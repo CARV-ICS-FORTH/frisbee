@@ -1,0 +1,8 @@
+#---
+apiVersion: frisbee.io/v1alpha1
+kind: Service
+metadata:
+  name: dokimi3
+spec:
+  name: dokimi
+  image: busybox

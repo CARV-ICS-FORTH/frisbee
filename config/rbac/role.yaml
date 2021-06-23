@@ -1,0 +1,102 @@
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: manager-role
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - services
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - frisbee.io
+  resources:
+  - servicegroups
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - frisbee.io
+  resources:
+  - servicegroups/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - frisbee.io
+  resources:
+  - servicegroups/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - frisbee.io
+  resources:
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - frisbee.io
+  resources:
+  - services/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - frisbee.io
+  resources:
+  - services/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - frisbee.io
+  resources:
+  - workflows
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - frisbee.io
+  resources:
+  - workflows/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - frisbee.io
+  resources:
+  - workflows/status
+  verbs:
+  - get
+  - patch
+  - update

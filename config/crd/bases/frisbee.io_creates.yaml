@@ -1,0 +1,90 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.4.1
+  creationTimestamp: null
+  name: creates.frisbee.io
+spec:
+  group: frisbee.io
+  names:
+    kind: Create
+    listKind: CreateList
+    plural: creates
+    singular: create
+  scope: Namespaced
+  versions:
+    - name: v1alpha1
+      schema:
+        openAPIV3Schema:
+          properties:
+            apiVersion:
+              description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+              type: string
+            kind:
+              description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: Spec defines the behavior of the Create action
+              properties:
+                env:
+                  additionalProperties:
+                    type: string
+                  description: Env are arguments passed to the objects
+                  type: object
+                group:
+                  properties:
+                    env:
+                      description: Env are list of inputs passed to the objects. When
+                        used, this field has priority over the Env of CreateArgs. The
+                        difference between the two fields is that this field accepts
+                        an array of inputs. If Instances are defined, the size of the
+                        given array must be equal to the number of instances. Otherwise,
+                        Instances are automatically set to the number of the given array.
+                      items:
+                        additionalProperties:
+                          type: string
+                        type: object
+                      type: array
+                    instances:
+                      description: Instances dictate the number of objects to be created
+                        for the selected class
+                      type: integer
+                    interval:
+                      description: Interval defines the interval between the creation
+                        of services within the group
+                      type: string
+                  required:
+                    - instances
+                    - interval
+                  type: object
+                name:
+                  description: Name is the group identifier. All services that belong
+                    to this group will be prefixed by the group name.
+                  type: string
+                service:
+                  description: Service selects a service class
+                  type: string
+              required:
+                - name
+                - service
+              type: object
+            status:
+              description: Most recently observed status of the create action
+              type: object
+          type: object
+      served: true
+      storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: [ ]
+  storedVersions: [ ]
