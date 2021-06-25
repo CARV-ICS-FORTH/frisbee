@@ -33,7 +33,7 @@ spec:
 
           echo Loader: insert keys into $host @ "$offset"
           ./go-ycsb load redis                                    \
-                  -p recordcount=1000000                          \
+                  -p recordcount=10000                            \
                   -p insertstart="$offset"                        \
                   -p threadcount=32                               \
                   -p redis.mode="single"                          \
@@ -55,13 +55,11 @@ spec:
           echo Runner: run $workload to $host
           ./go-ycsb run redis                         \
                     -P workloads/$workload            \
-                    -p operationcount=10000000        \
+                    -p operationcount=100000        \
                     -p threadcount=32                 \
                     -p redis.mode="single"            \
                     -p redis.addr="$host:6379"        \
           >> /dev/shm/pipe
-
-
 
 ---
 apiVersion: frisbee.io/v1alpha1
@@ -78,27 +76,32 @@ spec:
 
     - actiontype: CreateGroup
       name: loaders
-      depends: { ready: [ masters ] }
+      depends: { running: [ masters ] }
       createServiceGroup:
         templateRef: redis-example/loader
         inputs:
           - { host: .servicegroup.masters.one, offset: "0" }
-          - { host: .servicegroup.masters.one, offset: "1000000" }
-          - { host: .servicegroup.masters.one, offset: "2000000" }
-          - { host: .servicegroup.masters.one, offset: "3000000" }
-          - { host: .servicegroup.masters.one, offset: "4000000" }
-          - { host: .servicegroup.masters.one, offset: "5000000" }
-          - { host: .servicegroup.masters.one, offset: "6000000" }
-          - { host: .servicegroup.masters.one, offset: "7000000" }
-          - { host: .servicegroup.masters.one, offset: "8000000" }
-          - { host: .servicegroup.masters.one, offset: "9000000" }
+          - { host: .servicegroup.masters.one, offset: "10000" }
+          - { host: .servicegroup.masters.one, offset: "20000" }
+          - { host: .servicegroup.masters.one, offset: "30000" }
+          - { host: .servicegroup.masters.one, offset: "40000" }
+          - { host: .servicegroup.masters.one, offset: "50000" }
+          - { host: .servicegroup.masters.one, offset: "60000" }
+          - { host: .servicegroup.masters.one, offset: "70000" }
+          - { host: .servicegroup.masters.one, offset: "80000" }
+          - { host: .servicegroup.masters.one, offset: "90000" }
 
     - actiontype: CreateGroup
       name: runners
-      depends: { ready: [ masters ], complete: [ loaders ] }
+      depends: { running: [ masters ], complete: [ loaders ] }
       createServiceGroup:
         templateRef: redis-example/runner
         instances: 3
         env:
           host: .servicegroup.masters.one
           workload: workloada
+
+    - actiontype: Wait
+      name: "teardown"
+      wait:
+        complete: [runners]

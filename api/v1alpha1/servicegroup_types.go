@@ -53,8 +53,12 @@ type ServiceGroupStatus struct {
 	EtherStatus `json:",inline"`
 }
 
-func (s *ServiceGroup) GetStatus() *EtherStatus {
-	return &s.Status.EtherStatus
+func (s *ServiceGroup) GetStatus() EtherStatus {
+	return s.Status.EtherStatus
+}
+
+func (s *ServiceGroup) SetStatus(status EtherStatus) {
+	s.Status.EtherStatus = status
 }
 
 // +kubebuilder:object:root=true

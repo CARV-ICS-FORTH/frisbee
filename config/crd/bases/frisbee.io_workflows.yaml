@@ -281,8 +281,8 @@ spec:
                           items:
                             type: string
                           type: array
-                        ready:
-                          description: Ready waits for the given groups to be running
+                        running:
+                          description: Running waits for the given groups to be running
                           items:
                             type: string
                           type: array
@@ -367,8 +367,8 @@ spec:
                           items:
                             type: string
                           type: array
-                        ready:
-                          description: Ready waits for the given groups to be running
+                        running:
+                          description: Running waits for the given groups to be running
                           items:
                             type: string
                           type: array
@@ -393,7 +393,7 @@ spec:
                 enum:
                 - Running
                 - Failed
-                - Succeed
+                - Complete
                 type: string
               reason:
                 description: A brief CamelCase message indicating details about why

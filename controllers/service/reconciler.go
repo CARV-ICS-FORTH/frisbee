@@ -2,11 +2,11 @@ package service
 
 import (
 	"context"
-	"time"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/common"
 	"github.com/go-logr/logr"
+	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -55,8 +55,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	case v1alpha1.Running: // if we're here, then we're either still running or haven't started yet
 		return common.DoNotRequeue()
 
-	case v1alpha1.Succeed: // If we're Complete but not deleted yet, nothing to do but return
+	case v1alpha1.Complete: // If we're Complete but not deleted yet, nothing to do but return
 		r.Logger.Info("Service completed", "name", obj.GetName())
+
+		if err := r.Client.Delete(ctx, &obj); err != nil {
+			runtimeutil.HandleError(err)
+		}
 
 		return common.DoNotRequeue()
 
@@ -76,7 +80,6 @@ func (r *Reconciler) Finalizer() string {
 }
 
 func (r *Reconciler) Finalize(obj client.Object) error {
-
 	// delete any external resources associated with the service
 	// Examples finalizers include performing backups and deleting
 	// resources that are not owned by this CR, like a PVC.
@@ -91,48 +94,41 @@ func (r *Reconciler) Finalize(obj client.Object) error {
 
 func (r *Reconciler) create(ctx context.Context, obj *v1alpha1.Service) (ctrl.Result, error) {
 
+	// ingress
+
+	// configmap
+	volumes, mounts, err := r.createKubeConfigMap(ctx, obj)
+	if err != nil {
+		return common.Failed(ctx, obj, err)
+	}
+
+	// kubepod (the lifecycle of service is driven by the pod)
+	if err := r.createKubePod(ctx, obj, volumes, mounts); err != nil {
+		return common.Failed(ctx, obj, err)
+	}
+
+	// nic
+
 	/*
-		// discovery service
-		if err := createKubeService(ctx, instance, r); err != nil {
-			return err
-		}
+		go func() {
+			time.Sleep(30 * time.Second)
+			r.changePhase(ctx, obj, v1alpha1.Running, "Started")
 
-		// ingress
+			wait := 30 * time.Second
+			if strings.HasPrefix(obj.GetName(), "masters") {
+				wait = 30 * time.Minute
+			}
 
-		// configmap
-		volumes, mounts, err := createKubeConfigMap(ctx, instance, r)
-		if err != nil {
-			return err
-		}
-
-		// kubepod
-		if err := createKubePod(ctx, instance, r, volumes, mounts); err != nil {
-			return err
-		}
-
-		// nic
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(wait):
+				r.changePhase(ctx, obj, v1alpha1.Complete, "mock time elapsed")
+				return
+			}
+		}()
 
 	*/
 
-	go func() {
-		time.Sleep(30 * time.Second)
-		r.changePhase(ctx, obj, v1alpha1.Running, "Started")
-
-		select {
-		case <-ctx.Done():
-			return
-		case <-time.After(30 * time.Second):
-			r.changePhase(ctx, obj, v1alpha1.Succeed, "mock time elapsed")
-			return
-		}
-	}()
-
 	return common.DoNotRequeue()
-}
-
-func (r *Reconciler) changePhase(ctx context.Context, obj *v1alpha1.Service, newPhase v1alpha1.Phase, reason string) {
-	obj.Status.Phase = newPhase
-	obj.Status.Reason = reason
-
-	common.UpdateStatus(ctx, obj)
 }

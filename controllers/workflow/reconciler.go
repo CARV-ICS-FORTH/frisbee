@@ -2,11 +2,13 @@ package workflow
 
 import (
 	"context"
+	"time"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/common"
 	"github.com/go-logr/logr"
 	"github.com/sirupsen/logrus"
+	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
@@ -51,21 +53,34 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// The reconcile logic
 	switch obj.Status.Phase {
 	case v1alpha1.Uninitialized: // We haven't started yet
+		logrus.Warn("Why is Uninitialized called against ?")
+
 		common.Running(ctx, &obj)
 
-		return r.run(ctx, &obj)
+		go r.schedule(ctx, &obj)
+
+		return common.DoNotRequeue()
 
 	case v1alpha1.Running: // if we're here, then we're either still running or haven't started yet
 		logrus.Warn("Why is running called against ?")
+
 		return common.DoNotRequeue()
 
-	case v1alpha1.Succeed: // If we're Complete but not deleted yet, nothing to do but return
-		logrus.Warn("Why is Succeed called against ?")
+	case v1alpha1.Complete: // If we're Complete but not deleted yet, nothing to do but return
+		r.Logger.Info("Workflow Completed", "name", obj.GetName(), "time", time.Now())
+
+		logrus.Warn("-- DONE --")
+
+		if err := r.Client.Delete(ctx, &obj); err != nil {
+			runtimeutil.HandleError(err)
+		}
 
 		return common.DoNotRequeue()
 
 	case v1alpha1.Failed: // if we're here, then something went completely wrong
-		logrus.Warn("Why is Failed called against ?")
+		r.Logger.Error(err, "Workflow Failed", "name", obj.GetName(), "time", time.Now())
+
+		logrus.Warn("-- DONE --")
 
 		return common.DoNotRequeue()
 

@@ -90,25 +90,25 @@ func main() {
 
 	common.InitCommon(mgr, setupLog.WithName("Watcher"))
 
-	if err := service.NewController(mgr, setupLog.WithName("service")); err != nil {
+	if err := service.NewController(mgr, setupLog); err != nil {
 		runtimeutil.HandleError(errors.Wrapf(err, "unable to create Service controller"))
 
 		os.Exit(1)
 	}
 
-	if err := template.NewController(mgr, setupLog.WithName("template")); err != nil {
+	if err := template.NewController(mgr, setupLog); err != nil {
 		runtimeutil.HandleError(errors.Wrapf(err, "unable to create Templates controller"))
 
 		os.Exit(1)
 	}
 
-	if err := servicegroup.NewController(mgr, setupLog.WithName("servicegroup")); err != nil {
+	if err := servicegroup.NewController(mgr, setupLog); err != nil {
 		runtimeutil.HandleError(errors.Wrapf(err, "unable to create ServiceGroup controller"))
 
 		os.Exit(1)
 	}
 
-	if err := workflow.NewController(mgr, setupLog.WithName("workflow")); err != nil {
+	if err := workflow.NewController(mgr, setupLog); err != nil {
 		runtimeutil.HandleError(errors.Wrapf(err, "unable to create workflow controller"))
 
 		os.Exit(1)

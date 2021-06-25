@@ -7,91 +7,92 @@ import (
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/common"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-func (r *Reconciler) run(ctx context.Context, obj *v1alpha1.Workflow) (ctrl.Result, error) {
-	r.Logger.Info("Workflow Started", "name", obj.GetName(), "time", time.Now())
+func (r *Reconciler) schedule(ctx context.Context, w *v1alpha1.Workflow) {
+	r.Logger.Info("Workflow Started", "name", w.GetName(), "time", time.Now())
 
-	var err error
-
-	for _, action := range obj.Spec.Actions {
-		if action.Depends != nil {
-			r.Logger.Info("Dependency", "cond", action.Depends)
-
-			if err := r.wait(ctx, obj, action.Depends); err != nil {
-				return common.Failed(ctx, obj, errors.Wrapf(err, "unable to wait"))
-			}
-		}
-
-		r.Logger.Info("Process Action", "type", action.ActionType, "name", action.Name)
-
-		// FIXME: should it run within a goroutine ?
+	for _, action := range w.Spec.Actions {
+		r.Logger.Info("Process Action", "type", action.ActionType, "name", action.Name, "depends", action.Depends)
 
 		switch action.ActionType {
 		case "Create":
-			err = r.createService(ctx, obj, &action)
+			go r.createService(ctx, w, action)
 		case "CreateGroup":
-			err = r.createServiceGroup(ctx, obj, &action)
-		case "Wait":
-			err = r.wait(ctx, obj, action.Wait)
+			go r.createServiceGroup(ctx, w, action)
+		case "Wait": // Wait command will block the entire controller
+			if err := r.wait(ctx, w, action.Wait); err != nil {
+				common.Failed(ctx, w, err)
+				return
+			}
 		default:
-			return common.Failed(ctx, obj, errors.New("unknown action"))
-		}
+			common.Failed(ctx, w, errors.Errorf("unknown action %s", action.ActionType))
 
-		if err != nil {
-			return common.Failed(ctx, obj, err)
+			return
 		}
 	}
 
-	r.Logger.Info("Workflow Completed", "name", obj.GetName(), "time", time.Now())
-
-	logrus.Warn("-- DONE --")
-
-	return common.DoNotRequeue()
+	common.Success(ctx, w)
 }
 
-func (r *Reconciler) createService(ctx context.Context, w *v1alpha1.Workflow, action *v1alpha1.Action) error {
+func (r *Reconciler) createService(ctx context.Context, w *v1alpha1.Workflow, action v1alpha1.Action) {
+	if action.Depends != nil {
+		if err := r.wait(ctx, w, action.Depends); err != nil {
+			common.Failed(ctx, w, errors.Wrap(err, "unable to wait"))
+
+			return
+		}
+	}
+
 	service := v1alpha1.Service{}
 	service.Namespace = w.GetNamespace()
 	service.Name = action.Name
 	action.CreateService.DeepCopyInto(&service.Spec)
 
 	if err := common.SetOwner(w, &service); err != nil {
-		return errors.Wrap(err, "unable to set owner")
+		common.Failed(ctx, w, errors.Wrap(err, "unable to set owner"))
+		return
 	}
 
 	_, err := ctrl.CreateOrUpdate(ctx, r.Client, &service, func() error { return nil })
-
-	return errors.Wrapf(err, "cannot create service %s", service.GetName())
+	if err != nil {
+		common.Failed(ctx, w, errors.Wrapf(err, "cannot create service %s", service.GetName()))
+	}
 }
 
-func (r *Reconciler) createServiceGroup(ctx context.Context, w *v1alpha1.Workflow, action *v1alpha1.Action) error {
+func (r *Reconciler) createServiceGroup(ctx context.Context, w *v1alpha1.Workflow, action v1alpha1.Action) {
+	if action.Depends != nil {
+		if err := r.wait(ctx, w, action.Depends); err != nil {
+			common.Failed(ctx, w, errors.Wrapf(err, "unable to wait"))
+			return
+		}
+	}
+
 	group := v1alpha1.ServiceGroup{}
 	group.Namespace = w.GetNamespace()
 	group.Name = action.Name
 	action.CreateServiceGroup.DeepCopyInto(&group.Spec)
 
 	if err := common.SetOwner(w, &group); err != nil {
-		return errors.Wrap(err, "unable to set owner")
+		common.Failed(ctx, w, errors.Wrap(err, "unable to set owner"))
+		return
 	}
 
 	_, err := ctrl.CreateOrUpdate(ctx, r.Client, &group, func() error { return nil })
-
-	return errors.Wrapf(err, "cannot create servicegroup %s", group.GetName())
+	if err != nil {
+		common.Failed(ctx, w, errors.Wrapf(err, "cannot create servicegroup %s", group.GetName()))
+		return
+	}
 }
 
 func (r *Reconciler) wait(ctx context.Context, w *v1alpha1.Workflow, spec *v1alpha1.WaitSpec) error {
-
-	if len(spec.Ready) > 0 {
-		// wait for groups
-		return common.WaitForPhase(ctx, w.GetUID(), &v1alpha1.ServiceGroup{}, spec.Ready, v1alpha1.Running)
+	if len(spec.Complete) > 0 {
+		return common.WaitLifecycle(ctx, w.GetUID(), &v1alpha1.ServiceGroup{}, spec.Complete, v1alpha1.Complete)
 	}
 
-	if len(spec.Complete) > 0 {
-		// wait for groups
-		return common.WaitForPhase(ctx, w.GetUID(), &v1alpha1.ServiceGroup{}, spec.Complete, v1alpha1.Succeed)
+	if len(spec.Running) > 0 {
+		return common.WaitLifecycle(ctx, w.GetUID(), &v1alpha1.ServiceGroup{}, spec.Running, v1alpha1.Running)
 	}
 
 	return nil

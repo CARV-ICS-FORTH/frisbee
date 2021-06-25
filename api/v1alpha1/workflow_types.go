@@ -63,9 +63,9 @@ type StopSpec struct {
 }
 
 type WaitSpec struct {
-	// Ready waits for the given groups to be running
+	// Running waits for the given groups to be running
 	// +optional
-	Ready []string `json:"ready,omitempty"`
+	Running []string `json:"running,omitempty"`
 
 	// Complete waits for the given groups to be succeeded
 	// +optional
@@ -76,8 +76,12 @@ type WorkflowStatus struct {
 	EtherStatus `json:",inline"`
 }
 
-func (s *Workflow) GetStatus() *EtherStatus {
-	return &s.Status.EtherStatus
+func (s *Workflow) GetStatus() EtherStatus {
+	return s.Status.EtherStatus
+}
+
+func (s *Workflow) SetStatus(status EtherStatus) {
+	s.Status.EtherStatus = status
 }
 
 // +kubebuilder:object:root=true

@@ -7,6 +7,7 @@ import (
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/common"
+	"github.com/fnikolai/frisbee/controllers/common/selector"
 	"github.com/fnikolai/frisbee/controllers/common/selector/template"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
@@ -65,7 +66,7 @@ func (r *Reconciler) create(ctx context.Context, obj *v1alpha1.ServiceGroup) (ct
 		serviceKeys[i] = service.GetName()
 	}
 
-	common.WatchStatusUpdates(ctx, obj, &v1alpha1.Service{}, serviceKeys)
+	common.UpdateLifecycle(ctx, obj, &v1alpha1.Service{}, serviceKeys...)
 
 	return common.DoNotRequeue()
 }
@@ -80,7 +81,7 @@ func convertVars(ctx context.Context, in map[string]string) []v1.EnvVar {
 	for key, value := range in {
 		out = append(out, v1.EnvVar{
 			Name:  key,
-			Value: common.ExpandMacroToSelector(ctx, value)[0],
+			Value: selector.ExpandMacroToSelector(ctx, value)[0],
 		})
 	}
 

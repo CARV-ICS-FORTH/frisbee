@@ -6,6 +6,7 @@ import (
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/common"
 	"github.com/go-logr/logr"
+	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -16,7 +17,7 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 		Named("servicegroup").
 		Complete(&Reconciler{
 			Client: mgr.GetClient(),
-			Logger: logger.WithName("servicegroup"),
+			Logger: logger.WithName("group"),
 		})
 }
 
@@ -49,11 +50,14 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return r.create(ctx, &obj)
 
 	case v1alpha1.Running: // if we're here, then we're either still running or haven't started yet
-
 		return common.DoNotRequeue()
 
-	case v1alpha1.Succeed: // If we're Complete but not deleted yet, nothing to do but return
+	case v1alpha1.Complete: // If we're Complete but not deleted yet, nothing to do but return
 		r.Logger.Info("Group completed", "name", obj.GetName())
+
+		if err := r.Client.Delete(ctx, &obj); err != nil {
+			runtimeutil.HandleError(err)
+		}
 
 		return common.DoNotRequeue()
 
