@@ -44,10 +44,7 @@ type Action struct {
 
 type EmbedActions struct {
 	// +optional
-	CreateService *ServiceSpec `json:"createService,omitempty"`
-
-	// +optional
-	CreateServiceGroup *ServiceGroupSpec `json:"createServiceGroup,omitempty"`
+	ServiceGroup *ServiceGroupSpec `json:"servicegroup,omitempty"`
 
 	// +optional
 	Stop *StopSpec `json:"stop,omitempty"`
@@ -57,7 +54,10 @@ type EmbedActions struct {
 }
 
 type StopSpec struct {
-	ServiceSelector `json:",inline"`
+	// Macro abstract selector parameters into a structured string (e.g, .groupservice.master.all). Every parsed field is
+	// represents an inner structure of the selector.
+	// +optional
+	Macro string `json:"macro,omitempty"`
 
 	Schedule *SchedulerSpec `json:"schedule,omitempty"`
 }
@@ -70,6 +70,10 @@ type WaitSpec struct {
 	// Complete waits for the given groups to be succeeded
 	// +optional
 	Complete []string `json:"complete,omitempty"`
+
+	// Duration blocks waiting for the duration to expire
+	// +optional
+	Duration *metav1.Duration `json:"duration,omitempty"`
 }
 
 type WorkflowStatus struct {

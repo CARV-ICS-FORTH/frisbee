@@ -4,10 +4,10 @@ import (
 	"context"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
-	"github.com/fnikolai/frisbee/pkg/structure"
 	"github.com/pkg/errors"
 	k8errors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -127,11 +127,25 @@ func SetOwner(owner, object metav1.Object) error {
 	}
 
 	// add owner labels
-	object.SetLabels(structure.MergeMap(object.GetLabels(), map[string]string{
+	object.SetLabels(labels.Merge(object.GetLabels(), map[string]string{
 		"owner": owner.GetName(),
 	}))
 
 	return nil
+}
+
+// Chaos is a wrapper that sets phase to Chaos and does not requeue the request.
+func Chaos(ctx context.Context, obj InnerObject) (ctrl.Result, error) {
+	status := obj.GetStatus()
+
+	status.Phase = v1alpha1.Chaos
+	status.Reason = "Expect controlled failures"
+
+	obj.SetStatus(status)
+
+	updateStatus(ctx, obj)
+
+	return DoNotRequeue()
 }
 
 // Running is a wrapper that sets phase to Running and does not requeue the request.
@@ -153,7 +167,7 @@ func Success(ctx context.Context, obj InnerObject) (ctrl.Result, error) {
 	status := obj.GetStatus()
 
 	status.Phase = v1alpha1.Complete
-	status.Reason = "OK"
+	status.Reason = "All children are complete"
 
 	obj.SetStatus(status)
 
@@ -179,6 +193,11 @@ func Failed(ctx context.Context, obj InnerObject, err error) (ctrl.Result, error
 }
 
 func updateStatus(ctx context.Context, obj client.Object) {
+	// if the object is scheduled for deletion, do not update its status
+	if !obj.GetDeletionTimestamp().IsZero() {
+		return
+	}
+
 	// The status subresource ignores changes to spec, so it’s less likely to conflict with any other updates,
 	// and can have separate permissions.
 	if err := common.client.Status().Update(ctx, obj); err != nil {

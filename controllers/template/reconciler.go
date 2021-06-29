@@ -43,6 +43,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	r.Logger.Info("Register templates",
+		"name", req.NamespacedName,
 		"services", serviceNames,
 	)
 

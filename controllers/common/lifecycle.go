@@ -163,6 +163,7 @@ type notifier struct {
 	parentComplete   chan struct{}
 	childrenComplete map[string]chan struct{}
 
+	assess chan error
 	failed chan error
 }
 
@@ -227,7 +228,14 @@ func (n *notifier) watchChildrenPhase(obj interface{}) {
 		close(ch)
 
 	case v1alpha1.Failed:
-		n.failed <- errors.New(status.Reason)
+		switch obj.(type) {
+		case ExternalToInnerObject:
+			n.failed <- errors.Errorf("external object %s has failed. error: %s", object.GetName(), status.Reason)
+		case InnerObject:
+			n.failed <- errors.Errorf("managed object %s has failed. error: %s", object.GetName(), status.Reason)
+		default:
+			n.failed <- errors.Errorf("unknown object %s has failed. error: %s", object.GetName(), status.Reason)
+		}
 		// close(n.failed)
 	}
 }
@@ -235,30 +243,66 @@ func (n *notifier) watchChildrenPhase(obj interface{}) {
 // updateParent updates the phase of the parent based on the phase of its children.
 // Upon completion, the parent is automatically removed
 func (n *notifier) updateParent(ctx context.Context, parent InnerObject) {
+	failure := func(err error) {
+		switch parent.GetStatus().Phase {
+		case v1alpha1.Failed:
+			// Nothing to do if the parent has already failed. Just log the error
+			runtimeutil.HandleError(err)
+
+		case v1alpha1.Chaos:
+			// If the parent is in Chaos mode, it means that failing conditions are expected and therefore
+			// do not cause a failure to the controller. Instead, they should be handled by the system under evaluation.
+			common.logger.Info("Expected abnormal event",
+				"parent", parent.GetName(),
+				"event", err.Error(),
+			)
+
+		default:
+			// In any other case, mark the parent as failed
+			_, _ = Failed(ctx, parent, errors.Wrapf(err, "at least one of children for %s has failed",
+				parent.GetName()))
+		}
+	}
+
 	terminal := func() {
 		select {
 		case <-ctx.Done():
-			_, _ = Failed(ctx, parent, ctx.Err())
+			runtimeutil.HandleError(ctx.Err())
+
+			return
 
 		case <-n.parentComplete:
 			if status := parent.GetStatus(); status.Phase != v1alpha1.Complete {
 				_, _ = Success(ctx, parent)
 			}
 
-		case <-n.failed:
-			if status := parent.GetStatus(); status.Phase != v1alpha1.Failed {
-				_, _ = Failed(ctx, parent, errors.New("at least one of the objects has failed"))
-			}
+		case err := <-n.failed:
+			failure(err)
 		}
 	}
 
 	select {
 	case <-ctx.Done():
-		_, _ = Failed(ctx, parent, ctx.Err())
+		runtimeutil.HandleError(ctx.Err())
+
+		return
 
 	case <-n.parentRunning:
 		if status := parent.GetStatus(); status.Phase != v1alpha1.Running {
 			_, _ = Running(ctx, parent)
+		}
+
+		common.logger.Info("Update Parent",
+			"kind", reflect.TypeOf(parent),
+			"name", parent.GetName(),
+			"phase", parent.GetStatus().Phase,
+		)
+
+		terminal()
+
+	case <-n.assess:
+		if status := parent.GetStatus(); status.Phase != v1alpha1.Chaos {
+			_, _ = Chaos(ctx, parent)
 		}
 
 		common.logger.Info("Update Parent",
@@ -274,10 +318,8 @@ func (n *notifier) updateParent(ctx context.Context, parent InnerObject) {
 			_, _ = Success(ctx, parent)
 		}
 
-	case <-n.failed:
-		if status := parent.GetStatus(); status.Phase != v1alpha1.Failed {
-			_, _ = Failed(ctx, parent, errors.New("at least one of the objects has failed"))
-		}
+	case err := <-n.failed:
+		failure(err)
 	}
 }
 
@@ -287,6 +329,9 @@ func (n *notifier) waitParent(ctx context.Context, cond v1alpha1.Phase) error {
 	switch cond {
 	case v1alpha1.Uninitialized:
 		return errors.Errorf("Uninitialized phase cannot be waited")
+
+	case v1alpha1.Chaos:
+		return errors.Errorf("Chaos phase cannot be waited")
 
 	case v1alpha1.Running:
 		select {

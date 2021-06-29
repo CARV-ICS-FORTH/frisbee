@@ -13,7 +13,7 @@ type routeEntry struct {
 	// Name is the name of the handler
 	Name string
 
-	// Object is the type of objects the handler can handle (e.g, Create, Stop, ...)
+	// Object is the type of objects the handler can handle (e.g, ServiceGroup, Stop, ...)
 	Object InnerObject
 
 	// Endpoint points to the actual implementation of the handler

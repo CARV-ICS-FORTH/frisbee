@@ -6,6 +6,7 @@ import (
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/common"
 	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
 	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -48,11 +49,16 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// The reconcile logic
 	switch obj.Status.Phase {
 	case v1alpha1.Uninitialized:
-		r.Logger.Info("Create service", "name", obj.GetName())
+		r.Logger.Info("ServiceGroup service", "name", obj.GetName())
 
 		return r.create(ctx, &obj)
 
 	case v1alpha1.Running: // if we're here, then we're either still running or haven't started yet
+		r.Logger.Info("Service is already running",
+			"name", obj.GetName(),
+			"CreationTimestamp", obj.CreationTimestamp.String(),
+		)
+
 		return common.DoNotRequeue()
 
 	case v1alpha1.Complete: // If we're Complete but not deleted yet, nothing to do but return
@@ -69,9 +75,13 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		return common.DoNotRequeue()
 
-	default:
-		r.Logger.Info("unknown status", "phase", obj.Status.Phase)
+	case v1alpha1.Chaos: // if we're here, a controlled failure has occurred.
+		r.Logger.Info("Service failed gracefully", "name", obj.GetName())
+
 		return common.DoNotRequeue()
+
+	default:
+		return common.Failed(ctx, &obj, errors.Errorf("unknown status", "phase", obj.Status.Phase))
 	}
 }
 
@@ -80,20 +90,12 @@ func (r *Reconciler) Finalizer() string {
 }
 
 func (r *Reconciler) Finalize(obj client.Object) error {
-	// delete any external resources associated with the service
-	// Examples finalizers include performing backups and deleting
-	// resources that are not owned by this CR, like a PVC.
-	//
-	// Ensure that delete implementation is idempotent and safe to invoke
-	// multiple times for same object
-
 	r.Logger.Info("Finalize", "service", obj.GetName())
 
 	return nil
 }
 
 func (r *Reconciler) create(ctx context.Context, obj *v1alpha1.Service) (ctrl.Result, error) {
-
 	// ingress
 
 	// configmap

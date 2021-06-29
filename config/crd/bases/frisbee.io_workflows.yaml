@@ -43,200 +43,29 @@ spec:
                   properties:
                     actiontype:
                       type: string
-                    createService:
+                    depends:
+                      description: Depends define the conditions for the execution
+                        of this action
                       properties:
-                        args:
-                          description: Args define arguments to the command of the
-                            image
+                        complete:
+                          description: Complete waits for the given groups to be succeeded
                           items:
                             type: string
                           type: array
-                        command:
-                          description: Command overwrites the default command of the
-                            image
+                        duration:
+                          description: Duration blocks waiting for the duration to
+                            expire
+                          type: string
+                        running:
+                          description: Running waits for the given groups to be running
                           items:
                             type: string
                           type: array
-                        domain:
-                          description: Domain specifies the location where Service
-                            will be placed. For this to work, the nodes included in
-                            the domain must have the label domain:{{domain-name}}
-                          type: string
-                        env:
-                          description: Env defines environment variables for the containers
-                            that run the Service
-                          items:
-                            description: EnvVar represents an environment variable
-                              present in a Container.
-                            properties:
-                              name:
-                                description: Name of the environment variable. Must
-                                  be a C_IDENTIFIER.
-                                type: string
-                              value:
-                                description: 'Variable references $(VAR_NAME) are
-                                  expanded using the previous defined environment
-                                  variables in the container and any service environment
-                                  variables. If a variable cannot be resolved, the
-                                  reference in the input string will be unchanged.
-                                  The $(VAR_NAME) syntax can be escaped with a double
-                                  $$, ie: $$(VAR_NAME). Escaped references will never
-                                  be expanded, regardless of whether the variable
-                                  exists or not. Defaults to "".'
-                                type: string
-                              valueFrom:
-                                description: Source for the environment variable's
-                                  value. Cannot be used if value is not empty.
-                                properties:
-                                  configMapKeyRef:
-                                    description: Selects a key of a ConfigMap.
-                                    properties:
-                                      key:
-                                        description: The key to select.
-                                        type: string
-                                      name:
-                                        description: 'Name of the referent. More info:
-                                          https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                          TODO: Add other useful fields. apiVersion,
-                                          kind, uid?'
-                                        type: string
-                                      optional:
-                                        description: Specify whether the ConfigMap
-                                          or its key must be defined
-                                        type: boolean
-                                    required:
-                                    - key
-                                    type: object
-                                  fieldRef:
-                                    description: 'Selects a field of the pod: supports
-                                      metadata.name, metadata.namespace, `metadata.labels[''<KEY>'']`,
-                                      `metadata.annotations[''<KEY>'']`, spec.nodeName,
-                                      spec.serviceAccountName, status.hostIP, status.podIP,
-                                      status.podIPs.'
-                                    properties:
-                                      apiVersion:
-                                        description: Version of the schema the FieldPath
-                                          is written in terms of, defaults to "v1".
-                                        type: string
-                                      fieldPath:
-                                        description: Path of the field to select in
-                                          the specified API version.
-                                        type: string
-                                    required:
-                                    - fieldPath
-                                    type: object
-                                  resourceFieldRef:
-                                    description: 'Selects a resource of the container:
-                                      only resources limits and requests (limits.cpu,
-                                      limits.memory, limits.ephemeral-storage, requests.cpu,
-                                      requests.memory and requests.ephemeral-storage)
-                                      are currently supported.'
-                                    properties:
-                                      containerName:
-                                        description: 'Container name: required for
-                                          volumes, optional for env vars'
-                                        type: string
-                                      divisor:
-                                        anyOf:
-                                        - type: integer
-                                        - type: string
-                                        description: Specifies the output format of
-                                          the exposed resources, defaults to "1"
-                                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                                        x-kubernetes-int-or-string: true
-                                      resource:
-                                        description: 'Required: resource to select'
-                                        type: string
-                                    required:
-                                    - resource
-                                    type: object
-                                  secretKeyRef:
-                                    description: Selects a key of a secret in the
-                                      pod's namespace
-                                    properties:
-                                      key:
-                                        description: The key of the secret to select
-                                          from.  Must be a valid secret key.
-                                        type: string
-                                      name:
-                                        description: 'Name of the referent. More info:
-                                          https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                          TODO: Add other useful fields. apiVersion,
-                                          kind, uid?'
-                                        type: string
-                                      optional:
-                                        description: Specify whether the Secret or
-                                          its key must be defined
-                                        type: boolean
-                                    required:
-                                    - key
-                                    type: object
-                                type: object
-                            required:
-                            - name
-                            type: object
-                          type: array
-                        image:
-                          description: Image describes the name of the container for
-                            this node
-                          type: string
-                        ports:
-                          description: Ports lists the ports required for the service
-                            to work
-                          items:
-                            properties:
-                              name:
-                                type: string
-                              port:
-                                format: int32
-                                type: integer
-                            required:
-                            - name
-                            - port
-                            type: object
-                          type: array
-                        resources:
-                          description: Resources specifies limitations as to how the
-                            container will access host resources
-                          properties:
-                            cpu:
-                              type: string
-                            disk:
-                              description: Disk specifies the capabilities of the
-                                emulated storage device.
-                              properties:
-                                readbps:
-                                  description: ReadBPS limits read rate (bytes per
-                                    second)
-                                  type: string
-                                readiops:
-                                  description: ReadIOPS limits read rate (IO per second)
-                                  type: string
-                                writebps:
-                                  description: WriteBPS limits write rate (bytes per
-                                    second)
-                                  type: string
-                                writeiops:
-                                  description: WriteIOPS limits write rate (IO per
-                                    second)
-                                  type: string
-                              type: object
-                            memory:
-                              type: string
-                            nic:
-                              description: NIC specifies the capabilities of the emulated
-                                network interface.
-                              properties:
-                                latency:
-                                  type: string
-                                rate:
-                                  type: string
-                              type: object
-                          type: object
-                      required:
-                      - image
                       type: object
-                    createServiceGroup:
+                    name:
+                      description: Name is a unique identifier of the action
+                      type: string
+                    servicegroup:
                       properties:
                         env:
                           additionalProperties:
@@ -272,36 +101,12 @@ spec:
                       required:
                       - templateRef
                       type: object
-                    depends:
-                      description: Depends define the conditions for the execution
-                        of this action
-                      properties:
-                        complete:
-                          description: Complete waits for the given groups to be succeeded
-                          items:
-                            type: string
-                          type: array
-                        running:
-                          description: Running waits for the given groups to be running
-                          items:
-                            type: string
-                          type: array
-                      type: object
-                    name:
-                      description: Name is a unique identifier of the action
-                      type: string
                     stop:
                       properties:
-                        mode:
-                          description: 'Mode defines which of the selected services
-                            to use. If undefined, all() is used Supported mode: one
-                            / all / fixed / fixed-percent / random-max-percent'
-                          enum:
-                          - one
-                          - all
-                          - fixed
-                          - fixed-percent
-                          - random-max-percent
+                        macro:
+                          description: Macro abstract selector parameters into a structured
+                            string (e.g, .groupservice.master.all). Every parsed field
+                            is represents an inner structure of the selector.
                           type: string
                         schedule:
                           description: SchedulerSpec defines information about schedule
@@ -317,48 +122,6 @@ spec:
                           required:
                           - cron
                           type: object
-                        selector:
-                          description: Selector contains the rules to select target
-                          properties:
-                            labelSelectors:
-                              additionalProperties:
-                                type: string
-                              description: Map of string keys and values that can
-                                be used to select objects. A selector based on labels.
-                              type: object
-                            namespaces:
-                              description: Namespaces is a set of namespace to which
-                                objects belong.
-                              items:
-                                type: string
-                              type: array
-                            servicegroup:
-                              description: ServiceGroup defines the service group
-                                where services belong
-                              type: string
-                            services:
-                              additionalProperties:
-                                items:
-                                  type: string
-                                type: array
-                              description: Services is a map of string keys and a
-                                set values that used to select services. The key defines
-                                the namespace which services belong, and the each
-                                values is a set of service names.
-                              type: object
-                          type: object
-                        value:
-                          description: Value is required when the mode is set to `FixedPodMode`
-                            / `FixedPercentPodMod` / `RandomMaxPercentPodMod`. If
-                            `FixedPodMode`, provide an integer of pods to do chaos
-                            action. If `FixedPercentPodMod`, provide a number from
-                            0-100 to specify the percent of pods the server can do
-                            chaos action. IF `RandomMaxPercentPodMod`,  provide a
-                            number from 0-100 to specify the max percent of pods to
-                            do chaos action
-                          type: string
-                      required:
-                      - selector
                       type: object
                     wait:
                       properties:
@@ -367,6 +130,10 @@ spec:
                           items:
                             type: string
                           type: array
+                        duration:
+                          description: Duration blocks waiting for the duration to
+                            expire
+                          type: string
                         running:
                           description: Running waits for the given groups to be running
                           items:
@@ -392,8 +159,9 @@ spec:
                 description: Phase is the current status of an object
                 enum:
                 - Running
-                - Failed
                 - Complete
+                - Failed
+                - Chaos
                 type: string
               reason:
                 description: A brief CamelCase message indicating details about why

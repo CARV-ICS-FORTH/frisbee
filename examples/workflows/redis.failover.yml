@@ -1,0 +1,77 @@
+apiVersion: frisbee.io/v1alpha1
+kind: Workflow
+metadata:
+  name: redis-failover
+spec:
+  actions:
+    # Create a Master node
+    - actiontype: ServiceGroup
+      name: masters
+      servicegroup:
+        templateRef: redis/master
+        instances: 1
+
+    # Create a Slave node
+    - actiontype: ServiceGroup
+      name: slaves
+      depends: { running: [ masters ] }
+      servicegroup:
+        templateRef: redis/slave
+        instances: 1
+        env:
+          master: .servicegroup.masters.one
+
+   # Create a failover manager
+    - actiontype: ServiceGroup
+      name: sentinel
+      depends: { running: [ masters, slaves ] }
+      servicegroup:
+        templateRef: redis/sentinel
+        instances: 1
+        env:
+          master: .servicegroup.masters.one
+
+
+    # Ingest keys in parallel into different ranges
+    - actiontype: ServiceGroup
+      name: loaders
+      depends: { running: [ masters ],   complete: [ boot ] }
+      servicegroup:
+        templateRef: rediscluster/loader
+        inputs:
+          - { host: .servicegroup.masters.one, offset: "0" }
+          - { host: .servicegroup.masters.one, offset: "10000" }
+          - { host: .servicegroup.masters.one, offset: "20000" }
+          - { host: .servicegroup.masters.one, offset: "30000" }
+          - { host: .servicegroup.masters.one, offset: "40000" }
+          - { host: .servicegroup.masters.one, offset: "50000" }
+          - { host: .servicegroup.masters.one, offset: "60000" }
+          - { host: .servicegroup.masters.one, offset: "70000" }
+          - { host: .servicegroup.masters.one, offset: "80000" }
+          - { host: .servicegroup.masters.one, offset: "90000" }
+
+    # Run queries
+    - actiontype: ServiceGroup
+      name: runners
+      depends: { running: [ masters ], complete: [ loaders ] }
+      servicegroup:
+        templateRef: rediscluster/runner
+        instances: 3
+        env:
+          host: .servicegroup.masters.one
+          workload: workloada
+
+
+    # Stop the master nodes after a few minutes
+    - actiontype: Stop
+      name: "teardown"
+      depends: {duration: 30s}
+      stop:
+        macro: .servicegroup.masters.one
+
+
+    # Wait until servers are removed
+    - actiontype: Wait
+      name: "terminate"
+      wait:
+        complete: [masters]

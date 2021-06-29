@@ -6,7 +6,8 @@ type Mode string
 const (
 	// OneMode represents that the system will select one object randomly.
 	OneMode Mode = "one"
-	// AllMode represents that the system will select all objects  regardless of status (not ready or not running pods includes).
+	// AllMode represents that the system will select all objects  regardless of status
+	// (not ready or not running pods includes).
 	// Use this label carefully.
 	AllMode Mode = "all"
 	// FixedMode represents that the system will select a specific number of running objects.

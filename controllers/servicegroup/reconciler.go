@@ -6,7 +6,7 @@ import (
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/common"
 	"github.com/go-logr/logr"
-	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"
+	"github.com/pkg/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -14,7 +14,7 @@ import (
 func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.ServiceGroup{}).
-		Named("servicegroup").
+		Named("creategroup").
 		Complete(&Reconciler{
 			Client: mgr.GetClient(),
 			Logger: logger.WithName("group"),
@@ -45,19 +45,26 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// The reconcile logic
 	switch obj.Status.Phase {
 	case v1alpha1.Uninitialized:
-		r.Logger.Info("Create group", "name", obj.GetName())
+		r.Logger.Info("ServiceGroup group", "name", obj.GetName())
 
 		return r.create(ctx, &obj)
 
 	case v1alpha1.Running: // if we're here, then we're either still running or haven't started yet
+		r.Logger.Info("ServiceGroup is already running",
+			"name", obj.GetName(),
+			"CreationTimestamp", obj.CreationTimestamp.String(),
+		)
+
 		return common.DoNotRequeue()
 
 	case v1alpha1.Complete: // If we're Complete but not deleted yet, nothing to do but return
 		r.Logger.Info("Group completed", "name", obj.GetName())
 
-		if err := r.Client.Delete(ctx, &obj); err != nil {
-			runtimeutil.HandleError(err)
-		}
+		/*
+			if err := r.Client.Delete(ctx, &obj); err != nil {
+				runtimeutil.HandleError(err)
+			}
+		*/
 
 		return common.DoNotRequeue()
 
@@ -66,9 +73,14 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		return common.DoNotRequeue()
 
-	default:
-		r.Logger.Info("unknown status", "phase", obj.Status.Phase)
+
+	case v1alpha1.Chaos: // if we're here, a controlled failure has occurred.
+		r.Logger.Info("ServiceGroup failed gracefully", "name", obj.GetName())
+
 		return common.DoNotRequeue()
+
+	default:
+		return common.Failed(ctx, &obj, errors.Errorf("unknown status", "phase", obj.Status.Phase))
 	}
 }
 

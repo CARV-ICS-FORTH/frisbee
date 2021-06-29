@@ -3,28 +3,18 @@ package servicegroup
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/common"
 	"github.com/fnikolai/frisbee/controllers/common/selector"
-	"github.com/fnikolai/frisbee/controllers/common/selector/template"
+	"github.com/fnikolai/frisbee/controllers/common/selector/service"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 func (r *Reconciler) create(ctx context.Context, obj *v1alpha1.ServiceGroup) (ctrl.Result, error) {
-	parsed := strings.Split(obj.Spec.TemplateRef, "/")
-	templateFamily := parsed[0]
-	serviceRef := parsed[1]
-
-	serviceSpec, err := template.Select(ctx, &v1alpha1.TemplateSelector{
-		Family: templateFamily,
-		Selector: v1alpha1.TemplateSelectorSpec{
-			Service: serviceRef,
-		},
-	})
+	serviceSpec, err := selector.SelectTemplate(ctx, obj.Spec.TemplateRef)
 	if err != nil {
 		return common.Failed(ctx, obj, err)
 	}
@@ -81,7 +71,7 @@ func convertVars(ctx context.Context, in map[string]string) []v1.EnvVar {
 	for key, value := range in {
 		out = append(out, v1.EnvVar{
 			Name:  key,
-			Value: selector.ExpandMacroToSelector(ctx, value)[0],
+			Value: service.Select(ctx, selector.ExpandMacro(value)).String(),
 		})
 	}
 

@@ -13,7 +13,7 @@ func ReflectStructMethod(Iface interface{}, MethodName string) error {
 
 	// Check if the passed interface is a pointer
 	if ValueIface.Type().Kind() != reflect.Ptr {
-		// Create a new type of Iface, so we have a pointer to work with
+		// ServiceGroup a new type of Iface, so we have a pointer to work with
 		ValueIface = reflect.New(reflect.TypeOf(Iface))
 	}
 
@@ -33,7 +33,7 @@ func ReflectStructField(Iface interface{}, FieldName string) error {
 
 	// Check if the passed interface is a pointer
 	if ValueIface.Type().Kind() != reflect.Ptr {
-		// Create a new type of Iface's Type, so we have a pointer to work with
+		// ServiceGroup a new type of Iface's Type, so we have a pointer to work with
 		ValueIface = reflect.New(reflect.TypeOf(Iface))
 	}
 

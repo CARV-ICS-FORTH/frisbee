@@ -30,7 +30,7 @@ func (r *Reconciler) createKubeConfigMap(ctx context.Context, obj *v1alpha1.Serv
 			}(),
 		}
 
-		if err := r.Client.Create(ctx, &configMap); err != nil {
+		if err := r.Client.ServiceGroup(ctx, &configMap); err != nil {
 			return nil, nil, errors.Wrapf(err, "unable to create kubernetes configMap for object %s", obj.GetName())
 		}
 

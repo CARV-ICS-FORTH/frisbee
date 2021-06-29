@@ -79,7 +79,7 @@ rules:
   resources:
   - workflows
   verbs:
-  - create
+  - createServiceGroup
   - delete
   - get
   - list

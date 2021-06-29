@@ -7,7 +7,13 @@ import (
 // Phase is the current status of an object
 type Phase string
 
-// These are the valid statuses of services.
+// These are the valid statuses of services. The following lifecycles are valid:
+// Uninitialized -> Failed
+// Uninitialized -> Running* -> Completed
+// Uninitialized -> Running* -> Failed
+// Uninitialized -> Chaos* -> Completed
+// Uninitialized -> Running* -> Chaos -> Completed
+// The asterix (*) Indicate that the same phase may appear recursively.
 const (
 	// Uninitialized means that the service has been accepted by the system, but one or more of the containers
 	// has not been started. This includes time before being bound to a node, as well as time spent
@@ -25,10 +31,14 @@ const (
 	// Failed means that all containers in the pod have terminated, and at least one container has
 	// terminated in a failure (exited with a non-zero exit code or was stopped by the system).
 	Failed Phase = "Failed"
+
+	// Chaos indicates a managed abnormal condition such STOP or KILL. In this phase, the controller ignores
+	// any subsequent failures and let the system under evaluation to progress as it can.
+	Chaos Phase = "Chaos"
 )
 
 type EtherStatus struct {
-	// +kubebuilder:validation:Enum=Running;Failed;Complete
+	// +kubebuilder:validation:Enum=Running;Complete;Failed;Chaos
 	Phase Phase `json:"phase,omitempty"`
 
 	// A brief CamelCase message indicating details about why the service is in this Phase.

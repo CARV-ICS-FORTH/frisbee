@@ -7,38 +7,58 @@ import (
 	"math"
 	"math/big"
 	"strconv"
+	"strings"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
-	"github.com/fnikolai/frisbee/pkg/structure"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var Client client.Client
 
-func Select(ctx context.Context, ss *v1alpha1.ServiceSelector) ([]v1alpha1.Service, error) {
+const (
+	ServiceIDListSeparator = " "
+)
+
+type ServiceList []v1alpha1.Service
+
+func (list ServiceList) String() string {
+	names := make([]string, len(list))
+
+	for i, service := range list {
+		names[i] = service.GetName()
+	}
+
+	return strings.Join(names, ServiceIDListSeparator)
+}
+
+func Select(ctx context.Context, ss *v1alpha1.ServiceSelector) ServiceList {
 	if ss == nil {
-		return []v1alpha1.Service{}, nil
+		return []v1alpha1.Service{}
 	}
 
 	// get all available services that match the criteria
 	services, err := selectServices(ctx, ss.Selector)
 	if err != nil {
-		return nil, err
+		logrus.Warn(err)
+		return []v1alpha1.Service{}
 	}
 
 	if len(services) == 0 {
-		return nil, errors.New("no service is selected")
+		return []v1alpha1.Service{}
 	}
 
 	// filter services based on the pods
 	filteredServices, err := filterServicesByMode(services, ss.Mode, ss.Value)
 	if err != nil {
-		return nil, err
+		logrus.Warn(err)
+		return []v1alpha1.Service{}
 	}
 
-	return filteredServices, nil
+	return filteredServices
 }
 
 func selectServices(ctx context.Context, selector v1alpha1.ServiceSelectorSpec) ([]v1alpha1.Service, error) {
@@ -57,6 +77,7 @@ func selectServices(ctx context.Context, selector v1alpha1.ServiceSelectorSpec) 
 		}
 
 		services = append(services, service)
+
 		return nil
 	}
 
@@ -77,7 +98,7 @@ func selectServices(ctx context.Context, selector v1alpha1.ServiceSelectorSpec) 
 	if len(selector.ServiceGroup) > 0 || len(selector.LabelSelectors) > 0 {
 
 		if len(selector.ServiceGroup) > 0 {
-			selector.LabelSelectors = structure.MergeMap(selector.LabelSelectors, map[string]string{
+			selector.LabelSelectors = labels.Merge(selector.LabelSelectors, map[string]string{
 				"owner": selector.ServiceGroup,
 			})
 		}
@@ -90,6 +111,7 @@ func selectServices(ctx context.Context, selector v1alpha1.ServiceSelectorSpec) 
 		if err != nil {
 			return nil, err
 		}
+
 		listOptions.LabelSelector = ls
 	}
 
@@ -117,6 +139,7 @@ func filterServicesByMode(services []v1alpha1.Service, mode v1alpha1.Mode, value
 		return []v1alpha1.Service{service}, nil
 	case v1alpha1.AllMode:
 		return services, nil
+
 	case v1alpha1.FixedMode:
 		num, err := strconv.Atoi(value)
 		if err != nil {

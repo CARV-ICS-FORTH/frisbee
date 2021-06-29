@@ -5,11 +5,11 @@ import (
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/common"
-	"github.com/fnikolai/frisbee/pkg/structure"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 )
 
 func (r *Reconciler) createKubePod(ctx context.Context, owner *v1alpha1.Service, volumes []corev1.Volume, mounts []corev1.VolumeMount) error {
@@ -18,7 +18,7 @@ func (r *Reconciler) createKubePod(ctx context.Context, owner *v1alpha1.Service,
 	placement := func(spec v1alpha1.ServiceSpec) *corev1.Affinity {
 		if len(spec.Domain) > 0 {
 			domainLabels := map[string]string{"domain": spec.Domain}
-			owner.SetLabels(structure.MergeMap(owner.GetLabels(), domainLabels))
+			owner.SetLabels(labels.Merge(owner.GetLabels(), domainLabels))
 
 			return &corev1.Affinity{
 				NodeAffinity: nil,
@@ -160,7 +160,6 @@ func createContainers(obj *v1alpha1.Service, volumemounts []corev1.VolumeMount) 
 }
 
 func (r *Reconciler) makeDiscoverable(ctx context.Context, owner *v1alpha1.Service, pod *corev1.Pod) error {
-
 	// register ports from containers and sidecars
 	var allPorts []corev1.ServicePort
 
@@ -193,7 +192,7 @@ func (r *Reconciler) makeDiscoverable(ctx context.Context, owner *v1alpha1.Servi
 
 	// add discovery labels
 	discoverylabels := map[string]string{"discover": pod.GetName()}
-	pod.SetLabels(structure.MergeMap(pod.GetLabels(), discoverylabels))
+	pod.SetLabels(labels.Merge(pod.GetLabels(), discoverylabels))
 
 	kubeService.Spec.Selector = pod.GetLabels()
 

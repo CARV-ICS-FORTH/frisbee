@@ -1,0 +1,133 @@
+apiVersion: frisbee.io/v1alpha1
+kind: Template
+metadata:
+  name: redis
+spec:
+  services:
+    # Master node servicing requests
+    "master":
+      image: redis
+      ports:
+        - port: 6379
+          name: to-clients
+        - port: 16379
+          name: clusterbus
+        - port: 26379
+          name: sentinel
+      command:
+        - /bin/sh   # Run shell
+        - -c        # Read from string
+        - |         # Multi-line str
+          set -eum
+          trap "touch /dev/shm/stop" EXIT
+
+
+          cat > redis.conf <<EOF
+            port 6379
+            appendonly yes
+          EOF
+
+          redis-server redis.conf
+
+
+
+    # Replica of a master
+    "slave":
+      image: redis
+      ports:
+        - port: 6379
+          name: to-clients
+        - port: 16379
+          name: bus
+        - port: 26379
+          name: sentinel
+      env:
+        - name: master
+      command:
+        - /bin/sh   # Run shell
+        - -c        # Read from string
+        - |         # Multi-line str
+          set -eum
+          trap "touch /dev/shm/stop" EXIT
+
+          cat > redis.conf <<EOF
+           port 6379
+           appendonly yes
+           slaveof ${master} 6379
+          EOF
+
+          redis-server redis.conf
+
+    # Failover agent
+    "sentinel":
+      image: redis
+      ports:
+        - port: 26379
+          name: sentinel
+      env:
+        - name: master
+      command:
+        - /bin/sh   # Run shell
+        - -c        # Read from string
+        - |         # Multi-line str
+          set -eum
+          trap "touch /dev/shm/stop" EXIT
+
+          echo "Watch $master"
+
+          cat > sentinel.conf <<EOF
+           sentinel resolve-hostnames yes
+           sentinel monitor mymaster ${master} 6379 1
+           sentinel down-after-milliseconds mymaster 5000
+           sentinel failover-timeout mymaster 10000
+           sentinel parallel-syncs mymaster 1
+          EOF
+
+          redis-sentinel sentinel.conf
+
+
+    # Loader injecting keys into a single server
+    "loader":
+      image: aylei/go-ycsb:20201029
+      env:
+        - name: server
+        - name: offset
+      command:
+        - /bin/sh   # Run shell
+        - -c        # Read from string
+        - |         # Multi-line str
+          set -eum
+          trap "touch /dev/shm/stop" EXIT
+
+          echo Loader: insert keys into $host @ "$offset"
+          ./go-ycsb load redis                                    \
+                  -p recordcount=10000                            \
+                  -p insertstart="$offset"                        \
+                  -p threadcount=32                               \
+                  -p redis.mode="single"                          \
+                  -p redis.addr="$server:6379"                    \
+          >> /dev/shm/pipe
+
+
+
+    # Run queries against a single server
+    "runner":
+      image: aylei/go-ycsb:20201029
+      env:
+        - name: server
+        - name: workload
+      command:
+        - /bin/sh   # Run shell
+        - -c        # Read from string
+        - |         # Multi-line str
+          set -eum
+          trap "touch /dev/shm/stop" EXIT
+
+          echo Runner: run $workload to $host
+          ./go-ycsb run redis                         \
+                    -P workloads/$workload            \
+                    -p operationcount=100000        \
+                    -p threadcount=32                 \
+                    -p redis.mode="single"            \
+                    -p redis.addr="server:6379"        \
+          >> /dev/shm/pipe
