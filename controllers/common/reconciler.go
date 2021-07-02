@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 	k8errors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -19,7 +18,7 @@ func DoNotRequeue() (ctrl.Result, error) {
 }
 
 func RequeueWithError(err error) (ctrl.Result, error) {
-	return ctrl.Result{}, err
+	return ctrl.Result{}, errors.Wrapf(err, "requeue request")
 }
 
 // Reconcile provides the most common functions for all the Reconcilers. That includes acquisition of the CR object
@@ -104,6 +103,12 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 			controllerutil.RemoveFinalizer(obj, metav1.FinalizerDeleteDependents)
 
 			if err := r.Update(ctx, obj); err != nil {
+				if k8errors.IsGone(err) || k8errors.IsInvalid(err) {
+					common.logger.Info("Object is already removed", "object", obj.GetName())
+
+					return DoNotRequeue()
+				}
+
 				runtimeutil.HandleError(errors.Wrapf(err, "unable to remove finalizer for %s", req.NamespacedName))
 
 				return DoNotRequeue()
@@ -121,15 +126,20 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 }
 
 // SetOwner is a helper method to make sure the given object contains an object reference to the object provided.
-func SetOwner(owner, object metav1.Object) error {
-	if err := controllerutil.SetOwnerReference(owner, object, common.client.Scheme()); err != nil {
-		return errors.Wrapf(err, "unable to set owner")
+// It also names the child after the parent, with a potential postfix.
+func SetOwner(parentOwner, child metav1.Object, postfix string) error {
+	if postfix != "" {
+		postfix = "-" + postfix
 	}
 
-	// add owner labels
-	object.SetLabels(labels.Merge(object.GetLabels(), map[string]string{
-		"owner": owner.GetName(),
-	}))
+	// give name to the child
+	child.SetName(parentOwner.GetName() + postfix)
+	child.SetNamespace(parentOwner.GetNamespace())
+
+
+	if err := controllerutil.SetOwnerReference(parentOwner, child, common.client.Scheme()); err != nil {
+		return errors.Wrapf(err, "unable to set parentOwner")
+	}
 
 	return nil
 }
@@ -152,6 +162,16 @@ func Chaos(ctx context.Context, obj InnerObject) (ctrl.Result, error) {
 func Running(ctx context.Context, obj InnerObject) (ctrl.Result, error) {
 	status := obj.GetStatus()
 
+	switch status.Phase {
+	case v1alpha1.Running: // nothing to do
+		return DoNotRequeue()
+
+	case v1alpha1.Complete, v1alpha1.Failed:
+		runtimeutil.HandleError(errors.Errorf("invalid phase transition %s -> %s", status.Phase, v1alpha1.Complete))
+
+		return DoNotRequeue()
+	}
+
 	status.Phase = v1alpha1.Running
 	status.Reason = "OK"
 
@@ -166,6 +186,16 @@ func Running(ctx context.Context, obj InnerObject) (ctrl.Result, error) {
 func Success(ctx context.Context, obj InnerObject) (ctrl.Result, error) {
 	status := obj.GetStatus()
 
+	switch status.Phase {
+	case v1alpha1.Complete: // nothing to do
+		return DoNotRequeue()
+
+	case v1alpha1.Failed:
+		runtimeutil.HandleError(errors.Errorf("invalid phase transition %s -> %s", status.Phase, v1alpha1.Complete))
+
+		return DoNotRequeue()
+	}
+
 	status.Phase = v1alpha1.Complete
 	status.Reason = "All children are complete"
 
@@ -178,9 +208,18 @@ func Success(ctx context.Context, obj InnerObject) (ctrl.Result, error) {
 
 // Failed is a wrap that logs the error, updates the status, and does not requeue the request.
 func Failed(ctx context.Context, obj InnerObject, err error) (ctrl.Result, error) {
-	runtimeutil.HandleError(err)
+	common.logger.Error(err, "object failed", "object", obj.GetName())
 
 	status := obj.GetStatus()
+	switch status.Phase {
+	case v1alpha1.Failed: // nothing to do
+		return DoNotRequeue()
+
+	case v1alpha1.Complete:
+		runtimeutil.HandleError(errors.Errorf("invalid phase transition %s -> %s", status.Phase, v1alpha1.Failed))
+
+		return DoNotRequeue()
+	}
 
 	status.Phase = v1alpha1.Failed
 	status.Reason = err.Error()
@@ -194,14 +233,18 @@ func Failed(ctx context.Context, obj InnerObject, err error) (ctrl.Result, error
 
 func updateStatus(ctx context.Context, obj client.Object) {
 	// if the object is scheduled for deletion, do not update its status
-	if !obj.GetDeletionTimestamp().IsZero() {
-		return
-	}
+	if obj.GetDeletionTimestamp().IsZero() {
+		// The status subresource ignores changes to spec, so it’s less likely to conflict with any other updates,
+		// and can have separate permissions.
+		if err := common.client.Status().Update(ctx, obj); err != nil {
+			if k8errors.IsGone(err) || k8errors.IsInvalid(err) {
+				common.logger.Info("Object is already removed", "object", obj.GetName())
 
-	// The status subresource ignores changes to spec, so it’s less likely to conflict with any other updates,
-	// and can have separate permissions.
-	if err := common.client.Status().Update(ctx, obj); err != nil {
-		runtimeutil.HandleError(errors.Wrapf(err, "unable to update status for %s [%s]",
-			obj.GetName(), obj.GetObjectKind().GroupVersionKind()))
+				return
+			}
+
+			runtimeutil.HandleError(errors.Wrapf(err, "unable to update status for %s [%s]",
+				obj.GetName(), obj.GetObjectKind().GroupVersionKind()))
+		}
 	}
 }

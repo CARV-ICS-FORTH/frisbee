@@ -15,14 +15,32 @@ type Template struct {
 
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	// TemplateSpec defines the template of services
+	// MonitorSpec defines the template of services
 	Spec TemplateSpec `json:"spec"`
 }
 
 type TemplateSpec struct {
-	// Services include the templates for all the services in the experiment
+	// Services are lookups to service specifications
 	// +optional
-	Services map[string]ServiceSpec `json:"services,omitempty"`
+	Services map[string]ServiceSpec `json:"services"`
+
+	// Monitors are lookups to monitoring packages
+	// +optional
+	Monitors map[string]MonitorSpec `json:"monitors"`
+}
+
+type MonitorSpec struct {
+	// Agent is the sidecar that will be deployed in the same pod as the app
+	Agent ServiceSpec `json:"agent,omitempty"`
+
+	// Dashboard is dashboard payload that will be installed in Grafana.
+	Dashboard DashboardSpec `json:"dashboard,omitempty"`
+}
+
+type DashboardSpec struct {
+	File string `json:"file"`
+
+	Payload string `json:"payload"`
 }
 
 // +kubebuilder:object:root=true

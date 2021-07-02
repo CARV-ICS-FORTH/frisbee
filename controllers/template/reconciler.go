@@ -42,9 +42,15 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		serviceNames = append(serviceNames, name)
 	}
 
+	monitorNames := make([]string, 0, len(obj.Spec.Monitors))
+	for name := range obj.Spec.Monitors {
+		monitorNames = append(monitorNames, name)
+	}
+
 	r.Logger.Info("Register templates",
 		"name", req.NamespacedName,
 		"services", serviceNames,
+		"monitor", monitorNames,
 	)
 
 	return common.DoNotRequeue()

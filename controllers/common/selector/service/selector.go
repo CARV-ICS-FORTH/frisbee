@@ -41,9 +41,10 @@ func Select(ctx context.Context, ss *v1alpha1.ServiceSelector) ServiceList {
 	}
 
 	// get all available services that match the criteria
-	services, err := selectServices(ctx, ss.Selector)
+	services, err := selectServices(ctx, &ss.Selector)
 	if err != nil {
 		logrus.Warn(err)
+
 		return []v1alpha1.Service{}
 	}
 
@@ -61,7 +62,7 @@ func Select(ctx context.Context, ss *v1alpha1.ServiceSelector) ServiceList {
 	return filteredServices
 }
 
-func selectServices(ctx context.Context, selector v1alpha1.ServiceSelectorSpec) ([]v1alpha1.Service, error) {
+func selectServices(ctx context.Context, ss *v1alpha1.ServiceSelectorSpec) ([]v1alpha1.Service, error) {
 	var services []v1alpha1.Service
 
 	appendService := func(ns, name string) error {
@@ -82,8 +83,8 @@ func selectServices(ctx context.Context, selector v1alpha1.ServiceSelectorSpec) 
 	}
 
 	// case 1. services are specifically specified
-	if len(selector.Services) > 0 {
-		for ns, names := range selector.Services {
+	if len(ss.Services) > 0 {
+		for ns, names := range ss.Services {
 			for _, name := range names {
 				if err := appendService(ns, name); err != nil {
 					return nil, err
@@ -95,16 +96,16 @@ func selectServices(ctx context.Context, selector v1alpha1.ServiceSelectorSpec) 
 	// case 2. servicegroups are specifically specified
 	listOptions := client.ListOptions{}
 
-	if len(selector.ServiceGroup) > 0 || len(selector.LabelSelectors) > 0 {
+	if len(ss.ServiceGroup) > 0 || len(ss.LabelSelectors) > 0 {
 
-		if len(selector.ServiceGroup) > 0 {
-			selector.LabelSelectors = labels.Merge(selector.LabelSelectors, map[string]string{
-				"owner": selector.ServiceGroup,
+		if len(ss.ServiceGroup) > 0 {
+			ss.LabelSelectors = labels.Merge(ss.LabelSelectors, map[string]string{
+				"owner": ss.ServiceGroup,
 			})
 		}
 
 		metav1Ls := &metav1.LabelSelector{
-			MatchLabels: selector.LabelSelectors,
+			MatchLabels: ss.LabelSelectors,
 		}
 
 		ls, err := metav1.LabelSelectorAsSelector(metav1Ls)

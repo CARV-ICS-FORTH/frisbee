@@ -3,13 +3,15 @@ kind: Workflow
 metadata:
   name: redis-failover
 spec:
+  importMonitors: ["redismon/telegraf"]
+
   actions:
     # Create a Master node
     - actiontype: ServiceGroup
       name: masters
       servicegroup:
         templateRef: redis/master
-        instances: 1
+        instances: 2
 
     # Create a Slave node
     - actiontype: ServiceGroup
@@ -17,9 +19,9 @@ spec:
       depends: { running: [ masters ] }
       servicegroup:
         templateRef: redis/slave
-        instances: 1
-        env:
-          master: .servicegroup.masters.one
+        inputs:
+          - { master: .servicegroup.masters.one }
+
 
    # Create a failover manager
     - actiontype: ServiceGroup
@@ -27,47 +29,47 @@ spec:
       depends: { running: [ masters, slaves ] }
       servicegroup:
         templateRef: redis/sentinel
-        instances: 1
-        env:
-          master: .servicegroup.masters.one
+        inputs:
+          - { master: .servicegroup.masters.one }
 
 
     # Ingest keys in parallel into different ranges
     - actiontype: ServiceGroup
       name: loaders
-      depends: { running: [ masters ],   complete: [ boot ] }
+      depends: { running: [ masters ] }
       servicegroup:
-        templateRef: rediscluster/loader
+        templateRef: redis/loader
         inputs:
-          - { host: .servicegroup.masters.one, offset: "0" }
-          - { host: .servicegroup.masters.one, offset: "10000" }
-          - { host: .servicegroup.masters.one, offset: "20000" }
-          - { host: .servicegroup.masters.one, offset: "30000" }
-          - { host: .servicegroup.masters.one, offset: "40000" }
-          - { host: .servicegroup.masters.one, offset: "50000" }
-          - { host: .servicegroup.masters.one, offset: "60000" }
-          - { host: .servicegroup.masters.one, offset: "70000" }
-          - { host: .servicegroup.masters.one, offset: "80000" }
-          - { host: .servicegroup.masters.one, offset: "90000" }
+          - { server: .servicegroup.masters.one, recordcount: "100000", offset: "0" }
+          - { server: .servicegroup.masters.one, recordcount: "100000", offset: "100000" }
+          - { server: .servicegroup.masters.one, recordcount: "100000", offset: "200000" }
+          - { server: .servicegroup.masters.one, recordcount: "100000", offset: "300000" }
+          - { server: .servicegroup.masters.one, recordcount: "100000", offset: "400000" }
+          - { server: .servicegroup.masters.one, recordcount: "100000", offset: "500000" }
+          - { server: .servicegroup.masters.one, recordcount: "100000", offset: "600000" }
+          - { server: .servicegroup.masters.one, recordcount: "100000", offset: "700000" }
+          - { server: .servicegroup.masters.one, recordcount: "100000", offset: "800000" }
+          - { server: .servicegroup.masters.one, recordcount: "100000", offset: "900000" }
 
     # Run queries
     - actiontype: ServiceGroup
       name: runners
       depends: { running: [ masters ], complete: [ loaders ] }
       servicegroup:
-        templateRef: rediscluster/runner
+        templateRef: redis/runner
         instances: 3
-        env:
-          host: .servicegroup.masters.one
-          workload: workloada
+        inputs:
+          - { server: .servicegroup.masters.one, workload: workloada,  operationcount: "1000000"}
 
 
     # Stop the master nodes after a few minutes
     - actiontype: Stop
       name: "teardown"
-      depends: {duration: 30s}
+      depends: {duration: 1m}
       stop:
-        macro: .servicegroup.masters.one
+        macro: .servicegroup.runners.all
+        schedule:
+          cron: "@every 1m"
 
 
     # Wait until servers are removed

@@ -1,0 +1,100 @@
+apiVersion: frisbee.io/v1alpha1
+kind: Template
+metadata:
+  name: rediscluster
+spec:
+  services:
+    # Master server handling a keyspace
+    "master":
+      containers:
+        - name:  app
+          image: redis
+          ports:
+            - name: to-clients
+              containerPort: 6379
+            - name: clusterbus
+              containerPort: 16379
+          command:
+            - /bin/sh   # Run shell
+            - -c        # Read from string
+            - |         # Multi-line str
+
+              set -eum
+              trap "touch /dev/shm/stop" EXIT
+
+              cat > redis.conf <<EOF
+                port 6379
+                appendonly yes
+                cluster-enabled yes
+                cluster-config-file nodes.conf
+                cluster-node-timeout 5000
+              EOF
+
+              redis-server  redis.conf
+
+
+
+    # Combine servers into a cluster
+    "bootstrap":
+      containers:
+        - name: app
+          image: redis
+          env:
+            - name: servers
+          command:
+            - /bin/sh   # Run shell
+            - -c        # Read from string
+            - |         # Multi-line str
+
+              echo "Servers $servers"
+              redis-cli --cluster create  --cluster-yes `getent hosts $servers | awk '{print $1":6379"}'`
+
+
+    # Loader injecting keys into clustered servers
+    "loader":
+      containers:
+        - name: app
+          image:  aylei/go-ycsb:20201029
+          env:
+            - name: servers
+            - name: offset
+          command:
+            - /bin/sh   # Run shell
+            - -c        # Read from string
+            - |         # Multi-line str
+              set -eum
+              trap "touch /dev/shm/stop" EXIT
+
+              echo Loader: insert keys into $host @ "$offset"
+              ./go-ycsb load redis                                    \
+                  -p recordcount=10000                            \
+                  -p insertstart="$offset"                        \
+                  -p threadcount=32                               \
+                  -p redis.mode="cluster"                         \
+                  -p redis.addr="$server:6379"                    \
+              >> /dev/shm/pipe
+
+
+    # Run queries against the clustered servers
+    "runner":
+      containers:
+        - name: app
+          image: aylei/go-ycsb:20201029
+          env:
+            - name: servers
+            - name: workload
+          command:
+            - /bin/sh   # Run shell
+            - -c        # Read from string
+            - |         # Multi-line str
+              set -eum
+              trap "touch /dev/shm/stop" EXIT
+
+              echo Runner: run $workload to $host
+              ./go-ycsb run redis                                 \
+                    -P workloads/$workload                    \
+                    -p operationcount=100000                  \
+                    -p threadcount=32                         \
+                    -p redis.mode="cluster"                   \
+                    -p redis.addr="$server:6379"              \
+              >> /dev/shm/pipe

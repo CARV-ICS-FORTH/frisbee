@@ -25,6 +25,11 @@ type Workflow struct {
 }
 
 type WorkflowSpec struct {
+	// ImportMonitors are references to monitoring packages that will be used in the monitoring stack.
+	// +optional
+	ImportMonitors []string `json:"importMonitors,omitempty"`
+
+	// Actions are the tasks that will be taken.
 	Actions []Action `json:"actions"`
 }
 

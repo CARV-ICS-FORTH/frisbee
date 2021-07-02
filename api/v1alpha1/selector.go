@@ -20,9 +20,9 @@ const (
 
 // TemplateSelectorSpec defines some selectors for chosing a template
 type TemplateSelectorSpec struct {
-	// Service selects the service template with the specified value.
+	// Reference selects the service template with the specified value.
 	// +optional
-	Service string `json:"service,omitempty"`
+	Reference string `json:"entry,omitempty"`
 }
 
 type TemplateSelector struct {

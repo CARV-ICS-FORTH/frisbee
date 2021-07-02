@@ -26,38 +26,31 @@ type Service struct {
 }
 
 type ServiceSpec struct {
-	// Image describes the name of the container for this node
-	Image string `json:"image"`
-
-	// Ports lists the ports required for the service to work
+	// List of volumes that can be mounted by containers belonging to the pod.
 	// +optional
-	Ports []Port `json:"ports,omitempty"`
+	Volumes []v1.Volume `json:"volumes,omitempty"`
 
-	// Resources specifies limitations as to how the container will access host resources
-	// +optional
-	Resources *Resources `json:"resources,omitempty"`
+	// Container is the container running the application
+	Container v1.Container `json:"container,omitempty"`
 
-	// Env defines environment variables for the containers that run the Service
+	// MonitorTemplateRef is a list of references to monitoring packages
 	// +optional
-	Env []v1.EnvVar `json:"env,omitempty"`
+	MonitorTemplateRefs []string `json:"monitorTemplateRef,omitempty"`
+	/*
+		// Sidecars are containers that provide additional functionalities to the application
+		// +optional
+		Sidecars []v1.Container `json:"sidecars,omitempty"`
+
+	*/
 
 	// Domain specifies the location where Service will be placed. For this to work,
 	// the nodes included in the domain must have the label domain:{{domain-name}}
 	// +optional
 	Domain string `json:"domain,omitempty"`
 
-	// Command overwrites the default command of the image
+	// Resources specifies limitations as to how the container will access host resources
 	// +optional
-	Command []string `json:"command,omitempty"`
-
-	// Args define arguments to the command of the image
-	// +optional
-	Args []string `json:"args,omitempty"`
-}
-
-type Port struct {
-	Port int32  `json:"port"`
-	Name string `json:"name"`
+	Resources *Resources `json:"resources,omitempty"`
 }
 
 // NIC specifies the capabilities of the emulated network interface.

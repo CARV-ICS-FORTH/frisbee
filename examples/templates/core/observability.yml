@@ -1,0 +1,184 @@
+---
+apiVersion: frisbee.io/v1alpha1
+kind: Template
+metadata:
+  name: observability
+spec:
+  services:
+      prometheus:
+          volumes:
+            - name: prometheus-config-volume
+              configMap:
+                name: prometheus-config
+
+          container:
+            name: prometheus
+            image: "prom/prometheus"
+            ports:
+              - name: http
+                containerPort: 9090
+
+            volumeMounts:
+              - name: prometheus-config-volume
+                mountPath: /etc/prometheus/prometheus.yml
+                subPath: prometheus.yml
+                readOnly: true
+
+      grafana:
+        volumes:
+          - name: grafana-config-volume
+            configMap:
+              name: grafana-config
+
+        container:
+          name: grafana
+          image: "grafana/grafana:latest"
+          ports:
+            - name: http
+              containerPort: 3000
+
+          volumeMounts:
+            - name: grafana-config-volume
+              mountPath: /etc/grafana/grafana.ini
+              subPath: grafana.ini
+              readOnly: true
+
+            - name: grafana-config-volume
+              mountPath: /etc/grafana/provisioning/dashboards/dashboard.yml
+              subPath: dashboard.yml
+              readOnly: true
+
+            - name: grafana-config-volume
+              mountPath: /etc/grafana/provisioning/datasources/prometheus.yml
+              subPath: prometheus.yml
+              readOnly: true
+
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+data:
+  prometheus.yml: |
+    # For all the confusing Prometheus configuration and
+    # regular expressions,
+    # explained in examples.
+
+
+    # Remember, there are default values for each item if it's missing.
+    # regex is (.*),
+    # replacement is $1,
+    # separator is ;
+    # ,and action is replace
+    global:
+
+      # Can be overridden
+      scrape_interval: 15s
+
+    # A scrape configuration containing exactly one endpoint to scrape:
+    # Here it's Prometheus itself.
+    scrape_configs:
+      # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
+      - job_name: 'prometheus'
+
+        scheme: http
+
+        # Use Kubernetes Service Discovery
+        kubernetes_sd_configs:
+          - role: endpoints
+            namespaces:
+              names:
+                - "frisbee"  # Variable is automatically assigned by frisbee
+
+        relabel_configs:
+           # Condition 1. Monitor only the ports with name "mon-*". The * is used as type to the dashboard
+          - source_labels: [ __meta_kubernetes_pod_container_port_name ]
+            separator: ;
+            regex: mon-(.*)
+            action: keep
+
+          # Extract hints for the dashboard
+          - source_labels: [ __meta_kubernetes_pod_container_port_name ]
+            separator: ;
+            regex: mon-(.*)
+            target_label: mon
+            replacement: ${1}
+            action: replace
+
+          # Extract information about the target container
+          - source_labels: [ __meta_kubernetes_endpoint_address_target_name ]
+            separator: ;
+            regex: (.*)
+            target_label: instance
+            replacement: ${1}
+            action: replace
+
+          # Extract information about the host where container is running
+          - source_labels: [ __meta_kubernetes_endpoint_node_name ]
+            separator: ;
+            regex: (.*)
+            target_label: host
+            replacement: ${1}
+            action: replace
+
+          # Replace All kubernetes flags with the normal counterparts
+          # all __meta_kubernetes_service_label_(.+) will be changed to the (.+)
+          # e.g. __meta_kubernetes_service_label_app='armada-api' to app='armada-api'
+          # - action: labelmap
+          #   replacement: $1
+          #   regex: __meta_kubernetes_service_label_(.+)
+
+
+
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-config
+data:
+  dashboard.yml: |
+    apiVersion: 1
+
+    providers:
+      - name: 'Prometheus'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        editable: true
+        allowUiUpdates: true
+        options:
+          path: /etc/grafana/provisioning/dashboards
+
+  prometheus.yml: |
+    apiVersion: 1
+
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        access: proxy
+        orgId: 1
+        url: http://prometheus:9090
+        basicAuth: false
+        isDefault: true
+        editable: true
+
+  grafana.ini: |
+    [auth]
+    disable_login_form = true
+
+    [auth.basic]
+    enabled = false
+
+
+    [auth.anonymous]
+    # enable anonymous access
+    enabled = true
+
+    # specify organization name that should be used for unauthenticated users
+    #org_name = frisbee-benchmark
+
+    # specify role for unauthenticated users (other roles Viewer, Editor, Admin)
+    org_role = Admin

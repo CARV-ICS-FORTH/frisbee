@@ -91,7 +91,7 @@ func main() {
 	common.InitCommon(mgr, setupLog.WithName("Watcher"))
 
 	if err := service.NewController(mgr, setupLog); err != nil {
-		runtimeutil.HandleError(errors.Wrapf(err, "unable to create Service controller"))
+		runtimeutil.HandleError(errors.Wrapf(err, "unable to create Reference controller"))
 
 		os.Exit(1)
 	}

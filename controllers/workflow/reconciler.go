@@ -55,9 +55,17 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	case v1alpha1.Uninitialized: // We haven't started yet
 		logrus.Warn("Why is Uninitialized called against ?")
 
-		common.Running(ctx, &obj)
+		if err := r.newMonitoringStack(ctx, &obj); err != nil {
+			return common.Failed(ctx, &obj, errors.Wrapf(err, "cannot create monitoring stack"))
+		}
 
-		go r.schedule(ctx, &obj)
+		if action := obj.Spec.Actions[len(obj.Spec.Actions)-1]; action.ActionType != "Wait" {
+			return common.Failed(ctx, &obj, errors.New("All experiments must end with a wait function"))
+		}
+
+		_, _ = common.Running(ctx, &obj)
+
+		go r.scheduleActions(ctx, &obj)
 
 		return common.DoNotRequeue()
 
@@ -83,9 +91,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return common.DoNotRequeue()
 
 	case v1alpha1.Failed: // if we're here, then something went completely wrong
-		r.Logger.Error(err, "Workflow Failed", "name", obj.GetName(), "time", time.Now())
-
-		logrus.Warn("-- DONE --")
+		r.Logger.Error(errors.New(obj.Status.Reason), "Workflow Failed", "name", obj.GetName(), "time", time.Now())
 
 		return common.DoNotRequeue()
 
@@ -95,7 +101,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return common.DoNotRequeue()
 
 	default:
-		return common.Failed(ctx, &obj, errors.Errorf("unknown status", "phase", obj.Status.Phase))
+		return common.Failed(ctx, &obj, errors.Errorf("unknown phase: %s", obj.Status.Phase))
 	}
 }
 

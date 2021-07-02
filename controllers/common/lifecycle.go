@@ -7,6 +7,7 @@ import (
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/pkg/wait"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"
@@ -23,6 +24,8 @@ type eventHandlerFuncs struct {
 func WatchLifecycle(ctx context.Context, parentUID types.UID, child client.Object, handlers eventHandlerFuncs) {
 	informer, err := common.cache.GetInformer(ctx, child)
 	if err != nil {
+		logrus.Warn("ERROR ", err)
+
 		runtimeutil.HandleError(err)
 
 		return
@@ -100,8 +103,16 @@ func filter(parentUID types.UID) func(obj interface{}) bool {
 // UpdateLifecycle runs a background task to update the parent phase based on the phase of its children.
 func UpdateLifecycle(ctx context.Context, parent InnerObject, child client.Object, childrenNames ...string) {
 	if parent == nil || child == nil || len(childrenNames) == 0 {
+		common.logger.Error(errors.New("update lifecycle failed"), "invalid arguments")
 		return
 	}
+
+	common.logger.Info("Watch",
+		"parent-kind", reflect.TypeOf(parent),
+		"name", parent.GetName(),
+		"child-kind", reflect.TypeOf(child),
+		"children", childrenNames,
+	)
 
 	t := newNotifier(childrenNames)
 	t.accessChildStatus = accessStatus(child)
@@ -121,18 +132,11 @@ func UpdateLifecycle(ctx context.Context, parent InnerObject, child client.Objec
 	WatchLifecycle(ctx, parent.GetUID(), unwrap(child), handlers)
 
 	go t.updateParent(ctx, parent)
-
-	common.logger.Info("Watch",
-		"parent-kind", reflect.TypeOf(parent),
-		"name", parent.GetName(),
-		"child-kind", reflect.TypeOf(child),
-		"children", childrenNames,
-	)
 }
 
 // WaitLifecycle blocks until the parent has reached a define state
 func WaitLifecycle(ctx context.Context, parentUID types.UID, child client.Object, childrenNames []string,
-	expected v1alpha1.Phase) error {
+	expected v1alpha1.Phase) {
 
 	t := newNotifier(childrenNames)
 	t.accessChildStatus = accessStatus(child)
@@ -151,7 +155,7 @@ func WaitLifecycle(ctx context.Context, parentUID types.UID, child client.Object
 
 	WatchLifecycle(ctx, parentUID, child, handlers)
 
-	return t.waitParent(ctx, expected)
+	t.waitParent(ctx, expected)
 }
 
 type notifier struct {
@@ -204,7 +208,7 @@ func (n *notifier) watchChildrenPhase(obj interface{}) {
 	)
 
 	switch status.Phase {
-	case v1alpha1.Uninitialized:
+	case v1alpha1.Uninitialized, v1alpha1.Chaos:
 		return
 
 	case v1alpha1.Running:
@@ -228,23 +232,18 @@ func (n *notifier) watchChildrenPhase(obj interface{}) {
 		close(ch)
 
 	case v1alpha1.Failed:
-		switch obj.(type) {
-		case ExternalToInnerObject:
-			n.failed <- errors.Errorf("external object %s has failed. error: %s", object.GetName(), status.Reason)
-		case InnerObject:
-			n.failed <- errors.Errorf("managed object %s has failed. error: %s", object.GetName(), status.Reason)
-		default:
-			n.failed <- errors.Errorf("unknown object %s has failed. error: %s", object.GetName(), status.Reason)
-		}
-		// close(n.failed)
+		n.failed <- errors.Errorf("object failed. object:%s, name:%s, error:%s",
+			reflect.TypeOf(object),
+			object.GetName(),
+			status.Reason)
 	}
 }
 
 // updateParent updates the phase of the parent based on the phase of its children.
-// Upon completion, the parent is automatically removed
+// Upon completion, the parent is automatically removed.
 func (n *notifier) updateParent(ctx context.Context, parent InnerObject) {
 	failure := func(err error) {
-		switch parent.GetStatus().Phase {
+		switch phase := parent.GetStatus().Phase; phase {
 		case v1alpha1.Failed:
 			// Nothing to do if the parent has already failed. Just log the error
 			runtimeutil.HandleError(err)
@@ -257,10 +256,16 @@ func (n *notifier) updateParent(ctx context.Context, parent InnerObject) {
 				"event", err.Error(),
 			)
 
-		default:
+		case v1alpha1.Uninitialized, v1alpha1.Running:
 			// In any other case, mark the parent as failed
 			_, _ = Failed(ctx, parent, errors.Wrapf(err, "at least one of children for %s has failed",
 				parent.GetName()))
+
+		case v1alpha1.Complete:
+			panic("Is this case even possible ?")
+
+		default:
+			runtimeutil.HandleError(errors.Errorf("%s is not a valid phase", phase))
 		}
 	}
 
@@ -323,70 +328,101 @@ func (n *notifier) updateParent(ctx context.Context, parent InnerObject) {
 	}
 }
 
+var (
+	// ErrUnexpectedPhase indicate that object obtained a phase other than the expected. For example,
+	// get a Failed phase while expecting the next phase to be Running.
+	ErrUnexpectedPhase = errors.New("unexpected Phase")
+
+	// ErrNoWait is used for phases that cannot be waited. For example, users cannot wait for an
+	// object to become uninitialized.
+	ErrNoWait = errors.New("this phase cannot be waited. return immediately")
+)
+
 // waitParent blocks waiting for the next phase of the parent. If it is the one expected, it returns nil.
 // Otherwise it returns an error stating what was expected and what was got.
-func (n *notifier) waitParent(ctx context.Context, cond v1alpha1.Phase) error {
+func (n *notifier) waitParent(ctx context.Context, cond v1alpha1.Phase) {
 	switch cond {
 	case v1alpha1.Uninitialized:
-		return errors.Errorf("Uninitialized phase cannot be waited")
+		common.logger.Error(ErrNoWait, "waiting error",
+			"phase", v1alpha1.Uninitialized,
+		)
 
 	case v1alpha1.Chaos:
-		return errors.Errorf("Chaos phase cannot be waited")
+		common.logger.Error(ErrNoWait, "waiting error",
+			"phase", v1alpha1.Chaos,
+		)
 
 	case v1alpha1.Running:
 		select {
 		case <-ctx.Done():
-			return errors.Wrapf(ctx.Err(), "operation cancelled")
+			return
+
 		case <-n.parentRunning:
-			return nil
+			return
+
 		case <-n.parentComplete:
-			return errors.Errorf("expected %s but got %s", cond, v1alpha1.Complete)
+			common.logger.Error(ErrUnexpectedPhase, "waiting error",
+				"expected", cond,
+				"got", v1alpha1.Complete,
+			)
+
 		case err := <-n.failed:
-			return errors.Errorf("expected %s but got %s due to %s", cond, v1alpha1.Failed, err)
+			common.logger.Error(ErrUnexpectedPhase, "waiting error",
+				"expected", cond,
+				"got", v1alpha1.Failed,
+				"err", err,
+			)
 		}
 
-	case v1alpha1.Complete: // To reach completed, it must have first be running
+	case v1alpha1.Complete:
 		select {
 		case <-ctx.Done():
-			return errors.Wrapf(ctx.Err(), "operation cancelled")
+			return
+
 		case <-n.parentRunning:
 			select {
 			case <-ctx.Done():
-				return errors.Wrapf(ctx.Err(), "operation cancelled")
+				return
+
 			case <-n.parentComplete:
-				return nil
+				return
+
 			case err := <-n.failed:
-				return errors.Errorf("expected %s but got %s due to %s", cond, v1alpha1.Failed, err)
+				common.logger.Error(ErrUnexpectedPhase, "waiting error", "expected", cond, "got", v1alpha1.Failed, "err", err)
 			}
 		}
 
-	case v1alpha1.Failed: // To reach failed, it may or may not first be running
+	case v1alpha1.Failed:
 		select {
 		case <-ctx.Done():
-			return errors.Wrapf(ctx.Err(), "operation cancelled")
+			return
+
 		case <-n.parentRunning:
 			select {
 			case <-ctx.Done():
-				return errors.Wrapf(ctx.Err(), "operation cancelled")
+				return
+
 			case <-n.parentComplete:
-				return errors.Errorf("expected %s but got %s", cond, v1alpha1.Complete)
+				common.logger.Error(ErrUnexpectedPhase, "waiting error", "expected", cond, "got", v1alpha1.Complete)
+
 			case <-n.failed:
-				return nil
+				return
 			}
 		}
 
 	default:
-		return errors.Errorf("unknown phase %s", cond)
+		runtimeutil.HandleError(errors.Errorf("unknown phase %s", cond))
 	}
 }
 
 func trackAdd(obj interface{}) {
 	objMeta := obj.(metav1.Object)
 
-	common.logger.Info("Add Child",
+	common.logger.Info("Child Added",
 		"kind", reflect.TypeOf(obj),
 		"name", objMeta.GetName(),
-		"labels", objMeta.GetLabels())
+		"owner", objMeta.GetOwnerReferences(),
+	)
 
 	// todo: add Grafana annotations
 }
@@ -394,10 +430,10 @@ func trackAdd(obj interface{}) {
 func trackDelete(obj interface{}) {
 	objMeta := obj.(metav1.Object)
 
-	common.logger.Info("Delete Child",
+	common.logger.Info("Child Deleted",
 		"kind", reflect.TypeOf(obj),
 		"name", objMeta.GetName(),
-		"labels", objMeta.GetLabels())
+		"owner", objMeta.GetOwnerReferences())
 
 	// todo: add Grafana annotations
 }

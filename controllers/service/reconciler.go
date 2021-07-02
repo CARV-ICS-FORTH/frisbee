@@ -7,7 +7,6 @@ import (
 	"github.com/fnikolai/frisbee/controllers/common"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
-	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -29,7 +28,7 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 // +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch;
 // +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;
 
-// Reconciler reconciles a Service object
+// Reconciler reconciles a Reference object
 type Reconciler struct {
 	client.Client
 	logr.Logger
@@ -49,8 +48,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// The reconcile logic
 	switch obj.Status.Phase {
 	case v1alpha1.Uninitialized:
-		r.Logger.Info("ServiceGroup service", "name", obj.GetName())
-
 		return r.create(ctx, &obj)
 
 	case v1alpha1.Running: // if we're here, then we're either still running or haven't started yet
@@ -65,7 +62,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		r.Logger.Info("Service completed", "name", obj.GetName())
 
 		if err := r.Client.Delete(ctx, &obj); err != nil {
-			runtimeutil.HandleError(err)
+			r.Logger.Error(err, "unable to delete object", "object", obj.GetName())
 		}
 
 		return common.DoNotRequeue()
@@ -76,12 +73,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return common.DoNotRequeue()
 
 	case v1alpha1.Chaos: // if we're here, a controlled failure has occurred.
-		r.Logger.Info("Service failed gracefully", "name", obj.GetName())
+		r.Logger.Info("Service consumed by Chaos", "service", obj.GetName())
 
 		return common.DoNotRequeue()
 
 	default:
-		return common.Failed(ctx, &obj, errors.Errorf("unknown status", "phase", obj.Status.Phase))
+		return common.Failed(ctx, &obj, errors.Errorf("unknown phase: %s", obj.Status.Phase))
 	}
 }
 
@@ -98,14 +95,8 @@ func (r *Reconciler) Finalize(obj client.Object) error {
 func (r *Reconciler) create(ctx context.Context, obj *v1alpha1.Service) (ctrl.Result, error) {
 	// ingress
 
-	// configmap
-	volumes, mounts, err := r.createKubeConfigMap(ctx, obj)
-	if err != nil {
-		return common.Failed(ctx, obj, err)
-	}
-
 	// kubepod (the lifecycle of service is driven by the pod)
-	if err := r.createKubePod(ctx, obj, volumes, mounts); err != nil {
+	if err := r.createKubePod(ctx, obj); err != nil {
 		return common.Failed(ctx, obj, err)
 	}
 

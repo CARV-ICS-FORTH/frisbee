@@ -73,14 +73,13 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		return common.DoNotRequeue()
 
-
 	case v1alpha1.Chaos: // if we're here, a controlled failure has occurred.
 		r.Logger.Info("ServiceGroup failed gracefully", "name", obj.GetName())
 
 		return common.DoNotRequeue()
 
 	default:
-		return common.Failed(ctx, &obj, errors.Errorf("unknown status", "phase", obj.Status.Phase))
+		return common.Failed(ctx, &obj, errors.Errorf("unknown phase: %s", obj.Status.Phase))
 	}
 }
 

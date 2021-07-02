@@ -1,0 +1,2623 @@
+apiVersion: frisbee.io/v1alpha1
+kind: Template
+metadata:
+  name: redismon
+spec:
+  monitors:
+    "telegraf":
+      agent:
+        container:
+          name: telegraf
+          image: telegraf
+          ports:
+            - name: mon-redis
+              containerPort: 9443
+          command:
+            - /bin/sh # Run shell
+            - -c # Read from string
+            - |  # Multi-line str
+              set -eum
+
+              echo  -n '
+              [[inputs.redis]]
+                 servers = ["tcp://localhost:6379"]
+
+              [[outputs.prometheus_client]]
+                 listen = ":9443"
+                 metric_version = 2
+                 collectors_exclude = ["gocollector","process"]
+              ' > redis.conf
+
+              telegraf --config redis.conf &
+
+              # When the stop file is added by the container, the process stop
+              while [ ! -f "/dev/shm/stop" ];
+              do
+                sleep 10
+              done
+
+      dashboard:
+        file: redis.json
+        payload: |
+          {
+            "annotations": {
+              "list": [
+                {
+                  "builtIn": 1,
+                  "datasource": "Prometheus",
+                  "enable": true,
+                  "hide": true,
+                  "iconColor": "#96D98D",
+                  "limit": 100,
+                  "name": "Annotations & Alerts",
+                  "showIn": 0,
+                  "tags": [ ],
+                  "type": "tags"
+                },
+                {
+                  "datasource": "-- Grafana --",
+                  "enable": true,
+                  "hide": false,
+                  "iconColor": "#5794F2",
+                  "limit": 100,
+                  "name": "run",
+                  "showIn": 0,
+                  "tags": [
+                      "run"
+                  ],
+                  "type": "tags"
+                },
+                {
+                  "datasource": "-- Grafana --",
+                  "enable": false,
+                  "hide": false,
+                  "iconColor": "#FF9830",
+                  "limit": 100,
+                  "name": "exit",
+                  "showIn": 0,
+                  "tags": [
+                      "exit"
+                  ],
+                  "type": "tags"
+                },
+                {
+                  "datasource": "-- Grafana --",
+                  "enable": true,
+                  "hide": false,
+                  "iconColor": "rgba(255, 96, 96, 1)",
+                  "limit": 100,
+                  "name": "failure",
+                  "showIn": 0,
+                  "tags": [
+                      "failure"
+                  ],
+                  "type": "tags",
+                  "useValueForTime": false
+                }
+              ]
+            },
+            "description": "Prometheus dashboard for Redis servers",
+            "editable": true,
+            "gnetId": 4074,
+            "graphTooltip": 0,
+            "id": 3,
+            "iteration": 1621326984701,
+            "links": [ ],
+            "panels": [
+              {
+                "collapsed": false,
+                "datasource": null,
+                "gridPos": {
+                  "h": 1,
+                  "w": 24,
+                  "x": 0,
+                  "y": 0
+                },
+                "id": 53,
+                "panels": [ ],
+                "title": "Cluster Overview",
+                "type": "row"
+              },
+              {
+                "datasource": null,
+                "fieldConfig": {
+                  "defaults": {
+                    "color": {
+                      "mode": "thresholds"
+                    },
+                    "mappings": [ ],
+                    "thresholds": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "green",
+                          "value": null
+                        },
+                        {
+                          "color": "red",
+                          "value": 80
+                        }
+                      ]
+                    },
+                    "unit": "short"
+                  },
+                  "overrides": [ ]
+                },
+                "gridPos": {
+                  "h": 7,
+                  "w": 24,
+                  "x": 0,
+                  "y": 1
+                },
+                "id": 51,
+                "options": {
+                  "displayMode": "basic",
+                  "orientation": "auto",
+                  "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                  },
+                  "showUnfilled": true,
+                  "text": { }
+                },
+                "pluginVersion": "7.5.6",
+                "targets": [
+                  {
+                    "exemplar": true,
+                    "expr": "max(redis_keyspace_keys) by (instance)",
+                    "instant": false,
+                    "interval": "",
+                    "legendFormat": "{{instance}}",
+                    "refId": "A"
+                  }
+                ],
+                "timeFrom": null,
+                "timeShift": null,
+                "title": "Keyspace Distribution",
+                "type": "bargauge"
+              },
+              {
+                "datasource": null,
+                "description": "Total number of commands processed by the server",
+                "fieldConfig": {
+                  "defaults": {
+                    "color": {
+                      "mode": "thresholds"
+                    },
+                    "mappings": [ ],
+                    "thresholds": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "green",
+                          "value": null
+                        },
+                        {
+                          "color": "red",
+                          "value": 80
+                        }
+                      ]
+                    },
+                    "unit": "short"
+                  },
+                  "overrides": [ ]
+                },
+                "gridPos": {
+                  "h": 7,
+                  "w": 24,
+                  "x": 0,
+                  "y": 8
+                },
+                "id": 65,
+                "options": {
+                  "displayMode": "basic",
+                  "orientation": "auto",
+                  "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                  },
+                  "showUnfilled": true,
+                  "text": { }
+                },
+                "pluginVersion": "7.5.6",
+                "targets": [
+                  {
+                    "exemplar": true,
+                    "expr": "max(redis_total_commands_processed) by (instance)",
+                    "instant": false,
+                    "interval": "",
+                    "legendFormat": "{{instance}}",
+                    "refId": "A"
+                  }
+                ],
+                "timeFrom": null,
+                "timeShift": null,
+                "title": "Total Commands Processed",
+                "type": "bargauge"
+              },
+              {
+                "collapsed": false,
+                "datasource": null,
+                "gridPos": {
+                  "h": 1,
+                  "w": 24,
+                  "x": 0,
+                  "y": 15
+                },
+                "id": 37,
+                "panels": [ ],
+                "repeat": null,
+                "title": "Overview  $instance",
+                "type": "row"
+              },
+              {
+                "cacheTimeout": null,
+                "datasource": null,
+                "description": "Redis Up Time",
+                "fieldConfig": {
+                  "defaults": {
+                    "color": {
+                      "mode": "thresholds"
+                    },
+                    "mappings": [ ],
+                    "thresholds": {
+                      "mode": "absolute",
+                      "steps": [ ]
+                    },
+                    "unit": "dtdurations"
+                  },
+                  "overrides": [ ]
+                },
+                "gridPos": {
+                  "h": 4,
+                  "w": 5,
+                  "x": 0,
+                  "y": 16
+                },
+                "id": 20,
+                "interval": null,
+                "links": [ ],
+                "maxDataPoints": null,
+                "options": {
+                  "colorMode": "value",
+                  "graphMode": "area",
+                  "justifyMode": "auto",
+                  "orientation": "auto",
+                  "reduceOptions": {
+                    "calcs": [
+                        "max"
+                    ],
+                    "fields": "",
+                    "values": false
+                  },
+                  "text": { },
+                  "textMode": "auto"
+                },
+                "pluginVersion": "7.5.6",
+                "targets": [
+                  {
+                    "expr": "max(redis_uptime{instance=\"$instance\"})",
+                    "groupBy": [
+                      {
+                        "params": [
+                            "$__interval"
+                        ],
+                        "type": "time"
+                      },
+                      {
+                        "params": [
+                            "null"
+                        ],
+                        "type": "fill"
+                      }
+                    ],
+                    "instant": false,
+                    "interval": "",
+                    "legendFormat": "{{instance}}",
+                    "measurement": "redis",
+                    "orderByTime": "ASC",
+                    "policy": "default",
+                    "refId": "A",
+                    "resultFormat": "time_series",
+                    "select": [
+                      [
+                        {
+                          "params": [
+                              "uptime"
+                          ],
+                          "type": "field"
+                        },
+                        {
+                          "params": [ ],
+                          "type": "mean"
+                        }
+                      ]
+                    ],
+                    "tags": [
+                      {
+                        "key": "host",
+                        "operator": "=~",
+                        "value": "/^$Host$/"
+                      }
+                    ]
+                  }
+                ],
+                "title": "Redis Up Time",
+                "type": "stat"
+              },
+              {
+                "cacheTimeout": null,
+                "datasource": null,
+                "description": "Total Keys ",
+                "fieldConfig": {
+                  "defaults": {
+                    "color": {
+                      "mode": "thresholds"
+                    },
+                    "mappings": [
+                      {
+                        "id": 0,
+                        "op": "=",
+                        "text": "N/A",
+                        "type": 1,
+                        "value": "null"
+                      }
+                    ],
+                    "thresholds": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "green",
+                          "value": null
+                        },
+                        {
+                          "color": "red",
+                          "value": 80
+                        }
+                      ]
+                    },
+                    "unit": "none"
+                  },
+                  "overrides": [ ]
+                },
+                "gridPos": {
+                  "h": 4,
+                  "w": 6,
+                  "x": 5,
+                  "y": 16
+                },
+                "id": 33,
+                "interval": null,
+                "links": [ ],
+                "maxDataPoints": 100,
+                "options": {
+                  "colorMode": "value",
+                  "graphMode": "area",
+                  "justifyMode": "auto",
+                  "orientation": "horizontal",
+                  "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                  },
+                  "text": { },
+                  "textMode": "auto"
+                },
+                "pluginVersion": "7.5.6",
+                "targets": [
+                  {
+                    "exemplar": true,
+                    "expr": "redis_keyspace_keys{instance=\"$instance\"}",
+                    "groupBy": [
+                      {
+                        "params": [
+                            "$__interval"
+                        ],
+                        "type": "time"
+                      },
+                      {
+                        "params": [
+                            "none"
+                        ],
+                        "type": "fill"
+                      }
+                    ],
+                    "interval": "",
+                    "legendFormat": "",
+                    "measurement": "redis",
+                    "orderByTime": "ASC",
+                    "policy": "default",
+                    "refId": "A",
+                    "resultFormat": "time_series",
+                    "select": [
+                      [
+                        {
+                          "params": [
+                              "total_commands_processed"
+                          ],
+                          "type": "field"
+                        },
+                        {
+                          "params": [ ],
+                          "type": "mean"
+                        }
+                      ]
+                    ],
+                    "tags": [
+                      {
+                        "key": "host",
+                        "operator": "=~",
+                        "value": "/^$Host$/"
+                      },
+                      {
+                        "condition": "AND",
+                        "key": "server",
+                        "operator": "=~",
+                        "value": "/^$Server$/"
+                      }
+                    ]
+                  }
+                ],
+                "title": "Number of Keys",
+                "type": "stat"
+              },
+              {
+                "datasource": null,
+                "fieldConfig": {
+                  "defaults": {
+                    "color": {
+                      "mode": "thresholds"
+                    },
+                    "mappings": [ ],
+                    "thresholds": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "green",
+                          "value": null
+                        },
+                        {
+                          "color": "red",
+                          "value": 80
+                        }
+                      ]
+                    },
+                    "unit": "short"
+                  },
+                  "overrides": [ ]
+                },
+                "gridPos": {
+                  "h": 4,
+                  "w": 3,
+                  "x": 11,
+                  "y": 16
+                },
+                "id": 61,
+                "options": {
+                  "colorMode": "background",
+                  "graphMode": "area",
+                  "justifyMode": "center",
+                  "orientation": "auto",
+                  "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                  },
+                  "text": { },
+                  "textMode": "auto"
+                },
+                "pluginVersion": "7.5.6",
+                "targets": [
+                  {
+                    "exemplar": true,
+                    "expr": "max(redis_clients{instance=\"$instance\"})",
+                    "format": "time_series",
+                    "instant": false,
+                    "interval": "",
+                    "legendFormat": "connected_clients",
+                    "refId": "A"
+                  }
+                ],
+                "timeFrom": null,
+                "timeShift": null,
+                "title": "Connected Clients",
+                "transformations": [ ],
+                "type": "stat"
+              },
+              {
+                "cacheTimeout": null,
+                "datasource": null,
+                "fieldConfig": {
+                  "defaults": {
+                    "color": {
+                      "mode": "thresholds"
+                    },
+                    "mappings": [ ],
+                    "thresholds": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "green",
+                          "value": null
+                        },
+                        {
+                          "color": "red",
+                          "value": 80
+                        }
+                      ]
+                    },
+                    "unit": "short"
+                  },
+                  "overrides": [ ]
+                },
+                "gridPos": {
+                  "h": 4,
+                  "w": 3,
+                  "x": 14,
+                  "y": 16
+                },
+                "id": 30,
+                "interval": null,
+                "links": [ ],
+                "maxDataPoints": 100,
+                "options": {
+                  "colorMode": "value",
+                  "graphMode": "area",
+                  "justifyMode": "auto",
+                  "orientation": "auto",
+                  "reduceOptions": {
+                    "calcs": [
+                        "last"
+                    ],
+                    "fields": "",
+                    "values": false
+                  },
+                  "text": { },
+                  "textMode": "auto"
+                },
+                "pluginVersion": "7.5.6",
+                "targets": [
+                  {
+                    "exemplar": true,
+                    "expr": "max(redis_total_connections_received{instance=\"$instance\"})",
+                    "format": "time_series",
+                    "hide": false,
+                    "instant": false,
+                    "interval": "",
+                    "intervalFactor": 1,
+                    "legendFormat": "Total Connections",
+                    "refId": "B"
+                  }
+                ],
+                "timeFrom": null,
+                "timeShift": null,
+                "title": "Total Connection Received",
+                "transformations": [ ],
+                "type": "stat"
+              },
+              {
+                "cacheTimeout": null,
+                "datasource": null,
+                "description": "Total Commands Processed",
+                "fieldConfig": {
+                  "defaults": {
+                    "color": {
+                      "mode": "thresholds"
+                    },
+                    "mappings": [ ],
+                    "thresholds": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "green",
+                          "value": null
+                        },
+                        {
+                          "color": "red",
+                          "value": 80
+                        }
+                      ]
+                    },
+                    "unit": "short"
+                  },
+                  "overrides": [ ]
+                },
+                "gridPos": {
+                  "h": 4,
+                  "w": 4,
+                  "x": 17,
+                  "y": 16
+                },
+                "id": 32,
+                "interval": null,
+                "links": [ ],
+                "maxDataPoints": 100,
+                "options": {
+                  "colorMode": "value",
+                  "graphMode": "none",
+                  "justifyMode": "auto",
+                  "orientation": "horizontal",
+                  "reduceOptions": {
+                    "calcs": [
+                        "last"
+                    ],
+                    "fields": "",
+                    "values": false
+                  },
+                  "text": { },
+                  "textMode": "auto"
+                },
+                "pluginVersion": "7.5.6",
+                "targets": [
+                  {
+                    "exemplar": true,
+                    "expr": "max(redis_total_commands_processed{instance=\"$instance\"})",
+                    "groupBy": [
+                      {
+                        "params": [
+                            "$__interval"
+                        ],
+                        "type": "time"
+                      },
+                      {
+                        "params": [
+                            "none"
+                        ],
+                        "type": "fill"
+                      }
+                    ],
+                    "instant": false,
+                    "interval": "",
+                    "legendFormat": "",
+                    "measurement": "redis",
+                    "orderByTime": "ASC",
+                    "policy": "default",
+                    "refId": "A",
+                    "resultFormat": "time_series",
+                    "select": [
+                      [
+                        {
+                          "params": [
+                              "total_commands_processed"
+                          ],
+                          "type": "field"
+                        },
+                        {
+                          "params": [ ],
+                          "type": "mean"
+                        }
+                      ]
+                    ],
+                    "tags": [
+                      {
+                        "key": "host",
+                        "operator": "=~",
+                        "value": "/^$Host$/"
+                      },
+                      {
+                        "condition": "AND",
+                        "key": "server",
+                        "operator": "=~",
+                        "value": "/^$Server$/"
+                      }
+                    ]
+                  }
+                ],
+                "title": "Total Commands Processed",
+                "type": "stat"
+              },
+              {
+                "cacheTimeout": null,
+                "datasource": null,
+                "description": "Total number of issued error replies, that is the sum of rejected commands (errors prior command execution) and failed commands (errors within the command execution)",
+                "fieldConfig": {
+                  "defaults": {
+                    "color": {
+                      "mode": "thresholds"
+                    },
+                    "mappings": [ ],
+                    "thresholds": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "green",
+                          "value": null
+                        },
+                        {
+                          "color": "red",
+                          "value": 80
+                        }
+                      ]
+                    },
+                    "unit": "short"
+                  },
+                  "overrides": [ ]
+                },
+                "gridPos": {
+                  "h": 4,
+                  "w": 3,
+                  "x": 21,
+                  "y": 16
+                },
+                "id": 66,
+                "interval": null,
+                "links": [ ],
+                "maxDataPoints": 100,
+                "options": {
+                  "colorMode": "value",
+                  "graphMode": "none",
+                  "justifyMode": "auto",
+                  "orientation": "horizontal",
+                  "reduceOptions": {
+                    "calcs": [
+                        "last"
+                    ],
+                    "fields": "",
+                    "values": false
+                  },
+                  "text": { },
+                  "textMode": "auto"
+                },
+                "pluginVersion": "7.5.6",
+                "targets": [
+                  {
+                    "exemplar": true,
+                    "expr": "max(redis_total_error_replies{instance=\"$instance\"})",
+                    "groupBy": [
+                      {
+                        "params": [
+                            "$__interval"
+                        ],
+                        "type": "time"
+                      },
+                      {
+                        "params": [
+                            "none"
+                        ],
+                        "type": "fill"
+                      }
+                    ],
+                    "instant": false,
+                    "interval": "",
+                    "legendFormat": "",
+                    "measurement": "redis",
+                    "orderByTime": "ASC",
+                    "policy": "default",
+                    "refId": "A",
+                    "resultFormat": "time_series",
+                    "select": [
+                      [
+                        {
+                          "params": [
+                              "total_commands_processed"
+                          ],
+                          "type": "field"
+                        },
+                        {
+                          "params": [ ],
+                          "type": "mean"
+                        }
+                      ]
+                    ],
+                    "tags": [
+                      {
+                        "key": "host",
+                        "operator": "=~",
+                        "value": "/^$Host$/"
+                      },
+                      {
+                        "condition": "AND",
+                        "key": "server",
+                        "operator": "=~",
+                        "value": "/^$Server$/"
+                      }
+                    ]
+                  }
+                ],
+                "title": "Total Error Replies",
+                "type": "stat"
+              },
+              {
+                "aliasColors": {
+                  "Instantaneous OPS per sec": "#0a437c"
+                },
+                "bars": false,
+                "dashLength": 10,
+                "dashes": false,
+                "datasource": null,
+                "description": "Number of commands processed per second",
+                "fieldConfig": {
+                  "defaults": {
+                    "unit": "short"
+                  },
+                  "overrides": [ ]
+                },
+                "fill": 1,
+                "fillGradient": 0,
+                "gridPos": {
+                  "h": 8,
+                  "w": 10,
+                  "x": 0,
+                  "y": 20
+                },
+                "hiddenSeries": false,
+                "id": 49,
+                "legend": {
+                  "alignAsTable": true,
+                  "avg": true,
+                  "current": true,
+                  "max": true,
+                  "min": false,
+                  "show": false,
+                  "total": false,
+                  "values": true
+                },
+                "lines": true,
+                "linewidth": 2,
+                "links": [ ],
+                "nullPointMode": "null",
+                "options": {
+                  "alertThreshold": false
+                },
+                "percentage": false,
+                "pluginVersion": "7.5.6",
+                "pointradius": 1,
+                "points": true,
+                "renderer": "flot",
+                "seriesOverrides": [ ],
+                "spaceLength": 10,
+                "stack": false,
+                "steppedLine": false,
+                "targets": [
+                  {
+                    "alias": "Instantaneous OPS per sec",
+                    "exemplar": true,
+                    "expr": "max(redis_instantaneous_ops_per_sec{instance=\"$instance\"})",
+                    "groupBy": [
+                      {
+                        "params": [
+                            "$__interval"
+                        ],
+                        "type": "time"
+                      },
+                      {
+                        "params": [
+                            "linear"
+                        ],
+                        "type": "fill"
+                      }
+                    ],
+                    "instant": false,
+                    "interval": "",
+                    "intervalFactor": 1,
+                    "legendFormat": "Per second",
+                    "measurement": "redis",
+                    "orderByTime": "ASC",
+                    "policy": "default",
+                    "refId": "A",
+                    "resultFormat": "time_series",
+                    "select": [
+                      [
+                        {
+                          "params": [
+                              "instantaneous_ops_per_sec"
+                          ],
+                          "type": "field"
+                        },
+                        {
+                          "params": [ ],
+                          "type": "mean"
+                        }
+                      ]
+                    ],
+                    "tags": [
+                      {
+                        "key": "host",
+                        "operator": "=~",
+                        "value": "/^$Host$/"
+                      },
+                      {
+                        "condition": "AND",
+                        "key": "server",
+                        "operator": "=~",
+                        "value": "/^$Server$/"
+                      }
+                    ]
+                  }
+                ],
+                "thresholds": [ ],
+                "timeFrom": null,
+                "timeRegions": [ ],
+                "timeShift": null,
+                "title": "Commands Executed / Sec",
+                "tooltip": {
+                  "shared": true,
+                  "sort": 0,
+                  "value_type": "individual"
+                },
+                "type": "graph",
+                "xaxis": {
+                  "buckets": null,
+                  "mode": "time",
+                  "name": null,
+                  "show": true,
+                  "values": [ ]
+                },
+                "yaxes": [
+                  {
+                    "$$hashKey": "object:413",
+                    "format": "short",
+                    "label": null,
+                    "logBase": 1,
+                    "max": null,
+                    "min": null,
+                    "show": true
+                  },
+                  {
+                    "$$hashKey": "object:414",
+                    "format": "short",
+                    "label": null,
+                    "logBase": 1,
+                    "max": null,
+                    "min": null,
+                    "show": false
+                  }
+                ],
+                "yaxis": {
+                  "align": false,
+                  "alignLevel": null
+                }
+              },
+              {
+                "aliasColors": {
+                  "Uuser CPU": "#cca300"
+                },
+                "bars": false,
+                "dashLength": 10,
+                "dashes": false,
+                "datasource": null,
+                "description": "User CPU consumed by the Redis server",
+                "fieldConfig": {
+                  "defaults": {
+                    "links": [ ]
+                  },
+                  "overrides": [ ]
+                },
+                "fill": 1,
+                "fillGradient": 0,
+                "gridPos": {
+                  "h": 7,
+                  "w": 14,
+                  "x": 10,
+                  "y": 20
+                },
+                "hiddenSeries": false,
+                "id": 26,
+                "legend": {
+                  "alignAsTable": true,
+                  "avg": true,
+                  "current": true,
+                  "max": true,
+                  "min": false,
+                  "show": true,
+                  "total": false,
+                  "values": true
+                },
+                "lines": true,
+                "linewidth": 1,
+                "links": [ ],
+                "nullPointMode": "null",
+                "options": {
+                  "alertThreshold": true
+                },
+                "percentage": false,
+                "pluginVersion": "7.5.6",
+                "pointradius": 5,
+                "points": false,
+                "renderer": "flot",
+                "seriesOverrides": [
+                  {
+                    "alias": "Redis User CPU",
+                    "color": "rgb(250, 192, 42)",
+                    "fill": 2,
+                    "lines": true,
+                    "linewidth": 2
+                  }
+                ],
+                "spaceLength": 10,
+                "stack": false,
+                "steppedLine": false,
+                "targets": [
+                  {
+                    "alias": "Uuser CPU",
+                    "exemplar": true,
+                    "expr": "max (irate(container_cpu_user_seconds_total{instance=\"$instance\"}[1m])) *100",
+                    "groupBy": [
+                      {
+                        "params": [
+                            "$__interval"
+                        ],
+                        "type": "time"
+                      },
+                      {
+                        "params": [
+                            "linear"
+                        ],
+                        "type": "fill"
+                      }
+                    ],
+                    "interval": "",
+                    "intervalFactor": 1,
+                    "legendFormat": "User",
+                    "measurement": "redis",
+                    "orderByTime": "ASC",
+                    "policy": "default",
+                    "refId": "A",
+                    "resultFormat": "time_series",
+                    "select": [
+                      [
+                        {
+                          "params": [
+                              "used_cpu_user"
+                          ],
+                          "type": "field"
+                        },
+                        {
+                          "params": [ ],
+                          "type": "mean"
+                        }
+                      ]
+                    ],
+                    "tags": [
+                      {
+                        "key": "host",
+                        "operator": "=~",
+                        "value": "/^$Host$/"
+                      },
+                      {
+                        "condition": "AND",
+                        "key": "server",
+                        "operator": "=~",
+                        "value": "/^$Server$/"
+                      }
+                    ]
+                  },
+                  {
+                    "exemplar": true,
+                    "expr": "max (irate(container_cpu_system_seconds_total{instance=\"$instance\"}[1m]))  *100\n",
+                    "hide": false,
+                    "instant": false,
+                    "interval": "",
+                    "legendFormat": "System",
+                    "refId": "C"
+                  },
+                  {
+                    "exemplar": true,
+                    "expr": "",
+                    "hide": false,
+                    "interval": "",
+                    "legendFormat": "",
+                    "refId": "B"
+                  }
+                ],
+                "thresholds": [ ],
+                "timeFrom": null,
+                "timeRegions": [ ],
+                "timeShift": null,
+                "title": "Redis CPU Usage",
+                "tooltip": {
+                  "shared": true,
+                  "sort": 0,
+                  "value_type": "individual"
+                },
+                "type": "graph",
+                "xaxis": {
+                  "buckets": null,
+                  "mode": "time",
+                  "name": null,
+                  "show": true,
+                  "values": [ ]
+                },
+                "yaxes": [
+                  {
+                    "$$hashKey": "object:479",
+                    "format": "percent",
+                    "label": null,
+                    "logBase": 1,
+                    "max": null,
+                    "min": null,
+                    "show": true
+                  },
+                  {
+                    "$$hashKey": "object:480",
+                    "format": "short",
+                    "label": null,
+                    "logBase": 1,
+                    "max": null,
+                    "min": null,
+                    "show": true
+                  }
+                ],
+                "yaxis": {
+                  "align": false,
+                  "alignLevel": null
+                }
+              },
+              {
+                "aliasColors": {
+                  "input_bytes": "orange"
+                },
+                "bars": false,
+                "dashLength": 10,
+                "dashes": false,
+                "datasource": null,
+                "fieldConfig": {
+                  "defaults": {
+                    "links": [ ]
+                  },
+                  "overrides": [ ]
+                },
+                "fill": 1,
+                "fillGradient": 0,
+                "gridPos": {
+                  "h": 8,
+                  "w": 14,
+                  "x": 10,
+                  "y": 27
+                },
+                "hiddenSeries": false,
+                "id": 47,
+                "legend": {
+                  "alignAsTable": true,
+                  "avg": true,
+                  "current": true,
+                  "max": false,
+                  "min": false,
+                  "show": true,
+                  "total": false,
+                  "values": true
+                },
+                "lines": true,
+                "linewidth": 2,
+                "nullPointMode": "null",
+                "options": {
+                  "alertThreshold": true
+                },
+                "percentage": false,
+                "pluginVersion": "7.5.6",
+                "pointradius": 1,
+                "points": true,
+                "renderer": "flot",
+                "seriesOverrides": [ ],
+                "spaceLength": 10,
+                "stack": false,
+                "steppedLine": false,
+                "targets": [
+                  {
+                    "expr": "max(redis_total_net_input_bytes{instance=\"$instance\"})",
+                    "interval": "",
+                    "legendFormat": "input_bytes",
+                    "refId": "A"
+                  },
+                  {
+                    "exemplar": true,
+                    "expr": "- max(redis_total_net_output_bytes{instance=\"$instance\"})",
+                    "interval": "",
+                    "legendFormat": "output_bytes",
+                    "refId": "B"
+                  }
+                ],
+                "thresholds": [ ],
+                "timeFrom": null,
+                "timeRegions": [ ],
+                "timeShift": null,
+                "title": "Network Input / Output",
+                "tooltip": {
+                  "shared": true,
+                  "sort": 0,
+                  "value_type": "individual"
+                },
+                "type": "graph",
+                "xaxis": {
+                  "buckets": null,
+                  "mode": "time",
+                  "name": null,
+                  "show": true,
+                  "values": [ ]
+                },
+                "yaxes": [
+                  {
+                    "$$hashKey": "object:229",
+                    "format": "bytes",
+                    "label": null,
+                    "logBase": 1,
+                    "max": null,
+                    "min": null,
+                    "show": true
+                  },
+                  {
+                    "$$hashKey": "object:230",
+                    "format": "short",
+                    "label": null,
+                    "logBase": 1,
+                    "max": null,
+                    "min": null,
+                    "show": true
+                  }
+                ],
+                "yaxis": {
+                  "align": false,
+                  "alignLevel": null
+                }
+              },
+              {
+                "aliasColors": { },
+                "bars": true,
+                "dashLength": 10,
+                "dashes": false,
+                "datasource": "Prometheus",
+                "editable": true,
+                "error": false,
+                "fieldConfig": {
+                  "defaults": { },
+                  "overrides": [ ]
+                },
+                "fill": 8,
+                "fillGradient": 0,
+                "grid": { },
+                "gridPos": {
+                  "h": 8,
+                  "w": 10,
+                  "x": 0,
+                  "y": 28
+                },
+                "hiddenSeries": false,
+                "id": 14,
+                "legend": {
+                  "alignAsTable": false,
+                  "avg": false,
+                  "current": false,
+                  "max": false,
+                  "min": false,
+                  "rightSide": false,
+                  "show": false,
+                  "total": false,
+                  "values": false
+                },
+                "lines": false,
+                "linewidth": 1,
+                "links": [ ],
+                "nullPointMode": "null",
+                "options": {
+                  "alertThreshold": false
+                },
+                "percentage": true,
+                "pluginVersion": "7.5.6",
+                "pointradius": 5,
+                "points": false,
+                "renderer": "flot",
+                "seriesOverrides": [ ],
+                "spaceLength": 10,
+                "stack": false,
+                "steppedLine": false,
+                "targets": [
+                  {
+                    "exemplar": true,
+                    "expr": "redis_cmdstat_calls{instance=\"$instance\"}",
+                    "format": "time_series",
+                    "interval": "",
+                    "intervalFactor": 1,
+                    "legendFormat": "{{ command  }}",
+                    "metric": "redis_command_calls_total",
+                    "refId": "A",
+                    "step": 240
+                  }
+                ],
+                "thresholds": [ ],
+                "timeFrom": null,
+                "timeRegions": [ ],
+                "timeShift": null,
+                "title": "Total Command Calls",
+                "tooltip": {
+                  "msResolution": true,
+                  "shared": false,
+                  "sort": 1,
+                  "value_type": "cumulative"
+                },
+                "type": "graph",
+                "xaxis": {
+                  "buckets": null,
+                  "mode": "series",
+                  "name": null,
+                  "show": true,
+                  "values": [
+                      "total"
+                  ]
+                },
+                "yaxes": [
+                  {
+                    "$$hashKey": "object:615",
+                    "format": "short",
+                    "label": null,
+                    "logBase": 1,
+                    "max": null,
+                    "min": null,
+                    "show": true
+                  },
+                  {
+                    "$$hashKey": "object:616",
+                    "format": "short",
+                    "label": null,
+                    "logBase": 1,
+                    "max": null,
+                    "min": null,
+                    "show": false
+                  }
+                ],
+                "yaxis": {
+                  "align": false,
+                  "alignLevel": null
+                }
+              },
+              {
+                "aliasColors": {
+                  "redis: mem_rss": "rgba(239, 132, 60, 0.94)",
+                  "redis: mem_used": "orange"
+                },
+                "bars": false,
+                "dashLength": 10,
+                "dashes": false,
+                "datasource": null,
+                "description": "Total number of bytes allocated by Redis using its allocator",
+                "fieldConfig": {
+                  "defaults": {
+                    "links": [ ]
+                  },
+                  "overrides": [ ]
+                },
+                "fill": 1,
+                "fillGradient": 0,
+                "gridPos": {
+                  "h": 8,
+                  "w": 14,
+                  "x": 10,
+                  "y": 35
+                },
+                "hiddenSeries": false,
+                "id": 24,
+                "legend": {
+                  "alignAsTable": true,
+                  "avg": true,
+                  "current": true,
+                  "max": true,
+                  "min": false,
+                  "show": true,
+                  "total": false,
+                  "values": true
+                },
+                "lines": true,
+                "linewidth": 1,
+                "links": [ ],
+                "nullPointMode": "null",
+                "options": {
+                  "alertThreshold": false
+                },
+                "percentage": false,
+                "pluginVersion": "7.5.6",
+                "pointradius": 1,
+                "points": true,
+                "renderer": "flot",
+                "seriesOverrides": [
+                  {
+                    "$$hashKey": "object:120",
+                    "alias": "redis: mem_used",
+                    "lines": true,
+                    "linewidth": 2
+                  },
+                  {
+                    "$$hashKey": "object:121",
+                    "alias": "redis: mem_lua",
+                    "lines": true,
+                    "linewidth": 2
+                  },
+                  {
+                    "$$hashKey": "object:122",
+                    "alias": "redis: mem_peak",
+                    "lines": true,
+                    "linewidth": 2
+                  },
+                  {
+                    "$$hashKey": "object:123",
+                    "alias": "redis: mem_rss",
+                    "lines": true,
+                    "linewidth": 2
+                  }
+                ],
+                "spaceLength": 10,
+                "stack": false,
+                "steppedLine": false,
+                "targets": [
+                  {
+                    "alias": "Total Used Memory",
+                    "exemplar": true,
+                    "expr": "max(redis_used_memory{instance=~\"$instance\"})",
+                    "groupBy": [
+                      {
+                        "params": [
+                            "$__interval"
+                        ],
+                        "type": "time"
+                      },
+                      {
+                        "params": [
+                            "linear"
+                        ],
+                        "type": "fill"
+                      }
+                    ],
+                    "instant": false,
+                    "interval": "",
+                    "legendFormat": "mem_used",
+                    "measurement": "redis",
+                    "orderByTime": "ASC",
+                    "policy": "default",
+                    "refId": "A",
+                    "resultFormat": "time_series",
+                    "select": [
+                      [
+                        {
+                          "params": [
+                              "used_memory"
+                          ],
+                          "type": "field"
+                        },
+                        {
+                          "params": [ ],
+                          "type": "mean"
+                        }
+                      ]
+                    ],
+                    "tags": [
+                      {
+                        "key": "host",
+                        "operator": "=~",
+                        "value": "/^$Host$/"
+                      },
+                      {
+                        "condition": "AND",
+                        "key": "server",
+                        "operator": "=~",
+                        "value": "/^$Server$/"
+                      }
+                    ]
+                  },
+                  {
+                    "expr": "max(redis_used_memory_lua{instance=~\"$instance\"})",
+                    "instant": false,
+                    "interval": "",
+                    "legendFormat": "mem_lua",
+                    "refId": "B"
+                  },
+                  {
+                    "expr": "max(redis_used_memory_peak{instance=\"$instance\"})",
+                    "instant": false,
+                    "interval": "",
+                    "legendFormat": "mem_peak",
+                    "refId": "C"
+                  },
+                  {
+                    "expr": "max(redis_used_memory_rss{instance=\"$instance\"})",
+                    "interval": "",
+                    "legendFormat": "mem_rss",
+                    "refId": "D"
+                  }
+                ],
+                "thresholds": [ ],
+                "timeFrom": null,
+                "timeRegions": [ ],
+                "timeShift": null,
+                "title": "Redis Memory Utilization",
+                "tooltip": {
+                  "shared": true,
+                  "sort": 0,
+                  "value_type": "individual"
+                },
+                "transformations": [ ],
+                "type": "graph",
+                "xaxis": {
+                  "buckets": null,
+                  "mode": "time",
+                  "name": null,
+                  "show": true,
+                  "values": [ ]
+                },
+                "yaxes": [
+                  {
+                    "$$hashKey": "object:162",
+                    "format": "bytes",
+                    "label": null,
+                    "logBase": 1,
+                    "max": null,
+                    "min": null,
+                    "show": true
+                  },
+                  {
+                    "$$hashKey": "object:163",
+                    "format": "short",
+                    "label": null,
+                    "logBase": 1,
+                    "max": null,
+                    "min": null,
+                    "show": false
+                  }
+                ],
+                "yaxis": {
+                  "align": false,
+                  "alignLevel": null
+                }
+              },
+              {
+                "collapsed": true,
+                "datasource": null,
+                "gridPos": {
+                  "h": 1,
+                  "w": 24,
+                  "x": 0,
+                  "y": 43
+                },
+                "id": 63,
+                "panels": [ ],
+                "title": "Replication",
+                "type": "row"
+              },
+              {
+                "datasource": null,
+                "fieldConfig": {
+                  "defaults": {
+                    "color": {
+                      "mode": "thresholds"
+                    },
+                    "mappings": [ ],
+                    "thresholds": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "green",
+                          "value": null
+                        },
+                        {
+                          "color": "red",
+                          "value": 80
+                        }
+                      ]
+                    },
+                    "unit": "short"
+                  },
+                  "overrides": [ ]
+                },
+                "gridPos": {
+                  "h": 4,
+                  "w": 3,
+                  "x": 0,
+                  "y": 44
+                },
+                "id": 64,
+                "options": {
+                  "colorMode": "background",
+                  "graphMode": "area",
+                  "justifyMode": "center",
+                  "orientation": "auto",
+                  "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                  },
+                  "text": { },
+                  "textMode": "auto"
+                },
+                "pluginVersion": "7.5.6",
+                "targets": [
+                  {
+                    "exemplar": true,
+                    "expr": "max(redis_connected_slaves{instance=\"$instance\"})",
+                    "format": "time_series",
+                    "instant": false,
+                    "interval": "",
+                    "legendFormat": "connected_clients",
+                    "refId": "A"
+                  }
+                ],
+                "timeFrom": null,
+                "timeShift": null,
+                "title": "Connected Slaves",
+                "transformations": [ ],
+                "type": "stat"
+              },
+              {
+                "datasource": null,
+                "description": "The number of full resyncs with replicas",
+                "fieldConfig": {
+                  "defaults": {
+                    "color": {
+                      "mode": "thresholds"
+                    },
+                    "mappings": [ ],
+                    "thresholds": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "green",
+                          "value": null
+                        },
+                        {
+                          "color": "red",
+                          "value": 80
+                        }
+                      ]
+                    },
+                    "unit": "short"
+                  },
+                  "overrides": [ ]
+                },
+                "gridPos": {
+                  "h": 4,
+                  "w": 3,
+                  "x": 3,
+                  "y": 44
+                },
+                "id": 67,
+                "options": {
+                  "colorMode": "background",
+                  "graphMode": "area",
+                  "justifyMode": "center",
+                  "orientation": "auto",
+                  "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                  },
+                  "text": { },
+                  "textMode": "auto"
+                },
+                "pluginVersion": "7.5.6",
+                "targets": [
+                  {
+                    "exemplar": true,
+                    "expr": "max(redis_sync_full{instance=\"$instance\"})",
+                    "format": "time_series",
+                    "instant": false,
+                    "interval": "",
+                    "legendFormat": "The number of full resyncs with replicas",
+                    "refId": "A"
+                  }
+                ],
+                "timeFrom": null,
+                "timeShift": null,
+                "title": "Sync Full",
+                "transformations": [ ],
+                "type": "stat"
+              },
+              {
+                "datasource": null,
+                "description": "The number of accepted partial resync requests",
+                "fieldConfig": {
+                  "defaults": {
+                    "color": {
+                      "mode": "thresholds"
+                    },
+                    "mappings": [ ],
+                    "thresholds": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "green",
+                          "value": null
+                        },
+                        {
+                          "color": "red",
+                          "value": 80
+                        }
+                      ]
+                    },
+                    "unit": "short"
+                  },
+                  "overrides": [ ]
+                },
+                "gridPos": {
+                  "h": 4,
+                  "w": 3,
+                  "x": 6,
+                  "y": 44
+                },
+                "id": 68,
+                "options": {
+                  "colorMode": "background",
+                  "graphMode": "area",
+                  "justifyMode": "center",
+                  "orientation": "auto",
+                  "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                  },
+                  "text": { },
+                  "textMode": "auto"
+                },
+                "pluginVersion": "7.5.6",
+                "targets": [
+                  {
+                    "exemplar": true,
+                    "expr": "max(redis_sync_partial_ok{instance=\"$instance\"})",
+                    "format": "time_series",
+                    "instant": false,
+                    "interval": "",
+                    "legendFormat": "The number of accepted partial resync requests",
+                    "refId": "A"
+                  }
+                ],
+                "timeFrom": null,
+                "timeShift": null,
+                "title": "Sync Partial OK",
+                "transformations": [ ],
+                "type": "stat"
+              },
+              {
+                "datasource": null,
+                "description": "The number of denied partial resync requests",
+                "fieldConfig": {
+                  "defaults": {
+                    "color": {
+                      "mode": "thresholds"
+                    },
+                    "mappings": [ ],
+                    "thresholds": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "green",
+                          "value": null
+                        },
+                        {
+                          "color": "red",
+                          "value": 80
+                        }
+                      ]
+                    },
+                    "unit": "short"
+                  },
+                  "overrides": [ ]
+                },
+                "gridPos": {
+                  "h": 4,
+                  "w": 3,
+                  "x": 9,
+                  "y": 44
+                },
+                "id": 69,
+                "options": {
+                  "colorMode": "background",
+                  "graphMode": "area",
+                  "justifyMode": "center",
+                  "orientation": "auto",
+                  "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                  },
+                  "text": { },
+                  "textMode": "auto"
+                },
+                "pluginVersion": "7.5.6",
+                "targets": [
+                  {
+                    "exemplar": true,
+                    "expr": "max(redis_sync_partial_err{instance=\"$instance\"})",
+                    "format": "time_series",
+                    "instant": false,
+                    "interval": "",
+                    "legendFormat": "The number of denied partial resync requests",
+                    "refId": "A"
+                  }
+                ],
+                "timeFrom": null,
+                "timeShift": null,
+                "title": "Sync Partial Error",
+                "transformations": [ ],
+                "type": "stat"
+              },
+              {
+                "aliasColors": { },
+                "bars": false,
+                "dashLength": 10,
+                "dashes": false,
+                "datasource": null,
+                "fieldConfig": {
+                  "defaults": {
+                    "unit": "short"
+                  },
+                  "overrides": [ ]
+                },
+                "fill": 1,
+                "fillGradient": 0,
+                "gridPos": {
+                  "h": 6,
+                  "w": 24,
+                  "x": 0,
+                  "y": 48
+                },
+                "hiddenSeries": false,
+                "id": 56,
+                "legend": {
+                  "avg": false,
+                  "current": false,
+                  "max": false,
+                  "min": false,
+                  "show": true,
+                  "total": false,
+                  "values": false
+                },
+                "lines": true,
+                "linewidth": 2,
+                "nullPointMode": "null",
+                "options": {
+                  "alertThreshold": false
+                },
+                "percentage": false,
+                "pluginVersion": "7.5.6",
+                "pointradius": 1,
+                "points": true,
+                "renderer": "flot",
+                "seriesOverrides": [ ],
+                "spaceLength": 10,
+                "stack": false,
+                "steppedLine": false,
+                "targets": [
+                  {
+                    "exemplar": true,
+                    "expr": "avg(redis_uptime{instance=\"$instance\"}) by (replication_role)",
+                    "instant": false,
+                    "interval": "",
+                    "legendFormat": "{{replication_role}}",
+                    "refId": "A"
+                  }
+                ],
+                "thresholds": [ ],
+                "timeFrom": null,
+                "timeRegions": [ ],
+                "timeShift": null,
+                "title": "Uptime per Role",
+                "tooltip": {
+                  "shared": true,
+                  "sort": 0,
+                  "value_type": "individual"
+                },
+                "type": "graph",
+                "xaxis": {
+                  "buckets": null,
+                  "mode": "time",
+                  "name": null,
+                  "show": true,
+                  "values": [ ]
+                },
+                "yaxes": [
+                  {
+                    "$$hashKey": "object:160",
+                    "format": "short",
+                    "label": null,
+                    "logBase": 1,
+                    "max": null,
+                    "min": null,
+                    "show": true
+                  },
+                  {
+                    "$$hashKey": "object:161",
+                    "format": "short",
+                    "label": null,
+                    "logBase": 1,
+                    "max": null,
+                    "min": null,
+                    "show": true
+                  }
+                ],
+                "yaxis": {
+                  "align": false,
+                  "alignLevel": null
+                }
+              },
+              {
+                "collapsed": false,
+                "datasource": null,
+                "gridPos": {
+                  "h": 1,
+                  "w": 24,
+                  "x": 0,
+                  "y": 54
+                },
+                "id": 18,
+                "panels": [ ],
+                "title": "Redis Cache",
+                "type": "row"
+              },
+              {
+                "aliasColors": { },
+                "bars": false,
+                "dashLength": 10,
+                "dashes": false,
+                "datasource": null,
+                "fieldConfig": {
+                  "defaults": {
+                    "links": [ ]
+                  },
+                  "overrides": [ ]
+                },
+                "fill": 1,
+                "fillGradient": 0,
+                "gridPos": {
+                  "h": 10,
+                  "w": 12,
+                  "x": 0,
+                  "y": 55
+                },
+                "hiddenSeries": false,
+                "id": 39,
+                "legend": {
+                  "alignAsTable": true,
+                  "avg": true,
+                  "current": true,
+                  "max": false,
+                  "min": false,
+                  "show": true,
+                  "total": false,
+                  "values": true
+                },
+                "lines": true,
+                "linewidth": 1,
+                "nullPointMode": "null",
+                "options": {
+                  "alertThreshold": false
+                },
+                "percentage": true,
+                "pluginVersion": "7.5.6",
+                "pointradius": 2,
+                "points": false,
+                "renderer": "flot",
+                "seriesOverrides": [
+                  {
+                    "$$hashKey": "object:339",
+                    "alias": "redis_hitrate",
+                    "color": "rgb(57, 179, 121)",
+                    "linewidth": 2
+                  },
+                  {
+                    "$$hashKey": "object:340",
+                    "linewidth": 2
+                  }
+                ],
+                "spaceLength": 10,
+                "stack": true,
+                "steppedLine": false,
+                "targets": [
+                  {
+                    "exemplar": true,
+                    "expr": "max(redis_keyspace_hitrate{instance=\"$instance\"})",
+                    "format": "time_series",
+                    "interval": "",
+                    "legendFormat": "redis_hitrate",
+                    "refId": "A"
+                  }
+                ],
+                "thresholds": [ ],
+                "timeFrom": null,
+                "timeRegions": [ ],
+                "timeShift": null,
+                "title": "Hit / Miss Rate",
+                "tooltip": {
+                  "shared": true,
+                  "sort": 0,
+                  "value_type": "individual"
+                },
+                "type": "graph",
+                "xaxis": {
+                  "buckets": null,
+                  "mode": "time",
+                  "name": null,
+                  "show": true,
+                  "values": [ ]
+                },
+                "yaxes": [
+                  {
+                    "$$hashKey": "object:355",
+                    "format": "short",
+                    "label": null,
+                    "logBase": 1,
+                    "max": null,
+                    "min": null,
+                    "show": true
+                  },
+                  {
+                    "$$hashKey": "object:356",
+                    "format": "short",
+                    "label": null,
+                    "logBase": 1,
+                    "max": null,
+                    "min": null,
+                    "show": true
+                  }
+                ],
+                "yaxis": {
+                  "align": false,
+                  "alignLevel": null
+                }
+              },
+              {
+                "aliasColors": { },
+                "bars": false,
+                "dashLength": 10,
+                "dashes": false,
+                "datasource": "Prometheus",
+                "decimals": 2,
+                "editable": true,
+                "error": false,
+                "fieldConfig": {
+                  "defaults": { },
+                  "overrides": [ ]
+                },
+                "fill": 1,
+                "fillGradient": 0,
+                "grid": { },
+                "gridPos": {
+                  "h": 10,
+                  "w": 6,
+                  "x": 12,
+                  "y": 55
+                },
+                "hiddenSeries": false,
+                "id": 1,
+                "legend": {
+                  "avg": false,
+                  "current": false,
+                  "max": false,
+                  "min": false,
+                  "show": false,
+                  "total": false,
+                  "values": false
+                },
+                "lines": true,
+                "linewidth": 2,
+                "links": [ ],
+                "nullPointMode": "connected",
+                "options": {
+                  "alertThreshold": true
+                },
+                "percentage": true,
+                "pluginVersion": "7.5.6",
+                "pointradius": 5,
+                "points": false,
+                "renderer": "flot",
+                "seriesOverrides": [ ],
+                "spaceLength": 10,
+                "stack": false,
+                "steppedLine": false,
+                "targets": [
+                  {
+                    "exemplar": true,
+                    "expr": "max(irate(redis_keyspace_hits{instance=\"$instance\"}[1m]))",
+                    "format": "time_series",
+                    "hide": false,
+                    "interval": "",
+                    "intervalFactor": 2,
+                    "legendFormat": "hits",
+                    "metric": "",
+                    "refId": "A",
+                    "step": 240,
+                    "target": ""
+                  },
+                  {
+                    "exemplar": true,
+                    "expr": "max(irate(redis_keyspace_misses{instance=\"$instance\"}[1m]))",
+                    "format": "time_series",
+                    "hide": false,
+                    "interval": "",
+                    "intervalFactor": 2,
+                    "legendFormat": "misses",
+                    "metric": "",
+                    "refId": "B",
+                    "step": 240,
+                    "target": ""
+                  }
+                ],
+                "thresholds": [ ],
+                "timeFrom": null,
+                "timeRegions": [ ],
+                "timeShift": null,
+                "title": "Hits / Misses per Sec",
+                "tooltip": {
+                  "msResolution": false,
+                  "shared": true,
+                  "sort": 0,
+                  "value_type": "individual"
+                },
+                "type": "graph",
+                "xaxis": {
+                  "buckets": null,
+                  "mode": "time",
+                  "name": null,
+                  "show": true,
+                  "values": [ ]
+                },
+                "yaxes": [
+                  {
+                    "$$hashKey": "object:562",
+                    "format": "short",
+                    "label": "",
+                    "logBase": 1,
+                    "max": null,
+                    "min": 0,
+                    "show": true
+                  },
+                  {
+                    "$$hashKey": "object:563",
+                    "format": "short",
+                    "label": null,
+                    "logBase": 1,
+                    "max": null,
+                    "min": null,
+                    "show": false
+                  }
+                ],
+                "yaxis": {
+                  "align": false,
+                  "alignLevel": null
+                }
+              },
+              {
+                "aliasColors": { },
+                "bars": true,
+                "dashLength": 10,
+                "dashes": false,
+                "datasource": "Prometheus",
+                "editable": true,
+                "error": false,
+                "fieldConfig": {
+                  "defaults": { },
+                  "overrides": [ ]
+                },
+                "fill": 7,
+                "fillGradient": 0,
+                "grid": { },
+                "gridPos": {
+                  "h": 10,
+                  "w": 6,
+                  "x": 18,
+                  "y": 55
+                },
+                "hiddenSeries": false,
+                "id": 13,
+                "legend": {
+                  "avg": false,
+                  "current": false,
+                  "max": false,
+                  "min": false,
+                  "show": false,
+                  "total": false,
+                  "values": false
+                },
+                "lines": false,
+                "linewidth": 2,
+                "links": [ ],
+                "nullPointMode": "connected",
+                "options": {
+                  "alertThreshold": true
+                },
+                "percentage": false,
+                "pluginVersion": "7.5.6",
+                "pointradius": 5,
+                "points": false,
+                "renderer": "flot",
+                "seriesOverrides": [ ],
+                "spaceLength": 10,
+                "stack": false,
+                "steppedLine": false,
+                "targets": [
+                  {
+                    "expr": "sum (redis_keyspace_keys{instance=~\"$instance\", host=~\"$host\"}) - sum (redis_expired_keys{instance=~\"$instance\", host=~\"$host\"}) ",
+                    "format": "time_series",
+                    "instant": true,
+                    "interval": "",
+                    "intervalFactor": 2,
+                    "legendFormat": "not expiring",
+                    "refId": "A",
+                    "step": 240,
+                    "target": ""
+                  },
+                  {
+                    "expr": "sum (redis_expired_keys{instance=~\"$instance\", host=~\"$host\"}) ",
+                    "format": "time_series",
+                    "interval": "",
+                    "intervalFactor": 2,
+                    "legendFormat": "expiring",
+                    "metric": "",
+                    "refId": "B",
+                    "step": 240
+                  }
+                ],
+                "thresholds": [ ],
+                "timeFrom": null,
+                "timeRegions": [ ],
+                "timeShift": null,
+                "title": "Now: Expiring vs Not-Expiring Keys",
+                "tooltip": {
+                  "msResolution": false,
+                  "shared": false,
+                  "sort": 0,
+                  "value_type": "individual"
+                },
+                "type": "graph",
+                "xaxis": {
+                  "buckets": null,
+                  "mode": "series",
+                  "name": null,
+                  "show": true,
+                  "values": [
+                      "total"
+                  ]
+                },
+                "yaxes": [
+                  {
+                    "$$hashKey": "object:316",
+                    "format": "short",
+                    "label": null,
+                    "logBase": 1,
+                    "max": null,
+                    "min": null,
+                    "show": true
+                  },
+                  {
+                    "$$hashKey": "object:317",
+                    "format": "short",
+                    "label": null,
+                    "logBase": 1,
+                    "max": null,
+                    "min": null,
+                    "show": false
+                  }
+                ],
+                "yaxis": {
+                  "align": false,
+                  "alignLevel": null
+                }
+              },
+              {
+                "aliasColors": {
+                  "evicted_keys": "purple",
+                  "expirted_keys": "red"
+                },
+                "bars": false,
+                "dashLength": 10,
+                "dashes": false,
+                "datasource": null,
+                "description": " evicted_keys: Number of evicted keys due to maxmemory limit\n\n expired_keys: Total number of key expiration events",
+                "fieldConfig": {
+                  "defaults": {
+                    "links": [ ]
+                  },
+                  "overrides": [ ]
+                },
+                "fill": 1,
+                "fillGradient": 0,
+                "gridPos": {
+                  "h": 10,
+                  "w": 6,
+                  "x": 0,
+                  "y": 65
+                },
+                "hiddenSeries": false,
+                "id": 43,
+                "legend": {
+                  "alignAsTable": true,
+                  "avg": false,
+                  "current": true,
+                  "max": false,
+                  "min": false,
+                  "rightSide": false,
+                  "show": true,
+                  "total": false,
+                  "values": true
+                },
+                "lines": true,
+                "linewidth": 1,
+                "nullPointMode": "null",
+                "options": {
+                  "alertThreshold": true
+                },
+                "percentage": false,
+                "pluginVersion": "7.5.6",
+                "pointradius": 2,
+                "points": false,
+                "renderer": "flot",
+                "seriesOverrides": [ ],
+                "spaceLength": 10,
+                "stack": false,
+                "steppedLine": false,
+                "targets": [
+                  {
+                    "exemplar": true,
+                    "expr": "sum(redis_evicted_keys{instance=\"$instance\"})",
+                    "interval": "",
+                    "legendFormat": "evicted_keys",
+                    "refId": "A"
+                  },
+                  {
+                    "exemplar": true,
+                    "expr": "sum(redis_expired_keys{instance=\"$instance\"})",
+                    "interval": "",
+                    "legendFormat": "expirted_keys",
+                    "refId": "B"
+                  }
+                ],
+                "thresholds": [ ],
+                "timeFrom": null,
+                "timeRegions": [ ],
+                "timeShift": null,
+                "title": "Total Evicted / Expired keys",
+                "tooltip": {
+                  "shared": true,
+                  "sort": 0,
+                  "value_type": "individual"
+                },
+                "type": "graph",
+                "xaxis": {
+                  "buckets": null,
+                  "mode": "time",
+                  "name": null,
+                  "show": true,
+                  "values": [ ]
+                },
+                "yaxes": [
+                  {
+                    "$$hashKey": "object:731",
+                    "format": "short",
+                    "label": null,
+                    "logBase": 1,
+                    "max": null,
+                    "min": null,
+                    "show": true
+                  },
+                  {
+                    "$$hashKey": "object:732",
+                    "format": "short",
+                    "label": null,
+                    "logBase": 1,
+                    "max": null,
+                    "min": null,
+                    "show": true
+                  }
+                ],
+                "yaxis": {
+                  "align": false,
+                  "alignLevel": null
+                }
+              },
+              {
+                "aliasColors": {
+                  "total_tracking_items": "light-blue"
+                },
+                "bars": false,
+                "dashLength": 10,
+                "dashes": false,
+                "datasource": null,
+                "fieldConfig": {
+                  "defaults": {
+                    "links": [ ]
+                  },
+                  "overrides": [ ]
+                },
+                "fill": 3,
+                "fillGradient": 0,
+                "gridPos": {
+                  "h": 10,
+                  "w": 12,
+                  "x": 6,
+                  "y": 65
+                },
+                "hiddenSeries": false,
+                "id": 41,
+                "legend": {
+                  "avg": false,
+                  "current": false,
+                  "max": false,
+                  "min": false,
+                  "show": false,
+                  "total": false,
+                  "values": false
+                },
+                "lines": true,
+                "linewidth": 3,
+                "nullPointMode": "null",
+                "options": {
+                  "alertThreshold": true
+                },
+                "percentage": false,
+                "pluginVersion": "7.5.6",
+                "pointradius": 2,
+                "points": false,
+                "renderer": "flot",
+                "seriesOverrides": [ ],
+                "spaceLength": 10,
+                "stack": false,
+                "steppedLine": false,
+                "targets": [
+                  {
+                    "expr": "redis_tracking_total_items{instance=\"$instance\"}",
+                    "interval": "",
+                    "legendFormat": "total_tracking_items",
+                    "refId": "A"
+                  }
+                ],
+                "thresholds": [ ],
+                "timeFrom": null,
+                "timeRegions": [ ],
+                "timeShift": null,
+                "title": "Total Tracking Items",
+                "tooltip": {
+                  "shared": true,
+                  "sort": 0,
+                  "value_type": "individual"
+                },
+                "type": "graph",
+                "xaxis": {
+                  "buckets": null,
+                  "mode": "time",
+                  "name": null,
+                  "show": true,
+                  "values": [ ]
+                },
+                "yaxes": [
+                  {
+                    "format": "short",
+                    "label": null,
+                    "logBase": 1,
+                    "max": null,
+                    "min": null,
+                    "show": true
+                  },
+                  {
+                    "format": "short",
+                    "label": null,
+                    "logBase": 1,
+                    "max": null,
+                    "min": null,
+                    "show": true
+                  }
+                ],
+                "yaxis": {
+                  "align": false,
+                  "alignLevel": null
+                }
+              }
+            ],
+            "refresh": "30s",
+            "schemaVersion": 27,
+            "style": "dark",
+            "tags": [
+                "prometheus",
+                "redis"
+            ],
+            "templating": {
+              "list": [
+                {
+                  "allValue": ".*",
+                  "current": {
+                    "selected": false,
+                    "text": "masters-0",
+                    "value": "masters-0"
+                  },
+                  "datasource": "Prometheus",
+                  "definition": "label_values(redis_uptime,instance)",
+                  "description": null,
+                  "error": null,
+                  "hide": 0,
+                  "includeAll": false,
+                  "label": null,
+                  "multi": false,
+                  "name": "instance",
+                  "options": [ ],
+                  "query": {
+                    "query": "label_values(redis_uptime,instance)",
+                    "refId": "StandardVariableQuery"
+                  },
+                  "refresh": 1,
+                  "regex": "",
+                  "skipUrlSync": false,
+                  "sort": 1,
+                  "tagValuesQuery": "",
+                  "tags": [ ],
+                  "tagsQuery": "",
+                  "type": "query",
+                  "useTags": false
+                },
+                {
+                  "allValue": ".*",
+                  "current": {
+                    "selected": false,
+                    "text": "jedi6.cluster.ics.forth.gr",
+                    "value": "jedi6.cluster.ics.forth.gr"
+                  },
+                  "datasource": "Prometheus",
+                  "definition": "label_values(redis_uptime,host)",
+                  "description": null,
+                  "error": null,
+                  "hide": 2,
+                  "includeAll": false,
+                  "label": null,
+                  "multi": false,
+                  "name": "host",
+                  "options": [ ],
+                  "query": {
+                    "query": "label_values(redis_uptime,host)",
+                    "refId": "StandardVariableQuery"
+                  },
+                  "refresh": 1,
+                  "regex": "",
+                  "skipUrlSync": false,
+                  "sort": 1,
+                  "tagValuesQuery": "",
+                  "tags": [ ],
+                  "tagsQuery": "",
+                  "type": "query",
+                  "useTags": false
+                }
+              ]
+            },
+            "time": {
+              "from": "now-1h",
+              "to": "now"
+            },
+            "timepicker": {
+              "refresh_intervals": [
+                  "5s",
+                  "10s",
+                  "30s",
+                  "1m",
+                  "5m",
+                  "15m",
+                  "30m",
+                  "1h",
+                  "2h",
+                  "1d"
+              ],
+              "time_options": [
+                  "5m",
+                  "15m",
+                  "1h",
+                  "6h",
+                  "12h",
+                  "24h",
+                  "2d",
+                  "7d",
+                  "30d"
+              ]
+            },
+            "timezone": "browser",
+            "title": "Prometheus Redis (by addr and host)",
+            "uid": "EeXaCe8Mz",
+            "version": 1
+          }
