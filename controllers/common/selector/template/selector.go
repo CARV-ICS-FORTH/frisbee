@@ -12,13 +12,17 @@ import (
 
 var Client client.Client
 
+func IsRef(templateRef string) bool {
+	parsed := strings.Split(templateRef, "/")
+	return len(parsed) == 2
+}
+
 // ParseRef parse the templateRef and returns a template selector. If the templateRef is invalid, the selector
 // will be nil, and any subsequence select operation will return empty value.
 func ParseRef(templateRef string) *v1alpha1.TemplateSelector {
 	parsed := strings.Split(templateRef, "/")
 	if len(parsed) != 2 {
-		logrus.Warn("invalid reference format")
-		return nil
+		panic("invalid reference format")
 	}
 
 	family := parsed[0]
@@ -32,16 +36,17 @@ func ParseRef(templateRef string) *v1alpha1.TemplateSelector {
 	}
 }
 
-func SelectService(ctx context.Context, ts *v1alpha1.TemplateSelector) (v1alpha1.ServiceSpec, error) {
+func SelectService(ctx context.Context, ts *v1alpha1.TemplateSelector) *v1alpha1.ServiceSpec {
 	if ts == nil {
-		return v1alpha1.ServiceSpec{}, nil
+		return nil
 	}
 
 	var template v1alpha1.Template
 
 	key := client.ObjectKey{Namespace: "frisbee", Name: ts.Family}
 	if err := Client.Get(ctx, key, &template); err != nil {
-		return v1alpha1.ServiceSpec{}, err
+		logrus.Warn(err)
+		return nil
 	}
 
 	// TODO: Change Get to List
@@ -50,26 +55,30 @@ func SelectService(ctx context.Context, ts *v1alpha1.TemplateSelector) (v1alpha1
 	case len(ts.Selector.Reference) > 0:
 		serviceSpec, ok := template.Spec.Services[ts.Selector.Reference]
 		if !ok {
-			return v1alpha1.ServiceSpec{}, errors.Errorf("unable to find entry %s", ts.Selector.Reference)
+			logrus.Warn(errors.Errorf("unable to find entry %s", ts.Selector.Reference))
+
+			return nil
 		}
 
-		return serviceSpec, nil
+		return &serviceSpec
 
 	default:
-		return v1alpha1.ServiceSpec{}, errors.Errorf("unspecified selection criteria")
+		panic(errors.Errorf("unspecified selection criteria"))
 	}
 }
 
-func SelectMonitor(ctx context.Context, ts *v1alpha1.TemplateSelector) (*v1alpha1.MonitorSpec, error) {
+func SelectMonitor(ctx context.Context, ts *v1alpha1.TemplateSelector) *v1alpha1.MonitorSpec {
 	if ts == nil {
-		return nil, nil
+		return nil
 	}
 
 	var template v1alpha1.Template
 
 	key := client.ObjectKey{Namespace: "frisbee", Name: ts.Family}
 	if err := Client.Get(ctx, key, &template); err != nil {
-		return nil, err
+		logrus.Warn(err)
+
+		return nil
 	}
 
 	// TODO: Change Get to List
@@ -78,12 +87,13 @@ func SelectMonitor(ctx context.Context, ts *v1alpha1.TemplateSelector) (*v1alpha
 	case len(ts.Selector.Reference) > 0:
 		monSpec, ok := template.Spec.Monitors[ts.Selector.Reference]
 		if !ok {
-			return nil, errors.Errorf("unable to find entry %s", ts.Selector.Reference)
+			logrus.Warn(errors.Errorf("unable to find entry %s", ts.Selector.Reference))
+			return nil
 		}
 
-		return &monSpec, nil
+		return &monSpec
 
 	default:
-		return nil, errors.Errorf("unspecified selection criteria")
+		panic(errors.Errorf("unspecified selection criteria"))
 	}
 }

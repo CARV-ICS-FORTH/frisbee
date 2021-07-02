@@ -53,7 +53,7 @@ spec:
     # Wait queries to stop and shutdown the servers
     - actiontype: Stop
       name: "teardown"
-      depends: {complete: [ runners ]}
+      depends: { complete: [ runners ] }
       stop:
 
 
@@ -61,4 +61,4 @@ spec:
     - actiontype: Wait
       name: "teardown"
       wait:
-        complete: [runners]
+        complete: [ runners ]

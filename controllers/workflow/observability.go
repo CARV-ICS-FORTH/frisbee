@@ -39,21 +39,18 @@ func (r *Reconciler) newMonitoringStack(ctx context.Context, obj *v1alpha1.Workf
 }
 
 func (r *Reconciler) installPrometheus(ctx context.Context, obj *v1alpha1.Workflow) error {
-	prometheusSpec, err := template.SelectService(ctx, template.ParseRef(prometheusTemplate))
-	if err != nil {
-		return errors.Wrapf(err, "unable to find prometheus template")
+	prometheusSpec := template.SelectService(ctx, template.ParseRef(prometheusTemplate))
+	if prometheusSpec == nil {
+		return errors.New("unable to find Grafana template")
 	}
 
 	prom := v1alpha1.Service{
-		Spec: prometheusSpec,
+		Spec: *prometheusSpec,
 	}
 
 	if err := common.SetOwner(obj, &prom, "prometheus"); err != nil {
 		return errors.Wrapf(err, "ownership failed %s", obj.GetName())
 	}
-
-	// Set name to match the Grafana configuration within the monitoring Template.
-	prom.SetName("prometheus")
 
 	if err := r.Create(ctx, &prom); err != nil {
 		return errors.Wrapf(err, "unable to create prometheus")
@@ -65,51 +62,50 @@ func (r *Reconciler) installPrometheus(ctx context.Context, obj *v1alpha1.Workfl
 }
 
 func (r *Reconciler) installGrafana(ctx context.Context, obj *v1alpha1.Workflow) error {
-	grafanaSpec, err := template.SelectService(ctx, template.ParseRef(grafanaTemplate))
-	if err != nil {
-		return errors.Wrapf(err, "unable to find Grafana template")
+	grafanaSpec := template.SelectService(ctx, template.ParseRef(grafanaTemplate))
+	if grafanaSpec == nil {
+		return errors.New("unable to find Grafana template")
 	}
 
 	grafana := v1alpha1.Service{
-		Spec: grafanaSpec,
+		Spec: *grafanaSpec,
 	}
 
 	if err := common.SetOwner(obj, &grafana, "grafana"); err != nil {
 		return errors.Wrapf(err, "ownership failed %s", obj.GetName())
 	}
 
-	grafana.SetName("grafana")
-
 	if err := r.importDashboards(ctx, obj, &grafana); err != nil {
 		return errors.Wrapf(err, "unable to import dashboards")
 	}
 
-	if err := r.Create(ctx, &grafana); err != nil {
+	if err := r.Client.Create(ctx, &grafana); err != nil {
 		return errors.Wrapf(err, "unable to create Grafana")
 	}
 
-	r.Logger.Info("Grafana was installed")
+	if err := common.WaitLifecycle(ctx, obj.GetUID(), &grafana, v1alpha1.Running, grafana.GetName()); err != nil {
+		return errors.Wrapf(err, "grafana is not running")
+	}
+
+	obj.Status.GrafanaURL = grafana.Status.IP
 
 	return nil
 }
 
 func (r *Reconciler) importDashboards(ctx context.Context, obj *v1alpha1.Workflow, grafana *v1alpha1.Service) error {
+	// FIXME: https://github.com/kubernetes/kubernetes/pull/63362#issuecomment-386631005
+
 	// create configmap
 	configMap := corev1.ConfigMap{}
 	{
 		configMap.Data = make(map[string]string, len(obj.Spec.ImportMonitors))
 
 		for _, monRef := range obj.Spec.ImportMonitors {
-			monSpec, err := template.SelectMonitor(ctx, template.ParseRef(monRef))
-			if err != nil {
-				return errors.Wrapf(err, "unable to find monitoring references %s", monRef)
-			}
-
-			if monSpec == nil {
+			if monSpec := template.SelectMonitor(ctx, template.ParseRef(monRef)); monSpec != nil {
+				configMap.Data[monSpec.Dashboard.File] = string(monSpec.Dashboard.Payload)
+			} else {
 				return errors.Errorf("unable to find monitor %s", monRef)
 			}
-
-			configMap.Data[monSpec.Dashboard.File] = string(monSpec.Dashboard.Payload)
 		}
 
 		if err := common.SetOwner(obj, &configMap, "dashboards"); err != nil {

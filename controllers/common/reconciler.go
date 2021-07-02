@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	k8errors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -127,19 +128,23 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 
 // SetOwner is a helper method to make sure the given object contains an object reference to the object provided.
 // It also names the child after the parent, with a potential postfix.
-func SetOwner(parentOwner, child metav1.Object, postfix string) error {
-	if postfix != "" {
-		postfix = "-" + postfix
+func SetOwner(parent, child metav1.Object, name string) error {
+	if name == "" {
+		child.SetName(parent.GetName())
+	} else {
+		child.SetName(name)
 	}
 
-	// give name to the child
-	child.SetName(parentOwner.GetName() + postfix)
-	child.SetNamespace(parentOwner.GetNamespace())
+	child.SetNamespace(parent.GetNamespace())
 
-
-	if err := controllerutil.SetOwnerReference(parentOwner, child, common.client.Scheme()); err != nil {
-		return errors.Wrapf(err, "unable to set parentOwner")
+	if err := controllerutil.SetOwnerReference(parent, child, common.client.Scheme()); err != nil {
+		return errors.Wrapf(err, "unable to set parent")
 	}
+
+	// owner labels are used by the selectors
+	child.SetLabels(labels.Merge(child.GetLabels(), map[string]string{
+		"owner": parent.GetName(),
+	}))
 
 	return nil
 }
@@ -208,7 +213,7 @@ func Success(ctx context.Context, obj InnerObject) (ctrl.Result, error) {
 
 // Failed is a wrap that logs the error, updates the status, and does not requeue the request.
 func Failed(ctx context.Context, obj InnerObject, err error) (ctrl.Result, error) {
-	common.logger.Error(err, "object failed", "object", obj.GetName())
+	runtimeutil.HandleError(errors.Wrapf(err, "object %s failed", obj.GetName()))
 
 	status := obj.GetStatus()
 	switch status.Phase {

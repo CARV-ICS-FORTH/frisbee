@@ -47,6 +47,7 @@ func (r *Reconciler) createKubePod(ctx context.Context, obj *v1alpha1.Service) e
 	// If true, it leads to admission webhook error in chaos-mesh
 	privilege := false
 
+	pod.Spec.RestartPolicy = corev1.RestartPolicyNever
 	obj.Spec.Container.TTY = true
 	obj.Spec.Container.SecurityContext = &corev1.SecurityContext{
 		Capabilities: &corev1.Capabilities{
@@ -76,7 +77,23 @@ func (r *Reconciler) createKubePod(ctx context.Context, obj *v1alpha1.Service) e
 		return errors.Wrapf(err, "unable to create pod %s", pod.GetName())
 	}
 
-	common.UpdateLifecycle(ctx, obj, &common.ExternalToInnerObject{Object: &pod, StatusFunc: convert}, pod.GetName())
+	// because lifecycle operation require access to the status, we need to wrap externally managed
+	// objects like Pods into managed (inner) objects
+	podWraper := &common.ExternalToInnerObject{Object: &pod, StatusFunc: convert}
+
+	// wait until the pod is up and running. this step is necessary to obtain the ip.
+	if err := common.WaitLifecycle(ctx, obj.GetUID(), podWraper, v1alpha1.Running, pod.GetName()); err != nil {
+		return errors.Wrapf(err, "pod is not running")
+	}
+
+	// TODO: NEED TO FIND A WAY FOR GETTING THE IP
+
+	obj.Status.IP = pod.Status.PodIP
+
+	// continuously update the service with pod's phase
+	if err := common.UpdateLifecycle(ctx, obj, podWraper, pod.GetName()); err != nil {
+		return errors.Wrapf(err, "cannot update lifecycle for %s", pod.GetName())
+	}
 
 	return nil
 }
@@ -84,10 +101,7 @@ func (r *Reconciler) createKubePod(ctx context.Context, obj *v1alpha1.Service) e
 func (r *Reconciler) addMonitoring(ctx context.Context, obj *v1alpha1.Service, pod *corev1.Pod) error {
 	// import monitoring agents to the service
 	for _, ref := range obj.Spec.MonitorTemplateRefs {
-		mon, err := template.SelectMonitor(ctx, template.ParseRef(ref))
-		if err != nil {
-			return err
-		}
+		mon := template.SelectMonitor(ctx, template.ParseRef(ref))
 
 		if err := validateMonitor(mon); err != nil {
 			return err
@@ -157,11 +171,9 @@ func (r *Reconciler) makeDiscoverable(ctx context.Context, obj *v1alpha1.Service
 	return r.Client.Create(ctx, &kubeService)
 }
 
-func (_ *Reconciler) placement(obj *v1alpha1.Service, pod *corev1.Pod) {
+func (*Reconciler) placement(obj *v1alpha1.Service, pod *corev1.Pod) {
 	domainLabels := map[string]string{"domain": obj.Spec.Domain}
 	obj.SetLabels(labels.Merge(obj.GetLabels(), domainLabels))
-
-	pod.Spec.RestartPolicy = corev1.RestartPolicyNever
 
 	pod.Spec.Affinity = &corev1.Affinity{
 		NodeAffinity: nil,

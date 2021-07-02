@@ -5,53 +5,53 @@ metadata:
   name: observability
 spec:
   services:
-      prometheus:
-          volumes:
-            - name: prometheus-config-volume
-              configMap:
-                name: prometheus-config
+    prometheus:
+      volumes:
+        - name: prometheus-config-volume
+          configMap:
+            name: prometheus-config
 
-          container:
-            name: prometheus
-            image: "prom/prometheus"
-            ports:
-              - name: http
-                containerPort: 9090
+      container:
+        name: prometheus
+        image: "prom/prometheus"
+        ports:
+          - name: http
+            containerPort: 9090
 
-            volumeMounts:
-              - name: prometheus-config-volume
-                mountPath: /etc/prometheus/prometheus.yml
-                subPath: prometheus.yml
-                readOnly: true
+        volumeMounts:
+          - name: prometheus-config-volume
+            mountPath: /etc/prometheus/prometheus.yml
+            subPath: prometheus.yml
+            readOnly: true
 
-      grafana:
-        volumes:
+    grafana:
+      volumes:
+        - name: grafana-config-volume
+          configMap:
+            name: grafana-config
+
+      container:
+        name: grafana
+        image: "grafana/grafana:latest"
+        ports:
+          - name: http
+            containerPort: 3000
+
+        volumeMounts:
           - name: grafana-config-volume
-            configMap:
-              name: grafana-config
+            mountPath: /etc/grafana/grafana.ini
+            subPath: grafana.ini
+            readOnly: true
 
-        container:
-          name: grafana
-          image: "grafana/grafana:latest"
-          ports:
-            - name: http
-              containerPort: 3000
+          - name: grafana-config-volume
+            mountPath: /etc/grafana/provisioning/dashboards/dashboard.yml
+            subPath: dashboard.yml
+            readOnly: true
 
-          volumeMounts:
-            - name: grafana-config-volume
-              mountPath: /etc/grafana/grafana.ini
-              subPath: grafana.ini
-              readOnly: true
-
-            - name: grafana-config-volume
-              mountPath: /etc/grafana/provisioning/dashboards/dashboard.yml
-              subPath: dashboard.yml
-              readOnly: true
-
-            - name: grafana-config-volume
-              mountPath: /etc/grafana/provisioning/datasources/prometheus.yml
-              subPath: prometheus.yml
-              readOnly: true
+          - name: grafana-config-volume
+            mountPath: /etc/grafana/provisioning/datasources/prometheus.yml
+            subPath: prometheus.yml
+            readOnly: true
 
 
 ---

@@ -2628,6 +2628,9 @@ spec:
                 description: Most recently observed status of the object
                 format: date-time
                 type: string
+              ip:
+                description: IP is the IP of the pod running the service
+                type: string
               phase:
                 description: Phase is the current status of an object
                 enum:
@@ -2646,6 +2649,8 @@ spec:
                   image(s) for the pod.
                 format: date-time
                 type: string
+            required:
+            - ip
             type: object
         required:
         - spec

@@ -55,12 +55,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	case v1alpha1.Uninitialized: // We haven't started yet
 		logrus.Warn("Why is Uninitialized called against ?")
 
-		if err := r.newMonitoringStack(ctx, &obj); err != nil {
-			return common.Failed(ctx, &obj, errors.Wrapf(err, "cannot create monitoring stack"))
-		}
-
 		if action := obj.Spec.Actions[len(obj.Spec.Actions)-1]; action.ActionType != "Wait" {
 			return common.Failed(ctx, &obj, errors.New("All experiments must end with a wait function"))
+		}
+
+		if err := r.newMonitoringStack(ctx, &obj); err != nil {
+			return common.Failed(ctx, &obj, errors.Wrapf(err, "cannot create monitoring stack"))
 		}
 
 		_, _ = common.Running(ctx, &obj)

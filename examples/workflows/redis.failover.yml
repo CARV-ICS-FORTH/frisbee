@@ -3,7 +3,7 @@ kind: Workflow
 metadata:
   name: redis-failover
 spec:
-  importMonitors: ["redismon/telegraf"]
+  importMonitors: [ "sysmon/container", "redismon/telegraf", "ycsbmon/goycsb"]
 
   actions:
     # Create a Master node
@@ -11,7 +11,7 @@ spec:
       name: masters
       servicegroup:
         templateRef: redis/master
-        instances: 2
+        instances: 1
 
     # Create a Slave node
     - actiontype: ServiceGroup
@@ -23,7 +23,7 @@ spec:
           - { master: .servicegroup.masters.one }
 
 
-   # Create a failover manager
+    # Create a failover manager
     - actiontype: ServiceGroup
       name: sentinel
       depends: { running: [ masters, slaves ] }
@@ -57,7 +57,7 @@ spec:
       depends: { running: [ masters ], complete: [ loaders ] }
       servicegroup:
         templateRef: redis/runner
-        instances: 3
+        instances: 5
         inputs:
           - { server: .servicegroup.masters.one, workload: workloada,  operationcount: "1000000"}
 
@@ -65,15 +65,14 @@ spec:
     # Stop the master nodes after a few minutes
     - actiontype: Stop
       name: "teardown"
-      depends: {duration: 1m}
+      #depends: {duration: 1m}
       stop:
         macro: .servicegroup.runners.all
         schedule:
           cron: "@every 1m"
 
-
     # Wait until servers are removed
     - actiontype: Wait
       name: "terminate"
       wait:
-        complete: [masters]
+        complete: [ masters ]

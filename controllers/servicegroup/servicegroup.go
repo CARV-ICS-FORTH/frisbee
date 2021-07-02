@@ -6,19 +6,17 @@ import (
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/common"
-	"github.com/fnikolai/frisbee/controllers/common/selector"
 	"github.com/fnikolai/frisbee/controllers/common/selector/service"
 	"github.com/fnikolai/frisbee/controllers/common/selector/template"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 func (r *Reconciler) create(ctx context.Context, obj *v1alpha1.ServiceGroup) (ctrl.Result, error) {
-	serviceSpec, err := template.SelectService(ctx, template.ParseRef(obj.Spec.TemplateRef))
-	if err != nil {
-		return common.Failed(ctx, obj, err)
+	serviceSpec := template.SelectService(ctx, template.ParseRef(obj.Spec.TemplateRef))
+	if serviceSpec == nil {
+		return common.DoNotRequeue()
 	}
 
 	// validate service requests (resolve instances, inputs, and env variables)
@@ -34,59 +32,60 @@ func (r *Reconciler) create(ctx context.Context, obj *v1alpha1.ServiceGroup) (ct
 		obj.Spec.Instances = len(obj.Spec.Inputs)
 	}
 
-	// submit service creation requests
 	serviceKeys := make([]string, obj.Spec.Instances)
 
+	// create services for this group
 	for i := 0; i < obj.Spec.Instances; i++ {
 		service := v1alpha1.Service{}
-		serviceSpec.DeepCopyInto(&service.Spec)
 
-		if err := common.SetOwner(obj, &service, fmt.Sprintf("%d", i)); err != nil {
-			return common.Failed(ctx, obj, errors.Wrapf(err, "ownership failed %s", obj.GetName()))
+		if err := common.SetOwner(obj, &service, fmt.Sprintf("%s-%d", obj.GetName(), i)); err != nil {
+			return common.Failed(ctx, obj, errors.Wrapf(err, "setowner failed"))
 		}
 
+		serviceSpec.DeepCopyInto(&service.Spec) // deep copy so to avoid different services from sharing the same spec
+
 		if len(obj.Spec.Inputs) > 0 {
-			service.Spec.Container.Env = convertVars(ctx, obj.Spec.Inputs[i])
+			if err := r.inputs2Env(ctx, obj.Spec.Inputs[i], &service.Spec.Container); err != nil {
+				return common.Failed(ctx, obj, errors.Wrapf(err, "macro expansion failed"))
+			}
 		}
 
 		if _, err := ctrl.CreateOrUpdate(ctx, r.Client, &service, func() error { return nil }); err != nil {
-			return common.Failed(ctx, obj, errors.Wrapf(err, "unable to update %s ", obj.GetName()))
+			return common.Failed(ctx, obj, errors.Wrapf(err, "update failed"))
 		}
 
 		serviceKeys[i] = service.GetName()
 	}
 
-	common.UpdateLifecycle(ctx, obj, &v1alpha1.Service{}, serviceKeys...)
+	if err := common.UpdateLifecycle(ctx, obj, &v1alpha1.Service{}, serviceKeys...); err != nil {
+		return common.Failed(ctx, obj, err)
+	}
 
 	return common.DoNotRequeue()
 }
 
-func convertVars(ctx context.Context, in map[string]string) []v1.EnvVar {
-	if len(in) == 0 {
-		return nil
+func (r *Reconciler) inputs2Env(ctx context.Context, inputs map[string]string, container *v1.Container) error {
+	if len(inputs) != len(container.Env) {
+		return errors.Errorf("mismatch inputs and env vars. inputs:%d vars:%d", len(inputs), len(container.Env))
 	}
 
-	out := make([]v1.EnvVar, 0, len(in))
+	for i, evar := range container.Env {
+		value, ok := inputs[evar.Name]
+		if !ok {
+			return errors.Errorf("%s parameter not set", evar.Name)
+		}
 
-	var serviceSelector *v1alpha1.ServiceSelector
+		if service.IsMacro(value) {
+			services := service.Select(ctx, service.ParseMacro(value))
+			if len(services) == 0 {
+				return errors.Errorf("macro %s yields no services", value)
+			}
 
-	for key, value := range in {
-		serviceSelector = selector.ParseMacro(value)
-
-		if serviceSelector != nil { // with macro
-			out = append(out, v1.EnvVar{
-				Name:  key,
-				Value: service.Select(ctx, serviceSelector).String(),
-			})
-
-			logrus.Warn("MACRO ", out)
-		} else { // without macro
-			out = append(out, v1.EnvVar{
-				Name:  key,
-				Value: value,
-			})
+			container.Env[i].Value = services.String()
+		} else {
+			container.Env[i].Value = value
 		}
 	}
 
-	return out
+	return nil
 }

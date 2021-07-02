@@ -20,7 +20,7 @@ import (
 var Client client.Client
 
 const (
-	ServiceIDListSeparator = " "
+	idListSeparator = " "
 )
 
 type ServiceList []v1alpha1.Service
@@ -32,11 +32,43 @@ func (list ServiceList) String() string {
 		names[i] = service.GetName()
 	}
 
-	return strings.Join(names, ServiceIDListSeparator)
+	return strings.Join(names, idListSeparator)
+}
+
+func IsMacro(macro string) bool {
+	return strings.HasPrefix(macro, ".")
+}
+
+// ParseMacro translates a given macro to the appropriate selector and executes it.
+// If the input is not a macro, it will be returned immediately as the first element of a string slice.
+func ParseMacro(macro string) *v1alpha1.ServiceSelector {
+	var criteria v1alpha1.ServiceSelector
+
+	fields := strings.Split(macro, ".")
+
+	if len(fields) != 4 {
+		panic(errors.Errorf("%s is not a valid macro", macro))
+	}
+
+	kind := fields[1]
+	object := fields[2]
+	filter := fields[3]
+
+	switch kind {
+	case "servicegroup":
+		criteria.Selector.ServiceGroup = object
+		criteria.Mode = v1alpha1.Mode(filter)
+
+		return &criteria
+
+	default:
+		panic(errors.Errorf("%s is not a valid macro", macro))
+	}
 }
 
 func Select(ctx context.Context, ss *v1alpha1.ServiceSelector) ServiceList {
 	if ss == nil {
+		logrus.Warn("empty service selector")
 		return []v1alpha1.Service{}
 	}
 
@@ -56,6 +88,7 @@ func Select(ctx context.Context, ss *v1alpha1.ServiceSelector) ServiceList {
 	filteredServices, err := filterServicesByMode(services, ss.Mode, ss.Value)
 	if err != nil {
 		logrus.Warn(err)
+
 		return []v1alpha1.Service{}
 	}
 
@@ -63,6 +96,7 @@ func Select(ctx context.Context, ss *v1alpha1.ServiceSelector) ServiceList {
 }
 
 func selectServices(ctx context.Context, ss *v1alpha1.ServiceSelectorSpec) ([]v1alpha1.Service, error) {
+
 	var services []v1alpha1.Service
 
 	appendService := func(ns, name string) error {

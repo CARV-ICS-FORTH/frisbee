@@ -18,7 +18,7 @@ spec:
             - |  # Multi-line str
               set -eum
 
-              echo  -n '
+              cat > redis.conf <<EOF
               [[inputs.redis]]
                  servers = ["tcp://localhost:6379"]
 
@@ -26,7 +26,7 @@ spec:
                  listen = ":9443"
                  metric_version = 2
                  collectors_exclude = ["gocollector","process"]
-              ' > redis.conf
+              EOF
 
               telegraf --config redis.conf &
 
