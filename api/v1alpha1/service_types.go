@@ -84,9 +84,6 @@ type Resources struct {
 
 type ServiceStatus struct {
 	EtherStatus `json:",inline"`
-
-	// IP is the IP of the pod running the service
-	IP string `json:"ip"`
 }
 
 func (s *Service) GetStatus() EtherStatus {

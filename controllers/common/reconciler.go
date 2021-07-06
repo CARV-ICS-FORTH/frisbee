@@ -9,6 +9,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -70,10 +71,10 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 			controllerutil.AddFinalizer(obj, metav1.FinalizerDeleteDependents)
 			controllerutil.AddFinalizer(obj, r.Finalizer())
 
-			if err := r.Update(ctx, obj); err != nil {
+			if ret, err := update(ctx, obj); err != nil {
 				runtimeutil.HandleError(errors.Wrapf(err, "unable to add finalizer for %s", req.NamespacedName))
 
-				return RequeueWithError(err)
+				return ret, err
 			}
 
 			// This code changes the spec and metadata, whereas the solid Reconciler changes the status.
@@ -103,19 +104,14 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 			controllerutil.RemoveFinalizer(obj, r.Finalizer())
 			controllerutil.RemoveFinalizer(obj, metav1.FinalizerDeleteDependents)
 
-			if err := r.Update(ctx, obj); err != nil {
-				if k8errors.IsGone(err) || k8errors.IsInvalid(err) {
-					common.logger.Info("Object is already removed", "object", obj.GetName())
-
-					return DoNotRequeue()
-				}
-
+			if ret, err := update(ctx, obj); err != nil {
 				runtimeutil.HandleError(errors.Wrapf(err, "unable to remove finalizer for %s", req.NamespacedName))
 
-				return DoNotRequeue()
+				return ret, err
 			}
 
-			r.Info("remove finalizers", "name", req.NamespacedName)
+			// r.Info("remove finalizers", "name", req.NamespacedName)
+			*ret = true
 		}
 		// Stop reconciliation as the item is being deleted
 		return DoNotRequeue()
@@ -158,57 +154,31 @@ func Chaos(ctx context.Context, obj InnerObject) (ctrl.Result, error) {
 
 	obj.SetStatus(status)
 
-	updateStatus(ctx, obj)
-
-	return DoNotRequeue()
+	return updateStatus(ctx, obj)
 }
 
 // Running is a wrapper that sets phase to Running and does not requeue the request.
 func Running(ctx context.Context, obj InnerObject) (ctrl.Result, error) {
 	status := obj.GetStatus()
 
-	switch status.Phase {
-	case v1alpha1.Running: // nothing to do
-		return DoNotRequeue()
-
-	case v1alpha1.Complete, v1alpha1.Failed:
-		runtimeutil.HandleError(errors.Errorf("invalid phase transition %s -> %s", status.Phase, v1alpha1.Complete))
-
-		return DoNotRequeue()
-	}
-
 	status.Phase = v1alpha1.Running
 	status.Reason = "OK"
 
 	obj.SetStatus(status)
 
-	updateStatus(ctx, obj)
-
-	return DoNotRequeue()
+	return updateStatus(ctx, obj)
 }
 
 // Success is a wrapper that sets phase to Success and does not requeue the request.
 func Success(ctx context.Context, obj InnerObject) (ctrl.Result, error) {
 	status := obj.GetStatus()
 
-	switch status.Phase {
-	case v1alpha1.Complete: // nothing to do
-		return DoNotRequeue()
-
-	case v1alpha1.Failed:
-		runtimeutil.HandleError(errors.Errorf("invalid phase transition %s -> %s", status.Phase, v1alpha1.Complete))
-
-		return DoNotRequeue()
-	}
-
 	status.Phase = v1alpha1.Complete
 	status.Reason = "All children are complete"
 
 	obj.SetStatus(status)
 
-	updateStatus(ctx, obj)
-
-	return DoNotRequeue()
+	return updateStatus(ctx, obj)
 }
 
 // Failed is a wrap that logs the error, updates the status, and does not requeue the request.
@@ -216,40 +186,75 @@ func Failed(ctx context.Context, obj InnerObject, err error) (ctrl.Result, error
 	runtimeutil.HandleError(errors.Wrapf(err, "object %s failed", obj.GetName()))
 
 	status := obj.GetStatus()
-	switch status.Phase {
-	case v1alpha1.Failed: // nothing to do
-		return DoNotRequeue()
-
-	case v1alpha1.Complete:
-		runtimeutil.HandleError(errors.Errorf("invalid phase transition %s -> %s", status.Phase, v1alpha1.Failed))
-
-		return DoNotRequeue()
-	}
-
 	status.Phase = v1alpha1.Failed
 	status.Reason = err.Error()
 
 	obj.SetStatus(status)
 
-	updateStatus(ctx, obj)
-
-	return DoNotRequeue()
+	return updateStatus(ctx, obj)
 }
 
-func updateStatus(ctx context.Context, obj client.Object) {
+func update(ctx context.Context, obj client.Object) (ctrl.Result, error) {
+	// do not use delete convention here. we need to update a delete object in order to remove the finalizers.
+
+	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		return common.client.Update(ctx, obj)
+	})
+
+	switch {
+	case err == nil:
+		return DoNotRequeue()
+
+	case k8errors.IsInvalid(err):
+		common.logger.Error(err, "update error")
+
+		return DoNotRequeue()
+
+	case k8errors.IsConflict(err):
+		common.logger.Error(err, "update error (xxx)")
+
+		return DoNotRequeue()
+
+	default:
+		runtimeutil.HandleError(errors.Wrapf(err, "unable to update for %s [%s]",
+			obj.GetName(), obj.GetObjectKind().GroupVersionKind()))
+
+		return DoNotRequeue()
+	}
+}
+
+func updateStatus(ctx context.Context, obj client.Object) (ctrl.Result, error) {
 	// if the object is scheduled for deletion, do not update its status
 	if obj.GetDeletionTimestamp().IsZero() {
 		// The status subresource ignores changes to spec, so it’s less likely to conflict with any other updates,
 		// and can have separate permissions.
-		if err := common.client.Status().Update(ctx, obj); err != nil {
-			if k8errors.IsGone(err) || k8errors.IsInvalid(err) {
-				common.logger.Info("Object is already removed", "object", obj.GetName())
 
-				return
-			}
+		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			return common.client.Status().Update(ctx, obj)
+		})
 
+		switch {
+		case err == nil:
+			return DoNotRequeue()
+
+		case k8errors.IsInvalid(err):
+			common.logger.Error(err, "update status error")
+
+			return DoNotRequeue()
+
+		case k8errors.IsConflict(err):
+			// Most likely the object is already removed, and therefore we cannot update the status.
+			runtimeutil.HandleError(err)
+
+			return DoNotRequeue()
+
+		default:
 			runtimeutil.HandleError(errors.Wrapf(err, "unable to update status for %s [%s]",
 				obj.GetName(), obj.GetObjectKind().GroupVersionKind()))
+
+			return DoNotRequeue()
 		}
 	}
+
+	return DoNotRequeue()
 }

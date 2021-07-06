@@ -2,7 +2,6 @@ package common
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
@@ -15,67 +14,159 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// UpdateLifecycle schedules a background task that update the parent phase according to the phase of its children.
-func UpdateLifecycle(ctx context.Context, parent InnerObject, child InnerObject, childrenNames ...string) error {
-	if parent == nil || child == nil || len(childrenNames) == 0 {
-		return errors.New("invalid arguments")
+// ErrInvalidArgs indicate an error with calling arguments
+var ErrInvalidArgs = errors.New("invalid arguments")
+
+func GetLifecycle(ctx context.Context, parentUID types.UID, child InnerObject, childrenNames ...string) *ManagedLifecycle {
+	if child == nil || len(childrenNames) == 0 {
+		common.logger.Error(ErrInvalidArgs, "lifecycle error")
+
+		return nil
 	}
 
-	common.logger.Info("Watch",
-		"types", fmt.Sprintf("%s -> %s", reflect.TypeOf(parent), reflect.TypeOf(unwrap(child))),
-		"names", fmt.Sprintf("%s -> %s ", parent.GetName(), childrenNames),
+	common.logger.Info("Watch children",
+		"kind", reflect.TypeOf(unwrap(child)),
+		"names", childrenNames,
 	)
 
-	t := newNotifier(childrenNames)
-	t.accessChildStatus = accessStatus(child)
+	n := newNotifier(childrenNames)
+	n.accessChildStatus = accessStatus(child)
 
 	handlers := eventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			trackAdd(obj)
-			t.watchChildrenPhase(obj)
+			n.watchChildrenPhase(obj)
 		},
-		UpdateFunc: t.watchChildrenPhase,
+		UpdateFunc: n.watchChildrenPhase,
 		DeleteFunc: func(obj interface{}) {
 			trackDelete(obj)
-			t.watchChildrenPhase(obj)
+			n.watchChildrenPhase(obj)
 		},
 	}
 
-	if err := watchLifecycle(ctx, parent.GetUID(), unwrap(child), handlers); err != nil {
-		return errors.Wrapf(err, "watchlifecycle has failed")
+	return &ManagedLifecycle{
+		ctx:           ctx,
+		n:             n,
+		watchChildren: func() error { return watchLifecycle(ctx, parentUID, unwrap(child), handlers) },
+	}
+}
+
+type ManagedLifecycle struct {
+	ctx context.Context
+
+	n *notifier
+
+	watchChildren func() error
+}
+
+// UpdateParent run in a loops and continuously update the status of the parent.
+func (lc *ManagedLifecycle) UpdateParent(parent InnerObject) error {
+	if err := lc.watchChildren(); err != nil {
+		return errors.Wrapf(err, "unable to watch children")
 	}
 
-	go t.updateParent(ctx, parent)
+	go func() {
+		var phase v1alpha1.Phase
+		var msg error
+		var valid error
+
+		phase, valid = lc.n.getNextPhase()
+
+		for {
+			if valid != nil {
+				common.logger.Error(valid, "update parent failed", "parent", parent.GetName())
+
+				return
+			}
+
+			common.logger.Info("Update Parent",
+				"kind", reflect.TypeOf(parent),
+				"name", parent.GetName(),
+				"phase", phase,
+			)
+
+			switch phase {
+			case v1alpha1.Uninitialized:
+				panic("this should not happen")
+
+			case v1alpha1.Running:
+				_, _ = Running(lc.ctx, parent)
+				phase, msg, valid = lc.n.getNextRunning()
+
+			case v1alpha1.Complete:
+				_, _ = Success(lc.ctx, parent)
+
+				return
+
+			case v1alpha1.Failed:
+				_, _ = Failed(lc.ctx, parent, errors.Wrapf(msg, "at least one child has failed"))
+
+				return
+
+			case v1alpha1.Chaos:
+				_, _ = Chaos(lc.ctx, parent)
+
+				// If the parent is in Chaos mode, it means that failing conditions are expected and therefore
+				// do not cause a failure to the controller. Instead, they should be handled by the system under evaluation.
+				common.logger.Info("Expected abnormal event",
+					"parent", parent.GetName(),
+					"event", msg.Error(),
+				)
+
+				phase, msg, valid = lc.n.getNextChaos()
+
+			default:
+				valid = errors.Errorf("invalid phase %s ", phase)
+			}
+		}
+	}()
 
 	return nil
 }
 
-// WaitLifecycle blocks until the parent has reached a define state
-func WaitLifecycle(ctx context.Context, parentUID types.UID, child InnerObject, expected v1alpha1.Phase, childrenNames ...string) error {
-	if len(childrenNames) == 0 {
-		return errors.New("no children where given")
+// Expect blocks waiting for the next phase of the parent. If it is the one expected, it returns nil.
+// Otherwise it returns an error stating what was expected and what was got.
+func (lc *ManagedLifecycle) Expect(expect v1alpha1.Phase) error {
+	if err := lc.watchChildren(); err != nil {
+		common.logger.Error(err, "unable to watch children")
+		return err
 	}
 
-	t := newNotifier(childrenNames)
-	t.accessChildStatus = accessStatus(child)
+	var phase v1alpha1.Phase
+	var msg error
+	var valid error
 
-	handlers := eventHandlerFuncs{
-		AddFunc: func(obj interface{}) {
-			trackAdd(obj)
-			t.watchChildrenPhase(obj)
-		},
-		UpdateFunc: t.watchChildrenPhase,
-		DeleteFunc: func(obj interface{}) {
-			trackDelete(obj)
-			t.watchChildrenPhase(obj)
-		},
+	phase, _ = lc.n.getNextPhase()
+
+	for {
+		switch {
+		case phase == expect:
+			return nil // correct phase
+
+		case valid != nil:
+			return valid // the transition is invalid
+
+		case errors.Is(valid, errIsFinal): // the transition is valid, but is not the expected one
+			return errors.Errorf("expected %s but got %s (%s)", expect, phase, msg)
+		}
+
+		switch phase {
+		case v1alpha1.Uninitialized, v1alpha1.Chaos:
+			panic(errors.Errorf("cannot wait on phase %s", expect))
+
+		case v1alpha1.Running:
+			phase, msg, valid = lc.n.getNextRunning()
+
+		case v1alpha1.Complete:
+			phase, msg, valid = lc.n.getNextComplete()
+
+		case v1alpha1.Failed:
+			phase, msg, valid = lc.n.getNextFailed()
+
+		default:
+			return errors.Errorf("invalid phase %s ", phase)
+		}
 	}
-
-	if err := watchLifecycle(ctx, parentUID, unwrap(child), handlers); err != nil {
-		return errors.Wrapf(err, "watchlifecycle failed")
-	}
-
-	return t.waitParent(ctx, expected)
 }
 
 type eventHandlerFuncs struct {
@@ -169,7 +260,7 @@ type notifier struct {
 	parentComplete   chan struct{}
 	childrenComplete map[string]chan struct{}
 
-	assess chan error
+	chaos  chan error
 	failed chan error
 }
 
@@ -204,7 +295,7 @@ func (n *notifier) watchChildrenPhase(obj interface{}) {
 	status := n.accessChildStatus(obj)
 
 	common.logger.Info("Child Changed",
-		"kind", reflect.TypeOf(object),
+		"child", reflect.TypeOf(object),
 		"name", object.GetName(),
 		"phase", status.Phase,
 	)
@@ -245,151 +336,88 @@ func (n *notifier) watchChildrenPhase(obj interface{}) {
 	}
 }
 
-// updateParent updates the phase of the parent based on the phase of its children.
-// Upon completion, the parent is automatically removed.
-func (n *notifier) updateParent(ctx context.Context, parent InnerObject) {
-	failure := func(err error) {
-		switch phase := parent.GetStatus().Phase; phase {
-		case v1alpha1.Failed:
-			// Nothing to do if the parent has already failed. Just log the error
-			runtimeutil.HandleError(err)
-
-		case v1alpha1.Chaos:
-			// If the parent is in Chaos mode, it means that failing conditions are expected and therefore
-			// do not cause a failure to the controller. Instead, they should be handled by the system under evaluation.
-			common.logger.Info("Expected abnormal event",
-				"parent", parent.GetName(),
-				"event", err.Error(),
-			)
-
-		case v1alpha1.Uninitialized, v1alpha1.Running:
-			// In any other case, mark the parent as failed
-			_, _ = Failed(ctx, parent, errors.Wrapf(err, "at least one child has failed"))
-
-		case v1alpha1.Complete:
-			panic("Is this case even possible ?")
-
-		default:
-			runtimeutil.HandleError(errors.Errorf("invalid phase %s", phase))
-		}
-	}
-
-	terminal := func() {
-		select {
-		case <-ctx.Done():
-			runtimeutil.HandleError(ctx.Err())
-
-			return
-
-		case <-n.parentComplete:
-			if status := parent.GetStatus(); status.Phase != v1alpha1.Complete {
-				_, _ = Success(ctx, parent)
-			}
-
-		case err := <-n.failed:
-			failure(err)
-		}
-	}
-
+// getNextPhase blocks waiting for the next of the parent.
+func (n *notifier) getNextPhase() (v1alpha1.Phase, error) {
 	select {
-	case <-ctx.Done():
-		runtimeutil.HandleError(ctx.Err())
-
-		return
-
 	case <-n.parentRunning:
-		if status := parent.GetStatus(); status.Phase != v1alpha1.Running {
-			_, _ = Running(ctx, parent)
-		}
-
-		common.logger.Info("Update Parent",
-			"kind", reflect.TypeOf(parent),
-			"name", parent.GetName(),
-			"phase", parent.GetStatus().Phase,
-		)
-
-		terminal()
-
-	case <-n.assess:
-		if status := parent.GetStatus(); status.Phase != v1alpha1.Chaos {
-			_, _ = Chaos(ctx, parent)
-		}
-
-		common.logger.Info("Update Parent",
-			"kind", reflect.TypeOf(parent),
-			"name", parent.GetName(),
-			"phase", parent.GetStatus().Phase,
-		)
-
-		terminal()
+		return v1alpha1.Running, nil
 
 	case <-n.parentComplete:
-		if status := parent.GetStatus(); status.Phase != v1alpha1.Complete {
-			_, _ = Success(ctx, parent)
-		}
+		return v1alpha1.Complete, nil
 
 	case err := <-n.failed:
-		failure(err)
+		return v1alpha1.Failed, err
+
+	case err := <-n.chaos:
+		return v1alpha1.Chaos, err
 	}
 }
 
-var (
-	// ErrUnexpectedPhase indicate that object obtained a phase other than the expected. For example,
-	// get a Failed phase while expecting the next phase to be Running.
-	ErrUnexpectedPhase = errors.New("unexpected Phase")
+// listen for all the expected transition from Unitialized.
+func (n *notifier) getNextUninitialized() (phase v1alpha1.Phase, msg error, valid error) {
+	select {
+	case <-n.parentRunning:
+		return v1alpha1.Running, nil, nil
 
-	// ErrNoWait is used for phases that cannot be waited. For example, users cannot wait for an
-	// object to become uninitialized.
-	ErrNoWait = errors.New("this phase cannot be waited. return immediately")
-)
+	case <-n.parentComplete:
+		return v1alpha1.Complete, nil,
+			errors.Errorf("invalid transitiom %s -> %s", v1alpha1.Uninitialized, v1alpha1.Complete)
 
-// waitParent blocks waiting for the next phase of the parent. If it is the one expected, it returns nil.
-// Otherwise it returns an error stating what was expected and what was got.
-func (n *notifier) waitParent(ctx context.Context, expect v1alpha1.Phase) error {
-	switch expect {
-	case v1alpha1.Uninitialized, v1alpha1.Chaos:
-		return errors.Errorf("cannot wait on phase %s", expect)
+	case err := <-n.failed:
+		return v1alpha1.Failed, err, nil
 
-	case v1alpha1.Running:
-		select {
-		case <-ctx.Done():
-		case <-n.parentRunning:
-		case <-n.parentComplete:
-			return errors.Errorf("expected %s but got %s", expect, v1alpha1.Complete)
-
-		case err := <-n.failed:
-			return errors.Errorf("expected %s but got %s due to: %s", expect, v1alpha1.Failed, err)
-		}
-
-	case v1alpha1.Complete:
-		select {
-		case <-ctx.Done():
-		case <-n.parentRunning: // For complete is must go through running phase first
-			select {
-			case <-ctx.Done():
-			case <-n.parentComplete:
-			case err := <-n.failed:
-				return errors.Errorf("expected %s but got %s due to: %s", expect, v1alpha1.Failed, err)
-			}
-		}
-
-	case v1alpha1.Failed:
-		select {
-		case <-ctx.Done():
-		case <-n.parentRunning: // For Failed is must go through running phase first
-			select {
-			case <-ctx.Done():
-			case <-n.parentComplete:
-				return errors.Errorf("expected %s but got %s", expect, v1alpha1.Complete)
-			case <-n.failed: // expected failed and got failed. nothing to do
-			}
-		}
-
-	default:
-		return errors.Errorf("unknown phase %s", expect)
+	case err := <-n.chaos:
+		return v1alpha1.Chaos, err, nil
 	}
+}
 
-	return nil
+// listen for all the expected transition from Running.
+func (n *notifier) getNextRunning() (phase v1alpha1.Phase, msg error, valid error) {
+	select {
+	// ignore this case as it will lead to a loop
+	// case <-n.parentRunning:  return v1alpha1.Running, nil, nil
+
+	case <-n.parentComplete:
+		return v1alpha1.Complete, nil, nil
+
+	case err := <-n.failed:
+		return v1alpha1.Failed, err, nil
+
+	case err := <-n.chaos:
+		return v1alpha1.Chaos, err, nil
+	}
+}
+
+var errIsFinal = errors.New("phase is final")
+
+// listen for all the expected transition from Complete.
+func (n *notifier) getNextComplete() (phase v1alpha1.Phase, msg error, valid error) {
+	return v1alpha1.Complete, nil, errIsFinal
+}
+
+// listen for all the expected transition from Failed.
+func (n *notifier) getNextFailed() (phase v1alpha1.Phase, msg error, valid error) {
+	return v1alpha1.Failed, nil, errIsFinal
+}
+
+// listen for all the expected transition from Chaos.
+func (n *notifier) getNextChaos() (phase v1alpha1.Phase, msg error, valid error) {
+	select {
+	case <-n.parentRunning:
+		return v1alpha1.Running, nil,
+			errors.Errorf("invalid transition %s -> %s", v1alpha1.Chaos, v1alpha1.Running)
+
+	case <-n.parentComplete:
+		return v1alpha1.Complete, nil, nil
+
+	case err := <-n.failed:
+		return v1alpha1.Failed, err,
+			errors.Errorf("invalid transition %s -> %s", v1alpha1.Chaos, v1alpha1.Failed)
+
+		// ignore this case as it will lead to a loop
+		// case err := <-n.chaos:
+		//	return v1alpha1.Chaos, err, nil
+	}
 }
 
 func trackAdd(obj interface{}) {

@@ -96,7 +96,6 @@ func Select(ctx context.Context, ss *v1alpha1.ServiceSelector) ServiceList {
 }
 
 func selectServices(ctx context.Context, ss *v1alpha1.ServiceSelectorSpec) ([]v1alpha1.Service, error) {
-
 	var services []v1alpha1.Service
 
 	appendService := func(ns, name string) error {

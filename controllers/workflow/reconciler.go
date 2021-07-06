@@ -93,6 +93,14 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	case v1alpha1.Failed: // if we're here, then something went completely wrong
 		r.Logger.Error(errors.New(obj.Status.Reason), "Workflow Failed", "name", obj.GetName(), "time", time.Now())
 
+		// FIXME: it should send a "suspend command"
+		/*
+			if err := r.Client.Delete(ctx, &obj); err != nil {
+				runtimeutil.HandleError(err)
+			}
+
+		*/
+
 		return common.DoNotRequeue()
 
 	case v1alpha1.Chaos: // if we're here, a controlled failure has occurred.

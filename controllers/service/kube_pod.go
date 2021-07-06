@@ -45,7 +45,7 @@ func (r *Reconciler) createKubePod(ctx context.Context, obj *v1alpha1.Service) e
 	pod.Spec.Volumes = obj.Spec.Volumes
 
 	// If true, it leads to admission webhook error in chaos-mesh
-	privilege := false
+	privilege := true
 
 	pod.Spec.RestartPolicy = corev1.RestartPolicyNever
 	obj.Spec.Container.TTY = true
@@ -59,40 +59,30 @@ func (r *Reconciler) createKubePod(ctx context.Context, obj *v1alpha1.Service) e
 	pod.Spec.Containers = []corev1.Container{obj.Spec.Container}
 
 	if err := common.SetOwner(obj, &pod, ""); err != nil {
-		return errors.Wrapf(err, "ownership failed %s", obj.GetName())
+		return errors.Wrapf(err, "ownership failed")
 	}
 
 	// order of operation is important. do not change it.
 	if err := r.addMonitoring(ctx, obj, &pod); err != nil {
-		return errors.Wrapf(err, "unable to make pod %s discoverable", pod.GetName())
+		return errors.Wrapf(err, "pod monitoring failed")
 	}
 
 	if err := r.makeDiscoverable(ctx, obj, &pod); err != nil {
-		return errors.Wrapf(err, "unable to make pod %s discoverable", pod.GetName())
+		return errors.Wrapf(err, "pod discovery failed")
 	}
 
 	r.placement(obj, &pod)
 
 	if err := r.Client.Create(ctx, &pod); err != nil {
-		return errors.Wrapf(err, "unable to create pod %s", pod.GetName())
+		return errors.Wrapf(err, "pod creation failed")
 	}
 
 	// because lifecycle operation require access to the status, we need to wrap externally managed
 	// objects like Pods into managed (inner) objects
 	podWraper := &common.ExternalToInnerObject{Object: &pod, StatusFunc: convert}
 
-	// wait until the pod is up and running. this step is necessary to obtain the ip.
-	if err := common.WaitLifecycle(ctx, obj.GetUID(), podWraper, v1alpha1.Running, pod.GetName()); err != nil {
-		return errors.Wrapf(err, "pod is not running")
-	}
-
-	// TODO: NEED TO FIND A WAY FOR GETTING THE IP
-
-	obj.Status.IP = pod.Status.PodIP
-
-	// continuously update the service with pod's phase
-	if err := common.UpdateLifecycle(ctx, obj, podWraper, pod.GetName()); err != nil {
-		return errors.Wrapf(err, "cannot update lifecycle for %s", pod.GetName())
+	if err := common.GetLifecycle(ctx, obj.GetUID(), podWraper, pod.GetName()).UpdateParent(obj); err != nil {
+		return errors.Wrapf(err, "lifecycle failed")
 	}
 
 	return nil

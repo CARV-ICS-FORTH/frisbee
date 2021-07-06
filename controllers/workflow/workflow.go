@@ -23,7 +23,7 @@ func (r *Reconciler) scheduleActions(topCtx context.Context, obj *v1alpha1.Workf
 		r.Logger.Info("Process Action", "type", action.ActionType, "name", action.Name, "depends", action.Depends)
 
 		switch action.ActionType {
-		case "Wait": // Wait command will block the entire controller
+		case "Wait": // Expect command will block the entire controller
 			err = r.wait(ctx, obj, *action.Wait)
 
 		case "ServiceGroup":
@@ -48,11 +48,17 @@ func (r *Reconciler) scheduleActions(topCtx context.Context, obj *v1alpha1.Workf
 
 func (r *Reconciler) wait(ctx context.Context, w *v1alpha1.Workflow, spec v1alpha1.WaitSpec) error {
 	if len(spec.Complete) > 0 {
-		common.WaitLifecycle(ctx, w.GetUID(), &v1alpha1.ServiceGroup{}, v1alpha1.Complete, spec.Complete...)
+		err := common.GetLifecycle(ctx, w.GetUID(), &v1alpha1.ServiceGroup{}, spec.Complete...).Expect(v1alpha1.Complete)
+		if err != nil {
+			return errors.Wrapf(err, "wait error")
+		}
 	}
 
 	if len(spec.Running) > 0 {
-		common.WaitLifecycle(ctx, w.GetUID(), &v1alpha1.ServiceGroup{}, v1alpha1.Running, spec.Running...)
+		err := common.GetLifecycle(ctx, w.GetUID(), &v1alpha1.ServiceGroup{}, spec.Running...).Expect(v1alpha1.Running)
+		if err != nil {
+			return errors.Wrapf(err, "wait error")
+		}
 	}
 
 	if spec.Duration != nil {
@@ -100,7 +106,9 @@ func (r *Reconciler) stop(ctx context.Context, obj *v1alpha1.Workflow, action v1
 	// Resolve affected services
 	services := service.Select(ctx, service.ParseMacro(action.Stop.Macro))
 	if len(services) == 0 {
-		return errors.Errorf("no services to stop")
+		r.Logger.Info("no services to stop", "action", action.Name)
+
+		return nil
 	}
 
 	if action.Depends != nil {
@@ -132,6 +140,7 @@ func (r *Reconciler) stop(ctx context.Context, obj *v1alpha1.Workflow, action v1
 				return errors.Wrapf(err, "cannot delete service %s", service.GetName())
 			}
 		}
+
 		return nil
 	}
 

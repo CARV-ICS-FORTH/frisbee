@@ -57,8 +57,8 @@ func (r *Reconciler) create(ctx context.Context, obj *v1alpha1.ServiceGroup) (ct
 		serviceKeys[i] = service.GetName()
 	}
 
-	if err := common.UpdateLifecycle(ctx, obj, &v1alpha1.Service{}, serviceKeys...); err != nil {
-		return common.Failed(ctx, obj, err)
+	if err := common.GetLifecycle(ctx, obj.GetUID(), &v1alpha1.Service{}, serviceKeys...).UpdateParent(obj); err != nil {
+		return common.Failed(ctx, obj, errors.Wrapf(err, "lifecycle failed"))
 	}
 
 	return common.DoNotRequeue()

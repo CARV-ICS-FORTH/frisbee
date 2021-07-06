@@ -51,10 +51,13 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return r.create(ctx, &obj)
 
 	case v1alpha1.Running: // if we're here, then we're either still running or haven't started yet
-		r.Logger.Info("Service is already running",
-			"name", obj.GetName(),
-			"CreationTimestamp", obj.CreationTimestamp.String(),
-		)
+		/*
+			r.Logger.Info("Service is already running",
+				"name", obj.GetName(),
+				"CreationTimestamp", obj.CreationTimestamp.String(),
+			)
+
+		*/
 
 		return common.DoNotRequeue()
 

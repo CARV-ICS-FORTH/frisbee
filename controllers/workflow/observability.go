@@ -9,6 +9,7 @@ import (
 	"github.com/fnikolai/frisbee/controllers/common/selector/template"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // {{{ Internal types
@@ -83,11 +84,27 @@ func (r *Reconciler) installGrafana(ctx context.Context, obj *v1alpha1.Workflow)
 		return errors.Wrapf(err, "unable to create Grafana")
 	}
 
-	if err := common.WaitLifecycle(ctx, obj.GetUID(), &grafana, v1alpha1.Running, grafana.GetName()); err != nil {
+	if err := common.GetLifecycle(ctx, obj.GetUID(), &grafana, grafana.GetName()).Expect(v1alpha1.Running); err != nil {
 		return errors.Wrapf(err, "grafana is not running")
 	}
 
-	obj.Status.GrafanaURL = grafana.Status.IP
+	// inspect pod and get ip
+	var pod corev1.Pod
+
+	key := client.ObjectKey{
+		Namespace: grafana.GetNamespace(),
+		Name:      grafana.GetName(), // fixme: we assume here that the pod is named after the service
+	}
+
+	if err := r.Client.Get(ctx, key, &pod); err != nil {
+		return errors.Wrapf(err, "pod inspection failed")
+	}
+
+	if pod.Status.PodIP == "" {
+		return errors.Errorf("IP acquisition failed")
+	}
+
+	obj.Status.GrafanaURL = pod.Status.PodIP
 
 	return nil
 }
@@ -101,19 +118,20 @@ func (r *Reconciler) importDashboards(ctx context.Context, obj *v1alpha1.Workflo
 		configMap.Data = make(map[string]string, len(obj.Spec.ImportMonitors))
 
 		for _, monRef := range obj.Spec.ImportMonitors {
-			if monSpec := template.SelectMonitor(ctx, template.ParseRef(monRef)); monSpec != nil {
-				configMap.Data[monSpec.Dashboard.File] = string(monSpec.Dashboard.Payload)
-			} else {
-				return errors.Errorf("unable to find monitor %s", monRef)
+			monSpec := template.SelectMonitor(ctx, template.ParseRef(monRef))
+			if monSpec == nil {
+				return errors.Errorf("monitor failed")
 			}
+
+			configMap.Data[monSpec.Dashboard.File] = monSpec.Dashboard.Payload
 		}
 
 		if err := common.SetOwner(obj, &configMap, "dashboards"); err != nil {
-			return errors.Wrapf(err, "unable to set configmap ownership for %s", obj.GetName())
+			return errors.Wrapf(err, "ownership failed")
 		}
 
 		if err := r.Client.Create(ctx, &configMap); err != nil {
-			return errors.Wrapf(err, "unable to create dashboard configmap for %s", obj.GetName())
+			return errors.Wrapf(err, "configmap failed")
 		}
 	}
 
