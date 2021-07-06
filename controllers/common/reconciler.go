@@ -149,7 +149,7 @@ func SetOwner(parent, child metav1.Object, name string) error {
 func Chaos(ctx context.Context, obj InnerObject) (ctrl.Result, error) {
 	status := obj.GetStatus()
 
-	status.Phase = v1alpha1.Chaos
+	status.Phase = v1alpha1.PhaseChaos
 	status.Reason = "Expect controlled failures"
 
 	obj.SetStatus(status)
@@ -161,7 +161,7 @@ func Chaos(ctx context.Context, obj InnerObject) (ctrl.Result, error) {
 func Running(ctx context.Context, obj InnerObject) (ctrl.Result, error) {
 	status := obj.GetStatus()
 
-	status.Phase = v1alpha1.Running
+	status.Phase = v1alpha1.PhaseRunning
 	status.Reason = "OK"
 
 	obj.SetStatus(status)
@@ -173,7 +173,7 @@ func Running(ctx context.Context, obj InnerObject) (ctrl.Result, error) {
 func Success(ctx context.Context, obj InnerObject) (ctrl.Result, error) {
 	status := obj.GetStatus()
 
-	status.Phase = v1alpha1.Complete
+	status.Phase = v1alpha1.PhaseComplete
 	status.Reason = "All children are complete"
 
 	obj.SetStatus(status)
@@ -186,7 +186,7 @@ func Failed(ctx context.Context, obj InnerObject, err error) (ctrl.Result, error
 	runtimeutil.HandleError(errors.Wrapf(err, "object %s failed", obj.GetName()))
 
 	status := obj.GetStatus()
-	status.Phase = v1alpha1.Failed
+	status.Phase = v1alpha1.PhaseFailed
 	status.Reason = err.Error()
 
 	obj.SetStatus(status)

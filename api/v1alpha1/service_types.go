@@ -36,12 +36,6 @@ type ServiceSpec struct {
 	// MonitorTemplateRef is a list of references to monitoring packages
 	// +optional
 	MonitorTemplateRefs []string `json:"monitorTemplateRef,omitempty"`
-	/*
-		// Sidecars are containers that provide additional functionalities to the application
-		// +optional
-		Sidecars []v1.Container `json:"sidecars,omitempty"`
-
-	*/
 
 	// Domain specifies the location where Service will be placed. For this to work,
 	// the nodes included in the domain must have the label domain:{{domain-name}}

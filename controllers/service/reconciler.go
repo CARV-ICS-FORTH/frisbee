@@ -47,10 +47,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	// The reconcile logic
 	switch obj.Status.Phase {
-	case v1alpha1.Uninitialized:
+	case v1alpha1.PhaseUninitialized:
 		return r.create(ctx, &obj)
 
-	case v1alpha1.Running: // if we're here, then we're either still running or haven't started yet
+	case v1alpha1.PhaseRunning: // if we're here, then we're either still running or haven't started yet
 		/*
 			r.Logger.Info("Service is already running",
 				"name", obj.GetName(),
@@ -61,7 +61,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		return common.DoNotRequeue()
 
-	case v1alpha1.Complete: // If we're Complete but not deleted yet, nothing to do but return
+	case v1alpha1.PhaseComplete: // If we're PhaseComplete but not deleted yet, nothing to do but return
 		r.Logger.Info("Service completed", "name", obj.GetName())
 
 		if err := r.Client.Delete(ctx, &obj); err != nil {
@@ -70,13 +70,13 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		return common.DoNotRequeue()
 
-	case v1alpha1.Failed: // if we're here, then something went completely wrong
+	case v1alpha1.PhaseFailed: // if we're here, then something went completely wrong
 		r.Logger.Info("Service failed", "name", obj.GetName())
 
 		return common.DoNotRequeue()
 
-	case v1alpha1.Chaos: // if we're here, a controlled failure has occurred.
-		r.Logger.Info("Service consumed by Chaos", "service", obj.GetName())
+	case v1alpha1.PhaseChaos: // if we're here, a controlled failure has occurred.
+		r.Logger.Info("Service consumed by PhaseChaos", "service", obj.GetName())
 
 		return common.DoNotRequeue()
 
@@ -108,7 +108,7 @@ func (r *Reconciler) create(ctx context.Context, obj *v1alpha1.Service) (ctrl.Re
 	/*
 		go func() {
 			time.Sleep(30 * time.Second)
-			r.changePhase(ctx, obj, v1alpha1.Running, "Started")
+			r.changePhase(ctx, obj, v1alpha1.PhaseRunning, "Started")
 
 			wait := 30 * time.Second
 			if strings.HasPrefix(obj.GetName(), "masters") {
@@ -119,7 +119,7 @@ func (r *Reconciler) create(ctx context.Context, obj *v1alpha1.Service) (ctrl.Re
 			case <-ctx.Done():
 				return
 			case <-time.After(wait):
-				r.changePhase(ctx, obj, v1alpha1.Complete, "mock time elapsed")
+				r.changePhase(ctx, obj, v1alpha1.PhaseComplete, "mock time elapsed")
 				return
 			}
 		}()

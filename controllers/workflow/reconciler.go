@@ -52,8 +52,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	// The reconcile logic
 	switch obj.Status.Phase {
-	case v1alpha1.Uninitialized: // We haven't started yet
-		logrus.Warn("Why is Uninitialized called against ?")
+	case v1alpha1.PhaseUninitialized: // We haven't started yet
+		logrus.Warn("Why is PhaseUninitialized called against ?")
 
 		if action := obj.Spec.Actions[len(obj.Spec.Actions)-1]; action.ActionType != "Wait" {
 			return common.Failed(ctx, &obj, errors.New("All experiments must end with a wait function"))
@@ -69,7 +69,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		return common.DoNotRequeue()
 
-	case v1alpha1.Running: // if we're here, then we're either still running or haven't started yet
+	case v1alpha1.PhaseRunning: // if we're here, then we're either still running or haven't started yet
 		r.Logger.Info("Workflow is already running",
 			"name", obj.GetName(),
 			"CreationTimestamp", obj.CreationTimestamp.String(),
@@ -77,7 +77,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		return common.DoNotRequeue()
 
-	case v1alpha1.Complete: // If we're Complete but not deleted yet, nothing to do but return
+	case v1alpha1.PhaseComplete: // If we're PhaseComplete but not deleted yet, nothing to do but return
 		r.Logger.Info("Workflow Completed", "name", obj.GetName(), "time", time.Now())
 
 		logrus.Warn("-- DONE --")
@@ -90,8 +90,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		return common.DoNotRequeue()
 
-	case v1alpha1.Failed: // if we're here, then something went completely wrong
-		r.Logger.Error(errors.New(obj.Status.Reason), "Workflow Failed", "name", obj.GetName(), "time", time.Now())
+	case v1alpha1.PhaseFailed: // if we're here, then something went completely wrong
+		r.Logger.Error(errors.New(obj.Status.Reason), "Workflow PhaseFailed", "name", obj.GetName(), "time", time.Now())
 
 		// FIXME: it should send a "suspend command"
 		/*
@@ -103,7 +103,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		return common.DoNotRequeue()
 
-	case v1alpha1.Chaos: // if we're here, a controlled failure has occurred.
+	case v1alpha1.PhaseChaos: // if we're here, a controlled failure has occurred.
 		r.Logger.Info("Workflow failed gracefully", "name", obj.GetName())
 
 		return common.DoNotRequeue()

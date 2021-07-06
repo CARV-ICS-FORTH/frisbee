@@ -19,22 +19,22 @@ func convert(obj interface{}) v1alpha1.EtherStatus {
 
 	switch pod.Status.Phase {
 	case corev1.PodPending:
-		status.Phase = v1alpha1.Uninitialized
+		status.Phase = v1alpha1.PhaseUninitialized
 
 	case corev1.PodRunning:
-		status.Phase = v1alpha1.Running
+		status.Phase = v1alpha1.PhaseRunning
 		status.StartTime = pod.GetDeletionTimestamp()
 
 	case corev1.PodSucceeded:
-		status.Phase = v1alpha1.Complete
+		status.Phase = v1alpha1.PhaseComplete
 		status.StartTime = pod.GetDeletionTimestamp()
 
 	case corev1.PodFailed:
-		status.Phase = v1alpha1.Failed
+		status.Phase = v1alpha1.PhaseFailed
 		status.StartTime = pod.GetDeletionTimestamp()
 
 	case corev1.PodUnknown:
-		status.Phase = v1alpha1.Failed
+		status.Phase = v1alpha1.PhaseFailed
 	}
 
 	return status

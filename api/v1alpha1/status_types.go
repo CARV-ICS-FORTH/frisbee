@@ -8,37 +8,37 @@ import (
 type Phase string
 
 // These are the valid statuses of services. The following lifecycles are valid:
-// Uninitialized -> Failed
-// Uninitialized -> Running* -> Completed
-// Uninitialized -> Running* -> Failed
-// Uninitialized -> Chaos* -> Completed
-// Uninitialized -> Running* -> Chaos -> Completed
+// PhaseUninitialized -> PhaseFailed
+// PhaseUninitialized -> PhaseRunning* -> Completed
+// PhaseUninitialized -> PhaseRunning* -> PhaseFailed
+// PhaseUninitialized -> PhaseChaos* -> Completed
+// PhaseUninitialized -> PhaseRunning* -> PhaseChaos -> Completed
 // The asterix (*) Indicate that the same phase may appear recursively.
 const (
-	// Uninitialized means that the service has been accepted by the system, but one or more of the containers
+	// PhaseUninitialized means that the service has been accepted by the system, but one or more of the containers
 	// has not been started. This includes time before being bound to a node, as well as time spent
 	// pulling images onto the host.
-	Uninitialized Phase = ""
+	PhaseUninitialized = Phase("")
 
-	// Running means the services has been bound to a node and all of the containers have been started.
+	// PhaseRunning means the services has been bound to a node and all of the containers have been started.
 	// At least one container is still running or is in the process of being restarted.
-	Running Phase = "Running"
+	PhaseRunning = Phase("PhaseRunning")
 
-	// Complete means that all containers in the pod have voluntarily terminated
+	// PhaseComplete means that all containers in the pod have voluntarily terminated
 	// with a container exit code of 0, and the system is not going to restart any of these containers.
-	Complete Phase = "Complete"
+	PhaseComplete = Phase("PhaseComplete")
 
-	// Failed means that all containers in the pod have terminated, and at least one container has
+	// PhaseFailed means that all containers in the pod have terminated, and at least one container has
 	// terminated in a failure (exited with a non-zero exit code or was stopped by the system).
-	Failed Phase = "Failed"
+	PhaseFailed = Phase("PhaseFailed")
 
-	// Chaos indicates a managed abnormal condition such STOP or KILL. In this phase, the controller ignores
+	// PhaseChaos indicates a managed abnormal condition such STOP or KILL. In this phase, the controller ignores
 	// any subsequent failures and let the system under evaluation to progress as it can.
-	Chaos Phase = "Chaos"
+	PhaseChaos = Phase("PhaseChaos")
 )
 
 type EtherStatus struct {
-	// +kubebuilder:validation:Enum=Running;Complete;Failed;Chaos
+	// +kubebuilder:validation:Enum=PhaseRunning;PhaseComplete;PhaseFailed;PhaseChaos
 	Phase Phase `json:"phase,omitempty"`
 
 	// A brief CamelCase message indicating details about why the service is in this Phase.

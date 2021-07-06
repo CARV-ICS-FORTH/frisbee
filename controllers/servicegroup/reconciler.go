@@ -44,12 +44,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	// The reconcile logic
 	switch obj.Status.Phase {
-	case v1alpha1.Uninitialized:
+	case v1alpha1.PhaseUninitialized:
 		r.Logger.Info("ServiceGroup group", "name", obj.GetName())
 
 		return r.create(ctx, &obj)
 
-	case v1alpha1.Running: // if we're here, then we're either still running or haven't started yet
+	case v1alpha1.PhaseRunning: // if we're here, then we're either still running or haven't started yet
 		r.Logger.Info("ServiceGroup is already running",
 			"name", obj.GetName(),
 			"CreationTimestamp", obj.CreationTimestamp.String(),
@@ -57,7 +57,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		return common.DoNotRequeue()
 
-	case v1alpha1.Complete: // If we're Complete but not deleted yet, nothing to do but return
+	case v1alpha1.PhaseComplete: // If we're PhaseComplete but not deleted yet, nothing to do but return
 		r.Logger.Info("Group completed", "name", obj.GetName())
 
 		/*
@@ -68,12 +68,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		return common.DoNotRequeue()
 
-	case v1alpha1.Failed: // if we're here, then something went completely wrong
+	case v1alpha1.PhaseFailed: // if we're here, then something went completely wrong
 		r.Logger.Info("Group failed", "name", obj.GetName())
 
 		return common.DoNotRequeue()
 
-	case v1alpha1.Chaos: // if we're here, a controlled failure has occurred.
+	case v1alpha1.PhaseChaos: // if we're here, a controlled failure has occurred.
 		r.Logger.Info("ServiceGroup failed gracefully", "name", obj.GetName())
 
 		return common.DoNotRequeue()

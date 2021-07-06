@@ -72,10 +72,10 @@ spec:
               phase:
                 description: Phase is the current status of an object
                 enum:
-                - Running
-                - Complete
-                - Failed
-                - Chaos
+                - PhaseRunning
+                - PhaseComplete
+                - PhaseFailed
+                - PhaseChaos
                 type: string
               reason:
                 description: A brief CamelCase message indicating details about why

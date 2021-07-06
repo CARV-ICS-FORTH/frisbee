@@ -48,14 +48,14 @@ func (r *Reconciler) scheduleActions(topCtx context.Context, obj *v1alpha1.Workf
 
 func (r *Reconciler) wait(ctx context.Context, w *v1alpha1.Workflow, spec v1alpha1.WaitSpec) error {
 	if len(spec.Complete) > 0 {
-		err := common.GetLifecycle(ctx, w.GetUID(), &v1alpha1.ServiceGroup{}, spec.Complete...).Expect(v1alpha1.Complete)
+		err := common.GetLifecycle(ctx, w.GetUID(), &v1alpha1.ServiceGroup{}, spec.Complete...).Expect(v1alpha1.PhaseComplete)
 		if err != nil {
 			return errors.Wrapf(err, "wait error")
 		}
 	}
 
 	if len(spec.Running) > 0 {
-		err := common.GetLifecycle(ctx, w.GetUID(), &v1alpha1.ServiceGroup{}, spec.Running...).Expect(v1alpha1.Running)
+		err := common.GetLifecycle(ctx, w.GetUID(), &v1alpha1.ServiceGroup{}, spec.Running...).Expect(v1alpha1.PhaseRunning)
 		if err != nil {
 			return errors.Wrapf(err, "wait error")
 		}
@@ -120,7 +120,7 @@ func (r *Reconciler) stop(ctx context.Context, obj *v1alpha1.Workflow, action v1
 	// Without Schedule
 	if action.Stop.Schedule == nil {
 		for i := 0; i < len(services); i++ {
-			// Change service Phase to Chaos so to ignore the failure caused by the following deletion.
+			// Change service Phase to PhaseChaos so to ignore the failure caused by the following deletion.
 			_, _ = common.Chaos(ctx, &services[i])
 
 			if err := r.Client.Delete(ctx, &services[i]); err != nil {

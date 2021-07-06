@@ -145,6 +145,10 @@ spec:
                 items:
                   type: string
                 type: array
+              ingress:
+                description: 'Ingress defines external access to the services in a
+                  cluster, typically HTTP Example: grafana.localhost, grafana.{MYIP}.nip.io,'
+                type: string
             required:
             - actions
             type: object
@@ -161,10 +165,10 @@ spec:
               phase:
                 description: Phase is the current status of an object
                 enum:
-                - Running
-                - Complete
-                - Failed
-                - Chaos
+                - PhaseRunning
+                - PhaseComplete
+                - PhaseFailed
+                - PhaseChaos
                 type: string
               reason:
                 description: A brief CamelCase message indicating details about why

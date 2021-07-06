@@ -86,27 +86,27 @@ func (lc *ManagedLifecycle) UpdateParent(parent InnerObject) error {
 			)
 
 			switch phase {
-			case v1alpha1.Uninitialized:
+			case v1alpha1.PhaseUninitialized:
 				panic("this should not happen")
 
-			case v1alpha1.Running:
+			case v1alpha1.PhaseRunning:
 				_, _ = Running(lc.ctx, parent)
 				phase, msg, valid = lc.n.getNextRunning()
 
-			case v1alpha1.Complete:
+			case v1alpha1.PhaseComplete:
 				_, _ = Success(lc.ctx, parent)
 
 				return
 
-			case v1alpha1.Failed:
+			case v1alpha1.PhaseFailed:
 				_, _ = Failed(lc.ctx, parent, errors.Wrapf(msg, "at least one child has failed"))
 
 				return
 
-			case v1alpha1.Chaos:
+			case v1alpha1.PhaseChaos:
 				_, _ = Chaos(lc.ctx, parent)
 
-				// If the parent is in Chaos mode, it means that failing conditions are expected and therefore
+				// If the parent is in PhaseChaos mode, it means that failing conditions are expected and therefore
 				// do not cause a failure to the controller. Instead, they should be handled by the system under evaluation.
 				common.logger.Info("Expected abnormal event",
 					"parent", parent.GetName(),
@@ -143,24 +143,24 @@ func (lc *ManagedLifecycle) Expect(expect v1alpha1.Phase) error {
 		case phase == expect:
 			return nil // correct phase
 
-		case valid != nil:
-			return valid // the transition is invalid
-
 		case errors.Is(valid, errIsFinal): // the transition is valid, but is not the expected one
 			return errors.Errorf("expected %s but got %s (%s)", expect, phase, msg)
+
+		case valid != nil:
+			return valid // the transition is invalid
 		}
 
 		switch phase {
-		case v1alpha1.Uninitialized, v1alpha1.Chaos:
+		case v1alpha1.PhaseUninitialized, v1alpha1.PhaseChaos:
 			panic(errors.Errorf("cannot wait on phase %s", expect))
 
-		case v1alpha1.Running:
+		case v1alpha1.PhaseRunning:
 			phase, msg, valid = lc.n.getNextRunning()
 
-		case v1alpha1.Complete:
+		case v1alpha1.PhaseComplete:
 			phase, msg, valid = lc.n.getNextComplete()
 
-		case v1alpha1.Failed:
+		case v1alpha1.PhaseFailed:
 			phase, msg, valid = lc.n.getNextFailed()
 
 		default:
@@ -301,10 +301,10 @@ func (n *notifier) watchChildrenPhase(obj interface{}) {
 	)
 
 	switch status.Phase {
-	case v1alpha1.Uninitialized, v1alpha1.Chaos:
+	case v1alpha1.PhaseUninitialized, v1alpha1.PhaseChaos:
 		return
 
-	case v1alpha1.Running:
+	case v1alpha1.PhaseRunning:
 		ch := n.childrenRunning[object.GetName()]
 		if ch == nil {
 			return
@@ -314,7 +314,7 @@ func (n *notifier) watchChildrenPhase(obj interface{}) {
 
 		close(ch)
 
-	case v1alpha1.Complete:
+	case v1alpha1.PhaseComplete:
 		ch := n.childrenComplete[object.GetName()]
 		if ch == nil {
 			return
@@ -324,7 +324,7 @@ func (n *notifier) watchChildrenPhase(obj interface{}) {
 
 		close(ch)
 
-	case v1alpha1.Failed:
+	case v1alpha1.PhaseFailed:
 		if status.Reason == "" {
 			status.Reason = "see the logs of failing pod."
 		}
@@ -340,16 +340,16 @@ func (n *notifier) watchChildrenPhase(obj interface{}) {
 func (n *notifier) getNextPhase() (v1alpha1.Phase, error) {
 	select {
 	case <-n.parentRunning:
-		return v1alpha1.Running, nil
+		return v1alpha1.PhaseRunning, nil
 
 	case <-n.parentComplete:
-		return v1alpha1.Complete, nil
+		return v1alpha1.PhaseComplete, nil
 
 	case err := <-n.failed:
-		return v1alpha1.Failed, err
+		return v1alpha1.PhaseFailed, err
 
 	case err := <-n.chaos:
-		return v1alpha1.Chaos, err
+		return v1alpha1.PhaseChaos, err
 	}
 }
 
@@ -357,17 +357,17 @@ func (n *notifier) getNextPhase() (v1alpha1.Phase, error) {
 func (n *notifier) getNextUninitialized() (phase v1alpha1.Phase, msg error, valid error) {
 	select {
 	case <-n.parentRunning:
-		return v1alpha1.Running, nil, nil
+		return v1alpha1.PhaseRunning, nil, nil
 
 	case <-n.parentComplete:
-		return v1alpha1.Complete, nil,
-			errors.Errorf("invalid transitiom %s -> %s", v1alpha1.Uninitialized, v1alpha1.Complete)
+		return v1alpha1.PhaseComplete, nil,
+			errors.Errorf("invalid transitiom %s -> %s", v1alpha1.PhaseUninitialized, v1alpha1.PhaseComplete)
 
 	case err := <-n.failed:
-		return v1alpha1.Failed, err, nil
+		return v1alpha1.PhaseFailed, err, nil
 
 	case err := <-n.chaos:
-		return v1alpha1.Chaos, err, nil
+		return v1alpha1.PhaseChaos, err, nil
 	}
 }
 
@@ -375,48 +375,48 @@ func (n *notifier) getNextUninitialized() (phase v1alpha1.Phase, msg error, vali
 func (n *notifier) getNextRunning() (phase v1alpha1.Phase, msg error, valid error) {
 	select {
 	// ignore this case as it will lead to a loop
-	// case <-n.parentRunning:  return v1alpha1.Running, nil, nil
+	// case <-n.parentRunning:  return v1alpha1.PhaseRunning, nil, nil
 
 	case <-n.parentComplete:
-		return v1alpha1.Complete, nil, nil
+		return v1alpha1.PhaseComplete, nil, nil
 
 	case err := <-n.failed:
-		return v1alpha1.Failed, err, nil
+		return v1alpha1.PhaseFailed, err, nil
 
 	case err := <-n.chaos:
-		return v1alpha1.Chaos, err, nil
+		return v1alpha1.PhaseChaos, err, nil
 	}
 }
 
 var errIsFinal = errors.New("phase is final")
 
-// listen for all the expected transition from Complete.
+// listen for all the expected transition from PhaseComplete.
 func (n *notifier) getNextComplete() (phase v1alpha1.Phase, msg error, valid error) {
-	return v1alpha1.Complete, nil, errIsFinal
+	return v1alpha1.PhaseComplete, nil, errIsFinal
 }
 
 // listen for all the expected transition from Failed.
 func (n *notifier) getNextFailed() (phase v1alpha1.Phase, msg error, valid error) {
-	return v1alpha1.Failed, nil, errIsFinal
+	return v1alpha1.PhaseFailed, nil, errIsFinal
 }
 
 // listen for all the expected transition from Chaos.
 func (n *notifier) getNextChaos() (phase v1alpha1.Phase, msg error, valid error) {
 	select {
 	case <-n.parentRunning:
-		return v1alpha1.Running, nil,
-			errors.Errorf("invalid transition %s -> %s", v1alpha1.Chaos, v1alpha1.Running)
+		return v1alpha1.PhaseRunning, nil,
+			errors.Errorf("invalid transition %s -> %s", v1alpha1.PhaseChaos, v1alpha1.PhaseRunning)
 
 	case <-n.parentComplete:
-		return v1alpha1.Complete, nil, nil
+		return v1alpha1.PhaseComplete, nil, nil
 
 	case err := <-n.failed:
-		return v1alpha1.Failed, err,
-			errors.Errorf("invalid transition %s -> %s", v1alpha1.Chaos, v1alpha1.Failed)
+		return v1alpha1.PhaseFailed, err,
+			errors.Errorf("invalid transition %s -> %s", v1alpha1.PhaseChaos, v1alpha1.PhaseFailed)
 
 		// ignore this case as it will lead to a loop
 		// case err := <-n.chaos:
-		//	return v1alpha1.Chaos, err, nil
+		//	return v1alpha1.PhaseChaos, err, nil
 	}
 }
 

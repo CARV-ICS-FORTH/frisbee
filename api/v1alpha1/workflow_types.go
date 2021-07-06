@@ -31,6 +31,10 @@ type WorkflowSpec struct {
 
 	// Actions are the tasks that will be taken.
 	Actions []Action `json:"actions"`
+
+	// Ingress defines external access to the services in a cluster, typically HTTP
+	// Example: grafana.localhost, grafana.{MYIP}.nip.io,
+	Ingress string `json:"ingress,omitempty"`
 }
 
 // Action delegates arguments to the proper action handler
