@@ -17,6 +17,49 @@ import (
 // ErrInvalidArgs indicate an error with calling arguments
 var ErrInvalidArgs = errors.New("invalid arguments")
 
+// InnerObject is an object that is managed and recognized by Frisbee (including services, servicegroups, ...)
+type InnerObject interface {
+	client.Object
+	GetStatus() v1alpha1.EtherStatus
+	SetStatus(v1alpha1.EtherStatus)
+}
+
+// ExternalToInnerObject is a wrapper for converting external objects (e.g, Pods) to InnerObjects managed
+// by the Frisbee controller
+type ExternalToInnerObject struct {
+	client.Object
+
+	StatusFunc func(obj interface{}) v1alpha1.EtherStatus
+}
+
+func (d *ExternalToInnerObject) GetStatus() v1alpha1.EtherStatus {
+	return d.StatusFunc(d.Object)
+}
+
+func (d *ExternalToInnerObject) SetStatus(v1alpha1.EtherStatus) {
+	panic(errors.Errorf("cannot set status on external object"))
+}
+
+func unwrap(obj client.Object) client.Object {
+	wrapped, ok := obj.(*ExternalToInnerObject)
+	if ok {
+		return wrapped.Object
+	}
+
+	return obj
+}
+
+func accessStatus(obj interface{}) func(interface{}) v1alpha1.EtherStatus {
+	external, ok := obj.(*ExternalToInnerObject)
+	if ok {
+		return external.StatusFunc
+	}
+
+	return func(inner interface{}) v1alpha1.EtherStatus {
+		return inner.(InnerObject).GetStatus()
+	}
+}
+
 func GetLifecycle(ctx context.Context, parentUID types.UID, child InnerObject, childrenNames ...string) *ManagedLifecycle {
 	if child == nil || len(childrenNames) == 0 {
 		common.logger.Error(ErrInvalidArgs, "lifecycle error")
@@ -34,12 +77,12 @@ func GetLifecycle(ctx context.Context, parentUID types.UID, child InnerObject, c
 
 	handlers := eventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
-			trackAdd(obj)
+			annotateAdd(obj)
 			n.watchChildrenPhase(obj)
 		},
 		UpdateFunc: n.watchChildrenPhase,
 		DeleteFunc: func(obj interface{}) {
-			trackDelete(obj)
+			annotateDelete(obj)
 			n.watchChildrenPhase(obj)
 		},
 	}
@@ -144,6 +187,10 @@ func (lc *ManagedLifecycle) Expect(expect v1alpha1.Phase) error {
 			return nil // correct phase
 
 		case errors.Is(valid, errIsFinal): // the transition is valid, but is not the expected one
+			if msg == nil {
+				return errors.Errorf("expected %s but got %s", expect, phase)
+			}
+
 			return errors.Errorf("expected %s but got %s (%s)", expect, phase, msg)
 
 		case valid != nil:
@@ -418,25 +465,4 @@ func (n *notifier) getNextChaos() (phase v1alpha1.Phase, msg error, valid error)
 		// case err := <-n.chaos:
 		//	return v1alpha1.PhaseChaos, err, nil
 	}
-}
-
-func trackAdd(obj interface{}) {
-	objMeta := obj.(metav1.Object)
-
-	common.logger.Info("Child Added",
-		"kind", reflect.TypeOf(obj),
-		"name", objMeta.GetName(),
-	)
-
-	// todo: add Grafana annotations
-}
-
-func trackDelete(obj interface{}) {
-	objMeta := obj.(metav1.Object)
-
-	common.logger.Info("Child Deleted",
-		"kind", reflect.TypeOf(obj),
-		"name", objMeta.GetName(),
-	)
-	// todo: add Grafana annotations
 }

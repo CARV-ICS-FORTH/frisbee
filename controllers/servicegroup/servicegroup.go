@@ -19,17 +19,23 @@ func (r *Reconciler) create(ctx context.Context, obj *v1alpha1.ServiceGroup) (ct
 		return common.DoNotRequeue()
 	}
 
-	// validate service requests (resolve instances, inputs, and env variables)
-	if obj.Spec.Instances == 0 && len(obj.Spec.Inputs) == 0 {
-		return common.Failed(ctx, obj, errors.New("at least one of instances || inputs must be defined"))
-	}
-
-	if obj.Spec.Instances > 0 && len(obj.Spec.Inputs) > 1 {
-		return common.Failed(ctx, obj, errors.New("only one input is allows when Instances is defined"))
-	}
-
-	if len(obj.Spec.Inputs) > 0 {
+	// all inputs are explicitly defined. no instances were given
+	if obj.Spec.Instances == 0 {
+		if len(obj.Spec.Inputs) == 0 {
+			return common.Failed(ctx, obj, errors.New("at least one of instances || inputs must be defined"))
+		}
 		obj.Spec.Instances = len(obj.Spec.Inputs)
+	}
+
+	// instances were given, with one explicit input
+	if len(obj.Spec.Inputs) == 1 {
+		inputs := make([]map[string]string, obj.Spec.Instances)
+
+		for i := 0; i < obj.Spec.Instances; i++ {
+			inputs[i] = obj.Spec.Inputs[0]
+		}
+
+		obj.Spec.Inputs = inputs
 	}
 
 	serviceKeys := make([]string, obj.Spec.Instances)

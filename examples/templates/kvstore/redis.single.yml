@@ -65,7 +65,6 @@ spec:
 
     # Failover agent
     "sentinel":
-      monitorTemplateRef: [ sysmon/container, redismon/telegraf ]
       container:
         name: app
         image: redis

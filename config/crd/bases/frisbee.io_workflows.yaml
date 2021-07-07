@@ -159,9 +159,6 @@ spec:
                 description: Most recently observed status of the object
                 format: date-time
                 type: string
-              grafana:
-                description: GrafanaURL points to the URL where Grafana is listening
-                type: string
               phase:
                 description: Phase is the current status of an object
                 enum:

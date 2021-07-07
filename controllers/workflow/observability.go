@@ -11,7 +11,6 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	netv1 "k8s.io/api/networking/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // {{{ Internal types
@@ -28,23 +27,42 @@ func (r *Reconciler) newMonitoringStack(ctx context.Context, obj *v1alpha1.Workf
 		return nil
 	}
 
-	var prom v1alpha1.Service
+	var prometheus v1alpha1.Service
 
-	if err := r.installPrometheus(ctx, obj, &prom); err != nil {
-		return err
+	if err := r.installPrometheus(ctx, obj, &prometheus); err != nil {
+		return errors.Wrapf(err, "prometheus error")
 	}
 
 	var grafana v1alpha1.Service
 
 	if err := r.installGrafana(ctx, obj, &grafana); err != nil {
-		return err
+		return errors.Wrapf(err, "grafana error")
 	}
 
-	if err := r.installIngress(ctx, obj, &prom, &grafana); err != nil {
-		return err
+	if err := r.installIngress(ctx, obj, &prometheus, &grafana); err != nil {
+		return errors.Wrapf(err, "ingress error")
 	}
 
-	r.Logger.Info("Monitoring stack is ready", "packages", obj.Spec.ImportMonitors)
+	// wait for prometheus and  grafana to start running and then proceed with the experiment
+	if err := common.GetLifecycle(ctx, obj.GetUID(), &prometheus, grafana.GetName()).
+		Expect(v1alpha1.PhaseRunning); err != nil {
+		return errors.Wrapf(err, "grafana is not running")
+	}
+
+	if err := common.GetLifecycle(ctx, obj.GetUID(), &grafana, grafana.GetName()).
+		Expect(v1alpha1.PhaseRunning); err != nil {
+		return errors.Wrapf(err, "grafana is not running")
+	}
+
+	apiURI := fmt.Sprintf("http://%s", virtualhost(grafana.GetName(), obj.Spec.Ingress))
+	if err := common.InitGrafana(ctx, apiURI); err != nil {
+		return errors.Wrapf(err, "annotations error")
+	}
+
+	r.Logger.Info("Monitoring stack is ready",
+		"packages", obj.Spec.ImportMonitors,
+		"grafana", apiURI,
+	)
 
 	return nil
 }
@@ -55,14 +73,14 @@ func (r *Reconciler) installPrometheus(ctx context.Context, obj *v1alpha1.Workfl
 		return errors.New("unable to find Grafana template")
 	}
 
-	prom.Spec = *prometheusSpec
+	prometheusSpec.DeepCopyInto(&prom.Spec)
 
 	if err := common.SetOwner(obj, prom, "prometheus"); err != nil {
-		return errors.Wrapf(err, "ownership failed %s", obj.GetName())
+		return errors.Wrapf(err, "ownership error")
 	}
 
 	if err := r.Create(ctx, prom); err != nil {
-		return errors.Wrapf(err, "unable to create prometheus")
+		return errors.Wrapf(err, "request error")
 	}
 
 	r.Logger.Info("Prometheus was installed")
@@ -73,13 +91,13 @@ func (r *Reconciler) installPrometheus(ctx context.Context, obj *v1alpha1.Workfl
 func (r *Reconciler) installGrafana(ctx context.Context, obj *v1alpha1.Workflow, grafana *v1alpha1.Service) error {
 	grafanaSpec := template.SelectService(ctx, template.ParseRef(grafanaTemplate))
 	if grafanaSpec == nil {
-		return errors.New("unable to find Grafana template")
+		return errors.New("unable to find template")
 	}
 
-	grafana.Spec = *grafanaSpec
+	grafanaSpec.DeepCopyInto(&grafana.Spec)
 
 	if err := common.SetOwner(obj, grafana, "grafana"); err != nil {
-		return errors.Wrapf(err, "ownership failed %s", obj.GetName())
+		return errors.Wrapf(err, "ownership error")
 	}
 
 	if err := r.importDashboards(ctx, obj, grafana); err != nil {
@@ -87,30 +105,8 @@ func (r *Reconciler) installGrafana(ctx context.Context, obj *v1alpha1.Workflow,
 	}
 
 	if err := r.Client.Create(ctx, grafana); err != nil {
-		return errors.Wrapf(err, "unable to create Grafana")
+		return errors.Wrapf(err, "request error")
 	}
-
-	if err := common.GetLifecycle(ctx, obj.GetUID(), grafana, grafana.GetName()).Expect(v1alpha1.PhaseRunning); err != nil {
-		return errors.Wrapf(err, "grafana is not running")
-	}
-
-	// inspect pod and get ip
-	var pod corev1.Pod
-
-	key := client.ObjectKey{
-		Namespace: grafana.GetNamespace(),
-		Name:      grafana.GetName(), // fixme: we assume here that the pod is named after the service
-	}
-
-	if err := r.Client.Get(ctx, key, &pod); err != nil {
-		return errors.Wrapf(err, "pod inspection failed")
-	}
-
-	if pod.Status.PodIP == "" {
-		return errors.Errorf("IP acquisition failed")
-	}
-
-	obj.Status.GrafanaURL = pod.Status.PodIP
 
 	return nil
 }
@@ -215,8 +211,6 @@ func (r *Reconciler) installIngress(ctx context.Context, obj *v1alpha1.Workflow,
 	if err := r.Client.Create(ctx, &ingress); err != nil {
 		return errors.Wrapf(err, "unable to create ingress")
 	}
-
-	// obj.Status.IngressLink = publicDNS
 
 	return nil
 }

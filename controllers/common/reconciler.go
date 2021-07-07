@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
+	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	k8errors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,6 +24,21 @@ func RequeueWithError(err error) (ctrl.Result, error) {
 	return ctrl.Result{}, errors.Wrapf(err, "requeue request")
 }
 
+// Reconciler implements basic functionality that is common to every solid reconciler (e.g, finalizers)
+type Reconciler interface {
+	client.Client
+	logr.Logger
+	Finalizer() string
+
+	// Finalize deletes any external resources associated with the service
+	// Examples finalizers include performing backups and deleting
+	// resources that are not owned by this CR, like a PVC.
+	//
+	// Ensure that delete implementation is idempotent and safe to invoke
+	// multiple times for same object
+	Finalize(object client.Object) error
+}
+
 // Reconcile provides the most common functions for all the Reconcilers. That includes acquisition of the CR object
 //  and management of the CR (Custom Resource) finalizers.
 //
@@ -37,7 +53,7 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 		if k8errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
-			r.Info("object not found", "name", req.NamespacedName)
+			// r.Info("object not found", "name", req.NamespacedName)
 
 			// Return and don't requeue
 			return DoNotRequeue()
@@ -216,7 +232,7 @@ func update(ctx context.Context, obj client.Object) (ctrl.Result, error) {
 		return DoNotRequeue()
 
 	default:
-		runtimeutil.HandleError(errors.Wrapf(err, "unable to update for %s [%s]",
+		runtimeutil.HandleError(errors.Wrapf(err, "update failed for %s [%s]",
 			obj.GetName(), obj.GetObjectKind().GroupVersionKind()))
 
 		return DoNotRequeue()
@@ -249,7 +265,7 @@ func updateStatus(ctx context.Context, obj client.Object) (ctrl.Result, error) {
 			return DoNotRequeue()
 
 		default:
-			runtimeutil.HandleError(errors.Wrapf(err, "unable to update status for %s [%s]",
+			runtimeutil.HandleError(errors.Wrapf(err, "status update failed for %s [%s]",
 				obj.GetName(), obj.GetObjectKind().GroupVersionKind()))
 
 			return DoNotRequeue()

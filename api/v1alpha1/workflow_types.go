@@ -87,10 +87,6 @@ type WaitSpec struct {
 
 type WorkflowStatus struct {
 	EtherStatus `json:",inline"`
-
-	// GrafanaURL points to the URL where Grafana is listening
-	// +optional
-	GrafanaURL string `json:"grafana,omitempty"`
 }
 
 func (s *Workflow) GetStatus() EtherStatus {

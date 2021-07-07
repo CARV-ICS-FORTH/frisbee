@@ -103,18 +103,18 @@ func (r *Reconciler) stop(ctx context.Context, obj *v1alpha1.Workflow, action v1
 		return errors.Errorf("invalid macro %s", action.Stop.Macro)
 	}
 
+	if action.Depends != nil {
+		if err := r.wait(ctx, obj, *action.Depends); err != nil {
+			return errors.Wrapf(err, "dependencies failed")
+		}
+	}
+
 	// Resolve affected services
 	services := service.Select(ctx, service.ParseMacro(action.Stop.Macro))
 	if len(services) == 0 {
 		r.Logger.Info("no services to stop", "action", action.Name)
 
 		return nil
-	}
-
-	if action.Depends != nil {
-		if err := r.wait(ctx, obj, *action.Depends); err != nil {
-			return errors.Wrapf(err, "dependencies failed")
-		}
 	}
 
 	// Without Schedule
