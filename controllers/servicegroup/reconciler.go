@@ -50,10 +50,14 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return r.create(ctx, &obj)
 
 	case v1alpha1.PhaseRunning: // if we're here, then we're either still running or haven't started yet
-		r.Logger.Info("ServiceGroup is already running",
+	/*
+		r.Logger.Info("Already running",
+			"kind", "servicegroup",
 			"name", obj.GetName(),
 			"CreationTimestamp", obj.CreationTimestamp.String(),
 		)
+
+	 */
 
 		return common.DoNotRequeue()
 

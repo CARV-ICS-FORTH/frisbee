@@ -70,10 +70,14 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return common.DoNotRequeue()
 
 	case v1alpha1.PhaseRunning: // if we're here, then we're either still running or haven't started yet
-		r.Logger.Info("Workflow is already running",
+	/*
+		r.Logger.Info("Already Running",
+			"kind", "workflow",
 			"name", obj.GetName(),
 			"CreationTimestamp", obj.CreationTimestamp.String(),
 		)
+
+	 */
 
 		return common.DoNotRequeue()
 

@@ -55,7 +55,7 @@ func (r *Reconciler) newMonitoringStack(ctx context.Context, obj *v1alpha1.Workf
 	}
 
 	apiURI := fmt.Sprintf("http://%s", virtualhost(grafana.GetName(), obj.Spec.Ingress))
-	if err := common.InitGrafana(ctx, apiURI); err != nil {
+	if err := common.EnableAnnotations(ctx, apiURI); err != nil {
 		return errors.Wrapf(err, "annotations error")
 	}
 

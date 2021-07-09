@@ -142,7 +142,7 @@ func (lc *ManagedLifecycle) UpdateParent(parent InnerObject) error {
 				return
 
 			case v1alpha1.PhaseFailed:
-				_, _ = Failed(lc.ctx, parent, errors.Wrapf(msg, "at least one child has failed"))
+				_, _ = Failed(lc.ctx, parent, msg)
 
 				return
 
@@ -223,6 +223,7 @@ type eventHandlerFuncs struct {
 }
 
 func watchLifecycle(ctx context.Context, parentUID types.UID, child client.Object, handlers eventHandlerFuncs) error {
+
 	informer, err := common.cache.GetInformer(ctx, child)
 	if err != nil {
 		return errors.Wrapf(err, "unable to get informer")

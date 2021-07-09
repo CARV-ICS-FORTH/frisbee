@@ -1,0 +1,81 @@
+---
+apiVersion: frisbee.io/v1alpha1
+kind: Template
+metadata:
+  name: mesh-direct
+spec:
+  services:
+    "server":
+      mesh:
+        inputs:
+          - name: "consumer"
+            labels:
+              "discover": "kados"
+            type: direct
+            direct:
+
+      container:
+        name: app
+        image: "networkstatic/iperf3"
+        ports:
+          - name: tcp
+            containerPort: 5201
+        args: [ "-s", "-f", "m" ]
+
+    "client":
+      mesh:
+        outputs:
+          - name: "producer"
+            selector:
+              labels:
+                "discover": "kados"
+              mode: one
+            type: direct
+            direct:
+
+      container:
+        name: app
+        image: "networkstatic/iperf3"
+        env:
+          - name: server
+            valueFrom:
+              fieldRef:
+                fieldPath:  metadata.annotations['mesh.outputs.producer.dst']
+                # This will get the server from annotations and will use it as execution argument
+        command:
+          - /bin/sh # Run shell
+          - -c # Read from string
+          - |  # Multi-line str
+            set -eum
+            trap "touch /dev/shm/stop" EXIT
+
+            sleep 10 # Wait for NIC
+            iperf3 -c ${server} -t 600 -f m > /dev/shm/pipe
+
+
+---
+apiVersion: frisbee.io/v1alpha1
+kind: Workflow
+metadata:
+  name: mesh-1server-1client
+spec:
+  actions:
+    # Create a server node
+    - actiontype: ServiceGroup
+      name: servers
+      servicegroup:
+        templateRef: mesh-direct/server
+        instances: 1
+
+    # Create a client node
+    - actiontype: ServiceGroup
+      name: clients
+      servicegroup:
+        templateRef: mesh-direct/client
+        instances: 1
+
+    # Wait until servers are removed
+    - actiontype: Wait
+      name: "terminate"
+      wait:
+        duration: 1h

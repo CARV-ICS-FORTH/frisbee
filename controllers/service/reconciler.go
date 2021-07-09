@@ -96,7 +96,11 @@ func (r *Reconciler) Finalize(obj client.Object) error {
 }
 
 func (r *Reconciler) create(ctx context.Context, obj *v1alpha1.Service) (ctrl.Result, error) {
-	// ingress
+
+	// use mesh discovery
+	if err := r.discoverMesh(ctx, obj); err != nil {
+		return common.Failed(ctx, obj, err)
+	}
 
 	// kubepod (the lifecycle of service is driven by the pod)
 	if err := r.createKubePod(ctx, obj); err != nil {

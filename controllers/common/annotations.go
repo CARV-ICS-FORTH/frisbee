@@ -29,7 +29,7 @@ var (
 	annotationTimeout = 30 * time.Second
 )
 
-func InitGrafana(ctx context.Context, apiURI string) error {
+func EnableAnnotations(ctx context.Context, apiURI string) error {
 	client, err := sdk.NewClient(apiURI, "", sdk.DefaultHTTPClient)
 	if err != nil {
 		return err
@@ -78,8 +78,10 @@ func annotateDelete(obj interface{}) {
 
 func submit(ga sdk.CreateAnnotationRequest, validation response) {
 	if grafanaClient == nil {
-		common.logger.Info("grafana is not yet initialized. omit annotation", "msg", ga.Text)
-
+		common.logger.Info("omit annotation",
+			"reason", "disabled",
+			"msg", ga.Text,
+		)
 		return
 	}
 

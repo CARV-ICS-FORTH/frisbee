@@ -7,6 +7,8 @@ import (
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	k8errors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -44,8 +46,15 @@ func SelectService(ctx context.Context, ts *v1alpha1.TemplateSelector) *v1alpha1
 	var template v1alpha1.Template
 
 	key := client.ObjectKey{Namespace: "frisbee", Name: ts.Family}
-	if err := Client.Get(ctx, key, &template); err != nil {
+
+	// if the template is created in parallel with the workflow, it is possible to meet race conditions.
+	// We avoid it with a simple retry mechanism based on adaptive backoff.
+	err := retry.OnError(retry.DefaultRetry, k8errors.IsNotFound, func() error {
+		return Client.Get(ctx, key, &template)
+	})
+	if err != nil {
 		logrus.Warn(err)
+
 		return nil
 	}
 
@@ -75,7 +84,13 @@ func SelectMonitor(ctx context.Context, ts *v1alpha1.TemplateSelector) *v1alpha1
 	var template v1alpha1.Template
 
 	key := client.ObjectKey{Namespace: "frisbee", Name: ts.Family}
-	if err := Client.Get(ctx, key, &template); err != nil {
+
+	// if the template is created in parallel with the workflow, it is possible to meet race conditions.
+	// We avoid it with a simple retry mechanism based on adaptive backoff.
+	err := retry.OnError(retry.DefaultRetry, k8errors.IsNotFound, func() error {
+		return Client.Get(ctx, key, &template)
+	})
+	if err != nil {
 		logrus.Warn(err)
 
 		return nil

@@ -46,7 +46,7 @@ type ServiceSelectorSpec struct {
 	// Map of string keys and values that can be used to select objects.
 	// A selector based on labels.
 	// +optional
-	LabelSelectors map[string]string `json:"labelSelectors,omitempty"`
+	Labels map[string]string `json:"labels,omitempty"`
 
 	// ServiceGroup defines the service group where services belong
 	// +optional
@@ -62,7 +62,7 @@ type ServiceSelectorSpec struct {
 
 type ServiceSelector struct {
 	// Selector contains the rules to select target
-	Selector ServiceSelectorSpec `json:"selector"`
+	Selector ServiceSelectorSpec `json:",inline"`
 
 	// Mode defines which of the selected services to use. If undefined, all() is used
 	// Supported mode: one / all / fixed / fixed-percent / random-max-percent

@@ -57,6 +57,8 @@ func (r *Reconciler) createKubePod(ctx context.Context, obj *v1alpha1.Service) e
 		Privileged: &privilege,
 	}
 	pod.Spec.Containers = []corev1.Container{obj.Spec.Container}
+	pod.SetLabels(obj.GetLabels())
+	pod.SetAnnotations(obj.GetAnnotations())
 
 	if err := common.SetOwner(obj, &pod, ""); err != nil {
 		return errors.Wrapf(err, "ownership failed")
@@ -158,7 +160,11 @@ func (r *Reconciler) makeDiscoverable(ctx context.Context, obj *v1alpha1.Service
 
 	kubeService.Spec.Selector = pod.GetLabels()
 
-	return r.Client.Create(ctx, &kubeService)
+	if err := r.Client.Create(ctx, &kubeService); err != nil {
+		return errors.Wrapf(err, "cannot create kubernetes service")
+	}
+
+	return nil
 }
 
 func (*Reconciler) placement(obj *v1alpha1.Service, pod *corev1.Pod) {

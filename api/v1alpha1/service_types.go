@@ -26,6 +26,10 @@ type Service struct {
 }
 
 type ServiceSpec struct {
+	// Mesh is used for the automatic interconnection between services
+	// +optional
+	Mesh *Mesh `json:"mesh,omitempty"`
+
 	// List of volumes that can be mounted by containers belonging to the pod.
 	// +optional
 	Volumes []v1.Volume `json:"volumes,omitempty"`
@@ -78,6 +82,10 @@ type Resources struct {
 
 type ServiceStatus struct {
 	EtherStatus `json:",inline"`
+
+	// IP is the IP of the kubernetes service (not the kubernetes pod).
+	// This convention allows to avoid blocking until the pod ip becomes known.
+	IP string `json:"ip"`
 }
 
 func (s *Service) GetStatus() EtherStatus {

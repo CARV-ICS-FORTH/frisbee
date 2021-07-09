@@ -129,16 +129,16 @@ func selectServices(ctx context.Context, ss *v1alpha1.ServiceSelectorSpec) ([]v1
 	// case 2. servicegroups are specifically specified
 	listOptions := client.ListOptions{}
 
-	if len(ss.ServiceGroup) > 0 || len(ss.LabelSelectors) > 0 {
+	if len(ss.ServiceGroup) > 0 || len(ss.Labels) > 0 {
 
 		if len(ss.ServiceGroup) > 0 {
-			ss.LabelSelectors = labels.Merge(ss.LabelSelectors, map[string]string{
+			ss.Labels = labels.Merge(ss.Labels, map[string]string{
 				"owner": ss.ServiceGroup,
 			})
 		}
 
 		metav1Ls := &metav1.LabelSelector{
-			MatchLabels: ss.LabelSelectors,
+			MatchLabels: ss.Labels,
 		}
 
 		ls, err := metav1.LabelSelectorAsSelector(metav1Ls)

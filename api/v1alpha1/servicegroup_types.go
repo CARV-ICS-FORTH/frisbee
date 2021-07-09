@@ -31,7 +31,7 @@ type ServiceGroupSpec struct {
 	// Instances dictate the number of objects to be created for the service. If Env is specified, the values
 	// with be identical across the spawned instances. For instances with different parameters, use Inputs.
 	// +optional
-	Instances int `json:"instances"  validate:"required_without=Inputs"`
+	Instances int `json:"instances"  validate:"required_without=Offers"`
 
 	// Inputs are list of inputs passed to the objects. When used in conjunction with Instances, there can be
 	// only one input and all the instances will run with identical parameters. If Instances is defined and there are

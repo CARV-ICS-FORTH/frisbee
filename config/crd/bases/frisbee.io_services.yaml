@@ -1149,6 +1149,207 @@ spec:
                   For this to work, the nodes included in the domain must have the
                   label domain:{{domain-name}}
                 type: string
+              mesh:
+                description: Mesh is used for the automatic interconnection between
+                  services
+                properties:
+                  inputs:
+                    items:
+                      description: Port represents a property of a Component or Graph
+                        through which it communicates with the outer world.
+                      properties:
+                        direct:
+                          description: Direct indicates a point-to-point traffic,
+                            where the server runs a label, and the client a label
+                            selector.
+                          properties:
+                            setDst:
+                              description: SetDstIP points the annotation of the remote
+                                client to which the server will write its ip.
+                              type: string
+                            setPort:
+                              description: SetDstPort points the annotation of the
+                                remote client to which the server will write its port.
+                              type: string
+                          required:
+                          - setDst
+                          - setPort
+                          type: object
+                        file:
+                          type: object
+                        labels:
+                          additionalProperties:
+                            type: string
+                          description: Labels are slices of values that can be used
+                            to organize and categorize (scope and select) objects.
+                            May match selectors of replication controllers and services.
+                          type: object
+                        name:
+                          description: Name is a unique names that describes the port.
+                          type: string
+                        selector:
+                          description: Selector is used to discover services in the
+                            Mesh based on given criteria
+                          properties:
+                            labels:
+                              additionalProperties:
+                                type: string
+                              description: Map of string keys and values that can
+                                be used to select objects. A selector based on labels.
+                              type: object
+                            mode:
+                              description: 'Mode defines which of the selected services
+                                to use. If undefined, all() is used Supported mode:
+                                one / all / fixed / fixed-percent / random-max-percent'
+                              enum:
+                              - one
+                              - all
+                              - fixed
+                              - fixed-percent
+                              - random-max-percent
+                              type: string
+                            namespaces:
+                              description: Namespaces is a set of namespace to which
+                                objects belong.
+                              items:
+                                type: string
+                              type: array
+                            servicegroup:
+                              description: ServiceGroup defines the service group
+                                where services belong
+                              type: string
+                            services:
+                              additionalProperties:
+                                items:
+                                  type: string
+                                type: array
+                              description: Services is a map of string keys and a
+                                set values that used to select services. The key defines
+                                the namespace which services belong, and the each
+                                values is a set of service names.
+                              type: object
+                            value:
+                              description: Value is required when the mode is set
+                                to `FixedPodMode` / `FixedPercentPodMod` / `RandomMaxPercentPodMod`.
+                                If `FixedPodMode`, provide an integer of pods to do
+                                chaos action. If `FixedPercentPodMod`, provide a number
+                                from 0-100 to specify the percent of pods the server
+                                can do chaos action. IF `RandomMaxPercentPodMod`,  provide
+                                a number from 0-100 to specify the max percent of
+                                pods to do chaos action
+                              type: string
+                          type: object
+                        tcpproxy:
+                          description: TCPProxy is an OSI level 4 proxy for routing
+                            remote clients to local servers
+                          type: object
+                        type:
+                          description: Type indicate the dependencies of the Port.
+                          type: string
+                      required:
+                      - name
+                      - type
+                      type: object
+                    type: array
+                  outputs:
+                    items:
+                      description: Port represents a property of a Component or Graph
+                        through which it communicates with the outer world.
+                      properties:
+                        direct:
+                          description: Direct indicates a point-to-point traffic,
+                            where the server runs a label, and the client a label
+                            selector.
+                          properties:
+                            setDst:
+                              description: SetDstIP points the annotation of the remote
+                                client to which the server will write its ip.
+                              type: string
+                            setPort:
+                              description: SetDstPort points the annotation of the
+                                remote client to which the server will write its port.
+                              type: string
+                          required:
+                          - setDst
+                          - setPort
+                          type: object
+                        file:
+                          type: object
+                        labels:
+                          additionalProperties:
+                            type: string
+                          description: Labels are slices of values that can be used
+                            to organize and categorize (scope and select) objects.
+                            May match selectors of replication controllers and services.
+                          type: object
+                        name:
+                          description: Name is a unique names that describes the port.
+                          type: string
+                        selector:
+                          description: Selector is used to discover services in the
+                            Mesh based on given criteria
+                          properties:
+                            labels:
+                              additionalProperties:
+                                type: string
+                              description: Map of string keys and values that can
+                                be used to select objects. A selector based on labels.
+                              type: object
+                            mode:
+                              description: 'Mode defines which of the selected services
+                                to use. If undefined, all() is used Supported mode:
+                                one / all / fixed / fixed-percent / random-max-percent'
+                              enum:
+                              - one
+                              - all
+                              - fixed
+                              - fixed-percent
+                              - random-max-percent
+                              type: string
+                            namespaces:
+                              description: Namespaces is a set of namespace to which
+                                objects belong.
+                              items:
+                                type: string
+                              type: array
+                            servicegroup:
+                              description: ServiceGroup defines the service group
+                                where services belong
+                              type: string
+                            services:
+                              additionalProperties:
+                                items:
+                                  type: string
+                                type: array
+                              description: Services is a map of string keys and a
+                                set values that used to select services. The key defines
+                                the namespace which services belong, and the each
+                                values is a set of service names.
+                              type: object
+                            value:
+                              description: Value is required when the mode is set
+                                to `FixedPodMode` / `FixedPercentPodMod` / `RandomMaxPercentPodMod`.
+                                If `FixedPodMode`, provide an integer of pods to do
+                                chaos action. If `FixedPercentPodMod`, provide a number
+                                from 0-100 to specify the percent of pods the server
+                                can do chaos action. IF `RandomMaxPercentPodMod`,  provide
+                                a number from 0-100 to specify the max percent of
+                                pods to do chaos action
+                              type: string
+                          type: object
+                        tcpproxy:
+                          description: TCPProxy is an OSI level 4 proxy for routing
+                            remote clients to local servers
+                          type: object
+                        type:
+                          description: Type indicate the dependencies of the Port.
+                          type: string
+                      required:
+                      - name
+                      - type
+                      type: object
+                    type: array
+                type: object
               monitorTemplateRef:
                 description: MonitorTemplateRef is a list of references to monitoring
                   packages
@@ -2628,6 +2829,11 @@ spec:
                 description: Most recently observed status of the object
                 format: date-time
                 type: string
+              ip:
+                description: IP is the IP of the kubernetes service (not the kubernetes
+                  pod). This convention allows to avoid blocking until the pod ip
+                  becomes known.
+                type: string
               phase:
                 description: Phase is the current status of an object
                 enum:
@@ -2646,6 +2852,8 @@ spec:
                   image(s) for the pod.
                 format: date-time
                 type: string
+            required:
+            - ip
             type: object
         required:
         - spec
