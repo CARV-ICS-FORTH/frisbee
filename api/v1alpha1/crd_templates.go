@@ -9,6 +9,7 @@ func init() {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 
 type Template struct {
 	metav1.TypeMeta `json:",inline"`
@@ -17,6 +18,10 @@ type Template struct {
 
 	// MonitorSpec defines the template of services
 	Spec TemplateSpec `json:"spec"`
+
+	// Most recently observed status of the object
+	// +optional
+	Status TemplateStatus `json:"status,omitempty"`
 }
 
 type TemplateSpec struct {
@@ -41,6 +46,10 @@ type DashboardSpec struct {
 	File string `json:"file"`
 
 	Payload string `json:"payload"`
+}
+
+type TemplateStatus struct {
+	IsRegistered bool `json:"isRegistered"`
 }
 
 // +kubebuilder:object:root=true

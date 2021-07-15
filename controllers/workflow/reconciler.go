@@ -2,13 +2,13 @@ package workflow
 
 import (
 	"context"
-	"time"
+	"reflect"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/common"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
+	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
@@ -50,42 +50,48 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return result, err
 	}
 
+	r.Logger.Info("-> Reconcile", "kind", reflect.TypeOf(obj), "name", obj.GetName(), "lifecycle", obj.Status.Phase)
+	defer func() {
+		r.Logger.Info("<- Reconcile", "kind", reflect.TypeOf(obj), "name", obj.GetName(), "lifecycle", obj.Status.Phase)
+	}()
+
 	// The reconcile logic
 	switch obj.Status.Phase {
-	case v1alpha1.PhaseUninitialized: // We haven't started yet
-		logrus.Warn("Why is PhaseUninitialized called against ?")
-
+	case v1alpha1.PhaseUninitialized:
 		if action := obj.Spec.Actions[len(obj.Spec.Actions)-1]; action.ActionType != "Wait" {
 			return common.Failed(ctx, &obj, errors.New("All experiments must end with a wait function"))
 		}
 
 		if err := r.newMonitoringStack(ctx, &obj); err != nil {
-			return common.Failed(ctx, &obj, errors.Wrapf(err, "cannot create monitoring stack"))
+			runtime.HandleError(errors.Wrapf(err, "monitoring stack has failed. Use a mock up one for logging"))
 		}
 
-		_, _ = common.Running(ctx, &obj)
+		go r.scheduleActions(ctx, obj.DeepCopy())
 
-		go r.scheduleActions(ctx, &obj)
+		return common.Running(ctx, &obj)
+
+	case v1alpha1.PhaseRunning:
+		if obj.Status.IsRunning {
+			r.Logger.Info("Workflow is Running",
+				"name", obj.GetName(),
+				"CreationTimestamp", obj.CreationTimestamp.String(),
+			)
+
+			return common.DoNotRequeue()
+		}
+
+		obj.Status.IsRunning = true
 
 		return common.DoNotRequeue()
 
-	case v1alpha1.PhaseRunning: // if we're here, then we're either still running or haven't started yet
-	/*
-		r.Logger.Info("Already Running",
-			"kind", "workflow",
+	case v1alpha1.PhaseSuccess:
+		r.Logger.Error(errors.New(obj.Status.Reason),
+			"Workflow succeeded",
 			"name", obj.GetName(),
-			"CreationTimestamp", obj.CreationTimestamp.String(),
+			"starttime", obj.Status.StartTime,
+			"endtime", obj.Status.EndTime,
 		)
 
-	 */
-
-		return common.DoNotRequeue()
-
-	case v1alpha1.PhaseComplete: // If we're PhaseComplete but not deleted yet, nothing to do but return
-		r.Logger.Info("Workflow Completed", "name", obj.GetName(), "time", time.Now())
-
-		logrus.Warn("-- DONE --")
-
 		/*
 			if err := r.Client.Delete(ctx, &obj); err != nil {
 				runtimeutil.HandleError(err)
@@ -94,26 +100,23 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		return common.DoNotRequeue()
 
-	case v1alpha1.PhaseFailed: // if we're here, then something went completely wrong
-		r.Logger.Error(errors.New(obj.Status.Reason), "Workflow PhaseFailed", "name", obj.GetName(), "time", time.Now())
+	case v1alpha1.PhaseFailed:
+		r.Logger.Error(errors.New(obj.Status.Reason),
+			"Workflow failed",
+			"name", obj.GetName(),
+			"starttime", obj.Status.StartTime,
+			"endtime", obj.Status.EndTime,
+		)
 
 		// FIXME: it should send a "suspend command"
-		/*
-			if err := r.Client.Delete(ctx, &obj); err != nil {
-				runtimeutil.HandleError(err)
-			}
-
-		*/
 
 		return common.DoNotRequeue()
 
-	case v1alpha1.PhaseChaos: // if we're here, a controlled failure has occurred.
-		r.Logger.Info("Workflow failed gracefully", "name", obj.GetName())
-
-		return common.DoNotRequeue()
+	case v1alpha1.PhaseDiscoverable, v1alpha1.PhasePending, v1alpha1.PhaseChaos: // These phases should not happen in the workflow
+		panic(errors.Errorf("invalid lifecycle phase %s", obj.Status.Phase))
 
 	default:
-		return common.Failed(ctx, &obj, errors.Errorf("unknown phase: %s", obj.Status.Phase))
+		panic(errors.Errorf("unknown lifecycle phase: %s", obj.Status.Phase))
 	}
 }
 

@@ -44,15 +44,15 @@ type ServiceGroupSpec struct {
 }
 
 type ServiceGroupStatus struct {
-	EtherStatus `json:",inline"`
+	Lifecycle `json:",inline"`
 }
 
-func (s *ServiceGroup) GetStatus() EtherStatus {
-	return s.Status.EtherStatus
+func (s *ServiceGroup) GetLifecycle() Lifecycle {
+	return s.Status.Lifecycle
 }
 
-func (s *ServiceGroup) SetStatus(status EtherStatus) {
-	s.Status.EtherStatus = status
+func (s *ServiceGroup) SetLifecycle(lifecycle Lifecycle) {
+	s.Status.Lifecycle = lifecycle
 }
 
 // +kubebuilder:object:root=true

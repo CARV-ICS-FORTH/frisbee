@@ -3,7 +3,6 @@ package common
 import (
 	"context"
 
-	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	k8errors "k8s.io/apimachinery/pkg/api/errors"
@@ -77,7 +76,7 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 	// Check if the object is marked to be deleted, which is indicated by the deletion timestamp being set.
 	if obj.GetDeletionTimestamp().IsZero() {
 		// The object is not being deleted, so if it does not have our finalizer,
-		// then lets add the finalizer and update the object. This is equivalent
+		// then lets add the finalizer and Update the object. This is equivalent
 		// registering our finalizer.
 		if !controllerutil.ContainsFinalizer(obj, r.Finalizer()) {
 			// cause the delete operation to block until all dependents objects are removed
@@ -87,7 +86,7 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 			controllerutil.AddFinalizer(obj, metav1.FinalizerDeleteDependents)
 			controllerutil.AddFinalizer(obj, r.Finalizer())
 
-			if ret, err := update(ctx, obj); err != nil {
+			if ret, err := Update(ctx, obj); err != nil {
 				runtimeutil.HandleError(errors.Wrapf(err, "unable to add finalizer for %s", req.NamespacedName))
 
 				return ret, err
@@ -95,7 +94,7 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 
 			// This code changes the spec and metadata, whereas the solid Reconciler changes the status.
 			// If we do not return at this point, there will be a conflict because the solid Reconciler will try
-			// to update the status of a modified object.
+			// to Update the status of a modified object.
 			// To cause the solid Reconciler to return immediate, we use *ret=true
 			return DoNotRequeue()
 		}
@@ -120,7 +119,7 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 			controllerutil.RemoveFinalizer(obj, r.Finalizer())
 			controllerutil.RemoveFinalizer(obj, metav1.FinalizerDeleteDependents)
 
-			if ret, err := update(ctx, obj); err != nil {
+			if ret, err := Update(ctx, obj); err != nil {
 				runtimeutil.HandleError(errors.Wrapf(err, "unable to remove finalizer for %s", req.NamespacedName))
 
 				return ret, err
@@ -161,60 +160,15 @@ func SetOwner(parent, child metav1.Object, name string) error {
 	return nil
 }
 
-// Chaos is a wrapper that sets phase to Chaos and does not requeue the request.
-func Chaos(ctx context.Context, obj InnerObject) (ctrl.Result, error) {
-	status := obj.GetStatus()
-
-	status.Phase = v1alpha1.PhaseChaos
-	status.Reason = "Expect controlled failures"
-
-	obj.SetStatus(status)
-
-	return updateStatus(ctx, obj)
-}
-
-// Running is a wrapper that sets phase to Running and does not requeue the request.
-func Running(ctx context.Context, obj InnerObject) (ctrl.Result, error) {
-	status := obj.GetStatus()
-
-	status.Phase = v1alpha1.PhaseRunning
-	status.Reason = "OK"
-
-	obj.SetStatus(status)
-
-	return updateStatus(ctx, obj)
-}
-
-// Success is a wrapper that sets phase to Success and does not requeue the request.
-func Success(ctx context.Context, obj InnerObject) (ctrl.Result, error) {
-	status := obj.GetStatus()
-
-	status.Phase = v1alpha1.PhaseComplete
-	status.Reason = "All children are complete"
-
-	obj.SetStatus(status)
-
-	return updateStatus(ctx, obj)
-}
-
-// Failed is a wrap that logs the error, updates the status, and does not requeue the request.
-func Failed(ctx context.Context, obj InnerObject, err error) (ctrl.Result, error) {
-	runtimeutil.HandleError(errors.Wrapf(err, "object %s failed", obj.GetName()))
-
-	status := obj.GetStatus()
-	status.Phase = v1alpha1.PhaseFailed
-	status.Reason = err.Error()
-
-	obj.SetStatus(status)
-
-	return updateStatus(ctx, obj)
-}
-
-func update(ctx context.Context, obj client.Object) (ctrl.Result, error) {
-	// do not use delete convention here. we need to update a delete object in order to remove the finalizers.
+func Update(ctx context.Context, obj client.Object) (ctrl.Result, error) {
+	// do not use delete convention here. we need to Update a delete object in order to remove the finalizers.
 
 	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		return common.client.Update(ctx, obj)
+		if err := common.client.Update(ctx, obj); err != nil {
+			return errors.Wrapf(err, "update failed")
+		}
+
+		return nil
 	})
 
 	switch {
@@ -222,17 +176,17 @@ func update(ctx context.Context, obj client.Object) (ctrl.Result, error) {
 		return DoNotRequeue()
 
 	case k8errors.IsInvalid(err):
-		common.logger.Error(err, "update error")
+		common.logger.Error(err, "Update error")
 
 		return DoNotRequeue()
 
 	case k8errors.IsConflict(err):
-		common.logger.Error(err, "update error (xxx)")
+		runtimeutil.HandleError(errors.Wrapf(err, "update error. Probably the parent has been removed. Ignore it"))
 
 		return DoNotRequeue()
 
 	default:
-		runtimeutil.HandleError(errors.Wrapf(err, "update failed for %s [%s]",
+		runtimeutil.HandleError(errors.Wrapf(err, "Update failed for %s [%s]",
 			obj.GetName(), obj.GetObjectKind().GroupVersionKind()))
 
 		return DoNotRequeue()
@@ -240,13 +194,17 @@ func update(ctx context.Context, obj client.Object) (ctrl.Result, error) {
 }
 
 func updateStatus(ctx context.Context, obj client.Object) (ctrl.Result, error) {
-	// if the object is scheduled for deletion, do not update its status
+	// if the object is scheduled for deletion, do not Update its status
 	if obj.GetDeletionTimestamp().IsZero() {
 		// The status subresource ignores changes to spec, so it’s less likely to conflict with any other updates,
 		// and can have separate permissions.
 
 		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-			return common.client.Status().Update(ctx, obj)
+			if err := common.client.Status().Update(ctx, obj); err != nil {
+				return errors.Wrapf(err, "update status failed")
+			}
+
+			return nil
 		})
 
 		switch {
@@ -254,18 +212,18 @@ func updateStatus(ctx context.Context, obj client.Object) (ctrl.Result, error) {
 			return DoNotRequeue()
 
 		case k8errors.IsInvalid(err):
-			common.logger.Error(err, "update status error")
+			common.logger.Error(err, "Update status error")
 
 			return DoNotRequeue()
 
 		case k8errors.IsConflict(err):
-			// Most likely the object is already removed, and therefore we cannot update the status.
+			// Most likely the object is already removed, and therefore we cannot Update the status.
 			runtimeutil.HandleError(err)
 
 			return DoNotRequeue()
 
 		default:
-			runtimeutil.HandleError(errors.Wrapf(err, "status update failed for %s [%s]",
+			runtimeutil.HandleError(errors.Wrapf(err, "status Update failed for %s [%s]",
 				obj.GetName(), obj.GetObjectKind().GroupVersionKind()))
 
 			return DoNotRequeue()

@@ -39,7 +39,7 @@ func ReflectStructField(iface interface{}, FieldName string) error {
 
 	// Check if the passed interface is a pointer
 	if ValueIface.Type().Kind() != reflect.Ptr {
-		// ServiceGroup a new type of iface's Type, so we have a pointer to work with
+		// ServiceGroup a new type of iface's AccessMethod, so we have a pointer to work with
 		ValueIface = reflect.New(reflect.TypeOf(iface))
 	}
 

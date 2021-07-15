@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"reflect"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/common"
@@ -45,12 +46,47 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return result, err
 	}
 
+	r.Logger.Info("-> Reconcile", "kind", reflect.TypeOf(obj), "name", obj.GetName(), "lifecycle", obj.Status.Phase)
+	defer func() {
+		r.Logger.Info("<- Reconcile", "kind", reflect.TypeOf(obj), "name", obj.GetName(), "lifecycle", obj.Status.Phase)
+	}()
+
 	// The reconcile logic
 	switch obj.Status.Phase {
 	case v1alpha1.PhaseUninitialized:
-		return r.create(ctx, &obj)
+		// if no ports are defined, make it directly discoverable
+		if obj.Spec.PortRefs == nil {
+			return common.Discoverable(ctx, &obj)
+		}
 
-	case v1alpha1.PhaseRunning: // if we're here, then we're either still running or haven't started yet
+		// TODO: This case is for the MESH
+
+		if err := r.discoverDataMesh(ctx, &obj); err != nil {
+			return common.Failed(ctx, &obj, err)
+		}
+
+		// At this phase, we have passed control to the DataPort and wait for it to make the service Discoverable
+		return common.DoNotRequeue()
+
+	case v1alpha1.PhaseDiscoverable:
+		if obj.Status.Scheduled {
+			// The operation is already scheduled. nothing to do
+			return common.DoNotRequeue()
+		}
+
+		if err := r.createKubePod(ctx, &obj); err != nil {
+			return common.Failed(ctx, &obj, err)
+		}
+
+		obj.Status.Scheduled = true
+
+		return common.Pending(ctx, &obj)
+
+	case v1alpha1.PhasePending:
+		// if we're here, the lifecycle of service is driven by the pod
+		return common.DoNotRequeue()
+
+	case v1alpha1.PhaseRunning:
 		/*
 			r.Logger.Info("Service is already running",
 				"name", obj.GetName(),
@@ -61,7 +97,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		return common.DoNotRequeue()
 
-	case v1alpha1.PhaseComplete: // If we're PhaseComplete but not deleted yet, nothing to do but return
+	case v1alpha1.PhaseSuccess: // If we're PhaseSuccess but not deleted yet, nothing to do but return
 		r.Logger.Info("Service completed", "name", obj.GetName())
 
 		if err := r.Client.Delete(ctx, &obj); err != nil {
@@ -95,40 +131,20 @@ func (r *Reconciler) Finalize(obj client.Object) error {
 	return nil
 }
 
-func (r *Reconciler) create(ctx context.Context, obj *v1alpha1.Service) (ctrl.Result, error) {
+func (r *Reconciler) discoverDataMesh(ctx context.Context, obj *v1alpha1.Service) error {
+	// add port handlers
+	for _, portRef := range obj.Spec.PortRefs {
+		key := client.ObjectKey{
+			Name:      portRef,
+			Namespace: obj.GetNamespace(),
+		}
 
-	// use mesh discovery
-	if err := r.discoverMesh(ctx, obj); err != nil {
-		return common.Failed(ctx, obj, err)
+		var port v1alpha1.DataPort
+
+		if err := r.Client.Get(ctx, key, &port); err != nil {
+			return errors.Wrapf(err, "port error")
+		}
 	}
 
-	// kubepod (the lifecycle of service is driven by the pod)
-	if err := r.createKubePod(ctx, obj); err != nil {
-		return common.Failed(ctx, obj, err)
-	}
-
-	// nic
-
-	/*
-		go func() {
-			time.Sleep(30 * time.Second)
-			r.changePhase(ctx, obj, v1alpha1.PhaseRunning, "Started")
-
-			wait := 30 * time.Second
-			if strings.HasPrefix(obj.GetName(), "masters") {
-				wait = 30 * time.Minute
-			}
-
-			select {
-			case <-ctx.Done():
-				return
-			case <-time.After(wait):
-				r.changePhase(ctx, obj, v1alpha1.PhaseComplete, "mock time elapsed")
-				return
-			}
-		}()
-
-	*/
-
-	return common.DoNotRequeue()
+	return nil
 }

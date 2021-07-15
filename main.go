@@ -23,6 +23,7 @@ import (
 	"os"
 
 	"github.com/fnikolai/frisbee/controllers/common"
+	"github.com/fnikolai/frisbee/controllers/dataport"
 	"github.com/fnikolai/frisbee/controllers/service"
 	"github.com/fnikolai/frisbee/controllers/servicegroup"
 	"github.com/fnikolai/frisbee/controllers/template"
@@ -88,7 +89,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	common.InitCommon(mgr, setupLog.WithName("Watcher"))
+	common.InitCommon(mgr, setupLog)
 
 	if err := service.NewController(mgr, setupLog); err != nil {
 		runtimeutil.HandleError(errors.Wrapf(err, "unable to create Reference controller"))
@@ -110,6 +111,12 @@ func main() {
 
 	if err := workflow.NewController(mgr, setupLog); err != nil {
 		runtimeutil.HandleError(errors.Wrapf(err, "unable to create workflow controller"))
+
+		os.Exit(1)
+	}
+
+	if err := dataport.NewController(mgr, setupLog); err != nil {
+		runtimeutil.HandleError(errors.Wrapf(err, "unable to create dataport controller"))
 
 		os.Exit(1)
 	}

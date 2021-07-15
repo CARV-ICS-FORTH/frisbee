@@ -56,7 +56,7 @@ func ParseMacro(macro string) *v1alpha1.ServiceSelector {
 
 	switch kind {
 	case "servicegroup":
-		criteria.Selector.ServiceGroup = object
+		criteria.Match.ServiceGroup = object
 		criteria.Mode = v1alpha1.Mode(filter)
 
 		return &criteria
@@ -69,11 +69,12 @@ func ParseMacro(macro string) *v1alpha1.ServiceSelector {
 func Select(ctx context.Context, ss *v1alpha1.ServiceSelector) ServiceList {
 	if ss == nil {
 		logrus.Warn("empty service selector")
+
 		return []v1alpha1.Service{}
 	}
 
 	// get all available services that match the criteria
-	services, err := selectServices(ctx, &ss.Selector)
+	services, err := selectServices(ctx, &ss.Match)
 	if err != nil {
 		logrus.Warn(err)
 
@@ -95,69 +96,78 @@ func Select(ctx context.Context, ss *v1alpha1.ServiceSelector) ServiceList {
 	return filteredServices
 }
 
-func selectServices(ctx context.Context, ss *v1alpha1.ServiceSelectorSpec) ([]v1alpha1.Service, error) {
-	var services []v1alpha1.Service
-
-	appendService := func(ns, name string) error {
-		var service v1alpha1.Service
-
-		key := client.ObjectKey{
-			Namespace: ns,
-			Name:      name,
-		}
-
-		if err := Client.Get(ctx, key, &service); err != nil {
-			return errors.Wrapf(err, "unable to find %s", key)
-		}
-
-		services = append(services, service)
-
-		return nil
+func selectServices(ctx context.Context, ss *v1alpha1.MatchServiceSpec) ([]v1alpha1.Service, error) {
+	if ss == nil {
+		return nil, nil
 	}
 
+	var services []v1alpha1.Service
+
+	var listOptions client.ListOptions
+
 	// case 1. services are specifically specified
-	if len(ss.Services) > 0 {
-		for ns, names := range ss.Services {
+	if len(ss.ServiceNames) > 0 {
+		for ns, names := range ss.ServiceNames {
 			for _, name := range names {
-				if err := appendService(ns, name); err != nil {
-					return nil, err
+				var service v1alpha1.Service
+
+				key := client.ObjectKey{
+					Namespace: ns,
+					Name:      name,
 				}
+
+				if err := Client.Get(ctx, key, &service); err != nil {
+					return nil, errors.Wrapf(err, "unable to find %s", key)
+				}
+
+				services = append(services, service)
 			}
 		}
 	}
 
-	// case 2. servicegroups are specifically specified
-	listOptions := client.ListOptions{}
+	// case 2. servicegroups are specifically specified. Owner labels ia automatically attached to all
+	// components by SetOwnerRef(). Thus, we are looking for services that are owned by the desired servicegroup.
+	if len(ss.ServiceGroup) > 0 {
+		ss.Labels = labels.Merge(ss.Labels, map[string]string{
+			"owner": ss.ServiceGroup,
+		})
+	}
 
-	if len(ss.ServiceGroup) > 0 || len(ss.Labels) > 0 {
-
-		if len(ss.ServiceGroup) > 0 {
-			ss.Labels = labels.Merge(ss.Labels, map[string]string{
-				"owner": ss.ServiceGroup,
-			})
-		}
-
-		metav1Ls := &metav1.LabelSelector{
-			MatchLabels: ss.Labels,
-		}
-
-		ls, err := metav1.LabelSelectorAsSelector(metav1Ls)
+	// case 3. labels
+	if len(ss.Labels) > 0 {
+		ls, err := metav1.LabelSelectorAsSelector(metav1.SetAsLabelSelector(ss.Labels))
 		if err != nil {
 			return nil, err
 		}
 
-		listOptions.LabelSelector = ls
+		listOptions = client.ListOptions{LabelSelector: ls}
+	}
+
+	var serviceList v1alpha1.ServiceList
+
+	// case 4. Namespaces
+	if len(ss.Namespaces) > 0 { // search specified namespaces
+		for _, namespace := range ss.Namespaces {
+			listOptions.Namespace = namespace
+
+			if err := Client.List(ctx, &serviceList, &listOptions); err != nil {
+				return nil, err
+			}
+
+			services = append(services, serviceList.Items...)
+		}
+	} else { // search all namespaces
+		if err := Client.List(ctx, &serviceList, &listOptions); err != nil {
+			return nil, errors.Wrapf(err, "namespace error")
+		}
+
+		services = append(services, serviceList.Items...)
 	}
 
 	// select services For more options see
 	// https://github.com/chaos-mesh/chaos-mesh/blob/31aef289b81a1d713b5a9976a257090da81ac29e/pkg/selector/pod/selector.go
-	var serviceList v1alpha1.ServiceList
 
-	if err := Client.List(ctx, &serviceList, &listOptions); err != nil {
-		return nil, err
-	}
-
-	return serviceList.Items, nil
+	return services, nil
 }
 
 func filterServicesByMode(services []v1alpha1.Service, mode v1alpha1.Mode, value string) ([]v1alpha1.Service, error) {

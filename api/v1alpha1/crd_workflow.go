@@ -86,15 +86,17 @@ type WaitSpec struct {
 }
 
 type WorkflowStatus struct {
-	EtherStatus `json:",inline"`
+	Lifecycle `json:",inline"`
+
+	IsRunning bool `json:"isRunning"`
 }
 
-func (s *Workflow) GetStatus() EtherStatus {
-	return s.Status.EtherStatus
+func (s *Workflow) GetLifecycle() Lifecycle {
+	return s.Status.Lifecycle
 }
 
-func (s *Workflow) SetStatus(status EtherStatus) {
-	s.Status.EtherStatus = status
+func (s *Workflow) SetLifecycle(lifecycle Lifecycle) {
+	s.Status.Lifecycle = lifecycle
 }
 
 // +kubebuilder:object:root=true

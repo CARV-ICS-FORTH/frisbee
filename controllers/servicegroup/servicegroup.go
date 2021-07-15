@@ -13,17 +13,18 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-func (r *Reconciler) create(ctx context.Context, obj *v1alpha1.ServiceGroup) (ctrl.Result, error) {
-	serviceSpec := template.SelectService(ctx, template.ParseRef(obj.Spec.TemplateRef))
+func (r *Reconciler) create(ctx context.Context, obj *v1alpha1.ServiceGroup) error {
+	serviceSpec := template.SelectService(ctx, template.ParseRef(obj.GetNamespace(), obj.Spec.TemplateRef))
 	if serviceSpec == nil {
-		return common.DoNotRequeue()
+		return errors.Errorf("template %s/%s was not found", obj.GetNamespace(), obj.Spec.TemplateRef)
 	}
 
 	// all inputs are explicitly defined. no instances were given
 	if obj.Spec.Instances == 0 {
 		if len(obj.Spec.Inputs) == 0 {
-			return common.Failed(ctx, obj, errors.New("at least one of instances || inputs must be defined"))
+			return errors.New("at least one of instances || inputs must be defined")
 		}
+
 		obj.Spec.Instances = len(obj.Spec.Inputs)
 	}
 
@@ -45,29 +46,29 @@ func (r *Reconciler) create(ctx context.Context, obj *v1alpha1.ServiceGroup) (ct
 		service := v1alpha1.Service{}
 
 		if err := common.SetOwner(obj, &service, fmt.Sprintf("%s-%d", obj.GetName(), i)); err != nil {
-			return common.Failed(ctx, obj, errors.Wrapf(err, "setowner failed"))
+			return errors.Wrapf(err, "setowner failed")
 		}
 
 		serviceSpec.DeepCopyInto(&service.Spec) // deep copy so to avoid different services from sharing the same spec
 
 		if len(obj.Spec.Inputs) > 0 {
 			if err := r.inputs2Env(ctx, obj.Spec.Inputs[i], &service.Spec.Container); err != nil {
-				return common.Failed(ctx, obj, errors.Wrapf(err, "macro expansion failed"))
+				return errors.Wrapf(err, "macro expansion failed")
 			}
 		}
 
 		if _, err := ctrl.CreateOrUpdate(ctx, r.Client, &service, func() error { return nil }); err != nil {
-			return common.Failed(ctx, obj, errors.Wrapf(err, "update failed"))
+			return errors.Wrapf(err, "update failed")
 		}
 
 		serviceKeys[i] = service.GetName()
 	}
 
 	if err := common.GetLifecycle(ctx, obj.GetUID(), &v1alpha1.Service{}, serviceKeys...).UpdateParent(obj); err != nil {
-		return common.Failed(ctx, obj, errors.Wrapf(err, "lifecycle failed"))
+		return errors.Wrapf(err, "lifecycle failed")
 	}
 
-	return common.DoNotRequeue()
+	return nil
 }
 
 func (r *Reconciler) inputs2Env(ctx context.Context, inputs map[string]string, container *v1.Container) error {

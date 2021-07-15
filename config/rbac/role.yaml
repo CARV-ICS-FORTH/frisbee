@@ -25,6 +25,32 @@ rules:
 - apiGroups:
   - frisbee.io
   resources:
+  - dataports
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - frisbee.io
+  resources:
+  - dataports/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - frisbee.io
+  resources:
+  - dataports/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - frisbee.io
+  resources:
   - servicegroups
   verbs:
   - create

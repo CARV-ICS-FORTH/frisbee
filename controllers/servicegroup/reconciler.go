@@ -2,6 +2,7 @@ package servicegroup
 
 import (
 	"context"
+	"reflect"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/common"
@@ -42,48 +43,39 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return result, err
 	}
 
+	r.Logger.Info("-> Reconcile", "kind", reflect.TypeOf(obj), "name", obj.GetName(), "lifecycle", obj.Status.Phase)
+	defer func() {
+		r.Logger.Info("<- Reconcile", "kind", reflect.TypeOf(obj), "name", obj.GetName(), "lifecycle", obj.Status.Phase)
+	}()
+
 	// The reconcile logic
 	switch obj.Status.Phase {
 	case v1alpha1.PhaseUninitialized:
-		r.Logger.Info("ServiceGroup group", "name", obj.GetName())
+		if err := r.create(ctx, &obj); err != nil {
+			return common.Failed(ctx, &obj, err)
+		}
 
-		return r.create(ctx, &obj)
+		return common.Pending(ctx, &obj)
 
-	case v1alpha1.PhaseRunning: // if we're here, then we're either still running or haven't started yet
-	/*
-		r.Logger.Info("Already running",
-			"kind", "servicegroup",
-			"name", obj.GetName(),
-			"CreationTimestamp", obj.CreationTimestamp.String(),
-		)
+	case v1alpha1.PhasePending: // Managed by Lifecycle()
+		return common.DoNotRequeue()
 
-	 */
+	case v1alpha1.PhaseRunning: // Passthroughs
+		return common.DoNotRequeue()
+
+	case v1alpha1.PhaseSuccess: // Passthroughs
+		return common.DoNotRequeue()
+
+	case v1alpha1.PhaseFailed:
+		r.Logger.Info("ServiceGroup has failed", "name", obj.GetName())
 
 		return common.DoNotRequeue()
 
-	case v1alpha1.PhaseComplete: // If we're PhaseComplete but not deleted yet, nothing to do but return
-		r.Logger.Info("Group completed", "name", obj.GetName())
-
-		/*
-			if err := r.Client.Delete(ctx, &obj); err != nil {
-				runtimeutil.HandleError(err)
-			}
-		*/
-
-		return common.DoNotRequeue()
-
-	case v1alpha1.PhaseFailed: // if we're here, then something went completely wrong
-		r.Logger.Info("Group failed", "name", obj.GetName())
-
-		return common.DoNotRequeue()
-
-	case v1alpha1.PhaseChaos: // if we're here, a controlled failure has occurred.
-		r.Logger.Info("ServiceGroup failed gracefully", "name", obj.GetName())
-
-		return common.DoNotRequeue()
+	case v1alpha1.PhaseDiscoverable, v1alpha1.PhaseChaos: // Invalid
+		panic(errors.Errorf("invalid lifecycle phase %s", obj.Status.Phase))
 
 	default:
-		return common.Failed(ctx, &obj, errors.Errorf("unknown phase: %s", obj.Status.Phase))
+		panic(errors.Errorf("unknown lifecycle phase: %s", obj.Status.Phase))
 	}
 }
 

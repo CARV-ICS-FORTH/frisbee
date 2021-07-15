@@ -37,6 +37,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return result, err
 	}
 
+	// if the template is already registered, there is nothing else to do.
+	if obj.Status.IsRegistered {
+		return common.DoNotRequeue()
+	}
+
 	serviceNames := make([]string, 0, len(obj.Spec.Services))
 	for name := range obj.Spec.Services {
 		serviceNames = append(serviceNames, name)
@@ -47,7 +52,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		monitorNames = append(monitorNames, name)
 	}
 
-	r.Logger.Info("Register templates",
+	r.Logger.Info("New Templates",
 		"name", req.NamespacedName,
 		"services", serviceNames,
 		"monitor", monitorNames,

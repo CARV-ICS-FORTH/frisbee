@@ -12,26 +12,26 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 )
 
-func convert(obj interface{}) v1alpha1.EtherStatus {
+func convert(obj interface{}) v1alpha1.Lifecycle {
 	pod := obj.(*corev1.Pod)
 
-	status := v1alpha1.EtherStatus{}
+	status := v1alpha1.Lifecycle{}
 
 	switch pod.Status.Phase {
 	case corev1.PodPending:
-		status.Phase = v1alpha1.PhaseUninitialized
+		status.Phase = v1alpha1.PhasePending
 
 	case corev1.PodRunning:
 		status.Phase = v1alpha1.PhaseRunning
-		status.StartTime = pod.GetDeletionTimestamp()
+		status.StartTime = &metav1.Time{Time: pod.GetCreationTimestamp().Time}
 
 	case corev1.PodSucceeded:
-		status.Phase = v1alpha1.PhaseComplete
-		status.StartTime = pod.GetDeletionTimestamp()
+		status.Phase = v1alpha1.PhaseSuccess
+		status.EndTime = pod.GetDeletionTimestamp()
 
 	case corev1.PodFailed:
 		status.Phase = v1alpha1.PhaseFailed
-		status.StartTime = pod.GetDeletionTimestamp()
+		status.EndTime = pod.GetDeletionTimestamp()
 
 	case corev1.PodUnknown:
 		status.Phase = v1alpha1.PhaseFailed
@@ -81,7 +81,7 @@ func (r *Reconciler) createKubePod(ctx context.Context, obj *v1alpha1.Service) e
 
 	// because lifecycle operation require access to the status, we need to wrap externally managed
 	// objects like Pods into managed (inner) objects
-	podWraper := &common.ExternalToInnerObject{Object: &pod, StatusFunc: convert}
+	podWraper := &common.ExternalToInnerObject{Object: &pod, LifecycleFunc: convert}
 
 	if err := common.GetLifecycle(ctx, obj.GetUID(), podWraper, pod.GetName()).UpdateParent(obj); err != nil {
 		return errors.Wrapf(err, "lifecycle failed")
@@ -93,7 +93,7 @@ func (r *Reconciler) createKubePod(ctx context.Context, obj *v1alpha1.Service) e
 func (r *Reconciler) addMonitoring(ctx context.Context, obj *v1alpha1.Service, pod *corev1.Pod) error {
 	// import monitoring agents to the service
 	for _, ref := range obj.Spec.MonitorTemplateRefs {
-		mon := template.SelectMonitor(ctx, template.ParseRef(ref))
+		mon := template.SelectMonitor(ctx, template.ParseRef(obj.GetNamespace(), ref))
 
 		if err := validateMonitor(mon); err != nil {
 			return err

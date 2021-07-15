@@ -21,7 +21,7 @@ func IsRef(templateRef string) bool {
 
 // ParseRef parse the templateRef and returns a template selector. If the templateRef is invalid, the selector
 // will be nil, and any subsequence select operation will return empty value.
-func ParseRef(templateRef string) *v1alpha1.TemplateSelector {
+func ParseRef(nm string, templateRef string) *v1alpha1.TemplateSelector {
 	parsed := strings.Split(templateRef, "/")
 	if len(parsed) != 2 {
 		panic("invalid reference format")
@@ -31,7 +31,8 @@ func ParseRef(templateRef string) *v1alpha1.TemplateSelector {
 	ref := parsed[1]
 
 	return &v1alpha1.TemplateSelector{
-		Family: family,
+		Namespace: nm,
+		Family:    family,
 		Selector: v1alpha1.TemplateSelectorSpec{
 			Reference: ref,
 		},
@@ -45,7 +46,10 @@ func SelectService(ctx context.Context, ts *v1alpha1.TemplateSelector) *v1alpha1
 
 	var template v1alpha1.Template
 
-	key := client.ObjectKey{Namespace: "frisbee", Name: ts.Family}
+	key := client.ObjectKey{
+		Namespace: ts.Namespace,
+		Name:      ts.Family,
+	}
 
 	// if the template is created in parallel with the workflow, it is possible to meet race conditions.
 	// We avoid it with a simple retry mechanism based on adaptive backoff.
@@ -83,7 +87,10 @@ func SelectMonitor(ctx context.Context, ts *v1alpha1.TemplateSelector) *v1alpha1
 
 	var template v1alpha1.Template
 
-	key := client.ObjectKey{Namespace: "frisbee", Name: ts.Family}
+	key := client.ObjectKey{
+		Namespace: ts.Namespace,
+		Name:      ts.Family,
+	}
 
 	// if the template is created in parallel with the workflow, it is possible to meet race conditions.
 	// We avoid it with a simple retry mechanism based on adaptive backoff.

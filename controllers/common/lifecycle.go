@@ -11,32 +11,111 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"
 	cachetypes "k8s.io/client-go/tools/cache"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// ErrInvalidArgs indicate an error with calling arguments
-var ErrInvalidArgs = errors.New("invalid arguments")
+/******************************************************
+			Manage Status Response
+/******************************************************/
 
 // InnerObject is an object that is managed and recognized by Frisbee (including services, servicegroups, ...)
 type InnerObject interface {
 	client.Object
-	GetStatus() v1alpha1.EtherStatus
-	SetStatus(v1alpha1.EtherStatus)
+	GetLifecycle() v1alpha1.Lifecycle
+	SetLifecycle(v1alpha1.Lifecycle)
 }
+
+// Discoverable is a wrapper that sets phase to Discoverable and does not requeue the request.
+func Discoverable(ctx context.Context, obj InnerObject) (ctrl.Result, error) {
+	status := obj.GetLifecycle()
+
+	status.Phase = v1alpha1.PhaseDiscoverable
+	status.Reason = "waiting for dependencies"
+
+	obj.SetLifecycle(status)
+
+	return updateStatus(ctx, obj)
+}
+
+// Pending is a wrapper that sets phase to Pending and does not requeue the request.
+func Pending(ctx context.Context, obj InnerObject) (ctrl.Result, error) {
+	status := obj.GetLifecycle()
+
+	status.Phase = v1alpha1.PhasePending
+	status.Reason = "waiting for dependencies"
+
+	obj.SetLifecycle(status)
+
+	return updateStatus(ctx, obj)
+}
+
+// Running is a wrapper that sets phase to Running and does not requeue the request.
+func Running(ctx context.Context, obj InnerObject) (ctrl.Result, error) {
+	status := obj.GetLifecycle()
+
+	status.Phase = v1alpha1.PhaseRunning
+	status.Reason = "OK"
+
+	obj.SetLifecycle(status)
+
+	return updateStatus(ctx, obj)
+}
+
+// Success is a wrapper that sets phase to Success and does not requeue the request.
+func Success(ctx context.Context, obj InnerObject) (ctrl.Result, error) {
+	status := obj.GetLifecycle()
+
+	status.Phase = v1alpha1.PhaseSuccess
+	status.Reason = "All children are succeeded"
+
+	obj.SetLifecycle(status)
+
+	return updateStatus(ctx, obj)
+}
+
+// Chaos is a wrapper that sets phase to Chaos and does not requeue the request.
+func Chaos(ctx context.Context, obj InnerObject) (ctrl.Result, error) {
+	status := obj.GetLifecycle()
+
+	status.Phase = v1alpha1.PhaseChaos
+	status.Reason = "Expect controlled failures"
+
+	obj.SetLifecycle(status)
+
+	return updateStatus(ctx, obj)
+}
+
+// Failed is a wrap that logs the error, updates the status, and does not requeue the request.
+func Failed(ctx context.Context, obj InnerObject, err error) (ctrl.Result, error) {
+	runtimeutil.HandleError(errors.Wrapf(err, "object %s failed", obj.GetName()))
+
+	status := obj.GetLifecycle()
+	status.Phase = v1alpha1.PhaseFailed
+	status.Reason = err.Error()
+
+	obj.SetLifecycle(status)
+
+	return updateStatus(ctx, obj)
+}
+
+/******************************************************
+	Wrappers and Unwrappers for InnerObjects
+/******************************************************/
 
 // ExternalToInnerObject is a wrapper for converting external objects (e.g, Pods) to InnerObjects managed
 // by the Frisbee controller
 type ExternalToInnerObject struct {
 	client.Object
 
-	StatusFunc func(obj interface{}) v1alpha1.EtherStatus
+	LifecycleFunc func(obj interface{}) v1alpha1.Lifecycle
 }
 
-func (d *ExternalToInnerObject) GetStatus() v1alpha1.EtherStatus {
-	return d.StatusFunc(d.Object)
+func (d *ExternalToInnerObject) GetLifecycle() v1alpha1.Lifecycle {
+	return d.LifecycleFunc(d.Object)
 }
 
-func (d *ExternalToInnerObject) SetStatus(v1alpha1.EtherStatus) {
+func (d *ExternalToInnerObject) SetLifecycle(v1alpha1.Lifecycle) {
 	panic(errors.Errorf("cannot set status on external object"))
 }
 
@@ -49,28 +128,27 @@ func unwrap(obj client.Object) client.Object {
 	return obj
 }
 
-func accessStatus(obj interface{}) func(interface{}) v1alpha1.EtherStatus {
+func accessStatus(obj interface{}) func(interface{}) v1alpha1.Lifecycle {
 	external, ok := obj.(*ExternalToInnerObject)
 	if ok {
-		return external.StatusFunc
+		return external.LifecycleFunc
 	}
 
-	return func(inner interface{}) v1alpha1.EtherStatus {
-		return inner.(InnerObject).GetStatus()
+	return func(inner interface{}) v1alpha1.Lifecycle {
+		return inner.(InnerObject).GetLifecycle()
 	}
 }
 
+/******************************************************
+				Lifecycle
+******************************************************/
+
 func GetLifecycle(ctx context.Context, parentUID types.UID, child InnerObject, childrenNames ...string) *ManagedLifecycle {
 	if child == nil || len(childrenNames) == 0 {
-		common.logger.Error(ErrInvalidArgs, "lifecycle error")
+		common.logger.Error(errors.New("lifecycle error"), "invalid args")
 
 		return nil
 	}
-
-	common.logger.Info("Watch children",
-		"kind", reflect.TypeOf(unwrap(child)),
-		"names", childrenNames,
-	)
 
 	n := newNotifier(childrenNames)
 	n.accessChildStatus = accessStatus(child)
@@ -102,7 +180,7 @@ type ManagedLifecycle struct {
 	watchChildren func() error
 }
 
-// UpdateParent run in a loops and continuously update the status of the parent.
+// UpdateParent run in a loops and continuously Update the status of the parent.
 func (lc *ManagedLifecycle) UpdateParent(parent InnerObject) error {
 	if err := lc.watchChildren(); err != nil {
 		return errors.Wrapf(err, "unable to watch children")
@@ -117,7 +195,7 @@ func (lc *ManagedLifecycle) UpdateParent(parent InnerObject) error {
 
 		for {
 			if valid != nil {
-				common.logger.Error(valid, "update parent failed", "parent", parent.GetName())
+				common.logger.Error(valid, "Update parent failed", "parent", parent.GetName())
 
 				return
 			}
@@ -132,11 +210,14 @@ func (lc *ManagedLifecycle) UpdateParent(parent InnerObject) error {
 			case v1alpha1.PhaseUninitialized:
 				panic("this should not happen")
 
+			case v1alpha1.PhasePending:
+				panic("this should not happen")
+
 			case v1alpha1.PhaseRunning:
 				_, _ = Running(lc.ctx, parent)
 				phase, msg, valid = lc.n.getNextRunning()
 
-			case v1alpha1.PhaseComplete:
+			case v1alpha1.PhaseSuccess:
 				_, _ = Success(lc.ctx, parent)
 
 				return
@@ -172,6 +253,7 @@ func (lc *ManagedLifecycle) UpdateParent(parent InnerObject) error {
 func (lc *ManagedLifecycle) Expect(expect v1alpha1.Phase) error {
 	if err := lc.watchChildren(); err != nil {
 		common.logger.Error(err, "unable to watch children")
+
 		return err
 	}
 
@@ -198,13 +280,13 @@ func (lc *ManagedLifecycle) Expect(expect v1alpha1.Phase) error {
 		}
 
 		switch phase {
-		case v1alpha1.PhaseUninitialized, v1alpha1.PhaseChaos:
+		case v1alpha1.PhaseUninitialized, v1alpha1.PhaseChaos, v1alpha1.PhasePending:
 			panic(errors.Errorf("cannot wait on phase %s", expect))
 
 		case v1alpha1.PhaseRunning:
 			phase, msg, valid = lc.n.getNextRunning()
 
-		case v1alpha1.PhaseComplete:
+		case v1alpha1.PhaseSuccess:
 			phase, msg, valid = lc.n.getNextComplete()
 
 		case v1alpha1.PhaseFailed:
@@ -223,7 +305,6 @@ type eventHandlerFuncs struct {
 }
 
 func watchLifecycle(ctx context.Context, parentUID types.UID, child client.Object, handlers eventHandlerFuncs) error {
-
 	informer, err := common.cache.GetInformer(ctx, child)
 	if err != nil {
 		return errors.Wrapf(err, "unable to get informer")
@@ -240,11 +321,18 @@ func watchLifecycle(ctx context.Context, parentUID types.UID, child client.Objec
 		Handler: cachetypes.ResourceEventHandlerFuncs{
 			AddFunc: handlers.AddFunc,
 			UpdateFunc: func(oldObj, newObj interface{}) {
-				old := oldObj.(metav1.Object)
-				latest := newObj.(metav1.Object)
+				old, ok := oldObj.(metav1.Object)
+				if !ok {
+					panic("this should never happen")
+				}
+
+				latest, ok := newObj.(metav1.Object)
+				if !ok {
+					panic("this should never happen")
+				}
 
 				if old.GetResourceVersion() == latest.GetResourceVersion() {
-					// Periodic resync will send update events for all known services.
+					// Periodic resync will send Update events for all known services.
 					// Two different versions of the same Deployment will always have different RVs.
 					return
 				}
@@ -288,7 +376,7 @@ func filter(parentUID types.UID) func(obj interface{}) bool {
 			}
 		}
 
-		// update locate view of the dependent services
+		// Update locate view of the dependent services
 		for _, owner := range object.GetOwnerReferences() {
 			if owner.UID == parentUID {
 				return true
@@ -300,7 +388,7 @@ func filter(parentUID types.UID) func(obj interface{}) bool {
 }
 
 type notifier struct {
-	accessChildStatus func(obj interface{}) v1alpha1.EtherStatus
+	accessChildStatus func(obj interface{}) v1alpha1.Lifecycle
 
 	parentRunning   chan struct{}
 	childrenRunning map[string]chan struct{}
@@ -332,24 +420,21 @@ func newNotifier(serviceNames []string) *notifier {
 	return t
 }
 
-// watchChildren monitors the phase of children and update the channels of the parent.
+// watchChildren monitors the phase of children and Update the channels of the parent.
 func (n *notifier) watchChildrenPhase(obj interface{}) {
 	// To deliver idempotent operation, we want to ensure exactly-once notifications. However, an object may
 	// be in the same phase during different iterations. For this reason, we close the channel only the first
 	// and then we nil it. If the second iterations finds a nil for the given child,
 	// it returns immediately as it assumes that the closing is already delivered.
-	object := obj.(client.Object)
+	object, ok := obj.(client.Object)
+	if !ok {
+		panic("this should never happen")
+	}
 
 	status := n.accessChildStatus(obj)
 
-	common.logger.Info("Child Changed",
-		"child", reflect.TypeOf(object),
-		"name", object.GetName(),
-		"phase", status.Phase,
-	)
-
 	switch status.Phase {
-	case v1alpha1.PhaseUninitialized, v1alpha1.PhaseChaos:
+	case v1alpha1.PhaseUninitialized, v1alpha1.PhaseDiscoverable, v1alpha1.PhasePending, v1alpha1.PhaseChaos:
 		return
 
 	case v1alpha1.PhaseRunning:
@@ -362,7 +447,7 @@ func (n *notifier) watchChildrenPhase(obj interface{}) {
 
 		close(ch)
 
-	case v1alpha1.PhaseComplete:
+	case v1alpha1.PhaseSuccess:
 		ch := n.childrenComplete[object.GetName()]
 		if ch == nil {
 			return
@@ -391,7 +476,7 @@ func (n *notifier) getNextPhase() (v1alpha1.Phase, error) {
 		return v1alpha1.PhaseRunning, nil
 
 	case <-n.parentComplete:
-		return v1alpha1.PhaseComplete, nil
+		return v1alpha1.PhaseSuccess, nil
 
 	case err := <-n.failed:
 		return v1alpha1.PhaseFailed, err
@@ -408,8 +493,8 @@ func (n *notifier) getNextUninitialized() (phase v1alpha1.Phase, msg error, vali
 		return v1alpha1.PhaseRunning, nil, nil
 
 	case <-n.parentComplete:
-		return v1alpha1.PhaseComplete, nil,
-			errors.Errorf("invalid transitiom %s -> %s", v1alpha1.PhaseUninitialized, v1alpha1.PhaseComplete)
+		return v1alpha1.PhaseSuccess, nil,
+			errors.Errorf("invalid transitiom %s -> %s", v1alpha1.PhaseUninitialized, v1alpha1.PhaseSuccess)
 
 	case err := <-n.failed:
 		return v1alpha1.PhaseFailed, err, nil
@@ -426,7 +511,7 @@ func (n *notifier) getNextRunning() (phase v1alpha1.Phase, msg error, valid erro
 	// case <-n.parentRunning:  return v1alpha1.PhaseRunning, nil, nil
 
 	case <-n.parentComplete:
-		return v1alpha1.PhaseComplete, nil, nil
+		return v1alpha1.PhaseSuccess, nil, nil
 
 	case err := <-n.failed:
 		return v1alpha1.PhaseFailed, err, nil
@@ -438,9 +523,9 @@ func (n *notifier) getNextRunning() (phase v1alpha1.Phase, msg error, valid erro
 
 var errIsFinal = errors.New("phase is final")
 
-// listen for all the expected transition from PhaseComplete.
+// listen for all the expected transition from PhaseSuccess.
 func (n *notifier) getNextComplete() (phase v1alpha1.Phase, msg error, valid error) {
-	return v1alpha1.PhaseComplete, nil, errIsFinal
+	return v1alpha1.PhaseSuccess, nil, errIsFinal
 }
 
 // listen for all the expected transition from Failed.
@@ -456,13 +541,13 @@ func (n *notifier) getNextChaos() (phase v1alpha1.Phase, msg error, valid error)
 			errors.Errorf("invalid transition %s -> %s", v1alpha1.PhaseChaos, v1alpha1.PhaseRunning)
 
 	case <-n.parentComplete:
-		return v1alpha1.PhaseComplete, nil, nil
+		return v1alpha1.PhaseSuccess, nil, nil
 
 	case err := <-n.failed:
 		return v1alpha1.PhaseFailed, err,
 			errors.Errorf("invalid transition %s -> %s", v1alpha1.PhaseChaos, v1alpha1.PhaseFailed)
 
-		// ignore this case as it will lead to a loop
+		// ignore this case as it will lead to a loop due to the active channel
 		// case err := <-n.chaos:
 		//	return v1alpha1.PhaseChaos, err, nil
 	}

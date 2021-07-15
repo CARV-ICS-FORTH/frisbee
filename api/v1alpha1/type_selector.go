@@ -26,6 +26,8 @@ type TemplateSelectorSpec struct {
 }
 
 type TemplateSelector struct {
+	Namespace string `json:"namespace"`
+
 	// Family defines the target family of templates
 	// +optional
 	Family string `json:"family,omitempty"`
@@ -34,14 +36,14 @@ type TemplateSelector struct {
 	Selector TemplateSelectorSpec `json:"selector"`
 }
 
-// ServiceSelectorSpec defines the some selectors to select services.
+// MatchServiceSpec defines the some selectors to select services.
 // If the all selectors are empty, all services will be selected.
-type ServiceSelectorSpec struct {
-	// Services is a map of string keys and a set values that used to select services.
+type MatchServiceSpec struct {
+	// ServiceNames is a map of string keys and a set values that used to select services.
 	// The key defines the namespace which services belong,
 	// and the each values is a set of service names.
 	// +optional
-	Services map[string][]string `json:"services,omitempty"`
+	ServiceNames map[string][]string `json:"names,omitempty"`
 
 	// Map of string keys and values that can be used to select objects.
 	// A selector based on labels.
@@ -55,14 +57,11 @@ type ServiceSelectorSpec struct {
 	// Namespaces is a set of namespace to which objects belong.
 	// +optional
 	Namespaces []string `json:"namespaces,omitempty"`
-
-	// For more options check
-	// https://github.com/chaos-mesh/chaos-mesh/blob/31aef289b81a1d713b5a9976a257090da81ac29e/api/v1alpha1/selector.go#L94
 }
 
 type ServiceSelector struct {
-	// Selector contains the rules to select target
-	Selector ServiceSelectorSpec `json:",inline"`
+	// Match contains the rules to select target
+	Match MatchServiceSpec `json:"match"`
 
 	// Mode defines which of the selected services to use. If undefined, all() is used
 	// Supported mode: one / all / fixed / fixed-percent / random-max-percent

@@ -1,3 +1,4 @@
+# Example for point to point communication
 ---
 apiVersion: frisbee.io/v1alpha1
 kind: Template
@@ -6,13 +7,12 @@ metadata:
 spec:
   services:
     "server":
-      mesh:
+      datamesh:
         inputs:
           - name: "consumer"
             labels:
-              "discover": "kados"
+              "arkoudes": "kados"
             type: direct
-            direct:
 
       container:
         name: app
@@ -23,15 +23,15 @@ spec:
         args: [ "-s", "-f", "m" ]
 
     "client":
-      mesh:
+      datamesh:
         outputs:
           - name: "producer"
             selector:
-              labels:
-                "discover": "kados"
+              match:
+                labels:
+                  "arkoudes": "kados"
               mode: one
             type: direct
-            direct:
 
       container:
         name: app
@@ -40,7 +40,7 @@ spec:
           - name: server
             valueFrom:
               fieldRef:
-                fieldPath:  metadata.annotations['mesh.outputs.producer.dst']
+                fieldPath:  metadata.annotations['datamesh.outputs.producer.dst']
                 # This will get the server from annotations and will use it as execution argument
         command:
           - /bin/sh # Run shell
@@ -49,7 +49,7 @@ spec:
             set -eum
             trap "touch /dev/shm/stop" EXIT
 
-            sleep 10 # Wait for NIC
+            #sleep 10 # Wait for NIC
             iperf3 -c ${server} -t 600 -f m > /dev/shm/pipe
 
 
@@ -72,7 +72,7 @@ spec:
       name: clients
       servicegroup:
         templateRef: mesh-direct/client
-        instances: 1
+        instances: 2
 
     # Wait until servers are removed
     - actiontype: Wait

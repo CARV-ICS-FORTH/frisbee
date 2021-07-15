@@ -15,12 +15,12 @@ func (r *Reconciler) scheduleActions(topCtx context.Context, obj *v1alpha1.Workf
 	ctx, cancel := context.WithCancel(topCtx)
 	defer cancel()
 
-	r.Logger.Info("Workflow Started", "name", obj.GetName(), "time", time.Now())
+	// r.Logger.Info("Workflow Started", "name", obj.GetName(), "time", time.Now())
 
 	var err error
 
 	for _, action := range obj.Spec.Actions {
-		r.Logger.Info("Process Action", "type", action.ActionType, "name", action.Name, "depends", action.Depends)
+		r.Logger.Info("Exec Action", "type", action.ActionType, "name", action.Name, "depends", action.Depends)
 
 		switch action.ActionType {
 		case "Wait": // Expect command will block the entire controller
@@ -48,7 +48,7 @@ func (r *Reconciler) scheduleActions(topCtx context.Context, obj *v1alpha1.Workf
 
 func (r *Reconciler) wait(ctx context.Context, w *v1alpha1.Workflow, spec v1alpha1.WaitSpec) error {
 	if len(spec.Complete) > 0 {
-		err := common.GetLifecycle(ctx, w.GetUID(), &v1alpha1.ServiceGroup{}, spec.Complete...).Expect(v1alpha1.PhaseComplete)
+		err := common.GetLifecycle(ctx, w.GetUID(), &v1alpha1.ServiceGroup{}, spec.Complete...).Expect(v1alpha1.PhaseSuccess)
 		if err != nil {
 			return errors.Wrapf(err, "wait error")
 		}

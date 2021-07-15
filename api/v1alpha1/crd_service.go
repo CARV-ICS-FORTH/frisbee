@@ -26,9 +26,9 @@ type Service struct {
 }
 
 type ServiceSpec struct {
-	// Mesh is used for the automatic interconnection between services
+	// PortRef is a list of names of Ports that participate in the Mesh (autodiscovery + rewiring)
 	// +optional
-	Mesh *Mesh `json:"mesh,omitempty"`
+	PortRefs []string `json:"addPorts"`
 
 	// List of volumes that can be mounted by containers belonging to the pod.
 	// +optional
@@ -81,19 +81,22 @@ type Resources struct {
 }
 
 type ServiceStatus struct {
-	EtherStatus `json:",inline"`
+	Lifecycle `json:",inline"`
 
 	// IP is the IP of the kubernetes service (not the kubernetes pod).
 	// This convention allows to avoid blocking until the pod ip becomes known.
 	IP string `json:"ip"`
+
+	// Scheduled means that service is already received by the system. This is used for idempotent operations.
+	Scheduled bool `json:"scheduled"`
 }
 
-func (s *Service) GetStatus() EtherStatus {
-	return s.Status.EtherStatus
+func (s *Service) GetLifecycle() Lifecycle {
+	return s.Status.Lifecycle
 }
 
-func (s *Service) SetStatus(status EtherStatus) {
-	s.Status.EtherStatus = status
+func (s *Service) SetLifecycle(lifecycle Lifecycle) {
+	s.Status.Lifecycle = lifecycle
 }
 
 // +kubebuilder:object:root=true

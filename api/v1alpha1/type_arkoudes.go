@@ -40,8 +40,9 @@ const (
 	MeshRequisite = Kind("requisite")
 )
 
-// Mesh provides discovery capabilities to a service
-type Mesh struct {
+/*
+// DataMesh provides discovery capabilities to a service
+type DataMesh struct {
 	// +optional
 	Inputs []Port `json:"inputs,omitempty"`
 
@@ -59,42 +60,24 @@ type Port struct {
 	// +optional
 	Labels map[string]string `json:"labels,omitempty"`
 
-	// Selector is used to discover services in the Mesh based on given criteria
-	// +optional
-	Selector *ServiceSelector `json:"selector"`
-
-	// Type indicate the dependencies of the Port.
-	Type string `json:"type"`
+	// Type indicate the Access Protocol.
+	Type string `json:"type,omitempty"`
 
 	// Protocol represents the protocol associated with this port.
-	*EmbedProtocol `json:",inline"`
+	*ProtocolSpec `json:"protocolSpec,inline"`
+
+	// Protocol represents the protocol associated with this port.
+	*ProtocolStatus `json:"protocolStatus,inline"`
 }
 
-type EmbedProtocol struct {
-	// Direct indicates a point-to-point traffic, where the server runs a label, and the client a label selector.
+type ProtocolSpec struct {
+	Direct *DirectSpec `json:"direct,omitempty"`
+}
+
+type ProtocolStatus struct {
 	// +optional
-	Direct *Direct `json:"direct,omitempty"`
-
-	// TCPProxy is an OSI level 4 proxy for routing remote clients to local servers
-	TCPProxy *TCPProxy `json:"tcpproxy,omitempty"`
-
-	// +optional
-	File *File `json:"file,omitempty"`
+	Direct *DirectStatus `json:"direct,omitempty"`
 }
 
-// Direct allows for service discovery and point-to-point communication between two services in a Mesh.
-// In this mode, the servers must expose some labels, and the clients will select them.
-// It does not support multiplexing.
-type Direct struct {
-	// SetDstIP points the annotation of the remote client to which the server will write its ip.
-	SetDstIP string `json:"setDst"`
 
-	// SetDstPort points the annotation of the remote client to which the server will write its port.
-	SetDstPort string `json:"setPort"`
-}
-
-type TCPProxy struct {
-	//	tcpproxy.TCPProxy
-}
-
-type File struct{}
+*/

@@ -4,13 +4,16 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"time"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/common"
 	"github.com/fnikolai/frisbee/controllers/common/selector/template"
+	"github.com/grafana-tools/sdk"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	netv1 "k8s.io/api/networking/v1"
+	"k8s.io/apimachinery/pkg/util/runtime"
 )
 
 // {{{ Internal types
@@ -28,49 +31,57 @@ func (r *Reconciler) newMonitoringStack(ctx context.Context, obj *v1alpha1.Workf
 	}
 
 	var prometheus v1alpha1.Service
-
-	if err := r.installPrometheus(ctx, obj, &prometheus); err != nil {
-		return errors.Wrapf(err, "prometheus error")
+	{ // Install Prometheus
+		if err := r.installPrometheus(ctx, obj, &prometheus); err != nil {
+			return errors.Wrapf(err, "prometheus error")
+		}
 	}
 
 	var grafana v1alpha1.Service
-
-	if err := r.installGrafana(ctx, obj, &grafana); err != nil {
-		return errors.Wrapf(err, "grafana error")
+	{ // Install Grafana
+		if err := r.installGrafana(ctx, obj, &grafana); err != nil {
+			return errors.Wrapf(err, "grafana error")
+		}
 	}
 
-	if err := r.installIngress(ctx, obj, &prometheus, &grafana); err != nil {
-		return errors.Wrapf(err, "ingress error")
+	{ // Make Prometheus and Grafana accessible from outside the Cluster
+		if err := r.installIngress(ctx, obj, &prometheus, &grafana); err != nil {
+			return errors.Wrapf(err, "ingress error")
+		}
 	}
 
-	// wait for prometheus and  grafana to start running and then proceed with the experiment
-	if err := common.GetLifecycle(ctx, obj.GetUID(), &prometheus, grafana.GetName()).
-		Expect(v1alpha1.PhaseRunning); err != nil {
-		return errors.Wrapf(err, "grafana is not running")
+	{ // wait for prometheus and  grafana to start running and then proceed with the experiment
+		if err := common.GetLifecycle(ctx, obj.GetUID(), &prometheus, grafana.GetName()).
+			Expect(v1alpha1.PhaseRunning); err != nil {
+			return errors.Wrapf(err, "grafana is not running")
+		}
+
+		if err := common.GetLifecycle(ctx, obj.GetUID(), &grafana, grafana.GetName()).
+			Expect(v1alpha1.PhaseRunning); err != nil {
+			return errors.Wrapf(err, "grafana is not running")
+		}
 	}
 
-	if err := common.GetLifecycle(ctx, obj.GetUID(), &grafana, grafana.GetName()).
-		Expect(v1alpha1.PhaseRunning); err != nil {
-		return errors.Wrapf(err, "grafana is not running")
-	}
+	{ // use Grafana client for sending annotations
+		apiURI := fmt.Sprintf("http://%s", virtualhost(grafana.GetName(), obj.Spec.Ingress))
 
-	apiURI := fmt.Sprintf("http://%s", virtualhost(grafana.GetName(), obj.Spec.Ingress))
-	if err := common.EnableAnnotations(ctx, apiURI); err != nil {
-		return errors.Wrapf(err, "annotations error")
-	}
+		if err := newAnnotationClient(ctx, apiURI); err != nil {
+			return errors.Wrapf(err, "cannot create annotations client")
+		}
 
-	r.Logger.Info("Monitoring stack is ready",
-		"packages", obj.Spec.ImportMonitors,
-		"grafana", apiURI,
-	)
+		r.Logger.Info("Monitoring stack is ready",
+			"packages", obj.Spec.ImportMonitors,
+			"grafana", apiURI,
+		)
+	}
 
 	return nil
 }
 
 func (r *Reconciler) installPrometheus(ctx context.Context, obj *v1alpha1.Workflow, prom *v1alpha1.Service) error {
-	prometheusSpec := template.SelectService(ctx, template.ParseRef(prometheusTemplate))
+	prometheusSpec := template.SelectService(ctx, template.ParseRef(obj.GetNamespace(), prometheusTemplate))
 	if prometheusSpec == nil {
-		return errors.New("unable to find Grafana template")
+		return errors.New("cannot find template")
 	}
 
 	prometheusSpec.DeepCopyInto(&prom.Spec)
@@ -89,9 +100,9 @@ func (r *Reconciler) installPrometheus(ctx context.Context, obj *v1alpha1.Workfl
 }
 
 func (r *Reconciler) installGrafana(ctx context.Context, obj *v1alpha1.Workflow, grafana *v1alpha1.Service) error {
-	grafanaSpec := template.SelectService(ctx, template.ParseRef(grafanaTemplate))
+	grafanaSpec := template.SelectService(ctx, template.ParseRef(obj.GetNamespace(), grafanaTemplate))
 	if grafanaSpec == nil {
-		return errors.New("unable to find template")
+		return errors.New("cannot fubd template")
 	}
 
 	grafanaSpec.DeepCopyInto(&grafana.Spec)
@@ -108,6 +119,8 @@ func (r *Reconciler) installGrafana(ctx context.Context, obj *v1alpha1.Workflow,
 		return errors.Wrapf(err, "request error")
 	}
 
+	r.Logger.Info("Grafana was installed")
+
 	return nil
 }
 
@@ -120,7 +133,7 @@ func (r *Reconciler) importDashboards(ctx context.Context, obj *v1alpha1.Workflo
 		configMap.Data = make(map[string]string, len(obj.Spec.ImportMonitors))
 
 		for _, monRef := range obj.Spec.ImportMonitors {
-			monSpec := template.SelectMonitor(ctx, template.ParseRef(monRef))
+			monSpec := template.SelectMonitor(ctx, template.ParseRef(obj.GetNamespace(), monRef))
 			if monSpec == nil {
 				return errors.Errorf("monitor failed")
 			}
@@ -217,4 +230,62 @@ func (r *Reconciler) installIngress(ctx context.Context, obj *v1alpha1.Workflow,
 
 func virtualhost(serviceName, ingress string) string {
 	return fmt.Sprintf("%s.%s", serviceName, ingress)
+}
+
+//////////////////////////////////////////////////////
+// 			Mock Observability
+//////////////////////////////////////////////////////
+
+var annotationTimeout = 30 * time.Second
+
+const (
+	// grafana specific.
+	statusAnnotationAdded   = "Annotation added"
+	statusAnnotationPatched = "Annotation patched"
+)
+
+type AnnotationClient struct {
+	ctx    context.Context
+	apiURI string
+
+	*sdk.Client
+}
+
+func newAnnotationClient(ctx context.Context, apiURI string) error {
+	client, err := sdk.NewClient(apiURI, "", sdk.DefaultHTTPClient)
+	if err != nil {
+		return err
+	}
+
+	common.EnableAnnotations(ctx, &AnnotationClient{ctx: ctx, Client: client, apiURI: apiURI})
+
+	return nil
+}
+
+func (c *AnnotationClient) Add(ga sdk.CreateAnnotationRequest) {
+	ctx, cancel := context.WithTimeout(c.ctx, annotationTimeout)
+	defer cancel()
+
+	// submit
+	gaResp, err := c.Client.CreateAnnotation(ctx, ga)
+	if err != nil {
+		runtime.HandleError(errors.Wrapf(err, "annotation failed"))
+
+		return
+	}
+
+	// validate
+	switch {
+	case gaResp.Message == nil:
+		runtime.HandleError(errors.Wrapf(err, "empty annotation response"))
+
+	case *gaResp.Message == string(statusAnnotationAdded):
+		// valid
+		return
+
+	default:
+		runtime.HandleError(errors.Wrapf(err,
+			"unexpected annotation response. expected %s but got %s", statusAnnotationAdded, *gaResp.Message,
+		))
+	}
 }
