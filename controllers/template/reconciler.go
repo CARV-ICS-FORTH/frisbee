@@ -2,6 +2,7 @@ package template
 
 import (
 	"context"
+	"reflect"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/common"
@@ -66,11 +67,8 @@ func (r *Reconciler) Finalizer() string {
 }
 
 func (r *Reconciler) Finalize(obj client.Object) error {
-	// delete any external resources associated with the service
-	// Examples finalizers include performing backups and deleting
-	// resources that are not owned by this CR, like a PVC.
-	//
-	// Ensure that delete implementation is idempotent and safe to invoke
-	// multiple times for same object
+
+	r.Logger.Info("Finalize", "kind", reflect.TypeOf(obj), "name", obj.GetName())
+
 	return nil
 }

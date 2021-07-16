@@ -1,9 +1,7 @@
 package structure
 
 import (
-	"fmt"
 	"reflect"
-	"strings"
 )
 
 func KeysFromMap(m interface{}) (keys []string) {
@@ -30,20 +28,21 @@ func MergeMap(src map[string]string, newer map[string]string) map[string]string 
 	return src
 }
 
-// Label is the label field in metadata
-type Label map[string]string
-
-// String converts label to a string
-func (l Label) String() string {
-	var arr []string
-
-	for k, v := range l {
-		if len(k) == 0 {
-			continue
-		}
-
-		arr = append(arr, fmt.Sprintf("%s=%s", k, v))
+func Max(x, y int) int {
+	if x > y {
+		return x
 	}
+	return y
+}
 
-	return strings.Join(arr, ",")
+func Intersect(as, bs []string) []string {
+	i := make([]string, 0, Max(len(as), len(bs)))
+	for _, a := range as {
+		for _, b := range bs {
+			if a == b {
+				i = append(i, a)
+			}
+		}
+	}
+	return i
 }

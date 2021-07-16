@@ -112,7 +112,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		return common.DoNotRequeue()
 
-	case v1alpha1.PhaseDiscoverable, v1alpha1.PhasePending, v1alpha1.PhaseChaos: // These phases should not happen in the workflow
+	case v1alpha1.PhaseDiscoverable, v1alpha1.PhasePending, v1alpha1.PhaseChaos:
+		// These phases should not happen in the workflow
 		panic(errors.Errorf("invalid lifecycle phase %s", obj.Status.Phase))
 
 	default:
@@ -125,14 +126,7 @@ func (r *Reconciler) Finalizer() string {
 }
 
 func (r *Reconciler) Finalize(obj client.Object) error {
-	// delete any external resources associated with the service
-	// Examples finalizers include performing backups and deleting
-	// resources that are not owned by this CR, like a PVC.
-	//
-	// Ensure that delete implementation is idempotent and safe to invoke
-	// multiple times for same object
-
-	r.Logger.Info("Finalize", "workflow", obj.GetName())
+	r.Logger.Info("Finalize", "kind", reflect.TypeOf(obj), "name", obj.GetName())
 
 	return nil
 }

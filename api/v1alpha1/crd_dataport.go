@@ -8,6 +8,22 @@ func init() {
 	SchemeBuilder.Register(&DataPort{}, &DataPortList{})
 }
 
+type PortType string
+
+const (
+	Inport = PortType("input")
+
+	Outport = PortType("output")
+)
+
+type PortProtocol string
+
+const (
+	Direct = PortProtocol("direct")
+
+	Kafka = PortProtocol("kafka")
+)
+
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
@@ -20,20 +36,19 @@ type DataPort struct {
 	Spec DataPortSpec `json:"spec"`
 
 	// Most recently observed status of the object
-	// +optional
 	Status DataPortStatus `json:"status,omitempty"`
 }
 
 type DataPortSpec struct {
-	// Type indicate the role of the Port. It can be Input or Output.
+	// Type indicate the role of the DstPort. It can be Input or Output.
 	// +kubebuilder:validation:Enum=input;output
-	Type string `json:"type"`
+	Type PortType `json:"type"`
 
 	*EmbedType `json:",inline"`
 
-	Protocol string `json:"protocol"`
+	Protocol PortProtocol `json:"protocol"`
 
-	*EmbedProtocol `json:",inline"`
+	*ProtocolSpec `json:",inline"`
 }
 
 type EmbedType struct {
@@ -47,40 +62,29 @@ type EmbedType struct {
 type Input struct {
 	// Selector is used to discover services in the DataMesh based on given criteria
 	// +optional
-	Selector *ServiceSelector `json:"selector"`
+	Selector *metav1.LabelSelector `json:"selector"`
 }
 
 type Output struct{}
 
-type EmbedProtocol struct {
-	// +optional
-	Direct *Direct `json:"direct"`
-}
+////////////////////////////
+// Protocol Spec
+////////////////////////////
 
-type Direct struct {
-	// Spec defines the behavior of the object
-	Spec DirectSpec `json:"spec"`
+type ProtocolSpec struct {
+	// +optional
+	Direct *DirectSpec `json:"direct,omitempty"`
 
 	// +optional
-	Status DirectStatus `json:"status,omitempty"`
+	Kafka *KafkaSpec `json:"kafka,omitempty"`
 }
 
 type DirectSpec struct {
-	Port int `json:"port"`
-}
-
-type DirectStatus struct {
-	LocalAddr string `json:"localAddr"`
-
-	RemoteAddr string `json:"remoteAddr"`
-}
-
-type Kafka struct {
-	// Spec defines the behavior of the object
-	Spec KafkaSpec `json:"spec"`
+	// +optional
+	DstAddr string `json:"dstAddr"`
 
 	// +optional
-	Status KafkaStatus `json:"status,omitempty"`
+	DstPort int `json:"dstPort"`
 }
 
 type KafkaSpec struct {
@@ -91,11 +95,39 @@ type KafkaSpec struct {
 	Queue string `json:"queue"`
 }
 
-type KafkaStatus struct{}
+////////////////////////////
+// Protocol Status
+////////////////////////////
 
 type DataPortStatus struct {
 	Lifecycle `json:",inline"`
+
+	ProtocolStatus `json:",inline"`
 }
+
+type ProtocolStatus struct {
+	// +optional
+	Direct *DirectStatus `json:"direct"`
+
+	// +optional
+	Kafka *KafkaStatus `json:"kafka"`
+}
+
+type DirectStatus struct {
+	// LocalAddr is the IP of the associated target
+	LocalAddr string `json:"localAddr"`
+
+	// LocalPort is the DstPort of the associated target
+	LocalPort int `json:"localPort"`
+
+	// RemoteAddr is the IP of the remote target
+	RemoteAddr string `json:"remoteAddr"`
+
+	// RemotePort is the DstPort of the remote target
+	RemotePort int `json:"remotePort"`
+}
+
+type KafkaStatus struct{}
 
 func (s *DataPort) GetLifecycle() Lifecycle {
 	return s.Status.Lifecycle

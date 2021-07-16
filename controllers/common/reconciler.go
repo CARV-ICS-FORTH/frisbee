@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 	k8errors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -17,6 +16,13 @@ import (
 
 func DoNotRequeue() (ctrl.Result, error) {
 	return ctrl.Result{}, nil
+}
+
+func Requeue() (ctrl.Result, error) {
+	//logrus.Warn("Trigger Requeue")
+	//debug.PrintStack()
+
+	return ctrl.Result{Requeue: true}, nil
 }
 
 func RequeueWithError(err error) (ctrl.Result, error) {
@@ -53,8 +59,6 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// r.Info("object not found", "name", req.NamespacedName)
-
-			// Return and don't requeue
 			return DoNotRequeue()
 		}
 
@@ -137,38 +141,10 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 	return DoNotRequeue()
 }
 
-// SetOwner is a helper method to make sure the given object contains an object reference to the object provided.
-// It also names the child after the parent, with a potential postfix.
-func SetOwner(parent, child metav1.Object, name string) error {
-	if name == "" {
-		child.SetName(parent.GetName())
-	} else {
-		child.SetName(name)
-	}
-
-	child.SetNamespace(parent.GetNamespace())
-
-	if err := controllerutil.SetOwnerReference(parent, child, common.client.Scheme()); err != nil {
-		return errors.Wrapf(err, "unable to set parent")
-	}
-
-	// owner labels are used by the selectors
-	child.SetLabels(labels.Merge(child.GetLabels(), map[string]string{
-		"owner": parent.GetName(),
-	}))
-
-	return nil
-}
-
 func Update(ctx context.Context, obj client.Object) (ctrl.Result, error) {
-	// do not use delete convention here. we need to Update a delete object in order to remove the finalizers.
-
+	// we need to Update a delete object in order to remove the finalizers.
 	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		if err := common.client.Update(ctx, obj); err != nil {
-			return errors.Wrapf(err, "update failed")
-		}
-
-		return nil
+		return common.client.Update(ctx, obj)
 	})
 
 	switch {
@@ -180,10 +156,17 @@ func Update(ctx context.Context, obj client.Object) (ctrl.Result, error) {
 
 		return DoNotRequeue()
 
-	case k8errors.IsConflict(err):
-		runtimeutil.HandleError(errors.Wrapf(err, "update error. Probably the parent has been removed. Ignore it"))
+	case k8errors.IsNotFound(err):
+		// The object has been deleted since we read it.
+		// Requeue the object to try to reconciliate again.
+		return Requeue()
 
-		return DoNotRequeue()
+	case k8errors.IsConflict(err):
+		// The object has been updated since we read it.
+		// Requeue the object to try to reconciliate again.
+		runtimeutil.HandleError(errors.Wrapf(err, "update error"))
+
+		return Requeue()
 
 	default:
 		runtimeutil.HandleError(errors.Wrapf(err, "Update failed for %s [%s]",
@@ -193,42 +176,39 @@ func Update(ctx context.Context, obj client.Object) (ctrl.Result, error) {
 	}
 }
 
-func updateStatus(ctx context.Context, obj client.Object) (ctrl.Result, error) {
-	// if the object is scheduled for deletion, do not Update its status
-	if obj.GetDeletionTimestamp().IsZero() {
-		// The status subresource ignores changes to spec, so it’s less likely to conflict with any other updates,
-		// and can have separate permissions.
+func UpdateStatus(ctx context.Context, obj client.Object) (ctrl.Result, error) {
+	// The status subresource ignores changes to spec, so it’s less likely to conflict with any other updates,
+	// and can have separate permissions.
 
-		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-			if err := common.client.Status().Update(ctx, obj); err != nil {
-				return errors.Wrapf(err, "update status failed")
-			}
+	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		return common.client.Status().Update(ctx, obj)
+	})
 
-			return nil
-		})
+	switch {
+	case err == nil:
+		return DoNotRequeue()
 
-		switch {
-		case err == nil:
-			return DoNotRequeue()
+	case k8errors.IsInvalid(err):
+		common.logger.Error(err, "Update status error")
 
-		case k8errors.IsInvalid(err):
-			common.logger.Error(err, "Update status error")
+		return DoNotRequeue()
 
-			return DoNotRequeue()
+	case k8errors.IsNotFound(err):
+		// The object has been deleted since we read it.
+		// Requeue the object to try to reconciliate again.
+		return Requeue()
 
-		case k8errors.IsConflict(err):
-			// Most likely the object is already removed, and therefore we cannot Update the status.
-			runtimeutil.HandleError(err)
+	case k8errors.IsConflict(err):
+		// The object has been updated since we read it.
+		// Requeue the object to try to reconciliate again.
+		runtimeutil.HandleError(errors.Wrapf(err, "update status error"))
 
-			return DoNotRequeue()
+		return Requeue()
 
-		default:
-			runtimeutil.HandleError(errors.Wrapf(err, "status Update failed for %s [%s]",
-				obj.GetName(), obj.GetObjectKind().GroupVersionKind()))
+	default:
+		runtimeutil.HandleError(errors.Wrapf(err, "status Update failed for %s [%s]",
+			obj.GetName(), obj.GetObjectKind().GroupVersionKind()))
 
-			return DoNotRequeue()
-		}
+		return DoNotRequeue()
 	}
-
-	return DoNotRequeue()
 }

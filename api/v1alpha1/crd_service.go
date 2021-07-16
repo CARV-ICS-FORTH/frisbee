@@ -86,9 +86,6 @@ type ServiceStatus struct {
 	// IP is the IP of the kubernetes service (not the kubernetes pod).
 	// This convention allows to avoid blocking until the pod ip becomes known.
 	IP string `json:"ip"`
-
-	// Scheduled means that service is already received by the system. This is used for idempotent operations.
-	Scheduled bool `json:"scheduled"`
 }
 
 func (s *Service) GetLifecycle() Lifecycle {

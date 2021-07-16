@@ -35,7 +35,7 @@ func Discoverable(ctx context.Context, obj InnerObject) (ctrl.Result, error) {
 
 	obj.SetLifecycle(status)
 
-	return updateStatus(ctx, obj)
+	return UpdateStatus(ctx, obj)
 }
 
 // Pending is a wrapper that sets phase to Pending and does not requeue the request.
@@ -47,7 +47,7 @@ func Pending(ctx context.Context, obj InnerObject) (ctrl.Result, error) {
 
 	obj.SetLifecycle(status)
 
-	return updateStatus(ctx, obj)
+	return UpdateStatus(ctx, obj)
 }
 
 // Running is a wrapper that sets phase to Running and does not requeue the request.
@@ -59,7 +59,7 @@ func Running(ctx context.Context, obj InnerObject) (ctrl.Result, error) {
 
 	obj.SetLifecycle(status)
 
-	return updateStatus(ctx, obj)
+	return UpdateStatus(ctx, obj)
 }
 
 // Success is a wrapper that sets phase to Success and does not requeue the request.
@@ -71,7 +71,7 @@ func Success(ctx context.Context, obj InnerObject) (ctrl.Result, error) {
 
 	obj.SetLifecycle(status)
 
-	return updateStatus(ctx, obj)
+	return UpdateStatus(ctx, obj)
 }
 
 // Chaos is a wrapper that sets phase to Chaos and does not requeue the request.
@@ -83,7 +83,7 @@ func Chaos(ctx context.Context, obj InnerObject) (ctrl.Result, error) {
 
 	obj.SetLifecycle(status)
 
-	return updateStatus(ctx, obj)
+	return UpdateStatus(ctx, obj)
 }
 
 // Failed is a wrap that logs the error, updates the status, and does not requeue the request.
@@ -96,7 +96,7 @@ func Failed(ctx context.Context, obj InnerObject, err error) (ctrl.Result, error
 
 	obj.SetLifecycle(status)
 
-	return updateStatus(ctx, obj)
+	return UpdateStatus(ctx, obj)
 }
 
 /******************************************************
@@ -180,17 +180,17 @@ type ManagedLifecycle struct {
 	watchChildren func() error
 }
 
-// UpdateParent run in a loops and continuously Update the status of the parent.
-func (lc *ManagedLifecycle) UpdateParent(parent InnerObject) error {
+// UpdateParentLifecycle run in a loops and continuously Update the status of the parent.
+func (lc *ManagedLifecycle) UpdateParentLifecycle(parent InnerObject) error {
 	if err := lc.watchChildren(); err != nil {
 		return errors.Wrapf(err, "unable to watch children")
 	}
 
-	go func() {
-		var phase v1alpha1.Phase
-		var msg error
-		var valid error
+	var phase v1alpha1.Phase
+	var msg error
+	var valid error
 
+	go func() {
 		phase, valid = lc.n.getNextPhase()
 
 		for {
@@ -207,25 +207,12 @@ func (lc *ManagedLifecycle) UpdateParent(parent InnerObject) error {
 			)
 
 			switch phase {
-			case v1alpha1.PhaseUninitialized:
-				panic("this should not happen")
-
-			case v1alpha1.PhasePending:
+			case v1alpha1.PhaseUninitialized, v1alpha1.PhaseDiscoverable, v1alpha1.PhasePending:
 				panic("this should not happen")
 
 			case v1alpha1.PhaseRunning:
 				_, _ = Running(lc.ctx, parent)
 				phase, msg, valid = lc.n.getNextRunning()
-
-			case v1alpha1.PhaseSuccess:
-				_, _ = Success(lc.ctx, parent)
-
-				return
-
-			case v1alpha1.PhaseFailed:
-				_, _ = Failed(lc.ctx, parent, msg)
-
-				return
 
 			case v1alpha1.PhaseChaos:
 				_, _ = Chaos(lc.ctx, parent)
@@ -238,6 +225,16 @@ func (lc *ManagedLifecycle) UpdateParent(parent InnerObject) error {
 				)
 
 				phase, msg, valid = lc.n.getNextChaos()
+
+			case v1alpha1.PhaseSuccess:
+				_, _ = Success(lc.ctx, parent)
+
+				return
+
+			case v1alpha1.PhaseFailed:
+				_, _ = Failed(lc.ctx, parent, msg)
+
+				return
 
 			default:
 				valid = errors.Errorf("invalid phase %s ", phase)
@@ -258,7 +255,9 @@ func (lc *ManagedLifecycle) Expect(expect v1alpha1.Phase) error {
 	}
 
 	var phase v1alpha1.Phase
+
 	var msg error
+
 	var valid error
 
 	phase, _ = lc.n.getNextPhase()
@@ -280,7 +279,7 @@ func (lc *ManagedLifecycle) Expect(expect v1alpha1.Phase) error {
 		}
 
 		switch phase {
-		case v1alpha1.PhaseUninitialized, v1alpha1.PhaseChaos, v1alpha1.PhasePending:
+		case v1alpha1.PhaseUninitialized, v1alpha1.PhaseChaos, v1alpha1.PhaseDiscoverable, v1alpha1.PhasePending:
 			panic(errors.Errorf("cannot wait on phase %s", expect))
 
 		case v1alpha1.PhaseRunning:
@@ -349,7 +348,8 @@ func watchLifecycle(ctx context.Context, parentUID types.UID, child client.Objec
 // filter applies the provided filter to all events coming in, and decides which events will be handled
 // by this controller. It does this by looking at the objects metadata.ownerReferences field for an
 // appropriate OwnerReference. It then enqueues that Foo resource to be processed. If the object does not
-// have an appropriate OwnerReference, it will simply be skipped.
+// have an appropriate OwnerReference, it will simply be skipped. If the parent is empty, the object is passed
+// as if it belongs to this parent.
 func filter(parentUID types.UID) func(obj interface{}) bool {
 	return func(obj interface{}) bool {
 		if obj == nil {
@@ -374,6 +374,10 @@ func filter(parentUID types.UID) func(obj interface{}) bool {
 
 				return false
 			}
+		}
+
+		if len(parentUID) == 0 {
+			return true
 		}
 
 		// Update locate view of the dependent services

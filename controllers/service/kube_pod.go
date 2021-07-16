@@ -42,6 +42,10 @@ func convert(obj interface{}) v1alpha1.Lifecycle {
 
 func (r *Reconciler) createKubePod(ctx context.Context, obj *v1alpha1.Service) error {
 	pod := corev1.Pod{}
+	if err := common.SetOwner(obj, &pod, ""); err != nil {
+		return errors.Wrapf(err, "ownership failed")
+	}
+
 	pod.Spec.Volumes = obj.Spec.Volumes
 
 	// If true, it leads to admission webhook error in chaos-mesh
@@ -59,10 +63,6 @@ func (r *Reconciler) createKubePod(ctx context.Context, obj *v1alpha1.Service) e
 	pod.Spec.Containers = []corev1.Container{obj.Spec.Container}
 	pod.SetLabels(obj.GetLabels())
 	pod.SetAnnotations(obj.GetAnnotations())
-
-	if err := common.SetOwner(obj, &pod, ""); err != nil {
-		return errors.Wrapf(err, "ownership failed")
-	}
 
 	// order of operation is important. do not change it.
 	if err := r.addMonitoring(ctx, obj, &pod); err != nil {
@@ -83,7 +83,7 @@ func (r *Reconciler) createKubePod(ctx context.Context, obj *v1alpha1.Service) e
 	// objects like Pods into managed (inner) objects
 	podWraper := &common.ExternalToInnerObject{Object: &pod, LifecycleFunc: convert}
 
-	if err := common.GetLifecycle(ctx, obj.GetUID(), podWraper, pod.GetName()).UpdateParent(obj); err != nil {
+	if err := common.GetLifecycle(ctx, obj.GetUID(), podWraper, pod.GetName()).UpdateParentLifecycle(obj); err != nil {
 		return errors.Wrapf(err, "lifecycle failed")
 	}
 
@@ -214,12 +214,12 @@ func createContainers(obj *v1alpha1.Reference, volumemounts []corev1.VolumeMount
 		}
 	}
 
-	ports := func(ports []v1alpha1.Port) []corev1.ContainerPort {
+	ports := func(ports []v1alpha1.DstPort) []corev1.ContainerPort {
 		asPorts := make([]corev1.ContainerPort, len(ports))
 		for i := 0; i < len(ports); i++ {
 			asPorts[i] = corev1.ContainerPort{
 				Name:          ports[i].Name,
-				ContainerPort: ports[i].Port,
+				ContainerPort: ports[i].DstPort,
 			}
 		}
 

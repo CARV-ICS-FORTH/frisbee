@@ -20,7 +20,8 @@ const (
 
 	// PhaseDiscoverable means that the service has been accepted by the system, but one of the dependent
 	// conditions is not met yet. This includes logical dependencies (e.g, Run, Complete) and/or Ports discovery and
-	// rewiring.
+	// rewiring. This phase is generally for "listening" for remote events. (in terms of if anything happens, a
+	// remote object can update us)
 	PhaseDiscoverable = Phase("Discoverable")
 
 	// PhasePending means that the service been accepted by the Kubernetes cluster, but the service is not yet running.

@@ -2,7 +2,7 @@ package dataport
 
 import (
 	"context"
-	"strings"
+	"reflect"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/common"
@@ -43,51 +43,70 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return result, err
 	}
 
+	r.Logger.Info("-> Reconcile", "kind", reflect.TypeOf(obj), "name", obj.GetName(), "lifecycle", obj.Status.Phase)
+	defer func() {
+		r.Logger.Info("<- Reconcile", "kind", reflect.TypeOf(obj), "name", obj.GetName(), "lifecycle", obj.Status.Phase)
+	}()
+
+	handler := r.dispatch(obj.Spec.Protocol)
+
 	// The reconcile logic
 	switch obj.Status.Phase {
 	case v1alpha1.PhaseUninitialized:
-		return r.dispatch(ctx, &obj)
+		return handler.Create(ctx, &obj)
 
-	case v1alpha1.PhasePending: // if we're here, we haven't started yet
-		return common.DoNotRequeue()
+	case v1alpha1.PhaseDiscoverable:
+		return handler.Discoverable(ctx, &obj)
+
+	case v1alpha1.PhasePending:
+		return handler.Pending(ctx, &obj)
 
 	case v1alpha1.PhaseRunning:
-		return common.DoNotRequeue()
+		return handler.Running(ctx, &obj)
 
-	case v1alpha1.PhaseSuccess: // If we're PhaseSuccess but not deleted yet, nothing to do but return
-		return common.DoNotRequeue()
-
-	case v1alpha1.PhaseFailed: // if we're here, then something went completely wrong
-		r.Logger.Info("Service failed", "name", obj.GetName())
+	case v1alpha1.PhaseFailed:
+		r.Logger.Info("Dataport failed", "name", obj.GetName())
 
 		return common.DoNotRequeue()
 
-	case v1alpha1.PhaseChaos: // if we're here, a controlled failure has occurred.
-		r.Logger.Info("Service consumed by PhaseChaos", "service", obj.GetName())
-
-		return common.DoNotRequeue()
+	case v1alpha1.PhaseChaos, v1alpha1.PhaseSuccess:
+		// These phases should not happen in the workflow
+		panic(errors.Errorf("invalid lifecycle phase %s", obj.Status.Phase))
 
 	default:
-		return common.Failed(ctx, &obj, errors.Errorf("unknown phase: %s", obj.Status.Phase))
+		panic(errors.Errorf("unknown lifecycle phase: %s", obj.Status.Phase))
 	}
 }
 
 func (r *Reconciler) Finalizer() string {
-	return "services.frisbee.io/finalizer"
+	return "dataports.frisbee.io/finalizer"
 }
 
 func (r *Reconciler) Finalize(obj client.Object) error {
-	r.Logger.Info("Finalize", "service", obj.GetName())
+	r.Logger.Info("Finalize", "kind", reflect.TypeOf(obj), "name", obj.GetName())
 
 	return nil
 }
 
-func (r *Reconciler) dispatch(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
-	switch strings.ToLower(obj.Spec.Protocol) {
-	case "direct":
-		return r.direct(ctx, obj)
+type protocolHandler interface {
+	Create(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error)
+	Discoverable(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error)
+	Pending(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error)
+	Running(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error)
+}
+
+func (r *Reconciler) dispatch(proto v1alpha1.PortProtocol) protocolHandler {
+	switch proto {
+	case v1alpha1.Direct:
+		return &direct{r: r}
+
+	case v1alpha1.Kafka:
+		return nil
+	//	return &kafka{r: r}
 
 	default:
-		return common.Failed(ctx, obj, errors.New("invalid protocol"))
+		panic("should never happen")
 	}
 }
+
+// Initiate local port and prepare for matching remote ports.

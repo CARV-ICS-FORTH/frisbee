@@ -4,19 +4,20 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"time"
 
 	"github.com/grafana-tools/sdk"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var grafanaClient annotationClient
+var annnotator annotator
 
-type annotationClient interface {
+type annotator interface {
 	Add(sdk.CreateAnnotationRequest)
 }
 
-func EnableAnnotations(ctx context.Context, client annotationClient) {
-	grafanaClient = client
+func EnableAnnotations(ctx context.Context, client annotator) {
+	annnotator = client
 }
 
 func annotateAdd(obj interface{}) {
@@ -25,7 +26,7 @@ func annotateAdd(obj interface{}) {
 		panic("this should never happen")
 	}
 
-	msg := fmt.Sprintf("Child added. Kind:%s Name:%s ", reflect.TypeOf(obj), objMeta.GetName())
+	msg := fmt.Sprintf("Child added. Kind:%s Name:%s", reflect.TypeOf(obj), objMeta.GetName())
 
 	ga := sdk.CreateAnnotationRequest{
 		Time: objMeta.GetCreationTimestamp().Unix() * 1000, // unix ts in ms
@@ -33,14 +34,15 @@ func annotateAdd(obj interface{}) {
 		Text: msg,
 	}
 
-	if grafanaClient == nil {
+	if annnotator == nil {
 		common.logger.Info("omit annotation", "msg", msg)
-	} else {
-		grafanaClient.Add(ga)
+
+		return
 	}
+
+	annnotator.Add(ga)
 }
 
-// add an annotation to grafana
 func annotateDelete(obj interface{}) {
 	objMeta, ok := obj.(metav1.Object)
 	if !ok {
@@ -49,15 +51,23 @@ func annotateDelete(obj interface{}) {
 
 	msg := fmt.Sprintf("Child Deleted. Kind:%s Name:%s ", reflect.TypeOf(obj), objMeta.GetName())
 
+	// this is because in some conditions a delete elements does not have a deletion timestamp.
+	// in this case, just use the current time.
+	ts := objMeta.GetDeletionTimestamp()
+	if ts == nil {
+		ts = &metav1.Time{Time: time.Now()}
+	}
+
 	ga := sdk.CreateAnnotationRequest{
-		Time: objMeta.GetDeletionTimestamp().Unix() * 1000, // unix ts in ms
+		Time: ts.Unix() * 1000, // unix ts in ms
 		Tags: []string{"exit"},
 		Text: msg,
 	}
 
-	if grafanaClient == nil {
+	if annnotator == nil {
 		common.logger.Info("omit annotation", "msg", msg)
-	} else {
-		grafanaClient.Add(ga)
+		return
 	}
+
+	annnotator.Add(ga)
 }

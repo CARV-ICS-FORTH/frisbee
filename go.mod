@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/davecgh/go-spew v1.1.1
+	github.com/fatih/structs v1.1.0 // indirect
 	github.com/go-logr/logr v0.4.0
 	github.com/go-playground/validator/v10 v10.6.1
 	github.com/grafana-tools/sdk v0.0.0-20210630212345-db1192e93802

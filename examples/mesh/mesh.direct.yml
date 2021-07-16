@@ -10,14 +10,12 @@ spec:
   type: input
   input:
     selector:
-      match:
-        labels:
+      matchLabels:
           "arkoudes": "kados"
-      mode: one
   protocol: direct
   direct:
-    spec:
-      port: 5201
+      dstAddr: server
+      dstPort: 5201
 
 
 ---
@@ -27,10 +25,23 @@ metadata:
   name: server
 spec:
   addPorts: [consumer]
+
   container:
     name: app
     image: "networkstatic/iperf3"
-    args: [ "-s", "-f", "m" ]
+    env:
+      - name: port
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.annotations['ports.consumer.direct.LocalPort']
+    command:
+      - /bin/sh # Run shell
+      - -c # Read from string
+      - |  # Multi-line str
+        set -eum
+        trap "touch /dev/shm/stop" EXIT
+
+        iperf3 -s -f m -p ${port}
 
 ---
 #
@@ -55,6 +66,7 @@ metadata:
   name: client
 spec:
   addPorts: [producer]
+
   container:
     name: app
     image: "networkstatic/iperf3"
@@ -62,7 +74,12 @@ spec:
       - name: server
         valueFrom:
           fieldRef:
-            fieldPath: metadata.annotations['discover.producer.dst']
+            fieldPath: metadata.annotations['ports.producer.direct.RemoteAddr']
+
+      - name: port
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.annotations['ports.producer.direct.RemotePort']
             # This will get the server from annotations and will use it as execution argument
     command:
       - /bin/sh # Run shell
@@ -71,5 +88,7 @@ spec:
         set -eum
         trap "touch /dev/shm/stop" EXIT
 
+        sleep 120
+
         #sleep 10 # Wait for NIC
-        iperf3 -c ${server} -t 600 -f m > /dev/shm/pipe
+        iperf3 -c ${server} -p ${port} -t 600 -f m > /dev/shm/pipe

@@ -2,8 +2,10 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 
+	"github.com/fatih/structs"
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/common"
 	"github.com/go-logr/logr"
@@ -54,35 +56,21 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// The reconcile logic
 	switch obj.Status.Phase {
 	case v1alpha1.PhaseUninitialized:
-		// if no ports are defined, make it directly discoverable
-		if obj.Spec.PortRefs == nil {
+
+		if len(obj.Spec.PortRefs) > 0 {
 			return common.Discoverable(ctx, &obj)
 		}
 
-		// TODO: This case is for the MESH
-
-		if err := r.discoverDataMesh(ctx, &obj); err != nil {
-			return common.Failed(ctx, &obj, err)
-		}
-
-		// At this phase, we have passed control to the DataPort and wait for it to make the service Discoverable
-		return common.DoNotRequeue()
+		return common.Pending(ctx, &obj)
 
 	case v1alpha1.PhaseDiscoverable:
-		if obj.Status.Scheduled {
-			// The operation is already scheduled. nothing to do
-			return common.DoNotRequeue()
-		}
+		return r.discoverDataMesh(ctx, &obj)
 
+	case v1alpha1.PhasePending:
 		if err := r.createKubePod(ctx, &obj); err != nil {
 			return common.Failed(ctx, &obj, err)
 		}
 
-		obj.Status.Scheduled = true
-
-		return common.Pending(ctx, &obj)
-
-	case v1alpha1.PhasePending:
 		// if we're here, the lifecycle of service is driven by the pod
 		return common.DoNotRequeue()
 
@@ -126,25 +114,64 @@ func (r *Reconciler) Finalizer() string {
 }
 
 func (r *Reconciler) Finalize(obj client.Object) error {
-	r.Logger.Info("Finalize", "service", obj.GetName())
+	r.Logger.Info("Finalize", "kind", reflect.TypeOf(obj), "name", obj.GetName())
 
 	return nil
 }
 
-func (r *Reconciler) discoverDataMesh(ctx context.Context, obj *v1alpha1.Service) error {
-	// add port handlers
-	for _, portRef := range obj.Spec.PortRefs {
+func (r *Reconciler) discoverDataMesh(ctx context.Context, obj *v1alpha1.Service) (ctrl.Result, error) {
+
+	ports := make([]v1alpha1.DataPort, len(obj.Spec.PortRefs))
+
+	// add ports
+	for i, portRef := range obj.Spec.PortRefs {
 		key := client.ObjectKey{
 			Name:      portRef,
 			Namespace: obj.GetNamespace(),
 		}
 
-		var port v1alpha1.DataPort
-
-		if err := r.Client.Get(ctx, key, &port); err != nil {
-			return errors.Wrapf(err, "port error")
+		if err := r.Client.Get(ctx, key, &ports[i]); err != nil {
+			return common.Failed(ctx, obj, errors.Wrapf(err, "port error"))
 		}
 	}
 
-	return nil
+	// TODO: fix this crappy thing
+	return r.direct(ctx, obj, &ports[0])
+
+	/*
+		var
+		var err error
+
+		// connect remote ports to local handlers
+		for i, port := range ports {
+			switch v := port.Spec.Protocol; v {
+			case v1alpha1.Direct:
+				err = r.direct(ctx, obj, &ports[i])
+
+			default:
+				return common.Failed(ctx, obj, errors.Errorf("invalid mesh protocol %s", v))
+			}
+
+			if err != nil {
+				return errors.Wrapf(err, "data mesh failed")
+			}
+		}
+
+	*/
+}
+
+
+
+func portStatusToAnnotations(portName string, proto v1alpha1.PortProtocol, status interface{}) map[string]string {
+	if status == nil {
+		return nil
+	}
+
+	ret := make(map[string]string)
+
+	for key, value := range structs.Map(status) {
+		ret[fmt.Sprintf("ports.%s.%s.%s", portName, proto, key)] = fmt.Sprint(value)
+	}
+
+	return ret
 }

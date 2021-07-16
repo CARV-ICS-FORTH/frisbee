@@ -6,7 +6,7 @@ package v1alpha1
 type Kind string
 
 const (
-	// MeshOffer indicates that the Port is active and provides a certain functionality.
+	// MeshOffer indicates that the DstPort is active and provides a certain functionality.
 	MeshOffer = Kind("offer")
 
 	// MeshWants configures (weak) requirement dependencies on other units.
@@ -44,14 +44,14 @@ const (
 // DataMesh provides discovery capabilities to a service
 type DataMesh struct {
 	// +optional
-	Inputs []Port `json:"inputs,omitempty"`
+	Inputs []DstPort `json:"inputs,omitempty"`
 
 	// +optional
-	Outputs []Port `json:"outputs,omitempty"`
+	Outputs []DstPort `json:"outputs,omitempty"`
 }
 
-// Port represents a property of a Component or Graph through which it communicates with the outer world.
-type Port struct {
+// DstPort represents a property of a Component or Graph through which it communicates with the outer world.
+type DstPort struct {
 	// Name is a unique names that describes the port.
 	Name string `json:"name"`
 

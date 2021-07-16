@@ -7,7 +7,11 @@ import (
 	"sync/atomic"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
+	"github.com/pkg/errors"
 	"github.com/robfig/cron/v3"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 // ReflectStructMethod resolves if the interface (either a struct or a pointer to a struct)
@@ -103,4 +107,27 @@ func YieldByTime(ctx context.Context, cronspec string, services ...v1alpha1.Serv
 	}()
 
 	return ret
+}
+
+// SetOwner is a helper method to make sure the given object contains an object reference to the object provided.
+// It also names the child after the parent, with a potential postfix.
+func SetOwner(parent, child metav1.Object, name string) error {
+	if name == "" {
+		child.SetName(parent.GetName())
+	} else {
+		child.SetName(name)
+	}
+
+	child.SetNamespace(parent.GetNamespace())
+
+	if err := controllerutil.SetOwnerReference(parent, child, common.client.Scheme()); err != nil {
+		return errors.Wrapf(err, "unable to set parent")
+	}
+
+	// owner labels are used by the selectors
+	child.SetLabels(labels.Merge(child.GetLabels(), map[string]string{
+		"owner": parent.GetName(),
+	}))
+
+	return nil
 }

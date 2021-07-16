@@ -84,5 +84,7 @@ func (r *Reconciler) Finalizer() string {
 }
 
 func (r *Reconciler) Finalize(obj client.Object) error {
+	r.Logger.Info("Finalize", "kind", reflect.TypeOf(obj), "name", obj.GetName())
+
 	return nil
 }
