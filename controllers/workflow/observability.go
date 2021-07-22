@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
-	"time"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/common"
@@ -14,6 +13,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	netv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/util/retry"
 )
 
 // {{{ Internal types
@@ -30,108 +30,102 @@ func (r *Reconciler) newMonitoringStack(ctx context.Context, obj *v1alpha1.Workf
 		return nil
 	}
 
-	var prometheus v1alpha1.Service
-	{ // Install Prometheus
-		if err := r.installPrometheus(ctx, obj, &prometheus); err != nil {
-			return errors.Wrapf(err, "prometheus error")
-		}
+	prometheus, err := r.installPrometheus(ctx, obj)
+	if err != nil {
+		return errors.Wrapf(err, "prometheus error")
 	}
 
-	var grafana v1alpha1.Service
-	{ // Install Grafana
-		if err := r.installGrafana(ctx, obj, &grafana); err != nil {
-			return errors.Wrapf(err, "grafana error")
-		}
+	grafana, err := r.installGrafana(ctx, obj)
+	if err != nil {
+		return errors.Wrapf(err, "grafana error")
 	}
 
-	{ // Make Prometheus and Grafana accessible from outside the Cluster
-		if err := r.installIngress(ctx, obj, &prometheus, &grafana); err != nil {
+	// Make Prometheus and Grafana accessible from outside the Cluster
+	if len(obj.Spec.Ingress) > 0 {
+		if err := r.installIngress(ctx, obj, prometheus, grafana); err != nil {
 			return errors.Wrapf(err, "ingress error")
 		}
-	}
 
-	{ // wait for prometheus and  grafana to start running and then proceed with the experiment
-		if err := common.GetLifecycle(ctx, obj.GetUID(), &prometheus, grafana.GetName()).
-			Expect(v1alpha1.PhaseRunning); err != nil {
-			return errors.Wrapf(err, "grafana is not running")
-		}
+		// use the public Grafana address (via Ingress) because the controller runs outside of the cluster
+		grafanaPublicURI := fmt.Sprintf("http://%s", virtualhost(grafana.GetName(), obj.Spec.Ingress))
 
-		if err := common.GetLifecycle(ctx, obj.GetUID(), &grafana, grafana.GetName()).
-			Expect(v1alpha1.PhaseRunning); err != nil {
-			return errors.Wrapf(err, "grafana is not running")
-		}
-	}
-
-	{ // use Grafana client for sending annotations
-		apiURI := fmt.Sprintf("http://%s", virtualhost(grafana.GetName(), obj.Spec.Ingress))
-
-		if err := newAnnotationClient(ctx, apiURI); err != nil {
+		if err := newAnnotationClient(ctx, grafanaPublicURI); err != nil {
 			return errors.Wrapf(err, "cannot create annotations client")
 		}
-
-		r.Logger.Info("Monitoring stack is ready",
-			"packages", obj.Spec.ImportMonitors,
-			"grafana", apiURI,
-		)
 	}
+
+	r.Logger.Info("Monitoring stack is ready", "packages", obj.Spec.ImportMonitors)
 
 	return nil
 }
 
-func (r *Reconciler) installPrometheus(ctx context.Context, obj *v1alpha1.Workflow, prom *v1alpha1.Service) error {
-	prometheusSpec := template.SelectService(ctx, template.ParseRef(obj.GetNamespace(), prometheusTemplate))
-	if prometheusSpec == nil {
-		return errors.New("cannot find template")
+func (r *Reconciler) installPrometheus(ctx context.Context, obj *v1alpha1.Workflow) (*v1alpha1.Service, error) {
+	var prom v1alpha1.Service
+
+	spec := template.SelectService(ctx, template.ParseRef(obj.GetNamespace(), prometheusTemplate))
+	if spec == nil {
+		return nil, errors.New("cannot find template")
 	}
 
-	prometheusSpec.DeepCopyInto(&prom.Spec)
+	spec.DeepCopyInto(&prom.Spec)
 
-	if err := common.SetOwner(obj, prom, "prometheus"); err != nil {
-		return errors.Wrapf(err, "ownership error")
+	if err := common.SetOwner(obj, &prom, "prometheus"); err != nil {
+		return nil, errors.Wrapf(err, "ownership error")
 	}
 
-	if err := r.Create(ctx, prom); err != nil {
-		return errors.Wrapf(err, "request error")
+	if err := r.Create(ctx, &prom); err != nil {
+		return nil, errors.Wrapf(err, "request error")
+	}
+
+	r.Logger.Info("Wait for Prometheus to become ready")
+
+	if err := common.WaitReady(ctx, &prom); err != nil {
+		return nil, errors.Wrapf(err, "prometheus is not running")
 	}
 
 	r.Logger.Info("Prometheus was installed")
 
-	return nil
+	return &prom, nil
 }
 
-func (r *Reconciler) installGrafana(ctx context.Context, obj *v1alpha1.Workflow, grafana *v1alpha1.Service) error {
+func (r *Reconciler) installGrafana(ctx context.Context, obj *v1alpha1.Workflow) (*v1alpha1.Service, error) {
+	var grafana v1alpha1.Service
+
 	grafanaSpec := template.SelectService(ctx, template.ParseRef(obj.GetNamespace(), grafanaTemplate))
 	if grafanaSpec == nil {
-		return errors.New("cannot fubd template")
+		return nil, errors.New("cannot find template")
 	}
 
 	grafanaSpec.DeepCopyInto(&grafana.Spec)
 
-	if err := common.SetOwner(obj, grafana, "grafana"); err != nil {
-		return errors.Wrapf(err, "ownership error")
+	if err := common.SetOwner(obj, &grafana, "grafana"); err != nil {
+		return nil, errors.Wrapf(err, "ownership error")
 	}
 
-	if err := r.importDashboards(ctx, obj, grafana); err != nil {
-		return errors.Wrapf(err, "unable to import dashboards")
+	if err := r.importDashboards(ctx, obj, &grafana); err != nil {
+		return nil, errors.Wrapf(err, "import dashboards")
 	}
 
-	if err := r.Client.Create(ctx, grafana); err != nil {
-		return errors.Wrapf(err, "request error")
+	if err := r.Client.Create(ctx, &grafana); err != nil {
+		return nil, errors.Wrapf(err, "request error")
+	}
+
+	r.Logger.Info("Wait for Grafana to become ready")
+
+	if err := common.WaitReady(ctx, &grafana); err != nil {
+		return nil, errors.Wrapf(err, "prometheus is not running")
 	}
 
 	r.Logger.Info("Grafana was installed")
 
-	return nil
+	return &grafana, nil
 }
 
 func (r *Reconciler) importDashboards(ctx context.Context, obj *v1alpha1.Workflow, grafana *v1alpha1.Service) error {
-	// FIXME: https://github.com/kubernetes/kubernetes/pull/63362#issuecomment-386631005
-
 	// create configmap
 	configMap := corev1.ConfigMap{}
+	configMap.Data = make(map[string]string, len(obj.Spec.ImportMonitors))
 	{
-		configMap.Data = make(map[string]string, len(obj.Spec.ImportMonitors))
-
 		for _, monRef := range obj.Spec.ImportMonitors {
 			monSpec := template.SelectMonitor(ctx, template.ParseRef(obj.GetNamespace(), monRef))
 			if monSpec == nil {
@@ -151,16 +145,15 @@ func (r *Reconciler) importDashboards(ctx context.Context, obj *v1alpha1.Workflo
 	}
 
 	// create volume from the configmap
+	volume := corev1.Volume{}
+	volumeMounts := make([]corev1.VolumeMount, 0, len(configMap.Data))
 	{
-		volume := corev1.Volume{}
 		volume.Name = "grafana-dashboards"
 		volume.VolumeSource = corev1.VolumeSource{
 			ConfigMap: &corev1.ConfigMapVolumeSource{
 				LocalObjectReference: corev1.LocalObjectReference{Name: configMap.GetName()},
 			},
 		}
-
-		var volumeMounts []corev1.VolumeMount
 
 		for file := range configMap.Data {
 			volumeMounts = append(volumeMounts, corev1.VolumeMount{
@@ -170,20 +163,23 @@ func (r *Reconciler) importDashboards(ctx context.Context, obj *v1alpha1.Workflo
 				SubPath:   file,                                   //  Path within the volume
 			})
 		}
-
-		grafana.Spec.Volumes = append(grafana.Spec.Volumes, volume)
-		grafana.Spec.Container.VolumeMounts = append(grafana.Spec.Container.VolumeMounts, volumeMounts...)
 	}
+
+	// associate volume with grafana
+	grafana.Spec.Volumes = append(grafana.Spec.Volumes, volume)
+	grafana.Spec.Container.VolumeMounts = append(grafana.Spec.Container.VolumeMounts, volumeMounts...)
 
 	return nil
 }
 
 func (r *Reconciler) installIngress(ctx context.Context, obj *v1alpha1.Workflow, services ...*v1alpha1.Service) error {
-	if obj.Spec.Ingress == "" || len(services) == 0 {
-		return nil
-	}
-
 	var ingress netv1.Ingress
+
+	// Ingresses annotated with 'kubernetes.io/ingress.class=ambassador' will be managed by Ambassador.
+	// Without annotation, the default Ingress is used.
+	ingress.SetAnnotations(map[string]string{
+		"kubernetes.io/ingress.class": "ambassador",
+	})
 
 	if err := common.SetOwner(obj, &ingress, ""); err != nil {
 		return errors.Wrapf(err, "ownership failed")
@@ -217,6 +213,8 @@ func (r *Reconciler) installIngress(ctx context.Context, obj *v1alpha1.Workflow,
 		}
 
 		rules = append(rules, rule)
+
+		r.Logger.Info("Ingress", "host", rule.Host)
 	}
 
 	ingress.Spec.Rules = rules
@@ -232,11 +230,9 @@ func virtualhost(serviceName, ingress string) string {
 	return fmt.Sprintf("%s.%s", serviceName, ingress)
 }
 
-//////////////////////////////////////////////////////
+// ////////////////////////////////////////////////////
 // 			Mock Observability
-//////////////////////////////////////////////////////
-
-var annotationTimeout = 30 * time.Second
+// ////////////////////////////////////////////////////
 
 const (
 	// grafana specific.
@@ -254,7 +250,17 @@ type AnnotationClient struct {
 func newAnnotationClient(ctx context.Context, apiURI string) error {
 	client, err := sdk.NewClient(apiURI, "", sdk.DefaultHTTPClient)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "client error")
+	}
+
+	// retry until Grafana is ready to receive annotations.
+	err = retry.OnError(common.DefaultBackoff, func(_ error) bool { return true }, func() error {
+		_, err := client.GetHealth(ctx)
+		return errors.Wrapf(err, "grafana health error")
+	})
+
+	if err != nil {
+		return errors.Wrapf(err, "grafana is unreachable")
 	}
 
 	common.EnableAnnotations(ctx, &AnnotationClient{ctx: ctx, Client: client, apiURI: apiURI})
@@ -263,7 +269,7 @@ func newAnnotationClient(ctx context.Context, apiURI string) error {
 }
 
 func (c *AnnotationClient) Add(ga sdk.CreateAnnotationRequest) {
-	ctx, cancel := context.WithTimeout(c.ctx, annotationTimeout)
+	ctx, cancel := context.WithTimeout(c.ctx, common.DefaultTimeout)
 	defer cancel()
 
 	// submit

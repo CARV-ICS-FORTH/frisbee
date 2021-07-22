@@ -42,39 +42,52 @@ spec:
         templateRef: redis/loader
         inputs:
           - { server: .servicegroup.masters.one, recordcount: "100000", offset: "0" }
-          - { server: .servicegroup.masters.one, recordcount: "100000", offset: "100000" }
-          - { server: .servicegroup.masters.one, recordcount: "100000", offset: "200000" }
-          - { server: .servicegroup.masters.one, recordcount: "100000", offset: "300000" }
-          - { server: .servicegroup.masters.one, recordcount: "100000", offset: "400000" }
-          - { server: .servicegroup.masters.one, recordcount: "100000", offset: "500000" }
-          - { server: .servicegroup.masters.one, recordcount: "100000", offset: "600000" }
-          - { server: .servicegroup.masters.one, recordcount: "100000", offset: "700000" }
-          - { server: .servicegroup.masters.one, recordcount: "100000", offset: "800000" }
-          - { server: .servicegroup.masters.one, recordcount: "100000", offset: "900000" }
 
     # Run queries
     - actiontype: ServiceGroup
       name: runners
-      depends: { running: [ masters ], complete: [ loaders ] }
+      depends: { running: [ masters ], success: [ loaders ] }
       servicegroup:
         templateRef: redis/runner
-        instances: 5
         inputs:
-          - { server: .servicegroup.masters.one, workload: workloada,  operationcount: "1000000" }
+          - { server: .servicegroup.masters.one, workload: workloada,  operationcount: "100000" }
+
+
+    # Repeatable partition failures
+    - actiontype: Chaos
+      name: partition0
+      depends: { running: [ masters], duration: "10s" }
+      chaos:
+        type: partition
+        partition:
+          selector:
+            macro: .servicegroup.masters.one
+          duration: "2m"
+
+
+#    - actiontype: Chaos
+#      name: partition1
+#      depends: { running: [ masters, runners ], duration: "3m" }
+#      chaos:
+#        type: partition
+#        partition:
+#          selector:
+#            macro: .servicegroup.masters.one
+#          duration: "2m"
 
 
     # Stop the master nodes after a few minutes
-    - actiontype: Stop
-      name: "teardown"
-      depends: { duration: 1m }
-      stop:
-        selector:
-          macro: .servicegroup.runners.all
-        schedule:
-          cron: "@every 1m"
+#    - actiontype: Stop
+#      name: "teardown"
+#      depends: { duration: 1m }
+#      stop:
+#        selector:
+#          macro: .servicegroup.runners.all
+#        schedule:
+#          cron: "@every 1m"
 
     # Wait until servers are removed
     - actiontype: Wait
       name: "terminate"
       wait:
-        complete: [ masters ]
+        success: [ masters ]

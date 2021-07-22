@@ -56,6 +56,7 @@ func (p *direct) Discoverable(ctx context.Context, obj *v1alpha1.DataPort) (ctrl
 }
 
 func (p *direct) discoverableInput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
+	// this is not needed because the input is matched to a server, and the server does the discovery.
 	return common.Failed(ctx, obj, errors.Errorf("invalid phase for direct input port"))
 }
 
@@ -69,6 +70,7 @@ func (p *direct) discoverableOutput(ctx context.Context, obj *v1alpha1.DataPort)
 	}
 
 	// for direct protocol, just accept anything
+	// TODO: check if the target is pingable
 
 	return common.Pending(ctx, obj)
 }
@@ -136,18 +138,12 @@ func (p *direct) runningInput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl
 					errors.Errorf("conflicting protocols (%s) -> (%s)", obj.GetName(), match.GetName()))
 			}
 
-			// update remote port (client) with local info (server)
-			match.Status.Direct = &v1alpha1.DirectStatus{
-				RemoteAddr: obj.Spec.ProtocolSpec.Direct.DstAddr,
-				RemotePort: obj.Spec.ProtocolSpec.Direct.DstPort,
+			if err := p.connect(ctx, obj, &match); err != nil {
+				return common.Failed(ctx, obj,
+					errors.Errorf("rewiring error(%s) -> (%s)", obj.GetName(), match.GetName()))
 			}
 
-			if _, err := common.UpdateStatus(ctx, &match); err != nil {
-				return common.Failed(ctx, obj, errors.Wrapf(err, "remote update error"))
-			}
-
-			// fixme: reconcile running phase to get another input (or not ?)
-			return common.Requeue()
+			return common.DoNotRequeue()
 
 		default:
 			return common.Failed(ctx, obj, errors.Errorf("expected 1 server, but got multiple (%d)", len(matches.Items)))
@@ -159,4 +155,20 @@ func (p *direct) runningInput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl
 
 func (p *direct) runningOutput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
 	return common.DoNotRequeue()
+}
+
+func (p *direct) connect(ctx context.Context, ref, match *v1alpha1.DataPort) error {
+	// update remote port (client) with local info (server)
+	match.Status.Direct = &v1alpha1.DirectStatus{
+		RemoteAddr: ref.Spec.ProtocolSpec.Direct.DstAddr,
+		RemotePort: ref.Spec.ProtocolSpec.Direct.DstPort,
+	}
+
+	if _, err := common.UpdateStatus(ctx, match); err != nil {
+		return err
+	}
+
+	// FIXME: What should I do here if I want multiple inputs ?
+
+	return nil
 }

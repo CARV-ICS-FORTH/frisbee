@@ -3,6 +3,7 @@
 # It should be run by config/default
 resources:
   - bases/frisbee.io_dataports.yaml
+  - bases/frisbee.io_chaos.yaml
   - bases/frisbee.io_servicegroups.yaml
   - bases/frisbee.io_services.yaml
   - bases/frisbee.io_templates.yaml

@@ -16,7 +16,7 @@ func KeysFromMap(m interface{}) (keys []string) {
 	return keys
 }
 
-func MergeMap(src map[string]string, newer map[string]string) map[string]string {
+func MergeMap(src, newer map[string]string) map[string]string {
 	if len(src) == 0 {
 		src = map[string]string{}
 	}
@@ -45,4 +45,19 @@ func Intersect(as, bs []string) []string {
 		}
 	}
 	return i
+}
+
+// Contains checks if all keys of the subset are included in the ref, and the values are the same.
+func Contains(ref, subset map[string]string) bool {
+	if len(ref) < len(subset) {
+		return false
+	}
+
+	for k, v := range subset {
+		if w, ok := ref[k]; !ok || v != w {
+			return false
+		}
+	}
+
+	return true
 }

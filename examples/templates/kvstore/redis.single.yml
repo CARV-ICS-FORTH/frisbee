@@ -115,7 +115,7 @@ spec:
             ./go-ycsb load redis                                            \
                 -p recordcount=$recordcount                                 \
                 -p insertstart="$offset"                                    \
-                -p threadcount=32                                           \
+                -p threadcount=1                                           \
                 -p redis.mode="single"                                      \
                 -p redis.addr="$server:6379"                                \
             >> /dev/shm/pipe
@@ -143,7 +143,7 @@ spec:
             ./go-ycsb run redis                                 \
                   -P workloads/$workload                        \
                   -p operationcount=$operationcount             \
-                  -p threadcount=32                             \
+                  -p threadcount=1                             \
                   -p redis.mode="single"                        \
                   -p redis.addr="server:6379"                   \
             >> /dev/shm/pipe

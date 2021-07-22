@@ -15,6 +15,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// +kubebuilder:rbac:groups=frisbee.io,resources=workflows,verbs=get;list;watch;createServiceGroup;update;patch;delete
+// +kubebuilder:rbac:groups=frisbee.io,resources=workflows/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=frisbee.io,resources=workflows/finalizers,verbs=update
+
 func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 	logger.Info("Start workflow reconciler")
 
@@ -28,10 +32,6 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 			cache:         mgr.GetCache(),
 		})
 }
-
-// +kubebuilder:rbac:groups=frisbee.io,resources=workflows,verbs=get;list;watch;createServiceGroup;update;patch;delete
-// +kubebuilder:rbac:groups=frisbee.io,resources=workflows/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=frisbee.io,resources=workflows/finalizers,verbs=update
 
 type Reconciler struct {
 	client.Client
@@ -63,7 +63,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		}
 
 		if err := r.newMonitoringStack(ctx, &obj); err != nil {
-			runtime.HandleError(errors.Wrapf(err, "monitoring stack has failed. Use a mock up one for logging"))
+			runtime.HandleError(errors.Wrapf(err, "Use mock-up monitoring stack. Reason:"))
 		}
 
 		go r.scheduleActions(ctx, obj.DeepCopy())

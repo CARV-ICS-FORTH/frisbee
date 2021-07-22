@@ -53,7 +53,7 @@ spec:
       servicegroup:
         templateRef: direct/client
         inputs:
-          - { server: .servicegroup.servers.one}
+          - { server: .servicegroup.servers.one }
 
 
     # Wait until servers are removed

@@ -18,6 +18,8 @@ const (
 	RandomMaxPercentMode Mode = "random-max-percent"
 )
 
+// +kubebuilder:validation:Enum=one;all;fixed;fixed-percent;random-max-percent
+
 // TemplateSelectorSpec defines some selectors for chosing a template
 type TemplateSelectorSpec struct {
 	// Reference selects the service template with the specified value.
@@ -61,12 +63,12 @@ type MatchServiceSpec struct {
 
 type ServiceSelector struct {
 	// Match contains the rules to select target
-	Match MatchServiceSpec `json:"match"`
+	// +optional
+	Match MatchServiceSpec `json:"match,omitempty"`
 
 	// Mode defines which of the selected services to use. If undefined, all() is used
 	// Supported mode: one / all / fixed / fixed-percent / random-max-percent
 	// +optional
-	// +kubebuilder:validation:Enum=one;all;fixed;fixed-percent;random-max-percent
 	Mode Mode `json:"mode"`
 
 	// Value is required when the mode is set to `FixedPodMode` / `FixedPercentPodMod` / `RandomMaxPercentPodMod`.
@@ -75,4 +77,11 @@ type ServiceSelector struct {
 	// IF `RandomMaxPercentPodMod`,  provide a number from 0-100 to specify the max percent of pods to do chaos action
 	// +optional
 	Value string `json:"value,omitempty"`
+
+	// Macro abstract selector parameters into a structured string (e.g, .groupservice.master.all). Every parsed field is
+	// represents an inner structure of the selector.
+	// In case of invalid macro, the selector will return empty results.
+	// Macro conflicts with any other parameter.
+	// +optional
+	Macro *string `json:"macro,omitempty"`
 }

@@ -19,8 +19,8 @@ func DoNotRequeue() (ctrl.Result, error) {
 }
 
 func Requeue() (ctrl.Result, error) {
-	//logrus.Warn("Trigger Requeue")
-	//debug.PrintStack()
+	// logrus.Warn("Trigger Requeue")
+	// debug.PrintStack()
 
 	return ctrl.Result{Requeue: true}, nil
 }
@@ -143,33 +143,33 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 
 func Update(ctx context.Context, obj client.Object) (ctrl.Result, error) {
 	// we need to Update a delete object in order to remove the finalizers.
-	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+	updateError := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		return common.client.Update(ctx, obj)
 	})
 
 	switch {
-	case err == nil:
+	case updateError == nil:
 		return DoNotRequeue()
 
-	case k8errors.IsInvalid(err):
-		common.logger.Error(err, "Update error")
+	case k8errors.IsInvalid(updateError):
+		common.logger.Error(updateError, "Update error")
 
 		return DoNotRequeue()
 
-	case k8errors.IsNotFound(err):
+	case k8errors.IsNotFound(updateError):
 		// The object has been deleted since we read it.
 		// Requeue the object to try to reconciliate again.
 		return Requeue()
 
-	case k8errors.IsConflict(err):
+	case k8errors.IsConflict(updateError):
 		// The object has been updated since we read it.
 		// Requeue the object to try to reconciliate again.
-		runtimeutil.HandleError(errors.Wrapf(err, "update error"))
+		runtimeutil.HandleError(errors.Wrapf(updateError, "update error"))
 
 		return Requeue()
 
 	default:
-		runtimeutil.HandleError(errors.Wrapf(err, "Update failed for %s [%s]",
+		runtimeutil.HandleError(errors.Wrapf(updateError, "Update failed for %s [%s]",
 			obj.GetName(), obj.GetObjectKind().GroupVersionKind()))
 
 		return DoNotRequeue()
@@ -179,34 +179,35 @@ func Update(ctx context.Context, obj client.Object) (ctrl.Result, error) {
 func UpdateStatus(ctx context.Context, obj client.Object) (ctrl.Result, error) {
 	// The status subresource ignores changes to spec, so it’s less likely to conflict with any other updates,
 	// and can have separate permissions.
+	updateError := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		common.logger.V(4).Info("(re) to update status of ", obj.GetName())
 
-	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		return common.client.Status().Update(ctx, obj)
 	})
 
 	switch {
-	case err == nil:
+	case updateError == nil:
 		return DoNotRequeue()
 
-	case k8errors.IsInvalid(err):
-		common.logger.Error(err, "Update status error")
+	case k8errors.IsInvalid(updateError):
+		common.logger.Error(updateError, "Update status error")
 
 		return DoNotRequeue()
 
-	case k8errors.IsNotFound(err):
+	case k8errors.IsNotFound(updateError):
 		// The object has been deleted since we read it.
 		// Requeue the object to try to reconciliate again.
 		return Requeue()
 
-	case k8errors.IsConflict(err):
+	case k8errors.IsConflict(updateError):
 		// The object has been updated since we read it.
 		// Requeue the object to try to reconciliate again.
-		runtimeutil.HandleError(errors.Wrapf(err, "update status error"))
+		runtimeutil.HandleError(errors.Wrapf(updateError, "update status error"))
 
 		return Requeue()
 
 	default:
-		runtimeutil.HandleError(errors.Wrapf(err, "status Update failed for %s [%s]",
+		runtimeutil.HandleError(errors.Wrapf(updateError, "status Update failed for %s [%s]",
 			obj.GetName(), obj.GetObjectKind().GroupVersionKind()))
 
 		return DoNotRequeue()

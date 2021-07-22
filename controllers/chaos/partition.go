@@ -1,0 +1,75 @@
+package chaos
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"github.com/fnikolai/frisbee/api/v1alpha1"
+	"github.com/fnikolai/frisbee/controllers/common"
+	"github.com/fnikolai/frisbee/controllers/common/selector/service"
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
+	k8errors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/client-go/util/retry"
+	ctrl "sigs.k8s.io/controller-runtime"
+)
+
+type partition struct {
+	r *Reconciler
+}
+
+func (f *partition) generate(ctx context.Context, obj *v1alpha1.Chaos) unstructured.Unstructured {
+	spec := obj.Spec.Partition
+
+	return unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": "chaos-mesh.org/v1alpha1",
+			"kind":       "NetworkChaos",
+			"spec": map[string]interface{}{
+				"action": "partition",
+				"mode":   "all",
+				"selector": map[string]interface{}{
+					"namespaces": []string{obj.GetNamespace()},
+				},
+				"target": map[string]interface{}{
+					"mode": "all",
+					"selector": map[string]interface{}{
+						"pods": service.Select(ctx, &spec.Selector).ByNamespace(),
+					},
+				},
+			},
+		},
+	}
+}
+
+func (f *partition) Inject(ctx context.Context, obj *v1alpha1.Chaos) (ctrl.Result, error) {
+	chaos := f.generate(ctx, obj)
+
+	if err := common.SetOwner(obj, &chaos, fmt.Sprintf("%s.%d", obj.GetName(), time.Now().UnixNano())); err != nil {
+		return common.Failed(ctx, obj, errors.Wrapf(err, "ownership error"))
+	}
+
+	// occasionally Chaos-Mesh throws an internal timeout. in this case, just retry the operation.
+	err := retry.OnError(common.DefaultBackoff, k8errors.IsInternalError, func() error {
+		return f.r.Create(ctx, &chaos)
+	})
+	if err != nil {
+		return common.Failed(ctx, obj, errors.Wrapf(err, "injection failed"))
+	}
+
+	err = common.GetLifecycle(ctx,
+		common.WatchExternal(&chaos, convertStatus, chaos.GetName()),
+		common.WithFilter(common.FilterParent(obj.GetUID())),
+	).Expect(v1alpha1.PhaseRunning)
+
+	if err != nil {
+		return common.Failed(ctx, obj, errors.Wrapf(err, "chaos error"))
+	}
+
+
+	logrus.Info("Chaos was successfully injected", "name", obj.GetName(), "faulttype", obj.Spec.Type)
+
+	return common.Running(ctx, obj)
+}

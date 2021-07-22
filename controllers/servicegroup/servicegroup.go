@@ -64,11 +64,13 @@ func (r *Reconciler) create(ctx context.Context, obj *v1alpha1.ServiceGroup) err
 		serviceKeys[i] = service.GetName()
 	}
 
-	if err := common.GetLifecycle(ctx, obj.GetUID(), &v1alpha1.Service{}, serviceKeys...).UpdateParentLifecycle(obj); err != nil {
-		return errors.Wrapf(err, "lifecycle failed")
-	}
+	err := common.GetLifecycle(ctx,
+		common.Watch(&v1alpha1.Service{}, serviceKeys...),
+		common.WithFilter(common.FilterParent(obj.GetUID())),
+		common.WithAnnotator(true), // Register event to grafana
+	).UpdateParentLifecycle(obj)
 
-	return nil
+	return errors.Wrapf(err, "lifecycle failed")
 }
 
 func (r *Reconciler) inputs2Env(ctx context.Context, inputs map[string]string, container *v1.Container) error {
@@ -83,7 +85,8 @@ func (r *Reconciler) inputs2Env(ctx context.Context, inputs map[string]string, c
 		}
 
 		if service.IsMacro(value) {
-			services := service.Select(ctx, service.ParseMacro(value))
+			services := service.Select(ctx, &v1alpha1.ServiceSelector{Macro: &value})
+
 			if len(services) == 0 {
 				return errors.Errorf("macro %s yields no services", value)
 			}

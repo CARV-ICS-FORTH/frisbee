@@ -17,7 +17,7 @@ import (
 // ReflectStructMethod resolves if the interface (either a struct or a pointer to a struct)
 // has the defined member method. If error is nil, it means
 // the MethodName is accessible with reflect.
-func ReflectStructMethod(iface interface{}, MethodName string) error {
+func ReflectStructMethod(iface interface{}, methodName string) error {
 	ValueIface := reflect.ValueOf(iface)
 
 	// Check if the passed interface is a pointer
@@ -27,9 +27,9 @@ func ReflectStructMethod(iface interface{}, MethodName string) error {
 	}
 
 	// Get the method by name
-	Method := ValueIface.MethodByName(MethodName)
+	Method := ValueIface.MethodByName(methodName)
 	if !Method.IsValid() {
-		return fmt.Errorf("couldn't find method `%s` in interface `%s`, is it Exported?", MethodName, ValueIface.Type())
+		return fmt.Errorf("couldn't find method `%s` in interface `%s`, is it Exported?", methodName, ValueIface.Type())
 	}
 
 	return nil
@@ -38,7 +38,7 @@ func ReflectStructMethod(iface interface{}, MethodName string) error {
 // ReflectStructField resolves if the interface (either a struct or a pointer to a struct)
 // has the defined member field, if error is nil, the given
 // FieldName exists and is accessible with reflect.
-func ReflectStructField(iface interface{}, FieldName string) error {
+func ReflectStructField(iface interface{}, fieldName string) error {
 	ValueIface := reflect.ValueOf(iface)
 
 	// Check if the passed interface is a pointer
@@ -48,9 +48,9 @@ func ReflectStructField(iface interface{}, FieldName string) error {
 	}
 
 	// 'dereference' with Elem() and get the field by name
-	Field := ValueIface.Elem().FieldByName(FieldName)
+	Field := ValueIface.Elem().FieldByName(fieldName)
 	if !Field.IsValid() {
-		return fmt.Errorf("Interface `%s` does not have the field `%s`", ValueIface.Type(), FieldName)
+		return fmt.Errorf("Interface `%s` does not have the field `%s`", ValueIface.Type(), fieldName)
 	}
 
 	return nil
@@ -100,8 +100,8 @@ func YieldByTime(ctx context.Context, cronspec string, services ...v1alpha1.Serv
 		case <-stop:
 		}
 
-		wait := job.Stop()
-		<-wait.Done()
+		until := job.Stop()
+		<-until.Done()
 
 		close(ret)
 	}()

@@ -14,6 +14,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// +kubebuilder:rbac:groups=frisbee.io,resources=services,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=frisbee.io,resources=services/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=frisbee.io,resources=services/finalizers,verbs=update
+
+// +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch;
+// +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;
+
 func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.Service{}).
@@ -23,13 +30,6 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 			Logger: logger.WithName("service"),
 		})
 }
-
-// +kubebuilder:rbac:groups=frisbee.io,resources=services,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=frisbee.io,resources=services/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=frisbee.io,resources=services/finalizers,verbs=update
-
-// +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch;
-// +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;
 
 // Reconciler reconciles a Reference object
 type Reconciler struct {
@@ -56,7 +56,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// The reconcile logic
 	switch obj.Status.Phase {
 	case v1alpha1.PhaseUninitialized:
-
 		if len(obj.Spec.PortRefs) > 0 {
 			return common.Discoverable(ctx, &obj)
 		}
@@ -120,7 +119,6 @@ func (r *Reconciler) Finalize(obj client.Object) error {
 }
 
 func (r *Reconciler) discoverDataMesh(ctx context.Context, obj *v1alpha1.Service) (ctrl.Result, error) {
-
 	ports := make([]v1alpha1.DataPort, len(obj.Spec.PortRefs))
 
 	// add ports
@@ -160,17 +158,25 @@ func (r *Reconciler) discoverDataMesh(ctx context.Context, obj *v1alpha1.Service
 	*/
 }
 
-
-
+// portStatusAnnotations translates a Status struct to annotations that will be used for rewiring the service's dataports.
 func portStatusToAnnotations(portName string, proto v1alpha1.PortProtocol, status interface{}) map[string]string {
-	if status == nil {
+	val := reflect.ValueOf(status)
+
+	switch {
+	case val.IsNil(), val.IsZero():
 		return nil
+	case val.CanInterface():
+		status = val.Interface()
+	default:
+		panic("invalid type")
 	}
 
 	ret := make(map[string]string)
 
-	for key, value := range structs.Map(status) {
-		ret[fmt.Sprintf("ports.%s.%s.%s", portName, proto, key)] = fmt.Sprint(value)
+	s := structs.New(status)
+
+	for _, f := range s.Fields() {
+		ret[fmt.Sprintf("ports.%s.%s.%s", portName, proto, f.Name())] = fmt.Sprint(f.Value())
 	}
 
 	return ret

@@ -3,6 +3,9 @@ kind: Workflow
 metadata:
   name: redis-experiment
 spec:
+  importMonitors: [ "sysmon/container", "redismon/telegraf", "ycsbmon/goycsb" ]
+  ingress: localhost
+
   actions:
     # Instantiate Redis servers
     - actiontype: ServiceGroup

@@ -36,11 +36,9 @@ func annotateAdd(obj interface{}) {
 
 	if annnotator == nil {
 		common.logger.Info("omit annotation", "msg", msg)
-
-		return
+	} else {
+		annnotator.Add(ga)
 	}
-
-	annnotator.Add(ga)
 }
 
 func annotateDelete(obj interface{}) {
@@ -66,8 +64,7 @@ func annotateDelete(obj interface{}) {
 
 	if annnotator == nil {
 		common.logger.Info("omit annotation", "msg", msg)
-		return
+	} else {
+		annnotator.Add(ga)
 	}
-
-	annnotator.Add(ga)
 }

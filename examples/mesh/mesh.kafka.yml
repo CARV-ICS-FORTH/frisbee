@@ -117,13 +117,13 @@ spec:
   type: input
   input:
     selector:
-      labels:
+      matchLabels:
         "arkoudes": "kados"
 
   protocol: kafka
   kafka:
     host: kafka-service
-    port: "9092"
+    port: 9092
     queue: "incoming"
 
 
@@ -134,7 +134,7 @@ kind: Service
 metadata:
   name: kafka-consumer
 spec:
-  addPort: [ consumer ]
+  addPorts: [ consumer ]
   container:
     name: app
     image: solsson/kafka:0.11.0.0
@@ -142,17 +142,15 @@ spec:
       - name: kafkaHost
         valueFrom:
           fieldRef:
-            fieldPath: metadata.annotations['discover.consumer.kafka.host']
-
+            fieldPath: metadata.annotations['ports.consumer.kafka.Host']
       - name: kafkaPort
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.annotations['discover.consumer.kafka.port']
-
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.annotations['ports.consumer.kafka.Port']
       - name: kafkaQueue
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.annotations['discover.consumer.kafka.queue']
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.annotations['ports.consumer.kafka.Queue']
     command:
       - /bin/sh # Run shell
       - -c # Read from string
@@ -160,20 +158,20 @@ spec:
         set -eum
         trap "touch /dev/shm/stop" EXIT
 
-        bin/kafka-console-consumer.sh                       \
-        --bootstrap-server $kafkaHost:$kafkaPort            \
-        --topic $kafkaQueue                                 \
-        --from-beginning
+          sleep 120
 
-        sleep 3600
+          bin/kafka-console-consumer.sh                       \
+          --bootstrap-server $kafkaHost:$kafkaPort            \
+          --topic $kafkaQueue                                 \
+          --from-beginning
+
+          sleep 3600
 
 
 ---
 #
 # Producer
 #
----
-
 apiVersion: frisbee.io/v1alpha1
 kind: DataPort
 metadata:
@@ -185,7 +183,7 @@ spec:
   protocol: kafka
   kafka:
     host: kafka-service
-    port: "9092"
+    port: 9092
     queue: "outgoing"
 
 ---
@@ -194,7 +192,8 @@ kind: Service
 metadata:
   name: kafka-producer
 spec:
-  addPort: [ producer ]
+  addPorts: [ producer ]
+
   container:
     name: app
     image: solsson/kafka:0.11.0.0
@@ -202,23 +201,23 @@ spec:
       - name: kafkaHost
         valueFrom:
           fieldRef:
-            fieldPath: metadata.annotations['discover.producer.kafka.host']
+            fieldPath: metadata.annotations['ports.producer.kafka.Host']
 
       - name: kafkaPort
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.annotations['discover.producer.kafka.port']
-
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.annotations['ports.producer.kafka.Port']
       - name: kafkaQueue
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.annotations['discover.producer.kafka.queue']
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.annotations['ports.producer.kafka.Queue']
     command:
       - /bin/sh # Run shell
       - -c # Read from string
       - |  # Multi-line str
         set -eum
         trap "touch /dev/shm/stop" EXIT
+        sleep 120
 
         seq 1 100 |                             \
         bin/kafka-console-producer.sh           \
@@ -231,9 +230,6 @@ spec:
 # Consumer
 #
 
----
-
-#
 # Create an always-running client for the execution of kafka commands from the CLI.
 # Usage example:
 # kubectl -n frisbee2 exec -ti testclient -- ./bin/kafka-console-producer.sh --broker-list  kafka-service:9092 --topic my-topic

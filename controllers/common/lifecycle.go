@@ -3,6 +3,7 @@ package common
 import (
 	"context"
 	"reflect"
+	"time"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/pkg/wait"
@@ -16,7 +17,7 @@ import (
 )
 
 /******************************************************
-			Manage Status Response
+			Lifecycle Setters
 /******************************************************/
 
 // InnerObject is an object that is managed and recognized by Frisbee (including services, servicegroups, ...)
@@ -88,7 +89,7 @@ func Chaos(ctx context.Context, obj InnerObject) (ctrl.Result, error) {
 
 // Failed is a wrap that logs the error, updates the status, and does not requeue the request.
 func Failed(ctx context.Context, obj InnerObject, err error) (ctrl.Result, error) {
-	runtimeutil.HandleError(errors.Wrapf(err, "object %s failed", obj.GetName()))
+	runtimeutil.HandleError(errors.Wrapf(err, "object %s has failed", obj.GetName()))
 
 	status := obj.GetLifecycle()
 	status.Phase = v1alpha1.PhaseFailed
@@ -103,24 +104,24 @@ func Failed(ctx context.Context, obj InnerObject, err error) (ctrl.Result, error
 	Wrappers and Unwrappers for InnerObjects
 /******************************************************/
 
-// ExternalToInnerObject is a wrapper for converting external objects (e.g, Pods) to InnerObjects managed
+// externalToInnerObject is a wrapper for converting external objects (e.g, Pods) to InnerObjects managed
 // by the Frisbee controller
-type ExternalToInnerObject struct {
+type externalToInnerObject struct {
 	client.Object
 
 	LifecycleFunc func(obj interface{}) v1alpha1.Lifecycle
 }
 
-func (d *ExternalToInnerObject) GetLifecycle() v1alpha1.Lifecycle {
+func (d *externalToInnerObject) GetLifecycle() v1alpha1.Lifecycle {
 	return d.LifecycleFunc(d.Object)
 }
 
-func (d *ExternalToInnerObject) SetLifecycle(v1alpha1.Lifecycle) {
+func (d *externalToInnerObject) SetLifecycle(v1alpha1.Lifecycle) {
 	panic(errors.Errorf("cannot set status on external object"))
 }
 
 func unwrap(obj client.Object) client.Object {
-	wrapped, ok := obj.(*ExternalToInnerObject)
+	wrapped, ok := obj.(*externalToInnerObject)
 	if ok {
 		return wrapped.Object
 	}
@@ -129,7 +130,7 @@ func unwrap(obj client.Object) client.Object {
 }
 
 func accessStatus(obj interface{}) func(interface{}) v1alpha1.Lifecycle {
-	external, ok := obj.(*ExternalToInnerObject)
+	external, ok := obj.(*externalToInnerObject)
 	if ok {
 		return external.LifecycleFunc
 	}
@@ -140,42 +141,183 @@ func accessStatus(obj interface{}) func(interface{}) v1alpha1.Lifecycle {
 }
 
 /******************************************************
-				Lifecycle
+			Lifecycle Getters
 ******************************************************/
 
-func GetLifecycle(ctx context.Context, parentUID types.UID, child InnerObject, childrenNames ...string) *ManagedLifecycle {
-	if child == nil || len(childrenNames) == 0 {
-		common.logger.Error(errors.New("lifecycle error"), "invalid args")
+type LifecycleOptions struct {
+	// Timeout defines an expiration deadline for the request
+	Timeout *time.Duration
 
-		return nil
+	// FilterFunc is used to filter out events before they reach the lifecycle handler
+	Filter FilterFunc
+
+	// WatchType indicate the type of objects to watch
+	WatchType InnerObject
+
+	// ChildrenNames is a list of children names to watch
+	ChildrenNames []string
+
+	// Annotation indicate whether events shall be recorded in Grafana or not
+	Annotator bool
+}
+
+type LifecycleOption func(*LifecycleOptions)
+
+// Obligatory
+func Watch(kind InnerObject, names ...string) LifecycleOption {
+	return func(s *LifecycleOptions) {
+		if s.WatchType != nil && s.WatchType != kind {
+			panic("watch type is already defined")
+		} else {
+			s.WatchType = kind
+		}
+
+		// if the watch is of the same type, just append new names
+		s.ChildrenNames = append(s.ChildrenNames, names...)
+	}
+}
+
+// WatchExternal wraps an object that does not belong to this controller
+func WatchExternal(kind client.Object, convertor func(obj interface{}) v1alpha1.Lifecycle, names ...string) LifecycleOption {
+	return func(s *LifecycleOptions) {
+		if s.WatchType != nil && s.WatchType != kind {
+			panic("watch type is already defined")
+		} else {
+			s.WatchType = &externalToInnerObject{
+				Object:        kind,
+				LifecycleFunc: convertor,
+			}
+		}
+
+		// if the watch is of the same type, just append new names
+		s.ChildrenNames = append(s.ChildrenNames, names...)
+	}
+}
+
+// Optional
+func WithTimeout(duration time.Duration) LifecycleOption {
+	return func(s *LifecycleOptions) {
+		s.Timeout = &duration
+	}
+}
+
+// Optional
+func WithFilter(filter FilterFunc) LifecycleOption {
+	return func(s *LifecycleOptions) {
+		if s.Filter != nil {
+			panic("filter already exists")
+		}
+
+		s.Filter = filter
+	}
+}
+
+// WithAnnotator will send annotations to grafana whenever an Add or a Delete event takes place.
+func WithAnnotator(do bool) LifecycleOption {
+	return func(s *LifecycleOptions) {
+		s.Annotator = do
+	}
+}
+
+// WaitReady is a lifecycle wrapper that waits until an object has reached the Running phase.
+// If another phase is reached (e.g, failed), it returns error.
+func WaitReady(ctx context.Context, obj InnerObject) error {
+	return GetLifecycle(ctx,
+		Watch(obj, obj.GetName()),
+	).Expect(v1alpha1.PhaseRunning)
+}
+
+// WaitSuccess is a lifecycle wrapper that waits until an object has reached the Running phase.
+// If another phase is reached (e.g, failed), it returns error.
+func WaitSuccess(ctx context.Context, obj InnerObject) error {
+	return GetLifecycle(ctx,
+		Watch(obj, obj.GetName()),
+	).Expect(v1alpha1.PhaseSuccess)
+}
+
+func GetLifecycle(ctx context.Context, opts ...LifecycleOption) *ManagedLifecycle {
+	var options LifecycleOptions
+
+	// call option functions on instance to set options on it
+	for _, apply := range opts {
+		apply(&options)
 	}
 
-	n := newNotifier(childrenNames)
-	n.accessChildStatus = accessStatus(child)
+	var lifecycle ManagedLifecycle
 
-	handlers := eventHandlerFuncs{
-		AddFunc: func(obj interface{}) {
-			annotateAdd(obj)
-			n.watchChildrenPhase(obj)
-		},
-		UpdateFunc: n.watchChildrenPhase,
-		DeleteFunc: func(obj interface{}) {
-			annotateDelete(obj)
-			n.watchChildrenPhase(obj)
-		},
+	// set context
+	if options.Timeout == nil {
+		lifecycle.ctx = ctx
+	} else {
+		timeout, cancel := context.WithTimeout(ctx, *options.Timeout)
+
+		lifecycle.ctx = timeout
+		defer cancel()
 	}
 
-	return &ManagedLifecycle{
-		ctx:           ctx,
-		n:             n,
-		watchChildren: func() error { return watchLifecycle(ctx, parentUID, unwrap(child), handlers) },
+	// set filter
+	if options.Filter == nil {
+		lifecycle.filterFunc = NoFilter
+	} else {
+		lifecycle.filterFunc = options.Filter
 	}
+
+	var n *notifier
+
+	// set children
+	if len(options.ChildrenNames) == 0 {
+		panic("empty children")
+	} else {
+		n = newNotifier(options.ChildrenNames)
+	}
+
+	// set watchtype
+	if options.WatchType == nil {
+		panic("empty watchtype")
+	} else {
+		n.accessChildStatus = accessStatus(options.WatchType)
+	}
+
+	var handlers eventHandlerFuncs
+
+	if options.Annotator {
+		handlers = eventHandlerFuncs{
+			AddFunc: func(obj interface{}) {
+				annotateAdd(obj)
+				n.watchChildrenPhase(obj)
+			},
+			UpdateFunc: n.watchChildrenPhase,
+			DeleteFunc: func(obj interface{}) {
+				annotateDelete(obj)
+				n.watchChildrenPhase(obj)
+			},
+		}
+	} else {
+		handlers = eventHandlerFuncs{
+			AddFunc: func(obj interface{}) {
+				n.watchChildrenPhase(obj)
+			},
+			UpdateFunc: n.watchChildrenPhase,
+			DeleteFunc: func(obj interface{}) {
+				n.watchChildrenPhase(obj)
+			},
+		}
+	}
+
+	lifecycle.notifier = n
+	lifecycle.watchChildren = func() error {
+		return watchLifecycle(ctx, lifecycle.filterFunc, unwrap(options.WatchType), handlers)
+	}
+
+	return &lifecycle
 }
 
 type ManagedLifecycle struct {
 	ctx context.Context
 
-	n *notifier
+	*notifier
+
+	filterFunc func(obj interface{}) bool
 
 	watchChildren func() error
 }
@@ -187,11 +329,13 @@ func (lc *ManagedLifecycle) UpdateParentLifecycle(parent InnerObject) error {
 	}
 
 	var phase v1alpha1.Phase
+
 	var msg error
+
 	var valid error
 
 	go func() {
-		phase, valid = lc.n.getNextPhase()
+		phase, valid = lc.notifier.getNextPhase()
 
 		for {
 			if valid != nil {
@@ -212,7 +356,7 @@ func (lc *ManagedLifecycle) UpdateParentLifecycle(parent InnerObject) error {
 
 			case v1alpha1.PhaseRunning:
 				_, _ = Running(lc.ctx, parent)
-				phase, msg, valid = lc.n.getNextRunning()
+				phase, msg, valid = lc.notifier.getNextRunning()
 
 			case v1alpha1.PhaseChaos:
 				_, _ = Chaos(lc.ctx, parent)
@@ -224,7 +368,7 @@ func (lc *ManagedLifecycle) UpdateParentLifecycle(parent InnerObject) error {
 					"event", msg.Error(),
 				)
 
-				phase, msg, valid = lc.n.getNextChaos()
+				phase, msg, valid = lc.notifier.getNextChaos()
 
 			case v1alpha1.PhaseSuccess:
 				_, _ = Success(lc.ctx, parent)
@@ -247,49 +391,48 @@ func (lc *ManagedLifecycle) UpdateParentLifecycle(parent InnerObject) error {
 
 // Expect blocks waiting for the next phase of the parent. If it is the one expected, it returns nil.
 // Otherwise it returns an error stating what was expected and what was got.
-func (lc *ManagedLifecycle) Expect(expect v1alpha1.Phase) error {
+func (lc *ManagedLifecycle) Expect(expected v1alpha1.Phase) error {
 	if err := lc.watchChildren(); err != nil {
 		common.logger.Error(err, "unable to watch children")
 
 		return err
 	}
 
-	var phase v1alpha1.Phase
+	phase, err := lc.notifier.getNextPhase()
+	if err != nil {
+		return err
+	}
 
-	var msg error
-
-	var valid error
-
-	phase, _ = lc.n.getNextPhase()
+	var msg, valid error
 
 	for {
 		switch {
-		case phase == expect:
-			return nil // correct phase
+		case phase == expected: // correct phase
+			return nil
 
-		case errors.Is(valid, errIsFinal): // the transition is valid, but is not the expected one
+		case errors.Is(valid, errIsFinal): // the transition is valid, but not the expected one
 			if msg == nil {
-				return errors.Errorf("expected %s but got %s", expect, phase)
+				return errors.Errorf("expected %s but got %s", expected, phase)
 			}
 
-			return errors.Errorf("expected %s but got %s (%s)", expect, phase, msg)
+			return errors.Errorf("expected %s but got %s (%s)", expected, phase, msg)
 
 		case valid != nil:
-			return valid // the transition is invalid
+			return errors.Wrapf(valid, "invalid transition")
 		}
 
 		switch phase {
 		case v1alpha1.PhaseUninitialized, v1alpha1.PhaseChaos, v1alpha1.PhaseDiscoverable, v1alpha1.PhasePending:
-			panic(errors.Errorf("cannot wait on phase %s", expect))
+			panic(errors.Errorf("cannot wait on phase %s", expected))
 
 		case v1alpha1.PhaseRunning:
-			phase, msg, valid = lc.n.getNextRunning()
+			phase, msg, valid = lc.notifier.getNextRunning()
 
 		case v1alpha1.PhaseSuccess:
-			phase, msg, valid = lc.n.getNextComplete()
+			phase, msg, valid = lc.notifier.getNextComplete()
 
 		case v1alpha1.PhaseFailed:
-			phase, msg, valid = lc.n.getNextFailed()
+			phase, msg, valid = lc.notifier.getNextFailed()
 
 		default:
 			return errors.Errorf("invalid phase %s ", phase)
@@ -303,7 +446,11 @@ type eventHandlerFuncs struct {
 	DeleteFunc func(obj interface{})
 }
 
-func watchLifecycle(ctx context.Context, parentUID types.UID, child client.Object, handlers eventHandlerFuncs) error {
+func watchLifecycle(ctx context.Context, filterFunc func(obj interface{}) bool, child client.Object, handlers eventHandlerFuncs) error {
+	if filterFunc == nil {
+		panic("empty filter")
+	}
+
 	informer, err := common.cache.GetInformer(ctx, child)
 	if err != nil {
 		return errors.Wrapf(err, "unable to get informer")
@@ -316,7 +463,7 @@ func watchLifecycle(ctx context.Context, parentUID types.UID, child client.Objec
 	// handling ServiceGroup resources. More info on this pattern:
 	// https://github.com/kubernetes/community/blob/8cafef897a22026d42f5e5bb3f104febe7e29830/contributors/devel/controllers.md
 	informer.AddEventHandler(cachetypes.FilteringResourceEventHandler{
-		FilterFunc: filter(parentUID),
+		FilterFunc: filterFunc,
 		Handler: cachetypes.ResourceEventHandlerFuncs{
 			AddFunc: handlers.AddFunc,
 			UpdateFunc: func(oldObj, newObj interface{}) {
@@ -343,52 +490,6 @@ func watchLifecycle(ctx context.Context, parentUID types.UID, child client.Objec
 	})
 
 	return nil
-}
-
-// filter applies the provided filter to all events coming in, and decides which events will be handled
-// by this controller. It does this by looking at the objects metadata.ownerReferences field for an
-// appropriate OwnerReference. It then enqueues that Foo resource to be processed. If the object does not
-// have an appropriate OwnerReference, it will simply be skipped. If the parent is empty, the object is passed
-// as if it belongs to this parent.
-func filter(parentUID types.UID) func(obj interface{}) bool {
-	return func(obj interface{}) bool {
-		if obj == nil {
-			return false
-		}
-
-		object, ok := obj.(metav1.Object)
-		if !ok {
-			// an object was deleted but the watch deletion event was missed while disconnected from apiserver.
-			// In this case we don't know the final "resting" state of the object,
-			// so there's a chance the included `Obj` is stale.
-			tombstone, ok := obj.(cachetypes.DeletedFinalStateUnknown)
-			if !ok {
-				runtimeutil.HandleError(errors.New("error decoding object, invalid type"))
-
-				return false
-			}
-
-			object, ok = tombstone.Obj.(metav1.Object)
-			if !ok {
-				runtimeutil.HandleError(errors.New("error decoding object tombstone, invalid type"))
-
-				return false
-			}
-		}
-
-		if len(parentUID) == 0 {
-			return true
-		}
-
-		// Update locate view of the dependent services
-		for _, owner := range object.GetOwnerReferences() {
-			if owner.UID == parentUID {
-				return true
-			}
-		}
-
-		return false
-	}
 }
 
 type notifier struct {
@@ -466,7 +567,7 @@ func (n *notifier) watchChildrenPhase(obj interface{}) {
 			status.Reason = "see the logs of failing pod."
 		}
 
-		n.failed <- errors.Errorf("object failed. object:%s, name:%s, error:%s",
+		n.failed <- errors.Errorf("object:%s, name:%s, error:%s",
 			reflect.TypeOf(object),
 			object.GetName(),
 			status.Reason)
@@ -491,7 +592,7 @@ func (n *notifier) getNextPhase() (v1alpha1.Phase, error) {
 }
 
 // listen for all the expected transition from Unitialized.
-func (n *notifier) getNextUninitialized() (phase v1alpha1.Phase, msg error, valid error) {
+func (n *notifier) getNextUninitialized() (phase v1alpha1.Phase, msg, valid error) {
 	select {
 	case <-n.parentRunning:
 		return v1alpha1.PhaseRunning, nil, nil
@@ -509,7 +610,7 @@ func (n *notifier) getNextUninitialized() (phase v1alpha1.Phase, msg error, vali
 }
 
 // listen for all the expected transition from Running.
-func (n *notifier) getNextRunning() (phase v1alpha1.Phase, msg error, valid error) {
+func (n *notifier) getNextRunning() (phase v1alpha1.Phase, msg, valid error) {
 	select {
 	// ignore this case as it will lead to a loop
 	// case <-n.parentRunning:  return v1alpha1.PhaseRunning, nil, nil
@@ -528,17 +629,17 @@ func (n *notifier) getNextRunning() (phase v1alpha1.Phase, msg error, valid erro
 var errIsFinal = errors.New("phase is final")
 
 // listen for all the expected transition from PhaseSuccess.
-func (n *notifier) getNextComplete() (phase v1alpha1.Phase, msg error, valid error) {
+func (n *notifier) getNextComplete() (phase v1alpha1.Phase, msg, valid error) {
 	return v1alpha1.PhaseSuccess, nil, errIsFinal
 }
 
 // listen for all the expected transition from Failed.
-func (n *notifier) getNextFailed() (phase v1alpha1.Phase, msg error, valid error) {
+func (n *notifier) getNextFailed() (phase v1alpha1.Phase, msg, valid error) {
 	return v1alpha1.PhaseFailed, nil, errIsFinal
 }
 
 // listen for all the expected transition from Chaos.
-func (n *notifier) getNextChaos() (phase v1alpha1.Phase, msg error, valid error) {
+func (n *notifier) getNextChaos() (phase v1alpha1.Phase, msg, valid error) {
 	select {
 	case <-n.parentRunning:
 		return v1alpha1.PhaseRunning, nil,
@@ -556,3 +657,58 @@ func (n *notifier) getNextChaos() (phase v1alpha1.Phase, msg error, valid error)
 		//	return v1alpha1.PhaseChaos, err, nil
 	}
 }
+
+/******************************************************
+			Lifecycle Filters
+******************************************************/
+
+type FilterFunc func(obj interface{}) bool
+
+// FilterParent applies the provided FilterParent to all events coming in, and decides which events will be handled
+// by this controller. It does this by looking at the objects metadata.ownerReferences field for an
+// appropriate OwnerReference. It then enqueues that Foo resource to be processed. If the object does not
+// have an appropriate OwnerReference, it will simply be skipped. If the parent is empty, the object is passed
+// as if it belongs to this parent.
+func FilterParent(parentUID types.UID) FilterFunc {
+	return func(obj interface{}) bool {
+		if obj == nil {
+			return false
+		}
+
+		object, ok := obj.(metav1.Object)
+		if !ok {
+			// an object was deleted but the watch deletion event was missed while disconnected from apiserver.
+			// In this case we don't know the final "resting" state of the object,
+			// so there's a chance the included `Obj` is stale.
+			tombstone, ok := obj.(cachetypes.DeletedFinalStateUnknown)
+			if !ok {
+				runtimeutil.HandleError(errors.New("error decoding object, invalid type"))
+
+				return false
+			}
+
+			object, ok = tombstone.Obj.(metav1.Object)
+			if !ok {
+				runtimeutil.HandleError(errors.New("error decoding object tombstone, invalid type"))
+
+				return false
+			}
+		}
+
+		if len(parentUID) == 0 {
+			return true
+		}
+
+		// Update locate view of the dependent services
+		for _, owner := range object.GetOwnerReferences() {
+			if owner.UID == parentUID {
+				return true
+			}
+		}
+
+		return false
+	}
+}
+
+// NoFilter is a passthrough filter that allows all events to pass to the handler
+func NoFilter(obj interface{}) bool { return true }

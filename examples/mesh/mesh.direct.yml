@@ -11,11 +11,11 @@ spec:
   input:
     selector:
       matchLabels:
-          "arkoudes": "kados"
+        "lala": "kados"
   protocol: direct
   direct:
-      dstAddr: server
-      dstPort: 5201
+    dstAddr: server
+    dstPort: 5201
 
 
 ---
@@ -24,7 +24,7 @@ kind: Service
 metadata:
   name: server
 spec:
-  addPorts: [consumer]
+  addPorts: [ consumer ]
 
   container:
     name: app
@@ -53,7 +53,7 @@ kind: DataPort
 metadata:
   name: producer
   labels:
-    "arkoudes": "kados"
+    "lala": "kados"
 spec:
   type: output
   protocol: direct
@@ -65,7 +65,7 @@ kind: Service
 metadata:
   name: client
 spec:
-  addPorts: [producer]
+  addPorts: [ producer ]
 
   container:
     name: app
@@ -75,7 +75,6 @@ spec:
         valueFrom:
           fieldRef:
             fieldPath: metadata.annotations['ports.producer.direct.RemoteAddr']
-
       - name: port
         valueFrom:
           fieldRef:
@@ -87,8 +86,6 @@ spec:
       - |  # Multi-line str
         set -eum
         trap "touch /dev/shm/stop" EXIT
-
-        sleep 120
 
         #sleep 10 # Wait for NIC
         iperf3 -c ${server} -p ${port} -t 600 -f m > /dev/shm/pipe

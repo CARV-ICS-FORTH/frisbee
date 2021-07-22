@@ -1,4 +1,4 @@
-package dataport
+package chaos
 
 import (
 	"context"
@@ -12,17 +12,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// +kubebuilder:rbac:groups=frisbee.io,resources=dataports,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=frisbee.io,resources=dataports/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=frisbee.io,resources=dataports/finalizers,verbs=update
+// +kubebuilder:rbac:groups=frisbee.io,resources=chaoss,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=frisbee.io,resources=chaoss/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=frisbee.io,resources=chaoss/finalizers,verbs=update
 
 func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1alpha1.DataPort{}).
-		Named("dataport").
+		For(&v1alpha1.Chaos{}).
+		Named("chaos").
 		Complete(&Reconciler{
 			Client: mgr.GetClient(),
-			Logger: logger.WithName("dataport"),
+			Logger: logger.WithName("chaos"),
 		})
 }
 
@@ -35,7 +35,7 @@ type Reconciler struct {
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	var obj v1alpha1.DataPort
+	var obj v1alpha1.Chaos
 
 	var ret bool
 	result, err := common.Reconcile(ctx, r, req, &obj, &ret)
@@ -48,28 +48,22 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		r.Logger.Info("<- Reconcile", "kind", reflect.TypeOf(obj), "name", obj.GetName(), "lifecycle", obj.Status.Phase)
 	}()
 
-	handler := r.dispatch(obj.Spec.Protocol)
+	handler := r.dispatch(obj.Spec.Type)
 
 	// The reconcile logic
 	switch obj.Status.Phase {
 	case v1alpha1.PhaseUninitialized:
-		return handler.Create(ctx, &obj)
-
-	case v1alpha1.PhaseDiscoverable:
-		return handler.Discoverable(ctx, &obj)
-
-	case v1alpha1.PhasePending:
-		return handler.Pending(ctx, &obj)
+		return handler.Inject(ctx, &obj)
 
 	case v1alpha1.PhaseRunning:
-		return handler.Running(ctx, &obj)
+		return common.DoNotRequeue()
 
 	case v1alpha1.PhaseFailed:
-		r.Logger.Info("Dataport failed", "name", obj.GetName())
+		r.Logger.Info("Chaos failed", "name", obj.GetName())
 
 		return common.DoNotRequeue()
 
-	case v1alpha1.PhaseChaos, v1alpha1.PhaseSuccess:
+	case v1alpha1.PhaseChaos, v1alpha1.PhaseSuccess, v1alpha1.PhaseDiscoverable, v1alpha1.PhasePending:
 		// These phases should not happen in the workflow
 		panic(errors.Errorf("invalid lifecycle phase %s", obj.Status.Phase))
 
@@ -79,7 +73,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 }
 
 func (r *Reconciler) Finalizer() string {
-	return "dataports.frisbee.io/finalizer"
+	return "chaoss.frisbee.io/finalizer"
 }
 
 func (r *Reconciler) Finalize(obj client.Object) error {
@@ -88,24 +82,16 @@ func (r *Reconciler) Finalize(obj client.Object) error {
 	return nil
 }
 
-type protocolHandler interface {
-	Create(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error)
-	Discoverable(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error)
-	Pending(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error)
-	Running(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error)
+type chaoHandler interface {
+	Inject(ctx context.Context, obj *v1alpha1.Chaos) (ctrl.Result, error)
 }
 
-func (r *Reconciler) dispatch(proto v1alpha1.PortProtocol) protocolHandler {
-	switch proto {
-	case v1alpha1.Direct:
-		return &direct{r: r}
-
-	case v1alpha1.Kafka:
-		return &kafka{r: r}
+func (r *Reconciler) dispatch(faultType v1alpha1.FaultType) chaoHandler {
+	switch faultType {
+	case v1alpha1.FaultPartition:
+		return &partition{r: r}
 
 	default:
 		panic("should never happen")
 	}
 }
-
-// Initiate local port and prepare for matching remote ports.

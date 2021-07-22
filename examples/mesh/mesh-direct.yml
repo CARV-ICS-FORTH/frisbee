@@ -40,7 +40,7 @@ spec:
           - name: server
             valueFrom:
               fieldRef:
-                fieldPath:  metadata.annotations['datamesh.outputs.producer.dst']
+                fieldPath: metadata.annotations['datamesh.outputs.producer.dst']
                 # This will get the server from annotations and will use it as execution argument
         command:
           - /bin/sh # Run shell

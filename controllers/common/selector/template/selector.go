@@ -21,7 +21,7 @@ func IsRef(templateRef string) bool {
 
 // ParseRef parse the templateRef and returns a template selector. If the templateRef is invalid, the selector
 // will be nil, and any subsequence select operation will return empty value.
-func ParseRef(nm string, templateRef string) *v1alpha1.TemplateSelector {
+func ParseRef(nm, templateRef string) *v1alpha1.TemplateSelector {
 	parsed := strings.Split(templateRef, "/")
 	if len(parsed) != 2 {
 		panic("invalid reference format")

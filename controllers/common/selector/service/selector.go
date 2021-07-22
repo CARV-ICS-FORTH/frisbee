@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"crypto/rand"
-	"fmt"
 	"math"
 	"math/big"
 	"strconv"
@@ -35,19 +34,33 @@ func (list ServiceList) String() string {
 	return strings.Join(names, idListSeparator)
 }
 
+// ByNamespace return the services by the namespace they belong to.
+func (list ServiceList) ByNamespace() map[string][]string {
+	all := make(map[string][]string)
+
+	for _, s := range list {
+		// get namespace
+		sublist := all[s.GetNamespace()]
+
+		// append service to the namespace
+		sublist = append(sublist, s.GetName())
+
+		// update namespace
+		all[s.GetNamespace()] = sublist
+	}
+
+	return all
+}
+
 func IsMacro(macro string) bool {
 	return strings.HasPrefix(macro, ".")
 }
 
-// ParseMacro translates a given macro to the appropriate selector and executes it.
-// If the input is not a macro, it will be returned immediately as the first element of a string slice.
-func ParseMacro(macro string) *v1alpha1.ServiceSelector {
-	var criteria v1alpha1.ServiceSelector
-
-	fields := strings.Split(macro, ".")
+func parseMacro(ss *v1alpha1.ServiceSelector) {
+	fields := strings.Split(*ss.Macro, ".")
 
 	if len(fields) != 4 {
-		panic(errors.Errorf("%s is not a valid macro", macro))
+		panic(errors.Errorf("%s is not a valid macro", *ss.Macro))
 	}
 
 	kind := fields[1]
@@ -56,13 +69,11 @@ func ParseMacro(macro string) *v1alpha1.ServiceSelector {
 
 	switch kind {
 	case "servicegroup":
-		criteria.Match.ServiceGroup = object
-		criteria.Mode = v1alpha1.Mode(filter)
-
-		return &criteria
+		ss.Match.ServiceGroup = object
+		ss.Mode = v1alpha1.Mode(filter)
 
 	default:
-		panic(errors.Errorf("%s is not a valid macro", macro))
+		panic(errors.Errorf("%v is not a valid macro", ss.Macro))
 	}
 }
 
@@ -71,6 +82,10 @@ func Select(ctx context.Context, ss *v1alpha1.ServiceSelector) ServiceList {
 		logrus.Warn("empty service selector")
 
 		return []v1alpha1.Service{}
+	}
+
+	if ss.Macro != nil {
+		parseMacro(ss)
 	}
 
 	// get all available services that match the criteria
@@ -145,7 +160,7 @@ func selectServices(ctx context.Context, ss *v1alpha1.MatchServiceSpec) ([]v1alp
 
 	var serviceList v1alpha1.ServiceList
 
-	// case 4. Namespaces
+	// case 4. ByNamespace
 	if len(ss.Namespaces) > 0 { // search specified namespaces
 		for _, namespace := range ss.Namespaces {
 			listOptions.Namespace = namespace
@@ -210,7 +225,7 @@ func filterServicesByMode(services []v1alpha1.Service, mode v1alpha1.Mode, value
 		}
 
 		if percentage < 0 || percentage > 100 {
-			return nil, fmt.Errorf("fixed percentage value of %d is invalid, Must be (0,100]", percentage)
+			return nil, errors.Errorf("fixed percentage value of %d is invalid, Must be (0,100]", percentage)
 		}
 
 		num := int(math.Floor(float64(len(services)) * float64(percentage) / 100))
@@ -227,15 +242,16 @@ func filterServicesByMode(services []v1alpha1.Service, mode v1alpha1.Mode, value
 		}
 
 		if maxPercentage < 0 || maxPercentage > 100 {
-			return nil, fmt.Errorf("fixed percentage value of %d is invalid, Must be [0-100]", maxPercentage)
+			return nil, errors.Errorf("fixed percentage value of %d is invalid, Must be [0-100]", maxPercentage)
 		}
 
-		percentage := getRandomNumber(maxPercentage + 1) // + 1 because Intn works with half open interval [0,n) and we want [0,n]
+		// + 1 because Intn works with half open interval [0,n) and we want [0,n]
+		percentage := getRandomNumber(maxPercentage + 1)
 		num := int(math.Floor(float64(len(services)) * float64(percentage) / 100))
 
 		return getFixedSubListFromServiceList(services, num), nil
 	default:
-		return nil, fmt.Errorf("mode %s not supported", mode)
+		return nil, errors.Errorf("mode %s not supported", mode)
 	}
 }
 
@@ -247,7 +263,7 @@ func getRandomNumber(max int) uint64 {
 func getFixedSubListFromServiceList(services []v1alpha1.Service, num int) []v1alpha1.Service {
 	indexes := RandomFixedIndexes(0, uint(len(services)), uint(num))
 
-	var filteredServices []v1alpha1.Service
+	filteredServices := make([]v1alpha1.Service, len(indexes))
 
 	for _, index := range indexes {
 		index := index
@@ -261,6 +277,7 @@ func getFixedSubListFromServiceList(services []v1alpha1.Service, num int) []v1al
 // [start, end)
 func RandomFixedIndexes(start, end, count uint) []uint {
 	var indexes []uint
+
 	m := make(map[uint]uint, count)
 
 	if end < start {

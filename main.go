@@ -22,6 +22,7 @@ import (
 	_ "net/http/pprof"
 	"os"
 
+	"github.com/fnikolai/frisbee/controllers/chaos"
 	"github.com/fnikolai/frisbee/controllers/common"
 	"github.com/fnikolai/frisbee/controllers/dataport"
 	"github.com/fnikolai/frisbee/controllers/service"
@@ -117,6 +118,12 @@ func main() {
 
 	if err := dataport.NewController(mgr, setupLog); err != nil {
 		runtimeutil.HandleError(errors.Wrapf(err, "unable to create dataport controller"))
+
+		os.Exit(1)
+	}
+
+	if err := chaos.NewController(mgr, setupLog); err != nil {
+		runtimeutil.HandleError(errors.Wrapf(err, "unable to create fault controller"))
 
 		os.Exit(1)
 	}

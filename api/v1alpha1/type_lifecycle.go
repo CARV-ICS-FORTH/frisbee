@@ -19,7 +19,7 @@ const (
 	PhaseUninitialized = Phase("")
 
 	// PhaseDiscoverable means that the service has been accepted by the system, but one of the dependent
-	// conditions is not met yet. This includes logical dependencies (e.g, Run, Complete) and/or Ports discovery and
+	// conditions is not met yet. This includes logical dependencies (e.g, Run, Success) and/or Ports discovery and
 	// rewiring. This phase is generally for "listening" for remote events. (in terms of if anything happens, a
 	// remote object can update us)
 	PhaseDiscoverable = Phase("Discoverable")
@@ -36,7 +36,7 @@ const (
 
 	// PhaseSuccess means that all containers in the pod have voluntarily terminated
 	// with a container exit code of 0, and the system is not going to restart any of these containers.
-	PhaseSuccess = Phase("Complete")
+	PhaseSuccess = Phase("Success")
 
 	// PhaseFailed means that all containers in the pod have terminated, and at least one container has
 	// terminated in a failure (exited with a non-zero exit code or was stopped by the system).

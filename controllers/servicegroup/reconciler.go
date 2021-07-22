@@ -12,6 +12,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// +kubebuilder:rbac:groups=frisbee.io,resources=servicegroups,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=frisbee.io,resources=servicegroups/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=frisbee.io,resources=servicegroups/finalizers,verbs=update
+
 func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.ServiceGroup{}).
@@ -21,10 +25,6 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 			Logger: logger.WithName("group"),
 		})
 }
-
-// +kubebuilder:rbac:groups=frisbee.io,resources=servicegroups,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=frisbee.io,resources=servicegroups/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=frisbee.io,resources=servicegroups/finalizers,verbs=update
 
 // Reconciler reconciles a Templates object
 type Reconciler struct {

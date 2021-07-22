@@ -53,7 +53,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		monitorNames = append(monitorNames, name)
 	}
 
-	r.Logger.Info("New Templates",
+	r.Logger.Info("Import Template",
 		"name", req.NamespacedName,
 		"services", serviceNames,
 		"monitor", monitorNames,
@@ -67,7 +67,6 @@ func (r *Reconciler) Finalizer() string {
 }
 
 func (r *Reconciler) Finalize(obj client.Object) error {
-
 	r.Logger.Info("Finalize", "kind", reflect.TypeOf(obj), "name", obj.GetName())
 
 	return nil

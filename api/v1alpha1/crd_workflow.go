@@ -60,13 +60,13 @@ type EmbedActions struct {
 
 	// +optional
 	Wait *WaitSpec `json:"wait,omitempty"`
+
+	// +optional
+	Chaos *ChaosSpec `json:"chaos,omitempty"`
 }
 
 type StopSpec struct {
-	// Macro abstract selector parameters into a structured string (e.g, .groupservice.master.all). Every parsed field is
-	// represents an inner structure of the selector.
-	// +optional
-	Macro string `json:"macro,omitempty"`
+	Selector *ServiceSelector `json:"selector,omitempty"`
 
 	Schedule *SchedulerSpec `json:"schedule,omitempty"`
 }
@@ -76,9 +76,9 @@ type WaitSpec struct {
 	// +optional
 	Running []string `json:"running,omitempty"`
 
-	// Complete waits for the given groups to be succeeded
+	// Success waits for the given groups to be succeeded
 	// +optional
-	Complete []string `json:"complete,omitempty"`
+	Success []string `json:"success,omitempty"`
 
 	// Duration blocks waiting for the duration to expire
 	// +optional

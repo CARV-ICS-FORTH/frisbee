@@ -8,7 +8,7 @@ import (
 	"github.com/fnikolai/frisbee/controllers/common"
 	"github.com/fnikolai/frisbee/controllers/common/selector/service"
 	"github.com/pkg/errors"
-	ctrl "sigs.k8s.io/controller-runtime"
+	"github.com/sirupsen/logrus"
 )
 
 func (r *Reconciler) scheduleActions(topCtx context.Context, obj *v1alpha1.Workflow) {
@@ -32,6 +32,9 @@ func (r *Reconciler) scheduleActions(topCtx context.Context, obj *v1alpha1.Workf
 		case "Stop":
 			err = r.stop(ctx, obj, action)
 
+		case "Chaos":
+			err = r.chaos(ctx, obj, action)
+
 		default:
 			err = errors.Errorf("unknown action %s", action.ActionType)
 		}
@@ -47,27 +50,44 @@ func (r *Reconciler) scheduleActions(topCtx context.Context, obj *v1alpha1.Workf
 }
 
 func (r *Reconciler) wait(ctx context.Context, w *v1alpha1.Workflow, spec v1alpha1.WaitSpec) error {
-	if len(spec.Complete) > 0 {
-		err := common.GetLifecycle(ctx, w.GetUID(), &v1alpha1.ServiceGroup{}, spec.Complete...).Expect(v1alpha1.PhaseSuccess)
+	if len(spec.Success) > 0 {
+		logrus.Warn("-> Wait success for ", spec.Success)
+
+		err := common.GetLifecycle(ctx,
+			common.Watch(&v1alpha1.ServiceGroup{}, spec.Success...),
+			common.WithFilter(common.FilterParent(w.GetUID())),
+		).Expect(v1alpha1.PhaseSuccess)
 		if err != nil {
 			return errors.Wrapf(err, "wait error")
 		}
+
+		logrus.Warn("<- Wait success for ", spec.Success)
 	}
 
 	if len(spec.Running) > 0 {
-		err := common.GetLifecycle(ctx, w.GetUID(), &v1alpha1.ServiceGroup{}, spec.Running...).Expect(v1alpha1.PhaseRunning)
+		logrus.Warn("-> Wait running for ", spec.Running)
+
+		err := common.GetLifecycle(ctx,
+			common.Watch(&v1alpha1.ServiceGroup{}, spec.Running...),
+			common.WithFilter(common.FilterParent(w.GetUID())),
+		).Expect(v1alpha1.PhaseRunning)
 		if err != nil {
 			return errors.Wrapf(err, "wait error")
 		}
+
+		logrus.Warn("<- Wait running for ", spec.Running)
 	}
 
 	if spec.Duration != nil {
+		logrus.Warn("-> Wait duration for ", spec.Duration)
+
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
 		case <-time.After(spec.Duration.Duration):
-			return nil
 		}
+
+		logrus.Warn("<- Wait duration for ", spec.Duration)
 	}
 
 	return nil
@@ -87,8 +107,7 @@ func (r *Reconciler) createServiceGroup(ctx context.Context, obj *v1alpha1.Workf
 		}
 	}
 
-	_, err := ctrl.CreateOrUpdate(ctx, r.Client, &group, func() error { return nil })
-	if err != nil {
+	if err := r.Client.Create(ctx, &group); err != nil {
 		return errors.Wrapf(err, "create failed")
 	}
 
@@ -99,10 +118,6 @@ func (r *Reconciler) createServiceGroup(ctx context.Context, obj *v1alpha1.Workf
 }
 
 func (r *Reconciler) stop(ctx context.Context, obj *v1alpha1.Workflow, action v1alpha1.Action) error {
-	if !service.IsMacro(action.Stop.Macro) {
-		return errors.Errorf("invalid macro %s", action.Stop.Macro)
-	}
-
 	if action.Depends != nil {
 		if err := r.wait(ctx, obj, *action.Depends); err != nil {
 			return errors.Wrapf(err, "dependencies failed")
@@ -110,7 +125,7 @@ func (r *Reconciler) stop(ctx context.Context, obj *v1alpha1.Workflow, action v1
 	}
 
 	// Resolve affected services
-	services := service.Select(ctx, service.ParseMacro(action.Stop.Macro))
+	services := service.Select(ctx, action.Stop.Selector)
 	if len(services) == 0 {
 		r.Logger.Info("no services to stop", "action", action.Name)
 
@@ -142,6 +157,27 @@ func (r *Reconciler) stop(ctx context.Context, obj *v1alpha1.Workflow, action v1
 		}
 
 		return nil
+	}
+
+	return nil
+}
+
+func (r *Reconciler) chaos(ctx context.Context, obj *v1alpha1.Workflow, action v1alpha1.Action) error {
+	chaos := v1alpha1.Chaos{}
+	action.Chaos.DeepCopyInto(&chaos.Spec)
+
+	if err := common.SetOwner(obj, &chaos, action.Name); err != nil {
+		return errors.Wrapf(err, "ownership failed")
+	}
+
+	if action.Depends != nil {
+		if err := r.wait(ctx, obj, *action.Depends); err != nil {
+			return errors.Wrapf(err, "dependencies failed")
+		}
+	}
+
+	if err := r.Client.Create(ctx, &chaos); err != nil {
+		return errors.Wrapf(err, "chaos injection failed")
 	}
 
 	return nil
