@@ -74,17 +74,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return lifecycle.Running(ctx, &obj, "start running actions")
 
 	case v1alpha1.PhaseRunning:
-		if obj.Status.IsRunning {
-			r.Logger.Info("Workflow is Running",
-				"name", obj.GetName(),
-				"CreationTimestamp", obj.CreationTimestamp.String(),
-			)
-
-			return common.DoNotRequeue()
-		}
-
-		obj.Status.IsRunning = true
-
 		return common.DoNotRequeue()
 
 	case v1alpha1.PhaseSuccess:

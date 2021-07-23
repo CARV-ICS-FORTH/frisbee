@@ -87,8 +87,6 @@ type WaitSpec struct {
 
 type WorkflowStatus struct {
 	Lifecycle `json:",inline"`
-
-	IsRunning bool `json:"isRunning"`
 }
 
 func (s *Workflow) GetLifecycle() Lifecycle {

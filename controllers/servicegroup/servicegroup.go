@@ -68,7 +68,6 @@ func (r *Reconciler) create(ctx context.Context, obj *v1alpha1.ServiceGroup) err
 	err := lifecycle.WatchObject(ctx,
 		lifecycle.Watch(&v1alpha1.Service{}, serviceKeys...),
 		lifecycle.WithFilter(lifecycle.FilterParent(obj.GetUID())),
-		lifecycle.WithAnnotator(true), // Register event to grafana
 		lifecycle.WithLogger(r.Logger),
 	).UpdateParentLifecycle(obj)
 

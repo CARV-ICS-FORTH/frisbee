@@ -287,8 +287,6 @@ spec:
                 description: Most recently observed status of the object
                 format: date-time
                 type: string
-              isRunning:
-                type: boolean
               phase:
                 description: Phase is the current status of an object
                 type: string
@@ -302,8 +300,6 @@ spec:
                   image(s) for the pod.
                 format: date-time
                 type: string
-            required:
-            - isRunning
             type: object
         type: object
     served: true

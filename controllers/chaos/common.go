@@ -2,6 +2,7 @@ package chaos
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/common"
@@ -17,7 +18,7 @@ func AnnotateChaos(obj *v1alpha1.Chaos) {
 	if obj.Status.AnnotationID == 0 {
 		ga := sdk.CreateAnnotationRequest{
 			Time:    obj.GetCreationTimestamp().Unix() * 1000, // unix ts in ms
-			TimeEnd: 0,
+			TimeEnd: obj.GetCreationTimestamp().Add(24*time.Minute).Unix() * 1000,
 			Tags:    []string{"failure"},
 			Text:    fmt.Sprintf("Chaos injected. Name:%s", obj.GetName()),
 		}

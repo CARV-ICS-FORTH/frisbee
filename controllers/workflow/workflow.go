@@ -12,11 +12,21 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+type Workflow struct {
+	*v1alpha1.Workflow
+
+	waitableActions map[string]lifecycle.InnerObject
+}
+
 func (r *Reconciler) scheduleActions(topCtx context.Context, obj *v1alpha1.Workflow) {
 	ctx, cancel := context.WithCancel(topCtx)
 	defer cancel()
 
-	// r.Logger.Info("Workflow Started", "name", obj.GetName(), "time", time.Now())
+	// keep an index of names and objects. This is used for wait to identify the type of object to wait for.
+	w := Workflow{
+		Workflow:        obj,
+		waitableActions: make(map[string]lifecycle.InnerObject),
+	}
 
 	var err error
 
@@ -25,39 +35,48 @@ func (r *Reconciler) scheduleActions(topCtx context.Context, obj *v1alpha1.Workf
 
 		switch action.ActionType {
 		case "Wait": // Expect command will block the entire controller
-			err = r.wait(ctx, obj, *action.Wait)
+			err = r.wait(ctx, w, *action.Wait)
 
 		case "ServiceGroup":
-			err = r.createServiceGroup(ctx, obj, action)
+			err = r.createServiceGroup(ctx, w, action)
 
 		case "Stop":
-			err = r.stop(ctx, obj, action)
+			err = r.stop(ctx, w, action)
 
 		case "Chaos":
-			err = r.chaos(ctx, obj, action)
+			err = r.chaos(ctx, w, action)
 
 		default:
 			err = errors.Errorf("unknown action %s", action.ActionType)
 		}
 
 		if err != nil {
-			lifecycle.Failed(ctx, obj, errors.Wrapf(err, "action %s failed", action.Name))
+			lifecycle.Failed(ctx, w.Workflow, errors.Wrapf(err, "action %s failed", action.Name))
 
 			return
 		}
 	}
 
-	lifecycle.Success(ctx, obj, "all actions are complete")
+	_, _ = lifecycle.Success(ctx, w.Workflow, "all actions are complete")
 }
 
-func (r *Reconciler) wait(ctx context.Context, w *v1alpha1.Workflow, spec v1alpha1.WaitSpec) error {
+func (r *Reconciler) wait(ctx context.Context, w Workflow, spec v1alpha1.WaitSpec) error {
 	if len(spec.Success) > 0 {
 		logrus.Warn("-> Wait success for ", spec.Success)
 
-		// TODO: Wait for any object (Chaos or ServiceGroup)
+		// confirm that the referenced action have already happened. otherwise, it is possible to block forever.
+		for _, waitFor := range spec.Success {
+			_, ok := w.waitableActions[waitFor]
+			if !ok {
+				return errors.Errorf("action %s has not happened yet", spec.Success[0])
+			}
+		}
+
+		// assume that all action to wait are of the same type
+		kind := w.waitableActions[spec.Success[0]]
 
 		err := lifecycle.WatchObject(ctx,
-			lifecycle.Watch(&v1alpha1.ServiceGroup{}, spec.Success...),
+			lifecycle.Watch(kind, spec.Success...),
 			lifecycle.WithFilter(lifecycle.FilterParent(w.GetUID())),
 			lifecycle.WithLogger(r.Logger),
 		).Expect(v1alpha1.PhaseSuccess)
@@ -71,8 +90,19 @@ func (r *Reconciler) wait(ctx context.Context, w *v1alpha1.Workflow, spec v1alph
 	if len(spec.Running) > 0 {
 		logrus.Warn("-> Wait running for ", spec.Running)
 
+		// confirm that the referenced action have already happened. otherwise, it is possible to block forever.
+		for _, waitFor := range spec.Running {
+			_, ok := w.waitableActions[waitFor]
+			if !ok {
+				return errors.Errorf("action %s has not happened yet", spec.Success[0])
+			}
+		}
+
+		// assume that all action to wait are of the same type
+		kind := w.waitableActions[spec.Running[0]]
+
 		err := lifecycle.WatchObject(ctx,
-			lifecycle.Watch(&v1alpha1.ServiceGroup{}, spec.Running...),
+			lifecycle.Watch(kind, spec.Running...),
 			lifecycle.WithFilter(lifecycle.FilterParent(w.GetUID())),
 			lifecycle.WithLogger(r.Logger),
 		).Expect(v1alpha1.PhaseRunning)
@@ -98,16 +128,16 @@ func (r *Reconciler) wait(ctx context.Context, w *v1alpha1.Workflow, spec v1alph
 	return nil
 }
 
-func (r *Reconciler) createServiceGroup(ctx context.Context, obj *v1alpha1.Workflow, action v1alpha1.Action) error {
+func (r *Reconciler) createServiceGroup(ctx context.Context, w Workflow, action v1alpha1.Action) error {
 	group := v1alpha1.ServiceGroup{}
 	action.ServiceGroup.DeepCopyInto(&group.Spec)
 
-	if err := common.SetOwner(obj, &group, action.Name); err != nil {
+	if err := common.SetOwner(w.Workflow, &group, action.Name); err != nil {
 		return errors.Wrapf(err, "ownership failed")
 	}
 
 	if action.Depends != nil {
-		if err := r.wait(ctx, obj, *action.Depends); err != nil {
+		if err := r.wait(ctx, w, *action.Depends); err != nil {
 			return errors.Wrapf(err, "dependencies failed")
 		}
 	}
@@ -117,14 +147,16 @@ func (r *Reconciler) createServiceGroup(ctx context.Context, obj *v1alpha1.Workf
 	}
 
 	// TODO: Fix it with respect to threads
-	// common.UpdateLifecycle(ctx, obj, &v1alpha1.ServiceGroup{}, group.GetName())
+	// common.UpdateLifecycle(ctx, w, &v1alpha1.ServiceGroup{}, group.GetName())
+
+	w.waitableActions[action.Name] = &group
 
 	return nil
 }
 
-func (r *Reconciler) stop(ctx context.Context, obj *v1alpha1.Workflow, action v1alpha1.Action) error {
+func (r *Reconciler) stop(ctx context.Context, w Workflow, action v1alpha1.Action) error {
 	if action.Depends != nil {
-		if err := r.wait(ctx, obj, *action.Depends); err != nil {
+		if err := r.wait(ctx, w, *action.Depends); err != nil {
 			return errors.Wrapf(err, "dependencies failed")
 		}
 	}
@@ -167,16 +199,16 @@ func (r *Reconciler) stop(ctx context.Context, obj *v1alpha1.Workflow, action v1
 	return nil
 }
 
-func (r *Reconciler) chaos(ctx context.Context, obj *v1alpha1.Workflow, action v1alpha1.Action) error {
+func (r *Reconciler) chaos(ctx context.Context, w Workflow, action v1alpha1.Action) error {
 	chaos := v1alpha1.Chaos{}
 	action.Chaos.DeepCopyInto(&chaos.Spec)
 
-	if err := common.SetOwner(obj, &chaos, action.Name); err != nil {
+	if err := common.SetOwner(w.Workflow, &chaos, action.Name); err != nil {
 		return errors.Wrapf(err, "ownership failed")
 	}
 
 	if action.Depends != nil {
-		if err := r.wait(ctx, obj, *action.Depends); err != nil {
+		if err := r.wait(ctx, w, *action.Depends); err != nil {
 			return errors.Wrapf(err, "dependencies failed")
 		}
 	}
@@ -184,6 +216,8 @@ func (r *Reconciler) chaos(ctx context.Context, obj *v1alpha1.Workflow, action v
 	if err := r.Client.Create(ctx, &chaos); err != nil {
 		return errors.Wrapf(err, "chaos injection failed")
 	}
+
+	w.waitableActions[action.Name] = &chaos
 
 	return nil
 }

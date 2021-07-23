@@ -59,8 +59,12 @@ func convertStatus(obj interface{}) v1alpha1.Lifecycle {
 		status.Reason = "chaos is definitely is running"
 
 	default:
-		status.Phase = v1alpha1.PhasePending
-		status.Reason = "unsure about the chaos condition"
+		panic("unhandle status of external object")
+		/*
+			status.Phase = v1alpha1.PhasePending
+			status.Reason = "unsure about the chaos condition"
+
+		*/
 	}
 
 	return status

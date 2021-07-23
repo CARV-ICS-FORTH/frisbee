@@ -20,7 +20,7 @@ func annotateAdd(obj interface{}) (id uint) {
 	msg := fmt.Sprintf("Child added. Kind:%s Name:%s", reflect.TypeOf(obj), objMeta.GetName())
 
 	ga := sdk.CreateAnnotationRequest{
-		Time: objMeta.GetCreationTimestamp().Unix(), //* 1000, // unix ts in ms
+		Time: objMeta.GetCreationTimestamp().Unix() * 1000, // unix ts in ms
 		Tags: []string{"run"},
 		Text: msg,
 	}
@@ -50,7 +50,7 @@ func annotateDelete(obj interface{}) (id uint) {
 	}
 
 	ga := sdk.CreateAnnotationRequest{
-		Time: ts.Unix(),// * 1000, // unix ts in ms
+		Time: ts.Unix() * 1000, // unix ts in ms
 		Tags: []string{"exit"},
 		Text: msg,
 	}

@@ -76,3 +76,37 @@ func (f *partition) Inject(ctx context.Context, obj *v1alpha1.Chaos) (ctrl.Resul
 
 	return lifecycle.Running(ctx, obj, "chaos is up and running")
 }
+
+func (f *partition) WaitForDuration(ctx context.Context, obj *v1alpha1.Chaos) (ctrl.Result, error) {
+	if duration := obj.Spec.Partition.Duration; duration != nil {
+		revokeTime := obj.GetCreationTimestamp().Add(duration.Duration)
+
+		// if chaos injection + duration is elapsed, return immediately
+		if time.Now().After(revokeTime) {
+			return lifecycle.Success(ctx, obj, "chaos is already expired")
+		}
+
+		// otherwise, wait for the event to happen in the future
+		select {
+		case <-ctx.Done():
+			return lifecycle.Failed(ctx, obj, errors.Wrapf(ctx.Err(), "unable to revoke chaos"))
+		case <-time.After(time.Until(revokeTime)):
+			return lifecycle.Success(ctx, obj, "chaos duration expired")
+		}
+	}
+
+	return common.DoNotRequeue()
+}
+
+func (f *partition) Revoke(ctx context.Context, obj *v1alpha1.Chaos) (ctrl.Result, error) {
+
+	// because the internal Chaos object (managed by Chaos controller) owns the external Chaos implementation
+	// (managed by Chaos-Mesh) it suffice to remove the internal object, and the external will be garbage collected.
+	if err := f.r.Delete(ctx, obj); err != nil {
+		return lifecycle.Failed(ctx, obj, errors.Wrapf(err, "unable to revoke chaos"))
+	}
+
+	f.r.Logger.Info("Chaos revoked", "name", obj.GetName())
+
+	return common.DoNotRequeue()
+}

@@ -56,14 +56,19 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return handler.Inject(ctx, &obj)
 
 	case v1alpha1.PhaseRunning:
-		return common.DoNotRequeue()
+		return handler.WaitForDuration(ctx, &obj)
+
+	case v1alpha1.PhaseSuccess:
+		// Chaos is Success, meaning that duration has elapsed.
+		// Revoke the chaos
+		return handler.Revoke(ctx, &obj)
 
 	case v1alpha1.PhaseFailed:
 		r.Logger.Info("Chaos failed", "name", obj.GetName())
 
 		return common.DoNotRequeue()
 
-	case v1alpha1.PhaseChaos, v1alpha1.PhaseSuccess, v1alpha1.PhaseDiscoverable, v1alpha1.PhasePending:
+	case v1alpha1.PhaseChaos, v1alpha1.PhaseDiscoverable, v1alpha1.PhasePending:
 		// These phases should not happen in the workflow
 		panic(errors.Errorf("invalid lifecycle phase %s", obj.Status.Phase))
 
@@ -84,6 +89,8 @@ func (r *Reconciler) Finalize(obj client.Object) error {
 
 type chaoHandler interface {
 	Inject(ctx context.Context, obj *v1alpha1.Chaos) (ctrl.Result, error)
+	WaitForDuration(ctx context.Context, obj *v1alpha1.Chaos) (ctrl.Result, error)
+	Revoke(ctx context.Context, obj *v1alpha1.Chaos) (ctrl.Result, error)
 }
 
 func (r *Reconciler) dispatch(faultType v1alpha1.FaultType) chaoHandler {

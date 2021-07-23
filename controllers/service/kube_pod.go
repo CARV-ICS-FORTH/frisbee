@@ -92,6 +92,7 @@ func (r *Reconciler) createKubePod(ctx context.Context, obj *v1alpha1.Service) e
 	err := lifecycle.WatchObject(ctx,
 		lifecycle.WatchExternal(&pod, convert, pod.GetName()),
 		lifecycle.WithFilter(lifecycle.FilterParent(obj.GetUID())),
+		lifecycle.WithAnnotator(), // Register event to grafana
 		lifecycle.WithLogger(r.Logger),
 	).UpdateParentLifecycle(obj)
 

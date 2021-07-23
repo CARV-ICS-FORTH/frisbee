@@ -106,9 +106,9 @@ func WithFilter(filter FilterFunc) LifecycleOption {
 }
 
 // WithAnnotator will send annotations to grafana whenever an Add or a Delete event takes place.
-func WithAnnotator(do bool) LifecycleOption {
+func WithAnnotator() LifecycleOption {
 	return func(s *LifecycleOptions) {
-		s.Annotator = do
+		s.Annotator = true
 	}
 }
 

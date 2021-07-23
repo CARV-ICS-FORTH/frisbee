@@ -270,7 +270,6 @@ func newGrafanaClient(ctx context.Context, apiURI string) (*grafanaClient, error
 		ctx:    ctx,
 		Client: client,
 	}, nil
-
 }
 
 // Insert inserts a new annotation to Grafana
