@@ -51,6 +51,9 @@ type PartitionSpec struct {
 
 type ChaosStatus struct {
 	Lifecycle `json:",inline"`
+
+	// AnnotationID keeps a record of the annotation of the inject fault, in order to patch is when the fault is revoked
+	AnnotationID uint `json:"annotationId"`
 }
 
 func (s *Chaos) GetLifecycle() Lifecycle {

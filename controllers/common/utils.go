@@ -85,7 +85,7 @@ func YieldByTime(ctx context.Context, cronspec string, services ...v1alpha1.Serv
 		}
 	})
 	if err != nil {
-		common.logger.Error(err, "cronjob failed")
+		Common.Logger.Error(err, "cronjob failed")
 
 		close(ret)
 
@@ -120,7 +120,7 @@ func SetOwner(parent, child metav1.Object, name string) error {
 
 	child.SetNamespace(parent.GetNamespace())
 
-	if err := controllerutil.SetOwnerReference(parent, child, common.client.Scheme()); err != nil {
+	if err := controllerutil.SetOwnerReference(parent, child, Common.Client.Scheme()); err != nil {
 		return errors.Wrapf(err, "unable to set parent")
 	}
 

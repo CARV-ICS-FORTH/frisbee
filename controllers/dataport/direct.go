@@ -6,6 +6,7 @@ import (
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/common"
+	"github.com/fnikolai/frisbee/controllers/common/lifecycle"
 	"github.com/pkg/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
@@ -23,7 +24,7 @@ func (p *direct) Create(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Resul
 		return p.createOutput(ctx, obj)
 
 	default:
-		return common.Failed(ctx, obj, errors.Errorf("unknown type %s", v))
+		return lifecycle.Failed(ctx, obj, errors.Errorf("unknown type %s", v))
 	}
 }
 
@@ -37,11 +38,11 @@ func (p *direct) createInput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.
 
 	obj.Status.Direct = &localStatus
 
-	return common.Running(ctx, obj)
+	return lifecycle.Running(ctx, obj)
 }
 
 func (p *direct) createOutput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
-	return common.Discoverable(ctx, obj)
+	return lifecycle.Discoverable(ctx, obj)
 }
 
 func (p *direct) Discoverable(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
@@ -51,13 +52,13 @@ func (p *direct) Discoverable(ctx context.Context, obj *v1alpha1.DataPort) (ctrl
 	case v1alpha1.Outport:
 		return p.discoverableOutput(ctx, obj)
 	default:
-		return common.Failed(ctx, obj, errors.Errorf("unknown type %s", v))
+		return lifecycle.Failed(ctx, obj, errors.Errorf("unknown type %s", v))
 	}
 }
 
 func (p *direct) discoverableInput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
 	// this is not needed because the input is matched to a server, and the server does the discovery.
-	return common.Failed(ctx, obj, errors.Errorf("invalid phase for direct input port"))
+	return lifecycle.Failed(ctx, obj, errors.Errorf("invalid phase for direct input port"))
 }
 
 func (p *direct) discoverableOutput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
@@ -72,7 +73,7 @@ func (p *direct) discoverableOutput(ctx context.Context, obj *v1alpha1.DataPort)
 	// for direct protocol, just accept anything
 	// TODO: check if the target is pingable
 
-	return common.Pending(ctx, obj)
+	return lifecycle.Pending(ctx, obj)
 }
 
 func (p *direct) Pending(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
@@ -82,17 +83,17 @@ func (p *direct) Pending(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Resu
 	case v1alpha1.Outport:
 		return p.pendingOutput(ctx, obj)
 	default:
-		return common.Failed(ctx, obj, errors.Errorf("unknown type %s", v))
+		return lifecycle.Failed(ctx, obj, errors.Errorf("unknown type %s", v))
 	}
 }
 
 func (p *direct) pendingInput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
-	return common.Failed(ctx, obj, errors.Errorf("invalid phase for direct input port"))
+	return lifecycle.Failed(ctx, obj, errors.Errorf("invalid phase for direct input port"))
 }
 
 func (p *direct) pendingOutput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
 	// do rewire the connections. But this is not needed for direct protocol.
-	return common.Running(ctx, obj)
+	return lifecycle.Running(ctx, obj)
 }
 
 func (p *direct) Running(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
@@ -102,7 +103,7 @@ func (p *direct) Running(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Resu
 	case v1alpha1.Outport:
 		return p.runningOutput(ctx, obj)
 	default:
-		return common.Failed(ctx, obj, errors.Errorf("unknown type %s", v))
+		return lifecycle.Failed(ctx, obj, errors.Errorf("unknown type %s", v))
 	}
 }
 
@@ -130,23 +131,23 @@ func (p *direct) runningInput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl
 
 			switch {
 			case match.Spec.Type == v1alpha1.Inport:
-				return common.Failed(ctx, obj,
+				return lifecycle.Failed(ctx, obj,
 					errors.Errorf("conflicting ports (%s) -> (%s)", obj.GetName(), match.GetName()))
 
 			case match.Spec.Protocol != v1alpha1.Direct:
-				return common.Failed(ctx, obj,
+				return lifecycle.Failed(ctx, obj,
 					errors.Errorf("conflicting protocols (%s) -> (%s)", obj.GetName(), match.GetName()))
 			}
 
 			if err := p.connect(ctx, obj, &match); err != nil {
-				return common.Failed(ctx, obj,
+				return lifecycle.Failed(ctx, obj,
 					errors.Errorf("rewiring error(%s) -> (%s)", obj.GetName(), match.GetName()))
 			}
 
 			return common.DoNotRequeue()
 
 		default:
-			return common.Failed(ctx, obj, errors.Errorf("expected 1 server, but got multiple (%d)", len(matches.Items)))
+			return lifecycle.Failed(ctx, obj, errors.Errorf("expected 1 server, but got multiple (%d)", len(matches.Items)))
 		}
 	}()
 

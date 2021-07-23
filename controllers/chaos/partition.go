@@ -7,9 +7,9 @@ import (
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/common"
+	"github.com/fnikolai/frisbee/controllers/common/lifecycle"
 	"github.com/fnikolai/frisbee/controllers/common/selector/service"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	k8errors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/util/retry"
@@ -21,7 +21,9 @@ type partition struct {
 }
 
 func (f *partition) generate(ctx context.Context, obj *v1alpha1.Chaos) unstructured.Unstructured {
-	spec := obj.Spec.Partition
+	affectedPods := service.Select(ctx, &obj.Spec.Partition.Selector)
+
+	f.r.Logger.Info("Inject network partition", "targets", affectedPods.String())
 
 	return unstructured.Unstructured{
 		Object: map[string]interface{}{
@@ -36,7 +38,7 @@ func (f *partition) generate(ctx context.Context, obj *v1alpha1.Chaos) unstructu
 				"target": map[string]interface{}{
 					"mode": "all",
 					"selector": map[string]interface{}{
-						"pods": service.Select(ctx, &spec.Selector).ByNamespace(),
+						"pods": affectedPods.ByNamespace(),
 					},
 				},
 			},
@@ -48,7 +50,7 @@ func (f *partition) Inject(ctx context.Context, obj *v1alpha1.Chaos) (ctrl.Resul
 	chaos := f.generate(ctx, obj)
 
 	if err := common.SetOwner(obj, &chaos, fmt.Sprintf("%s.%d", obj.GetName(), time.Now().UnixNano())); err != nil {
-		return common.Failed(ctx, obj, errors.Wrapf(err, "ownership error"))
+		return lifecycle.Failed(ctx, obj, errors.Wrapf(err, "ownership error"))
 	}
 
 	// occasionally Chaos-Mesh throws an internal timeout. in this case, just retry the operation.
@@ -56,20 +58,21 @@ func (f *partition) Inject(ctx context.Context, obj *v1alpha1.Chaos) (ctrl.Resul
 		return f.r.Create(ctx, &chaos)
 	})
 	if err != nil {
-		return common.Failed(ctx, obj, errors.Wrapf(err, "injection failed"))
+		return lifecycle.Failed(ctx, obj, errors.Wrapf(err, "injection failed"))
 	}
 
-	err = common.GetLifecycle(ctx,
-		common.WatchExternal(&chaos, convertStatus, chaos.GetName()),
-		common.WithFilter(common.FilterParent(obj.GetUID())),
+	err = lifecycle.WatchObject(ctx,
+		lifecycle.WatchExternal(&chaos, convertStatus, chaos.GetName()),
+		lifecycle.WithFilter(lifecycle.FilterParent(obj.GetUID())),
 	).Expect(v1alpha1.PhaseRunning)
 
 	if err != nil {
-		return common.Failed(ctx, obj, errors.Wrapf(err, "chaos error"))
+		return lifecycle.Failed(ctx, obj, errors.Wrapf(err, "chaos error"))
 	}
 
+	AnnotateChaos(obj)
 
-	logrus.Info("Chaos was successfully injected", "name", obj.GetName(), "faulttype", obj.Spec.Type)
+	f.r.Logger.Info("Chaos was successfully injected", "name", obj.GetName(), "faulttype", obj.Spec.Type)
 
-	return common.Running(ctx, obj)
+	return lifecycle.Running(ctx, obj)
 }

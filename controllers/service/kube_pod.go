@@ -5,6 +5,7 @@ import (
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/common"
+	"github.com/fnikolai/frisbee/controllers/common/lifecycle"
 	"github.com/fnikolai/frisbee/controllers/common/selector/template"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -45,6 +46,16 @@ func (r *Reconciler) createKubePod(ctx context.Context, obj *v1alpha1.Service) e
 	// populate missing fields in service container
 	obj.Spec.Container.TTY = true
 
+	privilege := true
+
+	obj.Spec.Container.SecurityContext = &corev1.SecurityContext{
+		Capabilities: &corev1.Capabilities{
+			Add:  []corev1.Capability{"SYS_ADMIN"},
+			Drop: nil,
+		},
+		Privileged: &privilege,
+	}
+
 	pod := corev1.Pod{}
 
 	// set pod medata
@@ -78,9 +89,10 @@ func (r *Reconciler) createKubePod(ctx context.Context, obj *v1alpha1.Service) e
 	}
 
 	// convert external pod to inner object so to gain management of lifecycle
-	err := common.GetLifecycle(ctx,
-		common.WatchExternal(&pod, convert, pod.GetName()),
-		common.WithFilter(common.FilterParent(obj.GetUID())),
+	err := lifecycle.WatchObject(ctx,
+		lifecycle.WatchExternal(&pod, convert, pod.GetName()),
+		lifecycle.WithFilter(lifecycle.FilterParent(obj.GetUID())),
+		lifecycle.WithLogger(r.Logger),
 	).UpdateParentLifecycle(obj)
 
 	return errors.Wrapf(err, "lifecycle error")

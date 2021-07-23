@@ -6,6 +6,7 @@ import (
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/common"
+	"github.com/fnikolai/frisbee/controllers/common/lifecycle"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -52,10 +53,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	switch obj.Status.Phase {
 	case v1alpha1.PhaseUninitialized:
 		if err := r.create(ctx, &obj); err != nil {
-			return common.Failed(ctx, &obj, err)
+			return lifecycle.Failed(ctx, &obj, err)
 		}
 
-		return common.Pending(ctx, &obj)
+		return lifecycle.Pending(ctx, &obj)
 
 	case v1alpha1.PhasePending: // Managed by Lifecycle()
 		return common.DoNotRequeue()

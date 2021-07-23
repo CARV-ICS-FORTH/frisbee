@@ -9,14 +9,13 @@ import (
 	"strings"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
+	"github.com/fnikolai/frisbee/controllers/common"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-var Client client.Client
 
 const (
 	idListSeparator = " "
@@ -131,7 +130,7 @@ func selectServices(ctx context.Context, ss *v1alpha1.MatchServiceSpec) ([]v1alp
 					Name:      name,
 				}
 
-				if err := Client.Get(ctx, key, &service); err != nil {
+				if err := common.Common.Client.Get(ctx, key, &service); err != nil {
 					return nil, errors.Wrapf(err, "unable to find %s", key)
 				}
 
@@ -165,14 +164,14 @@ func selectServices(ctx context.Context, ss *v1alpha1.MatchServiceSpec) ([]v1alp
 		for _, namespace := range ss.Namespaces {
 			listOptions.Namespace = namespace
 
-			if err := Client.List(ctx, &serviceList, &listOptions); err != nil {
+			if err := common.Common.Client.List(ctx, &serviceList, &listOptions); err != nil {
 				return nil, err
 			}
 
 			services = append(services, serviceList.Items...)
 		}
 	} else { // search all namespaces
-		if err := Client.List(ctx, &serviceList, &listOptions); err != nil {
+		if err := common.Common.Client.List(ctx, &serviceList, &listOptions); err != nil {
 			return nil, errors.Wrapf(err, "namespace error")
 		}
 

@@ -5,14 +5,13 @@ import (
 	"strings"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
+	"github.com/fnikolai/frisbee/controllers/common"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	k8errors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-var Client client.Client
 
 func IsRef(templateRef string) bool {
 	parsed := strings.Split(templateRef, "/")
@@ -54,7 +53,7 @@ func SelectService(ctx context.Context, ts *v1alpha1.TemplateSelector) *v1alpha1
 	// if the template is created in parallel with the workflow, it is possible to meet race conditions.
 	// We avoid it with a simple retry mechanism based on adaptive backoff.
 	err := retry.OnError(retry.DefaultRetry, k8errors.IsNotFound, func() error {
-		return Client.Get(ctx, key, &template)
+		return common.Common.Client.Get(ctx, key, &template)
 	})
 	if err != nil {
 		logrus.Warn(err)
@@ -95,7 +94,7 @@ func SelectMonitor(ctx context.Context, ts *v1alpha1.TemplateSelector) *v1alpha1
 	// if the template is created in parallel with the workflow, it is possible to meet race conditions.
 	// We avoid it with a simple retry mechanism based on adaptive backoff.
 	err := retry.OnError(retry.DefaultRetry, k8errors.IsNotFound, func() error {
-		return Client.Get(ctx, key, &template)
+		return common.Common.Client.Get(ctx, key, &template)
 	})
 	if err != nil {
 		logrus.Warn(err)

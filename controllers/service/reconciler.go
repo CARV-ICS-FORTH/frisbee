@@ -8,6 +8,7 @@ import (
 	"github.com/fatih/structs"
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/common"
+	"github.com/fnikolai/frisbee/controllers/common/lifecycle"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -40,6 +41,7 @@ type Reconciler struct {
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+
 	var obj v1alpha1.Service
 
 	var ret bool
@@ -57,17 +59,17 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	switch obj.Status.Phase {
 	case v1alpha1.PhaseUninitialized:
 		if len(obj.Spec.PortRefs) > 0 {
-			return common.Discoverable(ctx, &obj)
+			return lifecycle.Discoverable(ctx, &obj)
 		}
 
-		return common.Pending(ctx, &obj)
+		return lifecycle.Pending(ctx, &obj)
 
 	case v1alpha1.PhaseDiscoverable:
 		return r.discoverDataMesh(ctx, &obj)
 
 	case v1alpha1.PhasePending:
 		if err := r.createKubePod(ctx, &obj); err != nil {
-			return common.Failed(ctx, &obj, err)
+			return lifecycle.Failed(ctx, &obj, err)
 		}
 
 		// if we're here, the lifecycle of service is driven by the pod
@@ -104,7 +106,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return common.DoNotRequeue()
 
 	default:
-		return common.Failed(ctx, &obj, errors.Errorf("unknown phase: %s", obj.Status.Phase))
+		return lifecycle.Failed(ctx, &obj, errors.Errorf("unknown phase: %s", obj.Status.Phase))
 	}
 }
 
@@ -129,7 +131,7 @@ func (r *Reconciler) discoverDataMesh(ctx context.Context, obj *v1alpha1.Service
 		}
 
 		if err := r.Client.Get(ctx, key, &ports[i]); err != nil {
-			return common.Failed(ctx, obj, errors.Wrapf(err, "port error"))
+			return lifecycle.Failed(ctx, obj, errors.Wrapf(err, "port error"))
 		}
 	}
 

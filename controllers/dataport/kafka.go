@@ -6,6 +6,7 @@ import (
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/common"
+	"github.com/fnikolai/frisbee/controllers/common/lifecycle"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -25,16 +26,16 @@ func (p *kafka) Create(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result
 		return p.createOutput(ctx, obj)
 
 	default:
-		return common.Failed(ctx, obj, errors.Errorf("unknown type %s", v))
+		return lifecycle.Failed(ctx, obj, errors.Errorf("unknown type %s", v))
 	}
 }
 
 func (p *kafka) createInput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
-	return common.Running(ctx, obj)
+	return lifecycle.Running(ctx, obj)
 }
 
 func (p *kafka) createOutput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
-	return common.Discoverable(ctx, obj)
+	return lifecycle.Discoverable(ctx, obj)
 }
 
 func (p *kafka) Discoverable(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
@@ -44,14 +45,14 @@ func (p *kafka) Discoverable(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.
 	case v1alpha1.Outport:
 		return p.discoverableOutput(ctx, obj)
 	default:
-		return common.Failed(ctx, obj, errors.Errorf("unknown type %s", v))
+		return lifecycle.Failed(ctx, obj, errors.Errorf("unknown type %s", v))
 	}
 }
 
 func (p *kafka) discoverableInput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
 	// TODO: check connectivity with Kafka server.
 
-	return common.Failed(ctx, obj, errors.Errorf("invalid phase for kafka input port"))
+	return lifecycle.Failed(ctx, obj, errors.Errorf("invalid phase for kafka input port"))
 }
 
 func (p *kafka) discoverableOutput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
@@ -65,7 +66,7 @@ func (p *kafka) discoverableOutput(ctx context.Context, obj *v1alpha1.DataPort) 
 
 	// FIXME:  just accept anything ?
 
-	return common.Pending(ctx, obj)
+	return lifecycle.Pending(ctx, obj)
 }
 
 func (p *kafka) Pending(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
@@ -75,19 +76,19 @@ func (p *kafka) Pending(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Resul
 	case v1alpha1.Outport:
 		return p.pendingOutput(ctx, obj)
 	default:
-		return common.Failed(ctx, obj, errors.Errorf("unknown type %s", v))
+		return lifecycle.Failed(ctx, obj, errors.Errorf("unknown type %s", v))
 	}
 }
 
 func (p *kafka) pendingInput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
 	// TODO:
 
-	return common.Failed(ctx, obj, errors.Errorf("invalid phase for kafka input port"))
+	return lifecycle.Failed(ctx, obj, errors.Errorf("invalid phase for kafka input port"))
 }
 
 func (p *kafka) pendingOutput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
 	// do rewire the connections. But this is not needed for direct protocol.
-	return common.Running(ctx, obj)
+	return lifecycle.Running(ctx, obj)
 }
 
 func (p *kafka) Running(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
@@ -97,7 +98,7 @@ func (p *kafka) Running(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Resul
 	case v1alpha1.Outport:
 		return p.runningOutput(ctx, obj)
 	default:
-		return common.Failed(ctx, obj, errors.Errorf("unknown type %s", v))
+		return lifecycle.Failed(ctx, obj, errors.Errorf("unknown type %s", v))
 	}
 }
 
@@ -125,23 +126,23 @@ func (p *kafka) runningInput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.
 
 			switch {
 			case match.Spec.Type == v1alpha1.Inport:
-				return common.Failed(ctx, obj,
+				return lifecycle.Failed(ctx, obj,
 					errors.Errorf("conflicting ports (%s) -> (%s)", obj.GetName(), match.GetName()))
 
 			case match.Spec.Protocol != v1alpha1.Kafka:
-				return common.Failed(ctx, obj,
+				return lifecycle.Failed(ctx, obj,
 					errors.Errorf("conflicting protocols (%s) -> (%s)", obj.GetName(), match.GetName()))
 			}
 
 			if err := p.connect(ctx, obj, &match); err != nil {
-				return common.Failed(ctx, obj,
+				return lifecycle.Failed(ctx, obj,
 					errors.Errorf("rewiring error(%s) -> (%s)", obj.GetName(), match.GetName()))
 			}
 
 			return common.DoNotRequeue()
 
 		default:
-			return common.Failed(ctx, obj, errors.Errorf("expected 1 server, but got multiple (%d)", len(matches.Items)))
+			return lifecycle.Failed(ctx, obj, errors.Errorf("expected 1 server, but got multiple (%d)", len(matches.Items)))
 		}
 	}()
 

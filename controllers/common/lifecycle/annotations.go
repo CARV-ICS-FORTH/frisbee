@@ -1,26 +1,17 @@
-package common
+package lifecycle
 
 import (
-	"context"
 	"fmt"
 	"reflect"
 	"time"
 
+	"github.com/fnikolai/frisbee/controllers/common"
 	"github.com/grafana-tools/sdk"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var annnotator annotator
-
-type annotator interface {
-	Add(sdk.CreateAnnotationRequest)
-}
-
-func EnableAnnotations(ctx context.Context, client annotator) {
-	annnotator = client
-}
-
-func annotateAdd(obj interface{}) {
+// annotateAdd pushes an annotation to grafana indicating that a new component has joined the experiment.
+func annotateAdd(obj interface{}) (id uint) {
 	objMeta, ok := obj.(metav1.Object)
 	if !ok {
 		panic("this should never happen")
@@ -34,14 +25,16 @@ func annotateAdd(obj interface{}) {
 		Text: msg,
 	}
 
-	if annnotator == nil {
-		common.logger.Info("omit annotation", "msg", msg)
-	} else {
-		annnotator.Add(ga)
+	if common.Common.Annotator == nil {
+		common.Common.Logger.Info("omit annotation", "msg", ga.Text)
+		return 0
 	}
+
+	return common.Common.Annotator.Insert(ga)
 }
 
-func annotateDelete(obj interface{}) {
+// annotateDelete pushes an annotation to grafana indicating that a new component has left the experiment.
+func annotateDelete(obj interface{}) (id uint) {
 	objMeta, ok := obj.(metav1.Object)
 	if !ok {
 		panic("this should never happen")
@@ -62,9 +55,10 @@ func annotateDelete(obj interface{}) {
 		Text: msg,
 	}
 
-	if annnotator == nil {
-		common.logger.Info("omit annotation", "msg", msg)
-	} else {
-		annnotator.Add(ga)
+	if common.Common.Annotator == nil {
+		common.Common.Logger.Info("omit annotation", "msg", ga.Text)
+		return 0
 	}
+
+	return common.Common.Annotator.Insert(ga)
 }

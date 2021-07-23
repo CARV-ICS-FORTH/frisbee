@@ -1,0 +1,318 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.4.1
+  creationTimestamp: null
+  name: workflows.frisbee.io
+spec:
+  group: frisbee.io
+  names:
+    kind: Workflow
+    listKind: WorkflowList
+    plural: workflows
+    shortNames:
+    - wf
+    singular: workflow
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: Spec defines the behavior of a workflow
+            properties:
+              actions:
+                description: Actions are the tasks that will be taken.
+                items:
+                  description: Action delegates arguments to the proper action handler
+                  properties:
+                    actiontype:
+                      type: string
+                    chaos:
+                      properties:
+                        partition:
+                          properties:
+                            duration:
+                              type: string
+                            selector:
+                              properties:
+                                macro:
+                                  description: Macro abstract selector parameters
+                                    into a structured string (e.g, .groupservice.master.all).
+                                    Every parsed field is represents an inner structure
+                                    of the selector. In case of invalid macro, the
+                                    selector will return empty results. Macro conflicts
+                                    with any other parameter.
+                                  type: string
+                                match:
+                                  description: Match contains the rules to select
+                                    target
+                                  properties:
+                                    labels:
+                                      additionalProperties:
+                                        type: string
+                                      description: Map of string keys and values that
+                                        can be used to select objects. A selector
+                                        based on labels.
+                                      type: object
+                                    names:
+                                      additionalProperties:
+                                        items:
+                                          type: string
+                                        type: array
+                                      description: ServiceNames is a map of string
+                                        keys and a set values that used to select
+                                        services. The key defines the namespace which
+                                        services belong, and the each values is a
+                                        set of service names.
+                                      type: object
+                                    namespaces:
+                                      description: Namespaces is a set of namespace
+                                        to which objects belong.
+                                      items:
+                                        type: string
+                                      type: array
+                                    servicegroup:
+                                      description: ServiceGroup defines the service
+                                        group where services belong
+                                      type: string
+                                  type: object
+                                mode:
+                                  description: 'Mode defines which of the selected
+                                    services to use. If undefined, all() is used Supported
+                                    mode: one / all / fixed / fixed-percent / random-max-percent'
+                                  type: string
+                                value:
+                                  description: Value is required when the mode is
+                                    set to `FixedPodMode` / `FixedPercentPodMod` /
+                                    `RandomMaxPercentPodMod`. If `FixedPodMode`, provide
+                                    an integer of pods to do chaos action. If `FixedPercentPodMod`,
+                                    provide a number from 0-100 to specify the percent
+                                    of pods the server can do chaos action. IF `RandomMaxPercentPodMod`,  provide
+                                    a number from 0-100 to specify the max percent
+                                    of pods to do chaos action
+                                  type: string
+                              type: object
+                          required:
+                          - selector
+                          type: object
+                        type:
+                          description: Type indicate the type of the injected fault
+                          enum:
+                          - partition
+                          type: string
+                      required:
+                      - type
+                      type: object
+                    depends:
+                      description: Depends define the conditions for the execution
+                        of this action
+                      properties:
+                        duration:
+                          description: Duration blocks waiting for the duration to
+                            expire
+                          type: string
+                        running:
+                          description: Running waits for the given groups to be running
+                          items:
+                            type: string
+                          type: array
+                        success:
+                          description: Success waits for the given groups to be succeeded
+                          items:
+                            type: string
+                          type: array
+                      type: object
+                    name:
+                      description: Name is a unique identifier of the action
+                      type: string
+                    servicegroup:
+                      properties:
+                        inputs:
+                          description: Inputs are list of inputs passed to the objects.
+                            When used in conjunction with Instances, there can be
+                            only one input and all the instances will run with identical
+                            parameters. If Instances is defined and there are more
+                            than one inputs, the request will be rejected.
+                          items:
+                            additionalProperties:
+                              type: string
+                            type: object
+                          type: array
+                        instances:
+                          description: Instances dictate the number of objects to
+                            be created for the service. If Env is specified, the values
+                            with be identical across the spawned instances. For instances
+                            with different parameters, use Inputs.
+                          type: integer
+                        interval:
+                          description: Interval defines the interval between the creation
+                            of services within the group
+                          type: string
+                        templateRef:
+                          description: TemplateRef refers to a service template.
+                          type: string
+                      required:
+                      - templateRef
+                      type: object
+                    stop:
+                      properties:
+                        schedule:
+                          description: SchedulerSpec defines information about schedule
+                            of the chaos experiment.
+                          properties:
+                            cron:
+                              description: "Cron defines a cron job rule. \n Some
+                                rule examples: \"0 30 * * * *\" means to \"Every hour
+                                on the half hour\" \"@hourly\"      means to \"Every
+                                hour\" \"@every 1h30m\" means to \"Every hour thirty\"
+                                \n More rule info: https://godoc.org/github.com/robfig/cron"
+                              type: string
+                          required:
+                          - cron
+                          type: object
+                        selector:
+                          properties:
+                            macro:
+                              description: Macro abstract selector parameters into
+                                a structured string (e.g, .groupservice.master.all).
+                                Every parsed field is represents an inner structure
+                                of the selector. In case of invalid macro, the selector
+                                will return empty results. Macro conflicts with any
+                                other parameter.
+                              type: string
+                            match:
+                              description: Match contains the rules to select target
+                              properties:
+                                labels:
+                                  additionalProperties:
+                                    type: string
+                                  description: Map of string keys and values that
+                                    can be used to select objects. A selector based
+                                    on labels.
+                                  type: object
+                                names:
+                                  additionalProperties:
+                                    items:
+                                      type: string
+                                    type: array
+                                  description: ServiceNames is a map of string keys
+                                    and a set values that used to select services.
+                                    The key defines the namespace which services belong,
+                                    and the each values is a set of service names.
+                                  type: object
+                                namespaces:
+                                  description: Namespaces is a set of namespace to
+                                    which objects belong.
+                                  items:
+                                    type: string
+                                  type: array
+                                servicegroup:
+                                  description: ServiceGroup defines the service group
+                                    where services belong
+                                  type: string
+                              type: object
+                            mode:
+                              description: 'Mode defines which of the selected services
+                                to use. If undefined, all() is used Supported mode:
+                                one / all / fixed / fixed-percent / random-max-percent'
+                              type: string
+                            value:
+                              description: Value is required when the mode is set
+                                to `FixedPodMode` / `FixedPercentPodMod` / `RandomMaxPercentPodMod`.
+                                If `FixedPodMode`, provide an integer of pods to do
+                                chaos action. If `FixedPercentPodMod`, provide a number
+                                from 0-100 to specify the percent of pods the server
+                                can do chaos action. IF `RandomMaxPercentPodMod`,  provide
+                                a number from 0-100 to specify the max percent of
+                                pods to do chaos action
+                              type: string
+                          type: object
+                      type: object
+                    wait:
+                      properties:
+                        duration:
+                          description: Duration blocks waiting for the duration to
+                            expire
+                          type: string
+                        running:
+                          description: Running waits for the given groups to be running
+                          items:
+                            type: string
+                          type: array
+                        success:
+                          description: Success waits for the given groups to be succeeded
+                          items:
+                            type: string
+                          type: array
+                      type: object
+                  required:
+                  - actiontype
+                  - name
+                  type: object
+                type: array
+              importMonitors:
+                description: ImportMonitors are references to monitoring packages
+                  that will be used in the monitoring stack.
+                items:
+                  type: string
+                type: array
+              ingress:
+                description: 'Ingress defines external access to the services in a
+                  cluster, typically HTTP Example: grafana.localhost, grafana.{MYIP}.nip.io,'
+                type: string
+            required:
+            - actions
+            type: object
+          status:
+            description: Most recently observed status of the workflow
+            properties:
+              endTime:
+                description: Most recently observed status of the object
+                format: date-time
+                type: string
+              isRunning:
+                type: boolean
+              phase:
+                description: Phase is the current status of an object
+                type: string
+              reason:
+                description: A brief CamelCase message indicating details about why
+                  the service is in this Phase. e.g. 'Evicted'
+                type: string
+              startTime:
+                description: RFC 3339 date and time at which the object was acknowledged
+                  by the Kubelet. This is before the Kubelet pulled the container
+                  image(s) for the pod.
+                format: date-time
+                type: string
+            required:
+            - isRunning
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

@@ -1,4 +1,4 @@
-package common
+package lifecycle
 
 import (
 	"context"
@@ -6,19 +6,14 @@ import (
 	"time"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
+	"github.com/fnikolai/frisbee/controllers/common"
 	"github.com/fnikolai/frisbee/pkg/wait"
+	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"
 	cachetypes "k8s.io/client-go/tools/cache"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-/******************************************************
-			Lifecycle Setters
-/******************************************************/
 
 // InnerObject is an object that is managed and recognized by Frisbee (including services, servicegroups, ...)
 type InnerObject interface {
@@ -27,121 +22,8 @@ type InnerObject interface {
 	SetLifecycle(v1alpha1.Lifecycle)
 }
 
-// Discoverable is a wrapper that sets phase to Discoverable and does not requeue the request.
-func Discoverable(ctx context.Context, obj InnerObject) (ctrl.Result, error) {
-	status := obj.GetLifecycle()
-
-	status.Phase = v1alpha1.PhaseDiscoverable
-	status.Reason = "waiting for dependencies"
-
-	obj.SetLifecycle(status)
-
-	return UpdateStatus(ctx, obj)
-}
-
-// Pending is a wrapper that sets phase to Pending and does not requeue the request.
-func Pending(ctx context.Context, obj InnerObject) (ctrl.Result, error) {
-	status := obj.GetLifecycle()
-
-	status.Phase = v1alpha1.PhasePending
-	status.Reason = "waiting for dependencies"
-
-	obj.SetLifecycle(status)
-
-	return UpdateStatus(ctx, obj)
-}
-
-// Running is a wrapper that sets phase to Running and does not requeue the request.
-func Running(ctx context.Context, obj InnerObject) (ctrl.Result, error) {
-	status := obj.GetLifecycle()
-
-	status.Phase = v1alpha1.PhaseRunning
-	status.Reason = "OK"
-
-	obj.SetLifecycle(status)
-
-	return UpdateStatus(ctx, obj)
-}
-
-// Success is a wrapper that sets phase to Success and does not requeue the request.
-func Success(ctx context.Context, obj InnerObject) (ctrl.Result, error) {
-	status := obj.GetLifecycle()
-
-	status.Phase = v1alpha1.PhaseSuccess
-	status.Reason = "All children are succeeded"
-
-	obj.SetLifecycle(status)
-
-	return UpdateStatus(ctx, obj)
-}
-
-// Chaos is a wrapper that sets phase to Chaos and does not requeue the request.
-func Chaos(ctx context.Context, obj InnerObject) (ctrl.Result, error) {
-	status := obj.GetLifecycle()
-
-	status.Phase = v1alpha1.PhaseChaos
-	status.Reason = "Expect controlled failures"
-
-	obj.SetLifecycle(status)
-
-	return UpdateStatus(ctx, obj)
-}
-
-// Failed is a wrap that logs the error, updates the status, and does not requeue the request.
-func Failed(ctx context.Context, obj InnerObject, err error) (ctrl.Result, error) {
-	runtimeutil.HandleError(errors.Wrapf(err, "object %s has failed", obj.GetName()))
-
-	status := obj.GetLifecycle()
-	status.Phase = v1alpha1.PhaseFailed
-	status.Reason = err.Error()
-
-	obj.SetLifecycle(status)
-
-	return UpdateStatus(ctx, obj)
-}
-
 /******************************************************
-	Wrappers and Unwrappers for InnerObjects
-/******************************************************/
-
-// externalToInnerObject is a wrapper for converting external objects (e.g, Pods) to InnerObjects managed
-// by the Frisbee controller
-type externalToInnerObject struct {
-	client.Object
-
-	LifecycleFunc func(obj interface{}) v1alpha1.Lifecycle
-}
-
-func (d *externalToInnerObject) GetLifecycle() v1alpha1.Lifecycle {
-	return d.LifecycleFunc(d.Object)
-}
-
-func (d *externalToInnerObject) SetLifecycle(v1alpha1.Lifecycle) {
-	panic(errors.Errorf("cannot set status on external object"))
-}
-
-func unwrap(obj client.Object) client.Object {
-	wrapped, ok := obj.(*externalToInnerObject)
-	if ok {
-		return wrapped.Object
-	}
-
-	return obj
-}
-
-func accessStatus(obj interface{}) func(interface{}) v1alpha1.Lifecycle {
-	external, ok := obj.(*externalToInnerObject)
-	if ok {
-		return external.LifecycleFunc
-	}
-
-	return func(inner interface{}) v1alpha1.Lifecycle {
-		return inner.(InnerObject).GetLifecycle()
-	}
-}
-
-/******************************************************
-			Lifecycle Getters
+			Lifecycle Manager
 ******************************************************/
 
 type LifecycleOptions struct {
@@ -159,6 +41,9 @@ type LifecycleOptions struct {
 
 	// Annotation indicate whether events shall be recorded in Grafana or not
 	Annotator bool
+
+	// Logger is a logger for recording asynchronous operations
+	Logger logr.Logger
 }
 
 type LifecycleOption func(*LifecycleOptions)
@@ -166,6 +51,10 @@ type LifecycleOption func(*LifecycleOptions)
 // Obligatory
 func Watch(kind InnerObject, names ...string) LifecycleOption {
 	return func(s *LifecycleOptions) {
+		if kind == nil || len(names) == 0 {
+			panic("invalid arguments")
+		}
+
 		if s.WatchType != nil && s.WatchType != kind {
 			panic("watch type is already defined")
 		} else {
@@ -180,6 +69,10 @@ func Watch(kind InnerObject, names ...string) LifecycleOption {
 // WatchExternal wraps an object that does not belong to this controller
 func WatchExternal(kind client.Object, convertor func(obj interface{}) v1alpha1.Lifecycle, names ...string) LifecycleOption {
 	return func(s *LifecycleOptions) {
+		if kind == nil || convertor == nil || len(names) == 0 {
+			panic("invalid arguments")
+		}
+
 		if s.WatchType != nil && s.WatchType != kind {
 			panic("watch type is already defined")
 		} else {
@@ -219,23 +112,18 @@ func WithAnnotator(do bool) LifecycleOption {
 	}
 }
 
-// WaitReady is a lifecycle wrapper that waits until an object has reached the Running phase.
-// If another phase is reached (e.g, failed), it returns error.
-func WaitReady(ctx context.Context, obj InnerObject) error {
-	return GetLifecycle(ctx,
-		Watch(obj, obj.GetName()),
-	).Expect(v1alpha1.PhaseRunning)
+// WithLogger appends a new logger for the lifecycle
+func WithLogger(logger logr.Logger) LifecycleOption {
+	return func(s *LifecycleOptions) {
+		if s.Logger != nil {
+			panic("logger already exists")
+		}
+
+		s.Logger = logger
+	}
 }
 
-// WaitSuccess is a lifecycle wrapper that waits until an object has reached the Running phase.
-// If another phase is reached (e.g, failed), it returns error.
-func WaitSuccess(ctx context.Context, obj InnerObject) error {
-	return GetLifecycle(ctx,
-		Watch(obj, obj.GetName()),
-	).Expect(v1alpha1.PhaseSuccess)
-}
-
-func GetLifecycle(ctx context.Context, opts ...LifecycleOption) *ManagedLifecycle {
+func WatchObject(ctx context.Context, opts ...LifecycleOption) *ManagedLifecycle {
 	var options LifecycleOptions
 
 	// call option functions on instance to set options on it
@@ -253,6 +141,13 @@ func GetLifecycle(ctx context.Context, opts ...LifecycleOption) *ManagedLifecycl
 
 		lifecycle.ctx = timeout
 		defer cancel()
+	}
+
+	// set logger
+	if options.Logger == nil {
+		lifecycle.logger = logr.Discard()
+	} else {
+		lifecycle.logger = options.Logger
 	}
 
 	// set filter
@@ -284,11 +179,13 @@ func GetLifecycle(ctx context.Context, opts ...LifecycleOption) *ManagedLifecycl
 		handlers = eventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				annotateAdd(obj)
+
 				n.watchChildrenPhase(obj)
 			},
 			UpdateFunc: n.watchChildrenPhase,
 			DeleteFunc: func(obj interface{}) {
 				annotateDelete(obj)
+
 				n.watchChildrenPhase(obj)
 			},
 		}
@@ -320,6 +217,8 @@ type ManagedLifecycle struct {
 	filterFunc func(obj interface{}) bool
 
 	watchChildren func() error
+
+	logger logr.Logger
 }
 
 // UpdateParentLifecycle run in a loops and continuously Update the status of the parent.
@@ -339,12 +238,12 @@ func (lc *ManagedLifecycle) UpdateParentLifecycle(parent InnerObject) error {
 
 		for {
 			if valid != nil {
-				common.logger.Error(valid, "Update parent failed", "parent", parent.GetName())
+				lc.logger.Error(valid, "Update parent failed", "parent", parent.GetName())
 
 				return
 			}
 
-			common.logger.Info("Update Parent",
+			lc.logger.Info("Update Parent",
 				"kind", reflect.TypeOf(parent),
 				"name", parent.GetName(),
 				"phase", phase,
@@ -363,7 +262,7 @@ func (lc *ManagedLifecycle) UpdateParentLifecycle(parent InnerObject) error {
 
 				// If the parent is in PhaseChaos mode, it means that failing conditions are expected and therefore
 				// do not cause a failure to the controller. Instead, they should be handled by the system under evaluation.
-				common.logger.Info("Expected abnormal event",
+				lc.logger.Info("Expected abnormal event",
 					"parent", parent.GetName(),
 					"event", msg.Error(),
 				)
@@ -393,7 +292,7 @@ func (lc *ManagedLifecycle) UpdateParentLifecycle(parent InnerObject) error {
 // Otherwise it returns an error stating what was expected and what was got.
 func (lc *ManagedLifecycle) Expect(expected v1alpha1.Phase) error {
 	if err := lc.watchChildren(); err != nil {
-		common.logger.Error(err, "unable to watch children")
+		lc.logger.Error(err, "unable to watch children")
 
 		return err
 	}
@@ -451,7 +350,7 @@ func watchLifecycle(ctx context.Context, filterFunc func(obj interface{}) bool, 
 		panic("empty filter")
 	}
 
-	informer, err := common.cache.GetInformer(ctx, child)
+	informer, err := common.Common.Cache.GetInformer(ctx, child)
 	if err != nil {
 		return errors.Wrapf(err, "unable to get informer")
 	}
@@ -657,58 +556,3 @@ func (n *notifier) getNextChaos() (phase v1alpha1.Phase, msg, valid error) {
 		//	return v1alpha1.PhaseChaos, err, nil
 	}
 }
-
-/******************************************************
-			Lifecycle Filters
-******************************************************/
-
-type FilterFunc func(obj interface{}) bool
-
-// FilterParent applies the provided FilterParent to all events coming in, and decides which events will be handled
-// by this controller. It does this by looking at the objects metadata.ownerReferences field for an
-// appropriate OwnerReference. It then enqueues that Foo resource to be processed. If the object does not
-// have an appropriate OwnerReference, it will simply be skipped. If the parent is empty, the object is passed
-// as if it belongs to this parent.
-func FilterParent(parentUID types.UID) FilterFunc {
-	return func(obj interface{}) bool {
-		if obj == nil {
-			return false
-		}
-
-		object, ok := obj.(metav1.Object)
-		if !ok {
-			// an object was deleted but the watch deletion event was missed while disconnected from apiserver.
-			// In this case we don't know the final "resting" state of the object,
-			// so there's a chance the included `Obj` is stale.
-			tombstone, ok := obj.(cachetypes.DeletedFinalStateUnknown)
-			if !ok {
-				runtimeutil.HandleError(errors.New("error decoding object, invalid type"))
-
-				return false
-			}
-
-			object, ok = tombstone.Obj.(metav1.Object)
-			if !ok {
-				runtimeutil.HandleError(errors.New("error decoding object tombstone, invalid type"))
-
-				return false
-			}
-		}
-
-		if len(parentUID) == 0 {
-			return true
-		}
-
-		// Update locate view of the dependent services
-		for _, owner := range object.GetOwnerReferences() {
-			if owner.UID == parentUID {
-				return true
-			}
-		}
-
-		return false
-	}
-}
-
-// NoFilter is a passthrough filter that allows all events to pass to the handler
-func NoFilter(obj interface{}) bool { return true }

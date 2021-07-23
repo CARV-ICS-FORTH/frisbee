@@ -6,6 +6,7 @@ import (
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/common"
+	"github.com/fnikolai/frisbee/controllers/common/lifecycle"
 	"github.com/fnikolai/frisbee/controllers/common/selector/service"
 	"github.com/fnikolai/frisbee/controllers/common/selector/template"
 	"github.com/pkg/errors"
@@ -64,10 +65,11 @@ func (r *Reconciler) create(ctx context.Context, obj *v1alpha1.ServiceGroup) err
 		serviceKeys[i] = service.GetName()
 	}
 
-	err := common.GetLifecycle(ctx,
-		common.Watch(&v1alpha1.Service{}, serviceKeys...),
-		common.WithFilter(common.FilterParent(obj.GetUID())),
-		common.WithAnnotator(true), // Register event to grafana
+	err := lifecycle.WatchObject(ctx,
+		lifecycle.Watch(&v1alpha1.Service{}, serviceKeys...),
+		lifecycle.WithFilter(lifecycle.FilterParent(obj.GetUID())),
+		lifecycle.WithAnnotator(true), // Register event to grafana
+		lifecycle.WithLogger(r.Logger),
 	).UpdateParentLifecycle(obj)
 
 	return errors.Wrapf(err, "lifecycle failed")

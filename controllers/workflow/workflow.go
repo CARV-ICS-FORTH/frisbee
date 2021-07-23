@@ -6,6 +6,7 @@ import (
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/common"
+	"github.com/fnikolai/frisbee/controllers/common/lifecycle"
 	"github.com/fnikolai/frisbee/controllers/common/selector/service"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -40,22 +41,25 @@ func (r *Reconciler) scheduleActions(topCtx context.Context, obj *v1alpha1.Workf
 		}
 
 		if err != nil {
-			common.Failed(ctx, obj, errors.Wrapf(err, "action %s failed", action.Name))
+			lifecycle.Failed(ctx, obj, errors.Wrapf(err, "action %s failed", action.Name))
 
 			return
 		}
 	}
 
-	common.Success(ctx, obj)
+	lifecycle.Success(ctx, obj)
 }
 
 func (r *Reconciler) wait(ctx context.Context, w *v1alpha1.Workflow, spec v1alpha1.WaitSpec) error {
 	if len(spec.Success) > 0 {
 		logrus.Warn("-> Wait success for ", spec.Success)
 
-		err := common.GetLifecycle(ctx,
-			common.Watch(&v1alpha1.ServiceGroup{}, spec.Success...),
-			common.WithFilter(common.FilterParent(w.GetUID())),
+		// TODO: Wait for any object (Chaos or ServiceGroup)
+
+		err := lifecycle.WatchObject(ctx,
+			lifecycle.Watch(&v1alpha1.ServiceGroup{}, spec.Success...),
+			lifecycle.WithFilter(lifecycle.FilterParent(w.GetUID())),
+			lifecycle.WithLogger(r.Logger),
 		).Expect(v1alpha1.PhaseSuccess)
 		if err != nil {
 			return errors.Wrapf(err, "wait error")
@@ -67,9 +71,10 @@ func (r *Reconciler) wait(ctx context.Context, w *v1alpha1.Workflow, spec v1alph
 	if len(spec.Running) > 0 {
 		logrus.Warn("-> Wait running for ", spec.Running)
 
-		err := common.GetLifecycle(ctx,
-			common.Watch(&v1alpha1.ServiceGroup{}, spec.Running...),
-			common.WithFilter(common.FilterParent(w.GetUID())),
+		err := lifecycle.WatchObject(ctx,
+			lifecycle.Watch(&v1alpha1.ServiceGroup{}, spec.Running...),
+			lifecycle.WithFilter(lifecycle.FilterParent(w.GetUID())),
+			lifecycle.WithLogger(r.Logger),
 		).Expect(v1alpha1.PhaseRunning)
 		if err != nil {
 			return errors.Wrapf(err, "wait error")
@@ -79,7 +84,7 @@ func (r *Reconciler) wait(ctx context.Context, w *v1alpha1.Workflow, spec v1alph
 	}
 
 	if spec.Duration != nil {
-		logrus.Warn("-> Wait duration for ", spec.Duration)
+		logrus.Warn("-> Wait duration for ", spec.Duration.Duration.String())
 
 		select {
 		case <-ctx.Done():
@@ -87,7 +92,7 @@ func (r *Reconciler) wait(ctx context.Context, w *v1alpha1.Workflow, spec v1alph
 		case <-time.After(spec.Duration.Duration):
 		}
 
-		logrus.Warn("<- Wait duration for ", spec.Duration)
+		logrus.Warn("<- Wait duration for ", spec.Duration.Duration.String())
 	}
 
 	return nil
@@ -136,7 +141,7 @@ func (r *Reconciler) stop(ctx context.Context, obj *v1alpha1.Workflow, action v1
 	if action.Stop.Schedule == nil {
 		for i := 0; i < len(services); i++ {
 			// Change service Phase to PhaseChaos so to ignore the failure caused by the following deletion.
-			_, _ = common.Chaos(ctx, &services[i])
+			_, _ = lifecycle.Chaos(ctx, &services[i])
 
 			if err := r.Client.Delete(ctx, &services[i]); err != nil {
 				return errors.Wrapf(err, "cannot delete service %s", services[i].GetName())

@@ -29,7 +29,7 @@ func RequeueWithError(err error) (ctrl.Result, error) {
 	return ctrl.Result{}, errors.Wrapf(err, "requeue request")
 }
 
-// Reconciler implements basic functionality that is common to every solid reconciler (e.g, finalizers)
+// Reconciler implements basic functionality that is Common to every solid reconciler (e.g, finalizers)
 type Reconciler interface {
 	client.Client
 	logr.Logger
@@ -44,7 +44,7 @@ type Reconciler interface {
 	Finalize(object client.Object) error
 }
 
-// Reconcile provides the most common functions for all the Reconcilers. That includes acquisition of the CR object
+// Reconcile provides the most Common functions for all the Reconcilers. That includes acquisition of the CR object
 //  and management of the CR (Custom Resource) finalizers.
 //
 // Bool indicate whether the caller should return immediately (true) or continue (false).
@@ -144,7 +144,7 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 func Update(ctx context.Context, obj client.Object) (ctrl.Result, error) {
 	// we need to Update a delete object in order to remove the finalizers.
 	updateError := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		return common.client.Update(ctx, obj)
+		return Common.Client.Update(ctx, obj)
 	})
 
 	switch {
@@ -152,7 +152,7 @@ func Update(ctx context.Context, obj client.Object) (ctrl.Result, error) {
 		return DoNotRequeue()
 
 	case k8errors.IsInvalid(updateError):
-		common.logger.Error(updateError, "Update error")
+		Common.Logger.Error(updateError, "Update error")
 
 		return DoNotRequeue()
 
@@ -180,9 +180,9 @@ func UpdateStatus(ctx context.Context, obj client.Object) (ctrl.Result, error) {
 	// The status subresource ignores changes to spec, so it’s less likely to conflict with any other updates,
 	// and can have separate permissions.
 	updateError := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		common.logger.V(4).Info("(re) to update status of ", obj.GetName())
+		Common.Logger.V(4).Info("(re) to update status of ", obj.GetName())
 
-		return common.client.Status().Update(ctx, obj)
+		return Common.Client.Status().Update(ctx, obj)
 	})
 
 	switch {
@@ -190,7 +190,7 @@ func UpdateStatus(ctx context.Context, obj client.Object) (ctrl.Result, error) {
 		return DoNotRequeue()
 
 	case k8errors.IsInvalid(updateError):
-		common.logger.Error(updateError, "Update status error")
+		Common.Logger.Error(updateError, "Update status error")
 
 		return DoNotRequeue()
 
@@ -202,6 +202,7 @@ func UpdateStatus(ctx context.Context, obj client.Object) (ctrl.Result, error) {
 	case k8errors.IsConflict(updateError):
 		// The object has been updated since we read it.
 		// Requeue the object to try to reconciliate again.
+
 		runtimeutil.HandleError(errors.Wrapf(updateError, "update status error"))
 
 		return Requeue()

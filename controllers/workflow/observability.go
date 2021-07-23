@@ -7,6 +7,7 @@ import (
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/common"
+	"github.com/fnikolai/frisbee/controllers/common/lifecycle"
 	"github.com/fnikolai/frisbee/controllers/common/selector/template"
 	"github.com/grafana-tools/sdk"
 	"github.com/pkg/errors"
@@ -49,9 +50,12 @@ func (r *Reconciler) newMonitoringStack(ctx context.Context, obj *v1alpha1.Workf
 		// use the public Grafana address (via Ingress) because the controller runs outside of the cluster
 		grafanaPublicURI := fmt.Sprintf("http://%s", virtualhost(grafana.GetName(), obj.Spec.Ingress))
 
-		if err := newAnnotationClient(ctx, grafanaPublicURI); err != nil {
-			return errors.Wrapf(err, "cannot create annotations client")
+		client, err := newGrafanaClient(ctx, grafanaPublicURI)
+		if err != nil {
+			return errors.Wrapf(err, "grafana clietn error")
 		}
+
+		common.EnableAnnotations(ctx, client)
 	}
 
 	r.Logger.Info("Monitoring stack is ready", "packages", obj.Spec.ImportMonitors)
@@ -79,7 +83,7 @@ func (r *Reconciler) installPrometheus(ctx context.Context, obj *v1alpha1.Workfl
 
 	r.Logger.Info("Wait for Prometheus to become ready")
 
-	if err := common.WaitReady(ctx, &prom); err != nil {
+	if err := lifecycle.WaitReady(ctx, &prom); err != nil {
 		return nil, errors.Wrapf(err, "prometheus is not running")
 	}
 
@@ -112,7 +116,7 @@ func (r *Reconciler) installGrafana(ctx context.Context, obj *v1alpha1.Workflow)
 
 	r.Logger.Info("Wait for Grafana to become ready")
 
-	if err := common.WaitReady(ctx, &grafana); err != nil {
+	if err := lifecycle.WaitReady(ctx, &grafana); err != nil {
 		return nil, errors.Wrapf(err, "prometheus is not running")
 	}
 
@@ -231,26 +235,25 @@ func virtualhost(serviceName, ingress string) string {
 }
 
 // ////////////////////////////////////////////////////
-// 			Mock Observability
+// 			Grafana Client
 // ////////////////////////////////////////////////////
 
 const (
-	// grafana specific.
-	statusAnnotationAdded   = "Annotation added"
+	statusAnnotationAdded = "Annotation added"
+
 	statusAnnotationPatched = "Annotation patched"
 )
 
-type AnnotationClient struct {
-	ctx    context.Context
-	apiURI string
+type grafanaClient struct {
+	ctx context.Context
 
 	*sdk.Client
 }
 
-func newAnnotationClient(ctx context.Context, apiURI string) error {
+func newGrafanaClient(ctx context.Context, apiURI string) (*grafanaClient, error) {
 	client, err := sdk.NewClient(apiURI, "", sdk.DefaultHTTPClient)
 	if err != nil {
-		return errors.Wrapf(err, "client error")
+		return nil, errors.Wrapf(err, "client error")
 	}
 
 	// retry until Grafana is ready to receive annotations.
@@ -260,15 +263,18 @@ func newAnnotationClient(ctx context.Context, apiURI string) error {
 	})
 
 	if err != nil {
-		return errors.Wrapf(err, "grafana is unreachable")
+		return nil, errors.Wrapf(err, "grafana is unreachable")
 	}
 
-	common.EnableAnnotations(ctx, &AnnotationClient{ctx: ctx, Client: client, apiURI: apiURI})
+	return &grafanaClient{
+		ctx:    ctx,
+		Client: client,
+	}, nil
 
-	return nil
 }
 
-func (c *AnnotationClient) Add(ga sdk.CreateAnnotationRequest) {
+// Insert inserts a new annotation to Grafana
+func (c *grafanaClient) Insert(ga sdk.CreateAnnotationRequest) (id uint) {
 	ctx, cancel := context.WithTimeout(c.ctx, common.DefaultTimeout)
 	defer cancel()
 
@@ -287,11 +293,44 @@ func (c *AnnotationClient) Add(ga sdk.CreateAnnotationRequest) {
 
 	case *gaResp.Message == string(statusAnnotationAdded):
 		// valid
-		return
+		return *gaResp.ID
 
 	default:
 		runtime.HandleError(errors.Wrapf(err,
 			"unexpected annotation response. expected %s but got %s", statusAnnotationAdded, *gaResp.Message,
 		))
 	}
+
+	return 0
+}
+
+// Patch updates an existing annotation to Grafana
+func (c *grafanaClient) Patch(reqID uint, ga sdk.PatchAnnotationRequest) (id uint) {
+	ctx, cancel := context.WithTimeout(c.ctx, common.DefaultTimeout)
+	defer cancel()
+
+	// submit
+	gaResp, err := c.Client.PatchAnnotation(ctx, id, ga)
+	if err != nil {
+		runtime.HandleError(errors.Wrapf(err, "annotation failed"))
+
+		return
+	}
+
+	// validate
+	switch {
+	case gaResp.Message == nil:
+		runtime.HandleError(errors.Wrapf(err, "empty annotation response"))
+
+	case *gaResp.Message == string(statusAnnotationPatched):
+		// valid
+		return *gaResp.ID
+
+	default:
+		runtime.HandleError(errors.Wrapf(err,
+			"unexpected annotation response. expected %s but got %s", statusAnnotationPatched, *gaResp.Message,
+		))
+	}
+
+	return 0
 }

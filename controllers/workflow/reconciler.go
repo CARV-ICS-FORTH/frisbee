@@ -6,6 +6,7 @@ import (
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/common"
+	"github.com/fnikolai/frisbee/controllers/common/lifecycle"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/runtime"
@@ -59,7 +60,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	switch obj.Status.Phase {
 	case v1alpha1.PhaseUninitialized:
 		if action := obj.Spec.Actions[len(obj.Spec.Actions)-1]; action.ActionType != "Wait" {
-			return common.Failed(ctx, &obj, errors.New("All experiments must end with a wait function"))
+			return lifecycle.Failed(ctx, &obj, errors.New("All experiments must end with a wait function"))
 		}
 
 		if err := r.newMonitoringStack(ctx, &obj); err != nil {
@@ -68,7 +69,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		go r.scheduleActions(ctx, obj.DeepCopy())
 
-		return common.Running(ctx, &obj)
+		return lifecycle.Running(ctx, &obj)
 
 	case v1alpha1.PhaseRunning:
 		if obj.Status.IsRunning {
