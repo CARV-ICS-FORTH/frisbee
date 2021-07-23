@@ -38,11 +38,11 @@ func (p *direct) createInput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.
 
 	obj.Status.Direct = &localStatus
 
-	return lifecycle.Running(ctx, obj)
+	return lifecycle.Running(ctx, obj, "input is ready")
 }
 
 func (p *direct) createOutput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
-	return lifecycle.Discoverable(ctx, obj)
+	return lifecycle.Discoverable(ctx, obj, "looking for matching ports")
 }
 
 func (p *direct) Discoverable(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
@@ -73,7 +73,7 @@ func (p *direct) discoverableOutput(ctx context.Context, obj *v1alpha1.DataPort)
 	// for direct protocol, just accept anything
 	// TODO: check if the target is pingable
 
-	return lifecycle.Pending(ctx, obj)
+	return lifecycle.Pending(ctx, obj, "waiting for input ports")
 }
 
 func (p *direct) Pending(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
@@ -93,7 +93,7 @@ func (p *direct) pendingInput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl
 
 func (p *direct) pendingOutput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
 	// do rewire the connections. But this is not needed for direct protocol.
-	return lifecycle.Running(ctx, obj)
+	return lifecycle.Running(ctx, obj, "connected")
 }
 
 func (p *direct) Running(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {

@@ -31,7 +31,7 @@ func (r *Reconciler) direct(ctx context.Context, obj *v1alpha1.Service, port *v1
 	annotations := portStatusToAnnotations(port.GetName(), port.Spec.Protocol, port.Status.Direct)
 	// abusively use the labels to evaluate annotations
 	if structure.Contains(obj.GetAnnotations(), annotations) {
-		return lifecycle.Pending(ctx, obj)
+		return lifecycle.Pending(ctx, obj, "wait for dataport to become ready")
 	}
 
 	obj.SetAnnotations(labels.Merge(obj.GetAnnotations(), annotations))

@@ -56,7 +56,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			return lifecycle.Failed(ctx, &obj, err)
 		}
 
-		return lifecycle.Pending(ctx, &obj)
+		return lifecycle.Pending(ctx, &obj, "waiting for services to become ready")
 
 	case v1alpha1.PhasePending: // Managed by Lifecycle()
 		return common.DoNotRequeue()

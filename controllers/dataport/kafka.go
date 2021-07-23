@@ -31,11 +31,11 @@ func (p *kafka) Create(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result
 }
 
 func (p *kafka) createInput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
-	return lifecycle.Running(ctx, obj)
+	return lifecycle.Running(ctx, obj, "passthrough")
 }
 
 func (p *kafka) createOutput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
-	return lifecycle.Discoverable(ctx, obj)
+	return lifecycle.Discoverable(ctx, obj, "looking for matching ports")
 }
 
 func (p *kafka) Discoverable(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
@@ -66,7 +66,7 @@ func (p *kafka) discoverableOutput(ctx context.Context, obj *v1alpha1.DataPort) 
 
 	// FIXME:  just accept anything ?
 
-	return lifecycle.Pending(ctx, obj)
+	return lifecycle.Pending(ctx, obj, "waiting for input ports")
 }
 
 func (p *kafka) Pending(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
@@ -88,7 +88,7 @@ func (p *kafka) pendingInput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.
 
 func (p *kafka) pendingOutput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
 	// do rewire the connections. But this is not needed for direct protocol.
-	return lifecycle.Running(ctx, obj)
+	return lifecycle.Running(ctx, obj, "connected")
 }
 
 func (p *kafka) Running(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {

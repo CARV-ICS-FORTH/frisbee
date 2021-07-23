@@ -59,10 +59,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	switch obj.Status.Phase {
 	case v1alpha1.PhaseUninitialized:
 		if len(obj.Spec.PortRefs) > 0 {
-			return lifecycle.Discoverable(ctx, &obj)
+			return lifecycle.Discoverable(ctx, &obj, "waiting for dataport to become ready")
 		}
 
-		return lifecycle.Pending(ctx, &obj)
+		return lifecycle.Pending(ctx, &obj, "waiting for pod to become ready")
 
 	case v1alpha1.PhaseDiscoverable:
 		return r.discoverDataMesh(ctx, &obj)

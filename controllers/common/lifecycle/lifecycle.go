@@ -254,11 +254,11 @@ func (lc *ManagedLifecycle) UpdateParentLifecycle(parent InnerObject) error {
 				panic("this should not happen")
 
 			case v1alpha1.PhaseRunning:
-				_, _ = Running(lc.ctx, parent)
+				_, _ = Running(lc.ctx, parent, "all children are running")
 				phase, msg, valid = lc.notifier.getNextRunning()
 
 			case v1alpha1.PhaseChaos:
-				_, _ = Chaos(lc.ctx, parent)
+				_, _ = Chaos(lc.ctx, parent, "at least one of the children is experiencing chaos")
 
 				// If the parent is in PhaseChaos mode, it means that failing conditions are expected and therefore
 				// do not cause a failure to the controller. Instead, they should be handled by the system under evaluation.
@@ -270,7 +270,7 @@ func (lc *ManagedLifecycle) UpdateParentLifecycle(parent InnerObject) error {
 				phase, msg, valid = lc.notifier.getNextChaos()
 
 			case v1alpha1.PhaseSuccess:
-				_, _ = Success(lc.ctx, parent)
+				_, _ = Success(lc.ctx, parent, "all children are complete")
 
 				return
 

@@ -74,5 +74,5 @@ func (f *partition) Inject(ctx context.Context, obj *v1alpha1.Chaos) (ctrl.Resul
 
 	f.r.Logger.Info("Chaos was successfully injected", "name", obj.GetName(), "faulttype", obj.Spec.Type)
 
-	return lifecycle.Running(ctx, obj)
+	return lifecycle.Running(ctx, obj, "chaos is up and running")
 }

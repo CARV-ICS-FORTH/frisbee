@@ -67,9 +67,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			runtime.HandleError(errors.Wrapf(err, "Use mock-up monitoring stack. Reason:"))
 		}
 
+		// schedule action in a separate thread in order to support delete operation.
+		// otherwise, the deletion of the workflow will be suspended until all actions are complete.
 		go r.scheduleActions(ctx, obj.DeepCopy())
 
-		return lifecycle.Running(ctx, &obj)
+		return lifecycle.Running(ctx, &obj, "start running actions")
 
 	case v1alpha1.PhaseRunning:
 		if obj.Status.IsRunning {

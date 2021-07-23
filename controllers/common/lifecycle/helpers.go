@@ -36,11 +36,15 @@ func WaitSuccess(ctx context.Context, obj InnerObject) error {
 /******************************************************/
 
 // Discoverable is a wrapper that sets phase to Discoverable and does not requeue the request.
-func Discoverable(ctx context.Context, obj InnerObject) (ctrl.Result, error) {
+func Discoverable(ctx context.Context, obj InnerObject, reason string) (ctrl.Result, error) {
+	if ctx == nil || obj == nil || reason == "" {
+		panic("invalid args")
+	}
+
 	status := obj.GetLifecycle()
 
 	status.Phase = v1alpha1.PhaseDiscoverable
-	status.Reason = "waiting for dependencies"
+	status.Reason = reason
 
 	obj.SetLifecycle(status)
 
@@ -48,11 +52,15 @@ func Discoverable(ctx context.Context, obj InnerObject) (ctrl.Result, error) {
 }
 
 // Pending is a wrapper that sets phase to Pending and does not requeue the request.
-func Pending(ctx context.Context, obj InnerObject) (ctrl.Result, error) {
+func Pending(ctx context.Context, obj InnerObject, reason string) (ctrl.Result, error) {
+	if ctx == nil || obj == nil || reason == "" {
+		panic("invalid args")
+	}
+
 	status := obj.GetLifecycle()
 
 	status.Phase = v1alpha1.PhasePending
-	status.Reason = "waiting for dependencies"
+	status.Reason = reason
 
 	obj.SetLifecycle(status)
 
@@ -60,11 +68,15 @@ func Pending(ctx context.Context, obj InnerObject) (ctrl.Result, error) {
 }
 
 // Running is a wrapper that sets phase to Running and does not requeue the request.
-func Running(ctx context.Context, obj InnerObject) (ctrl.Result, error) {
+func Running(ctx context.Context, obj InnerObject, reason string) (ctrl.Result, error) {
+	if ctx == nil || obj == nil || reason == "" {
+		panic("invalid args")
+	}
+
 	status := obj.GetLifecycle()
 
 	status.Phase = v1alpha1.PhaseRunning
-	status.Reason = "OK"
+	status.Reason = reason
 
 	obj.SetLifecycle(status)
 
@@ -72,11 +84,15 @@ func Running(ctx context.Context, obj InnerObject) (ctrl.Result, error) {
 }
 
 // Success is a wrapper that sets phase to Success and does not requeue the request.
-func Success(ctx context.Context, obj InnerObject) (ctrl.Result, error) {
+func Success(ctx context.Context, obj InnerObject, reason string) (ctrl.Result, error) {
+	if ctx == nil || obj == nil || reason == "" {
+		panic("invalid args")
+	}
+
 	status := obj.GetLifecycle()
 
 	status.Phase = v1alpha1.PhaseSuccess
-	status.Reason = "All children are succeeded"
+	status.Reason = reason
 
 	obj.SetLifecycle(status)
 
@@ -84,11 +100,15 @@ func Success(ctx context.Context, obj InnerObject) (ctrl.Result, error) {
 }
 
 // Chaos is a wrapper that sets phase to Chaos and does not requeue the request.
-func Chaos(ctx context.Context, obj InnerObject) (ctrl.Result, error) {
+func Chaos(ctx context.Context, obj InnerObject, reason string) (ctrl.Result, error) {
+	if ctx == nil || obj == nil || reason == "" {
+		panic("invalid args")
+	}
+
 	status := obj.GetLifecycle()
 
 	status.Phase = v1alpha1.PhaseChaos
-	status.Reason = "Expect controlled failures"
+	status.Reason = reason
 
 	obj.SetLifecycle(status)
 
@@ -97,6 +117,10 @@ func Chaos(ctx context.Context, obj InnerObject) (ctrl.Result, error) {
 
 // Failed is a wrap that logs the error, updates the status, and does not requeue the request.
 func Failed(ctx context.Context, obj InnerObject, err error) (ctrl.Result, error) {
+	if ctx == nil || obj == nil || err == nil {
+		panic("invalid args")
+	}
+
 	runtimeutil.HandleError(errors.Wrapf(err, "object %s has failed", obj.GetName()))
 
 	status := obj.GetLifecycle()

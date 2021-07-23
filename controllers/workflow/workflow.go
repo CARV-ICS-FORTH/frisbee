@@ -47,7 +47,7 @@ func (r *Reconciler) scheduleActions(topCtx context.Context, obj *v1alpha1.Workf
 		}
 	}
 
-	lifecycle.Success(ctx, obj)
+	lifecycle.Success(ctx, obj, "all actions are complete")
 }
 
 func (r *Reconciler) wait(ctx context.Context, w *v1alpha1.Workflow, spec v1alpha1.WaitSpec) error {
@@ -141,7 +141,7 @@ func (r *Reconciler) stop(ctx context.Context, obj *v1alpha1.Workflow, action v1
 	if action.Stop.Schedule == nil {
 		for i := 0; i < len(services); i++ {
 			// Change service Phase to PhaseChaos so to ignore the failure caused by the following deletion.
-			_, _ = lifecycle.Chaos(ctx, &services[i])
+			_, _ = lifecycle.Chaos(ctx, &services[i], "manual service termination")
 
 			if err := r.Client.Delete(ctx, &services[i]); err != nil {
 				return errors.Wrapf(err, "cannot delete service %s", services[i].GetName())
