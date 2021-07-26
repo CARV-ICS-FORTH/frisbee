@@ -9,7 +9,6 @@ import (
 	"github.com/fnikolai/frisbee/controllers/common/lifecycle"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
-	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
@@ -29,7 +28,7 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 		Complete(&Reconciler{
 			Client:        mgr.GetClient(),
 			Logger:        logger.WithName("workflow"),
-			eventRecorder: mgr.GetEventRecorderFor("workflow-reconciler"),
+			eventRecorder: mgr.GetEventRecorderFor("workflow"),
 			cache:         mgr.GetCache(),
 		})
 }
@@ -64,9 +63,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		}
 
 		if err := r.newMonitoringStack(ctx, &obj); err != nil {
-			runtime.HandleError(errors.Wrapf(err, "Use mock-up monitoring stack. Reason:"))
+			r.Logger.Info("Use mock-up monitoring stack", "reason", err.Error())
 		}
 
+		return lifecycle.Pending(ctx, &obj, "workflow verified")
+
+	case v1alpha1.PhasePending:
 		// schedule action in a separate thread in order to support delete operation.
 		// otherwise, the deletion of the workflow will be suspended until all actions are complete.
 		go r.scheduleActions(ctx, obj.DeepCopy())
@@ -80,8 +82,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		r.Logger.Error(errors.New(obj.Status.Reason),
 			"Workflow succeeded",
 			"name", obj.GetName(),
-			"starttime", obj.Status.StartTime,
-			"endtime", obj.Status.EndTime,
+			"startTime", obj.Status.StartTime,
+			"endTime", obj.Status.EndTime,
 		)
 
 		/*
@@ -96,15 +98,15 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		r.Logger.Error(errors.New(obj.Status.Reason),
 			"Workflow failed",
 			"name", obj.GetName(),
-			"starttime", obj.Status.StartTime,
-			"endtime", obj.Status.EndTime,
+			"startTime", obj.Status.StartTime,
+			"endTime", obj.Status.EndTime,
 		)
 
 		// FIXME: it should send a "suspend command"
 
 		return common.DoNotRequeue()
 
-	case v1alpha1.PhaseDiscoverable, v1alpha1.PhasePending, v1alpha1.PhaseChaos:
+	case v1alpha1.PhaseDiscoverable, v1alpha1.PhaseChaos:
 		// These phases should not happen in the workflow
 		panic(errors.Errorf("invalid lifecycle phase %s", obj.Status.Phase))
 

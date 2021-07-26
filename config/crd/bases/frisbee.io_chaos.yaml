@@ -107,10 +107,6 @@ spec:
           status:
             description: Most recently observed status of the object
             properties:
-              annotationId:
-                description: AnnotationID keeps a record of the annotation of the
-                  inject fault, in order to patch is when the fault is revoked
-                type: integer
               endTime:
                 description: Most recently observed status of the object
                 format: date-time
@@ -128,8 +124,6 @@ spec:
                   image(s) for the pod.
                 format: date-time
                 type: string
-            required:
-            - annotationId
             type: object
         required:
         - spec

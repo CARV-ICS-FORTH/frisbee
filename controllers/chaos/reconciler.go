@@ -6,6 +6,7 @@ import (
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/common"
+	"github.com/fnikolai/frisbee/controllers/common/lifecycle"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -53,22 +54,35 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// The reconcile logic
 	switch obj.Status.Phase {
 	case v1alpha1.PhaseUninitialized:
-		return handler.Inject(ctx, &obj)
+		return lifecycle.Pending(ctx, &obj, "received chaos request")
+
+	case v1alpha1.PhasePending:
+		if err := handler.Inject(ctx, &obj); err != nil {
+			return lifecycle.Failed(ctx, &obj, errors.Wrapf(err, "injection failed"))
+		}
+
+		return lifecycle.Running(ctx, &obj, "Chaos was successfully injected")
 
 	case v1alpha1.PhaseRunning:
-		return handler.WaitForDuration(ctx, &obj)
+		if err := handler.WaitForDuration(ctx, &obj); err != nil {
+			return lifecycle.Failed(ctx, &obj, errors.Wrapf(err, "chaos failed"))
+		}
+
+		if err := handler.Revoke(ctx, &obj); err != nil {
+			return lifecycle.Failed(ctx, &obj, errors.Wrapf(err, "unable to revoke chaos"))
+		}
+
+		return lifecycle.Success(ctx, &obj, "chaos revoked")
 
 	case v1alpha1.PhaseSuccess:
-		// Chaos is Success, meaning that duration has elapsed.
-		// Revoke the chaos
-		return handler.Revoke(ctx, &obj)
+		return common.DoNotRequeue()
 
 	case v1alpha1.PhaseFailed:
 		r.Logger.Info("Chaos failed", "name", obj.GetName())
 
 		return common.DoNotRequeue()
 
-	case v1alpha1.PhaseChaos, v1alpha1.PhaseDiscoverable, v1alpha1.PhasePending:
+	case v1alpha1.PhaseChaos, v1alpha1.PhaseDiscoverable:
 		// These phases should not happen in the workflow
 		panic(errors.Errorf("invalid lifecycle phase %s", obj.Status.Phase))
 
@@ -88,9 +102,9 @@ func (r *Reconciler) Finalize(obj client.Object) error {
 }
 
 type chaoHandler interface {
-	Inject(ctx context.Context, obj *v1alpha1.Chaos) (ctrl.Result, error)
-	WaitForDuration(ctx context.Context, obj *v1alpha1.Chaos) (ctrl.Result, error)
-	Revoke(ctx context.Context, obj *v1alpha1.Chaos) (ctrl.Result, error)
+	Inject(ctx context.Context, obj *v1alpha1.Chaos) error
+	WaitForDuration(ctx context.Context, obj *v1alpha1.Chaos) error
+	Revoke(ctx context.Context, obj *v1alpha1.Chaos) error
 }
 
 func (r *Reconciler) dispatch(faultType v1alpha1.FaultType) chaoHandler {

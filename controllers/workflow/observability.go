@@ -9,12 +9,9 @@ import (
 	"github.com/fnikolai/frisbee/controllers/common"
 	"github.com/fnikolai/frisbee/controllers/common/lifecycle"
 	"github.com/fnikolai/frisbee/controllers/common/selector/template"
-	"github.com/grafana-tools/sdk"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	netv1 "k8s.io/api/networking/v1"
-	"k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/util/retry"
 )
 
 // {{{ Internal types
@@ -50,15 +47,12 @@ func (r *Reconciler) newMonitoringStack(ctx context.Context, obj *v1alpha1.Workf
 		// use the public Grafana address (via Ingress) because the controller runs outside of the cluster
 		grafanaPublicURI := fmt.Sprintf("http://%s", virtualhost(grafana.GetName(), obj.Spec.Ingress))
 
-		client, err := newGrafanaClient(ctx, grafanaPublicURI)
-		if err != nil {
+		if err := common.EnableGrafanaAnnotator(ctx, grafanaPublicURI); err != nil {
 			return errors.Wrapf(err, "grafana clietn error")
 		}
-
-		common.EnableAnnotations(ctx, client)
 	}
 
-	r.Logger.Info("Monitoring stack is ready", "packages", obj.Spec.ImportMonitors)
+	r.Logger.Info("Monitoring stack is ready")
 
 	return nil
 }
@@ -80,8 +74,6 @@ func (r *Reconciler) installPrometheus(ctx context.Context, obj *v1alpha1.Workfl
 	if err := r.Create(ctx, &prom); err != nil {
 		return nil, errors.Wrapf(err, "request error")
 	}
-
-	r.Logger.Info("Wait for Prometheus to become ready")
 
 	if err := lifecycle.WaitReady(ctx, &prom); err != nil {
 		return nil, errors.Wrapf(err, "prometheus is not running")
@@ -113,8 +105,6 @@ func (r *Reconciler) installGrafana(ctx context.Context, obj *v1alpha1.Workflow)
 	if err := r.Client.Create(ctx, &grafana); err != nil {
 		return nil, errors.Wrapf(err, "request error")
 	}
-
-	r.Logger.Info("Wait for Grafana to become ready")
 
 	if err := lifecycle.WaitReady(ctx, &grafana); err != nil {
 		return nil, errors.Wrapf(err, "prometheus is not running")
@@ -172,6 +162,8 @@ func (r *Reconciler) importDashboards(ctx context.Context, obj *v1alpha1.Workflo
 	// associate volume with grafana
 	grafana.Spec.Volumes = append(grafana.Spec.Volumes, volume)
 	grafana.Spec.Container.VolumeMounts = append(grafana.Spec.Container.VolumeMounts, volumeMounts...)
+
+	r.Logger.Info("Import Grafana packages", "dashboards", obj.Spec.ImportMonitors)
 
 	return nil
 }
@@ -232,104 +224,4 @@ func (r *Reconciler) installIngress(ctx context.Context, obj *v1alpha1.Workflow,
 
 func virtualhost(serviceName, ingress string) string {
 	return fmt.Sprintf("%s.%s", serviceName, ingress)
-}
-
-// ////////////////////////////////////////////////////
-// 			Grafana Client
-// ////////////////////////////////////////////////////
-
-const (
-	statusAnnotationAdded = "Annotation added"
-
-	statusAnnotationPatched = "Annotation patched"
-)
-
-type grafanaClient struct {
-	ctx context.Context
-
-	*sdk.Client
-}
-
-func newGrafanaClient(ctx context.Context, apiURI string) (*grafanaClient, error) {
-	client, err := sdk.NewClient(apiURI, "", sdk.DefaultHTTPClient)
-	if err != nil {
-		return nil, errors.Wrapf(err, "client error")
-	}
-
-	// retry until Grafana is ready to receive annotations.
-	err = retry.OnError(common.DefaultBackoff, func(_ error) bool { return true }, func() error {
-		_, err := client.GetHealth(ctx)
-		return errors.Wrapf(err, "grafana health error")
-	})
-
-	if err != nil {
-		return nil, errors.Wrapf(err, "grafana is unreachable")
-	}
-
-	return &grafanaClient{
-		ctx:    ctx,
-		Client: client,
-	}, nil
-}
-
-// Insert inserts a new annotation to Grafana
-func (c *grafanaClient) Insert(ga sdk.CreateAnnotationRequest) (id uint) {
-	ctx, cancel := context.WithTimeout(c.ctx, common.DefaultTimeout)
-	defer cancel()
-
-	// submit
-	gaResp, err := c.Client.CreateAnnotation(ctx, ga)
-	if err != nil {
-		runtime.HandleError(errors.Wrapf(err, "annotation failed"))
-
-		return
-	}
-
-	// validate
-	switch {
-	case gaResp.Message == nil:
-		runtime.HandleError(errors.Wrapf(err, "empty annotation response"))
-
-	case *gaResp.Message == string(statusAnnotationAdded):
-		// valid
-		return *gaResp.ID
-
-	default:
-		runtime.HandleError(errors.Wrapf(err,
-			"unexpected annotation response. expected %s but got %s", statusAnnotationAdded, *gaResp.Message,
-		))
-	}
-
-	return 0
-}
-
-// Patch updates an existing annotation to Grafana
-func (c *grafanaClient) Patch(reqID uint, ga sdk.PatchAnnotationRequest) (id uint) {
-	ctx, cancel := context.WithTimeout(c.ctx, common.DefaultTimeout)
-	defer cancel()
-
-	// submit
-	gaResp, err := c.Client.PatchAnnotation(ctx, id, ga)
-	if err != nil {
-		runtime.HandleError(errors.Wrapf(err, "annotation failed"))
-
-		return
-	}
-
-	// validate
-	switch {
-	case gaResp.Message == nil:
-		runtime.HandleError(errors.Wrapf(err, "empty annotation response"))
-
-	case *gaResp.Message == string(statusAnnotationPatched):
-		// valid
-		return *gaResp.ID
-
-	default:
-		runtime.HandleError(errors.Wrapf(err,
-			"unexpected annotation response. expected %s but got %s", statusAnnotationPatched, *gaResp.Message,
-		))
-	}
-
-	return 0
 }

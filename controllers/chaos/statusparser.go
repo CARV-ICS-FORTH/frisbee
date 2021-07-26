@@ -15,7 +15,7 @@ const (
 type ChaosStatus struct {
 	FailedMessage string `json:"failedMessage"`
 
-	Experiment struct {
+	Experiment *struct {
 		Phase string `json:"phase"`
 	} `json:"experiment"`
 }
@@ -39,30 +39,35 @@ func convertStatus(obj interface{}) v1alpha1.Lifecycle {
 		return status
 	}
 
-	var accessChaosStatus ChaosStatus
+	var parsedChaosStatus ChaosStatus
 
-	if err := mapstructure.Decode(chaosStatus, &accessChaosStatus); err != nil {
+	if err := mapstructure.Decode(chaosStatus, &parsedChaosStatus); err != nil {
 		panic(err)
 	}
 
 	switch {
-	case accessChaosStatus.FailedMessage != "":
+	case parsedChaosStatus.FailedMessage != "":
 		status.Phase = v1alpha1.PhaseFailed
-		status.Reason = accessChaosStatus.FailedMessage
+		status.Reason = parsedChaosStatus.FailedMessage
 
-	case accessChaosStatus.Experiment.Phase == ChaosFailed:
+	case parsedChaosStatus.Experiment.Phase == ChaosFailed:
 		status.Phase = v1alpha1.PhaseFailed
-		status.Reason = accessChaosStatus.FailedMessage
+		status.Reason = parsedChaosStatus.FailedMessage
 
-	case accessChaosStatus.Experiment.Phase == ChaosRunning:
+	case parsedChaosStatus.Experiment.Phase == ChaosRunning:
 		status.Phase = v1alpha1.PhaseRunning
 		status.Reason = "chaos is definitely is running"
 
 	default:
-		panic("unhandle status of external object")
+		status.Phase = v1alpha1.PhasePending
+		status.Reason = "unsure about the chaos condition"
+
 		/*
-			status.Phase = v1alpha1.PhasePending
-			status.Reason = "unsure about the chaos condition"
+			panic(errors.Errorf("external object %s reached an unknown status. Parsed:%v \n Raw:%v",
+				chaos.GetName(),
+				parsedChaosStatus,
+				chaosStatus,
+			))
 
 		*/
 	}

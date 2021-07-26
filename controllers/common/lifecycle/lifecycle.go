@@ -39,8 +39,8 @@ type LifecycleOptions struct {
 	// ChildrenNames is a list of children names to watch
 	ChildrenNames []string
 
-	// Annotation indicate whether events shall be recorded in Grafana or not
-	Annotator bool
+	// Annotator indicate whether events shall be recorded in Grafana or not
+	Annotator Annotator
 
 	// Logger is a logger for recording asynchronous operations
 	Logger logr.Logger
@@ -106,9 +106,13 @@ func WithFilter(filter FilterFunc) LifecycleOption {
 }
 
 // WithAnnotator will send annotations to grafana whenever an Add or a Delete event takes place.
-func WithAnnotator() LifecycleOption {
+func WithAnnotator(annotator Annotator) LifecycleOption {
 	return func(s *LifecycleOptions) {
-		s.Annotator = true
+		if annotator == nil {
+			panic("empty annotator")
+		}
+
+		s.Annotator = annotator
 	}
 }
 
@@ -175,29 +179,25 @@ func WatchObject(ctx context.Context, opts ...LifecycleOption) *ManagedLifecycle
 
 	var handlers eventHandlerFuncs
 
-	if options.Annotator {
+	if options.Annotator != nil {
 		handlers = eventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				annotateAdd(obj)
+				options.Annotator.Add(obj)
 
 				n.watchChildrenPhase(obj)
 			},
 			UpdateFunc: n.watchChildrenPhase,
 			DeleteFunc: func(obj interface{}) {
-				annotateDelete(obj)
+				options.Annotator.Delete(obj)
 
 				n.watchChildrenPhase(obj)
 			},
 		}
 	} else {
 		handlers = eventHandlerFuncs{
-			AddFunc: func(obj interface{}) {
-				n.watchChildrenPhase(obj)
-			},
+			AddFunc:    n.watchChildrenPhase,
 			UpdateFunc: n.watchChildrenPhase,
-			DeleteFunc: func(obj interface{}) {
-				n.watchChildrenPhase(obj)
-			},
+			DeleteFunc: n.watchChildrenPhase,
 		}
 	}
 
@@ -221,10 +221,18 @@ type ManagedLifecycle struct {
 	logger logr.Logger
 }
 
-// UpdateParentLifecycle run in a loops and continuously Update the status of the parent.
-func (lc *ManagedLifecycle) UpdateParentLifecycle(parent InnerObject) error {
+func (lc *ManagedLifecycle) Run() error {
 	if err := lc.watchChildren(); err != nil {
 		return errors.Wrapf(err, "unable to watch children")
+	}
+
+	return nil
+}
+
+// UpdateParentLifecycle run in a loops and continuously Update the status of the parent.
+func (lc *ManagedLifecycle) UpdateParentLifecycle(parent InnerObject) error {
+	if err := lc.Run(); err != nil {
+		return errors.Wrapf(err, "run failed")
 	}
 
 	var phase v1alpha1.Phase
@@ -291,10 +299,8 @@ func (lc *ManagedLifecycle) UpdateParentLifecycle(parent InnerObject) error {
 // Expect blocks waiting for the next phase of the parent. If it is the one expected, it returns nil.
 // Otherwise it returns an error stating what was expected and what was got.
 func (lc *ManagedLifecycle) Expect(expected v1alpha1.Phase) error {
-	if err := lc.watchChildren(); err != nil {
-		lc.logger.Error(err, "unable to watch children")
-
-		return err
+	if err := lc.Run(); err != nil {
+		return errors.Wrapf(err, "run failed")
 	}
 
 	phase, err := lc.notifier.getNextPhase()
