@@ -38,9 +38,9 @@ type ServiceGroupSpec struct {
 	// more than one inputs, the request will be rejected.
 	Inputs []map[string]string `json:"inputs,omitempty" validate:"required_without=Instances"`
 
-	// Interval defines the interval between the creation of services within the group
+	// Schedule defines the interval between the creation of services within the group
 	// +optional
-	Interval string `json:"interval"`
+	Schedule *SchedulerSpec `json:"schedule,omitempty"`
 }
 
 type ServiceGroupStatus struct {

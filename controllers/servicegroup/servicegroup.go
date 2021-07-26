@@ -11,7 +11,6 @@ import (
 	"github.com/fnikolai/frisbee/controllers/common/selector/template"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
-	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 func (r *Reconciler) create(ctx context.Context, obj *v1alpha1.ServiceGroup) error {
@@ -40,9 +39,8 @@ func (r *Reconciler) create(ctx context.Context, obj *v1alpha1.ServiceGroup) err
 		obj.Spec.Inputs = inputs
 	}
 
-	serviceKeys := make([]string, obj.Spec.Instances)
-
-	// create services for this group
+	// prepare services
+	services := make(common.ServiceList, obj.Spec.Instances)
 	for i := 0; i < obj.Spec.Instances; i++ {
 		service := v1alpha1.Service{}
 
@@ -50,7 +48,8 @@ func (r *Reconciler) create(ctx context.Context, obj *v1alpha1.ServiceGroup) err
 			return errors.Wrapf(err, "setowner failed")
 		}
 
-		serviceSpec.DeepCopyInto(&service.Spec) // deep copy so to avoid different services from sharing the same spec
+		// deep copy so to avoid different services from sharing the same spec
+		serviceSpec.DeepCopyInto(&service.Spec)
 
 		if len(obj.Spec.Inputs) > 0 {
 			if err := r.inputs2Env(ctx, obj.Spec.Inputs[i], &service.Spec.Container); err != nil {
@@ -58,18 +57,46 @@ func (r *Reconciler) create(ctx context.Context, obj *v1alpha1.ServiceGroup) err
 			}
 		}
 
-		if _, err := ctrl.CreateOrUpdate(ctx, r.Client, &service, func() error { return nil }); err != nil {
-			return errors.Wrapf(err, "update failed")
-		}
-
-		serviceKeys[i] = service.GetName()
+		services[i] = service
 	}
 
-	err := lifecycle.WatchObject(ctx,
-		lifecycle.Watch(&v1alpha1.Service{}, serviceKeys...),
+	if obj.Spec.Schedule != nil {
+		return r.createWithSchedule(ctx, obj, services)
+	}
+
+	return r.createNow(ctx, obj, services)
+}
+
+func (r *Reconciler) createNow(ctx context.Context, obj *v1alpha1.ServiceGroup, services common.ServiceList) error {
+	for i := 0; i < len(services); i++ {
+		if err := r.Client.Create(ctx, &services[i]); err != nil {
+			return errors.Wrapf(err, "cannot create service %s", services[i].GetName())
+		}
+	}
+
+	err := lifecycle.New(ctx,
+		lifecycle.NewWatchdog(&v1alpha1.Service{}, services.Names()...),
 		lifecycle.WithFilter(lifecycle.FilterParent(obj.GetUID())),
 		lifecycle.WithLogger(r.Logger),
-	).UpdateParentLifecycle(obj)
+	).Update(obj)
+
+	return errors.Wrapf(err, "lifecycle failed")
+}
+
+func (r *Reconciler) createWithSchedule(ctx context.Context, obj *v1alpha1.ServiceGroup, services common.ServiceList) error {
+	schedule := obj.Spec.Schedule
+
+	for service := range common.YieldByTime(ctx, schedule.Cron, services...) {
+		if err := r.Client.Create(ctx, service); err != nil {
+			return errors.Wrapf(err, "cannot create service %s", service.GetName())
+		}
+	}
+
+	err := lifecycle.New(ctx,
+		lifecycle.NewWatchdog(&v1alpha1.Service{}, services.Names()...),
+		lifecycle.WithFilter(lifecycle.FilterParent(obj.GetUID())),
+		lifecycle.WithLogger(r.Logger),
+	).Update(obj)
 
 	return errors.Wrapf(err, "lifecycle failed")
 }

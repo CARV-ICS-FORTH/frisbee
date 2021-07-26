@@ -88,7 +88,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	case v1alpha1.PhaseSuccess: // If we're PhaseSuccess but not deleted yet, nothing to do but return
 		r.Logger.Info("Service completed", "name", obj.GetName())
 
-		if err := r.Client.Delete(ctx, &obj); err != nil {
+		if err := lifecycle.Delete(ctx, r.Client, &obj); err != nil {
 			r.Logger.Error(err, "unable to delete object", "object", obj.GetName())
 		}
 

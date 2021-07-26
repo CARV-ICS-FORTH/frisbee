@@ -17,40 +17,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const (
-	idListSeparator = " "
-)
-
-type ServiceList []v1alpha1.Service
-
-func (list ServiceList) String() string {
-	names := make([]string, len(list))
-
-	for i, service := range list {
-		names[i] = service.GetName()
-	}
-
-	return strings.Join(names, idListSeparator)
-}
-
-// ByNamespace return the services by the namespace they belong to.
-func (list ServiceList) ByNamespace() map[string][]string {
-	all := make(map[string][]string)
-
-	for _, s := range list {
-		// get namespace
-		sublist := all[s.GetNamespace()]
-
-		// append service to the namespace
-		sublist = append(sublist, s.GetName())
-
-		// update namespace
-		all[s.GetNamespace()] = sublist
-	}
-
-	return all
-}
-
 func IsMacro(macro string) bool {
 	return strings.HasPrefix(macro, ".")
 }
@@ -76,7 +42,7 @@ func parseMacro(ss *v1alpha1.ServiceSelector) {
 	}
 }
 
-func Select(ctx context.Context, ss *v1alpha1.ServiceSelector) ServiceList {
+func Select(ctx context.Context, ss *v1alpha1.ServiceSelector) common.ServiceList {
 	if ss == nil {
 		logrus.Warn("empty service selector")
 

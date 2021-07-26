@@ -52,10 +52,19 @@ spec:
                   across the spawned instances. For instances with different parameters,
                   use Inputs.
                 type: integer
-              interval:
-                description: Interval defines the interval between the creation of
+              schedule:
+                description: Schedule defines the interval between the creation of
                   services within the group
-                type: string
+                properties:
+                  cron:
+                    description: "Cron defines a cron job rule. \n Some rule examples:
+                      \"0 30 * * * *\" means to \"Every hour on the half hour\" \"@hourly\"
+                      \     means to \"Every hour\" \"@every 1h30m\" means to \"Every
+                      hour thirty\" \n More rule info: https://godoc.org/github.com/robfig/cron"
+                    type: string
+                required:
+                - cron
+                type: object
               templateRef:
                 description: TemplateRef refers to a service template.
                 type: string

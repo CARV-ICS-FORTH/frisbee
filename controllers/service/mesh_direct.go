@@ -19,8 +19,8 @@ func (r *Reconciler) direct(ctx context.Context, obj *v1alpha1.Service, port *v1
 
 	// if the port is not ready, just wait for it.
 	if port.Status.Lifecycle.Phase != v1alpha1.PhaseRunning {
-		err := lifecycle.WatchObject(ctx,
-			lifecycle.Watch(port, port.GetName()),
+		err := lifecycle.New(ctx,
+			lifecycle.NewWatchdog(port, port.GetName()),
 			lifecycle.WithLogger(r.Logger),
 		).Expect(v1alpha1.PhaseRunning)
 		if err != nil {

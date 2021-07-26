@@ -3,7 +3,6 @@ package lifecycle
 import (
 	"context"
 	"reflect"
-	"time"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/common"
@@ -26,10 +25,8 @@ type InnerObject interface {
 			Lifecycle Manager
 ******************************************************/
 
+// LifecycleOptions is a set of options that will be used to instantiate a new Watchdog
 type LifecycleOptions struct {
-	// Timeout defines an expiration deadline for the request
-	Timeout *time.Duration
-
 	// FilterFunc is used to filter out events before they reach the lifecycle handler
 	Filter FilterFunc
 
@@ -46,10 +43,11 @@ type LifecycleOptions struct {
 	Logger logr.Logger
 }
 
+// LifecycleOption is a wrapper for Functional Options
 type LifecycleOption func(*LifecycleOptions)
 
-// Obligatory
-func Watch(kind InnerObject, names ...string) LifecycleOption {
+// NewWatchdog listens of events that happen on object of the given type and names.
+func NewWatchdog(kind InnerObject, names ...string) LifecycleOption {
 	return func(s *LifecycleOptions) {
 		if kind == nil || len(names) == 0 {
 			panic("invalid arguments")
@@ -87,14 +85,9 @@ func WatchExternal(kind client.Object, convertor func(obj interface{}) v1alpha1.
 	}
 }
 
-// Optional
-func WithTimeout(duration time.Duration) LifecycleOption {
-	return func(s *LifecycleOptions) {
-		s.Timeout = &duration
-	}
-}
-
-// Optional
+// WithFilter add a filter that allows only specific object to reach function like Expect and Wait.
+// Most commonly, this is used in conjunction with ParentFilter that filters only events that belongs
+// to the given parent.
 func WithFilter(filter FilterFunc) LifecycleOption {
 	return func(s *LifecycleOptions) {
 		if s.Filter != nil {
@@ -105,7 +98,7 @@ func WithFilter(filter FilterFunc) LifecycleOption {
 	}
 }
 
-// WithAnnotator will send annotations to grafana whenever an Add or a Delete event takes place.
+// WithAnnotator will send annotations to grafana whenever an object is added or delete.
 func WithAnnotator(annotator Annotator) LifecycleOption {
 	return func(s *LifecycleOptions) {
 		if annotator == nil {
@@ -127,7 +120,7 @@ func WithLogger(logger logr.Logger) LifecycleOption {
 	}
 }
 
-func WatchObject(ctx context.Context, opts ...LifecycleOption) *ManagedLifecycle {
+func New(ctx context.Context, opts ...LifecycleOption) *ManagedLifecycle {
 	var options LifecycleOptions
 
 	// call option functions on instance to set options on it
@@ -136,16 +129,7 @@ func WatchObject(ctx context.Context, opts ...LifecycleOption) *ManagedLifecycle
 	}
 
 	var lifecycle ManagedLifecycle
-
-	// set context
-	if options.Timeout == nil {
-		lifecycle.ctx = ctx
-	} else {
-		timeout, cancel := context.WithTimeout(ctx, *options.Timeout)
-
-		lifecycle.ctx = timeout
-		defer cancel()
-	}
+	lifecycle.ctx = ctx
 
 	// set logger
 	if options.Logger == nil {
@@ -229,8 +213,11 @@ func (lc *ManagedLifecycle) Run() error {
 	return nil
 }
 
-// UpdateParentLifecycle run in a loops and continuously Update the status of the parent.
-func (lc *ManagedLifecycle) UpdateParentLifecycle(parent InnerObject) error {
+// Update run in a loops and continuously Update the status of the parent.
+// When using this function, there are two rules that must be respected in order to avoid conflicts
+// 1) This method should not be followed by status updates (e.g., Pending, Success).
+// 2) When deleting the parent object, use the provided Delete() method of this package.
+func (lc *ManagedLifecycle) Update(parent InnerObject) error {
 	if err := lc.Run(); err != nil {
 		return errors.Wrapf(err, "run failed")
 	}
@@ -496,24 +483,6 @@ func (n *notifier) getNextPhase() (v1alpha1.Phase, error) {
 	}
 }
 
-// listen for all the expected transition from Unitialized.
-func (n *notifier) getNextUninitialized() (phase v1alpha1.Phase, msg, valid error) {
-	select {
-	case <-n.parentRunning:
-		return v1alpha1.PhaseRunning, nil, nil
-
-	case <-n.parentComplete:
-		return v1alpha1.PhaseSuccess, nil,
-			errors.Errorf("invalid transitiom %s -> %s", v1alpha1.PhaseUninitialized, v1alpha1.PhaseSuccess)
-
-	case err := <-n.failed:
-		return v1alpha1.PhaseFailed, err, nil
-
-	case err := <-n.chaos:
-		return v1alpha1.PhaseChaos, err, nil
-	}
-}
-
 // listen for all the expected transition from Running.
 func (n *notifier) getNextRunning() (phase v1alpha1.Phase, msg, valid error) {
 	select {
@@ -561,4 +530,26 @@ func (n *notifier) getNextChaos() (phase v1alpha1.Phase, msg, valid error) {
 		// case err := <-n.chaos:
 		//	return v1alpha1.PhaseChaos, err, nil
 	}
+}
+
+// Delete is a wrapper that addresses a circular dependency issue with the lifecycle monitoring.
+// By default, Kubernetes deletes Children before the parent. When a Child is removed,
+// the lifecycle watchdog detects that a child is deleted (failed) and updates the parent. However,
+// the parent used in the lifecycle is a stalled copy of the actual parent object. Hence, the update
+// causes a conflict between the stalled and the actual object.
+//
+// This deletion method addresses this issue by first deleting the parent, and then the children.
+func Delete(ctx context.Context, c client.Client, obj client.Object) error {
+	// There are three different options for the deletion propagation policy:
+	//
+	//    Foreground: Children are deleted before the parent (post-order)
+	//    Background: Parent is deleted before the children (pre-order)
+	//    Orphan: Owner references are ignored
+	deletePolicy := metav1.DeletePropagationBackground
+
+	if err := c.Delete(ctx, obj, &client.DeleteOptions{PropagationPolicy: &deletePolicy}); err != nil {
+		return errors.Wrapf(err, "unable to delete object %s", obj.GetName())
+	}
+
+	return nil
 }

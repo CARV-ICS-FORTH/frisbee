@@ -61,20 +61,22 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			return lifecycle.Failed(ctx, &obj, errors.Wrapf(err, "injection failed"))
 		}
 
-		return lifecycle.Running(ctx, &obj, "Chaos was successfully injected")
+		return common.DoNotRequeue()
 
 	case v1alpha1.PhaseRunning:
 		if err := handler.WaitForDuration(ctx, &obj); err != nil {
 			return lifecycle.Failed(ctx, &obj, errors.Wrapf(err, "chaos failed"))
 		}
 
+		return lifecycle.Success(ctx, &obj, "chaos revoked")
+
+	case v1alpha1.PhaseSuccess:
+		r.Logger.Info("Chaos completed", "name", obj.GetName())
+
 		if err := handler.Revoke(ctx, &obj); err != nil {
 			return lifecycle.Failed(ctx, &obj, errors.Wrapf(err, "unable to revoke chaos"))
 		}
 
-		return lifecycle.Success(ctx, &obj, "chaos revoked")
-
-	case v1alpha1.PhaseSuccess:
 		return common.DoNotRequeue()
 
 	case v1alpha1.PhaseFailed:

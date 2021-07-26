@@ -20,7 +20,7 @@ spec:
       depends: { running: [ masters ] }
       servicegroup:
         templateRef: redis/slave
-        inputs:
+        inputs: # parameters to template ENV variables
           - { master: .servicegroup.masters.one }
 
 
@@ -44,7 +44,7 @@ spec:
           - { server: .servicegroup.masters.one, recordcount: "100000000", offset: "0" }
 
 
-    # Repeatable partition failures
+    # Cause two partition failures with different duration
     - actiontype: Chaos
       name: partition0
       depends: { running: [ masters], duration: "5m" }
@@ -55,15 +55,13 @@ spec:
             macro: .servicegroup.masters.one
           duration: "2m"
 
-
     - actiontype: Chaos
       name: partition1
       depends: { running: [ masters], success: [ partition0 ], duration: "3m" }
       chaos:
         type: partition
         partition:
-          selector:
-            macro: .servicegroup.masters.one
+          selector: {macro: .servicegroup.masters.one}
           duration: "2m"
 
 
@@ -72,10 +70,7 @@ spec:
       name: "teardown"
       depends: { success: [ partition1 ], duration: "1m" }
       stop:
-        selector:
-          macro: .servicegroup.runners.all
-        schedule:
-          cron: "@every 1m"
+        selector: {macro: .servicegroup.runners.all}
 
     # Wait until servers are removed
     - actiontype: Wait

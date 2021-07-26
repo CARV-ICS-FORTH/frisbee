@@ -19,17 +19,14 @@ func DoNotRequeue() (ctrl.Result, error) {
 }
 
 func Requeue() (ctrl.Result, error) {
-	// logrus.Warn("Trigger Requeue")
-	// debug.PrintStack()
-
 	return ctrl.Result{Requeue: true}, nil
 }
 
 func RequeueWithError(err error) (ctrl.Result, error) {
-	return ctrl.Result{}, errors.Wrapf(err, "requeue request")
+	return ctrl.Result{Requeue: true}, errors.Wrapf(err, "requeue request")
 }
 
-// Reconciler implements basic functionality that is Common to every solid reconciler (e.g, finalizers)
+// Reconciler implements basic functionality that is common to every solid reconciler (e.g, finalizers)
 type Reconciler interface {
 	client.Client
 	logr.Logger

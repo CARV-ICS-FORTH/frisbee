@@ -87,7 +87,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		)
 
 		/*
-			if err := r.Client.Delete(ctx, &obj); err != nil {
+			if err := r.Client.DeleteParent(ctx, &obj); err != nil {
 				runtimeutil.HandleError(err)
 			}
 		*/

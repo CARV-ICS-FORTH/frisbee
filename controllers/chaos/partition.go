@@ -58,17 +58,18 @@ func (f *partition) Inject(ctx context.Context, obj *v1alpha1.Chaos) error {
 	// occasionally Chaos-Mesh throws an internal timeout. in this case, just retry the operation.
 	err := retry.OnError(common.DefaultBackoff, k8errors.IsInternalError, func() error {
 		err := f.r.Create(ctx, &chaos)
+
 		return errors.Wrapf(err, "create error")
 	})
 	if err != nil {
 		return errors.Wrapf(err, "injection failed")
 	}
 
-	err = lifecycle.WatchObject(ctx,
+	err = lifecycle.New(ctx,
 		lifecycle.WatchExternal(&chaos, convertStatus, chaos.GetName()),
 		lifecycle.WithFilter(lifecycle.FilterParent(obj.GetUID())),
 		lifecycle.WithAnnotator(&lifecycle.RangeAnnotation{}),
-	).Run()
+	).Update(obj)
 
 	return errors.Wrapf(err, "lifecycle failed")
 }
@@ -86,7 +87,7 @@ func (f *partition) WaitForDuration(ctx context.Context, obj *v1alpha1.Chaos) er
 		// otherwise, wait for the event to happen in the future
 		select {
 		case <-ctx.Done():
-			return ctx.Err()
+			return errors.Wrapf(ctx.Err(), "waiting error")
 		case <-time.After(time.Until(revokeTime)):
 			return nil
 		}
@@ -98,16 +99,10 @@ func (f *partition) WaitForDuration(ctx context.Context, obj *v1alpha1.Chaos) er
 }
 
 func (f *partition) Revoke(ctx context.Context, obj *v1alpha1.Chaos) error {
-	chaos := f.generate(ctx, obj)
-
-	if err := common.SetOwner(obj, &chaos, ""); err != nil {
-		return errors.Wrapf(err, "ownership error")
-	}
-
 	// because the internal Chaos object (managed by Chaos controller) owns the external Chaos implementation
 	// (managed by Chaos-Mesh) it suffice to remove the internal object, and the external will be garbage collected.
-	if err := f.r.Delete(ctx, &chaos); err != nil {
-		return errors.Wrapf(err, "unable to revoke %s", chaos.GetName())
+	if err := lifecycle.Delete(ctx, f.r, obj); err != nil {
+		return errors.Wrapf(err, "unable to revoke %s", obj.GetName())
 	}
 
 	return nil

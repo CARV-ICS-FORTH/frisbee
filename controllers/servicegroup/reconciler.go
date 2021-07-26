@@ -52,13 +52,13 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// The reconcile logic
 	switch obj.Status.Phase {
 	case v1alpha1.PhaseUninitialized:
+		return lifecycle.Pending(ctx, &obj, "waiting for services to become ready")
+
+	case v1alpha1.PhasePending: // Managed by Lifecycle()
 		if err := r.create(ctx, &obj); err != nil {
 			return lifecycle.Failed(ctx, &obj, err)
 		}
 
-		return lifecycle.Pending(ctx, &obj, "waiting for services to become ready")
-
-	case v1alpha1.PhasePending: // Managed by Lifecycle()
 		return common.DoNotRequeue()
 
 	case v1alpha1.PhaseRunning: // Passthroughs

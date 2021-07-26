@@ -89,12 +89,12 @@ func (r *Reconciler) createKubePod(ctx context.Context, obj *v1alpha1.Service) e
 	}
 
 	// convert external pod to inner object so to gain management of lifecycle
-	err := lifecycle.WatchObject(ctx,
+	err := lifecycle.New(ctx,
 		lifecycle.WatchExternal(&pod, convert, pod.GetName()),
 		lifecycle.WithFilter(lifecycle.FilterParent(obj.GetUID())),
 		lifecycle.WithAnnotator(&lifecycle.PointAnnotation{}), // Register event to grafana
 		lifecycle.WithLogger(r.Logger),
-	).UpdateParentLifecycle(obj)
+	).Update(obj)
 
 	return errors.Wrapf(err, "lifecycle error")
 }

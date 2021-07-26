@@ -18,16 +18,16 @@ import (
 // WaitReady is a lifecycle wrapper that waits until an object has reached the Running phase.
 // If another phase is reached (e.g, failed), it returns error.
 func WaitReady(ctx context.Context, obj InnerObject) error {
-	return WatchObject(ctx,
-		Watch(obj, obj.GetName()),
+	return New(ctx,
+		NewWatchdog(obj, obj.GetName()),
 	).Expect(v1alpha1.PhaseRunning)
 }
 
 // WaitSuccess is a lifecycle wrapper that waits until an object has reached the Running phase.
 // If another phase is reached (e.g, failed), it returns error.
 func WaitSuccess(ctx context.Context, obj InnerObject) error {
-	return WatchObject(ctx,
-		Watch(obj, obj.GetName()),
+	return New(ctx,
+		NewWatchdog(obj, obj.GetName()),
 	).Expect(v1alpha1.PhaseSuccess)
 }
 

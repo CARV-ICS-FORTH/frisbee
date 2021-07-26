@@ -10,6 +10,7 @@ import (
 	"github.com/fnikolai/frisbee/controllers/common/selector/service"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	k8errors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 type Workflow struct {
@@ -51,7 +52,7 @@ func (r *Reconciler) scheduleActions(topCtx context.Context, obj *v1alpha1.Workf
 		}
 
 		if err != nil {
-			lifecycle.Failed(ctx, w.Workflow, errors.Wrapf(err, "action %s failed", action.Name))
+			_, _ = lifecycle.Failed(ctx, w.Workflow, errors.Wrapf(err, "action %s failed", action.Name))
 
 			return
 		}
@@ -75,8 +76,8 @@ func (r *Reconciler) wait(ctx context.Context, w Workflow, spec v1alpha1.WaitSpe
 		// assume that all action to wait are of the same type
 		kind := w.waitableActions[spec.Success[0]]
 
-		err := lifecycle.WatchObject(ctx,
-			lifecycle.Watch(kind, spec.Success...),
+		err := lifecycle.New(ctx,
+			lifecycle.NewWatchdog(kind, spec.Success...),
 			lifecycle.WithFilter(lifecycle.FilterParent(w.GetUID())),
 			lifecycle.WithLogger(r.Logger),
 		).Expect(v1alpha1.PhaseSuccess)
@@ -101,8 +102,8 @@ func (r *Reconciler) wait(ctx context.Context, w Workflow, spec v1alpha1.WaitSpe
 		// assume that all action to wait are of the same type
 		kind := w.waitableActions[spec.Running[0]]
 
-		err := lifecycle.WatchObject(ctx,
-			lifecycle.Watch(kind, spec.Running...),
+		err := lifecycle.New(ctx,
+			lifecycle.NewWatchdog(kind, spec.Running...),
 			lifecycle.WithFilter(lifecycle.FilterParent(w.GetUID())),
 			lifecycle.WithLogger(r.Logger),
 		).Expect(v1alpha1.PhaseRunning)
@@ -118,7 +119,7 @@ func (r *Reconciler) wait(ctx context.Context, w Workflow, spec v1alpha1.WaitSpe
 
 		select {
 		case <-ctx.Done():
-			return ctx.Err()
+			return errors.Wrapf(ctx.Err(), "wait error")
 		case <-time.After(spec.Duration.Duration):
 		}
 
@@ -147,7 +148,7 @@ func (r *Reconciler) createServiceGroup(ctx context.Context, w Workflow, action 
 	}
 
 	// TODO: Fix it with respect to threads
-	// common.UpdateLifecycle(ctx, w, &v1alpha1.ServiceGroup{}, group.GetName())
+	// common.Update(ctx, w, &v1alpha1.ServiceGroup{}, group.GetName())
 
 	w.waitableActions[action.Name] = &group
 
@@ -155,12 +156,6 @@ func (r *Reconciler) createServiceGroup(ctx context.Context, w Workflow, action 
 }
 
 func (r *Reconciler) stop(ctx context.Context, w Workflow, action v1alpha1.Action) error {
-	if action.Depends != nil {
-		if err := r.wait(ctx, w, *action.Depends); err != nil {
-			return errors.Wrapf(err, "dependencies failed")
-		}
-	}
-
 	// Resolve affected services
 	services := service.Select(ctx, action.Stop.Selector)
 	if len(services) == 0 {
@@ -169,13 +164,17 @@ func (r *Reconciler) stop(ctx context.Context, w Workflow, action v1alpha1.Actio
 		return nil
 	}
 
+	if action.Depends != nil {
+		if err := r.wait(ctx, w, *action.Depends); err != nil {
+			return errors.Wrapf(err, "dependencies failed")
+		}
+	}
+
 	// Without Schedule
 	if action.Stop.Schedule == nil {
 		for i := 0; i < len(services); i++ {
-			// Change service Phase to PhaseChaos so to ignore the failure caused by the following deletion.
-			_, _ = lifecycle.Chaos(ctx, &services[i], "manual service termination")
-
-			if err := r.Client.Delete(ctx, &services[i]); err != nil {
+			err := lifecycle.Delete(ctx, r.Client, &services[i])
+			if err != nil && !k8errors.IsNotFound(err) {
 				return errors.Wrapf(err, "cannot delete service %s", services[i].GetName())
 			}
 		}
@@ -188,7 +187,8 @@ func (r *Reconciler) stop(ctx context.Context, w Workflow, action v1alpha1.Actio
 		r.Logger.Info("Yield with Schedule", "services", services)
 
 		for service := range common.YieldByTime(ctx, action.Stop.Schedule.Cron, services...) {
-			if err := r.Client.Delete(ctx, service); err != nil {
+			err := lifecycle.Delete(ctx, r.Client, service)
+			if err != nil && !k8errors.IsNotFound(err) {
 				return errors.Wrapf(err, "cannot delete service %s", service.GetName())
 			}
 		}
