@@ -75,7 +75,7 @@ func (r *Reconciler) createNow(ctx context.Context, obj *v1alpha1.ServiceGroup, 
 	}
 
 	err := lifecycle.New(ctx,
-		lifecycle.NewWatchdog(&v1alpha1.Service{}, services.Names()...),
+		lifecycle.Watch(&v1alpha1.Service{}, services.Names()...),
 		lifecycle.WithFilter(lifecycle.FilterParent(obj.GetUID())),
 		lifecycle.WithLogger(r.Logger),
 	).Update(obj)
@@ -93,7 +93,7 @@ func (r *Reconciler) createWithSchedule(ctx context.Context, obj *v1alpha1.Servi
 	}
 
 	err := lifecycle.New(ctx,
-		lifecycle.NewWatchdog(&v1alpha1.Service{}, services.Names()...),
+		lifecycle.Watch(&v1alpha1.Service{}, services.Names()...),
 		lifecycle.WithFilter(lifecycle.FilterParent(obj.GetUID())),
 		lifecycle.WithLogger(r.Logger),
 	).Update(obj)

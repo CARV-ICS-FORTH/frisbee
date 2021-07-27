@@ -35,38 +35,7 @@ func (p *kafka) createInput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.R
 }
 
 func (p *kafka) createOutput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
-	return lifecycle.Discoverable(ctx, obj, "looking for matching ports")
-}
-
-func (p *kafka) Discoverable(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
-	switch v := obj.Spec.Type; v {
-	case v1alpha1.Inport:
-		return p.discoverableInput(ctx, obj)
-	case v1alpha1.Outport:
-		return p.discoverableOutput(ctx, obj)
-	default:
-		return lifecycle.Failed(ctx, obj, errors.Errorf("unknown type %s", v))
-	}
-}
-
-func (p *kafka) discoverableInput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
-	// TODO: check connectivity with Kafka server.
-
-	return lifecycle.Failed(ctx, obj, errors.Errorf("invalid phase for kafka input port"))
-}
-
-func (p *kafka) discoverableOutput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
-	// In this phase we are still getting offers (requests from input ports that discovered this output).
-	// If the offers satisfy certain conditions, accept them and go to Pending phase.
-
-	if obj.Status.ProtocolStatus.Kafka == nil {
-		// no offer yet
-		return common.DoNotRequeue()
-	}
-
-	// FIXME:  just accept anything ?
-
-	return lifecycle.Pending(ctx, obj, "waiting for input ports")
+	return lifecycle.Pending(ctx, obj, "looking for matching ports")
 }
 
 func (p *kafka) Pending(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
@@ -87,6 +56,15 @@ func (p *kafka) pendingInput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.
 }
 
 func (p *kafka) pendingOutput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
+	// In this phase we are still getting offers (requests from input ports that discovered this output).
+	// If the offers satisfy certain conditions, accept them and go to Pending phase.
+	if obj.Status.ProtocolStatus.Kafka == nil {
+		// no offer yet
+		return common.DoNotRequeue()
+	}
+
+	// FIXME:  just accept anything ?
+
 	// do rewire the connections. But this is not needed for direct protocol.
 	return lifecycle.Running(ctx, obj, "connected")
 }
@@ -109,8 +87,7 @@ func (p *kafka) Running(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Resul
 func (p *kafka) runningInput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
 	go func() (ctrl.Result, error) {
 	retry:
-
-		p.r.Logger.Info("Watching for new sources for ", "labels", obj.Spec.Input.Selector.MatchLabels)
+		p.r.Logger.Info("Watching for matches ", "labels", obj.Spec.Input.Selector.MatchLabels)
 
 		matches := matchPorts(ctx, p.r, obj.Spec.Input.Selector)
 

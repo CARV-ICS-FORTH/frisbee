@@ -77,7 +77,7 @@ func (r *Reconciler) wait(ctx context.Context, w Workflow, spec v1alpha1.WaitSpe
 		kind := w.waitableActions[spec.Success[0]]
 
 		err := lifecycle.New(ctx,
-			lifecycle.NewWatchdog(kind, spec.Success...),
+			lifecycle.Watch(kind, spec.Success...),
 			lifecycle.WithFilter(lifecycle.FilterParent(w.GetUID())),
 			lifecycle.WithLogger(r.Logger),
 		).Expect(v1alpha1.PhaseSuccess)
@@ -103,7 +103,7 @@ func (r *Reconciler) wait(ctx context.Context, w Workflow, spec v1alpha1.WaitSpe
 		kind := w.waitableActions[spec.Running[0]]
 
 		err := lifecycle.New(ctx,
-			lifecycle.NewWatchdog(kind, spec.Running...),
+			lifecycle.Watch(kind, spec.Running...),
 			lifecycle.WithFilter(lifecycle.FilterParent(w.GetUID())),
 			lifecycle.WithLogger(r.Logger),
 		).Expect(v1alpha1.PhaseRunning)

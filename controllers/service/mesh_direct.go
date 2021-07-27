@@ -14,22 +14,25 @@ import (
 )
 
 func (r *Reconciler) direct(ctx context.Context, obj *v1alpha1.Service, port *v1alpha1.DataPort) (ctrl.Result, error) {
-	logrus.Warn("-> Wait for lifecycle of ", port.GetName())
-	logrus.Warn("<- Wait for lifecycle of ", port.GetName())
+	logrus.Warnf("-> Bind service %s with port %s", obj.GetName(), port.GetName())
+	defer logrus.Warnf("<- Bind service %s with port %s", obj.GetName(), port.GetName())
 
-	// if the port is not ready, just wait for it.
-	if port.Status.Lifecycle.Phase != v1alpha1.PhaseRunning {
-		err := lifecycle.New(ctx,
-			lifecycle.NewWatchdog(port, port.GetName()),
-			lifecycle.WithLogger(r.Logger),
-		).Expect(v1alpha1.PhaseRunning)
-		if err != nil {
-			return lifecycle.Failed(ctx, obj, errors.Wrapf(err, "waiting for port %s failed", port.GetName()))
-		}
+	// wait for port to become ready
+	err := lifecycle.New(ctx,
+		lifecycle.Watch(port, port.GetName()),
+		lifecycle.WithLogger(r.Logger),
+	).Until(v1alpha1.PhaseRunning, port)
+
+	if err != nil {
+		return lifecycle.Failed(ctx, obj, errors.Wrapf(err, "waiting for port %s failed", port.GetName()))
 	}
 
+	// convert status of the remote port to local annotations that will be used by the ENV.
 	annotations := portStatusToAnnotations(port.GetName(), port.Spec.Protocol, port.Status.Direct)
-	// abusively use the labels to evaluate annotations
+	if len(annotations) == 0 {
+		panic("empty annotations")
+	}
+
 	if structure.Contains(obj.GetAnnotations(), annotations) {
 		return lifecycle.Pending(ctx, obj, "wait for dataport to become ready")
 	}

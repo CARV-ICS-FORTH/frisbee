@@ -19,7 +19,7 @@ import (
 // If another phase is reached (e.g, failed), it returns error.
 func WaitReady(ctx context.Context, obj InnerObject) error {
 	return New(ctx,
-		NewWatchdog(obj, obj.GetName()),
+		Watch(obj, obj.GetName()),
 	).Expect(v1alpha1.PhaseRunning)
 }
 
@@ -27,29 +27,13 @@ func WaitReady(ctx context.Context, obj InnerObject) error {
 // If another phase is reached (e.g, failed), it returns error.
 func WaitSuccess(ctx context.Context, obj InnerObject) error {
 	return New(ctx,
-		NewWatchdog(obj, obj.GetName()),
+		Watch(obj, obj.GetName()),
 	).Expect(v1alpha1.PhaseSuccess)
 }
 
 /******************************************************
 			Lifecycle Setters
 /******************************************************/
-
-// Discoverable is a wrapper that sets phase to Discoverable and does not requeue the request.
-func Discoverable(ctx context.Context, obj InnerObject, reason string) (ctrl.Result, error) {
-	if ctx == nil || obj == nil || reason == "" {
-		panic("invalid args")
-	}
-
-	status := obj.GetLifecycle()
-
-	status.Phase = v1alpha1.PhaseDiscoverable
-	status.Reason = reason
-
-	obj.SetLifecycle(status)
-
-	return common.UpdateStatus(ctx, obj)
-}
 
 // Pending is a wrapper that sets phase to Pending and does not requeue the request.
 func Pending(ctx context.Context, obj InnerObject, reason string) (ctrl.Result, error) {

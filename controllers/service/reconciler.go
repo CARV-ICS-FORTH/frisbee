@@ -58,13 +58,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	switch obj.Status.Phase {
 	case v1alpha1.PhaseUninitialized:
 		if len(obj.Spec.PortRefs) > 0 {
-			return lifecycle.Discoverable(ctx, &obj, "waiting for dataport to become ready")
+			return r.discoverDataMesh(ctx, &obj)
 		}
 
-		return lifecycle.Pending(ctx, &obj, "waiting for pod to become ready")
-
-	case v1alpha1.PhaseDiscoverable:
-		return r.discoverDataMesh(ctx, &obj)
+		return lifecycle.Pending(ctx, &obj, "dependencies resolved. create pods...")
 
 	case v1alpha1.PhasePending:
 		if err := r.createKubePod(ctx, &obj); err != nil {
@@ -89,13 +86,13 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		r.Logger.Info("Service completed", "name", obj.GetName())
 
 		if err := lifecycle.Delete(ctx, r.Client, &obj); err != nil {
-			r.Logger.Error(err, "unable to delete object", "object", obj.GetName())
+			r.Logger.Error(err, "garbage collection error", "object", obj.GetName())
 		}
 
 		return common.DoNotRequeue()
 
 	case v1alpha1.PhaseFailed: // if we're here, then something went completely wrong
-		r.Logger.Info("Service failed", "name", obj.GetName())
+		r.Logger.Info("Service failed. Omit garbage collection for debugging purposes.", "name", obj.GetName())
 
 		return common.DoNotRequeue()
 
@@ -161,6 +158,10 @@ func (r *Reconciler) discoverDataMesh(ctx context.Context, obj *v1alpha1.Service
 
 // portStatusAnnotations translates a Status struct to annotations that will be used for rewiring the service's dataports.
 func portStatusToAnnotations(portName string, proto v1alpha1.PortProtocol, status interface{}) map[string]string {
+	if status == nil {
+		panic("empty status")
+	}
+
 	val := reflect.ValueOf(status)
 
 	switch {

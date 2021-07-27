@@ -19,7 +19,7 @@ In this walk-through, we explain how to install and execute the runtime with giv
 
 
 
-### Installation
+## Installation
 
 #### Local Kubernetes Installation
 
@@ -55,9 +55,9 @@ curl -sSL https://mirrors.chaos-mesh.org/latest/install.sh | bash -s -- --microk
 
 
 
-
-
 ### Run experiments
+
+## 
 
 
 
@@ -70,8 +70,6 @@ $ kubectl -n frisbee apply -f  ../paper/elasticity.yml
 # Delete an experiment
 $ kubectl -n frisbee delete -f  ../paper/elasticity.yml
 ```
-
-
 
 
 
@@ -99,6 +97,8 @@ $ kubectl -kubeConfig /home/fnikol/.kube/config.evolve -n frisbee delete -f  ../
 
 
 ### Dashboard
+
+## 
 
 Dashboard is a web-based Kubernetes user interface. You can use Dashboard to deploy containerized applications to a Kubernetes cluster, troubleshoot your containerized application, and manage the cluster resources.
 
@@ -148,8 +148,6 @@ By default Grafana is configured without any login requirements, so we must leav
 
 
 
-
-
 ## Bugs and Feedback
 For bug report, questions and discussions please submit [GitHub Issues](https://github.com/CARV-ICS-FORTH/frisbee/issues). 
 
@@ -159,11 +157,16 @@ You can also contact us via:
 * Slack group: ...
 * Twitter: ...
 
+
+
 ## Contributing
-We welcome every contribution, even if it is just punctuation. See details of [CONTRIBUTING](CONTRIBUTING.md)
+
+We welcome every contribution, even if it is just punctuation. See details of [CONTRIBUTING](docs/CONTRIBUTING.md)
+
 
 
 ## Business Registration
+
 The original intention of our open source project is to lower the threshold for chaos engineering to be implemented in enterprises, so we highly value the use of the project in enterprises. Welcome everyone here [ISSUE](https://github.com/chaosblade-io/chaosblade/issues/32). After registration, you will be invited to join the corporate mail group to discuss the problems encountered by Chaos Engineering in the landing of the company and share the landing experience.
 
 
@@ -171,125 +174,6 @@ The original intention of our open source project is to lower the threshold for 
 
 ## License
 
-Chaosblade is licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) for the full license text.
+Frisbee is licensed under the Apache License, Version 2.0. See [LICENSE](http://www.apache.org/licenses/LICENSE-2.0) for the full license text.
 
 
-
-```
-
-
-```
-
-
-
-
-
-
-
-
-
-
-
-
-
-## Contributors
-
-### Code Contributors
-
-/This project exists thanks to all the people who contribute. [[Contribute](CONTRIBUTING.md)].
-<a href="https://github.com/chaosblade-io/chaosblade/graphs/contributors"><img src="https://opencollective.com/chaosblade/contributors.svg?width=890&button=false" /></a>
-
-
-
-
-
-### Architecture
-
-A Custom Resource Definition (CRD) is an endpoint in the [Kubernetes API](https://kubernetes.io/docs/concepts/overview/kubernetes-api/) that stores a collection of [API objects](https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/) of a certain kind; for example, the built-in *pods* resource contains a collection of Pod objects.
-
-Frisbee provides the following CRDs:
-
-* Service
-* ServiceGroup
-* Chaos
-* Workflow
-* Dataport
-
-
-
-
-
-
-
-
-
-## In a nutshell
-
-Cypress is most often compared to Selenium; however Cypress is both  fundamentally and architecturally different. Cypress is not constrained  by the same restrictions as Selenium.
-
-This enables you to 
-
-
-
-
-
-
-
-
-
-* 
-
-
-
-
-
-## Cloud Native
-
-[chaosblade-operator](https://github.com/chaosblade-io/chaosblade-operator) The project is a chaos experiment injection tool for cloud-native  platforms. It follows the chaos experiment model to standardize the  experimental scenario and defines the experiment as Kubernetes CRD  Resources, mapping experimental models to Kubernetes resource  attributes, and very friendly combination of chaotic experimental models with Kubernetes declarative design. While relying on chaotic  experimental models to conveniently develop scenarios, it can also well  integrate Kubernetes design concepts, through kubectl or Write code to  directly call the Kubernetes API to create, update, and delete chaotic  experiments, and the resource status can clearly indicate the execution  status of the experiment, and standardize Kubernetes fault injection. In addition to using the above methods to perform experiments, you can  also use the chaosblade cli method to execute kubernetes experimental  scenarios and query the experimental status very conveniently. For  details, please read the chinese document: [Chaos Engineering Practice under Cloud Native](https://github.com/chaosblade-io/chaosblade/blob/master/CLOUDNATIVE.md)
-
-
-
-
-
-
-
-
-
-https://chaos-mesh.org/docs/development_guides/develop_a_new_chaos/
-
-Make uninstall make install
-
-// Will create new CRDS
-
-Make update
-
-Because of this bug, https://github.com/argoproj/argo-cd/issues/820, we cannot use the kubectl apply directly on the
-CRDS. For this reason, we must uninstall and install all the crds at once.
-
-make install KUBECONFIG="--kubeconfig /home/fnikol/.kube/config.evolve" NAMESPACE="-n karvdash-fnikol"
-
-RESERVED LABELS:
-
-* discover
-* owner
-
-
-* For mapping local directories to configMap
-  https://itnext.io/helm-3-mapping-a-directory-of-files-into-a-container-ed6c54372df8
-
-
-
-curl -sSL https://mirrors.chaos-mesh.org/v1.2.2/install.sh | bash -s -- --microk8s
-
--- Conditional branches
-
-https://githubcom/chaos-mesh/chaos-mesh/blob/master/examples/workflow/custom-taskyaml:
-
-
-conditionalBranches:
-- target: workflow-stress-chaos
-  expression: 'exitCode == 0 && stdout == "branch-a"'
-- target: workflow-network-chaos
-  expression: 'exitCode == 0 && stdout == "branch-b"'
-- target: on-failed
-  expression: 'exitCode != 0

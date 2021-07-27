@@ -72,7 +72,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		return common.DoNotRequeue()
 
-	case v1alpha1.PhaseDiscoverable, v1alpha1.PhaseChaos: // Invalid
+	case v1alpha1.PhaseChaos: // Invalid
 		panic(errors.Errorf("invalid lifecycle phase %s", obj.Status.Phase))
 
 	default:

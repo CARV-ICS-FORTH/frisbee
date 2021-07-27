@@ -25,8 +25,8 @@ type InnerObject interface {
 			Lifecycle Manager
 ******************************************************/
 
-// LifecycleOptions is a set of options that will be used to instantiate a new Watchdog
-type LifecycleOptions struct {
+// Options is a set of options that will be used to instantiate a new Watchdog
+type Options struct {
 	// FilterFunc is used to filter out events before they reach the lifecycle handler
 	Filter FilterFunc
 
@@ -43,12 +43,12 @@ type LifecycleOptions struct {
 	Logger logr.Logger
 }
 
-// LifecycleOption is a wrapper for Functional Options
-type LifecycleOption func(*LifecycleOptions)
+// Option is a wrapper for Functional Options.
+type Option func(*Options)
 
-// NewWatchdog listens of events that happen on object of the given type and names.
-func NewWatchdog(kind InnerObject, names ...string) LifecycleOption {
-	return func(s *LifecycleOptions) {
+// Watch listens of events that happen on object of the given type and names.
+func Watch(kind InnerObject, names ...string) Option {
+	return func(s *Options) {
 		if kind == nil || len(names) == 0 {
 			panic("invalid arguments")
 		}
@@ -64,9 +64,9 @@ func NewWatchdog(kind InnerObject, names ...string) LifecycleOption {
 	}
 }
 
-// WatchExternal wraps an object that does not belong to this controller
-func WatchExternal(kind client.Object, convertor func(obj interface{}) v1alpha1.Lifecycle, names ...string) LifecycleOption {
-	return func(s *LifecycleOptions) {
+// WatchExternal wraps an object that does not belong to this controller.
+func WatchExternal(kind client.Object, convertor func(obj interface{}) v1alpha1.Lifecycle, names ...string) Option {
+	return func(s *Options) {
 		if kind == nil || convertor == nil || len(names) == 0 {
 			panic("invalid arguments")
 		}
@@ -88,8 +88,8 @@ func WatchExternal(kind client.Object, convertor func(obj interface{}) v1alpha1.
 // WithFilter add a filter that allows only specific object to reach function like Expect and Wait.
 // Most commonly, this is used in conjunction with ParentFilter that filters only events that belongs
 // to the given parent.
-func WithFilter(filter FilterFunc) LifecycleOption {
-	return func(s *LifecycleOptions) {
+func WithFilter(filter FilterFunc) Option {
+	return func(s *Options) {
 		if s.Filter != nil {
 			panic("filter already exists")
 		}
@@ -99,8 +99,8 @@ func WithFilter(filter FilterFunc) LifecycleOption {
 }
 
 // WithAnnotator will send annotations to grafana whenever an object is added or delete.
-func WithAnnotator(annotator Annotator) LifecycleOption {
-	return func(s *LifecycleOptions) {
+func WithAnnotator(annotator Annotator) Option {
+	return func(s *Options) {
 		if annotator == nil {
 			panic("empty annotator")
 		}
@@ -110,8 +110,8 @@ func WithAnnotator(annotator Annotator) LifecycleOption {
 }
 
 // WithLogger appends a new logger for the lifecycle
-func WithLogger(logger logr.Logger) LifecycleOption {
-	return func(s *LifecycleOptions) {
+func WithLogger(logger logr.Logger) Option {
+	return func(s *Options) {
 		if s.Logger != nil {
 			panic("logger already exists")
 		}
@@ -120,8 +120,8 @@ func WithLogger(logger logr.Logger) LifecycleOption {
 	}
 }
 
-func New(ctx context.Context, opts ...LifecycleOption) *ManagedLifecycle {
-	var options LifecycleOptions
+func New(ctx context.Context, opts ...Option) *ManagedLifecycle {
+	var options Options
 
 	// call option functions on instance to set options on it
 	for _, apply := range opts {
@@ -213,7 +213,9 @@ func (lc *ManagedLifecycle) Run() error {
 	return nil
 }
 
-// Update run in a loops and continuously Update the status of the parent.
+// Update run in a loops and continuously updates the lifecycle of the parent. This method, however, does not
+// convey object specific status. Only updates the lifecycle.
+//
 // When using this function, there are two rules that must be respected in order to avoid conflicts
 // 1) This method should not be followed by status updates (e.g., Pending, Success).
 // 2) When deleting the parent object, use the provided Delete() method of this package.
@@ -229,11 +231,11 @@ func (lc *ManagedLifecycle) Update(parent InnerObject) error {
 	var valid error
 
 	go func() {
-		phase, valid = lc.notifier.getNextPhase()
+		phase, msg = lc.notifier.getNextPhase()
 
 		for {
 			if valid != nil {
-				lc.logger.Error(valid, "Update parent failed", "parent", parent.GetName())
+				lc.logger.Error(valid, "invalid transition", "parent", parent.GetName())
 
 				return
 			}
@@ -245,7 +247,7 @@ func (lc *ManagedLifecycle) Update(parent InnerObject) error {
 			)
 
 			switch phase {
-			case v1alpha1.PhaseUninitialized, v1alpha1.PhaseDiscoverable, v1alpha1.PhasePending:
+			case v1alpha1.PhaseUninitialized, v1alpha1.PhasePending:
 				panic("this should not happen")
 
 			case v1alpha1.PhaseRunning:
@@ -314,7 +316,7 @@ func (lc *ManagedLifecycle) Expect(expected v1alpha1.Phase) error {
 		}
 
 		switch phase {
-		case v1alpha1.PhaseUninitialized, v1alpha1.PhaseChaos, v1alpha1.PhaseDiscoverable, v1alpha1.PhasePending:
+		case v1alpha1.PhaseUninitialized, v1alpha1.PhaseChaos, v1alpha1.PhasePending:
 			panic(errors.Errorf("cannot wait on phase %s", expected))
 
 		case v1alpha1.PhaseRunning:
@@ -330,6 +332,16 @@ func (lc *ManagedLifecycle) Expect(expected v1alpha1.Phase) error {
 			return errors.Errorf("invalid phase %s ", phase)
 		}
 	}
+}
+
+// Until is like expect, with the different that it also returns the updated parent.
+func (lc *ManagedLifecycle) Until(expected v1alpha1.Phase, obj client.Object) error {
+	if err := lc.Expect(expected); err != nil {
+		return err
+	}
+
+	err := common.Common.Client.Get(lc.ctx, client.ObjectKeyFromObject(obj), obj)
+	return errors.Wrapf(err, "until operation error")
 }
 
 type eventHandlerFuncs struct {
@@ -431,7 +443,7 @@ func (n *notifier) watchChildrenPhase(obj interface{}) {
 	status := n.accessChildStatus(obj)
 
 	switch status.Phase {
-	case v1alpha1.PhaseUninitialized, v1alpha1.PhaseDiscoverable, v1alpha1.PhasePending, v1alpha1.PhaseChaos:
+	case v1alpha1.PhaseUninitialized, v1alpha1.PhasePending, v1alpha1.PhaseChaos:
 		return
 
 	case v1alpha1.PhaseRunning:

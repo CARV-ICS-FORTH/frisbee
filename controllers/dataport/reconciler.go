@@ -55,9 +55,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	case v1alpha1.PhaseUninitialized:
 		return handler.Create(ctx, &obj)
 
-	case v1alpha1.PhaseDiscoverable:
-		return handler.Discoverable(ctx, &obj)
-
 	case v1alpha1.PhasePending:
 		return handler.Pending(ctx, &obj)
 
@@ -89,9 +86,13 @@ func (r *Reconciler) Finalize(obj client.Object) error {
 }
 
 type protocolHandler interface {
+	// Create starts the object and procures external dependencies (e.g, create a queue)
 	Create(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error)
-	Discoverable(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error)
+
+	// Pending phase accepts connection offers from remote objects.
 	Pending(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error)
+
+	// Running means that the object is occupied and
 	Running(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error)
 }
 
@@ -107,5 +108,3 @@ func (r *Reconciler) dispatch(proto v1alpha1.PortProtocol) protocolHandler {
 		panic("should never happen")
 	}
 }
-
-// Initiate local port and prepare for matching remote ports.

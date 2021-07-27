@@ -73,7 +73,7 @@ make clean
 ```
 
 ### Code Style
-See details of [CODE STYLE](./docs/code_styles.md)
+See details of [CODE STYLE](code_styles.md)
 
 ### Commit Rules
 #### Commit Message

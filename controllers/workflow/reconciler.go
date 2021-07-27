@@ -106,7 +106,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		return common.DoNotRequeue()
 
-	case v1alpha1.PhaseDiscoverable, v1alpha1.PhaseChaos:
+	case v1alpha1.PhaseChaos:
 		// These phases should not happen in the workflow
 		panic(errors.Errorf("invalid lifecycle phase %s", obj.Status.Phase))
 

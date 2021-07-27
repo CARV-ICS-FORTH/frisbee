@@ -41,6 +41,8 @@ spec:
         set -eum
         trap "touch /dev/shm/stop" EXIT
 
+
+        echo "Connect to ${port}"
         iperf3 -s -f m -p ${port}
 
 ---
@@ -87,5 +89,5 @@ spec:
         set -eum
         trap "touch /dev/shm/stop" EXIT
 
-        #sleep 10 # Wait for NIC
+        echo "Connect to ${server}:${port}"
         iperf3 -c ${server} -p ${port} -t 600 -f m > /dev/shm/pipe

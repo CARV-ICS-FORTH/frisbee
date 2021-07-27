@@ -15,19 +15,12 @@ type Phase string
 // PhaseUninitialized -> PhaseRunning* -> PhaseChaos -> Completed
 // The asterix (*) Indicate that the same phase may appear recursively.
 const (
-	// PhaseUninitialized means that the service has been accepted by the system,
+	// PhaseUninitialized means that the service has been accepted by the system.
 	PhaseUninitialized = Phase("")
 
-	// PhaseDiscoverable means that the service has been accepted by the system, but one of the dependent
-	// conditions is not met yet. This includes logical dependencies (e.g, Run, Success) and/or Ports discovery and
-	// rewiring. This phase is generally for "listening" for remote events. (in terms of if anything happens, a
-	// remote object can update us)
-	PhaseDiscoverable = Phase("Discoverable")
-
-	// PhasePending means that the service been accepted by the Kubernetes cluster, but the service is not yet running.
-	// This includes the time waiting for the Pod to become running, and the time that Mesh inputs are available.
-	// In contrast to Discoverable, the pending phase is driven by dependent elements. For example,
-	// a Service in the Pending phase will become Running automatically when the Pod becomes Running.
+	// PhasePending means that the service been accepted by the Kubernetes cluster, but one of the dependent
+	// conditions is not met yet. This includes the time waiting for logical dependencies (e.g, Run, Success),
+	// Ports discovery and rewiring, and placement of Pods.
 	PhasePending = Phase("Pending")
 
 	// PhaseRunning means that the service has been bound to a node and all of the containers have been started.

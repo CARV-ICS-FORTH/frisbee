@@ -8,6 +8,7 @@ import (
 	"github.com/fnikolai/frisbee/controllers/common"
 	"github.com/fnikolai/frisbee/controllers/common/lifecycle"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
@@ -42,38 +43,7 @@ func (p *direct) createInput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.
 }
 
 func (p *direct) createOutput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
-	return lifecycle.Discoverable(ctx, obj, "looking for matching ports")
-}
-
-func (p *direct) Discoverable(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
-	switch v := obj.Spec.Type; v {
-	case v1alpha1.Inport:
-		return p.discoverableInput(ctx, obj)
-	case v1alpha1.Outport:
-		return p.discoverableOutput(ctx, obj)
-	default:
-		return lifecycle.Failed(ctx, obj, errors.Errorf("unknown type %s", v))
-	}
-}
-
-func (p *direct) discoverableInput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
-	// this is not needed because the input is matched to a server, and the server does the discovery.
-	return lifecycle.Failed(ctx, obj, errors.Errorf("invalid phase for direct input port"))
-}
-
-func (p *direct) discoverableOutput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
-	// In this phase we are still getting offers (requests from input ports that discovered this output).
-	// If the offers satisfy certain conditions, accept them and go to Pending phase.
-
-	if obj.Status.ProtocolStatus.Direct == nil {
-		// no offer yet
-		return common.DoNotRequeue()
-	}
-
-	// for direct protocol, just accept anything
-	// TODO: check if the target is pingable
-
-	return lifecycle.Pending(ctx, obj, "waiting for input ports")
+	return lifecycle.Pending(ctx, obj, "looking for matching ports")
 }
 
 func (p *direct) Pending(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
@@ -92,6 +62,18 @@ func (p *direct) pendingInput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl
 }
 
 func (p *direct) pendingOutput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
+	// In this phase we are still getting offers (requests from input ports that discovered this output).
+	// If the offers satisfy certain conditions, accept them and go to Pending phase.
+	if obj.Status.ProtocolStatus.Direct == nil {
+		// no offer yet
+		return common.DoNotRequeue()
+	}
+
+	// for direct protocol, just accept anything
+	// TODO: check if the target is pingable
+
+	logrus.Warn("Connected port ", obj.GetName(), " info ", obj.Status.Direct)
+
 	// do rewire the connections. But this is not needed for direct protocol.
 	return lifecycle.Running(ctx, obj, "connected")
 }
@@ -115,7 +97,7 @@ func (p *direct) runningInput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl
 	go func() (ctrl.Result, error) {
 	retry:
 
-		p.r.Logger.Info("Watching for new sources for ", "labels", obj.Spec.Input.Selector.MatchLabels)
+		p.r.Logger.Info("Watching for matches ", "labels", obj.Spec.Input.Selector.MatchLabels)
 
 		matches := matchPorts(ctx, p.r, obj.Spec.Input.Selector)
 
@@ -128,6 +110,8 @@ func (p *direct) runningInput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl
 
 		case 1:
 			match := matches.Items[0]
+
+			logrus.Warnf("Match found. labels:%v, object:%s", obj.Spec.Input.Selector.MatchLabels, match.GetName())
 
 			switch {
 			case match.Spec.Type == v1alpha1.Inport:
@@ -155,6 +139,9 @@ func (p *direct) runningInput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl
 }
 
 func (p *direct) runningOutput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
+
+	logrus.Warn("Running port ", obj.GetName(), " info ", obj.Status.Direct)
+
 	return common.DoNotRequeue()
 }
 
@@ -168,6 +155,8 @@ func (p *direct) connect(ctx context.Context, ref, match *v1alpha1.DataPort) err
 	if _, err := common.UpdateStatus(ctx, match); err != nil {
 		return err
 	}
+
+	logrus.Warn("Update remote match ", match.GetName(), " info ", match.Status.Direct)
 
 	// FIXME: What should I do here if I want multiple inputs ?
 
