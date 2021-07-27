@@ -31,7 +31,16 @@ func (p *kafka) Create(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result
 }
 
 func (p *kafka) createInput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
-	return lifecycle.Running(ctx, obj, "passthrough")
+
+	obj.Status.Kafka = &v1alpha1.KafkaStatus{
+		Host:  obj.Spec.Kafka.Host,
+		Port:  obj.Spec.Kafka.Port,
+		Queue: obj.Spec.Kafka.Queue,
+	}
+
+	// TODO: ping kafka broker to make sure that is reachable
+
+	return lifecycle.Running(ctx, obj, "kafka is ready")
 }
 
 func (p *kafka) createOutput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
@@ -50,8 +59,6 @@ func (p *kafka) Pending(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Resul
 }
 
 func (p *kafka) pendingInput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
-	// TODO:
-
 	return lifecycle.Failed(ctx, obj, errors.Errorf("invalid phase for kafka input port"))
 }
 
@@ -64,6 +71,9 @@ func (p *kafka) pendingOutput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl
 	}
 
 	// FIXME:  just accept anything ?
+
+	logrus.Warn("Connected port ", obj.GetName(), " info ", obj.Status.Direct)
+
 
 	// do rewire the connections. But this is not needed for direct protocol.
 	return lifecycle.Running(ctx, obj, "connected")

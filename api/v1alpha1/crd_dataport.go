@@ -127,7 +127,13 @@ type DirectStatus struct {
 	RemotePort int `json:"remotePort"`
 }
 
-type KafkaStatus struct{}
+type KafkaStatus struct{
+	Host string `json:"host"`
+
+	Port int `json:"port"`
+
+	Queue string `json:"queue"`
+}
 
 func (s *DataPort) GetLifecycle() Lifecycle {
 	return s.Status.Lifecycle
