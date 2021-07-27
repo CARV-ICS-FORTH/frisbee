@@ -22,16 +22,16 @@ spec:
       servicegroup:
         templateRef: redis/loader
         inputs:
-          - { server: .servicegroup.masters.one, recordcount: "10000", offset: "0" }
-          - { server: .servicegroup.masters.one, recordcount: "10000", offset: "10000" }
-          - { server: .servicegroup.masters.one, recordcount: "10000", offset: "20000" }
-          - { server: .servicegroup.masters.one, recordcount: "10000", offset: "30000" }
-          - { server: .servicegroup.masters.one, recordcount: "10000", offset: "40000" }
-          - { server: .servicegroup.masters.one, recordcount: "10000", offset: "50000" }
-          - { server: .servicegroup.masters.one, recordcount: "10000", offset: "60000" }
-          - { server: .servicegroup.masters.one, recordcount: "10000", offset: "70000" }
-          - { server: .servicegroup.masters.one, recordcount: "10000", offset: "80000" }
-          - { server: .servicegroup.masters.one, recordcount: "10000", offset: "90000" }
+          - { server: .servicegroup.masters.one, recordcount: "100000", offset: "0" }
+          - { server: .servicegroup.masters.one, recordcount: "100000", offset: "100000" }
+          - { server: .servicegroup.masters.one, recordcount: "100000", offset: "200000" }
+          - { server: .servicegroup.masters.one, recordcount: "100000", offset: "300000" }
+          - { server: .servicegroup.masters.one, recordcount: "100000", offset: "400000" }
+          - { server: .servicegroup.masters.one, recordcount: "100000", offset: "500000" }
+          - { server: .servicegroup.masters.one, recordcount: "100000", offset: "600000" }
+          - { server: .servicegroup.masters.one, recordcount: "100000", offset: "700000" }
+          - { server: .servicegroup.masters.one, recordcount: "100000", offset: "800000" }
+          - { server: .servicegroup.masters.one, recordcount: "100000", offset: "900000" }
 
 
     # Wait for ingestion to complete, and start querying clients, with different workloads
@@ -41,11 +41,11 @@ spec:
       servicegroup:
         templateRef: redis/runner
         inputs:
-          - { server: .servicegroup.masters.one, workload: "workloada", operationcount: "100000" }
-          - { server: .servicegroup.masters.one, workload: "workloadb", operationcount: "100000" }
-          - { server: .servicegroup.masters.one, workload: "workloadc", operationcount: "100000" }
-          - { server: .servicegroup.masters.one, workload: "workloadd", operationcount: "100000" }
-          - { server: .servicegroup.masters.one, workload: "workloada", operationcount: "100000" }
+          - { server: .servicegroup.masters.one, workload: "workloada", operationcount: "10000000" }
+          - { server: .servicegroup.masters.one, workload: "workloadb", operationcount: "10000000" }
+          - { server: .servicegroup.masters.one, workload: "workloadc", operationcount: "10000000" }
+          - { server: .servicegroup.masters.one, workload: "workloadd", operationcount: "10000000" }
+          - { server: .servicegroup.masters.one, workload: "workloada", operationcount: "10000000" }
         schedule:
           cron: "@every 2m"
 

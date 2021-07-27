@@ -3,6 +3,7 @@ package lifecycle
 import (
 	"fmt"
 	"reflect"
+	"time"
 
 	"github.com/fnikolai/frisbee/controllers/common"
 	"github.com/grafana-tools/sdk"
@@ -92,9 +93,15 @@ func (a *RangeAnnotation) Delete(obj interface{}) {
 		panic("this should never happen")
 	}
 
+	// in some cases the deletion timestamp is nil. If so, just use the present time.
+	ts := objMeta.GetDeletionTimestamp()
+	if ts == nil {
+		ts = &metav1.Time{Time: time.Now()}
+	}
+
 	ga := sdk.PatchAnnotationRequest{
 		Time:    objMeta.GetCreationTimestamp().Unix() * 1000, // unix ts in ms
-		TimeEnd: objMeta.GetDeletionTimestamp().Unix() * 1000,
+		TimeEnd: ts.Unix() * 1000,
 		Tags:    []string{"failure"},
 		Text:    fmt.Sprintf("Chaos revoked. Kind:%s Name:%s", reflect.TypeOf(obj), objMeta.GetName()),
 	}
