@@ -55,9 +55,9 @@ curl -sSL https://mirrors.chaos-mesh.org/latest/install.sh | bash -s -- --microk
 
 
 
-### Run experiments
 
-## 
+
+### Run experiments
 
 
 
@@ -70,6 +70,8 @@ $ kubectl -n frisbee apply -f  ../paper/elasticity.yml
 # Delete an experiment
 $ kubectl -n frisbee delete -f  ../paper/elasticity.yml
 ```
+
+
 
 
 
@@ -97,8 +99,6 @@ $ kubectl -kubeConfig /home/fnikol/.kube/config.evolve -n frisbee delete -f  ../
 
 
 ### Dashboard
-
-## 
 
 Dashboard is a web-based Kubernetes user interface. You can use Dashboard to deploy containerized applications to a Kubernetes cluster, troubleshoot your containerized application, and manage the cluster resources.
 
@@ -143,6 +143,8 @@ Briefly,
 By default Grafana is configured without any login requirements, so we must leave this field blank
 
 "":"" denotes empty username:password.
+
+
 
 
 
