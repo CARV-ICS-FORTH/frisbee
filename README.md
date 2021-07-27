@@ -1,6 +1,9 @@
-![logo](https://https://www.vectorstock.com/royalty-free-vector/disc-golf-frisbee-eps-vector-25179185)  
+![/docs/images/logo.jpg](https://www.vectorstock.com/royalty-free-vector/disc-golf-frisbee-eps-vector-25179185)  
+
+[[https://github.com/CARV-ICS-FORTH/frisbee/blob/master/docs/images/logo.jpg|alt=octocat]]
 
 
+<img src="/docs/images/logo.jpg">
 
 # Why Frisbee ?
 
@@ -58,13 +61,23 @@ curl -sSL https://mirrors.chaos-mesh.org/latest/install.sh | bash -s -- --microk
 
 
 
+#### Install Templates
+
+Templates are Frisbee objects that hold templates of reusable services.
+
+```bash
+# From Frisbee homefolder
+$ cd examples/templates
+$ find . -name "*.yml" -exec kubectl -n frisbee apply -f {} \;
+```
+
+
+
 ### Run experiments
 
-## 
 
 
-
-#### On local installation
+#### On local setup
 
 ```bash
 # Run an experiment
@@ -99,9 +112,7 @@ $ kubectl -kubeConfig /home/fnikol/.kube/config.evolve -n frisbee delete -f  ../
 
 
 
-### Dashboard
-
-## 
+### Dashboard 
 
 Dashboard is a web-based Kubernetes user interface. You can use Dashboard to deploy containerized applications to a Kubernetes cluster, troubleshoot your containerized application, and manage the cluster resources.
 
@@ -120,8 +131,6 @@ Dashboard will be available at http://127.0.0.1:2333/dashboard/experiments
 # This parameter is configured using the ingress parameter of the workflow. By default, 
 Dashboard will be available at http://grafana.localhost
 ```
-
-
 
 
 
@@ -178,5 +187,4 @@ The original intention of our open source project is to lower the threshold for 
 ## License
 
 Frisbee is licensed under the Apache License, Version 2.0. See [LICENSE](http://www.apache.org/licenses/LICENSE-2.0) for the full license text.
-
 

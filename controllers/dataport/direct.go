@@ -30,14 +30,13 @@ func (p *direct) Create(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Resul
 }
 
 func (p *direct) createInput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
-	localStatus := v1alpha1.DirectStatus{
+
+	obj.Status.Direct = &v1alpha1.DirectStatus{
 		LocalAddr:  obj.Spec.Direct.DstAddr,
 		LocalPort:  obj.Spec.Direct.DstPort,
 		RemoteAddr: "0.0.0.0",
 		RemotePort: 0,
 	}
-
-	obj.Status.Direct = &localStatus
 
 	return lifecycle.Running(ctx, obj, "input is ready")
 }
