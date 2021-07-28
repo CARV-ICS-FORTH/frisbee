@@ -135,17 +135,21 @@ spec:
                   remotePort:
                     description: RemotePort is the DstPort of the remote target
                     type: integer
-                required:
-                - localAddr
-                - localPort
-                - remoteAddr
-                - remotePort
                 type: object
               endTime:
                 description: Most recently observed status of the object
                 format: date-time
                 type: string
               kafka:
+                properties:
+                  host:
+                    type: string
+                  localQueue:
+                    type: string
+                  port:
+                    type: integer
+                  remoteQueue:
+                    type: string
                 type: object
               phase:
                 description: Phase is the current status of an object

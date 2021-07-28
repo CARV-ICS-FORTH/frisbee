@@ -1,9 +1,10 @@
-![/docs/images/logo.jpg](https://www.vectorstock.com/royalty-free-vector/disc-golf-frisbee-eps-vector-25179185)  
-
-[[https://github.com/CARV-ICS-FORTH/frisbee/blob/master/docs/images/logo.jpg|alt=octocat]]
 
 
-<img src="/docs/images/logo.jpg">
+<figure><img src="/docs/images/logo.jpg" width="200"></figure>
+
+
+
+
 
 # Why Frisbee ?
 
@@ -13,21 +14,23 @@ Frisbee is a next generation testbed tool built for exploring, testing, and benc
 
 We make it possible to:
 
-* **Write tests:**  for stressing complex topologies and dynamic operating conditions.
+* **Write tests:**  for exploring complex topologies and dynamic operating conditions.
 
-* **Run tests:**  provides seamless scaling from a single workstation to hundreds of machines.
+* **Run tests:**  with seamless scaling from a single workstation to hundreds of machines.
 
-* **Debug tests:**  through extensive monitoring and comprehensive dashboards
+* **Debug tests:**  through extensive monitoring and comprehensive dashboards.
 
   
 
-In this walk-through, we explain how to install and execute the runtime with given examples. We will discuss later how to use the language to build custom experiments.
+In this walk-through, we explain how to install Kubernetes locally and run Frisbee workflows. 
+
+We will discuss later how to use the language to build custom experiments.
 
 
 
 ## Installation
 
-#### Local Kubernetes Installation
+#### Install Kubernetes
 
 *MicroK8s* is a CNCF certified upstream Kubernetes deployment that runs entirely on your workstation or edge device.
 
@@ -61,7 +64,11 @@ curl -sSL https://mirrors.chaos-mesh.org/latest/install.sh | bash -s -- --microk
 
 
 
-#### Install Templates
+### Run experiments
+
+
+
+#### Step 1. Load Templates
 
 Templates are Frisbee objects that hold templates of reusable services.
 
@@ -73,68 +80,26 @@ $ find . -name "*.yml" -exec kubectl -n frisbee apply -f {} \;
 
 
 
-### Run experiments
-
-
-
-#### On local setup
+#### Step 2. Deploy the experiment 
 
 ```bash
-# Run an experiment
+# Run the experiment
 $ kubectl -n frisbee apply -f  ../paper/elasticity.yml
 
-# Delete an experiment
-$ kubectl -n frisbee delete -f  ../paper/elasticity.yml
+# Dashboard will be available at http://grafana.localhost
 ```
 
 
 
-#### On remote cluster
-
-In order to access your Kubernetes cluster, `frisbee` uses kubeconfig to to find the information it needs to choose a cluster and communicate with it.
-
-`kubeconfig` files organize information about clusters, users, namespaces, and authentication mechanisms.
-
-The configuration is the same as `kubectl` and is located at `~/.kube/config`.
+#### Step 3. Real-time visualization 
 
 
 
-```bash
-# Create tunnel for sending requests to Kubernetes controller
-$ ssh -L 6443:192.168.1.213:6443 thegates
-
-# Run an experiment
-$ kubectl -kubeConfig /home/fnikol/.kube/config.evolve -n frisbee apply -f  ../paper/elasticity.yml 		
-
-# Delete an experiment
-$ kubectl -kubeConfig /home/fnikol/.kube/config.evolve -n frisbee delete -f  ../paper/elasticity.yml
-```
-
-
-
-### Dashboard 
-
-Dashboard is a web-based Kubernetes user interface. You can use Dashboard to deploy containerized applications to a Kubernetes cluster, troubleshoot your containerized application, and manage the cluster resources.
-
-
-
-```bash
-# Run Kubernetes dashboard
-$ microk8s dashboard-proxy
-Dashboard will be available at https://127.0.0.1:10443
-
-# Run Chaos dashboard
-$ kubectl port-forward -n chaos-testing svc/chaos-dashboard 2333:2333
-Dashboard will be available at http://127.0.0.1:2333/dashboard/experiments
-
-# Run Frisbee dashboard (Grafana)
-# This parameter is configured using the ingress parameter of the workflow. By default, 
 Dashboard will be available at http://grafana.localhost
-```
 
 
 
-#### Fetch PDF from Grafana
+##### Fetch PDF from Grafana
 
 To fetch a PDF from Grafana follow the instructions of: https://gist.github.com/svet-b/1ad0656cd3ce0e1a633e16eb20f66425
 
@@ -155,6 +120,18 @@ Briefly,
 By default Grafana is configured without any login requirements, so we must leave this field blank
 
 "":"" denotes empty username:password.
+
+
+
+
+
+#### Step 4. Destroy the experiment 
+
+```bash
+$ kubectl -n frisbee delete -f  ../paper/elasticity.yml
+```
+
+
 
 
 

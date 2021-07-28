@@ -39,6 +39,32 @@ type DataPort struct {
 	Status DataPortStatus `json:"status,omitempty"`
 }
 
+// GetProtocolSpec is a wrapper that returns the Spec structs for the
+// defined protocol.
+func (p *DataPort) GetProtocolSpec() interface{} {
+	switch p.Spec.Protocol {
+	case Direct:
+		return p.Spec.Direct
+	case Kafka:
+		return p.Spec.Kafka
+	default:
+		return nil
+	}
+}
+
+// GetProtocolStatus is a wrapper that returns the Status structs for the
+// defined protocol.
+func (p *DataPort) GetProtocolStatus() interface{} {
+	switch p.Spec.Protocol {
+	case Direct:
+		return p.Status.ProtocolStatus.Direct
+	case Kafka:
+		return p.Status.ProtocolStatus.Kafka
+	default:
+		return nil
+	}
+}
+
 type DataPortSpec struct {
 	// Type indicate the role of the DstPort. It can be Input or Output.
 	// +kubebuilder:validation:Enum=input;output
@@ -115,24 +141,26 @@ type ProtocolStatus struct {
 
 type DirectStatus struct {
 	// LocalAddr is the IP of the associated target
-	LocalAddr string `json:"localAddr"`
+	LocalAddr string `json:"localAddr,omitempty"`
 
 	// LocalPort is the DstPort of the associated target
-	LocalPort int `json:"localPort"`
+	LocalPort int `json:"localPort,omitempty"`
 
 	// RemoteAddr is the IP of the remote target
-	RemoteAddr string `json:"remoteAddr"`
+	RemoteAddr string `json:"remoteAddr,omitempty"`
 
 	// RemotePort is the DstPort of the remote target
-	RemotePort int `json:"remotePort"`
+	RemotePort int `json:"remotePort,omitempty"`
 }
 
-type KafkaStatus struct{
-	Host string `json:"host"`
+type KafkaStatus struct {
+	Host string `json:"host,omitempty"`
 
-	Port int `json:"port"`
+	Port int `json:"port,omitempty"`
 
-	Queue string `json:"queue"`
+	LocalQueue string `json:"localQueue,omitempty"`
+
+	RemoteQueue string `json:"remoteQueue,omitempty"`
 }
 
 func (s *DataPort) GetLifecycle() Lifecycle {

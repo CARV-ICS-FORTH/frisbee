@@ -150,7 +150,7 @@ spec:
       - name: kafkaQueue
         valueFrom:
           fieldRef:
-            fieldPath: metadata.annotations['ports.consumer.kafka.Queue']
+            fieldPath: metadata.annotations['ports.consumer.kafka.LocalQueue']
     command:
       - /bin/sh # Run shell
       - -c # Read from string
@@ -158,14 +158,14 @@ spec:
         set -eum
         trap "touch /dev/shm/stop" EXIT
 
-          sleep 120
+        echo "Queue: ${kafkaHost}:${kafkaPort}/${kafkaQueue}"
 
-          bin/kafka-console-consumer.sh                       \
-          --bootstrap-server $kafkaHost:$kafkaPort            \
-          --topic $kafkaQueue                                 \
-          --from-beginning
+        bin/kafka-console-consumer.sh                       \
+        --bootstrap-server ${kafkaHost}:${kafkaPort}        \
+        --topic ${kafkaQueue}                               \
+        --from-beginning
 
-          sleep 3600
+        sleep 3600
 
 
 ---
@@ -193,7 +193,6 @@ metadata:
   name: kafka-producer
 spec:
   addPorts: [ producer ]
-
   container:
     name: app
     image: solsson/kafka:0.11.0.0
@@ -202,7 +201,6 @@ spec:
         valueFrom:
           fieldRef:
             fieldPath: metadata.annotations['ports.producer.kafka.Host']
-
       - name: kafkaPort
         valueFrom:
           fieldRef:
@@ -219,10 +217,12 @@ spec:
         trap "touch /dev/shm/stop" EXIT
         sleep 120
 
-        seq 1 100 |                             \
-        bin/kafka-console-producer.sh           \
-        --broker-list  $kafkaHost:$kafkaPort    \
-        --topic $kafkaQueue
+        echo "Queue: ${kafkaHost}:${kafkaPort}/${kafkaQueue}"
+
+        seq 1 100 |                                 \
+        bin/kafka-console-producer.sh               \
+        --broker-list  ${kafkaHost}:${kafkaPort}    \
+        --topic ${kafkaQueue}
 
         sleep 3600
 ---
@@ -239,8 +239,8 @@ metadata:
   name: testclient
 spec:
   containers:
-    - name: kafka
-      image: solsson/kafka:0.11.0.0
+    - name: kafkacat
+      image: confluentinc/cp-kafkacat
       command:
         - sh
         - -c

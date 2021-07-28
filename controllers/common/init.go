@@ -15,7 +15,11 @@ var Common struct {
 	client.Client
 	logr.Logger
 
+	// Annotator pushes annotation for evenete
 	Annotator
+
+	// Execute run commands within containers
+	Executor
 }
 
 func InitCommon(mgr ctrl.Manager, logger logr.Logger) {
@@ -23,6 +27,7 @@ func InitCommon(mgr ctrl.Manager, logger logr.Logger) {
 	Common.Client = mgr.GetClient()
 	Common.Logger = logger.WithName("Common")
 	Common.Annotator = &DefaultAnnotator{}
+	Common.Executor = NewExecutor(mgr.GetConfig())
 }
 
 var DefaultBackoff = wait.Backoff{
