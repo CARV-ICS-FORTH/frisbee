@@ -30,7 +30,6 @@ func (p *direct) Create(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Resul
 }
 
 func (p *direct) createInput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
-
 	obj.Status.Direct = &v1alpha1.DirectStatus{
 		LocalAddr:  obj.Spec.Direct.DstAddr,
 		LocalPort:  obj.Spec.Direct.DstPort,
@@ -71,7 +70,7 @@ func (p *direct) pendingOutput(ctx context.Context, obj *v1alpha1.DataPort) (ctr
 	// for direct protocol, just accept anything
 	// TODO: check if the target is pingable
 
-	logrus.Warn("Connected port ", obj.GetName(), " info ", obj.Status.Direct)
+	logrus.Warn("Connected port ", obj.GetName(), " info ", obj.GetProtocolStatus())
 
 	// do rewire the connections. But this is not needed for direct protocol.
 	return lifecycle.Running(ctx, obj, "connected")
@@ -138,7 +137,6 @@ func (p *direct) runningInput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl
 }
 
 func (p *direct) runningOutput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
-
 	logrus.Warn("Running port ", obj.GetName(), " info ", obj.Status.Direct)
 
 	return common.DoNotRequeue()
@@ -155,7 +153,7 @@ func (p *direct) connect(ctx context.Context, ref, match *v1alpha1.DataPort) err
 		return err
 	}
 
-	logrus.Warn("Update remote match ", match.GetName(), " info ", match.Status.Direct)
+	logrus.Warn("Update remote match ", match.GetName(), " info ", match.GetProtocolStatus())
 
 	// FIXME: What should I do here if I want multiple inputs ?
 

@@ -22,13 +22,12 @@ func (r *Reconciler) direct(ctx context.Context, obj *v1alpha1.Service, port *v1
 		lifecycle.Watch(port, port.GetName()),
 		lifecycle.WithLogger(r.Logger),
 	).Until(v1alpha1.PhaseRunning, port)
-
 	if err != nil {
 		return lifecycle.Failed(ctx, obj, errors.Wrapf(err, "waiting for port %s failed", port.GetName()))
 	}
 
 	// convert status of the remote port to local annotations that will be used by the ENV.
-	annotations := portStatusToAnnotations(port.GetName(), port.Spec.Protocol, port.Status.Direct)
+	annotations := portStatusToAnnotations(port.GetName(), port.Spec.Protocol, port.GetProtocolStatus())
 	if len(annotations) == 0 {
 		panic("empty annotations")
 	}

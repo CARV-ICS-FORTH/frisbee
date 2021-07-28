@@ -3,6 +3,7 @@ package common
 import (
 	"context"
 	"fmt"
+	"io"
 	"reflect"
 	"sync/atomic"
 
@@ -129,5 +130,48 @@ func SetOwner(parent, child metav1.Object, name string) error {
 		"owner": parent.GetName(),
 	}))
 
+	return nil
+}
+
+// ExecCMDInContainer execute command in first container of a pod
+func ExecCMDInContainer(r Reconciler, podName string, cmd []string, stdout, stderr io.Writer, stdin io.Reader, tty bool) error {
+	/*
+		req := c.KubeClient.CoreV1().RESTClient().
+			Post().
+			Namespace(c.Namespace).
+			Resource("pods").
+			Name(podName).
+			SubResource("exec").
+			VersionedParams(&corev1.PodExecOptions{
+				Command: cmd,
+				Stdin:   stdin != nil,
+				Stdout:  stdout != nil,
+				Stderr:  stderr != nil,
+				TTY:     tty,
+			}, scheme.ParameterCodec)
+
+		config, err := c.KubeConfig.ClientConfig()
+		if err != nil {
+			return errors.Wrapf(err, "unable to get Kubernetes client config")
+		}
+
+		// Connect to url (constructed from req) using SPDY (HTTP/2) protocol which allows bidirectional streams.
+		exec, err := remotecommand.NewSPDYExecutor(config, "POST", req.URL())
+		if err != nil {
+			return errors.Wrapf(err, "unable execute command via SPDY")
+		}
+		// initialize the transport of the standard shell streams
+		err = exec.Stream(remotecommand.StreamOptions{
+			Stdin:  stdin,
+			Stdout: stdout,
+			Stderr: stderr,
+			Tty:    tty,
+		})
+		if err != nil {
+			return errors.Wrapf(err, "error while streaming command")
+		}
+
+
+	*/
 	return nil
 }

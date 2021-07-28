@@ -2,6 +2,8 @@ package dataport
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
@@ -9,10 +11,50 @@ import (
 	"github.com/fnikolai/frisbee/controllers/common/lifecycle"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-var kafkaImage = "solsson/kafka:0.11.0.0"
+/*
+kafkacat -C -b kafka-service:9092 -o beginning  -t incoming | kafkacat -P -b kafka-service:9092 -o beginning -t my-topic
+
+kafkacat -C -b $BOOTSTRAP_SERVERS -o beginning -e -t $SOURCE_TOPIC  | kafkacat -P -b $BOOTSTRAP_SERVERS  -t $TARGET_TOPIC
+
+
+kafkacat -b localhost:9092 -C -t source-topic -K: -e -o beginning  | \
+kafkacat -b localhost:9092 -P -t target-topic -K:
+
+    | redirects the output of the first kafkacat (which is a -C consumer) into the input of the second kafkacat (which is a -P producer)
+    -c10 means just consume 10 messages
+    -o beginning means start at the beginning of the topic.
+
+*/
+
+type kafkaRewireRequest struct {
+	pod         types.NamespacedName
+	containerID string
+	cmd         []string
+}
+
+func newRewireRequest(nm string, status *v1alpha1.KafkaStatus) kafkaRewireRequest {
+
+	cmdString := fmt.Sprintf(
+		`/bin/sh -c 'for i in {1..5}; do kafkacat -b %s:%d -C -t %s -o beginning  | kafkacat -b %s:%d -P -t %s && break || sleep 15; done`,
+		status.Host, status.Port, status.LocalQueue,
+		status.Host, status.Port, status.RemoteQueue, // assume the same Kafka server. Could be a different one
+	)
+
+	logrus.Warn("Rewire CMD ", cmdString)
+
+	return kafkaRewireRequest{
+		pod: types.NamespacedName{
+			Namespace: nm,
+			Name:      "testclient",
+		},
+		containerID: "",
+		cmd:         strings.Fields(cmdString),
+	}
+}
 
 type kafka struct {
 	r *Reconciler
@@ -31,11 +73,11 @@ func (p *kafka) Create(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result
 }
 
 func (p *kafka) createInput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
-
 	obj.Status.Kafka = &v1alpha1.KafkaStatus{
-		Host:  obj.Spec.Kafka.Host,
-		Port:  obj.Spec.Kafka.Port,
-		Queue: obj.Spec.Kafka.Queue,
+		Host:        obj.Spec.Kafka.Host,
+		Port:        obj.Spec.Kafka.Port,
+		LocalQueue:  obj.Spec.Kafka.Queue,
+		RemoteQueue: "",
 	}
 
 	// TODO: ping kafka broker to make sure that is reachable
@@ -72,8 +114,7 @@ func (p *kafka) pendingOutput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl
 
 	// FIXME:  just accept anything ?
 
-	logrus.Warn("Connected port ", obj.GetName(), " info ", obj.Status.Direct)
-
+	logrus.Warn("Connected port ", obj.GetName(), " info ", obj.GetProtocolStatus())
 
 	// do rewire the connections. But this is not needed for direct protocol.
 	return lifecycle.Running(ctx, obj, "connected")
@@ -111,6 +152,8 @@ func (p *kafka) runningInput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.
 		case 1:
 			match := matches.Items[0]
 
+			logrus.Warnf("Match found. labels:%v, object:%s", obj.Spec.Input.Selector.MatchLabels, match.GetName())
+
 			switch {
 			case match.Spec.Type == v1alpha1.Inport:
 				return lifecycle.Failed(ctx, obj,
@@ -137,27 +180,44 @@ func (p *kafka) runningInput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.
 }
 
 func (p *kafka) runningOutput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
+	params := obj.GetProtocolStatus().(*v1alpha1.KafkaStatus)
+
+	logrus.Warn(" REWIRE ",
+		" src: ", params.LocalQueue,
+		" dst: ", params.RemoteQueue,
+	)
+
+	req := newRewireRequest(obj.GetNamespace(), params)
+
+	ret, err := common.Common.Executor.Exec(req.pod, req.containerID, req.cmd)
+	if err != nil {
+		return lifecycle.Failed(ctx, obj, errors.Wrapf(err, "rewiring error. from: %s to %s", params.LocalQueue, params.RemoteQueue))
+	}
+
+	logrus.Warn("OUT ", ret.Stdout.String())
+	logrus.Warn("ERR ", ret.Stderr.String())
+
 	return common.DoNotRequeue()
 }
 
 func (p *kafka) connect(ctx context.Context, ref, match *v1alpha1.DataPort) error {
-	// create a new container to run the rewiring command
-	// var pod corev1.Pod
-	/*
-		pod.Spec.Containers = []corev1.Container{
-			{
-				Name: fmt.Sprintf("rewire-%s-%s", ref.GetName(), match.GetName()),
-				Image: kafkaImage,
-				Command:
-			},
-		}
+	// confirm that both ref and match are talking to the same kafka servers
+	refKafka := ref.Spec.ProtocolSpec.Kafka
+	matchKafka := match.Spec.ProtocolSpec.Kafka
 
-	*/
+	if refKafka.Host != matchKafka.Host ||
+		refKafka.Port != matchKafka.Port {
+		return errors.Errorf("kafka mismatch")
+	}
 
-	logrus.Warn(" REWIRE ",
-		" src: ", ref.Spec.ProtocolSpec.Kafka.Queue,
-		" dst: ", match.Spec.ProtocolSpec.Kafka.Queue,
-	)
+	// update remote port (client) with local info (server)
+	match.Status.Kafka = &v1alpha1.KafkaStatus{
+		Host:        refKafka.Host,
+		Port:        refKafka.Port,
+		LocalQueue:  matchKafka.Queue,
+		RemoteQueue: refKafka.Queue,
+	}
 
-	return nil
+	_, err := common.UpdateStatus(ctx, match)
+	return errors.Wrapf(err, "port connection error")
 }
