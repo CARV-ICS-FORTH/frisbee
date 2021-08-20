@@ -37,7 +37,7 @@ spec:
     # Wait for ingestion to complete, and start querying clients, with different workloads
     - actiontype: ServiceGroup
       name: "runners"
-      depends: { running: [ masters ], success: [loaders] }
+      depends: { running: [ masters ], success: [ loaders ] }
       servicegroup:
         templateRef: redis/runner
         inputs:
@@ -55,7 +55,7 @@ spec:
       name: "teardown"
       depends: { success: [ runners ], duration: "1m" }
       stop:
-        selector: {macro: .servicegroup.masters.all}
+        selector: { macro: .servicegroup.masters.all }
         schedule:
           cron: "@every 2m"
 

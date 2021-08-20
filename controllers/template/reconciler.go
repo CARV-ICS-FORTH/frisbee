@@ -59,7 +59,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		"monitor", monitorNames,
 	)
 
-	return common.DoNotRequeue()
+	obj.Status.IsRegistered = true
+	return common.UpdateStatus(ctx, &obj)
 }
 
 func (r *Reconciler) Finalizer() string {

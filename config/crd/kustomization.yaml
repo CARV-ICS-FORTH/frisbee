@@ -4,8 +4,8 @@
 resources:
   - bases/frisbee.io_dataports.yaml
   - bases/frisbee.io_chaos.yaml
-  - bases/frisbee.io_servicegroups.yaml
-  - bases/frisbee.io_services.yaml
+  - bases/frisbee.io_distributedgroups.yaml
+  - bases/frisbee.io_collocatedgroups.yaml
   - bases/frisbee.io_templates.yaml
   - bases/frisbee.io_workflows.yaml
 #+kubebuilder:scaffold:crdkustomizeresource

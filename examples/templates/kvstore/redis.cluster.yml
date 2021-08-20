@@ -83,6 +83,7 @@ spec:
           env:
             - name: servers
             - name: workload
+            - name: port
           command:
             - /bin/sh   # Run shell
             - -c        # Read from string

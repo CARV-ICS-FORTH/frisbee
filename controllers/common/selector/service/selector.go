@@ -12,8 +12,7 @@ import (
 	"github.com/fnikolai/frisbee/controllers/common"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -33,7 +32,7 @@ func parseMacro(ss *v1alpha1.ServiceSelector) {
 	filter := fields[3]
 
 	switch kind {
-	case "servicegroup":
+	case "group":
 		ss.Match.ServiceGroup = object
 		ss.Mode = v1alpha1.Mode(filter)
 
@@ -42,11 +41,11 @@ func parseMacro(ss *v1alpha1.ServiceSelector) {
 	}
 }
 
-func Select(ctx context.Context, ss *v1alpha1.ServiceSelector) common.ServiceList {
+func Select(ctx context.Context, ss *v1alpha1.ServiceSelector) v1alpha1.ServiceSpecList {
 	if ss == nil {
 		logrus.Warn("empty service selector")
 
-		return []v1alpha1.Service{}
+		return []*v1alpha1.ServiceSpec{}
 	}
 
 	if ss.Macro != nil {
@@ -58,11 +57,11 @@ func Select(ctx context.Context, ss *v1alpha1.ServiceSelector) common.ServiceLis
 	if err != nil {
 		logrus.Warn(err)
 
-		return []v1alpha1.Service{}
+		return []*v1alpha1.ServiceSpec{}
 	}
 
 	if len(services) == 0 {
-		return []v1alpha1.Service{}
+		return []*v1alpha1.ServiceSpec{}
 	}
 
 	// filter services based on the pods
@@ -70,26 +69,25 @@ func Select(ctx context.Context, ss *v1alpha1.ServiceSelector) common.ServiceLis
 	if err != nil {
 		logrus.Warn(err)
 
-		return []v1alpha1.Service{}
+		return []*v1alpha1.ServiceSpec{}
 	}
 
 	return filteredServices
 }
 
-func selectServices(ctx context.Context, ss *v1alpha1.MatchServiceSpec) ([]v1alpha1.Service, error) {
+func selectServices(ctx context.Context, ss *v1alpha1.MatchServiceSpec) (v1alpha1.ServiceSpecList, error) {
 	if ss == nil {
 		return nil, nil
 	}
 
-	var services []v1alpha1.Service
+	var serviceList v1alpha1.ServiceSpecList
 
-	var listOptions client.ListOptions
-
+	/*  == Deprecated ==
 	// case 1. services are specifically specified
 	if len(ss.ServiceNames) > 0 {
 		for ns, names := range ss.ServiceNames {
 			for _, name := range names {
-				var service v1alpha1.Service
+				var service v1alpha1.ServiceSpec
 
 				key := client.ObjectKey{
 					Namespace: ns,
@@ -105,52 +103,91 @@ func selectServices(ctx context.Context, ss *v1alpha1.MatchServiceSpec) ([]v1alp
 		}
 	}
 
+	*/
+
 	// case 2. servicegroups are specifically specified. Owner labels ia automatically attached to all
 	// components by SetOwnerRef(). Thus, we are looking for services that are owned by the desired servicegroup.
 	if len(ss.ServiceGroup) > 0 {
-		ss.Labels = labels.Merge(ss.Labels, map[string]string{
-			"owner": ss.ServiceGroup,
-		})
-	}
+		var groupedServiceList v1alpha1.ServiceSpecList
 
-	// case 3. labels
-	if len(ss.Labels) > 0 {
-		ls, err := metav1.LabelSelectorAsSelector(metav1.SetAsLabelSelector(ss.Labels))
-		if err != nil {
-			return nil, err
+		// TODO: fix the manual namespace
+		key := types.NamespacedName{Namespace: "frisbee", Name: ss.ServiceGroup}
+
+		// a servicegroup can be either a distributedgroup or a collocated group. thus, we need to search both of them
+		{
+			var group v1alpha1.DistributedGroup
+
+			if err := common.Common.Client.Get(ctx, key, &group); client.IgnoreNotFound(err) != nil {
+				return nil, errors.Wrapf(err, "unable to find group %s", key)
+			}
+
+			groupedServiceList = append(groupedServiceList, group.Status.ExpectedServices...)
 		}
 
-		listOptions = client.ListOptions{LabelSelector: ls}
+		{
+			var group v1alpha1.CollocatedGroup
+
+			if err := common.Common.Client.Get(ctx, key, &group); client.IgnoreNotFound(err) != nil {
+				return nil, errors.Wrapf(err, "unable to find group %s", key)
+			}
+
+			groupedServiceList = append(groupedServiceList, group.Status.ExpectedServices...)
+		}
+
+		if len(groupedServiceList) == 0 {
+			common.Common.Logger.Error(errors.New("potential error detected"), "empty group", "name", key)
+		}
+
+		serviceList = append(serviceList, groupedServiceList...)
+		/*
+			ss.Labels = labels.Merge(ss.Labels, map[string]string{
+				"owner": ss.ServiceGroup,
+			})
+		*/
 	}
+	/*
+		// case 3. labels
+		var listOptions client.ListOptions
 
-	var serviceList v1alpha1.ServiceList
-
-	// case 4. ByNamespace
-	if len(ss.Namespaces) > 0 { // search specified namespaces
-		for _, namespace := range ss.Namespaces {
-			listOptions.Namespace = namespace
-
-			if err := common.Common.Client.List(ctx, &serviceList, &listOptions); err != nil {
+		if len(ss.Labels) > 0 {
+			ls, err := metav1.LabelSelectorAsSelector(metav1.SetAsLabelSelector(ss.Labels))
+			if err != nil {
 				return nil, err
 			}
 
-			services = append(services, serviceList.Items...)
-		}
-	} else { // search all namespaces
-		if err := common.Common.Client.List(ctx, &serviceList, &listOptions); err != nil {
-			return nil, errors.Wrapf(err, "namespace error")
+			listOptions = client.ListOptions{LabelSelector: ls}
 		}
 
-		services = append(services, serviceList.Items...)
-	}
+		var podList corev1.PodList
+
+			// case 4. ByNamespace
+			if len(ss.Namespaces) > 0 { // search specified namespaces
+				for _, namespace := range ss.Namespaces {
+					listOptions.Namespace = namespace
+
+					if err := common.Common.Client.List(ctx, &serviceList, &listOptions); err != nil {
+						return nil, err
+					}
+
+					services = append(services, serviceList.Items...)
+				}
+			} else { // search all namespaces
+				if err := common.Common.Client.List(ctx, &serviceList, &listOptions); err != nil {
+					return nil, errors.Wrapf(err, "namespace error")
+				}
+
+				services = append(services, serviceList.Items...)
+			}
+
+	*/
 
 	// select services For more options see
 	// https://github.com/chaos-mesh/chaos-mesh/blob/31aef289b81a1d713b5a9976a257090da81ac29e/pkg/selector/pod/selector.go
 
-	return services, nil
+	return serviceList, nil
 }
 
-func filterServicesByMode(services []v1alpha1.Service, mode v1alpha1.Mode, value string) ([]v1alpha1.Service, error) {
+func filterServicesByMode(services []*v1alpha1.ServiceSpec, mode v1alpha1.Mode, value string) (v1alpha1.ServiceSpecList, error) {
 	if len(services) == 0 {
 		return nil, errors.New("cannot generate services from empty list")
 	}
@@ -160,7 +197,7 @@ func filterServicesByMode(services []v1alpha1.Service, mode v1alpha1.Mode, value
 		index := getRandomNumber(len(services))
 		service := services[index]
 
-		return []v1alpha1.Service{service}, nil
+		return []*v1alpha1.ServiceSpec{service}, nil
 	case v1alpha1.AllMode:
 		return services, nil
 
@@ -182,7 +219,7 @@ func filterServicesByMode(services []v1alpha1.Service, mode v1alpha1.Mode, value
 	case v1alpha1.FixedPercentMode:
 		percentage, err := strconv.Atoi(value)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "conversion error")
 		}
 
 		if percentage == 0 {
@@ -222,16 +259,16 @@ func filterServicesByMode(services []v1alpha1.Service, mode v1alpha1.Mode, value
 
 func getRandomNumber(max int) uint64 {
 	num, _ := rand.Int(rand.Reader, big.NewInt(int64(max)))
+
 	return num.Uint64()
 }
 
-func getFixedSubListFromServiceList(services []v1alpha1.Service, num int) []v1alpha1.Service {
+func getFixedSubListFromServiceList(services v1alpha1.ServiceSpecList, num int) v1alpha1.ServiceSpecList {
 	indexes := RandomFixedIndexes(0, uint(len(services)), uint(num))
 
-	filteredServices := make([]v1alpha1.Service, len(indexes))
+	filteredServices := make([]*v1alpha1.ServiceSpec, 0, len(indexes))
 
 	for _, index := range indexes {
-		index := index
 		filteredServices = append(filteredServices, services[index])
 	}
 

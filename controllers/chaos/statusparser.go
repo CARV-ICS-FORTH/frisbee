@@ -1,6 +1,8 @@
 package chaos
 
 import (
+	"reflect"
+
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/mitchellh/mapstructure"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -20,29 +22,41 @@ type ChaosStatus struct {
 	} `json:"experiment"`
 }
 
-func convertStatus(obj interface{}) v1alpha1.Lifecycle {
-	var status v1alpha1.Lifecycle
+func convertStatus(obj interface{}) []*v1alpha1.Lifecycle {
 
 	chaos, ok := obj.(*unstructured.Unstructured)
 	if !ok {
-		status.Phase = v1alpha1.PhaseFailed
-		status.Reason = "unexpected type"
-
-		return status
+		return []*v1alpha1.Lifecycle{&v1alpha1.Lifecycle{
+			Kind:      reflect.TypeOf(obj).String(),
+			Name:      "unknown",
+			Phase:     v1alpha1.PhaseFailed,
+			Reason:    "unexpected type",
+			StartTime: nil,
+			EndTime:   nil,
+		}}
 	}
 
 	chaosStatus, ok := chaos.Object["status"]
 	if !ok {
-		status.Phase = v1alpha1.PhaseFailed
-		status.Reason = "chaos injection error. unable to retrieve status"
-
-		return status
+		return []*v1alpha1.Lifecycle{&v1alpha1.Lifecycle{
+			Kind:      "chaos",
+			Name:      chaos.GetName(),
+			Phase:     v1alpha1.PhaseFailed,
+			Reason:    "chaos injection error. unable to retrieve status",
+			StartTime: nil,
+			EndTime:   nil,
+		}}
 	}
 
 	var parsedChaosStatus ChaosStatus
 
 	if err := mapstructure.Decode(chaosStatus, &parsedChaosStatus); err != nil {
 		panic(err)
+	}
+
+	status := v1alpha1.Lifecycle{
+		Kind: "chaos",
+		Name: chaos.GetName(),
 	}
 
 	switch {
@@ -72,5 +86,5 @@ func convertStatus(obj interface{}) v1alpha1.Lifecycle {
 		*/
 	}
 
-	return status
+	return []*v1alpha1.Lifecycle{&status}
 }

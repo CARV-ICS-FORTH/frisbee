@@ -1,31 +1,30 @@
 package v1alpha1
 
 import (
+	"strings"
+
 	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func init() {
-	SchemeBuilder.Register(&Service{}, &ServiceList{})
+type NamespacedName struct {
+	Namespace string `json:"namespace"`
+	Name      string `json:"name"`
 }
 
-// +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
+const (
+	Separator = '/'
+)
 
-type Service struct {
-	metav1.TypeMeta `json:",inline"`
-
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	// Spec defines the behavior of the object
-	Spec ServiceSpec `json:"spec"`
-
-	// Most recently observed status of the object
-	// +optional
-	Status ServiceStatus `json:"status,omitempty"`
+// String returns the general purpose string representation
+func (n NamespacedName) String() string {
+	return n.Namespace + string(Separator) + n.Name
 }
 
 type ServiceSpec struct {
+	// NamespacedName is the name of the desired service. If unspecified, it is automatically set by the respective controller
+	// +optional
+	NamespacedName `json:"namespacedName"`
+
 	// PortRef is a list of names of Ports that participate in the Mesh (autodiscovery + rewiring)
 	// +optional
 	PortRefs []string `json:"addPorts"`
@@ -80,6 +79,7 @@ type Resources struct {
 	Disk   Disk   `json:"disk,omitempty"`
 }
 
+/*
 type ServiceStatus struct {
 	Lifecycle `json:",inline"`
 
@@ -97,8 +97,58 @@ func (s *Service) SetLifecycle(lifecycle Lifecycle) {
 }
 
 // +kubebuilder:object:root=true
-type ServiceList struct {
+type ServiceSpecList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Service `json:"items"`
+}
+
+*/
+
+const (
+	idListSeparator = " "
+)
+
+type ServiceSpecList []*ServiceSpec
+
+func (list ServiceSpecList) String() string {
+	return strings.Join(list.GetNames(), idListSeparator)
+}
+
+func (list ServiceSpecList) GetNames() []string {
+	names := make([]string, len(list))
+
+	for i, service := range list {
+		names[i] = service.NamespacedName.Name
+	}
+
+	return names
+}
+
+func (list ServiceSpecList) GetNamespaces() []string {
+	namespace := make([]string, len(list))
+
+	for i, service := range list {
+		namespace[i] = service.NamespacedName.Namespace
+	}
+
+	return namespace
+}
+
+// ByNamespace return the services by the namespace they belong to.
+func (list ServiceSpecList) ByNamespace() map[string][]string {
+	all := make(map[string][]string)
+
+	for _, s := range list {
+		// get namespace
+		sublist := all[s.NamespacedName.Namespace]
+
+		// append service to the namespace
+		sublist = append(sublist, s.NamespacedName.Name)
+
+		// update namespace
+		all[s.NamespacedName.Namespace] = sublist
+	}
+
+	return all
 }

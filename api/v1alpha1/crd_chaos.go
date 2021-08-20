@@ -53,8 +53,8 @@ type ChaosStatus struct {
 	Lifecycle `json:",inline"`
 }
 
-func (s *Chaos) GetLifecycle() Lifecycle {
-	return s.Status.Lifecycle
+func (s *Chaos) GetLifecycle() []*Lifecycle {
+	return []*Lifecycle{&s.Status.Lifecycle}
 }
 
 func (s *Chaos) SetLifecycle(lifecycle Lifecycle) {
