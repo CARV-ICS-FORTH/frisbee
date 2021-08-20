@@ -1,10 +1,13 @@
 # Code Style
 
-Code style is a set of rules or guidelines when writing source codes of a software project. Following particular code style will definitely help contributors to read and understand source codes very well. In addition, it will help to avoid introducing errors as well.
+Code style is a set of rules or guidelines when writing source codes of a software project. Following particular code
+style will definitely help contributors to read and understand source codes very well. In addition, it will help to
+avoid introducing errors as well.
 
 ## Code Style Tools
 
-Project chaosblade is written in Golang. And currently we use three tools to help conform code styles in this project. These three tools are:
+Project chaosblade is written in Golang. And currently we use three tools to help conform code styles in this project.
+These three tools are:
 
 * [gofmt](https://golang.org/cmd/gofmt)
 * [go vet](https://golang.org/cmd/vet/)
@@ -13,15 +16,19 @@ And all these tools are used in [Makefile](../Makefile).
 
 ## Code Review Comments
 
-When collaborating in chaosblade project, we follow the style from [Go Code Review Comments](https://github.com/golang/go/wiki/CodeReviewComments). Before contributing, we treat this as a must-read.
+When collaborating in chaosblade project, we follow the style
+from [Go Code Review Comments](https://github.com/golang/go/wiki/CodeReviewComments). Before contributing, we treat this
+as a must-read.
 
 ## Additional Style Rules
 
-For a project, existing tools and rules may not be sufficient. To align more in styles, we recommend contributors taking a thorough look at the following additional style rules:
+For a project, existing tools and rules may not be sufficient. To align more in styles, we recommend contributors taking
+a thorough look at the following additional style rules:
 
 ### RULE001 - Add blank line between field's comments
 
-When constructing a struct, if comments needed for fields in struct, keep a blank line between fields. The encouraged way is as following:
+When constructing a struct, if comments needed for fields in struct, keep a blank line between fields. The encouraged
+way is as following:
 
 ``` golang
 // correct example
@@ -63,7 +70,8 @@ type ContainerManager struct {
 
 ### RULE002 - Add parameter name in interface definition
 
-When defining interface functions, we should always explicitly add formal parameters, and this helps a lot to code readability. For example, the following way are preferred:
+When defining interface functions, we should always explicitly add formal parameters, and this helps a lot to code
+readability. For example, the following way are preferred:
 
 ``` golang
 // correct example
@@ -78,7 +86,8 @@ type ContainerMgr interface {
 }
 ```
 
-However, missing formal parameter's name would make interface unreadable, since we would never know what the parameter's real meaning unless turning to one implementation of this interface:
+However, missing formal parameter's name would make interface unreadable, since we would never know what the parameter's
+real meaning unless turning to one implementation of this interface:
 
 ``` golang
 // wrong example
@@ -125,7 +134,8 @@ Variable object should be declared at the beginning of the go file following pac
 
 ### RULE005 - Generation of action failure
 
-When generating error in one function execution failure, we should generally use the following way to append string "failed to do something" and the specific err instance to construct a new error:
+When generating error in one function execution failure, we should generally use the following way to append string "
+failed to do something" and the specific err instance to construct a new error:
 
 ``` golang
 fmt.Errorf("failed to do something: %v", err)
@@ -135,7 +145,8 @@ When an err could be thrown out, please remember to add it in the error construc
 
 ### RULE006 - Return fast to indent less
 
-chaosblade encourages contributors to take advantages of `return fast` to simply source code and indent less. For example, the following codes are discouraged:
+chaosblade encourages contributors to take advantages of `return fast` to simply source code and indent less. For
+example, the following codes are discouraged:
 
 ``` golang
 // wrong example
@@ -171,7 +182,9 @@ return retryLoad()
 
 ### RULE007 - Lowercase log and error
 
-No matter log or error, first letter of the message must be lower-case. So, `logrus.Debugf("failed to add list: %v", err)` is encouraged. And `logrus.Debugf("Failed to add list: %v", err)` is not perferred.
+No matter log or error, first letter of the message must be lower-case.
+So, `logrus.Debugf("failed to add list: %v", err)` is encouraged. And `logrus.Debugf("Failed to add list: %v", err)` is
+not perferred.
 
 ### RULE008 - Nested errors
 
@@ -179,7 +192,9 @@ When occurring nesting errors, we recommend first considering using package `git
 
 ### RULE009 - Comment correctly
 
-Every comment must begin with `//` plus a whitespace no matter for a variable, struct, function, code block and anything else. Please don't forget the whitespace, and end up all the sentence with a `.`. In addition, it is encouraged to use third person singular to polish the majority of function's comments. For example, the following way
+Every comment must begin with `//` plus a whitespace no matter for a variable, struct, function, code block and anything
+else. Please don't forget the whitespace, and end up all the sentence with a `.`. In addition, it is encouraged to use
+third person singular to polish the majority of function's comments. For example, the following way
 
 ```golang
 // wrong example
@@ -205,8 +220,9 @@ We should take `DRY(Don't Repeat Yourself)` into consideration when adding anyth
 
 ### RULE011 - Welcome to your addition
 
-If you think much more practical code styles should be introduced in chaosblade. Please submit a pull request to make this better.
-
+If you think much more practical code styles should be introduced in chaosblade. Please submit a pull request to make
+this better.
 
 ## Reference
+
 [Pouch Code Style](https://github.com/alibaba/pouch/blob/master/docs/contributions/code_styles.md)

@@ -10,6 +10,7 @@ import (
 	"github.com/fnikolai/frisbee/controllers/common/selector/service"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	corev1 "k8s.io/api/core/v1"
 	k8errors "k8s.io/apimachinery/pkg/api/errors"
 )
 
@@ -35,11 +36,14 @@ func (r *Reconciler) scheduleActions(topCtx context.Context, obj *v1alpha1.Workf
 		r.Logger.Info("Exec Action", "type", action.ActionType, "name", action.Name, "depends", action.Depends)
 
 		switch action.ActionType {
-		case "Wait": // Expect command will block the entire controller
-			err = r.wait(ctx, w, *action.Wait)
+		case "Wait": // expect command will block the entire controller
+			err = r.wait(ctx, w, action, *action.Wait)
 
-		case "ServiceGroup":
-			err = r.createServiceGroup(ctx, w, action)
+		case "DistributedGroup":
+			err = r.distributedGroup(ctx, w, action)
+
+		case "CollocatedGroup":
+			err = r.collocatedGroup(ctx, w, action)
 
 		case "Stop":
 			err = r.stop(ctx, w, action)
@@ -61,9 +65,9 @@ func (r *Reconciler) scheduleActions(topCtx context.Context, obj *v1alpha1.Workf
 	_, _ = lifecycle.Success(ctx, w.Workflow, "all actions are complete")
 }
 
-func (r *Reconciler) wait(ctx context.Context, w Workflow, spec v1alpha1.WaitSpec) error {
+func (r *Reconciler) wait(ctx context.Context, w Workflow, action v1alpha1.Action, spec v1alpha1.WaitSpec) error {
 	if len(spec.Success) > 0 {
-		logrus.Warn("-> Wait success for ", spec.Success)
+		logrus.Warnf("-> Action %s waiting for success of %v", action.Name, spec.Success)
 
 		// confirm that the referenced action have already happened. otherwise, it is possible to block forever.
 		for _, waitFor := range spec.Success {
@@ -76,20 +80,21 @@ func (r *Reconciler) wait(ctx context.Context, w Workflow, spec v1alpha1.WaitSpe
 		// assume that all action to wait are of the same type
 		kind := w.waitableActions[spec.Success[0]]
 
-		err := lifecycle.New(ctx,
+		err := lifecycle.New(
 			lifecycle.Watch(kind, spec.Success...),
-			lifecycle.WithFilter(lifecycle.FilterParent(w.GetUID())),
+			lifecycle.WithFilters(lifecycle.FilterByParent(w.GetUID()), lifecycle.FilterByNames(spec.Success...)),
 			lifecycle.WithLogger(r.Logger),
-		).Expect(v1alpha1.PhaseSuccess)
+			lifecycle.WithExpectedPhase(v1alpha1.PhaseSuccess),
+		).Run(ctx)
 		if err != nil {
 			return errors.Wrapf(err, "wait error")
 		}
 
-		logrus.Warn("<- Wait success for ", spec.Success)
+		logrus.Warnf("<- Action %s waiting for success of %v", action.Name, spec.Success)
 	}
 
 	if len(spec.Running) > 0 {
-		logrus.Warn("-> Wait running for ", spec.Running)
+		logrus.Warnf("-> Action %s waiting for running of %v", action.Name, spec.Running)
 
 		// confirm that the referenced action have already happened. otherwise, it is possible to block forever.
 		for _, waitFor := range spec.Running {
@@ -102,20 +107,21 @@ func (r *Reconciler) wait(ctx context.Context, w Workflow, spec v1alpha1.WaitSpe
 		// assume that all action to wait are of the same type
 		kind := w.waitableActions[spec.Running[0]]
 
-		err := lifecycle.New(ctx,
+		err := lifecycle.New(
 			lifecycle.Watch(kind, spec.Running...),
-			lifecycle.WithFilter(lifecycle.FilterParent(w.GetUID())),
+			lifecycle.WithFilters(lifecycle.FilterByParent(w.GetUID()), lifecycle.FilterByNames(spec.Running...)),
 			lifecycle.WithLogger(r.Logger),
-		).Expect(v1alpha1.PhaseRunning)
+			lifecycle.WithExpectedPhase(v1alpha1.PhaseRunning),
+		).Run(ctx)
 		if err != nil {
 			return errors.Wrapf(err, "wait error")
 		}
 
-		logrus.Warn("<- Wait running for ", spec.Running)
+		logrus.Warnf("<- Action %s waiting for running of %v", action.Name, spec.Running)
 	}
 
 	if spec.Duration != nil {
-		logrus.Warn("-> Wait duration for ", spec.Duration.Duration.String())
+		logrus.Warnf("-> Action %s waiting for duration of %v", action.Name, spec.Duration.Duration.String())
 
 		select {
 		case <-ctx.Done():
@@ -123,24 +129,25 @@ func (r *Reconciler) wait(ctx context.Context, w Workflow, spec v1alpha1.WaitSpe
 		case <-time.After(spec.Duration.Duration):
 		}
 
-		logrus.Warn("<- Wait duration for ", spec.Duration.Duration.String())
+		logrus.Warnf("<- Action %s waiting for duration of %v", action.Name, spec.Duration.Duration.String())
 	}
 
 	return nil
 }
 
-func (r *Reconciler) createServiceGroup(ctx context.Context, w Workflow, action v1alpha1.Action) error {
-	group := v1alpha1.ServiceGroup{}
-	action.ServiceGroup.DeepCopyInto(&group.Spec)
-
-	if err := common.SetOwner(w.Workflow, &group, action.Name); err != nil {
-		return errors.Wrapf(err, "ownership failed")
-	}
-
+func (r *Reconciler) distributedGroup(ctx context.Context, w Workflow, action v1alpha1.Action) error {
 	if action.Depends != nil {
-		if err := r.wait(ctx, w, *action.Depends); err != nil {
+		if err := r.wait(ctx, w, action, *action.Depends); err != nil {
 			return errors.Wrapf(err, "dependencies failed")
 		}
+	}
+
+	group := v1alpha1.DistributedGroup{}
+	group.SetName(action.Name)
+	action.DistributedGroup.DeepCopyInto(&group.Spec)
+
+	if err := common.SetOwner(w.Workflow, &group); err != nil {
+		return errors.Wrapf(err, "ownership failed")
 	}
 
 	if err := r.Client.Create(ctx, &group); err != nil {
@@ -148,7 +155,34 @@ func (r *Reconciler) createServiceGroup(ctx context.Context, w Workflow, action 
 	}
 
 	// TODO: Fix it with respect to threads
-	// common.Update(ctx, w, &v1alpha1.ServiceGroup{}, group.GetName())
+	// common.Update(ctx, w, &v1alpha1.DistributedGroup{}, group.GetName())
+
+	w.waitableActions[action.Name] = &group
+
+	return nil
+}
+
+func (r *Reconciler) collocatedGroup(ctx context.Context, w Workflow, action v1alpha1.Action) error {
+	if action.Depends != nil {
+		if err := r.wait(ctx, w, action, *action.Depends); err != nil {
+			return errors.Wrapf(err, "dependencies failed")
+		}
+	}
+
+	group := v1alpha1.CollocatedGroup{}
+	group.SetName(action.Name)
+	action.CollocatedGroup.DeepCopyInto(&group.Spec)
+
+	if err := common.SetOwner(w.Workflow, &group); err != nil {
+		return errors.Wrapf(err, "ownership failed")
+	}
+
+	if err := r.Client.Create(ctx, &group); err != nil {
+		return errors.Wrapf(err, "create failed")
+	}
+
+	// TODO: Fix it with respect to threads
+	// common.Update(ctx, w, &v1alpha1.CollocatedGroup{}, group.GetName())
 
 	w.waitableActions[action.Name] = &group
 
@@ -156,6 +190,12 @@ func (r *Reconciler) createServiceGroup(ctx context.Context, w Workflow, action 
 }
 
 func (r *Reconciler) stop(ctx context.Context, w Workflow, action v1alpha1.Action) error {
+	if action.Depends != nil {
+		if err := r.wait(ctx, w, action, *action.Depends); err != nil {
+			return errors.Wrapf(err, "dependencies failed")
+		}
+	}
+
 	// Resolve affected services
 	services := service.Select(ctx, action.Stop.Selector)
 	if len(services) == 0 {
@@ -164,36 +204,39 @@ func (r *Reconciler) stop(ctx context.Context, w Workflow, action v1alpha1.Actio
 		return nil
 	}
 
-	if action.Depends != nil {
-		if err := r.wait(ctx, w, *action.Depends); err != nil {
-			return errors.Wrapf(err, "dependencies failed")
-		}
-	}
-
 	// Without Schedule
 	if action.Stop.Schedule == nil {
-		for i := 0; i < len(services); i++ {
-			err := lifecycle.Delete(ctx, r.Client, &services[i])
+		for _, service := range services {
+			// for this to work we assume that a pod is dependent to a discovery service.
+			// Using this assumption, by removing the service Kubernetes garbage collects the pod.
+			discovery := corev1.Service{}
+			discovery.SetNamespace(service.Namespace)
+			discovery.SetName(service.Name)
+
+			err := lifecycle.Delete(ctx, r.Client, &discovery)
 			if err != nil && !k8errors.IsNotFound(err) {
-				return errors.Wrapf(err, "cannot delete service %s", services[i].GetName())
+				return errors.Wrapf(err, "cannot delete service %s", service)
 			}
+
+			r.Logger.Info("stop", "service", service)
 		}
-
-		return nil
-	}
-
-	// With Schedule
-	if action.Stop.Schedule != nil {
+	} else { // With Schedule
 		r.Logger.Info("Yield with Schedule", "services", services)
 
 		for service := range common.YieldByTime(ctx, action.Stop.Schedule.Cron, services...) {
-			err := lifecycle.Delete(ctx, r.Client, service)
-			if err != nil && !k8errors.IsNotFound(err) {
-				return errors.Wrapf(err, "cannot delete service %s", service.GetName())
-			}
-		}
+			// for this to work we assume that a pod is dependent to a discovery service.
+			// Using this assumption, by removing the service Kubernetes garbage collects the pod.
+			discovery := corev1.Service{}
+			discovery.SetNamespace(service.Namespace)
+			discovery.SetName(service.Name)
 
-		return nil
+			err := lifecycle.Delete(ctx, r.Client, &discovery)
+			if err != nil && !k8errors.IsNotFound(err) {
+				return errors.Wrapf(err, "cannot delete service %s", service)
+			}
+
+			r.Logger.Info("stop", "service", service)
+		}
 	}
 
 	return nil
@@ -201,14 +244,15 @@ func (r *Reconciler) stop(ctx context.Context, w Workflow, action v1alpha1.Actio
 
 func (r *Reconciler) chaos(ctx context.Context, w Workflow, action v1alpha1.Action) error {
 	chaos := v1alpha1.Chaos{}
+	chaos.SetName(action.Name)
 	action.Chaos.DeepCopyInto(&chaos.Spec)
 
-	if err := common.SetOwner(w.Workflow, &chaos, action.Name); err != nil {
+	if err := common.SetOwner(w.Workflow, &chaos); err != nil {
 		return errors.Wrapf(err, "ownership failed")
 	}
 
 	if action.Depends != nil {
-		if err := r.wait(ctx, w, *action.Depends); err != nil {
+		if err := r.wait(ctx, w, action, *action.Depends); err != nil {
 			return errors.Wrapf(err, "dependencies failed")
 		}
 	}

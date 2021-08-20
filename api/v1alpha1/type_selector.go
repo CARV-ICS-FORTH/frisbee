@@ -45,20 +45,21 @@ type MatchServiceSpec struct {
 	// The key defines the namespace which services belong,
 	// and the each values is a set of service names.
 	// +optional
-	ServiceNames map[string][]string `json:"names,omitempty"`
+	// ServiceNames map[string][]string `json:"names,omitempty"`
 
 	// Map of string keys and values that can be used to select objects.
 	// A selector based on labels.
 	// +optional
-	Labels map[string]string `json:"labels,omitempty"`
+	// Labels map[string]string `json:"labels,omitempty"`
 
-	// ServiceGroup defines the service group where services belong
+	// ServiceGroup defines the service group where services belong. A ServiceGroup may refer either to
+	// a DistributedGroup or a CollocatedGroup. Therefore, we need to search both of them.
 	// +optional
 	ServiceGroup string `json:"servicegroup,omitempty"`
 
 	// Namespaces is a set of namespace to which objects belong.
 	// +optional
-	Namespaces []string `json:"namespaces,omitempty"`
+	// Namespaces []string `json:"namespaces,omitempty"`
 }
 
 type ServiceSelector struct {

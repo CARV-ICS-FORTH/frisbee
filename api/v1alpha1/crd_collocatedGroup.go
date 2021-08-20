@@ -5,27 +5,32 @@ import (
 )
 
 func init() {
-	SchemeBuilder.Register(&ServiceGroup{}, &ServiceGroupList{})
+	SchemeBuilder.Register(&CollocatedGroup{}, &CollocatedGroupList{})
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-type ServiceGroup struct {
+type CollocatedGroup struct {
 	metav1.TypeMeta `json:",inline"`
 
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	// Spec defines the behavior of the object
-	Spec ServiceGroupSpec `json:"spec"`
+	Spec CollocatedGroupSpec `json:"spec"`
 
 	// Most recently observed status of the object
 	// +optional
-	Status ServiceGroupStatus `json:"status,omitempty"`
+	Status CollocatedGroupStatus `json:"status,omitempty"`
 }
 
-type ServiceGroupSpec struct {
-	// TemplateRef refers to a service template.
+type CollocatedGroupSpec struct {
+	// ServiceSpec includes a service specification. It conflicts with TemplateRef.
+	// +optional
+	ServiceSpec *ServiceSpec `json:"service"`
+
+	// TemplateRef refers to a service template. It conflicts with Service.
+	// +optional
 	TemplateRef string `json:"templateRef"`
 
 	// Instances dictate the number of objects to be created for the service. If Env is specified, the values
@@ -37,27 +42,27 @@ type ServiceGroupSpec struct {
 	// only one input and all the instances will run with identical parameters. If Instances is defined and there are
 	// more than one inputs, the request will be rejected.
 	Inputs []map[string]string `json:"inputs,omitempty" validate:"required_without=Instances"`
-
-	// Schedule defines the interval between the creation of services within the group
-	// +optional
-	Schedule *SchedulerSpec `json:"schedule,omitempty"`
 }
 
-type ServiceGroupStatus struct {
+type CollocatedGroupStatus struct {
 	Lifecycle `json:",inline"`
+
+	// ExpectedServices is a list of services that belong to this group.
+	// These services will be located in the same namespace as the group.
+	ExpectedServices ServiceSpecList `json:"expectedServices"`
 }
 
-func (s *ServiceGroup) GetLifecycle() Lifecycle {
-	return s.Status.Lifecycle
+func (s *CollocatedGroup) GetLifecycle() []*Lifecycle {
+	return []*Lifecycle{&s.Status.Lifecycle}
 }
 
-func (s *ServiceGroup) SetLifecycle(lifecycle Lifecycle) {
+func (s *CollocatedGroup) SetLifecycle(lifecycle Lifecycle) {
 	s.Status.Lifecycle = lifecycle
 }
 
 // +kubebuilder:object:root=true
-type ServiceGroupList struct {
+type CollocatedGroupList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []ServiceGroup `json:"items"`
+	Items           []CollocatedGroup `json:"items"`
 }

@@ -51,7 +51,7 @@ func (f *partition) generate(ctx context.Context, obj *v1alpha1.Chaos) unstructu
 func (f *partition) Inject(ctx context.Context, obj *v1alpha1.Chaos) error {
 	chaos := f.generate(ctx, obj)
 
-	if err := common.SetOwner(obj, &chaos, ""); err != nil {
+	if err := common.SetOwner(obj, &chaos); err != nil {
 		return errors.Wrapf(err, "ownership error")
 	}
 
@@ -65,11 +65,12 @@ func (f *partition) Inject(ctx context.Context, obj *v1alpha1.Chaos) error {
 		return errors.Wrapf(err, "injection failed")
 	}
 
-	err = lifecycle.New(ctx,
+	err = lifecycle.New(
 		lifecycle.WatchExternal(&chaos, convertStatus, chaos.GetName()),
-		lifecycle.WithFilter(lifecycle.FilterParent(obj.GetUID())),
+		lifecycle.WithFilters(lifecycle.FilterByParent(obj.GetUID())),
 		lifecycle.WithAnnotator(&lifecycle.RangeAnnotation{}),
-	).Update(obj)
+		lifecycle.WithUpdateParent(obj),
+	).Run(ctx)
 
 	return errors.Wrapf(err, "lifecycle failed")
 }

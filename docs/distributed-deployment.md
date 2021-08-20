@@ -1,12 +1,11 @@
 #### On remote cluster
 
-In order to access your Kubernetes cluster, `frisbee` uses kubeconfig to to find the information it needs to choose a cluster and communicate with it.
+In order to access your Kubernetes cluster, `frisbee` uses kubeconfig to to find the information it needs to choose a
+cluster and communicate with it.
 
 `kubeconfig` files organize information about clusters, users, namespaces, and authentication mechanisms.
 
 The configuration is the same as `kubectl` and is located at `~/.kube/config`.
-
-
 
 ```bash
 # Create tunnel for sending requests to Kubernetes controller
@@ -21,9 +20,8 @@ $ kubectl -kubeConfig /home/fnikol/.kube/config.evolve -n frisbee delete -f  ../
 
 ### Dashboard
 
-Dashboard is a web-based Kubernetes user interface. You can use Dashboard to deploy containerized applications to a Kubernetes cluster, troubleshoot your containerized application, and manage the cluster resources.
-
-
+Dashboard is a web-based Kubernetes user interface. You can use Dashboard to deploy containerized applications to a
+Kubernetes cluster, troubleshoot your containerized application, and manage the cluster resources.
 
 ```bash
 # Run Kubernetes dashboard

@@ -23,7 +23,7 @@ func ReflectStructMethod(iface interface{}, methodName string) error {
 
 	// Check if the passed interface is a pointer
 	if ValueIface.Type().Kind() != reflect.Ptr {
-		// ServiceGroup a new type of iface, so we have a pointer to work with
+		// DistributedGroup a new type of iface, so we have a pointer to work with
 		ValueIface = reflect.New(reflect.TypeOf(iface))
 	}
 
@@ -44,7 +44,7 @@ func ReflectStructField(iface interface{}, fieldName string) error {
 
 	// Check if the passed interface is a pointer
 	if ValueIface.Type().Kind() != reflect.Ptr {
-		// ServiceGroup a new type of iface's AccessMethod, so we have a pointer to work with
+		// DistributedGroup a new type of iface's AccessMethod, so we have a pointer to work with
 		ValueIface = reflect.New(reflect.TypeOf(iface))
 	}
 
@@ -58,12 +58,12 @@ func ReflectStructField(iface interface{}, fieldName string) error {
 }
 
 // YieldByTime takes a list and return its elements one by one, with the frequency defined in the cronspec.
-func YieldByTime(ctx context.Context, cronspec string, services ...v1alpha1.Service) <-chan *v1alpha1.Service {
+func YieldByTime(ctx context.Context, cronspec string, serviceList ...*v1alpha1.ServiceSpec) <-chan *v1alpha1.ServiceSpec {
 	job := cron.New()
-	ret := make(chan *v1alpha1.Service)
+	ret := make(chan *v1alpha1.ServiceSpec)
 	stop := make(chan struct{})
 
-	if len(services) == 0 {
+	if len(serviceList) == 0 {
 		close(ret)
 
 		return ret
@@ -77,11 +77,11 @@ func YieldByTime(ctx context.Context, cronspec string, services ...v1alpha1.Serv
 		v := atomic.LoadUint32(&last)
 
 		switch {
-		case v < uint32(len(services)):
-			ret <- &services[last]
-		case v == uint32(len(services)):
+		case v < uint32(len(serviceList)):
+			ret <- serviceList[last]
+		case v == uint32(len(serviceList)):
 			close(stop)
-		case v > uint32(len(services)):
+		case v > uint32(len(serviceList)):
 			return
 		}
 	})
@@ -112,13 +112,7 @@ func YieldByTime(ctx context.Context, cronspec string, services ...v1alpha1.Serv
 
 // SetOwner is a helper method to make sure the given object contains an object reference to the object provided.
 // It also names the child after the parent, with a potential postfix.
-func SetOwner(parent, child metav1.Object, name string) error {
-	if name == "" {
-		child.SetName(parent.GetName())
-	} else {
-		child.SetName(name)
-	}
-
+func SetOwner(parent, child metav1.Object) error {
 	child.SetNamespace(parent.GetNamespace())
 
 	if err := controllerutil.SetOwnerReference(parent, child, Common.Client.Scheme()); err != nil {

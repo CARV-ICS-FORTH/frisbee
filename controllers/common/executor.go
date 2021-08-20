@@ -46,9 +46,10 @@ func (e *Executor) Exec(pod types.NamespacedName, containerID string, command []
 		VersionedParams(&corev1.PodExecOptions{
 			Command:   command,
 			Container: containerID,
-			Stdout:    true,
-			Stderr:    true,
-			TTY:       true,
+			// Stdin:     true, // needed for piped operations
+			Stdout: true,
+			Stderr: true,
+			// TTY:       true, // If TTY is enabled the call will be blocking
 		}, scheme.ParameterCodec)
 
 	result := new(ExecutorResult)
@@ -72,7 +73,7 @@ func (e *Executor) Exec(pod types.NamespacedName, containerID string, command []
 
 	// Connect this process' std{in,out,err} to the remote shell process.
 	if err := exec.Stream(remotecommand.StreamOptions{Stdout: &result.Stdout, Stderr: &result.Stderr}); err != nil {
-		return result, errors.Wrapf(err, "streaming error")
+		return result, errors.Wrapf(err, "streaming error on %v/%v", pod.Namespace, pod.Name)
 	}
 
 	return result, nil

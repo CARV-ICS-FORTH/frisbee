@@ -208,14 +208,13 @@ spec:
       - name: kafkaQueue
         valueFrom:
           fieldRef:
-            fieldPath: metadata.annotations['ports.producer.kafka.Queue']
+            fieldPath: metadata.annotations['ports.producer.kafka.LocalQueue']
     command:
       - /bin/sh # Run shell
       - -c # Read from string
       - |  # Multi-line str
         set -eum
         trap "touch /dev/shm/stop" EXIT
-        sleep 120
 
         echo "Queue: ${kafkaHost}:${kafkaPort}/${kafkaQueue}"
 

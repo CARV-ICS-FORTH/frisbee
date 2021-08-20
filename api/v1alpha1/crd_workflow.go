@@ -53,7 +53,10 @@ type Action struct {
 
 type EmbedActions struct {
 	// +optional
-	ServiceGroup *ServiceGroupSpec `json:"servicegroup,omitempty"`
+	DistributedGroup *DistributedGroupSpec `json:"distributedGroup,omitempty"`
+
+	// +optional
+	CollocatedGroup *CollocatedGroupSpec `json:"collocatedGroup,omitempty"`
 
 	// +optional
 	Stop *StopSpec `json:"stop,omitempty"`
@@ -89,8 +92,8 @@ type WorkflowStatus struct {
 	Lifecycle `json:",inline"`
 }
 
-func (s *Workflow) GetLifecycle() Lifecycle {
-	return s.Status.Lifecycle
+func (s *Workflow) GetLifecycle() []*Lifecycle {
+	return []*Lifecycle{&s.Status.Lifecycle}
 }
 
 func (s *Workflow) SetLifecycle(lifecycle Lifecycle) {

@@ -1,16 +1,11 @@
-
-
-<figure><img src="/docs/images/logo.jpg" width="200"></figure>
-
-
-
-
+<figure><img src="/docs/images/logo.jpg" width="400"></figure>
 
 # Why Frisbee ?
 
+Frisbee is a next generation tool for exploring, testing, and benchmarking distributed applications on top of
+Kubernetes.
 
-
-Frisbee is a next generation testbed tool built for exploring, testing, and benchmarking modern applications. We address the key pain points developers and QA engineers  face when testing cloud-native applications.
+We address the key pain points developers and QA engineers face when testing cloud-native applications.
 
 We make it possible to:
 
@@ -20,13 +15,8 @@ We make it possible to:
 
 * **Debug tests:**  through extensive monitoring and comprehensive dashboards.
 
-  
-
-In this walk-through, we explain how to install Kubernetes locally and run Frisbee workflows. 
-
-We will discuss later how to use the language to build custom experiments.
-
-
+In this walk-through, we explain how to install, configure, and run Frisbee workflows. We will discuss later how to use
+the language to build custom experiments.
 
 ## Installation
 
@@ -48,11 +38,9 @@ $ microk8s enable dns ingress ambassador
 $ microk8s config > config
 ```
 
-
-
 #### Install CRDs
 
-CRDs are extensions of the Kubernetes API. 
+CRDs are extensions of the Kubernetes API.
 
 ```bash
 # Install Frisbee CRD (from Frisbee homefolder)
@@ -62,11 +50,7 @@ $ make install
 curl -sSL https://mirrors.chaos-mesh.org/latest/install.sh | bash -s -- --microk8s
 ```
 
-
-
 ### Run experiments
-
-
 
 #### Step 1. Load Templates
 
@@ -78,9 +62,7 @@ $ cd examples/templates
 $ find . -name "*.yml" -exec kubectl -n frisbee apply -f {} \;
 ```
 
-
-
-#### Step 2. Deploy the experiment 
+#### Step 2. Deploy the experiment
 
 ```bash
 # Run the experiment
@@ -89,15 +71,9 @@ $ kubectl -n frisbee apply -f  ../paper/elasticity.yml
 # Dashboard will be available at http://grafana.localhost
 ```
 
-
-
-#### Step 3. Real-time visualization 
-
-
+#### Step 3. Real-time visualization
 
 Dashboard will be available at http://grafana.localhost
-
-
 
 ##### Fetch PDF from Grafana
 
@@ -109,11 +85,9 @@ Briefly,
 2. wget https://gist.githubusercontent.com/svet-b/1ad0656cd3ce0e1a633e16eb20f66425/raw/grafana_pdf.js
 3. execute the grafana_fs.js over node.ns
 
-
-
 > node grafana_pdf.js "http://grafana.localhost/d/A2EjFbsMk/ycsb-services?viewPanel=74" "":"" output.pdf
 
-###### 
+######  
 
 ###### Permissions
 
@@ -121,47 +95,37 @@ By default Grafana is configured without any login requirements, so we must leav
 
 "":"" denotes empty username:password.
 
-
-
-
-
-#### Step 4. Destroy the experiment 
+#### Step 4. Destroy the experiment
 
 ```bash
 $ kubectl -n frisbee delete -f  ../paper/elasticity.yml
 ```
 
-
-
-
-
-
-
 ## Bugs and Feedback
-For bug report, questions and discussions please submit [GitHub Issues](https://github.com/CARV-ICS-FORTH/frisbee/issues). 
 
+For bug report, questions and discussions please
+submit [GitHub Issues](https://github.com/CARV-ICS-FORTH/frisbee/issues).
 
 You can also contact us via:
+
 * Email: fnikol@ics.forth.gr
 * Slack group: ...
 * Twitter: ...
-
-
 
 ## Contributing
 
 We welcome every contribution, even if it is just punctuation. See details of [CONTRIBUTING](docs/CONTRIBUTING.md)
 
-
-
 ## Business Registration
 
-The original intention of our open source project is to lower the threshold for chaos engineering to be implemented in enterprises, so we highly value the use of the project in enterprises. Welcome everyone here [ISSUE](https://github.com/chaosblade-io/chaosblade/issues/32). After registration, you will be invited to join the corporate mail group to discuss the problems encountered by Chaos Engineering in the landing of the company and share the landing experience.
-
-
-
+The original intention of our open source project is to lower the threshold for chaos engineering to be implemented in
+enterprises, so we highly value the use of the project in enterprises. Welcome everyone
+here [ISSUE](https://github.com/chaosblade-io/chaosblade/issues/32). After registration, you will be invited to join the
+corporate mail group to discuss the problems encountered by Chaos Engineering in the landing of the company and share
+the landing experience.
 
 ## License
 
-Frisbee is licensed under the Apache License, Version 2.0. See [LICENSE](http://www.apache.org/licenses/LICENSE-2.0) for the full license text.
+Frisbee is licensed under the Apache License, Version 2.0. See [LICENSE](http://www.apache.org/licenses/LICENSE-2.0) for
+the full license text.
 

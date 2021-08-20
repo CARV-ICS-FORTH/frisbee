@@ -8,60 +8,60 @@ spec:
 
   actions:
     # Create a Master node
-    - actiontype: ServiceGroup
+    - actiontype: DistributedGroup
       name: masters
-      servicegroup:
+      distributedGroup:
         templateRef: redis/master
         instances: 1
 
     # Create a Slave node
-    - actiontype: ServiceGroup
+    - actiontype: DistributedGroup
       name: slaves
       depends: { running: [ masters ] }
-      servicegroup:
+      distributedGroup:
         templateRef: redis/slave
         inputs: # parameters to template ENV variables
-          - { master: .servicegroup.masters.one }
+          - { master: .group.masters.one }
 
 
     # Create a failover manager
-    - actiontype: ServiceGroup
+    - actiontype: DistributedGroup
       name: sentinel
       depends: { running: [ masters, slaves ] }
-      servicegroup:
+      distributedGroup:
         templateRef: redis/sentinel
         inputs:
-          - { master: .servicegroup.masters.one }
+          - { master: .group.masters.one }
 
 
     # Ingest keys in parallel into different ranges
-    - actiontype: ServiceGroup
+    - actiontype: DistributedGroup
       name: loaders
       depends: { running: [ masters ] }
-      servicegroup:
+      distributedGroup:
         templateRef: redis/loader
         inputs:
-          - { server: .servicegroup.masters.one, recordcount: "100000000", offset: "0" }
+          - { server: .group.masters.one, recordcount: "100000000", offset: "0" }
 
 
     # Cause two partition failures with different duration
     - actiontype: Chaos
       name: partition0
-      depends: { running: [ masters], duration: "5m" }
+      depends: { running: [ masters ], duration: "5m" }
       chaos:
         type: partition
         partition:
           selector:
-            macro: .servicegroup.masters.one
+            macro: .group.masters.one
           duration: "2m"
 
     - actiontype: Chaos
       name: partition1
-      depends: { running: [ masters], success: [ partition0 ], duration: "3m" }
+      depends: { running: [ masters ], success: [ partition0 ], duration: "3m" }
       chaos:
         type: partition
         partition:
-          selector: {macro: .servicegroup.masters.one}
+          selector: { macro: .group.masters.one }
           duration: "2m"
 
 
@@ -70,7 +70,7 @@ spec:
       name: "teardown"
       depends: { success: [ partition1 ], duration: "1m" }
       stop:
-        selector: {macro: .servicegroup.runners.all}
+        selector: { macro: .group.runners.all }
 
     # Wait until servers are removed
     - actiontype: Wait

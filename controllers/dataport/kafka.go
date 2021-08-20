@@ -3,7 +3,6 @@ package dataport
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
@@ -12,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
@@ -37,14 +37,22 @@ type kafkaRewireRequest struct {
 }
 
 func newRewireRequest(nm string, status *v1alpha1.KafkaStatus) kafkaRewireRequest {
+	if status.LocalQueue == "" || status.RemoteQueue == "" || status.LocalQueue == status.RemoteQueue {
+		panic(errors.Errorf("invalid arguments. LocalQueue: %s, RemoteQueue:%s", status.LocalQueue, status.RemoteQueue))
+	}
 
-	cmdString := fmt.Sprintf(
-		`/bin/sh -c 'for i in {1..5}; do kafkacat -b %s:%d -C -t %s -o beginning  | kafkacat -b %s:%d -P -t %s && break || sleep 15; done`,
-		status.Host, status.Port, status.LocalQueue,
-		status.Host, status.Port, status.RemoteQueue, // assume the same Kafka server. Could be a different one
-	)
+	// -E                 Do not exit on non fatal error
+	// -u                 Unbuffered output
+	//
+	// cmdString := fmt.Sprintf(`kafkacat -E -b %s:%d -C -t %s -o beginning -u | kafkacat -E -b %s:%d -P -t %s`,
 
-	logrus.Warn("Rewire CMD ", cmdString)
+	// assume the same Kafka server. Could be a different one
+	src := fmt.Sprintf("kafkacat -E -b %s:%d -t %s -C -o beginning -u", status.Host, status.Port, status.LocalQueue)
+	dst := fmt.Sprintf("kafkacat -E -b %s:%d -t %s -P", status.Host, status.Port, status.RemoteQueue)
+
+	// cmdString := []string{"sh", "-c", fmt.Sprintf("'%s | %s'", src, dst)}
+	cmdString := []string{"sh", "-c", fmt.Sprintf("%s", src)}
+	_ = dst
 
 	return kafkaRewireRequest{
 		pod: types.NamespacedName{
@@ -52,7 +60,7 @@ func newRewireRequest(nm string, status *v1alpha1.KafkaStatus) kafkaRewireReques
 			Name:      "testclient",
 		},
 		containerID: "",
-		cmd:         strings.Fields(cmdString),
+		cmd:         cmdString,
 	}
 }
 
@@ -86,6 +94,14 @@ func (p *kafka) createInput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.R
 }
 
 func (p *kafka) createOutput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
+
+	obj.Status.Kafka = &v1alpha1.KafkaStatus{
+		Host:        obj.Spec.Kafka.Host,
+		Port:        obj.Spec.Kafka.Port,
+		LocalQueue:  obj.Spec.Kafka.Queue,
+		RemoteQueue: "", // to be filled by connect()
+	}
+
 	return lifecycle.Pending(ctx, obj, "looking for matching ports")
 }
 
@@ -107,7 +123,7 @@ func (p *kafka) pendingInput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.
 func (p *kafka) pendingOutput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
 	// In this phase we are still getting offers (requests from input ports that discovered this output).
 	// If the offers satisfy certain conditions, accept them and go to Pending phase.
-	if obj.Status.ProtocolStatus.Kafka == nil {
+	if obj.Status.ProtocolStatus.Kafka.RemoteQueue == "" {
 		// no offer yet
 		return common.DoNotRequeue()
 	}
@@ -181,21 +197,25 @@ func (p *kafka) runningInput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.
 
 func (p *kafka) runningOutput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
 	params := obj.GetProtocolStatus().(*v1alpha1.KafkaStatus)
-
-	logrus.Warn(" REWIRE ",
-		" src: ", params.LocalQueue,
-		" dst: ", params.RemoteQueue,
-	)
-
 	req := newRewireRequest(obj.GetNamespace(), params)
 
-	ret, err := common.Common.Executor.Exec(req.pod, req.containerID, req.cmd)
+	logrus.Warn("Rewire CMD ", req.cmd)
+
+	err := retry.OnError(common.DefaultBackoff, func(error) bool { return true }, func() error {
+		logrus.Warn("retry rewiring")
+
+		ret, err := common.Common.Executor.Exec(req.pod, req.containerID, req.cmd)
+		logrus.Warn("RET ", errors.Wrapf(err, ret.Stderr.String()))
+
+		return errors.Wrapf(err, ret.Stderr.String())
+	})
+
 	if err != nil {
-		return lifecycle.Failed(ctx, obj, errors.Wrapf(err, "rewiring error. from: %s to %s", params.LocalQueue, params.RemoteQueue))
+		return lifecycle.Failed(ctx, obj, errors.Wrapf(err,
+			"rewiring error. from: %s to %s", params.LocalQueue, params.RemoteQueue))
 	}
 
-	logrus.Warn("OUT ", ret.Stdout.String())
-	logrus.Warn("ERR ", ret.Stderr.String())
+	p.r.Logger.Info("Kafka rewiring was successful", "from", params.LocalQueue, "to", params.RemoteQueue)
 
 	return common.DoNotRequeue()
 }
@@ -211,12 +231,7 @@ func (p *kafka) connect(ctx context.Context, ref, match *v1alpha1.DataPort) erro
 	}
 
 	// update remote port (client) with local info (server)
-	match.Status.Kafka = &v1alpha1.KafkaStatus{
-		Host:        refKafka.Host,
-		Port:        refKafka.Port,
-		LocalQueue:  matchKafka.Queue,
-		RemoteQueue: refKafka.Queue,
-	}
+	match.Status.Kafka.RemoteQueue = refKafka.Queue
 
 	_, err := common.UpdateStatus(ctx, match)
 	return errors.Wrapf(err, "port connection error")

@@ -80,11 +80,11 @@ spec:
             set -eum
             trap "touch /dev/shm/stop" EXIT
 
-            echo "Watch $master"
+            echo "Watch ${master}:6379"
 
             cat > sentinel.conf <<EOF
               sentinel resolve-hostnames yes
-              sentinel monitor mymaster ${master} 6379 1
+              sentinel monitor mymaster $master 6379 1
               sentinel down-after-milliseconds mymaster 5000
               sentinel failover-timeout mymaster 10000
               sentinel parallel-syncs mymaster 1
@@ -115,7 +115,7 @@ spec:
             ./go-ycsb load redis                                            \
                 -p recordcount=$recordcount                                 \
                 -p insertstart="$offset"                                    \
-                -p threadcount=1                                           \
+                -p threadcount=1                                            \
                 -p redis.mode="single"                                      \
                 -p redis.addr="$server:6379"                                \
             >> /dev/shm/pipe
@@ -132,6 +132,7 @@ spec:
           - name: server
           - name: workload
           - name: operationcount
+
         command:
           - /bin/sh   # Run shell
           - -c        # Read from string
@@ -143,7 +144,7 @@ spec:
             ./go-ycsb run redis                                 \
                   -P workloads/$workload                        \
                   -p operationcount=$operationcount             \
-                  -p threadcount=1                             \
+                  -p threadcount=1                              \
                   -p redis.mode="single"                        \
-                  -p redis.addr="server:6379"                   \
+                  -p redis.addr="$server:6379"                 \
             >> /dev/shm/pipe

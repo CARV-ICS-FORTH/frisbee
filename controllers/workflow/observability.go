@@ -48,7 +48,7 @@ func (r *Reconciler) newMonitoringStack(ctx context.Context, obj *v1alpha1.Workf
 		grafanaPublicURI := fmt.Sprintf("http://%s", virtualhost(grafana.GetName(), obj.Spec.Ingress))
 
 		if err := common.EnableGrafanaAnnotator(ctx, grafanaPublicURI); err != nil {
-			return errors.Wrapf(err, "grafana clietn error")
+			return errors.Wrapf(err, "grafana client error")
 		}
 	}
 
@@ -57,67 +57,80 @@ func (r *Reconciler) newMonitoringStack(ctx context.Context, obj *v1alpha1.Workf
 	return nil
 }
 
-func (r *Reconciler) installPrometheus(ctx context.Context, obj *v1alpha1.Workflow) (*v1alpha1.Service, error) {
-	var prom v1alpha1.Service
+func (r *Reconciler) installPrometheus(ctx context.Context, obj *v1alpha1.Workflow) (*v1alpha1.DistributedGroup, error) {
+	prom := v1alpha1.DistributedGroup{}
 
-	spec := template.SelectService(ctx, template.ParseRef(obj.GetNamespace(), prometheusTemplate))
-	if spec == nil {
-		return nil, errors.New("cannot find template")
+	{ // metadata
+		prom.SetName("prometheus")
+		if err := common.SetOwner(obj, &prom); err != nil {
+			return nil, errors.Wrapf(err, "ownership error")
+		}
 	}
 
-	spec.DeepCopyInto(&prom.Spec)
-
-	if err := common.SetOwner(obj, &prom, "prometheus"); err != nil {
-		return nil, errors.Wrapf(err, "ownership error")
+	{ // spec
+		prom.Spec.Instances = 1
+		prom.Spec.TemplateRef = prometheusTemplate
 	}
 
-	if err := r.Create(ctx, &prom); err != nil {
-		return nil, errors.Wrapf(err, "request error")
+	{ // deployment
+		if err := r.Create(ctx, &prom); err != nil {
+			return nil, errors.Wrapf(err, "request error")
+		}
+
+		if err := lifecycle.WaitRunningAndUpdate(ctx, &prom); err != nil {
+			return nil, errors.Wrapf(err, "prometheus is not running")
+		}
 	}
 
-	if err := lifecycle.WaitReady(ctx, &prom); err != nil {
-		return nil, errors.Wrapf(err, "prometheus is not running")
-	}
-
-	r.Logger.Info("Prometheus was installed")
+	r.Logger.Info("Prometheus is installed")
 
 	return &prom, nil
 }
 
-func (r *Reconciler) installGrafana(ctx context.Context, obj *v1alpha1.Workflow) (*v1alpha1.Service, error) {
-	var grafana v1alpha1.Service
+func (r *Reconciler) installGrafana(ctx context.Context, obj *v1alpha1.Workflow) (*v1alpha1.DistributedGroup, error) {
+	grafana := v1alpha1.DistributedGroup{}
 
-	grafanaSpec := template.SelectService(ctx, template.ParseRef(obj.GetNamespace(), grafanaTemplate))
-	if grafanaSpec == nil {
-		return nil, errors.New("cannot find template")
+	{ // metadata
+		grafana.SetName("grafana")
+		if err := common.SetOwner(obj, &grafana); err != nil {
+			return nil, errors.Wrapf(err, "ownership error")
+		}
 	}
 
-	grafanaSpec.DeepCopyInto(&grafana.Spec)
+	{ // spec
+		grafana.Spec.Instances = 1
 
-	if err := common.SetOwner(obj, &grafana, "grafana"); err != nil {
-		return nil, errors.Wrapf(err, "ownership error")
+		// to perform the necessary automations, we load the spec locally and push the modified version for creation.
+		grafana.Spec.ServiceSpec = template.SelectService(ctx, template.ParseRef(obj.GetNamespace(), grafanaTemplate))
+		if grafana.Spec.ServiceSpec == nil {
+			return nil, errors.New("cannot find template")
+		}
+
+		if err := r.importDashboards(ctx, obj, grafana.Spec.ServiceSpec); err != nil {
+			return nil, errors.Wrapf(err, "import dashboards")
+		}
 	}
 
-	if err := r.importDashboards(ctx, obj, &grafana); err != nil {
-		return nil, errors.Wrapf(err, "import dashboards")
+	{ // deployment
+		if err := r.Client.Create(ctx, &grafana); err != nil {
+			return nil, errors.Wrapf(err, "request error")
+		}
+
+		if err := lifecycle.WaitRunningAndUpdate(ctx, &grafana); err != nil {
+			return nil, errors.Wrapf(err, "grafana is not running")
+		}
 	}
 
-	if err := r.Client.Create(ctx, &grafana); err != nil {
-		return nil, errors.Wrapf(err, "request error")
-	}
-
-	if err := lifecycle.WaitReady(ctx, &grafana); err != nil {
-		return nil, errors.Wrapf(err, "prometheus is not running")
-	}
-
-	r.Logger.Info("Grafana was installed")
+	r.Logger.Info("Grafana is installed")
 
 	return &grafana, nil
 }
 
-func (r *Reconciler) importDashboards(ctx context.Context, obj *v1alpha1.Workflow, grafana *v1alpha1.Service) error {
+func (r *Reconciler) importDashboards(ctx context.Context, obj *v1alpha1.Workflow, spec *v1alpha1.ServiceSpec) error {
 	// create configmap
 	configMap := corev1.ConfigMap{}
+	configMap.Name = "dashboards"
+
 	configMap.Data = make(map[string]string, len(obj.Spec.ImportMonitors))
 	{
 		for _, monRef := range obj.Spec.ImportMonitors {
@@ -129,7 +142,7 @@ func (r *Reconciler) importDashboards(ctx context.Context, obj *v1alpha1.Workflo
 			configMap.Data[monSpec.Dashboard.File] = monSpec.Dashboard.Payload
 		}
 
-		if err := common.SetOwner(obj, &configMap, "dashboards"); err != nil {
+		if err := common.SetOwner(obj, &configMap); err != nil {
 			return errors.Wrapf(err, "ownership failed")
 		}
 
@@ -160,63 +173,74 @@ func (r *Reconciler) importDashboards(ctx context.Context, obj *v1alpha1.Workflo
 	}
 
 	// associate volume with grafana
-	grafana.Spec.Volumes = append(grafana.Spec.Volumes, volume)
-	grafana.Spec.Container.VolumeMounts = append(grafana.Spec.Container.VolumeMounts, volumeMounts...)
+	spec.Volumes = append(spec.Volumes, volume)
+	spec.Container.VolumeMounts = append(spec.Container.VolumeMounts, volumeMounts...)
 
 	r.Logger.Info("Import Grafana packages", "dashboards", obj.Spec.ImportMonitors)
 
 	return nil
 }
 
-func (r *Reconciler) installIngress(ctx context.Context, obj *v1alpha1.Workflow, services ...*v1alpha1.Service) error {
-	var ingress netv1.Ingress
+func (r *Reconciler) installIngress(ctx context.Context, obj *v1alpha1.Workflow, groups ...*v1alpha1.DistributedGroup) error {
+	ingress := netv1.Ingress{}
 
-	// Ingresses annotated with 'kubernetes.io/ingress.class=ambassador' will be managed by Ambassador.
-	// Without annotation, the default Ingress is used.
-	ingress.SetAnnotations(map[string]string{
-		"kubernetes.io/ingress.class": "ambassador",
-	})
+	{ // metadata
+		ingress.SetName("ingress")
 
-	if err := common.SetOwner(obj, &ingress, ""); err != nil {
-		return errors.Wrapf(err, "ownership failed")
+		// Ingresses annotated with 'kubernetes.io/ingress.class=ambassador' will be managed by Ambassador.
+		// Without annotation, the default Ingress is used.
+		ingress.SetAnnotations(map[string]string{
+			"kubernetes.io/ingress.class": "ambassador",
+		})
+
+		if err := common.SetOwner(obj, &ingress); err != nil {
+			return errors.Wrapf(err, "ownership failed")
+		}
 	}
 
-	pathtype := netv1.PathTypePrefix
+	{ // spec
+		pathtype := netv1.PathTypePrefix
 
-	rules := make([]netv1.IngressRule, 0, len(services))
+		rules := make([]netv1.IngressRule, 0, len(groups))
 
-	for _, service := range services {
-		port := service.Spec.Container.Ports[0]
+		for _, group := range groups {
+			service := group.Status.ExpectedServices[0]
 
-		rule := netv1.IngressRule{
-			Host: virtualhost(service.GetName(), obj.Spec.Ingress),
-			IngressRuleValue: netv1.IngressRuleValue{
-				HTTP: &netv1.HTTPIngressRuleValue{
-					Paths: []netv1.HTTPIngressPath{
-						{
-							Path:     "/",
-							PathType: &pathtype,
-							Backend: netv1.IngressBackend{
-								Service: &netv1.IngressServiceBackend{
-									Name: service.GetName(),
-									Port: netv1.ServiceBackendPort{Number: port.ContainerPort},
+			// we now that prometheus and grafana have a single container
+			port := service.Container.Ports[0]
+
+			rule := netv1.IngressRule{
+				Host: virtualhost(service.Name, obj.Spec.Ingress),
+				IngressRuleValue: netv1.IngressRuleValue{
+					HTTP: &netv1.HTTPIngressRuleValue{
+						Paths: []netv1.HTTPIngressPath{
+							{
+								Path:     "/",
+								PathType: &pathtype,
+								Backend: netv1.IngressBackend{
+									Service: &netv1.IngressServiceBackend{
+										Name: service.Name,
+										Port: netv1.ServiceBackendPort{Number: port.ContainerPort},
+									},
 								},
 							},
 						},
 					},
 				},
-			},
+			}
+
+			rules = append(rules, rule)
+
+			r.Logger.Info("Ingress", "host", rule.Host)
 		}
 
-		rules = append(rules, rule)
-
-		r.Logger.Info("Ingress", "host", rule.Host)
+		ingress.Spec.Rules = rules
 	}
 
-	ingress.Spec.Rules = rules
-
-	if err := r.Client.Create(ctx, &ingress); err != nil {
-		return errors.Wrapf(err, "unable to create ingress")
+	{ // deployment
+		if err := r.Client.Create(ctx, &ingress); err != nil {
+			return errors.Wrapf(err, "unable to create ingress")
+		}
 	}
 
 	return nil
