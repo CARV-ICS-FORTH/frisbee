@@ -15,7 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// +kubebuilder:rbac:groups=frisbee.io,resources=workflows,verbs=get;list;watch;createServiceGroup;update;patch;delete
+// +kubebuilder:rbac:groups=frisbee.io,resources=workflows,verbs=get;list;watch;distributedGroup;update;patch;delete
 // +kubebuilder:rbac:groups=frisbee.io,resources=workflows/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=frisbee.io,resources=workflows/finalizers,verbs=update
 
@@ -63,7 +63,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		}
 
 		if err := r.newMonitoringStack(ctx, &obj); err != nil {
-			r.Logger.Info("Use mock-up monitoring stack", "reason", err.Error())
+			return lifecycle.Failed(ctx, &obj, err)
 		}
 
 		return lifecycle.Pending(ctx, &obj, "workflow verified")

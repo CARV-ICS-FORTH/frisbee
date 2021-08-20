@@ -23,10 +23,10 @@ import (
 	"os"
 
 	"github.com/fnikolai/frisbee/controllers/chaos"
+	"github.com/fnikolai/frisbee/controllers/collocatedgroup"
 	"github.com/fnikolai/frisbee/controllers/common"
 	"github.com/fnikolai/frisbee/controllers/dataport"
-	"github.com/fnikolai/frisbee/controllers/service"
-	"github.com/fnikolai/frisbee/controllers/servicegroup"
+	"github.com/fnikolai/frisbee/controllers/distributedgroup"
 	"github.com/fnikolai/frisbee/controllers/template"
 	"github.com/fnikolai/frisbee/controllers/workflow"
 	"github.com/pkg/errors"
@@ -92,20 +92,20 @@ func main() {
 
 	common.InitCommon(mgr, setupLog)
 
-	if err := service.NewController(mgr, setupLog); err != nil {
-		runtimeutil.HandleError(errors.Wrapf(err, "unable to create Reference controller"))
-
-		os.Exit(1)
-	}
-
 	if err := template.NewController(mgr, setupLog); err != nil {
 		runtimeutil.HandleError(errors.Wrapf(err, "unable to create Templates controller"))
 
 		os.Exit(1)
 	}
 
-	if err := servicegroup.NewController(mgr, setupLog); err != nil {
-		runtimeutil.HandleError(errors.Wrapf(err, "unable to create ServiceGroup controller"))
+	if err := distributedgroup.NewController(mgr, setupLog); err != nil {
+		runtimeutil.HandleError(errors.Wrapf(err, "unable to create DistributedGroup controller"))
+
+		os.Exit(1)
+	}
+
+	if err := collocatedgroup.NewController(mgr, setupLog); err != nil {
+		runtimeutil.HandleError(errors.Wrapf(err, "unable to create DistributedGroup controller"))
 
 		os.Exit(1)
 	}

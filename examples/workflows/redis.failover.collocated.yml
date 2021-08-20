@@ -8,37 +8,37 @@ spec:
 
   actions:
     # Create a Master node
-    - actiontype: DistributedGroup
+    - actiontype: CollocatedGroup
       name: masters
-      distributedGroup:
+      collocatedGroup:
         templateRef: redis/master
         instances: 1
 
     # Create a Slave node
-    - actiontype: DistributedGroup
+    - actiontype: CollocatedGroup
       name: slaves
       depends: { running: [ masters ] }
-      distributedGroup:
+      collocatedGroup:
         templateRef: redis/slave
         inputs:
           - { master: .group.masters.one }
 
 
     # Create a failover manager
-    - actiontype: DistributedGroup
+    - actiontype: CollocatedGroup
       name: sentinel
       depends: { running: [ masters, slaves ] }
-      distributedGroup:
+      collocatedGroup:
         templateRef: redis/sentinel
         inputs:
           - { master: .group.masters.one }
 
 
     # Ingest keys in parallel into different ranges
-    - actiontype: DistributedGroup
+    - actiontype: CollocatedGroup
       name: loaders
       depends: { running: [ masters, slaves, sentinel ] }
-      distributedGroup:
+      collocatedGroup:
         templateRef: redis/loader
         inputs:
           - { server: .group.masters.one, recordcount: "100000", offset: "0" }
@@ -53,25 +53,16 @@ spec:
           - { server: .group.masters.one, recordcount: "100000", offset: "900000" }
 
     # Run queries
-    - actiontype: DistributedGroup
+    - actiontype: CollocatedGroup
       name: runners
       depends: { running: [ masters, slaves ], success: [ loaders ] }
-      distributedGroup:
+      collocatedGroup:
         templateRef: redis/runner
         instances: 5
         inputs:
           - { server: .group.masters.one, workload: workloada,  operationcount: "1000000" }
 
 
-    # Stop the master nodes after a few minutes
-    - actiontype: Stop
-      name: "teardown"
-      depends: { running: [ runners ], duration: 10s }
-      stop:
-        selector:
-          macro: .group.runners.all
-        schedule:
-          cron: "@every 1m"
 
     # Wait until servers are removed
     - actiontype: Wait

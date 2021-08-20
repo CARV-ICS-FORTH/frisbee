@@ -163,8 +163,8 @@ type KafkaStatus struct {
 	RemoteQueue string `json:"remoteQueue,omitempty"`
 }
 
-func (s *DataPort) GetLifecycle() Lifecycle {
-	return s.Status.Lifecycle
+func (s *DataPort) GetLifecycle() []*Lifecycle {
+	return []*Lifecycle{&s.Status.Lifecycle}
 }
 
 func (s *DataPort) SetLifecycle(lifecycle Lifecycle) {

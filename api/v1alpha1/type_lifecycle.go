@@ -1,6 +1,8 @@
 package v1alpha1
 
 import (
+	"fmt"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -41,6 +43,12 @@ const (
 )
 
 type Lifecycle struct {
+	// Is it needed ?
+	Kind string `json:"kind,omitempty"`
+
+	// Is it needed ?
+	Name string `json:"name,omitempty"`
+
 	Phase Phase `json:"phase,omitempty"`
 
 	// A brief CamelCase message indicating details about why the service is in this Phase.
@@ -56,4 +64,23 @@ type Lifecycle struct {
 	// Most recently observed status of the object
 	// +optional
 	EndTime *metav1.Time `json:"endTime,omitempty"`
+}
+
+func (lf *Lifecycle) String() string {
+	if lf.Phase == PhaseFailed {
+		if lf.Reason == "" {
+			lf.Reason = "check the logs"
+		}
+
+		return fmt.Sprintf("object:%s, Name:%s, phase:%s reason:%s",
+			lf.Kind,
+			lf.Name,
+			lf.Phase,
+			lf.Reason)
+	}
+
+	return fmt.Sprintf("object:%s, Name:%s, phase:%s ",
+		lf.Kind,
+		lf.Name,
+		lf.Phase)
 }

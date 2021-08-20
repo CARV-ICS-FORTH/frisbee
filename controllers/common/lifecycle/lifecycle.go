@@ -2,11 +2,9 @@ package lifecycle
 
 import (
 	"context"
-	"reflect"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/common"
-	"github.com/fnikolai/frisbee/pkg/wait"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -14,10 +12,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+
 // InnerObject is an object that is managed and recognized by Frisbee (including services, servicegroups, ...)
 type InnerObject interface {
 	client.Object
-	GetLifecycle() v1alpha1.Lifecycle
+	GetLifecycle() []*v1alpha1.Lifecycle
 	SetLifecycle(v1alpha1.Lifecycle)
 }
 
@@ -27,8 +26,8 @@ type InnerObject interface {
 
 // Options is a set of options that will be used to instantiate a new Watchdog
 type Options struct {
-	// FilterFunc is used to filter out events before they reach the lifecycle handler
-	Filter FilterFunc
+	// Filters is used to filter out events before they reach the lifecycle handler
+	Filters []FilterFunc
 
 	// WatchType indicate the type of objects to watch
 	WatchType InnerObject
@@ -41,6 +40,12 @@ type Options struct {
 
 	// Logger is a logger for recording asynchronous operations
 	Logger logr.Logger
+
+	// ExpectedPhase indicate the next expected phase
+	ExpectedPhase v1alpha1.Phase
+
+	// UpdateParentObject will update the parent object
+	UpdateParentObject InnerObject
 }
 
 // Option is a wrapper for Functional Options.
@@ -65,7 +70,7 @@ func Watch(kind InnerObject, names ...string) Option {
 }
 
 // WatchExternal wraps an object that does not belong to this controller.
-func WatchExternal(kind client.Object, convertor func(obj interface{}) v1alpha1.Lifecycle, names ...string) Option {
+func WatchExternal(kind client.Object, convertor GetLifecycleFunc, names ...string) Option {
 	return func(s *Options) {
 		if kind == nil || convertor == nil || len(names) == 0 {
 			panic("invalid arguments")
@@ -85,16 +90,20 @@ func WatchExternal(kind client.Object, convertor func(obj interface{}) v1alpha1.
 	}
 }
 
-// WithFilter add a filter that allows only specific object to reach function like Expect and Wait.
+// WithFilters add a filter that allows only specific object to reach function like expect and Wait.
 // Most commonly, this is used in conjunction with ParentFilter that filters only events that belongs
 // to the given parent.
-func WithFilter(filter FilterFunc) Option {
+func WithFilters(filters ...FilterFunc) Option {
 	return func(s *Options) {
-		if s.Filter != nil {
-			panic("filter already exists")
+		if len(filters) == 0 {
+			panic("empty filter list")
 		}
 
-		s.Filter = filter
+		if s.Filters != nil {
+			panic("filterlist already exists")
+		}
+
+		s.Filters = filters
 	}
 }
 
@@ -109,7 +118,7 @@ func WithAnnotator(annotator Annotator) Option {
 	}
 }
 
-// WithLogger appends a new logger for the lifecycle
+// WithLogger appends a new logger for the lifecycle.
 func WithLogger(logger logr.Logger) Option {
 	return func(s *Options) {
 		if s.Logger != nil {
@@ -120,29 +129,85 @@ func WithLogger(logger logr.Logger) Option {
 	}
 }
 
-func New(ctx context.Context, opts ...Option) *ManagedLifecycle {
-	var options Options
+// WithUpdate appends a new logger for the lifecycle.
+func WithUpdate(logger logr.Logger) Option {
+	return func(s *Options) {
+		if s.Logger != nil {
+			panic("logger already exists")
+		}
+
+		s.Logger = logger
+	}
+}
+
+// WithExpectedPhase blocks waiting for the next Phase of the parent. If it is the one expected, it returns nil.
+// Otherwise it returns an error stating what was expected and what was got.
+func WithExpectedPhase(expected v1alpha1.Phase) Option {
+	return func(s *Options) {
+		s.ExpectedPhase = expected
+	}
+}
+
+// WithUpdateParent ...
+func WithUpdateParent(obj InnerObject) Option {
+	return func(s *Options) {
+		s.UpdateParentObject = obj
+	}
+}
+
+type ManagedLifecycle struct {
+	options Options
+
+	notifier *notifier
+
+	logger logr.Logger
+
+	filterFunc func(obj interface{}) bool
+
+	eventHandlers eventHandlerFuncs
+
+	expectPhase *v1alpha1.Phase
+
+	parentObject InnerObject
+}
+
+func New(opts ...Option) *ManagedLifecycle {
+	options := Options{}
 
 	// call option functions on instance to set options on it
 	for _, apply := range opts {
 		apply(&options)
 	}
 
-	var lifecycle ManagedLifecycle
-	lifecycle.ctx = ctx
-
-	// set logger
-	if options.Logger == nil {
-		lifecycle.logger = logr.Discard()
-	} else {
-		lifecycle.logger = options.Logger
+	// if some stuff
+	lifecycle := ManagedLifecycle{
+		options:      options,
+		logger:       options.Logger,
+		parentObject: options.UpdateParentObject,
 	}
 
-	// set filter
-	if options.Filter == nil {
-		lifecycle.filterFunc = NoFilter
-	} else {
-		lifecycle.filterFunc = options.Filter
+	// validate fields
+	if lifecycle.logger == nil {
+		lifecycle.logger = logr.Discard()
+	}
+
+	// if there are no filters, this function will act as passthrough
+	lifecycle.filterFunc = func(obj interface{}) bool {
+		for _, f := range options.Filters {
+			if !f(obj) {
+				return false
+			}
+		}
+
+		return true
+	}
+
+	if options.ExpectedPhase != v1alpha1.PhaseUninitialized {
+		if lifecycle.parentObject != nil {
+			panic("expected conflicts with update parent")
+		}
+
+		lifecycle.expectPhase = &options.ExpectedPhase
 	}
 
 	var n *notifier
@@ -152,19 +217,18 @@ func New(ctx context.Context, opts ...Option) *ManagedLifecycle {
 		panic("empty children")
 	} else {
 		n = newNotifier(options.ChildrenNames)
+		n.logger = lifecycle.logger
 	}
 
 	// set watchtype
 	if options.WatchType == nil {
 		panic("empty watchtype")
 	} else {
-		n.accessChildStatus = accessStatus(options.WatchType)
+		n.getChildLifecycle = accessStatus(options.WatchType)
 	}
 
-	var handlers eventHandlerFuncs
-
 	if options.Annotator != nil {
-		handlers = eventHandlerFuncs{
+		lifecycle.eventHandlers = eventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				options.Annotator.Add(obj)
 
@@ -178,7 +242,7 @@ func New(ctx context.Context, opts ...Option) *ManagedLifecycle {
 			},
 		}
 	} else {
-		handlers = eventHandlerFuncs{
+		lifecycle.eventHandlers = eventHandlerFuncs{
 			AddFunc:    n.watchChildrenPhase,
 			UpdateFunc: n.watchChildrenPhase,
 			DeleteFunc: n.watchChildrenPhase,
@@ -186,162 +250,8 @@ func New(ctx context.Context, opts ...Option) *ManagedLifecycle {
 	}
 
 	lifecycle.notifier = n
-	lifecycle.watchChildren = func() error {
-		return watchLifecycle(ctx, lifecycle.filterFunc, unwrap(options.WatchType), handlers)
-	}
 
 	return &lifecycle
-}
-
-type ManagedLifecycle struct {
-	ctx context.Context
-
-	*notifier
-
-	filterFunc func(obj interface{}) bool
-
-	watchChildren func() error
-
-	logger logr.Logger
-}
-
-func (lc *ManagedLifecycle) Run() error {
-	if err := lc.watchChildren(); err != nil {
-		return errors.Wrapf(err, "unable to watch children")
-	}
-
-	return nil
-}
-
-// Update run in a loops and continuously updates the lifecycle of the parent. This method, however, does not
-// convey object specific status. Only updates the lifecycle.
-//
-// When using this function, there are two rules that must be respected in order to avoid conflicts
-// 1) This method should not be followed by status updates (e.g., Pending, Success).
-// 2) When deleting the parent object, use the provided Delete() method of this package.
-func (lc *ManagedLifecycle) Update(parent InnerObject) error {
-	if err := lc.Run(); err != nil {
-		return errors.Wrapf(err, "run failed")
-	}
-
-	var phase v1alpha1.Phase
-
-	var msg error
-
-	var valid error
-
-	go func() {
-		phase, msg = lc.notifier.getNextPhase()
-
-		for {
-			if valid != nil {
-				lc.logger.Error(valid, "invalid transition", "parent", parent.GetName())
-
-				return
-			}
-
-			lc.logger.Info("Update Parent",
-				"kind", reflect.TypeOf(parent),
-				"name", parent.GetName(),
-				"phase", phase,
-			)
-
-			switch phase {
-			case v1alpha1.PhaseUninitialized, v1alpha1.PhasePending:
-				panic("this should not happen")
-
-			case v1alpha1.PhaseRunning:
-				_, _ = Running(lc.ctx, parent, "all children are running")
-				phase, msg, valid = lc.notifier.getNextRunning()
-
-			case v1alpha1.PhaseChaos:
-				_, _ = Chaos(lc.ctx, parent, "at least one of the children is experiencing chaos")
-
-				// If the parent is in PhaseChaos mode, it means that failing conditions are expected and therefore
-				// do not cause a failure to the controller. Instead, they should be handled by the system under evaluation.
-				lc.logger.Info("Expected abnormal event",
-					"parent", parent.GetName(),
-					"event", msg.Error(),
-				)
-
-				phase, msg, valid = lc.notifier.getNextChaos()
-
-			case v1alpha1.PhaseSuccess:
-				_, _ = Success(lc.ctx, parent, "all children are complete")
-
-				return
-
-			case v1alpha1.PhaseFailed:
-				_, _ = Failed(lc.ctx, parent, msg)
-
-				return
-
-			default:
-				valid = errors.Errorf("invalid phase %s ", phase)
-			}
-		}
-	}()
-
-	return nil
-}
-
-// Expect blocks waiting for the next phase of the parent. If it is the one expected, it returns nil.
-// Otherwise it returns an error stating what was expected and what was got.
-func (lc *ManagedLifecycle) Expect(expected v1alpha1.Phase) error {
-	if err := lc.Run(); err != nil {
-		return errors.Wrapf(err, "run failed")
-	}
-
-	phase, err := lc.notifier.getNextPhase()
-	if err != nil {
-		return err
-	}
-
-	var msg, valid error
-
-	for {
-		switch {
-		case phase == expected: // correct phase
-			return nil
-
-		case errors.Is(valid, errIsFinal): // the transition is valid, but not the expected one
-			if msg == nil {
-				return errors.Errorf("expected %s but got %s", expected, phase)
-			}
-
-			return errors.Errorf("expected %s but got %s (%s)", expected, phase, msg)
-
-		case valid != nil:
-			return errors.Wrapf(valid, "invalid transition")
-		}
-
-		switch phase {
-		case v1alpha1.PhaseUninitialized, v1alpha1.PhaseChaos, v1alpha1.PhasePending:
-			panic(errors.Errorf("cannot wait on phase %s", expected))
-
-		case v1alpha1.PhaseRunning:
-			phase, msg, valid = lc.notifier.getNextRunning()
-
-		case v1alpha1.PhaseSuccess:
-			phase, msg, valid = lc.notifier.getNextComplete()
-
-		case v1alpha1.PhaseFailed:
-			phase, msg, valid = lc.notifier.getNextFailed()
-
-		default:
-			return errors.Errorf("invalid phase %s ", phase)
-		}
-	}
-}
-
-// Until is like expect, with the different that it also returns the updated parent.
-func (lc *ManagedLifecycle) Until(expected v1alpha1.Phase, obj client.Object) error {
-	if err := lc.Expect(expected); err != nil {
-		return err
-	}
-
-	err := common.Common.Client.Get(lc.ctx, client.ObjectKeyFromObject(obj), obj)
-	return errors.Wrapf(err, "until operation error")
 }
 
 type eventHandlerFuncs struct {
@@ -350,26 +260,22 @@ type eventHandlerFuncs struct {
 	DeleteFunc func(obj interface{})
 }
 
-func watchLifecycle(ctx context.Context, filterFunc func(obj interface{}) bool, child client.Object, handlers eventHandlerFuncs) error {
-	if filterFunc == nil {
-		panic("empty filter")
-	}
-
-	informer, err := common.Common.Cache.GetInformer(ctx, child)
+func (lc *ManagedLifecycle) Run(ctx context.Context) error {
+	informer, err := common.Common.Cache.GetInformer(ctx, unwrap(lc.options.WatchType))
 	if err != nil {
-		return errors.Wrapf(err, "unable to get informer")
+		return errors.Wrapf(err, "unable to get informer for %s", unwrap(lc.options.WatchType).GetName())
 	}
 
-	// Set up an event handler for when ServiceGroup resources change. This
-	// handler will lookup the owner of the given ServiceGroup, and if it is
-	// owned by a Foo (ServiceGroup) resource will enqueue that Foo resource for
+	// Set up an event handler for when DistributedGroup resources change. This
+	// handler will lookup the owner of the given DistributedGroup, and if it is
+	// owned by a Foo (DistributedGroup) resource will enqueue that Foo resource for
 	// processing. This way, we don't need to implement custom logic for
-	// handling ServiceGroup resources. More info on this pattern:
+	// handling DistributedGroup resources. More info on this pattern:
 	// https://github.com/kubernetes/community/blob/8cafef897a22026d42f5e5bb3f104febe7e29830/contributors/devel/controllers.md
 	informer.AddEventHandler(cachetypes.FilteringResourceEventHandler{
-		FilterFunc: filterFunc,
+		FilterFunc: lc.filterFunc,
 		Handler: cachetypes.ResourceEventHandlerFuncs{
-			AddFunc: handlers.AddFunc,
+			AddFunc: lc.eventHandlers.AddFunc,
 			UpdateFunc: func(oldObj, newObj interface{}) {
 				old, ok := oldObj.(metav1.Object)
 				if !ok {
@@ -387,180 +293,18 @@ func watchLifecycle(ctx context.Context, filterFunc func(obj interface{}) bool, 
 					return
 				}
 
-				handlers.UpdateFunc(latest)
+				lc.eventHandlers.UpdateFunc(latest)
 			},
-			DeleteFunc: handlers.DeleteFunc,
+			DeleteFunc: lc.eventHandlers.DeleteFunc,
 		},
 	})
 
-	return nil
-}
-
-type notifier struct {
-	accessChildStatus func(obj interface{}) v1alpha1.Lifecycle
-
-	parentRunning   chan struct{}
-	childrenRunning map[string]chan struct{}
-
-	parentComplete   chan struct{}
-	childrenComplete map[string]chan struct{}
-
-	chaos  chan error
-	failed chan error
-}
-
-func newNotifier(serviceNames []string) *notifier {
-	parentRun, childrenRun := wait.ChannelWaitForChildren(len(serviceNames))
-	parentExit, childrenExit := wait.ChannelWaitForChildren(len(serviceNames))
-
-	t := &notifier{
-		parentRunning:    parentRun,
-		childrenRunning:  make(map[string]chan struct{}),
-		parentComplete:   parentExit,
-		childrenComplete: make(map[string]chan struct{}),
-		failed:           make(chan error),
+	if lc.expectPhase != nil {
+		return lc.notifier.expect(*lc.expectPhase)
 	}
 
-	for i, name := range serviceNames {
-		t.childrenRunning[name] = childrenRun[i]
-		t.childrenComplete[name] = childrenExit[i]
-	}
-
-	return t
-}
-
-// watchChildren monitors the phase of children and Update the channels of the parent.
-func (n *notifier) watchChildrenPhase(obj interface{}) {
-	// To deliver idempotent operation, we want to ensure exactly-once notifications. However, an object may
-	// be in the same phase during different iterations. For this reason, we close the channel only the first
-	// and then we nil it. If the second iterations finds a nil for the given child,
-	// it returns immediately as it assumes that the closing is already delivered.
-	object, ok := obj.(client.Object)
-	if !ok {
-		panic("this should never happen")
-	}
-
-	status := n.accessChildStatus(obj)
-
-	switch status.Phase {
-	case v1alpha1.PhaseUninitialized, v1alpha1.PhasePending, v1alpha1.PhaseChaos:
-		return
-
-	case v1alpha1.PhaseRunning:
-		ch := n.childrenRunning[object.GetName()]
-		if ch == nil {
-			return
-		}
-
-		n.childrenRunning[object.GetName()] = nil
-
-		close(ch)
-
-	case v1alpha1.PhaseSuccess:
-		ch := n.childrenComplete[object.GetName()]
-		if ch == nil {
-			return
-		}
-
-		n.childrenComplete[object.GetName()] = nil
-
-		close(ch)
-
-	case v1alpha1.PhaseFailed:
-		if status.Reason == "" {
-			status.Reason = "see the logs of failing pod."
-		}
-
-		n.failed <- errors.Errorf("object:%s, name:%s, error:%s",
-			reflect.TypeOf(object),
-			object.GetName(),
-			status.Reason)
-	}
-}
-
-// getNextPhase blocks waiting for the next of the parent.
-func (n *notifier) getNextPhase() (v1alpha1.Phase, error) {
-	select {
-	case <-n.parentRunning:
-		return v1alpha1.PhaseRunning, nil
-
-	case <-n.parentComplete:
-		return v1alpha1.PhaseSuccess, nil
-
-	case err := <-n.failed:
-		return v1alpha1.PhaseFailed, err
-
-	case err := <-n.chaos:
-		return v1alpha1.PhaseChaos, err
-	}
-}
-
-// listen for all the expected transition from Running.
-func (n *notifier) getNextRunning() (phase v1alpha1.Phase, msg, valid error) {
-	select {
-	// ignore this case as it will lead to a loop
-	// case <-n.parentRunning:  return v1alpha1.PhaseRunning, nil, nil
-
-	case <-n.parentComplete:
-		return v1alpha1.PhaseSuccess, nil, nil
-
-	case err := <-n.failed:
-		return v1alpha1.PhaseFailed, err, nil
-
-	case err := <-n.chaos:
-		return v1alpha1.PhaseChaos, err, nil
-	}
-}
-
-var errIsFinal = errors.New("phase is final")
-
-// listen for all the expected transition from PhaseSuccess.
-func (n *notifier) getNextComplete() (phase v1alpha1.Phase, msg, valid error) {
-	return v1alpha1.PhaseSuccess, nil, errIsFinal
-}
-
-// listen for all the expected transition from Failed.
-func (n *notifier) getNextFailed() (phase v1alpha1.Phase, msg, valid error) {
-	return v1alpha1.PhaseFailed, nil, errIsFinal
-}
-
-// listen for all the expected transition from Chaos.
-func (n *notifier) getNextChaos() (phase v1alpha1.Phase, msg, valid error) {
-	select {
-	case <-n.parentRunning:
-		return v1alpha1.PhaseRunning, nil,
-			errors.Errorf("invalid transition %s -> %s", v1alpha1.PhaseChaos, v1alpha1.PhaseRunning)
-
-	case <-n.parentComplete:
-		return v1alpha1.PhaseSuccess, nil, nil
-
-	case err := <-n.failed:
-		return v1alpha1.PhaseFailed, err,
-			errors.Errorf("invalid transition %s -> %s", v1alpha1.PhaseChaos, v1alpha1.PhaseFailed)
-
-		// ignore this case as it will lead to a loop due to the active channel
-		// case err := <-n.chaos:
-		//	return v1alpha1.PhaseChaos, err, nil
-	}
-}
-
-// Delete is a wrapper that addresses a circular dependency issue with the lifecycle monitoring.
-// By default, Kubernetes deletes Children before the parent. When a Child is removed,
-// the lifecycle watchdog detects that a child is deleted (failed) and updates the parent. However,
-// the parent used in the lifecycle is a stalled copy of the actual parent object. Hence, the update
-// causes a conflict between the stalled and the actual object.
-//
-// This deletion method addresses this issue by first deleting the parent, and then the children.
-func Delete(ctx context.Context, c client.Client, obj client.Object) error {
-	// There are three different options for the deletion propagation policy:
-	//
-	//    Foreground: Children are deleted before the parent (post-order)
-	//    Background: Parent is deleted before the children (pre-order)
-	//    Orphan: Owner references are ignored
-	deletePolicy := metav1.DeletePropagationBackground
-
-	if err := c.Delete(ctx, obj, &client.DeleteOptions{PropagationPolicy: &deletePolicy}); err != nil {
-		return errors.Wrapf(err, "unable to delete object %s", obj.GetName())
+	if lc.parentObject != nil {
+		return lc.notifier.Update(ctx, lc.parentObject)
 	}
 
 	return nil

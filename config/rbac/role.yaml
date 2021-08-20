@@ -7,22 +7,6 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
-  - ""
-  resources:
-  - pods
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - services
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
   - frisbee.io
   resources:
   - chaoss
@@ -77,7 +61,7 @@ rules:
 - apiGroups:
   - frisbee.io
   resources:
-  - servicegroups
+  - distributedgroups
   verbs:
   - create
   - delete
@@ -89,39 +73,13 @@ rules:
 - apiGroups:
   - frisbee.io
   resources:
-  - servicegroups/finalizers
+  - distributedgroups/finalizers
   verbs:
   - update
 - apiGroups:
   - frisbee.io
   resources:
-  - servicegroups/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - frisbee.io
-  resources:
-  - services
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - frisbee.io
-  resources:
-  - services/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - frisbee.io
-  resources:
-  - services/status
+  - distributedgroups/status
   verbs:
   - get
   - patch
@@ -131,8 +89,8 @@ rules:
   resources:
   - workflows
   verbs:
-  - createServiceGroup
   - delete
+  - distributedGroup
   - get
   - list
   - patch

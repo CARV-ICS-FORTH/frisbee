@@ -3,8 +3,8 @@
 Welcome to Frisbee world, here is a list of contributing guide for you. If you find something incorrect or missing
 content in the page, please submit an issue or PR to fix it.
 
-
 ## What can you do
+
 Every action to make the project better is encouraged. On GitHub, every improvement for the project could be via a PR
 (short for pull request).
 
@@ -23,14 +23,17 @@ Actually, it is impossible to list them completely. Just remember one principle:
 
 **WE ARE LOOKING FORWARD TO ANY PR FROM YOU.**
 
-
 ## Contributing
+
 ### Preparation
+
 Before you contribute, you need to register a Github ID. Prepare the following environment:
+
 * go
 * git
 
 ### Workflow
+
 We use the `master` branch as the development branch, which indicates that this is an unstable branch.
 
 Here is the workflow for contributors:
@@ -43,42 +46,52 @@ Here is the workflow for contributors:
 6. Push your commits to your forked repository
 7. Create a pull request
 
-Please follow [Creating a pull request](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request).
-Please make sure the PR has a corresponding issue.
+Please
+follow [Creating a pull request](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request)
+. Please make sure the PR has a corresponding issue.
 
-After creating a PR, one or more reviewers will be assigned to the pull request.
-The reviewers will review the code.
+After creating a PR, one or more reviewers will be assigned to the pull request. The reviewers will review the code.
 
-Before merging a PR, squash any fix review feedback, typo, merged, and rebased sorts of commits.
-The final commit message should be clear and concise.
+Before merging a PR, squash any fix review feedback, typo, merged, and rebased sorts of commits. The final commit
+message should be clear and concise.
 
 ### Compile
+
 Go to the project root directory which you cloned and execute compile:
+
 ```bash
 make
 ```
 
 If you compile the Linux package on the Mac operating system, you can do:
+
 ```bash
 make build_linux
 ```
 
 If you compile the Frisbee image, you can do:
+
 ```bash
 make build_image
 ```
+
 clean compilation:
+
 ```bash
 make clean
 ```
 
 ### Code Style
+
 See details of [CODE STYLE](code_styles.md)
 
 ### Commit Rules
+
 #### Commit Message
 
-Commit message could help reviewers better understand what is the purpose of submitted PR. It could help accelerate the code review procedure as well. We encourage contributors to use **EXPLICIT** commit message rather than an ambiguous message. In general, we advocate the following commit message type:
+Commit message could help reviewers better understand what is the purpose of submitted PR. It could help accelerate the
+code review procedure as well. We encourage contributors to use **EXPLICIT** commit message rather than an ambiguous
+message. In general, we advocate the following commit message type:
 
 * feat: A new feature
 * fix: A bug fix
@@ -99,30 +112,33 @@ If you get lost, please see [How to Write a Git Commit Message](http://chris.bea
 
 #### Commit Content
 
-Commit content represents all content changes included in one commit. We had better include things in one single commit which could support the reviewer's complete review without any other commits' help. In other word, contents in one single commit can pass the CI to avoid code mess. In brief, there are two minor rules for us to keep in mind:
+Commit content represents all content changes included in one commit. We had better include things in one single commit
+which could support the reviewer's complete review without any other commits' help. In other word, contents in one
+single commit can pass the CI to avoid code mess. In brief, there are two minor rules for us to keep in mind:
 
 * avoid very large change in a commit;
 * complete and reviewable for each commit.
 
 No matter commit message or commit content, we do take more emphasis on code review.
 
-
 ### Pull Request
-We use [GitHub Issues](https://github.com/CARV-ICS-FORTH/frisbee/issues) and [Pull Requests](https://github.com/CARV-ICS-FORTH/frisbee/pulls) for trackers.
 
-If you find a typo in document, find a bug in code, or want new features, or want to give suggestions,
-you can [open an issue on GitHub](https://github.com/CARV-ICS-FORTH/frisbee/issues/new) to report it.
-Please follow the guideline message in the issue template.
+We use [GitHub Issues](https://github.com/CARV-ICS-FORTH/frisbee/issues)
+and [Pull Requests](https://github.com/CARV-ICS-FORTH/frisbee/pulls) for trackers.
 
-If you want to contribute, please follow the [contribution workflow](#Workflow) and create a new pull request.
-If your PR contains large changes, e.g. component refactor or new components, please write detailed documents
-about its design and usage.
+If you find a typo in document, find a bug in code, or want new features, or want to give suggestions, you
+can [open an issue on GitHub](https://github.com/CARV-ICS-FORTH/frisbee/issues/new) to report it. Please follow the
+guideline message in the issue template.
 
-Note that a single PR should not be too large. If heavy changes are required, it's better to separate the changes
-to a few individual PRs.
+If you want to contribute, please follow the [contribution workflow](#Workflow) and create a new pull request. If your
+PR contains large changes, e.g. component refactor or new components, please write detailed documents about its design
+and usage.
 
+Note that a single PR should not be too large. If heavy changes are required, it's better to separate the changes to a
+few individual PRs.
 
 ### Code Review
+
 All code should be well reviewed by one or more committers. Some principles:
 
 - Readability: Important code should be well-documented. Comply with our code style.
@@ -130,17 +146,22 @@ All code should be well reviewed by one or more committers. Some principles:
 - Testability: Important code should be well-tested (high unit test coverage).
 
 ## Others
+
 ### Code of Conduct
+
 *"In the interest of fostering an open and welcoming environment, we as contributors and maintainers pledge to make
-participation in our project and our community a harassment-free experience for everyone, regardless of age, body
-size, disability, ethnicity, sex characteristics, gender identity and expression, level of experience, education,
+participation in our project and our community a harassment-free experience for everyone, regardless of age, body size,
+disability, ethnicity, sex characteristics, gender identity and expression, level of experience, education,
 socio-economic status, nationality, personal appearance, race, religion, or sexual identity and orientation..."*
 
-See details of [CONTRIBUTOR COVENANT CODE OF CONDUCT](https://github.com/CARV-ICS-FORTH/frisbee/blob/master/docs/CODE_OF_CONDUCT.md)
+See details
+of [CONTRIBUTOR COVENANT CODE OF CONDUCT](https://github.com/CARV-ICS-FORTH/frisbee/blob/master/docs/CODE_OF_CONDUCT.md)
 
 ### Sign your work
-The sign-off is a simple line at the end of the explanation for the patch, which certifies that you wrote it or otherwise have the right to pass it on as an open-source patch.
-The rules are pretty simple: if you can certify the below (from [developercertificate.org](http://developercertificate.org/)):
+
+The sign-off is a simple line at the end of the explanation for the patch, which certifies that you wrote it or
+otherwise have the right to pass it on as an open-source patch. The rules are pretty simple: if you can certify the
+below (from [developercertificate.org](http://developercertificate.org/)):
 
 ```
 Developer Certificate of Origin
