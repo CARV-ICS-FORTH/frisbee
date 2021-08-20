@@ -12,7 +12,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-
 // InnerObject is an object that is managed and recognized by Frisbee (including services, servicegroups, ...)
 type InnerObject interface {
 	client.Object
@@ -69,8 +68,10 @@ func Watch(kind InnerObject, names ...string) Option {
 	}
 }
 
+type StatusAccessor func(obj interface{}) []*v1alpha1.Lifecycle
+
 // WatchExternal wraps an object that does not belong to this controller.
-func WatchExternal(kind client.Object, convertor GetLifecycleFunc, names ...string) Option {
+func WatchExternal(kind client.Object, convertor StatusAccessor, names ...string) Option {
 	return func(s *Options) {
 		if kind == nil || convertor == nil || len(names) == 0 {
 			panic("invalid arguments")
@@ -90,7 +91,7 @@ func WatchExternal(kind client.Object, convertor GetLifecycleFunc, names ...stri
 	}
 }
 
-// WithFilters add a filter that allows only specific object to reach function like expect and Wait.
+// WithFilters add a filter that allows only specific object to reach function like Expect and Wait.
 // Most commonly, this is used in conjunction with ParentFilter that filters only events that belongs
 // to the given parent.
 func WithFilters(filters ...FilterFunc) Option {
@@ -129,17 +130,6 @@ func WithLogger(logger logr.Logger) Option {
 	}
 }
 
-// WithUpdate appends a new logger for the lifecycle.
-func WithUpdate(logger logr.Logger) Option {
-	return func(s *Options) {
-		if s.Logger != nil {
-			panic("logger already exists")
-		}
-
-		s.Logger = logger
-	}
-}
-
 // WithExpectedPhase blocks waiting for the next Phase of the parent. If it is the one expected, it returns nil.
 // Otherwise it returns an error stating what was expected and what was got.
 func WithExpectedPhase(expected v1alpha1.Phase) Option {
@@ -158,7 +148,7 @@ func WithUpdateParent(obj InnerObject) Option {
 type ManagedLifecycle struct {
 	options Options
 
-	notifier *notifier
+	notifier *BoundedFSM
 
 	logger logr.Logger
 
@@ -210,21 +200,21 @@ func New(opts ...Option) *ManagedLifecycle {
 		lifecycle.expectPhase = &options.ExpectedPhase
 	}
 
-	var n *notifier
+	var fsm *BoundedFSM
 
 	// set children
 	if len(options.ChildrenNames) == 0 {
 		panic("empty children")
 	} else {
-		n = newNotifier(options.ChildrenNames)
-		n.logger = lifecycle.logger
+		fsm = NewBoundedFSM(options.ChildrenNames)
+		fsm.logger = lifecycle.logger
 	}
 
 	// set watchtype
 	if options.WatchType == nil {
 		panic("empty watchtype")
 	} else {
-		n.getChildLifecycle = accessStatus(options.WatchType)
+		fsm.getChildLifecycle = accessStatus(options.WatchType)
 	}
 
 	if options.Annotator != nil {
@@ -232,24 +222,24 @@ func New(opts ...Option) *ManagedLifecycle {
 			AddFunc: func(obj interface{}) {
 				options.Annotator.Add(obj)
 
-				n.watchChildrenPhase(obj)
+				fsm.HandleEvent(obj)
 			},
-			UpdateFunc: n.watchChildrenPhase,
+			UpdateFunc: fsm.HandleEvent,
 			DeleteFunc: func(obj interface{}) {
 				options.Annotator.Delete(obj)
 
-				n.watchChildrenPhase(obj)
+				fsm.HandleEvent(obj)
 			},
 		}
 	} else {
 		lifecycle.eventHandlers = eventHandlerFuncs{
-			AddFunc:    n.watchChildrenPhase,
-			UpdateFunc: n.watchChildrenPhase,
-			DeleteFunc: n.watchChildrenPhase,
+			AddFunc:    fsm.HandleEvent,
+			UpdateFunc: fsm.HandleEvent,
+			DeleteFunc: fsm.HandleEvent,
 		}
 	}
 
-	lifecycle.notifier = n
+	lifecycle.notifier = fsm
 
 	return &lifecycle
 }
@@ -300,7 +290,7 @@ func (lc *ManagedLifecycle) Run(ctx context.Context) error {
 	})
 
 	if lc.expectPhase != nil {
-		return lc.notifier.expect(*lc.expectPhase)
+		return lc.notifier.Expect(*lc.expectPhase)
 	}
 
 	if lc.parentObject != nil {

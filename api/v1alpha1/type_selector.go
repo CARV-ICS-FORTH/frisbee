@@ -4,8 +4,8 @@ package v1alpha1
 type Mode string
 
 const (
-	// OneMode represents that the system will select one object randomly.
-	OneMode Mode = "one"
+	// AnyMode represents that the system will select one object randomly.
+	AnyMode Mode = "any"
 	// AllMode represents that the system will select all objects  regardless of status
 	// (not ready or not running pods includes).
 	// Use this label carefully.

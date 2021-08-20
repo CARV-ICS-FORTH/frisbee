@@ -31,6 +31,10 @@ func (f *partition) generate(ctx context.Context, obj *v1alpha1.Chaos) unstructu
 		Object: map[string]interface{}{
 			"apiVersion": "chaos-mesh.org/v1alpha1",
 			"kind":       "NetworkChaos",
+			"metadata": map[string]interface{}{
+				"name":      obj.GetName(),
+				"namespace": obj.GetNamespace(),
+			},
 			"spec": map[string]interface{}{
 				"action": "partition",
 				"mode":   "all",
@@ -65,8 +69,10 @@ func (f *partition) Inject(ctx context.Context, obj *v1alpha1.Chaos) error {
 		return errors.Wrapf(err, "injection failed")
 	}
 
+	// fixme: it may need FilterByName()
+
 	err = lifecycle.New(
-		lifecycle.WatchExternal(&chaos, convertStatus, chaos.GetName()),
+		lifecycle.WatchExternal(&chaos, AccessChaosStatus, chaos.GetName()),
 		lifecycle.WithFilters(lifecycle.FilterByParent(obj.GetUID())),
 		lifecycle.WithAnnotator(&lifecycle.RangeAnnotation{}),
 		lifecycle.WithUpdateParent(obj),

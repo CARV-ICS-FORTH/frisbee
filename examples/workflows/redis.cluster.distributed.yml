@@ -1,26 +1,34 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Workflow
 metadata:
-  name: elasticity
+  name: redis-experiment
 spec:
   importMonitors: [ "sysmon/container", "redismon/telegraf", "ycsbmon/goycsb" ]
   ingress: localhost
 
   actions:
-    # Create a Master node
+    # Create Redis nodes
     - actiontype: DistributedGroup
-      name: "masters"
+      name: masters
       distributedGroup:
-        templateRef: redis/master
-        instances: 1
+        templateRef: rediscluster/master
+        instances: 3
 
-
-    # Wait for master node to become ready, and ingest 100K non-overlapping keys, with 10 parallel clients
+    # Create redis cluster
     - actiontype: DistributedGroup
-      name: "loaders"
+      name: boot
       depends: { running: [ masters ] }
       distributedGroup:
-        templateRef: redis/loader
+        templateRef: rediscluster/bootstrap
+        inputs:
+          - { servers: .group.masters.all }
+
+    # Ingest keys in parallel into different ranges
+    - actiontype: DistributedGroup
+      name: loaders
+      depends: { running: [ masters ],   success: [ boot ] }
+      distributedGroup:
+        templateRef: rediscluster/loader
         inputs:
           - { server: .group.masters.any, recordcount: "100000", offset: "0" }
           - { server: .group.masters.any, recordcount: "100000", offset: "100000" }
@@ -33,34 +41,19 @@ spec:
           - { server: .group.masters.any, recordcount: "100000", offset: "800000" }
           - { server: .group.masters.any, recordcount: "100000", offset: "900000" }
 
-
-    # Wait for ingestion to complete, and start querying clients, with different workloads
+    # Run queries
     - actiontype: DistributedGroup
-      name: "runners"
-      depends: { running: [ masters ], success: [ loaders ] }
+      name: runners
+      depends: { running: [ masters, slaves ], success: [ loaders ] }
       distributedGroup:
-        templateRef: redis/runner
+        templateRef: rediscluster/runner
+        instances: 5
         inputs:
-          - { server: .group.masters.any, workload: "workloada", operationcount: "10000000" }
-          - { server: .group.masters.any, workload: "workloadb", operationcount: "10000000" }
-          - { server: .group.masters.any, workload: "workloadc", operationcount: "10000000" }
-          - { server: .group.masters.any, workload: "workloadd", operationcount: "10000000" }
-          - { server: .group.masters.any, workload: "workloada", operationcount: "10000000" }
-        schedule:
-          cron: "@every 2m"
+          - { server: .group.masters.any, workload: workloada,  operationcount: "1000000" }
 
-
-    # Stop the masters
-    - actiontype: Stop
-      name: "teardown"
-      depends: { success: [ runners ], duration: "1m" }
-      stop:
-        selector: { macro: .group.masters.all }
-        schedule:
-          cron: "@every 2m"
 
     # Wait until servers are removed
     - actiontype: Wait
-      name: "terminate"
+      name: "teardown"
       wait:
-        success: [ masters ]
+        success: [ runners ]

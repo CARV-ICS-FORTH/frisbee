@@ -4,12 +4,58 @@ import (
 	"strings"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// Pod translates the Pod's Lifecycle to Frisbee Lifecycle
-func Pod() GetLifecycleFunc {
+/******************************************************
+	Wrappers and Unwrappers for InnerObjects
+/******************************************************/
+
+// externalToInnerObject is a wrapper for converting external objects (e.g, Pods) to InnerObjects managed
+// by the Frisbee controller.
+type externalToInnerObject struct {
+	client.Object
+
+	LifecycleFunc func(obj interface{}) []*v1alpha1.Lifecycle
+}
+
+func (d *externalToInnerObject) GetLifecycle() []*v1alpha1.Lifecycle {
+	return d.LifecycleFunc(d.Object)
+}
+
+func (d *externalToInnerObject) SetLifecycle(v1alpha1.Lifecycle) {
+	panic(errors.Errorf("cannot set status on external object"))
+}
+
+func unwrap(obj client.Object) client.Object {
+	wrapped, ok := obj.(*externalToInnerObject)
+	if ok {
+		return wrapped.Object
+	}
+
+	return obj
+}
+
+func accessStatus(obj interface{}) StatusAccessor {
+	external, ok := obj.(*externalToInnerObject)
+	if ok {
+		return external.LifecycleFunc
+	}
+
+	return func(inner interface{}) []*v1alpha1.Lifecycle {
+		return inner.(InnerObject).GetLifecycle()
+	}
+}
+
+/******************************************************
+	Known Accessor for External Objects
+/******************************************************/
+
+// Pod translates the Pod's Lifecycle to Frisbee Lifecycle.
+func Pod() StatusAccessor {
 	return func(obj interface{}) []*v1alpha1.Lifecycle {
 		pod := obj.(*corev1.Pod)
 
@@ -70,7 +116,7 @@ func Pod() GetLifecycleFunc {
 }
 
 // Containers translates the Container's Lifecycle to Frisbee Lifecycle.
-func Containers() GetLifecycleFunc {
+func Containers() StatusAccessor {
 	return func(obj interface{}) []*v1alpha1.Lifecycle {
 		var lifecycles []*v1alpha1.Lifecycle
 
