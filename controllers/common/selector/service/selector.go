@@ -193,7 +193,7 @@ func filterServicesByMode(services []*v1alpha1.ServiceSpec, mode v1alpha1.Mode, 
 	}
 
 	switch mode {
-	case v1alpha1.OneMode:
+	case v1alpha1.AnyMode:
 		index := getRandomNumber(len(services))
 		service := services[index]
 

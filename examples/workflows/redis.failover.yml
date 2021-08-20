@@ -21,7 +21,7 @@ spec:
       distributedGroup:
         templateRef: redis/slave
         inputs:
-          - { master: .group.masters.one }
+          - { master: .group.masters.any }
 
 
     # Create a failover manager
@@ -31,7 +31,7 @@ spec:
       distributedGroup:
         templateRef: redis/sentinel
         inputs:
-          - { master: .group.masters.one }
+          - { master: .group.masters.any }
 
 
     # Ingest keys in parallel into different ranges
@@ -41,16 +41,16 @@ spec:
       distributedGroup:
         templateRef: redis/loader
         inputs:
-          - { server: .group.masters.one, recordcount: "100000", offset: "0" }
-          - { server: .group.masters.one, recordcount: "100000", offset: "100000" }
-          - { server: .group.masters.one, recordcount: "100000", offset: "200000" }
-          - { server: .group.masters.one, recordcount: "100000", offset: "300000" }
-          - { server: .group.masters.one, recordcount: "100000", offset: "400000" }
-          - { server: .group.masters.one, recordcount: "100000", offset: "500000" }
-          - { server: .group.masters.one, recordcount: "100000", offset: "600000" }
-          - { server: .group.masters.one, recordcount: "100000", offset: "700000" }
-          - { server: .group.masters.one, recordcount: "100000", offset: "800000" }
-          - { server: .group.masters.one, recordcount: "100000", offset: "900000" }
+          - { server: .group.masters.any, recordcount: "100000", offset: "0" }
+          - { server: .group.masters.any, recordcount: "100000", offset: "100000" }
+          - { server: .group.masters.any, recordcount: "100000", offset: "200000" }
+          - { server: .group.masters.any, recordcount: "100000", offset: "300000" }
+          - { server: .group.masters.any, recordcount: "100000", offset: "400000" }
+          - { server: .group.masters.any, recordcount: "100000", offset: "500000" }
+          - { server: .group.masters.any, recordcount: "100000", offset: "600000" }
+          - { server: .group.masters.any, recordcount: "100000", offset: "700000" }
+          - { server: .group.masters.any, recordcount: "100000", offset: "800000" }
+          - { server: .group.masters.any, recordcount: "100000", offset: "900000" }
 
     # Run queries
     - actiontype: DistributedGroup
@@ -60,7 +60,7 @@ spec:
         templateRef: redis/runner
         instances: 5
         inputs:
-          - { server: .group.masters.one, workload: workloada,  operationcount: "1000000" }
+          - { server: .group.masters.any, workload: workloada,  operationcount: "1000000" }
 
 
     # Stop the master nodes after a few minutes

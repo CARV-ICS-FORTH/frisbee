@@ -8,16 +8,14 @@ import (
 	"github.com/fnikolai/frisbee/pkg/wait"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 )
 
-type GetLifecycleFunc func(obj interface{}) []*v1alpha1.Lifecycle
-
-
-type notifier struct {
+// BoundedFSM calculates the present state of the parent by using a set of predefined children.
+// A BoundedFSM is useful in group where the parent becomes running only if all the (predefined) children are running.
+type BoundedFSM struct {
 	logger logr.Logger
 
-	getChildLifecycle GetLifecycleFunc
+	getChildLifecycle StatusAccessor
 
 	parentRunning   chan struct{}
 	childrenRunning map[string]chan struct{}
@@ -29,11 +27,11 @@ type notifier struct {
 	failed chan error
 }
 
-func newNotifier(serviceNames []string) *notifier {
+func NewBoundedFSM(serviceNames []string) *BoundedFSM {
 	parentRun, childrenRun := wait.ChannelWaitForChildren(len(serviceNames))
 	parentExit, childrenExit := wait.ChannelWaitForChildren(len(serviceNames))
 
-	t := &notifier{
+	t := &BoundedFSM{
 		parentRunning:   parentRun,
 		childrenRunning: make(map[string]chan struct{}),
 		parentComplete:  parentExit,
@@ -46,24 +44,23 @@ func newNotifier(serviceNames []string) *notifier {
 		t.childrenSuccess[name] = childrenExit[i]
 	}
 
-	logrus.Warn("EXPECTE SERVICES ", serviceNames)
-
 	return t
 }
 
-// watchChildren monitors the Phase of children and Update the channels of the parent.
+// HandleEvent monitors the Phase of children and Update the channels of the parent.
 // To deliver idempotent operation, we want to ensure exactly-once notifications. However, an object may
 // be in the same Phase during different iterations. For this Reason, we close the channel only the first
 // and then we nil it. If the second iterations finds a nil for the given child,
 // it returns immediately as it assumes that the closing is already delivered.
-func (n *notifier) watchChildrenPhase(obj interface{}) {
+func (n *BoundedFSM) HandleEvent(obj interface{}) {
+
 	for _, event := range n.getChildLifecycle(obj) {
 		if event == nil || *event == (v1alpha1.Lifecycle{}) { // ignore empty events (e.g, add)
 			continue
 		}
 
 		if event.Name == "" || event.Kind == "" {
-			panic(errors.Errorf("invalid args. name: %s, kind:%s", event.Name, event.Kind))
+			panic(errors.Errorf("controller panic due to invalid args. name: %s, kind:%s", event.Name, event.Kind))
 		}
 
 		switch event.Phase {
@@ -101,7 +98,7 @@ func (n *notifier) watchChildrenPhase(obj interface{}) {
 }
 
 // getNextPhase blocks waiting for the next of the parent.
-func (n *notifier) getNextPhase() (v1alpha1.Phase, error) {
+func (n *BoundedFSM) getNextPhase() (v1alpha1.Phase, error) {
 	select {
 	case <-n.parentRunning:
 		return v1alpha1.PhaseRunning, nil
@@ -118,7 +115,7 @@ func (n *notifier) getNextPhase() (v1alpha1.Phase, error) {
 }
 
 // listen for all the expected transition from Running.
-func (n *notifier) getNextRunning() (phase v1alpha1.Phase, msg, valid error) {
+func (n *BoundedFSM) getNextRunning() (phase v1alpha1.Phase, msg, valid error) {
 	select {
 	// ignore this case as it will lead to a loop
 	// case <-n.parentRunning:  return v1alpha1.PhaseRunning, nil, nil
@@ -137,17 +134,17 @@ func (n *notifier) getNextRunning() (phase v1alpha1.Phase, msg, valid error) {
 var errIsFinal = errors.New("Phase is final")
 
 // listen for all the expected transition from PhaseSuccess.
-func (n *notifier) getNextComplete() (phase v1alpha1.Phase, msg, valid error) {
+func (n *BoundedFSM) getNextComplete() (phase v1alpha1.Phase, msg, valid error) {
 	return v1alpha1.PhaseSuccess, nil, errIsFinal
 }
 
 // listen for all the expected transition from Failed.
-func (n *notifier) getNextFailed() (phase v1alpha1.Phase, msg, valid error) {
+func (n *BoundedFSM) getNextFailed() (phase v1alpha1.Phase, msg, valid error) {
 	return v1alpha1.PhaseFailed, nil, errIsFinal
 }
 
 // listen for all the expected transition from Chaos.
-func (n *notifier) getNextChaos() (phase v1alpha1.Phase, msg, valid error) {
+func (n *BoundedFSM) getNextChaos() (phase v1alpha1.Phase, msg, valid error) {
 	select {
 	case <-n.parentRunning:
 		return v1alpha1.PhaseRunning, nil,
@@ -166,7 +163,7 @@ func (n *notifier) getNextChaos() (phase v1alpha1.Phase, msg, valid error) {
 	}
 }
 
-func (n *notifier) expect(expected v1alpha1.Phase) error {
+func (n *BoundedFSM) Expect(expected v1alpha1.Phase) error {
 	phase, err := n.getNextPhase()
 	if err != nil {
 		return err
@@ -215,7 +212,7 @@ func (n *notifier) expect(expected v1alpha1.Phase) error {
 // When using this function, there are two rules that must be respected in order to avoid conflicts
 // 1) This method should not be followed by status updates (e.g., Pending, Success).
 // 2) When deleting the parent object, use the provided Delete() method of this package.
-func (n *notifier) Update(ctx context.Context, parent InnerObject) error {
+func (n *BoundedFSM) Update(ctx context.Context, parent InnerObject) error {
 
 	var phase v1alpha1.Phase
 
