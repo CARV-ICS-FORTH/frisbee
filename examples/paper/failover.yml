@@ -21,7 +21,7 @@ spec:
       distributedGroup:
         templateRef: redis/slave
         inputs: # parameters to template ENV variables
-          - { master: .group.masters.one }
+          - { master: .group.masters.any }
 
 
     # Create a failover manager
@@ -31,7 +31,7 @@ spec:
       distributedGroup:
         templateRef: redis/sentinel
         inputs:
-          - { master: .group.masters.one }
+          - { master: .group.masters.any }
 
 
     # Ingest keys in parallel into different ranges
@@ -41,39 +41,32 @@ spec:
       distributedGroup:
         templateRef: redis/loader
         inputs:
-          - { server: .group.masters.one, recordcount: "100000000", offset: "0" }
+          - { server: .group.masters.any, recordcount: "100000000", offset: "0" }
 
 
     # Cause two partition failures with different duration
     - actiontype: Chaos
       name: partition0
-      depends: { running: [ masters ], duration: "5m" }
+      depends: { running: [ masters, slaves ], duration: "5m" }
       chaos:
         type: partition
         partition:
           selector:
-            macro: .group.masters.one
+            macro: .group.masters.any
           duration: "2m"
 
     - actiontype: Chaos
       name: partition1
-      depends: { running: [ masters ], success: [ partition0 ], duration: "3m" }
+      depends: { running: [ masters, slaves  ], success: [ partition0 ], duration: "3m" }
       chaos:
         type: partition
         partition:
-          selector: { macro: .group.masters.one }
+          selector: { macro: .group.masters.any }
           duration: "2m"
 
-
-    # Stop the master nodes after a few minutes
-    - actiontype: Stop
-      name: "teardown"
-      depends: { success: [ partition1 ], duration: "1m" }
-      stop:
-        selector: { macro: .group.runners.all }
 
     # Wait until servers are removed
     - actiontype: Wait
       name: "terminate"
       wait:
-        success: [ masters ]
+        success: [ loaders ]

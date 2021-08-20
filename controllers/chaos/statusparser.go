@@ -2,9 +2,12 @@ package chaos
 
 import (
 	"reflect"
+	"time"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/mitchellh/mapstructure"
+	"github.com/pkg/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
@@ -14,19 +17,22 @@ const (
 	ChaosFailed = "Failed"
 )
 
-type ChaosStatus struct {
+type metadata struct{}
+
+type v1alpha1ChaosStatus struct {
 	FailedMessage string `json:"failedMessage"`
 
 	Experiment *struct {
-		Phase string `json:"phase"`
+		Phase     string `json:"phase"`
+		StartTime string `json:"startTime,omitempty"`
+		EndTime   string `json:"endTime,omitempty"`
 	} `json:"experiment"`
 }
 
-func convertStatus(obj interface{}) []*v1alpha1.Lifecycle {
-
+func AccessChaosStatus(obj interface{}) []*v1alpha1.Lifecycle {
 	chaos, ok := obj.(*unstructured.Unstructured)
 	if !ok {
-		return []*v1alpha1.Lifecycle{&v1alpha1.Lifecycle{
+		return []*v1alpha1.Lifecycle{{
 			Kind:      reflect.TypeOf(obj).String(),
 			Name:      "unknown",
 			Phase:     v1alpha1.PhaseFailed,
@@ -38,53 +44,66 @@ func convertStatus(obj interface{}) []*v1alpha1.Lifecycle {
 
 	chaosStatus, ok := chaos.Object["status"]
 	if !ok {
-		return []*v1alpha1.Lifecycle{&v1alpha1.Lifecycle{
+		return []*v1alpha1.Lifecycle{{
 			Kind:      "chaos",
 			Name:      chaos.GetName(),
-			Phase:     v1alpha1.PhaseFailed,
-			Reason:    "chaos injection error. unable to retrieve status",
+			Phase:     v1alpha1.PhasePending,
+			Reason:    "don't why Chaos-Mesh throws empty messages. Probably it's for pending",
 			StartTime: nil,
 			EndTime:   nil,
 		}}
 	}
 
-	var parsedChaosStatus ChaosStatus
+	var parsed v1alpha1ChaosStatus
 
-	if err := mapstructure.Decode(chaosStatus, &parsedChaosStatus); err != nil {
-		panic(err)
-	}
-
-	status := v1alpha1.Lifecycle{
-		Kind: "chaos",
-		Name: chaos.GetName(),
+	if err := mapstructure.Decode(chaosStatus, &parsed); err != nil {
+		panic(errors.Wrap(err, "unable to parse chaos message"))
 	}
 
 	switch {
-	case parsedChaosStatus.FailedMessage != "":
-		status.Phase = v1alpha1.PhaseFailed
-		status.Reason = parsedChaosStatus.FailedMessage
+	case parsed.Experiment.Phase == ChaosFailed || parsed.FailedMessage != "":
+		return []*v1alpha1.Lifecycle{{
+			Kind:      "chaos",
+			Name:      chaos.GetName(),
+			Phase:     v1alpha1.PhaseFailed,
+			Reason:    parsed.FailedMessage,
+			StartTime: strToTime(parsed.Experiment.StartTime),
+			EndTime:   strToTime(parsed.Experiment.EndTime),
+		}}
 
-	case parsedChaosStatus.Experiment.Phase == ChaosFailed:
-		status.Phase = v1alpha1.PhaseFailed
-		status.Reason = parsedChaosStatus.FailedMessage
-
-	case parsedChaosStatus.Experiment.Phase == ChaosRunning:
-		status.Phase = v1alpha1.PhaseRunning
-		status.Reason = "chaos is definitely is running"
+	case parsed.Experiment.Phase == ChaosRunning:
+		return []*v1alpha1.Lifecycle{{
+			Kind:      "chaos",
+			Name:      chaos.GetName(),
+			Phase:     v1alpha1.PhaseRunning,
+			Reason:    "chaos is definitely is running",
+			StartTime: strToTime(parsed.Experiment.StartTime),
+			EndTime:   strToTime(parsed.Experiment.EndTime),
+		}}
 
 	default:
-		status.Phase = v1alpha1.PhasePending
-		status.Reason = "unsure about the chaos condition"
+		return []*v1alpha1.Lifecycle{{
+			Kind:      "chaos",
+			Name:      chaos.GetName(),
+			Phase:     v1alpha1.PhasePending,
+			Reason:    "unsure about the chaos condition. see the controller logs",
+			StartTime: strToTime(parsed.Experiment.StartTime),
+			EndTime:   strToTime(parsed.Experiment.EndTime),
+		}}
+	}
+}
 
-		/*
-			panic(errors.Errorf("external object %s reached an unknown status. Parsed:%v \n Raw:%v",
-				chaos.GetName(),
-				parsedChaosStatus,
-				chaosStatus,
-			))
-
-		*/
+func strToTime(strTime string) *metav1.Time {
+	if strTime == "" {
+		return nil
 	}
 
-	return []*v1alpha1.Lifecycle{&status}
+	layout := "2006-01-02T15:04:05.000Z"
+
+	t, err := time.Parse(layout, strTime)
+	if err != nil {
+		return nil
+	}
+
+	return &metav1.Time{Time: t}
 }
