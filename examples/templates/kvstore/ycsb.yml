@@ -1,3 +1,4 @@
+---
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
@@ -5,1717 +6,1726 @@ metadata:
 spec:
   monitors:
     "goycsb":
-      agent:
-        container:
-          name: telegraf
-          image: telegraf
-          ports:
-            - name: mon-ycsb
-              containerPort: 9443
-          command:
-            - /bin/sh # Run shell
-            - -c # Read from string
-            - |  # Multi-line str
-              set -eum
+      spec: |
+        agent:
+          container:
+            name: telegraf
+            image: telegraf
+            ports:
+              - name: mon-ycsb
+                containerPort: 9443
+            command:
+              - /bin/sh # Run shell
+              - -c # Read from string
+              - |  # Multi-line str
+                set -eum
 
-              cat > ycsb.conf <<EOF
-              [[inputs.tail]]
-                 files = ["/dev/shm/pipe"]
-                 from_beginning = true
-                 name_override = "ycsb"
-                 data_format = "grok"
+                cat > ycsb.conf <<EOF
+                [[inputs.tail]]
+                   files = ["/dev/shm/pipe"]
+                   from_beginning = true
+                   name_override = "ycsb"
+                   data_format = "grok"
 
-                 # Example Line
-                 # INSERT - Takes(s): 60.0, Count: 732548, OPS: 12209.4, Avg(us): 62, Min(us): 23, Max(us): 11668, 99th(us): 1000, 99.9th(us): 1000, 99.99th(us): 3000
-                 grok_patterns = [ "^%{WORD:operation} %{SPACE}- Take.*: %{NUMBER:timestamp}, Count: %{NUMBER:count:int}, OPS: %{NUMBER:ops:float}, Avg.*: %{NUMBER:avg:float}, Min.*: %{NUMBER:min:float}, Max.*: %{NUMBER:max:float}, 99th.*: %{NUMBER:99th:float}, 99.9th.*: %{NUMBER:999th:float}, 99.99th.*: %{NUMBER:9999th:float}$" ]
+                   # Example Line
+                   # INSERT - Takes(s): 60.0, Count: 732548, OPS: 12209.4, Avg(us): 62, Min(us): 23, Max(us): 11668, 99th(us): 1000, 99.9th(us): 1000, 99.99th(us): 3000
+                   grok_patterns = [ "^%{WORD:operation} %{SPACE}- Take.*: %{NUMBER:timestamp}, Count: %{NUMBER:count:int}, OPS: %{NUMBER:ops:float}, Avg.*: %{NUMBER:avg:float}, Min.*: %{NUMBER:min:float}, Max.*: %{NUMBER:max:float}, 99th.*: %{NUMBER:99th:float}, 99.9th.*: %{NUMBER:999th:float}, 99.99th.*: %{NUMBER:9999th:float}$" ]
 
-              [[outputs.prometheus_client]]
-                 listen = ":9443"
-                 metric_version = 2
-                 collectors_exclude = ["gocollector","process"]
-              EOF
+                [[outputs.prometheus_client]]
+                   listen = ":9443"
+                   metric_version = 2
+                   collectors_exclude = ["gocollector","process"]
+                EOF
 
-              telegraf --config ycsb.conf &
+                telegraf --config ycsb.conf &
 
-              while [ ! -f "/dev/shm/stop" ];
-              do
-                sleep 10
-              done
+                while [ ! -f "/dev/shm/stop" ];
+                do
+                  sleep 10
+                done
 
-      dashboard:
-        file: ycsb.json
-        payload: |
+        dashboard:
+          fromConfigMap: ycsb-dashboard
+          file: ycsb.json
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ycsb-dashboard
+data:
+  ycsb.json: |
+    {
+      "annotations": {
+        "list": [
           {
-            "annotations": {
-              "list": [
-                {
-                  "builtIn": 1,
-                  "datasource": "-- Grafana --",
-                  "enable": false,
-                  "hide": true,
-                  "iconColor": "rgba(0, 211, 255, 1)",
-                  "limit": 100,
-                  "name": "Annotations & Alerts",
-                  "showIn": 0,
-                  "type": "dashboard"
-                },
-                {
-                  "datasource": "-- Grafana --",
-                  "enable": true,
-                  "hide": false,
-                  "iconColor": "#5794F2",
-                  "limit": 100,
-                  "name": "run",
-                  "showIn": 0,
-                  "tags": [
-                    "run"
-                  ],
-                  "type": "tags"
-                },
-                {
-                  "datasource": "-- Grafana --",
-                  "enable": true,
-                  "hide": false,
-                  "iconColor": "#FF9830",
-                  "limit": 100,
-                  "name": "exit",
-                  "showIn": 0,
-                  "tags": [
-                    "exit"
-                  ],
-                  "type": "tags"
-                },
-                {
-                  "datasource": "-- Grafana --",
-                  "enable": false,
-                  "hide": false,
-                  "iconColor": "rgba(255, 96, 96, 1)",
-                  "limit": 100,
-                  "name": "failure",
-                  "showIn": 0,
-                  "tags": [
-                    "failure"
-                  ],
-                  "type": "tags"
-                }
-              ]
-            },
-            "editable": true,
-            "gnetId": null,
-            "graphTooltip": 1,
-            "id": 3,
-            "iteration": 1621858550509,
-            "links": [],
-            "panels": [
-              {
-                "collapsed": false,
-                "datasource": null,
-                "gridPos": {
-                  "h": 1,
-                  "w": 24,
-                  "x": 0,
-                  "y": 0
-                },
-                "id": 82,
-                "panels": [],
-                "title": "Cluster Overview",
-                "type": "row"
-              },
-              {
-                "aliasColors": {
-                  "Chunks": "#1F78C1",
-                  "Chunks to persist": "#508642",
-                  "Max chunks": "#052B51",
-                  "Max to persist": "#3F6833",
-                  "To persist": "#9AC48A"
-                },
-                "bars": false,
-                "dashLength": 10,
-                "dashes": false,
-                "datasource": "Prometheus",
-                "editable": true,
-                "error": false,
-                "fieldConfig": {
-                  "defaults": {
-                    "unit": "reqps"
-                  },
-                  "overrides": []
-                },
-                "fill": 0,
-                "fillGradient": 0,
-                "gridPos": {
-                  "h": 14,
-                  "w": 16,
-                  "x": 0,
-                  "y": 1
-                },
-                "hiddenSeries": false,
-                "id": 28,
-                "legend": {
-                  "alignAsTable": true,
-                  "avg": true,
-                  "current": false,
-                  "max": true,
-                  "min": true,
-                  "show": true,
-                  "total": false,
-                  "values": true
-                },
-                "lines": true,
-                "linewidth": 2,
-                "links": [],
-                "nullPointMode": "null",
-                "options": {
-                  "alertThreshold": true
-                },
-                "percentage": false,
-                "pluginVersion": "7.5.7",
-                "pointradius": 0.5,
-                "points": true,
-                "renderer": "flot",
-                "seriesOverrides": [
-                  {
-                    "alias": "/Max.*/",
-                    "fill": 0
-                  }
-                ],
-                "spaceLength": 10,
-                "stack": false,
-                "steppedLine": false,
-                "targets": [
-                  {
-                    "expr": "sum(ycsb_count{instance=~\"$instance\", host=~\"$host\"}) by (operation)",
-                    "hide": false,
-                    "instant": false,
-                    "interval": "",
-                    "intervalFactor": 1,
-                    "legendFormat": "{{operation}}",
-                    "refId": "A"
-                  },
-                  {
-                    "expr": "sum(ycsb_count{instance=~\"$instance\", host=~\"$host\"}) ",
-                    "hide": false,
-                    "interval": "",
-                    "legendFormat": "Total",
-                    "refId": "B"
-                  }
-                ],
-                "thresholds": [],
-                "timeFrom": null,
-                "timeRegions": [],
-                "timeShift": null,
-                "title": "Total Operations ",
-                "tooltip": {
-                  "msResolution": false,
-                  "shared": true,
-                  "sort": 0,
-                  "value_type": "individual"
-                },
-                "transformations": [
-                  {
-                    "id": "reduce",
-                    "options": {
-                      "includeTimeField": true,
-                      "mode": "reduceFields",
-                      "reducers": []
-                    }
-                  }
-                ],
-                "type": "graph",
-                "xaxis": {
-                  "buckets": null,
-                  "mode": "time",
-                  "name": null,
-                  "show": true,
-                  "values": []
-                },
-                "yaxes": [
-                  {
-                    "$$hashKey": "object:886",
-                    "format": "reqps",
-                    "label": null,
-                    "logBase": 1,
-                    "max": null,
-                    "min": "0",
-                    "show": true
-                  },
-                  {
-                    "$$hashKey": "object:887",
-                    "format": "short",
-                    "label": null,
-                    "logBase": 1,
-                    "max": null,
-                    "min": null,
-                    "show": false
-                  }
-                ],
-                "yaxis": {
-                  "align": false,
-                  "alignLevel": null
-                }
-              },
-              {
-                "datasource": "Prometheus",
-                "fieldConfig": {
-                  "defaults": {
-                    "color": {
-                      "mode": "continuous-BlYlRd"
-                    },
-                    "custom": {
-                      "align": null,
-                      "displayMode": "auto",
-                      "filterable": true
-                    },
-                    "mappings": [
-                      {
-                        "from": "",
-                        "id": 1,
-                        "text": "",
-                        "to": "",
-                        "type": 1,
-                        "value": ""
-                      }
-                    ],
-                    "thresholds": {
-                      "mode": "absolute",
-                      "steps": []
-                    },
-                    "unit": "short"
-                  },
-                  "overrides": []
-                },
-                "gridPos": {
-                  "h": 7,
-                  "w": 8,
-                  "x": 16,
-                  "y": 1
-                },
-                "id": 75,
-                "links": [],
-                "options": {
-                  "showHeader": true,
-                  "sortBy": []
-                },
-                "pluginVersion": "7.5.7",
-                "targets": [
-                  {
-                    "exemplar": false,
-                    "expr": "sum(ycsb_count{instance=~\"$instance\", host=~\"$host\"}) by (instance)",
-                    "format": "time_series",
-                    "hide": false,
-                    "instant": false,
-                    "interval": "",
-                    "intervalFactor": 2,
-                    "legendFormat": "{{instance}}",
-                    "refId": "Operations"
-                  }
-                ],
-                "timeFrom": null,
-                "timeShift": null,
-                "title": "Top Clients (#operations)",
-                "transformations": [
-                  {
-                    "id": "reduce",
-                    "options": {
-                      "includeTimeField": false,
-                      "mode": "seriesToRows",
-                      "reducers": [
-                        "max"
-                      ]
-                    }
-                  }
-                ],
-                "type": "table"
-              },
-              {
-                "aliasColors": {
-                  "Chunks": "#1F78C1",
-                  "Chunks to persist": "#508642",
-                  "Max chunks": "#052B51",
-                  "Max to persist": "#3F6833",
-                  "To persist": "#9AC48A"
-                },
-                "bars": false,
-                "dashLength": 10,
-                "dashes": false,
-                "datasource": "Prometheus",
-                "editable": true,
-                "error": false,
-                "fieldConfig": {
-                  "defaults": {},
-                  "overrides": []
-                },
-                "fill": 0,
-                "fillGradient": 0,
-                "gridPos": {
-                  "h": 7,
-                  "w": 8,
-                  "x": 16,
-                  "y": 8
-                },
-                "hiddenSeries": false,
-                "id": 83,
-                "legend": {
-                  "alignAsTable": false,
-                  "avg": true,
-                  "current": false,
-                  "max": true,
-                  "min": true,
-                  "show": false,
-                  "total": false,
-                  "values": true
-                },
-                "lines": true,
-                "linewidth": 2,
-                "links": [],
-                "nullPointMode": "null",
-                "options": {
-                  "alertThreshold": true
-                },
-                "percentage": false,
-                "pluginVersion": "7.5.7",
-                "pointradius": 0.5,
-                "points": true,
-                "renderer": "flot",
-                "seriesOverrides": [
-                  {
-                    "alias": "/Max.*/",
-                    "fill": 0
-                  }
-                ],
-                "spaceLength": 10,
-                "stack": false,
-                "steppedLine": false,
-                "targets": [
-                  {
-                    "expr": "sum(up{dash=~\"ycsb\"}) ",
-                    "hide": false,
-                    "instant": false,
-                    "interval": "",
-                    "intervalFactor": 1,
-                    "legendFormat": "",
-                    "refId": "Operations"
-                  }
-                ],
-                "thresholds": [],
-                "timeFrom": null,
-                "timeRegions": [],
-                "timeShift": null,
-                "title": "Total Clients",
-                "tooltip": {
-                  "msResolution": false,
-                  "shared": true,
-                  "sort": 0,
-                  "value_type": "individual"
-                },
-                "transformations": [],
-                "type": "graph",
-                "xaxis": {
-                  "buckets": null,
-                  "mode": "time",
-                  "name": null,
-                  "show": true,
-                  "values": []
-                },
-                "yaxes": [
-                  {
-                    "$$hashKey": "object:886",
-                    "format": "short",
-                    "label": null,
-                    "logBase": 1,
-                    "max": null,
-                    "min": "0",
-                    "show": true
-                  },
-                  {
-                    "$$hashKey": "object:887",
-                    "format": "short",
-                    "label": null,
-                    "logBase": 1,
-                    "max": null,
-                    "min": null,
-                    "show": false
-                  }
-                ],
-                "yaxis": {
-                  "align": false,
-                  "alignLevel": null
-                }
-              },
-              {
-                "collapsed": false,
-                "datasource": null,
-                "gridPos": {
-                  "h": 1,
-                  "w": 24,
-                  "x": 0,
-                  "y": 15
-                },
-                "id": 80,
-                "panels": [],
-                "title": "Operations",
-                "type": "row"
-              },
-              {
-                "aliasColors": {},
-                "bars": false,
-                "dashLength": 10,
-                "dashes": false,
-                "datasource": "Prometheus",
-                "decimals": 2,
-                "editable": true,
-                "error": false,
-                "fieldConfig": {
-                  "defaults": {
-                    "unit": "reqps"
-                  },
-                  "overrides": []
-                },
-                "fill": 0,
-                "fillGradient": 0,
-                "grid": {},
-                "gridPos": {
-                  "h": 8,
-                  "w": 15,
-                  "x": 0,
-                  "y": 16
-                },
-                "hiddenSeries": false,
-                "id": 74,
-                "legend": {
-                  "alignAsTable": true,
-                  "avg": true,
-                  "current": false,
-                  "hideEmpty": false,
-                  "max": true,
-                  "min": true,
-                  "rightSide": false,
-                  "show": true,
-                  "total": false,
-                  "values": true
-                },
-                "lines": true,
-                "linewidth": 2,
-                "links": [],
-                "nullPointMode": "null",
-                "options": {
-                  "alertThreshold": false
-                },
-                "percentage": false,
-                "pluginVersion": "7.5.7",
-                "pointradius": 0.5,
-                "points": true,
-                "renderer": "flot",
-                "seriesOverrides": [],
-                "spaceLength": 10,
-                "stack": false,
-                "steppedLine": false,
-                "targets": [
-                  {
-                    "expr": "avg(ycsb_ops{instance=~\"$instance\", host=~\"$host\"}) by (operation)",
-                    "format": "time_series",
-                    "hide": false,
-                    "instant": false,
-                    "interval": "",
-                    "intervalFactor": 1,
-                    "legendFormat": "{{ operation }}",
-                    "refId": "QPS",
-                    "step": 10
-                  },
-                  {
-                    "exemplar": true,
-                    "expr": "avg(ycsb_ops) ",
-                    "hide": false,
-                    "instant": false,
-                    "interval": "",
-                    "legendFormat": "Average",
-                    "refId": "Average"
-                  }
-                ],
-                "thresholds": [],
-                "timeFrom": null,
-                "timeRegions": [],
-                "timeShift": null,
-                "title": "Average Throughput",
-                "tooltip": {
-                  "msResolution": true,
-                  "shared": true,
-                  "sort": 2,
-                  "value_type": "cumulative"
-                },
-                "transformations": [],
-                "type": "graph",
-                "xaxis": {
-                  "buckets": null,
-                  "mode": "time",
-                  "name": null,
-                  "show": true,
-                  "values": []
-                },
-                "yaxes": [
-                  {
-                    "$$hashKey": "object:878",
-                    "format": "reqps",
-                    "label": null,
-                    "logBase": 1,
-                    "max": null,
-                    "min": null,
-                    "show": true
-                  },
-                  {
-                    "$$hashKey": "object:879",
-                    "format": "short",
-                    "label": null,
-                    "logBase": 1,
-                    "max": null,
-                    "min": null,
-                    "show": false
-                  }
-                ],
-                "yaxis": {
-                  "align": false,
-                  "alignLevel": null
-                }
-              },
-              {
-                "aliasColors": {
-                  "Chunks": "#1F78C1",
-                  "Chunks to persist": "#508642",
-                  "Max chunks": "#052B51",
-                  "Max to persist": "#3F6833"
-                },
-                "bars": false,
-                "dashLength": 10,
-                "dashes": false,
-                "datasource": "Prometheus",
-                "editable": true,
-                "error": false,
-                "fieldConfig": {
-                  "defaults": {
-                    "unit": "µs"
-                  },
-                  "overrides": []
-                },
-                "fill": 0,
-                "fillGradient": 0,
-                "gridPos": {
-                  "h": 8,
-                  "w": 9,
-                  "x": 15,
-                  "y": 16
-                },
-                "hiddenSeries": false,
-                "id": 87,
-                "legend": {
-                  "alignAsTable": true,
-                  "avg": true,
-                  "current": false,
-                  "max": true,
-                  "min": true,
-                  "show": true,
-                  "total": false,
-                  "values": true
-                },
-                "lines": true,
-                "linewidth": 2,
-                "links": [],
-                "nullPointMode": "null",
-                "options": {
-                  "alertThreshold": false
-                },
-                "percentage": false,
-                "pluginVersion": "7.5.7",
-                "pointradius": 0.5,
-                "points": true,
-                "renderer": "flot",
-                "seriesOverrides": [],
-                "spaceLength": 10,
-                "stack": false,
-                "steppedLine": false,
-                "targets": [
-                  {
-                    "expr": "avg(ycsb_999th{instance=~\"$instance\", host=~\"$host\"}) by (operation)",
-                    "format": "time_series",
-                    "interval": "",
-                    "intervalFactor": 2,
-                    "legendFormat": "{{ operation }}",
-                    "metric": "prometheus_local_storage_memory_series",
-                    "refId": "A",
-                    "step": 10
-                  }
-                ],
-                "thresholds": [],
-                "timeFrom": null,
-                "timeRegions": [],
-                "timeShift": null,
-                "title": "Average Latency",
-                "tooltip": {
-                  "msResolution": false,
-                  "shared": true,
-                  "sort": 0,
-                  "value_type": "individual"
-                },
-                "type": "graph",
-                "xaxis": {
-                  "buckets": null,
-                  "mode": "time",
-                  "name": null,
-                  "show": true,
-                  "values": []
-                },
-                "yaxes": [
-                  {
-                    "$$hashKey": "object:341",
-                    "format": "µs",
-                    "label": null,
-                    "logBase": 1,
-                    "max": null,
-                    "min": "0",
-                    "show": true
-                  },
-                  {
-                    "$$hashKey": "object:342",
-                    "format": "short",
-                    "label": null,
-                    "logBase": 1,
-                    "max": null,
-                    "min": null,
-                    "show": false
-                  }
-                ],
-                "yaxis": {
-                  "align": false,
-                  "alignLevel": null
-                }
-              },
-              {
-                "aliasColors": {
-                  "samples/s": "#e5a8e2"
-                },
-                "bars": false,
-                "dashLength": 10,
-                "dashes": false,
-                "datasource": "Prometheus",
-                "editable": true,
-                "error": false,
-                "fieldConfig": {
-                  "defaults": {},
-                  "overrides": []
-                },
-                "fill": 0,
-                "fillGradient": 0,
-                "gridPos": {
-                  "h": 7,
-                  "w": 8,
-                  "x": 0,
-                  "y": 24
-                },
-                "hiddenSeries": false,
-                "id": 88,
-                "legend": {
-                  "alignAsTable": true,
-                  "avg": true,
-                  "current": false,
-                  "max": true,
-                  "min": true,
-                  "show": true,
-                  "total": false,
-                  "values": true
-                },
-                "lines": true,
-                "linewidth": 2,
-                "links": [],
-                "nullPointMode": "null",
-                "options": {
-                  "alertThreshold": false
-                },
-                "percentage": false,
-                "pluginVersion": "7.5.7",
-                "pointradius": 0.5,
-                "points": true,
-                "renderer": "flot",
-                "seriesOverrides": [],
-                "spaceLength": 10,
-                "stack": false,
-                "steppedLine": false,
-                "targets": [
-                  {
-                    "expr": "avg(ycsb_99th{instance=~\"$instance\", host=~\"$host\"}) by (operation)",
-                    "format": "time_series",
-                    "interval": "",
-                    "intervalFactor": 2,
-                    "legendFormat": "{{ operation}}",
-                    "metric": "prometheus_local_storage_ingested_samples_total",
-                    "refId": "99Latency",
-                    "step": 10
-                  },
-                  {
-                    "expr": "avg(ycsb_99th) ",
-                    "hide": false,
-                    "interval": "",
-                    "legendFormat": "Average",
-                    "refId": "Average Read"
-                  }
-                ],
-                "thresholds": [],
-                "timeFrom": null,
-                "timeRegions": [],
-                "timeShift": null,
-                "title": "Tail Latency (99)",
-                "tooltip": {
-                  "msResolution": false,
-                  "shared": true,
-                  "sort": 0,
-                  "value_type": "individual"
-                },
-                "type": "graph",
-                "xaxis": {
-                  "buckets": null,
-                  "mode": "time",
-                  "name": null,
-                  "show": true,
-                  "values": []
-                },
-                "yaxes": [
-                  {
-                    "$$hashKey": "object:255",
-                    "format": "µs",
-                    "label": "",
-                    "logBase": 1,
-                    "max": null,
-                    "min": "0",
-                    "show": true
-                  },
-                  {
-                    "$$hashKey": "object:256",
-                    "format": "short",
-                    "label": null,
-                    "logBase": 1,
-                    "max": null,
-                    "min": null,
-                    "show": false
-                  }
-                ],
-                "yaxis": {
-                  "align": false,
-                  "alignLevel": null
-                }
-              },
-              {
-                "aliasColors": {
-                  "samples/s": "#e5a8e2"
-                },
-                "bars": false,
-                "dashLength": 10,
-                "dashes": false,
-                "datasource": "Prometheus",
-                "editable": true,
-                "error": false,
-                "fieldConfig": {
-                  "defaults": {},
-                  "overrides": []
-                },
-                "fill": 0,
-                "fillGradient": 0,
-                "gridPos": {
-                  "h": 7,
-                  "w": 8,
-                  "x": 8,
-                  "y": 24
-                },
-                "hiddenSeries": false,
-                "id": 89,
-                "legend": {
-                  "alignAsTable": true,
-                  "avg": true,
-                  "current": false,
-                  "max": true,
-                  "min": true,
-                  "show": true,
-                  "total": false,
-                  "values": true
-                },
-                "lines": true,
-                "linewidth": 2,
-                "links": [],
-                "nullPointMode": "null",
-                "options": {
-                  "alertThreshold": false
-                },
-                "percentage": false,
-                "pluginVersion": "7.5.7",
-                "pointradius": 0.5,
-                "points": true,
-                "renderer": "flot",
-                "seriesOverrides": [],
-                "spaceLength": 10,
-                "stack": false,
-                "steppedLine": false,
-                "targets": [
-                  {
-                    "expr": "avg(ycsb_999th{instance=~\"$instance\", host=~\"$host\"}) by (operation)",
-                    "format": "time_series",
-                    "interval": "",
-                    "intervalFactor": 2,
-                    "legendFormat": "{{ operation }}",
-                    "metric": "prometheus_local_storage_ingested_samples_total",
-                    "refId": "99Latency",
-                    "step": 10
-                  },
-                  {
-                    "expr": "avg(ycsb_999th) ",
-                    "hide": false,
-                    "interval": "",
-                    "legendFormat": "Average",
-                    "refId": "Average Read"
-                  }
-                ],
-                "thresholds": [],
-                "timeFrom": null,
-                "timeRegions": [],
-                "timeShift": null,
-                "title": "Tail Latency (99.9)",
-                "tooltip": {
-                  "msResolution": false,
-                  "shared": true,
-                  "sort": 0,
-                  "value_type": "individual"
-                },
-                "type": "graph",
-                "xaxis": {
-                  "buckets": null,
-                  "mode": "time",
-                  "name": null,
-                  "show": true,
-                  "values": []
-                },
-                "yaxes": [
-                  {
-                    "$$hashKey": "object:255",
-                    "format": "µs",
-                    "label": "",
-                    "logBase": 1,
-                    "max": null,
-                    "min": "0",
-                    "show": true
-                  },
-                  {
-                    "$$hashKey": "object:256",
-                    "format": "short",
-                    "label": null,
-                    "logBase": 1,
-                    "max": null,
-                    "min": null,
-                    "show": false
-                  }
-                ],
-                "yaxis": {
-                  "align": false,
-                  "alignLevel": null
-                }
-              },
-              {
-                "aliasColors": {
-                  "samples/s": "#e5a8e2"
-                },
-                "bars": false,
-                "dashLength": 10,
-                "dashes": false,
-                "datasource": "Prometheus",
-                "editable": true,
-                "error": false,
-                "fieldConfig": {
-                  "defaults": {},
-                  "overrides": []
-                },
-                "fill": 0,
-                "fillGradient": 0,
-                "gridPos": {
-                  "h": 7,
-                  "w": 8,
-                  "x": 16,
-                  "y": 24
-                },
-                "hiddenSeries": false,
-                "id": 92,
-                "legend": {
-                  "alignAsTable": true,
-                  "avg": true,
-                  "current": false,
-                  "max": true,
-                  "min": true,
-                  "show": true,
-                  "total": false,
-                  "values": true
-                },
-                "lines": true,
-                "linewidth": 2,
-                "links": [],
-                "nullPointMode": "null",
-                "options": {
-                  "alertThreshold": false
-                },
-                "percentage": false,
-                "pluginVersion": "7.5.7",
-                "pointradius": 0.5,
-                "points": true,
-                "renderer": "flot",
-                "seriesOverrides": [],
-                "spaceLength": 10,
-                "stack": false,
-                "steppedLine": false,
-                "targets": [
-                  {
-                    "expr": "avg(ycsb_9999th{instance=~\"$instance\", host=~\"$host\"}) by (operation)",
-                    "format": "time_series",
-                    "interval": "",
-                    "intervalFactor": 2,
-                    "legendFormat": "{{ operation }}",
-                    "metric": "prometheus_local_storage_ingested_samples_total",
-                    "refId": "99Latency",
-                    "step": 10
-                  },
-                  {
-                    "expr": "avg(ycsb_9999th) ",
-                    "hide": false,
-                    "interval": "",
-                    "legendFormat": "Average",
-                    "refId": "Average Read"
-                  }
-                ],
-                "thresholds": [],
-                "timeFrom": null,
-                "timeRegions": [],
-                "timeShift": null,
-                "title": "Tail Latency (99.99)",
-                "tooltip": {
-                  "msResolution": false,
-                  "shared": true,
-                  "sort": 0,
-                  "value_type": "individual"
-                },
-                "type": "graph",
-                "xaxis": {
-                  "buckets": null,
-                  "mode": "time",
-                  "name": null,
-                  "show": true,
-                  "values": []
-                },
-                "yaxes": [
-                  {
-                    "$$hashKey": "object:255",
-                    "format": "µs",
-                    "label": "",
-                    "logBase": 1,
-                    "max": null,
-                    "min": "0",
-                    "show": true
-                  },
-                  {
-                    "$$hashKey": "object:256",
-                    "format": "short",
-                    "label": null,
-                    "logBase": 1,
-                    "max": null,
-                    "min": null,
-                    "show": false
-                  }
-                ],
-                "yaxis": {
-                  "align": false,
-                  "alignLevel": null
-                }
-              },
-              {
-                "collapsed": false,
-                "datasource": null,
-                "gridPos": {
-                  "h": 1,
-                  "w": 24,
-                  "x": 0,
-                  "y": 31
-                },
-                "id": 78,
-                "panels": [],
-                "repeat": null,
-                "title": "Clients",
-                "type": "row"
-              },
-              {
-                "aliasColors": {},
-                "bars": false,
-                "dashLength": 10,
-                "dashes": false,
-                "datasource": "Prometheus",
-                "decimals": 2,
-                "editable": true,
-                "error": false,
-                "fieldConfig": {
-                  "defaults": {
-                    "unit": "reqps"
-                  },
-                  "overrides": []
-                },
-                "fill": 0,
-                "fillGradient": 0,
-                "grid": {},
-                "gridPos": {
-                  "h": 8,
-                  "w": 16,
-                  "x": 0,
-                  "y": 32
-                },
-                "hiddenSeries": false,
-                "id": 86,
-                "legend": {
-                  "alignAsTable": true,
-                  "avg": true,
-                  "current": false,
-                  "hideEmpty": false,
-                  "max": true,
-                  "min": true,
-                  "rightSide": false,
-                  "show": true,
-                  "total": false,
-                  "values": true
-                },
-                "lines": true,
-                "linewidth": 2,
-                "links": [],
-                "nullPointMode": "null",
-                "options": {
-                  "alertThreshold": false
-                },
-                "percentage": false,
-                "pluginVersion": "7.5.7",
-                "pointradius": 0.5,
-                "points": true,
-                "renderer": "flot",
-                "seriesOverrides": [],
-                "spaceLength": 10,
-                "stack": false,
-                "steppedLine": false,
-                "targets": [
-                  {
-                    "expr": "avg(ycsb_ops{instance=~\"$instance\", host=~\"$host\"}) by (instance)",
-                    "format": "time_series",
-                    "hide": false,
-                    "instant": false,
-                    "interval": "",
-                    "intervalFactor": 1,
-                    "legendFormat": "{{ instance }}",
-                    "refId": "QPS",
-                    "step": 10
-                  },
-                  {
-                    "expr": "avg(ycsb_ops) ",
-                    "hide": false,
-                    "instant": false,
-                    "interval": "",
-                    "legendFormat": "Average",
-                    "refId": "Average"
-                  }
-                ],
-                "thresholds": [],
-                "timeFrom": null,
-                "timeRegions": [],
-                "timeShift": null,
-                "title": "Throughput (Queries Per Second)",
-                "tooltip": {
-                  "msResolution": true,
-                  "shared": true,
-                  "sort": 2,
-                  "value_type": "cumulative"
-                },
-                "transformations": [],
-                "type": "graph",
-                "xaxis": {
-                  "buckets": null,
-                  "mode": "time",
-                  "name": null,
-                  "show": true,
-                  "values": []
-                },
-                "yaxes": [
-                  {
-                    "$$hashKey": "object:878",
-                    "format": "reqps",
-                    "label": null,
-                    "logBase": 1,
-                    "max": null,
-                    "min": null,
-                    "show": true
-                  },
-                  {
-                    "$$hashKey": "object:879",
-                    "format": "short",
-                    "label": null,
-                    "logBase": 1,
-                    "max": null,
-                    "min": null,
-                    "show": false
-                  }
-                ],
-                "yaxis": {
-                  "align": false,
-                  "alignLevel": null
-                }
-              },
-              {
-                "aliasColors": {
-                  "Chunks": "#1F78C1",
-                  "Chunks to persist": "#508642",
-                  "Max chunks": "#052B51",
-                  "Max to persist": "#3F6833"
-                },
-                "bars": false,
-                "dashLength": 10,
-                "dashes": false,
-                "datasource": "Prometheus",
-                "editable": true,
-                "error": false,
-                "fieldConfig": {
-                  "defaults": {
-                    "unit": "µs"
-                  },
-                  "overrides": []
-                },
-                "fill": 0,
-                "fillGradient": 0,
-                "gridPos": {
-                  "h": 8,
-                  "w": 8,
-                  "x": 16,
-                  "y": 32
-                },
-                "hiddenSeries": false,
-                "id": 24,
-                "legend": {
-                  "alignAsTable": true,
-                  "avg": true,
-                  "current": false,
-                  "max": true,
-                  "min": true,
-                  "show": true,
-                  "total": false,
-                  "values": true
-                },
-                "lines": true,
-                "linewidth": 2,
-                "links": [],
-                "nullPointMode": "null",
-                "options": {
-                  "alertThreshold": false
-                },
-                "percentage": false,
-                "pluginVersion": "7.5.7",
-                "pointradius": 0.5,
-                "points": true,
-                "renderer": "flot",
-                "seriesOverrides": [],
-                "spaceLength": 10,
-                "stack": false,
-                "steppedLine": false,
-                "targets": [
-                  {
-                    "expr": "avg(ycsb_999th{instance=~\"$instance\", host=~\"$host\"}) by (instance)",
-                    "format": "time_series",
-                    "interval": "",
-                    "intervalFactor": 2,
-                    "legendFormat": "{{ instance }}",
-                    "metric": "prometheus_local_storage_memory_series",
-                    "refId": "A",
-                    "step": 10
-                  }
-                ],
-                "thresholds": [],
-                "timeFrom": null,
-                "timeRegions": [],
-                "timeShift": null,
-                "title": "Average Latency",
-                "tooltip": {
-                  "msResolution": false,
-                  "shared": true,
-                  "sort": 0,
-                  "value_type": "individual"
-                },
-                "type": "graph",
-                "xaxis": {
-                  "buckets": null,
-                  "mode": "time",
-                  "name": null,
-                  "show": true,
-                  "values": []
-                },
-                "yaxes": [
-                  {
-                    "$$hashKey": "object:341",
-                    "format": "µs",
-                    "label": null,
-                    "logBase": 1,
-                    "max": null,
-                    "min": "0",
-                    "show": true
-                  },
-                  {
-                    "$$hashKey": "object:342",
-                    "format": "short",
-                    "label": null,
-                    "logBase": 1,
-                    "max": null,
-                    "min": null,
-                    "show": false
-                  }
-                ],
-                "yaxis": {
-                  "align": false,
-                  "alignLevel": null
-                }
-              },
-              {
-                "aliasColors": {
-                  "samples/s": "#e5a8e2"
-                },
-                "bars": false,
-                "dashLength": 10,
-                "dashes": false,
-                "datasource": "Prometheus",
-                "editable": true,
-                "error": false,
-                "fieldConfig": {
-                  "defaults": {},
-                  "overrides": []
-                },
-                "fill": 0,
-                "fillGradient": 0,
-                "gridPos": {
-                  "h": 7,
-                  "w": 8,
-                  "x": 0,
-                  "y": 40
-                },
-                "hiddenSeries": false,
-                "id": 26,
-                "legend": {
-                  "alignAsTable": true,
-                  "avg": true,
-                  "current": false,
-                  "max": true,
-                  "min": true,
-                  "show": true,
-                  "total": false,
-                  "values": true
-                },
-                "lines": true,
-                "linewidth": 2,
-                "links": [],
-                "nullPointMode": "null",
-                "options": {
-                  "alertThreshold": false
-                },
-                "percentage": false,
-                "pluginVersion": "7.5.7",
-                "pointradius": 0.5,
-                "points": true,
-                "renderer": "flot",
-                "seriesOverrides": [],
-                "spaceLength": 10,
-                "stack": false,
-                "steppedLine": false,
-                "targets": [
-                  {
-                    "expr": "avg(ycsb_99th{instance=~\"$instance\", host=~\"$host\"}) by (instance)",
-                    "format": "time_series",
-                    "interval": "",
-                    "intervalFactor": 2,
-                    "legendFormat": "{{ instance }}",
-                    "metric": "prometheus_local_storage_ingested_samples_total",
-                    "refId": "99Latency",
-                    "step": 10
-                  },
-                  {
-                    "expr": "avg(ycsb_99th) ",
-                    "hide": false,
-                    "interval": "",
-                    "legendFormat": "Average",
-                    "refId": "Average Read"
-                  }
-                ],
-                "thresholds": [],
-                "timeFrom": null,
-                "timeRegions": [],
-                "timeShift": null,
-                "title": "Tail Latency (99)",
-                "tooltip": {
-                  "msResolution": false,
-                  "shared": true,
-                  "sort": 0,
-                  "value_type": "individual"
-                },
-                "type": "graph",
-                "xaxis": {
-                  "buckets": null,
-                  "mode": "time",
-                  "name": null,
-                  "show": true,
-                  "values": []
-                },
-                "yaxes": [
-                  {
-                    "$$hashKey": "object:255",
-                    "format": "µs",
-                    "label": "",
-                    "logBase": 1,
-                    "max": null,
-                    "min": "0",
-                    "show": true
-                  },
-                  {
-                    "$$hashKey": "object:256",
-                    "format": "short",
-                    "label": null,
-                    "logBase": 1,
-                    "max": null,
-                    "min": null,
-                    "show": false
-                  }
-                ],
-                "yaxis": {
-                  "align": false,
-                  "alignLevel": null
-                }
-              },
-              {
-                "aliasColors": {
-                  "samples/s": "#e5a8e2"
-                },
-                "bars": false,
-                "dashLength": 10,
-                "dashes": false,
-                "datasource": "Prometheus",
-                "editable": true,
-                "error": false,
-                "fieldConfig": {
-                  "defaults": {},
-                  "overrides": []
-                },
-                "fill": 0,
-                "fillGradient": 0,
-                "gridPos": {
-                  "h": 7,
-                  "w": 8,
-                  "x": 8,
-                  "y": 40
-                },
-                "hiddenSeries": false,
-                "id": 76,
-                "legend": {
-                  "alignAsTable": true,
-                  "avg": true,
-                  "current": false,
-                  "max": true,
-                  "min": true,
-                  "show": true,
-                  "total": false,
-                  "values": true
-                },
-                "lines": true,
-                "linewidth": 2,
-                "links": [],
-                "nullPointMode": "null",
-                "options": {
-                  "alertThreshold": false
-                },
-                "percentage": false,
-                "pluginVersion": "7.5.7",
-                "pointradius": 0.5,
-                "points": true,
-                "renderer": "flot",
-                "seriesOverrides": [],
-                "spaceLength": 10,
-                "stack": false,
-                "steppedLine": false,
-                "targets": [
-                  {
-                    "expr": "avg(ycsb_999th{instance=~\"$instance\", host=~\"$host\"}) by (instance)",
-                    "format": "time_series",
-                    "interval": "",
-                    "intervalFactor": 2,
-                    "legendFormat": "{{ instance }}",
-                    "metric": "prometheus_local_storage_ingested_samples_total",
-                    "refId": "99Latency",
-                    "step": 10
-                  },
-                  {
-                    "expr": "avg(ycsb_999th) ",
-                    "hide": false,
-                    "interval": "",
-                    "legendFormat": "Average",
-                    "refId": "Average Read"
-                  }
-                ],
-                "thresholds": [],
-                "timeFrom": null,
-                "timeRegions": [],
-                "timeShift": null,
-                "title": "Tail Latency (99.9)",
-                "tooltip": {
-                  "msResolution": false,
-                  "shared": true,
-                  "sort": 0,
-                  "value_type": "individual"
-                },
-                "type": "graph",
-                "xaxis": {
-                  "buckets": null,
-                  "mode": "time",
-                  "name": null,
-                  "show": true,
-                  "values": []
-                },
-                "yaxes": [
-                  {
-                    "$$hashKey": "object:255",
-                    "format": "µs",
-                    "label": "",
-                    "logBase": 1,
-                    "max": null,
-                    "min": "0",
-                    "show": true
-                  },
-                  {
-                    "$$hashKey": "object:256",
-                    "format": "short",
-                    "label": null,
-                    "logBase": 1,
-                    "max": null,
-                    "min": null,
-                    "show": false
-                  }
-                ],
-                "yaxis": {
-                  "align": false,
-                  "alignLevel": null
-                }
-              },
-              {
-                "aliasColors": {
-                  "samples/s": "#e5a8e2"
-                },
-                "bars": false,
-                "dashLength": 10,
-                "dashes": false,
-                "datasource": "Prometheus",
-                "editable": true,
-                "error": false,
-                "fieldConfig": {
-                  "defaults": {},
-                  "overrides": []
-                },
-                "fill": 0,
-                "fillGradient": 0,
-                "gridPos": {
-                  "h": 7,
-                  "w": 8,
-                  "x": 16,
-                  "y": 40
-                },
-                "hiddenSeries": false,
-                "id": 91,
-                "legend": {
-                  "alignAsTable": true,
-                  "avg": true,
-                  "current": false,
-                  "max": true,
-                  "min": true,
-                  "show": true,
-                  "total": false,
-                  "values": true
-                },
-                "lines": true,
-                "linewidth": 2,
-                "links": [],
-                "nullPointMode": "null",
-                "options": {
-                  "alertThreshold": false
-                },
-                "percentage": false,
-                "pluginVersion": "7.5.7",
-                "pointradius": 0.5,
-                "points": true,
-                "renderer": "flot",
-                "seriesOverrides": [],
-                "spaceLength": 10,
-                "stack": false,
-                "steppedLine": false,
-                "targets": [
-                  {
-                    "expr": "avg(ycsb_9999th{instance=~\"$instance\", host=~\"$host\"}) by (instance)",
-                    "format": "time_series",
-                    "interval": "",
-                    "intervalFactor": 2,
-                    "legendFormat": "{{ instance }}",
-                    "metric": "prometheus_local_storage_ingested_samples_total",
-                    "refId": "99Latency",
-                    "step": 10
-                  },
-                  {
-                    "expr": "avg(ycsb_9999th) ",
-                    "hide": false,
-                    "interval": "",
-                    "legendFormat": "Average",
-                    "refId": "Average Read"
-                  }
-                ],
-                "thresholds": [],
-                "timeFrom": null,
-                "timeRegions": [],
-                "timeShift": null,
-                "title": "Tail Latency (99.99)",
-                "tooltip": {
-                  "msResolution": false,
-                  "shared": true,
-                  "sort": 0,
-                  "value_type": "individual"
-                },
-                "type": "graph",
-                "xaxis": {
-                  "buckets": null,
-                  "mode": "time",
-                  "name": null,
-                  "show": true,
-                  "values": []
-                },
-                "yaxes": [
-                  {
-                    "$$hashKey": "object:255",
-                    "format": "µs",
-                    "label": "",
-                    "logBase": 1,
-                    "max": null,
-                    "min": "0",
-                    "show": true
-                  },
-                  {
-                    "$$hashKey": "object:256",
-                    "format": "short",
-                    "label": null,
-                    "logBase": 1,
-                    "max": null,
-                    "min": null,
-                    "show": false
-                  }
-                ],
-                "yaxis": {
-                  "align": false,
-                  "alignLevel": null
-                }
-              }
-            ],
-            "refresh": "30s",
-            "schemaVersion": 27,
-            "style": "dark",
+            "builtIn": 1,
+            "datasource": "-- Grafana --",
+            "enable": false,
+            "hide": true,
+            "iconColor": "rgba(0, 211, 255, 1)",
+            "limit": 100,
+            "name": "Annotations & Alerts",
+            "showIn": 0,
+            "type": "dashboard"
+          },
+          {
+            "datasource": "-- Grafana --",
+            "enable": true,
+            "hide": false,
+            "iconColor": "#5794F2",
+            "limit": 100,
+            "name": "run",
+            "showIn": 0,
             "tags": [
-              "ycsb"
+              "run"
             ],
-            "templating": {
-              "list": [
-                {
-                  "allValue": ".*",
-                  "current": {
-                    "selected": false,
-                    "text": "All",
-                    "value": "$__all"
-                  },
-                  "datasource": null,
-                  "definition": "query_result(count (up{dash=~\"ycsb\"}) by (instance))",
-                  "description": null,
-                  "error": null,
-                  "hide": 0,
-                  "includeAll": true,
-                  "label": null,
-                  "multi": true,
-                  "name": "instance",
-                  "options": [],
-                  "query": {
-                    "query": "query_result(count (up{dash=~\"ycsb\"}) by (instance))",
-                    "refId": "StandardVariableQuery"
-                  },
-                  "refresh": 2,
-                  "regex": "/.*instance=\"(.*)\".*/",
-                  "skipUrlSync": false,
-                  "sort": 1,
-                  "tagValuesQuery": "",
-                  "tags": [],
-                  "tagsQuery": "",
-                  "type": "query",
-                  "useTags": false
-                },
-                {
-                  "allValue": ".*",
-                  "current": {
-                    "selected": false,
-                    "text": "All",
-                    "value": "$__all"
-                  },
-                  "datasource": null,
-                  "definition": "query_result(count (up{dash=\"ycsb\"}) by (host))",
-                  "description": null,
-                  "error": null,
-                  "hide": 0,
-                  "includeAll": true,
-                  "label": null,
-                  "multi": true,
-                  "name": "host",
-                  "options": [],
-                  "query": {
-                    "query": "query_result(count (up{dash=\"ycsb\"}) by (host))",
-                    "refId": "StandardVariableQuery"
-                  },
-                  "refresh": 2,
-                  "regex": "/.*host=\"(.*)\".*/",
-                  "skipUrlSync": false,
-                  "sort": 1,
-                  "tagValuesQuery": "",
-                  "tags": [],
-                  "tagsQuery": "",
-                  "type": "query",
-                  "useTags": false
-                }
-              ]
-            },
-            "time": {
-              "from": "now-3h",
-              "to": "now"
-            },
-            "timepicker": {
-              "refresh_intervals": [
-                "5s",
-                "10s",
-                "30s",
-                "1m",
-                "5m",
-                "15m",
-                "30m",
-                "1h",
-                "2h",
-                "1d"
-              ],
-              "time_options": [
-                "5m",
-                "15m",
-                "1h",
-                "6h",
-                "12h",
-                "24h",
-                "2d",
-                "7d",
-                "30d"
-              ]
-            },
-            "timezone": "browser",
-            "title": "YCSB Services",
-            "uid": "A2EjFbsMk",
-            "version": 1
+            "type": "tags"
+          },
+          {
+            "datasource": "-- Grafana --",
+            "enable": true,
+            "hide": false,
+            "iconColor": "#FF9830",
+            "limit": 100,
+            "name": "exit",
+            "showIn": 0,
+            "tags": [
+              "exit"
+            ],
+            "type": "tags"
+          },
+          {
+            "datasource": "-- Grafana --",
+            "enable": false,
+            "hide": false,
+            "iconColor": "rgba(255, 96, 96, 1)",
+            "limit": 100,
+            "name": "failure",
+            "showIn": 0,
+            "tags": [
+              "failure"
+            ],
+            "type": "tags"
           }
+        ]
+      },
+      "editable": true,
+      "gnetId": null,
+      "graphTooltip": 1,
+      "id": 3,
+      "iteration": 1621858550509,
+      "links": [],
+      "panels": [
+        {
+          "collapsed": false,
+          "datasource": null,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 0
+          },
+          "id": 82,
+          "panels": [],
+          "title": "Cluster Overview",
+          "type": "row"
+        },
+        {
+          "aliasColors": {
+            "Chunks": "#1F78C1",
+            "Chunks to persist": "#508642",
+            "Max chunks": "#052B51",
+            "Max to persist": "#3F6833",
+            "To persist": "#9AC48A"
+          },
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": "Prometheus",
+          "editable": true,
+          "error": false,
+          "fieldConfig": {
+            "defaults": {
+              "unit": "reqps"
+            },
+            "overrides": []
+          },
+          "fill": 0,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 14,
+            "w": 16,
+            "x": 0,
+            "y": 1
+          },
+          "hiddenSeries": false,
+          "id": 28,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": false,
+            "max": true,
+            "min": true,
+            "show": true,
+            "total": false,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 2,
+          "links": [],
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": true
+          },
+          "percentage": false,
+          "pluginVersion": "7.5.7",
+          "pointradius": 0.5,
+          "points": true,
+          "renderer": "flot",
+          "seriesOverrides": [
+            {
+              "alias": "/Max.*/",
+              "fill": 0
+            }
+          ],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "sum(ycsb_count{instance=~\"$instance\", host=~\"$host\"}) by (operation)",
+              "hide": false,
+              "instant": false,
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "{{operation}}",
+              "refId": "A"
+            },
+            {
+              "expr": "sum(ycsb_count{instance=~\"$instance\", host=~\"$host\"}) ",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "Total",
+              "refId": "B"
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "Total Operations ",
+          "tooltip": {
+            "msResolution": false,
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "transformations": [
+            {
+              "id": "reduce",
+              "options": {
+                "includeTimeField": true,
+                "mode": "reduceFields",
+                "reducers": []
+              }
+            }
+          ],
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "$$hashKey": "object:886",
+              "format": "reqps",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": "0",
+              "show": true
+            },
+            {
+              "$$hashKey": "object:887",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": false
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "continuous-BlYlRd"
+              },
+              "custom": {
+                "align": null,
+                "displayMode": "auto",
+                "filterable": true
+              },
+              "mappings": [
+                {
+                  "from": "",
+                  "id": 1,
+                  "text": "",
+                  "to": "",
+                  "type": 1,
+                  "value": ""
+                }
+              ],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": []
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 8,
+            "x": 16,
+            "y": 1
+          },
+          "id": 75,
+          "links": [],
+          "options": {
+            "showHeader": true,
+            "sortBy": []
+          },
+          "pluginVersion": "7.5.7",
+          "targets": [
+            {
+              "exemplar": false,
+              "expr": "sum(ycsb_count{instance=~\"$instance\", host=~\"$host\"}) by (instance)",
+              "format": "time_series",
+              "hide": false,
+              "instant": false,
+              "interval": "",
+              "intervalFactor": 2,
+              "legendFormat": "{{instance}}",
+              "refId": "Operations"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Top Clients (#operations)",
+          "transformations": [
+            {
+              "id": "reduce",
+              "options": {
+                "includeTimeField": false,
+                "mode": "seriesToRows",
+                "reducers": [
+                  "max"
+                ]
+              }
+            }
+          ],
+          "type": "table"
+        },
+        {
+          "aliasColors": {
+            "Chunks": "#1F78C1",
+            "Chunks to persist": "#508642",
+            "Max chunks": "#052B51",
+            "Max to persist": "#3F6833",
+            "To persist": "#9AC48A"
+          },
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": "Prometheus",
+          "editable": true,
+          "error": false,
+          "fieldConfig": {
+            "defaults": {},
+            "overrides": []
+          },
+          "fill": 0,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 7,
+            "w": 8,
+            "x": 16,
+            "y": 8
+          },
+          "hiddenSeries": false,
+          "id": 83,
+          "legend": {
+            "alignAsTable": false,
+            "avg": true,
+            "current": false,
+            "max": true,
+            "min": true,
+            "show": false,
+            "total": false,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 2,
+          "links": [],
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": true
+          },
+          "percentage": false,
+          "pluginVersion": "7.5.7",
+          "pointradius": 0.5,
+          "points": true,
+          "renderer": "flot",
+          "seriesOverrides": [
+            {
+              "alias": "/Max.*/",
+              "fill": 0
+            }
+          ],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "sum(up{dash=~\"ycsb\"}) ",
+              "hide": false,
+              "instant": false,
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "",
+              "refId": "Operations"
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "Total Clients",
+          "tooltip": {
+            "msResolution": false,
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "transformations": [],
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "$$hashKey": "object:886",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": "0",
+              "show": true
+            },
+            {
+              "$$hashKey": "object:887",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": false
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "collapsed": false,
+          "datasource": null,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 15
+          },
+          "id": 80,
+          "panels": [],
+          "title": "Operations",
+          "type": "row"
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": "Prometheus",
+          "decimals": 2,
+          "editable": true,
+          "error": false,
+          "fieldConfig": {
+            "defaults": {
+              "unit": "reqps"
+            },
+            "overrides": []
+          },
+          "fill": 0,
+          "fillGradient": 0,
+          "grid": {},
+          "gridPos": {
+            "h": 8,
+            "w": 15,
+            "x": 0,
+            "y": 16
+          },
+          "hiddenSeries": false,
+          "id": 74,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": false,
+            "hideEmpty": false,
+            "max": true,
+            "min": true,
+            "rightSide": false,
+            "show": true,
+            "total": false,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 2,
+          "links": [],
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": false
+          },
+          "percentage": false,
+          "pluginVersion": "7.5.7",
+          "pointradius": 0.5,
+          "points": true,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "avg(ycsb_ops{instance=~\"$instance\", host=~\"$host\"}) by (operation)",
+              "format": "time_series",
+              "hide": false,
+              "instant": false,
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "{{ operation }}",
+              "refId": "QPS",
+              "step": 10
+            },
+            {
+              "exemplar": true,
+              "expr": "avg(ycsb_ops) ",
+              "hide": false,
+              "instant": false,
+              "interval": "",
+              "legendFormat": "Average",
+              "refId": "Average"
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "Average Throughput",
+          "tooltip": {
+            "msResolution": true,
+            "shared": true,
+            "sort": 2,
+            "value_type": "cumulative"
+          },
+          "transformations": [],
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "$$hashKey": "object:878",
+              "format": "reqps",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "$$hashKey": "object:879",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": false
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {
+            "Chunks": "#1F78C1",
+            "Chunks to persist": "#508642",
+            "Max chunks": "#052B51",
+            "Max to persist": "#3F6833"
+          },
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": "Prometheus",
+          "editable": true,
+          "error": false,
+          "fieldConfig": {
+            "defaults": {
+              "unit": "µs"
+            },
+            "overrides": []
+          },
+          "fill": 0,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 8,
+            "w": 9,
+            "x": 15,
+            "y": 16
+          },
+          "hiddenSeries": false,
+          "id": 87,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": false,
+            "max": true,
+            "min": true,
+            "show": true,
+            "total": false,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 2,
+          "links": [],
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": false
+          },
+          "percentage": false,
+          "pluginVersion": "7.5.7",
+          "pointradius": 0.5,
+          "points": true,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "avg(ycsb_999th{instance=~\"$instance\", host=~\"$host\"}) by (operation)",
+              "format": "time_series",
+              "interval": "",
+              "intervalFactor": 2,
+              "legendFormat": "{{ operation }}",
+              "metric": "prometheus_local_storage_memory_series",
+              "refId": "A",
+              "step": 10
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "Average Latency",
+          "tooltip": {
+            "msResolution": false,
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "$$hashKey": "object:341",
+              "format": "µs",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": "0",
+              "show": true
+            },
+            {
+              "$$hashKey": "object:342",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": false
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {
+            "samples/s": "#e5a8e2"
+          },
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": "Prometheus",
+          "editable": true,
+          "error": false,
+          "fieldConfig": {
+            "defaults": {},
+            "overrides": []
+          },
+          "fill": 0,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 7,
+            "w": 8,
+            "x": 0,
+            "y": 24
+          },
+          "hiddenSeries": false,
+          "id": 88,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": false,
+            "max": true,
+            "min": true,
+            "show": true,
+            "total": false,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 2,
+          "links": [],
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": false
+          },
+          "percentage": false,
+          "pluginVersion": "7.5.7",
+          "pointradius": 0.5,
+          "points": true,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "avg(ycsb_99th{instance=~\"$instance\", host=~\"$host\"}) by (operation)",
+              "format": "time_series",
+              "interval": "",
+              "intervalFactor": 2,
+              "legendFormat": "{{ operation}}",
+              "metric": "prometheus_local_storage_ingested_samples_total",
+              "refId": "99Latency",
+              "step": 10
+            },
+            {
+              "expr": "avg(ycsb_99th) ",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "Average",
+              "refId": "Average Read"
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "Tail Latency (99)",
+          "tooltip": {
+            "msResolution": false,
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "$$hashKey": "object:255",
+              "format": "µs",
+              "label": "",
+              "logBase": 1,
+              "max": null,
+              "min": "0",
+              "show": true
+            },
+            {
+              "$$hashKey": "object:256",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": false
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {
+            "samples/s": "#e5a8e2"
+          },
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": "Prometheus",
+          "editable": true,
+          "error": false,
+          "fieldConfig": {
+            "defaults": {},
+            "overrides": []
+          },
+          "fill": 0,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 7,
+            "w": 8,
+            "x": 8,
+            "y": 24
+          },
+          "hiddenSeries": false,
+          "id": 89,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": false,
+            "max": true,
+            "min": true,
+            "show": true,
+            "total": false,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 2,
+          "links": [],
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": false
+          },
+          "percentage": false,
+          "pluginVersion": "7.5.7",
+          "pointradius": 0.5,
+          "points": true,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "avg(ycsb_999th{instance=~\"$instance\", host=~\"$host\"}) by (operation)",
+              "format": "time_series",
+              "interval": "",
+              "intervalFactor": 2,
+              "legendFormat": "{{ operation }}",
+              "metric": "prometheus_local_storage_ingested_samples_total",
+              "refId": "99Latency",
+              "step": 10
+            },
+            {
+              "expr": "avg(ycsb_999th) ",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "Average",
+              "refId": "Average Read"
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "Tail Latency (99.9)",
+          "tooltip": {
+            "msResolution": false,
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "$$hashKey": "object:255",
+              "format": "µs",
+              "label": "",
+              "logBase": 1,
+              "max": null,
+              "min": "0",
+              "show": true
+            },
+            {
+              "$$hashKey": "object:256",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": false
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {
+            "samples/s": "#e5a8e2"
+          },
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": "Prometheus",
+          "editable": true,
+          "error": false,
+          "fieldConfig": {
+            "defaults": {},
+            "overrides": []
+          },
+          "fill": 0,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 7,
+            "w": 8,
+            "x": 16,
+            "y": 24
+          },
+          "hiddenSeries": false,
+          "id": 92,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": false,
+            "max": true,
+            "min": true,
+            "show": true,
+            "total": false,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 2,
+          "links": [],
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": false
+          },
+          "percentage": false,
+          "pluginVersion": "7.5.7",
+          "pointradius": 0.5,
+          "points": true,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "avg(ycsb_9999th{instance=~\"$instance\", host=~\"$host\"}) by (operation)",
+              "format": "time_series",
+              "interval": "",
+              "intervalFactor": 2,
+              "legendFormat": "{{ operation }}",
+              "metric": "prometheus_local_storage_ingested_samples_total",
+              "refId": "99Latency",
+              "step": 10
+            },
+            {
+              "expr": "avg(ycsb_9999th) ",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "Average",
+              "refId": "Average Read"
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "Tail Latency (99.99)",
+          "tooltip": {
+            "msResolution": false,
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "$$hashKey": "object:255",
+              "format": "µs",
+              "label": "",
+              "logBase": 1,
+              "max": null,
+              "min": "0",
+              "show": true
+            },
+            {
+              "$$hashKey": "object:256",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": false
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "collapsed": false,
+          "datasource": null,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 31
+          },
+          "id": 78,
+          "panels": [],
+          "repeat": null,
+          "title": "Clients",
+          "type": "row"
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": "Prometheus",
+          "decimals": 2,
+          "editable": true,
+          "error": false,
+          "fieldConfig": {
+            "defaults": {
+              "unit": "reqps"
+            },
+            "overrides": []
+          },
+          "fill": 0,
+          "fillGradient": 0,
+          "grid": {},
+          "gridPos": {
+            "h": 8,
+            "w": 16,
+            "x": 0,
+            "y": 32
+          },
+          "hiddenSeries": false,
+          "id": 86,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": false,
+            "hideEmpty": false,
+            "max": true,
+            "min": true,
+            "rightSide": false,
+            "show": true,
+            "total": false,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 2,
+          "links": [],
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": false
+          },
+          "percentage": false,
+          "pluginVersion": "7.5.7",
+          "pointradius": 0.5,
+          "points": true,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "avg(ycsb_ops{instance=~\"$instance\", host=~\"$host\"}) by (instance)",
+              "format": "time_series",
+              "hide": false,
+              "instant": false,
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "{{ instance }}",
+              "refId": "QPS",
+              "step": 10
+            },
+            {
+              "expr": "avg(ycsb_ops) ",
+              "hide": false,
+              "instant": false,
+              "interval": "",
+              "legendFormat": "Average",
+              "refId": "Average"
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "Throughput (Queries Per Second)",
+          "tooltip": {
+            "msResolution": true,
+            "shared": true,
+            "sort": 2,
+            "value_type": "cumulative"
+          },
+          "transformations": [],
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "$$hashKey": "object:878",
+              "format": "reqps",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "$$hashKey": "object:879",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": false
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {
+            "Chunks": "#1F78C1",
+            "Chunks to persist": "#508642",
+            "Max chunks": "#052B51",
+            "Max to persist": "#3F6833"
+          },
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": "Prometheus",
+          "editable": true,
+          "error": false,
+          "fieldConfig": {
+            "defaults": {
+              "unit": "µs"
+            },
+            "overrides": []
+          },
+          "fill": 0,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 8,
+            "w": 8,
+            "x": 16,
+            "y": 32
+          },
+          "hiddenSeries": false,
+          "id": 24,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": false,
+            "max": true,
+            "min": true,
+            "show": true,
+            "total": false,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 2,
+          "links": [],
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": false
+          },
+          "percentage": false,
+          "pluginVersion": "7.5.7",
+          "pointradius": 0.5,
+          "points": true,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "avg(ycsb_999th{instance=~\"$instance\", host=~\"$host\"}) by (instance)",
+              "format": "time_series",
+              "interval": "",
+              "intervalFactor": 2,
+              "legendFormat": "{{ instance }}",
+              "metric": "prometheus_local_storage_memory_series",
+              "refId": "A",
+              "step": 10
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "Average Latency",
+          "tooltip": {
+            "msResolution": false,
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "$$hashKey": "object:341",
+              "format": "µs",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": "0",
+              "show": true
+            },
+            {
+              "$$hashKey": "object:342",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": false
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {
+            "samples/s": "#e5a8e2"
+          },
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": "Prometheus",
+          "editable": true,
+          "error": false,
+          "fieldConfig": {
+            "defaults": {},
+            "overrides": []
+          },
+          "fill": 0,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 7,
+            "w": 8,
+            "x": 0,
+            "y": 40
+          },
+          "hiddenSeries": false,
+          "id": 26,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": false,
+            "max": true,
+            "min": true,
+            "show": true,
+            "total": false,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 2,
+          "links": [],
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": false
+          },
+          "percentage": false,
+          "pluginVersion": "7.5.7",
+          "pointradius": 0.5,
+          "points": true,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "avg(ycsb_99th{instance=~\"$instance\", host=~\"$host\"}) by (instance)",
+              "format": "time_series",
+              "interval": "",
+              "intervalFactor": 2,
+              "legendFormat": "{{ instance }}",
+              "metric": "prometheus_local_storage_ingested_samples_total",
+              "refId": "99Latency",
+              "step": 10
+            },
+            {
+              "expr": "avg(ycsb_99th) ",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "Average",
+              "refId": "Average Read"
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "Tail Latency (99)",
+          "tooltip": {
+            "msResolution": false,
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "$$hashKey": "object:255",
+              "format": "µs",
+              "label": "",
+              "logBase": 1,
+              "max": null,
+              "min": "0",
+              "show": true
+            },
+            {
+              "$$hashKey": "object:256",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": false
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {
+            "samples/s": "#e5a8e2"
+          },
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": "Prometheus",
+          "editable": true,
+          "error": false,
+          "fieldConfig": {
+            "defaults": {},
+            "overrides": []
+          },
+          "fill": 0,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 7,
+            "w": 8,
+            "x": 8,
+            "y": 40
+          },
+          "hiddenSeries": false,
+          "id": 76,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": false,
+            "max": true,
+            "min": true,
+            "show": true,
+            "total": false,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 2,
+          "links": [],
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": false
+          },
+          "percentage": false,
+          "pluginVersion": "7.5.7",
+          "pointradius": 0.5,
+          "points": true,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "avg(ycsb_999th{instance=~\"$instance\", host=~\"$host\"}) by (instance)",
+              "format": "time_series",
+              "interval": "",
+              "intervalFactor": 2,
+              "legendFormat": "{{ instance }}",
+              "metric": "prometheus_local_storage_ingested_samples_total",
+              "refId": "99Latency",
+              "step": 10
+            },
+            {
+              "expr": "avg(ycsb_999th) ",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "Average",
+              "refId": "Average Read"
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "Tail Latency (99.9)",
+          "tooltip": {
+            "msResolution": false,
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "$$hashKey": "object:255",
+              "format": "µs",
+              "label": "",
+              "logBase": 1,
+              "max": null,
+              "min": "0",
+              "show": true
+            },
+            {
+              "$$hashKey": "object:256",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": false
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {
+            "samples/s": "#e5a8e2"
+          },
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": "Prometheus",
+          "editable": true,
+          "error": false,
+          "fieldConfig": {
+            "defaults": {},
+            "overrides": []
+          },
+          "fill": 0,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 7,
+            "w": 8,
+            "x": 16,
+            "y": 40
+          },
+          "hiddenSeries": false,
+          "id": 91,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": false,
+            "max": true,
+            "min": true,
+            "show": true,
+            "total": false,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 2,
+          "links": [],
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": false
+          },
+          "percentage": false,
+          "pluginVersion": "7.5.7",
+          "pointradius": 0.5,
+          "points": true,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "avg(ycsb_9999th{instance=~\"$instance\", host=~\"$host\"}) by (instance)",
+              "format": "time_series",
+              "interval": "",
+              "intervalFactor": 2,
+              "legendFormat": "{{ instance }}",
+              "metric": "prometheus_local_storage_ingested_samples_total",
+              "refId": "99Latency",
+              "step": 10
+            },
+            {
+              "expr": "avg(ycsb_9999th) ",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "Average",
+              "refId": "Average Read"
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "Tail Latency (99.99)",
+          "tooltip": {
+            "msResolution": false,
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "$$hashKey": "object:255",
+              "format": "µs",
+              "label": "",
+              "logBase": 1,
+              "max": null,
+              "min": "0",
+              "show": true
+            },
+            {
+              "$$hashKey": "object:256",
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": false
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        }
+      ],
+      "refresh": "30s",
+      "schemaVersion": 27,
+      "style": "dark",
+      "tags": [
+        "ycsb"
+      ],
+      "templating": {
+        "list": [
+          {
+            "allValue": ".*",
+            "current": {
+              "selected": false,
+              "text": "All",
+              "value": "$__all"
+            },
+            "datasource": null,
+            "definition": "query_result(count (up{dash=~\"ycsb\"}) by (instance))",
+            "description": null,
+            "error": null,
+            "hide": 0,
+            "includeAll": true,
+            "label": null,
+            "multi": true,
+            "name": "instance",
+            "options": [],
+            "query": {
+              "query": "query_result(count (up{dash=~\"ycsb\"}) by (instance))",
+              "refId": "StandardVariableQuery"
+            },
+            "refresh": 2,
+            "regex": "/.*instance=\"(.*)\".*/",
+            "skipUrlSync": false,
+            "sort": 1,
+            "tagValuesQuery": "",
+            "tags": [],
+            "tagsQuery": "",
+            "type": "query",
+            "useTags": false
+          },
+          {
+            "allValue": ".*",
+            "current": {
+              "selected": false,
+              "text": "All",
+              "value": "$__all"
+            },
+            "datasource": null,
+            "definition": "query_result(count (up{dash=\"ycsb\"}) by (host))",
+            "description": null,
+            "error": null,
+            "hide": 0,
+            "includeAll": true,
+            "label": null,
+            "multi": true,
+            "name": "host",
+            "options": [],
+            "query": {
+              "query": "query_result(count (up{dash=\"ycsb\"}) by (host))",
+              "refId": "StandardVariableQuery"
+            },
+            "refresh": 2,
+            "regex": "/.*host=\"(.*)\".*/",
+            "skipUrlSync": false,
+            "sort": 1,
+            "tagValuesQuery": "",
+            "tags": [],
+            "tagsQuery": "",
+            "type": "query",
+            "useTags": false
+          }
+        ]
+      },
+      "time": {
+        "from": "now-3h",
+        "to": "now"
+      },
+      "timepicker": {
+        "refresh_intervals": [
+          "5s",
+          "10s",
+          "30s",
+          "1m",
+          "5m",
+          "15m",
+          "30m",
+          "1h",
+          "2h",
+          "1d"
+        ],
+        "time_options": [
+          "5m",
+          "15m",
+          "1h",
+          "6h",
+          "12h",
+          "24h",
+          "2d",
+          "7d",
+          "30d"
+        ]
+      },
+      "timezone": "browser",
+      "title": "YCSB Services",
+      "uid": "A2EjFbsMk",
+      "version": 1
+    }

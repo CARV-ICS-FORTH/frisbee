@@ -5,13 +5,15 @@ import (
 	"fmt"
 	"path/filepath"
 
+	pet "github.com/dustinkirkland/golang-petname"
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/common"
 	"github.com/fnikolai/frisbee/controllers/common/lifecycle"
-	"github.com/fnikolai/frisbee/controllers/common/selector/template"
+	"github.com/fnikolai/frisbee/controllers/template/helpers"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	netv1 "k8s.io/api/networking/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // {{{ Internal types
@@ -44,6 +46,8 @@ func (r *Reconciler) newMonitoringStack(ctx context.Context, obj *v1alpha1.Workf
 			return errors.Wrapf(err, "ingress error")
 		}
 
+		r.Logger.Info("Ingress is installed")
+
 		// use the public Grafana address (via Ingress) because the controller runs outside of the cluster
 		grafanaPublicURI := fmt.Sprintf("http://%s", virtualhost(grafana.GetName(), obj.Spec.Ingress))
 
@@ -73,7 +77,7 @@ func (r *Reconciler) installPrometheus(ctx context.Context, obj *v1alpha1.Workfl
 	}
 
 	{ // deployment
-		if err := r.Create(ctx, &prom); err != nil {
+		if err := r.Client.Create(ctx, &prom); err != nil {
 			return nil, errors.Wrapf(err, "request error")
 		}
 
@@ -98,17 +102,18 @@ func (r *Reconciler) installGrafana(ctx context.Context, obj *v1alpha1.Workflow)
 	}
 
 	{ // spec
-		grafana.Spec.Instances = 1
-
 		// to perform the necessary automations, we load the spec locally and push the modified version for creation.
-		grafana.Spec.ServiceSpec = template.SelectService(ctx, template.ParseRef(obj.GetNamespace(), grafanaTemplate))
-		if grafana.Spec.ServiceSpec == nil {
-			return nil, errors.New("cannot find template")
+		spec, err := helpers.GetServiceSpec(ctx, helpers.ParseRef(obj.GetNamespace(), grafanaTemplate))
+		if err != nil {
+			return nil, errors.Wrapf(err, "spec spec error")
 		}
 
-		if err := r.importDashboards(ctx, obj, grafana.Spec.ServiceSpec); err != nil {
+		if err := r.importDashboards(ctx, obj, spec); err != nil {
 			return nil, errors.Wrapf(err, "import dashboards")
 		}
+
+		grafana.Spec.Instances = 1
+		grafana.Spec.ServiceSpec = spec
 	}
 
 	{ // deployment
@@ -127,56 +132,49 @@ func (r *Reconciler) installGrafana(ctx context.Context, obj *v1alpha1.Workflow)
 }
 
 func (r *Reconciler) importDashboards(ctx context.Context, obj *v1alpha1.Workflow, spec *v1alpha1.ServiceSpec) error {
-	// create configmap
-	configMap := corev1.ConfigMap{}
-	configMap.Name = "dashboards"
-
-	configMap.Data = make(map[string]string, len(obj.Spec.ImportMonitors))
-	{
-		for _, monRef := range obj.Spec.ImportMonitors {
-			monSpec := template.SelectMonitor(ctx, template.ParseRef(obj.GetNamespace(), monRef))
-			if monSpec == nil {
-				return errors.Errorf("monitor failed")
-			}
-
-			configMap.Data[monSpec.Dashboard.File] = monSpec.Dashboard.Payload
+	// iterate monitoring services
+	for _, monRef := range obj.Spec.ImportMonitors {
+		monSpec, err := helpers.GetMonitorSpec(ctx, helpers.ParseRef(obj.GetNamespace(), monRef))
+		if err != nil {
+			return errors.Errorf("monitor failed")
 		}
 
-		if err := common.SetOwner(obj, &configMap); err != nil {
-			return errors.Wrapf(err, "ownership failed")
+		// get the configmap which contains our desired dashboard
+		configMapKey := client.ObjectKey{Namespace: obj.GetNamespace(), Name: monSpec.Dashboard.FromConfigMap}
+		configMap := corev1.ConfigMap{}
+
+		if err := r.Client.Get(ctx, configMapKey, &configMap); err != nil {
+			return errors.Wrapf(err, "cannot get configmap %s", configMapKey)
 		}
 
-		if err := r.Client.Create(ctx, &configMap); err != nil {
-			return errors.Wrapf(err, "configmap failed")
-		}
-	}
+		// create volume from the configmap
+		volume := corev1.Volume{}
+		volume.Name = pet.Name() // generate random name
 
-	// create volume from the configmap
-	volume := corev1.Volume{}
-	volumeMounts := make([]corev1.VolumeMount, 0, len(configMap.Data))
-	{
-		volume.Name = "grafana-dashboards"
 		volume.VolumeSource = corev1.VolumeSource{
 			ConfigMap: &corev1.ConfigMapVolumeSource{
 				LocalObjectReference: corev1.LocalObjectReference{Name: configMap.GetName()},
 			},
 		}
 
+		// create mountpoints
+		mounts := make([]corev1.VolumeMount, 0, len(configMap.Data))
+
 		for file := range configMap.Data {
-			volumeMounts = append(volumeMounts, corev1.VolumeMount{
-				Name:      volume.Name, // Name of a Volume.
-				ReadOnly:  true,
-				MountPath: filepath.Join(grafanaDashboards, file), // Path within the container
-				SubPath:   file,                                   //  Path within the volume
-			})
+			if file == monSpec.Dashboard.File {
+				mounts = append(mounts, corev1.VolumeMount{
+					Name:      volume.Name, // Name of a Volume.
+					ReadOnly:  true,
+					MountPath: filepath.Join(grafanaDashboards, file), // Path within the container
+					SubPath:   file,                                   //  Path within the volume
+				})
+			}
 		}
+
+		// associate mounts to grafana container
+		spec.Volumes = append(spec.Volumes, volume)
+		spec.Container.VolumeMounts = append(spec.Container.VolumeMounts, mounts...)
 	}
-
-	// associate volume with grafana
-	spec.Volumes = append(spec.Volumes, volume)
-	spec.Container.VolumeMounts = append(spec.Container.VolumeMounts, volumeMounts...)
-
-	r.Logger.Info("Import Grafana packages", "dashboards", obj.Spec.ImportMonitors)
 
 	return nil
 }

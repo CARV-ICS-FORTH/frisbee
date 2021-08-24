@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/common"
-	"github.com/fnikolai/frisbee/controllers/common/selector/template"
+	"github.com/fnikolai/frisbee/controllers/template/helpers"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 )
@@ -16,7 +18,6 @@ import (
 // first, to create a common pods
 // second, populate the pod spec for every  service -- which may involve more than one containers.
 func (r *Reconciler) create(ctx context.Context, group *v1alpha1.CollocatedGroup, serviceList v1alpha1.ServiceSpecList) error {
-
 	pod := corev1.Pod{}
 
 	{ // metadata
@@ -48,8 +49,12 @@ func (r *Reconciler) create(ctx context.Context, group *v1alpha1.CollocatedGroup
 			pod.Spec.Containers = append(pod.Spec.Containers, b.containers...)
 			pod.Spec.Volumes = append(pod.Spec.Volumes, b.spec.Volumes...)
 
+			logrus.Warn("required label ", b.labels)
+
 			pod.SetLabels(labels.Merge(pod.GetLabels(), b.labels))
 		}
+
+		logrus.Warn("Pod labels ", pod.Labels)
 	}
 
 	{ // deploy
@@ -110,12 +115,9 @@ func (r *Reconciler) createServiceBundle(ctx context.Context, group *v1alpha1.Co
 func (r *Reconciler) deployAgents(ctx context.Context, group *v1alpha1.CollocatedGroup, b *bundle) error {
 	// import monitoring agents to the service
 	for _, ref := range b.spec.MonitorTemplateRefs {
-		mon := template.SelectMonitor(ctx, template.ParseRef(group.GetNamespace(), ref))
-
-		// TODO: validate that agent has no fields set other than Volume and Container
-
-		if mon == nil {
-			return errors.New("nil monitor")
+		mon, err := helpers.GetMonitorSpec(ctx, helpers.ParseRef(group.GetNamespace(), ref))
+		if err != nil {
+			return errors.Wrapf(err, "cannot get monitor")
 		}
 
 		// prefix the sidecar (e.g, Telegraf) by the name of service it works for.
@@ -134,6 +136,12 @@ func (r *Reconciler) deployDiscoveryService(ctx context.Context, group *v1alpha1
 
 	for _, container := range b.containers {
 		for _, port := range container.Ports {
+			if port.ContainerPort == 0 {
+				spew.Dump(b.spec)
+
+				panic("invalid port")
+			}
+
 			allPorts = append(allPorts, corev1.ServicePort{
 				Name: port.Name,
 				Port: port.ContainerPort,
@@ -159,12 +167,12 @@ func (r *Reconciler) deployDiscoveryService(ctx context.Context, group *v1alpha1
 	kubeService.Spec.ClusterIP = clusterIP
 
 	// enable kubeservice to discover the service containers
-	b.labels = map[string]string{"discover": b.spec.Name}
+	b.labels = map[string]string{b.spec.Name: "discover"}
 
 	kubeService.Spec.Selector = b.labels
 
 	if err := r.Client.Create(ctx, &kubeService); err != nil {
-		return errors.Wrapf(err, "cannot create kubernetes service")
+		return errors.Wrapf(err, "cannot create discovery service")
 	}
 
 	return nil

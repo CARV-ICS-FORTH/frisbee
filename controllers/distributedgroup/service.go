@@ -3,9 +3,10 @@ package distributedgroup
 import (
 	"context"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/common"
-	"github.com/fnikolai/frisbee/controllers/common/selector/template"
+	"github.com/fnikolai/frisbee/controllers/template/helpers"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -44,7 +45,6 @@ func (r *Reconciler) createService(ctx context.Context, group *v1alpha1.Distribu
 		pod.Spec.RestartPolicy = corev1.RestartPolicyNever
 
 		// r.setPlacementConstraints(spec, &pod)
-
 	}
 
 	{ // deployment
@@ -67,21 +67,10 @@ func (r *Reconciler) createService(ctx context.Context, group *v1alpha1.Distribu
 func (r *Reconciler) deployAgents(ctx context.Context, group *v1alpha1.DistributedGroup, spec *v1alpha1.ServiceSpec, pod *corev1.Pod) error {
 	// import monitoring agents to the service
 	for _, ref := range spec.MonitorTemplateRefs {
-		mon := template.SelectMonitor(ctx, template.ParseRef(group.GetNamespace(), ref))
-
-		// TODO: validate that agent has no fields set other than Volume and Container
-
-		if mon == nil {
-			return errors.New("nil monitor")
+		mon, err := helpers.GetMonitorSpec(ctx, helpers.ParseRef(group.GetNamespace(), ref))
+		if err != nil {
+			return errors.Wrapf(err, "cannot get monitor")
 		}
-		/*
-			if len(spec.MonitorTemplateRef) > 0 ||
-				len(spec.Volumes) > 0 ||
-				len(spec.Domain) > 0 ||
-				spec.Resources != nil {
-				return errors.Errorf("sidecar service must have only the container specified")
-			}
-		*/
 
 		pod.Spec.Volumes = append(pod.Spec.Volumes, mon.Agent.Volumes...)
 		pod.Spec.Containers = append(pod.Spec.Containers, mon.Agent.Container)
@@ -96,6 +85,12 @@ func (r *Reconciler) deployDiscoveryService(ctx context.Context, group *v1alpha1
 
 	for _, container := range pod.Spec.Containers {
 		for _, port := range container.Ports {
+			if port.ContainerPort == 0 {
+				spew.Dump(spec)
+
+				panic("invalid port")
+			}
+
 			allPorts = append(allPorts, corev1.ServicePort{
 				Name: port.Name,
 				Port: port.ContainerPort,
@@ -121,14 +116,15 @@ func (r *Reconciler) deployDiscoveryService(ctx context.Context, group *v1alpha1
 	kubeService.Spec.ClusterIP = clusterIP
 
 	// enable kubeservice to discover kubepod
-	service2Pod := map[string]string{"discover": pod.GetName()}
-	pod.SetLabels(labels.Merge(pod.GetLabels(), service2Pod))
+	service2Pod := map[string]string{pod.GetName(): "discover"}
 
-	kubeService.Spec.Selector = pod.GetLabels()
+	kubeService.Spec.Selector = service2Pod
 
 	if err := r.Client.Create(ctx, &kubeService); err != nil {
-		return errors.Wrapf(err, "cannot create kubernetes service")
+		return errors.Wrapf(err, "cannot create discovery service")
 	}
+
+	pod.SetLabels(labels.Merge(pod.GetLabels(), service2Pod))
 
 	return nil
 }

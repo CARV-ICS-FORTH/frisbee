@@ -26,7 +26,7 @@ spec:
     # Ingest keys in parallel into different ranges
     - actiontype: DistributedGroup
       name: loaders
-      depends: { running: [ masters ],   success: [ boot ] }
+      depends: { running: [ masters ],   success: [ boot ], duration: 30s }
       distributedGroup:
         templateRef: rediscluster/loader
         inputs:
@@ -44,7 +44,7 @@ spec:
     # Run queries
     - actiontype: DistributedGroup
       name: runners
-      depends: { running: [ masters, slaves ], success: [ loaders ] }
+      depends: { running: [ masters ], success: [ loaders ] }
       distributedGroup:
         templateRef: rediscluster/runner
         instances: 5
