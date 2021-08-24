@@ -11,21 +11,13 @@ type NamespacedName struct {
 	Name      string `json:"name"`
 }
 
-const (
-	Separator = '/'
-)
-
-// String returns the general purpose string representation
-func (n NamespacedName) String() string {
-	return n.Namespace + string(Separator) + n.Name
-}
-
 type ServiceSpec struct {
-	// NamespacedName is the name of the desired service. If unspecified, it is automatically set by the respective controller
+	// NamespacedName is the name of the desired service. If unspecified, it is automatically set by
+	// the respective controller.
 	// +optional
 	NamespacedName `json:"namespacedName"`
 
-	// PortRef is a list of names of Ports that participate in the Mesh (autodiscovery + rewiring)
+	// PortRef is a list of names of Ports that participate in the Mesh (autodiscovery + rewiring).
 	// +optional
 	PortRefs []string `json:"addPorts"`
 
@@ -36,7 +28,7 @@ type ServiceSpec struct {
 	// Container is the container running the application
 	Container v1.Container `json:"container,omitempty"`
 
-	// MonitorTemplateRef is a list of references to monitoring packages
+	// MonitorTemplateRef is a list of references to monitoring packages.
 	// +optional
 	MonitorTemplateRefs []string `json:"monitorTemplateRef,omitempty"`
 
@@ -45,7 +37,7 @@ type ServiceSpec struct {
 	// +optional
 	Domain string `json:"domain,omitempty"`
 
-	// Resources specifies limitations as to how the container will access host resources
+	// Resources specifies limitations as to how the container will access host resources.
 	// +optional
 	Resources *Resources `json:"resources,omitempty"`
 }

@@ -28,6 +28,10 @@ type BoundedFSM struct {
 }
 
 func NewBoundedFSM(serviceNames []string) *BoundedFSM {
+	if len(serviceNames) == 0 {
+		return &BoundedFSM{}
+	}
+
 	parentRun, childrenRun := wait.ChannelWaitForChildren(len(serviceNames))
 	parentExit, childrenExit := wait.ChannelWaitForChildren(len(serviceNames))
 

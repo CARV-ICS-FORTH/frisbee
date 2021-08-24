@@ -60,12 +60,17 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return lifecycle.Pending(ctx, &group, "waiting for services to become ready")
 
 	case v1alpha1.PhasePending:
+		expected := group.Status.ExpectedServices.GetNames()
+		if len(expected) == 0 {
+			return lifecycle.Failed(ctx, &group, errors.New("no services are expected. stall condition ?"))
+		}
+
 		// start listening for events.
 		// If any of the services is created, the group will go to the running phase.
 		// If any of the services is failed, the group will go to the failed phase.
 		// if all services are successfully terminated, the group will go to the success phase
 		err := lifecycle.New(
-			lifecycle.WatchExternal(&v1.Pod{}, lifecycle.Pod(), group.Status.ExpectedServices.GetNames()...),
+			lifecycle.WatchExternal(&v1.Pod{}, lifecycle.Pod(), expected...),
 			lifecycle.WithFilters(lifecycle.FilterByParent(group.GetUID())),
 			lifecycle.WithAnnotator(&lifecycle.PointAnnotation{}), // Register event to grafana
 			lifecycle.WithLogger(r.Logger),

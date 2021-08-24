@@ -57,7 +57,7 @@ spec:
 
     - actiontype: Chaos
       name: partition1
-      depends: { running: [ masters, slaves  ], success: [ partition0 ], duration: "3m" }
+      depends: { running: [ masters, slaves ], success: [ partition0 ], duration: "3m" }
       chaos:
         type: partition
         partition:

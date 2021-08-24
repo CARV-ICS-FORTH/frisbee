@@ -56,6 +56,7 @@ func EnableGrafanaAnnotator(ctx context.Context, apiURI string) error {
 	// retry until Grafana is ready to receive annotations.
 	err = retry.OnError(DefaultBackoff, func(_ error) bool { return true }, func() error {
 		_, err := client.GetHealth(ctx)
+
 		return errors.Wrapf(err, "grafana health error")
 	})
 
