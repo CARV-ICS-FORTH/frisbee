@@ -7,29 +7,33 @@ import (
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/common"
 	"github.com/fnikolai/frisbee/controllers/common/selector/service"
-	"github.com/fnikolai/frisbee/controllers/common/selector/template"
+	"github.com/fnikolai/frisbee/controllers/template/helpers"
 	"github.com/pkg/errors"
-	v1 "k8s.io/api/core/v1"
+	"github.com/sirupsen/logrus"
 )
 
 func (r *Reconciler) prepare(ctx context.Context, group *v1alpha1.DistributedGroup) error {
-	var serviceSpec *v1alpha1.ServiceSpec
-	{ // sanitize parameters
-		switch {
-		case group.Spec.ServiceSpec != nil && group.Spec.TemplateRef != "":
-			return errors.New("only one of servicespec and templateref can be used")
+	switch {
+	case group.Spec.ServiceSpec != nil && group.Spec.TemplateRef != "":
+		return errors.New("only one of servicespec and templateref can be used")
 
-		case group.Spec.ServiceSpec != nil:
-			serviceSpec = group.Spec.ServiceSpec
-
-		case group.Spec.TemplateRef != "":
-			serviceSpec = template.SelectService(ctx, template.ParseRef(group.GetNamespace(), group.Spec.TemplateRef))
-
-			if serviceSpec == nil {
-				return errors.Errorf("template %s/%s was not found", group.GetNamespace(), group.Spec.TemplateRef)
-			}
+	case group.Spec.ServiceSpec != nil:
+		if len(group.Spec.Inputs) > 0 {
+			return errors.New("no inputs  are allowed when service spec is defined")
 		}
 
+		for i := 0; i < group.Spec.Instances; i++ {
+			// if the service is specifically define, we can create only one instance
+			spec := group.Spec.ServiceSpec.DeepCopy()
+
+			spec.NamespacedName = generateName(group, i)
+
+			group.Status.ExpectedServices = append(group.Status.ExpectedServices, spec)
+		}
+
+		return nil
+
+	case group.Spec.TemplateRef != "":
 		// all inputs are explicitly defined. no instances were given
 		if group.Spec.Instances == 0 {
 			if len(group.Spec.Inputs) == 0 {
@@ -39,44 +43,47 @@ func (r *Reconciler) prepare(ctx context.Context, group *v1alpha1.DistributedGro
 			group.Spec.Instances = len(group.Spec.Inputs)
 		}
 
-		// instances were given, with one explicit input
-		if len(group.Spec.Inputs) == 1 {
-			inputs := make([]map[string]string, group.Spec.Instances)
+		// cache the results of macro as to avoid asking the Kubernetes API. This, however, is only applicable
+		// to the level of a group, because different groups may be created in different moments
+		// throughout the experiment,  thus yielding different results.
+		lookupCache := make(map[string]v1alpha1.ServiceSpecList)
 
-			for i := 0; i < group.Spec.Instances; i++ {
-				inputs[i] = group.Spec.Inputs[0]
+		scheme := helpers.SelectServiceTemplate(ctx, helpers.ParseRef(group.GetNamespace(), group.Spec.TemplateRef))
+
+		for i := 0; i < group.Spec.Instances; i++ {
+			switch len(group.Spec.Inputs) {
+			case 0:
+				// no inputs
+			case 1:
+				// use a common set of inputs for all instances
+				if err := inputs2Env(ctx, scheme.Inputs.Parameters, group.Spec.Inputs[0], lookupCache); err != nil {
+					return errors.Wrapf(err, "macro expansion failed")
+				}
+
+			default:
+				// use a different set of inputs for every instance
+				if err := inputs2Env(ctx, scheme.Inputs.Parameters, group.Spec.Inputs[i], lookupCache); err != nil {
+					return errors.Wrapf(err, "macro expansion failed")
+				}
 			}
 
-			group.Spec.Inputs = inputs
-		}
-	}
+			logrus.Warn("Generate scheme", scheme.Inputs)
 
-	// cache the results of macro as to avoid asking the Kubernetes API. This, however, is only applicable
-	// to the level of a group, because different groups may be created in different momements throughout the experiment,
-	// thus yielding different results.
-	lookupCache := make(map[string]v1alpha1.ServiceSpecList)
-
-	var serviceList v1alpha1.ServiceSpecList
-
-	for i := 0; i < group.Spec.Instances; i++ {
-		// prevent different services from sharing the same spec
-		spec := serviceSpec.DeepCopy()
-
-		spec.NamespacedName = generateName(group, i)
-
-		// prepare service environment
-		if len(group.Spec.Inputs) > 0 {
-			if err := r.inputs2Env(ctx, group.Spec.Inputs[i], &spec.Container, lookupCache); err != nil {
-				return errors.Wrapf(err, "macro expansion failed")
+			service, err := helpers.GenerateServiceSpec(scheme)
+			if err != nil {
+				return errors.Wrapf(err, "scheme to service")
 			}
+
+			service.NamespacedName = generateName(group, i)
+
+			group.Status.ExpectedServices = append(group.Status.ExpectedServices, service)
 		}
 
-		serviceList = append(serviceList, spec)
+		return nil
+
+	default:
+		return errors.Errorf("at least one of Service or TemplateRef must be defined")
 	}
-
-	group.Status.ExpectedServices = serviceList
-
-	return nil
 }
 
 // if there is only one instance, it will be named after the group. otherwise, the instances will be named
@@ -89,19 +96,18 @@ func generateName(group *v1alpha1.DistributedGroup, i int) v1alpha1.NamespacedNa
 	return v1alpha1.NamespacedName{Namespace: group.GetNamespace(), Name: fmt.Sprintf("%s-%d", group.GetName(), i)}
 }
 
-func (r *Reconciler) inputs2Env(ctx context.Context, inputs map[string]string, container *v1.Container,
-	cache map[string]v1alpha1.ServiceSpecList) error {
-	if len(inputs) != len(container.Env) {
-		return errors.Errorf("mismatch inputs and env vars. vars:%d inputs:%d ", len(container.Env), len(inputs))
-	}
-
-	for i, evar := range container.Env {
-		value, ok := inputs[evar.Name]
+func inputs2Env(ctx context.Context, dst, src map[string]string, cache map[string]v1alpha1.ServiceSpecList) error {
+	for key := range dst {
+		// if there is no user-given value, use the default.
+		value, ok := src[key]
 		if !ok {
-			return errors.Errorf("%s parameter not set", evar.Name)
+			continue
 		}
 
-		if service.IsMacro(value) {
+		// if the value is not a macro, write it directly to the inputs
+		if !service.IsMacro(value) {
+			dst[key] = value
+		} else { // expand macro
 			services, ok := cache[value]
 			if !ok {
 				services = service.Select(ctx, &v1alpha1.ServiceSelector{Macro: &value})
@@ -113,9 +119,7 @@ func (r *Reconciler) inputs2Env(ctx context.Context, inputs map[string]string, c
 				cache[value] = services
 			}
 
-			container.Env[i].Value = services.String()
-		} else {
-			container.Env[i].Value = value
+			dst[key] = services.String()
 		}
 	}
 

@@ -8,7 +8,6 @@ import (
 	"github.com/fnikolai/frisbee/controllers/common"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -134,7 +133,7 @@ func Failed(ctx context.Context, obj InnerObject, err error) (ctrl.Result, error
 		panic("invalid args")
 	}
 
-	runtimeutil.HandleError(errors.Wrapf(err, "object %s has failed", obj.GetName()))
+	common.Common.Logger.Error(err, "object failed", "name", obj.GetName())
 
 	obj.SetLifecycle(v1alpha1.Lifecycle{
 		Kind:      reflect.TypeOf(obj).String(),
@@ -146,30 +145,4 @@ func Failed(ctx context.Context, obj InnerObject, err error) (ctrl.Result, error
 	})
 
 	return common.UpdateStatus(ctx, obj)
-}
-
-/******************************************************
-			Delete Managed objects
-/******************************************************/
-
-// Delete is a wrapper that addresses a circular dependency issue with the lifecycle monitoring.
-// By default, Kubernetes deletes Children before the parent. When a Child is removed,
-// the lifecycle watchdog detects that a child is deleted (failed) and updates the parent. However,
-// the parent used in the lifecycle is a stalled copy of the actual parent object. Hence, the update
-// causes a conflict between the stalled and the actual object.
-//
-// This deletion method addresses this issue by first deleting the parent, and then the children.
-func Delete(ctx context.Context, c client.Client, obj client.Object) error {
-	// There are three different options for the deletion propagation policy:
-	//
-	//    Foreground: Children are deleted before the parent (post-order)
-	//    Background: Parent is deleted before the children (pre-order)
-	//    Orphan: Owner references are ignored
-	deletePolicy := metav1.DeletePropagationBackground
-
-	if err := c.Delete(ctx, obj, &client.DeleteOptions{PropagationPolicy: &deletePolicy}); err != nil {
-		return errors.Wrapf(err, "unable to delete object %s", obj.GetName())
-	}
-
-	return nil
 }

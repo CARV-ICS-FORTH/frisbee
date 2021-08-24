@@ -215,7 +215,7 @@ func (r *Reconciler) stop(ctx context.Context, w Workflow, action v1alpha1.Actio
 
 			err := lifecycle.Delete(ctx, r.Client, &discovery)
 			if err != nil && !k8errors.IsNotFound(err) {
-				return errors.Wrapf(err, "cannot delete service %s", service)
+				return errors.Wrapf(err, "cannot delete service %s", service.NamespacedName)
 			}
 
 			r.Logger.Info("stop", "service", service)
@@ -232,7 +232,7 @@ func (r *Reconciler) stop(ctx context.Context, w Workflow, action v1alpha1.Actio
 
 			err := lifecycle.Delete(ctx, r.Client, &discovery)
 			if err != nil && !k8errors.IsNotFound(err) {
-				return errors.Wrapf(err, "cannot delete service %s", service)
+				return errors.Wrapf(err, "cannot delete service %s", service.NamespacedName)
 			}
 
 			r.Logger.Info("stop", "service", service)

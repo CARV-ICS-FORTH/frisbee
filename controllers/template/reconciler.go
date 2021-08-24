@@ -1,3 +1,9 @@
+/*
+Package template provides a lookup for service definition.
+
+It also provides a way of creating random values at every call, for example to create services that listen
+on different ports.
+*/
 package template
 
 import (
@@ -6,7 +12,10 @@ import (
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/common"
+	"github.com/fnikolai/frisbee/controllers/common/lifecycle"
+	"github.com/fnikolai/frisbee/controllers/template/helpers"
 	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -43,24 +52,29 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return common.DoNotRequeue()
 	}
 
-	serviceNames := make([]string, 0, len(obj.Spec.Services))
-	for name := range obj.Spec.Services {
-		serviceNames = append(serviceNames, name)
+	// validate services
+	for name, spec := range obj.Spec.Services {
+		if _, err := helpers.GenerateServiceSpec(&spec); err != nil {
+			return lifecycle.Failed(ctx, &obj, errors.Wrapf(err, "service template %s error", name))
+		}
 	}
 
-	monitorNames := make([]string, 0, len(obj.Spec.Monitors))
-	for name := range obj.Spec.Monitors {
-		monitorNames = append(monitorNames, name)
+	// validate monitors
+	for name, spec := range obj.Spec.Monitors {
+		if _, err := helpers.GenerateMonitorSpec(&spec); err != nil {
+			return lifecycle.Failed(ctx, &obj, errors.Wrapf(err, "monitor template %s error", name))
+		}
 	}
 
 	r.Logger.Info("Import Template",
 		"name", req.NamespacedName,
-		"services", serviceNames,
-		"monitor", monitorNames,
+		"services", GetServiceNames(obj.Spec),
+		"monitor", GetMonitorNames(obj.Spec),
 	)
 
 	obj.Status.IsRegistered = true
-	return common.UpdateStatus(ctx, &obj)
+
+	return lifecycle.Running(ctx, &obj, "all templates are loaded")
 }
 
 func (r *Reconciler) Finalizer() string {
@@ -71,4 +85,24 @@ func (r *Reconciler) Finalize(obj client.Object) error {
 	r.Logger.Info("Finalize", "kind", reflect.TypeOf(obj), "name", obj.GetName())
 
 	return nil
+}
+
+func GetServiceNames(t v1alpha1.TemplateSpec) []string {
+	names := make([]string, 0, len(t.Services))
+
+	for name := range t.Services {
+		names = append(names, name)
+	}
+
+	return names
+}
+
+func GetMonitorNames(t v1alpha1.TemplateSpec) []string {
+	names := make([]string, 0, len(t.Monitors))
+
+	for name := range t.Monitors {
+		names = append(names, name)
+	}
+
+	return names
 }

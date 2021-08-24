@@ -55,6 +55,7 @@ type DistributedGroupStatus struct {
 
 	// ExpectedServices is a list of services that belong to this group.
 	// These services will be located in the same namespace as the group.
+	// +optional
 	ExpectedServices ServiceSpecList `json:"expectedServices"`
 }
 

@@ -2,6 +2,7 @@ package lifecycle
 
 import (
 	"context"
+	"reflect"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/common"
@@ -72,11 +73,11 @@ type StatusAccessor func(obj interface{}) []*v1alpha1.Lifecycle
 
 // WatchExternal wraps an object that does not belong to this controller.
 func WatchExternal(kind client.Object, convertor StatusAccessor, names ...string) Option {
-	return func(s *Options) {
-		if kind == nil || convertor == nil || len(names) == 0 {
-			panic("invalid arguments")
-		}
+	if kind == nil || convertor == nil || len(names) == 0 {
+		panic(errors.Errorf("invalid arguments. kind:%s convertor:%p names:%v", reflect.TypeOf(kind), convertor, names))
+	}
 
+	return func(s *Options) {
 		if s.WatchType != nil && s.WatchType != kind {
 			panic("watch type is already defined")
 		} else {

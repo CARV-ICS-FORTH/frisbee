@@ -1,7 +1,7 @@
 package lifecycle
 
 import (
-	"strings"
+	"fmt"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/pkg/errors"
@@ -123,12 +123,6 @@ func Containers() StatusAccessor {
 		pod := obj.(*corev1.Pod)
 
 		for _, container := range pod.Status.ContainerStatuses {
-			// todo: to go on, we currently ignore the status of sidecars.
-			// find a way to overcome this limitation
-			if strings.Contains(container.Name, "-") {
-				continue
-			}
-
 			switch {
 			case container.State.Waiting != nil:
 				state := container.State.Waiting
@@ -137,7 +131,7 @@ func Containers() StatusAccessor {
 					Kind:      "Container",
 					Name:      container.Name,
 					Phase:     v1alpha1.PhasePending,
-					Reason:    state.Reason,
+					Reason:    fmt.Sprintf("%s - %s", state.Reason, state.Message),
 					StartTime: nil,
 					EndTime:   nil,
 				})
@@ -149,7 +143,7 @@ func Containers() StatusAccessor {
 					Kind:      "Container",
 					Name:      container.Name,
 					Phase:     v1alpha1.PhaseRunning,
-					Reason:    "container is started",
+					Reason:    "container has started",
 					StartTime: &state.StartedAt,
 					EndTime:   nil,
 				})
@@ -162,7 +156,7 @@ func Containers() StatusAccessor {
 						Kind:      "Container",
 						Name:      container.Name,
 						Phase:     v1alpha1.PhaseSuccess,
-						Reason:    state.Reason,
+						Reason:    fmt.Sprintf("%s - %s", state.Reason, state.Message),
 						StartTime: &state.StartedAt,
 						EndTime:   &state.FinishedAt,
 					})
@@ -171,7 +165,7 @@ func Containers() StatusAccessor {
 						Kind:      "Container",
 						Name:      container.Name,
 						Phase:     v1alpha1.PhaseFailed,
-						Reason:    state.Reason,
+						Reason:    fmt.Sprintf("%s - %s", state.Reason, state.Message),
 						StartTime: &state.StartedAt,
 						EndTime:   &state.FinishedAt,
 					})

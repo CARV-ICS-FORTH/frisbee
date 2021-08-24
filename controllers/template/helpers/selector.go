@@ -1,4 +1,4 @@
-package template
+package helpers
 
 import (
 	"context"
@@ -38,7 +38,7 @@ func ParseRef(nm, templateRef string) *v1alpha1.TemplateSelector {
 	}
 }
 
-func SelectService(ctx context.Context, ts *v1alpha1.TemplateSelector) *v1alpha1.ServiceSpec {
+func SelectServiceTemplate(ctx context.Context, ts *v1alpha1.TemplateSelector) *v1alpha1.Scheme {
 	if ts == nil {
 		return nil
 	}
@@ -65,21 +65,21 @@ func SelectService(ctx context.Context, ts *v1alpha1.TemplateSelector) *v1alpha1
 
 	switch {
 	case len(ts.Selector.Reference) > 0:
-		serviceSpec, ok := template.Spec.Services[ts.Selector.Reference]
+		scheme, ok := template.Spec.Services[ts.Selector.Reference]
 		if !ok {
 			logrus.Warn(errors.Errorf("unable to find entry %s", ts.Selector.Reference))
 
 			return nil
 		}
 
-		return &serviceSpec
+		return &scheme
 
 	default:
 		panic(errors.Errorf("unspecified selection criteria"))
 	}
 }
 
-func SelectMonitor(ctx context.Context, ts *v1alpha1.TemplateSelector) *v1alpha1.MonitorSpec {
+func SelectMonitorTemplate(ctx context.Context, ts *v1alpha1.TemplateSelector) *v1alpha1.Scheme {
 	if ts == nil {
 		return nil
 	}
@@ -106,13 +106,14 @@ func SelectMonitor(ctx context.Context, ts *v1alpha1.TemplateSelector) *v1alpha1
 
 	switch {
 	case len(ts.Selector.Reference) > 0:
-		monSpec, ok := template.Spec.Monitors[ts.Selector.Reference]
+		scheme, ok := template.Spec.Monitors[ts.Selector.Reference]
 		if !ok {
 			logrus.Warn(errors.Errorf("unable to find entry %s", ts.Selector.Reference))
+
 			return nil
 		}
 
-		return &monSpec
+		return &scheme
 
 	default:
 		panic(errors.Errorf("unspecified selection criteria"))
