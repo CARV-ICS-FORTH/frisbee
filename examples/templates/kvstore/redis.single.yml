@@ -7,7 +7,8 @@ spec:
     # Master node servicing requests
     "master":
       spec: |
-        monitorTemplateRef: [ sysmon/container, redismon/telegraf ]
+        agents:
+          telemetry: [ sysmon/container, redismon/telegraf ]
         container:
           name: app
           image: redis
@@ -39,7 +40,8 @@ spec:
         parameters:
           master: localhost
       spec: |
-        monitorTemplateRef: [ sysmon/container, redismon/telegraf ]
+        agents:
+          telemetry: [ sysmon/container, redismon/telegraf ]
         container:
           name: app
           image: redis
@@ -107,7 +109,8 @@ spec:
           offset: "0"
           recordcount: "100000"
       spec: |
-        monitorTemplateRef: [ sysmon/container, ycsbmon/goycsb ]
+        agents:
+          telemetry: [ sysmon/container, ycsbmon/goycsb ]
         container:
           name: app
           image: aylei/go-ycsb:20201029
@@ -140,7 +143,8 @@ spec:
           workload: "workloada"
           operationcount: "100000"
       spec: |
-        monitorTemplateRef: [ sysmon/container, ycsbmon/goycsb ]
+        agents:
+          telemetry: [ sysmon/container, ycsbmon/goycsb ]
         container:
           name: app
           image: aylei/go-ycsb:20201029
@@ -151,13 +155,14 @@ spec:
               set -eum
               trap "touch /dev/shm/stop" EXIT
 
-              echo Runner: {{.Inputs.Parameters.workflow}} with {{.Inputs.Parameters.operationcount}} to \
-                "{{.Inputs.Parameters.server}}:{{.Inputs.Parameters.port}}"
+              addr={{.Inputs.Parameters.server}}:{{.Inputs.Parameters.port}}
+
+              echo Runner: {{.Inputs.Parameters.workload}} with {{.Inputs.Parameters.operationcount}} to $addr"
 
               ./go-ycsb run redis                                                                   \
                     -P workloads/{{.Inputs.Parameters.workload}}                                    \
                     -p operationcount={{.Inputs.Parameters.operationcount}}                         \
                     -p threadcount=1                                                                \
                     -p redis.mode="single"                                                         \
-                    -p redis.addr="{{.Inputs.Parameters.server}}:{{.Inputs.Parameters.port}}"       \
+                    -p redis.addr="$addr"                                                           \
               >> /dev/shm/pipe

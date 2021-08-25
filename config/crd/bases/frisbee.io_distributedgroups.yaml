@@ -77,6 +77,16 @@ spec:
                     items:
                       type: string
                     type: array
+                  agents:
+                    description: List of sidecar agents
+                    properties:
+                      telemetry:
+                        description: Telemetry is a list of references to monitoring
+                          packages.
+                        items:
+                          type: string
+                        type: array
+                    type: object
                   container:
                     description: Container is the container running the application
                     properties:
@@ -1224,12 +1234,6 @@ spec:
                       be placed. For this to work, the nodes included in the domain
                       must have the label domain:{{domain-name}}
                     type: string
-                  monitorTemplateRef:
-                    description: MonitorTemplateRef is a list of references to monitoring
-                      packages.
-                    items:
-                      type: string
-                    type: array
                   namespacedName:
                     description: NamespacedName is the name of the desired service.
                       If unspecified, it is automatically set by the respective controller.
@@ -2789,6 +2793,16 @@ spec:
                       items:
                         type: string
                       type: array
+                    agents:
+                      description: List of sidecar agents
+                      properties:
+                        telemetry:
+                          description: Telemetry is a list of references to monitoring
+                            packages.
+                          items:
+                            type: string
+                          type: array
+                      type: object
                     container:
                       description: Container is the container running the application
                       properties:
@@ -3949,12 +3963,6 @@ spec:
                         be placed. For this to work, the nodes included in the domain
                         must have the label domain:{{domain-name}}
                       type: string
-                    monitorTemplateRef:
-                      description: MonitorTemplateRef is a list of references to monitoring
-                        packages.
-                      items:
-                        type: string
-                      type: array
                     namespacedName:
                       description: NamespacedName is the name of the desired service.
                         If unspecified, it is automatically set by the respective
