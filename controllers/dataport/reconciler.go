@@ -64,7 +64,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	case v1alpha1.PhaseFailed:
 		r.Logger.Info("Dataport failed", "name", obj.GetName())
 
-		return common.DoNotRequeue()
+		return common.Stop()
 
 	case v1alpha1.PhaseChaos, v1alpha1.PhaseSuccess:
 		// These phases should not happen in the workflow
