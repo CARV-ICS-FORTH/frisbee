@@ -1,5 +1,5 @@
 # Adds namespace to all resources.
-namespace: frisbee-system
+namespace: frisbee
 
 # Value of this field is prepended to the
 # names of all resources, e.g. a deployment named
@@ -12,7 +12,7 @@ namePrefix: frisbee-
 #commonLabels:
 #  someName: someValue
 
-bases:
+resources:
   - ../crd
   - ../rbac
   - ../manager

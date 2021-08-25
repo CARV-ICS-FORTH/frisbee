@@ -76,7 +76,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return lifecycle.Running(ctx, &w, "start running actions")
 
 	case v1alpha1.PhaseRunning:
-		return common.DoNotRequeue()
+		return common.Stop()
 
 	case v1alpha1.PhaseSuccess:
 		r.Logger.Info("Workflow succeeded",
@@ -91,7 +91,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			}
 		*/
 
-		return common.DoNotRequeue()
+		return common.Stop()
 
 	case v1alpha1.PhaseFailed:
 		r.Logger.Error(errors.New(w.Status.Reason), "Workflow failed",
@@ -102,7 +102,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		// FIXME: it should send a "suspend command"
 
-		return common.DoNotRequeue()
+		return common.Stop()
 
 	case v1alpha1.PhaseChaos:
 		// These phases should not happen in the workflow

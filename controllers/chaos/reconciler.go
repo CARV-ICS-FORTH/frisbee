@@ -61,7 +61,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			return lifecycle.Failed(ctx, &obj, errors.Wrapf(err, "injection failed"))
 		}
 
-		return common.DoNotRequeue()
+		return common.Stop()
 
 	case v1alpha1.PhaseRunning:
 		if err := handler.WaitForDuration(ctx, &obj); err != nil {
@@ -77,12 +77,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			return lifecycle.Failed(ctx, &obj, errors.Wrapf(err, "unable to revoke chaos"))
 		}
 
-		return common.DoNotRequeue()
+		return common.Stop()
 
 	case v1alpha1.PhaseFailed:
 		r.Logger.Info("Chaos failed", "name", obj.GetName())
 
-		return common.DoNotRequeue()
+		return common.Stop()
 
 	case v1alpha1.PhaseChaos:
 		// These phases should not happen in the workflow

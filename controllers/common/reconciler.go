@@ -14,7 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-func DoNotRequeue() (ctrl.Result, error) {
+func Stop() (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
@@ -22,8 +22,8 @@ func Requeue() (ctrl.Result, error) {
 	return ctrl.Result{Requeue: true}, nil
 }
 
-func RequeueWithError(err error) (ctrl.Result, error) {
-	return ctrl.Result{Requeue: true}, errors.Wrapf(err, "requeue request")
+func StopWithError(err error) (ctrl.Result, error) {
+	return ctrl.Result{}, errors.Wrapf(err, "requeue request")
 }
 
 // Reconciler implements basic functionality that is common to every solid reconciler (e.g, finalizers)
@@ -56,18 +56,19 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// r.Info("object not found", "name", req.NamespacedName)
-			return DoNotRequeue()
+			return Stop()
 		}
 
 		r.Error(err, "error reading the object", "name", req.NamespacedName)
 		// Error reading the object - requeue the request.
-		return RequeueWithError(err)
+		return StopWithError(err)
 	}
 
 	//
 	// 2. Manage the instance validity. We don’t want to try to do anything on an instance that does not
 	// carry valid values.
 	//
+	// TODO: ...
 
 	//
 	// 3. Manage instance initialization. If some values of the instance are not initialized,
@@ -97,7 +98,7 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 			// If we do not return at this point, there will be a conflict because the solid Reconciler will try
 			// to Update the status of a modified object.
 			// To cause the solid Reconciler to return immediate, we use *ret=true
-			return DoNotRequeue()
+			return Stop()
 		}
 	}
 
@@ -112,7 +113,7 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 			// finalization logic fails, don't remove the finalizer so
 			// that we can retry during the next reconciliation.
 			if err := r.Finalize(obj); err != nil {
-				return RequeueWithError(err)
+				return StopWithError(err)
 			}
 
 			// Remove CR (Custom Resource) finalizer.
@@ -130,12 +131,12 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 			*ret = true
 		}
 		// Stop reconciliation as the item is being deleted
-		return DoNotRequeue()
+		return Stop()
 	}
 
 	*ret = false
 
-	return DoNotRequeue()
+	return Stop()
 }
 
 func Update(ctx context.Context, obj client.Object) (ctrl.Result, error) {
@@ -146,12 +147,12 @@ func Update(ctx context.Context, obj client.Object) (ctrl.Result, error) {
 
 	switch {
 	case updateError == nil:
-		return DoNotRequeue()
+		return Stop()
 
 	case k8errors.IsInvalid(updateError):
 		Common.Logger.Error(updateError, "Update error")
 
-		return DoNotRequeue()
+		return Stop()
 
 	case k8errors.IsNotFound(updateError):
 		// The object has been deleted since we read it.
@@ -169,7 +170,7 @@ func Update(ctx context.Context, obj client.Object) (ctrl.Result, error) {
 		runtimeutil.HandleError(errors.Wrapf(updateError, "Update failed for %s [%s]",
 			obj.GetName(), obj.GetObjectKind().GroupVersionKind()))
 
-		return DoNotRequeue()
+		return Stop()
 	}
 }
 
@@ -184,12 +185,12 @@ func UpdateStatus(ctx context.Context, obj client.Object) (ctrl.Result, error) {
 
 	switch {
 	case updateError == nil:
-		return DoNotRequeue()
+		return Stop()
 
 	case k8errors.IsInvalid(updateError):
 		Common.Logger.Error(updateError, "Update status error")
 
-		return DoNotRequeue()
+		return Stop()
 
 	case k8errors.IsNotFound(updateError):
 		// The object has been deleted since we read it.
@@ -208,6 +209,6 @@ func UpdateStatus(ctx context.Context, obj client.Object) (ctrl.Result, error) {
 		runtimeutil.HandleError(errors.Wrapf(updateError, "status Update failed for %s [%s]",
 			obj.GetName(), obj.GetObjectKind().GroupVersionKind()))
 
-		return DoNotRequeue()
+		return Stop()
 	}
 }

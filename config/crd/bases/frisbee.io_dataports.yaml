@@ -1,0 +1,186 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.4.1
+  creationTimestamp: null
+  name: dataports.frisbee.io
+spec:
+  group: frisbee.io
+  names:
+    kind: DataPort
+    listKind: DataPortList
+    plural: dataports
+    singular: dataport
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: Spec defines the behavior of the object
+            properties:
+              direct:
+                properties:
+                  dstAddr:
+                    type: string
+                  dstPort:
+                    type: integer
+                type: object
+              input:
+                properties:
+                  selector:
+                    description: Selector is used to discover services in the DataMesh
+                      based on given criteria
+                    properties:
+                      matchExpressions:
+                        description: matchExpressions is a list of label selector
+                          requirements. The requirements are ANDed.
+                        items:
+                          description: A label selector requirement is a selector
+                            that contains values, a key, and an operator that relates
+                            the key and values.
+                          properties:
+                            key:
+                              description: key is the label key that the selector
+                                applies to.
+                              type: string
+                            operator:
+                              description: operator represents a key's relationship
+                                to a set of values. Valid operators are In, NotIn,
+                                Exists and DoesNotExist.
+                              type: string
+                            values:
+                              description: values is an array of string values. If
+                                the operator is In or NotIn, the values array must
+                                be non-empty. If the operator is Exists or DoesNotExist,
+                                the values array must be empty. This array is replaced
+                                during a strategic merge patch.
+                              items:
+                                type: string
+                              type: array
+                          required:
+                          - key
+                          - operator
+                          type: object
+                        type: array
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: matchLabels is a map of {key,value} pairs. A
+                          single {key,value} in the matchLabels map is equivalent
+                          to an element of matchExpressions, whose key field is "key",
+                          the operator is "In", and the values array contains only
+                          "value". The requirements are ANDed.
+                        type: object
+                    type: object
+                type: object
+              kafka:
+                properties:
+                  host:
+                    type: string
+                  port:
+                    type: integer
+                  queue:
+                    type: string
+                required:
+                - host
+                - port
+                - queue
+                type: object
+              output:
+                type: object
+              protocol:
+                type: string
+              type:
+                description: Type indicate the role of the DstPort. It can be Input
+                  or Output.
+                enum:
+                - input
+                - output
+                type: string
+            required:
+            - protocol
+            - type
+            type: object
+          status:
+            description: Most recently observed status of the object
+            properties:
+              direct:
+                properties:
+                  localAddr:
+                    description: LocalAddr is the IP of the associated target
+                    type: string
+                  localPort:
+                    description: LocalPort is the DstPort of the associated target
+                    type: integer
+                  remoteAddr:
+                    description: RemoteAddr is the IP of the remote target
+                    type: string
+                  remotePort:
+                    description: RemotePort is the DstPort of the remote target
+                    type: integer
+                type: object
+              endTime:
+                description: Most recently observed status of the object
+                format: date-time
+                type: string
+              kafka:
+                properties:
+                  host:
+                    type: string
+                  localQueue:
+                    type: string
+                  port:
+                    type: integer
+                  remoteQueue:
+                    type: string
+                type: object
+              kind:
+                description: Is it needed ?
+                type: string
+              name:
+                description: Is it needed ?
+                type: string
+              phase:
+                description: Phase is the current status of an object
+                type: string
+              reason:
+                description: A brief CamelCase message indicating details about why
+                  the service is in this Phase. e.g. 'Evicted'
+                type: string
+              startTime:
+                description: RFC 3339 date and time at which the object was acknowledged
+                  by the Kubelet. This is before the Kubelet pulled the container
+                  image(s) for the pod.
+                format: date-time
+                type: string
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

@@ -39,7 +39,7 @@ func (r *Reconciler) direct(ctx context.Context, obj *v1alpha1.ServiceSpec, port
 
 	*/
 
-	return common.DoNotRequeue()
+	return common.Stop()
 }
 
 /*
@@ -99,7 +99,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		}
 
 		// if we're here, the lifecycle of service is driven by the pod
-		return common.DoNotRequeue()
+		return common.Stop()
 
 	case v1alpha1.PhaseRunning:
 		/ *
@@ -110,7 +110,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		* /
 
-		return common.DoNotRequeue()
+		return common.Stop()
 
 	case v1alpha1.PhaseSuccess: // If we're PhaseSuccess but not deleted yet, nothing to do but return
 		r.Logger.Info("Service completed", "name", obj.GetName())
@@ -119,17 +119,17 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			r.Logger.Error(err, "garbage collection error", "object", obj.GetName())
 		}
 
-		return common.DoNotRequeue()
+		return common.Stop()
 
 	case v1alpha1.PhaseFailed: // if we're here, then something went completely wrong
 		r.Logger.Info("Service failed. Omit garbage collection for debugging purposes.", "name", obj.GetName())
 
-		return common.DoNotRequeue()
+		return common.Stop()
 
 	case v1alpha1.PhaseChaos: // if we're here, a controlled failure has occurred.
 		r.Logger.Info("Service consumed by PhaseChaos", "service", obj.GetName())
 
-		return common.DoNotRequeue()
+		return common.Stop()
 
 	default:
 		return lifecycle.Failed(ctx, &obj, errors.Errorf("unknown phase: %s", obj.Status.Phase))
