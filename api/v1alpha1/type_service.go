@@ -11,15 +11,30 @@ type NamespacedName struct {
 	Name      string `json:"name"`
 }
 
+type Mesh struct {
+	// PortRef is a list of names of Ports that participate in the Mesh (autodiscovery + rewiring).
+	// +optional
+	PortRefs []string `json:"addPorts"`
+}
+
+// Agents are sidecar services will be deployed in the same Pod as the Service container.
+type Agents struct {
+	// Telemetry is a list of references to monitoring packages.
+	// +optional
+	Telemetry []string `json:"telemetry,omitempty"`
+}
+
 type ServiceSpec struct {
 	// NamespacedName is the name of the desired service. If unspecified, it is automatically set by
 	// the respective controller.
 	// +optional
 	NamespacedName `json:"namespacedName"`
 
-	// PortRef is a list of names of Ports that participate in the Mesh (autodiscovery + rewiring).
+	*Mesh `json:",inline"`
+
+	// List of sidecar agents
 	// +optional
-	PortRefs []string `json:"addPorts"`
+	Agents *Agents `json:"agents,omitempty"`
 
 	// List of volumes that can be mounted by containers belonging to the pod.
 	// +optional
@@ -27,10 +42,6 @@ type ServiceSpec struct {
 
 	// Container is the container running the application
 	Container v1.Container `json:"container,omitempty"`
-
-	// MonitorTemplateRef is a list of references to monitoring packages.
-	// +optional
-	MonitorTemplateRefs []string `json:"monitorTemplateRef,omitempty"`
 
 	// Domain specifies the location where Service will be placed. For this to work,
 	// the nodes included in the domain must have the label domain:{{domain-name}}
@@ -70,32 +81,6 @@ type Resources struct {
 	NIC    NIC    `json:"nic,omitempty"`
 	Disk   Disk   `json:"disk,omitempty"`
 }
-
-/*
-type ServiceStatus struct {
-	Lifecycle `json:",inline"`
-
-	// IP is the IP of the kubernetes service (not the kubernetes pod).
-	// This convention allows to avoid blocking until the pod ip becomes known.
-	IP string `json:"ip"`
-}
-
-func (s *Service) GetLifecycle() Lifecycle {
-	return s.Status.Lifecycle
-}
-
-func (s *Service) SetLifecycle(lifecycle Lifecycle) {
-	s.Status.Lifecycle = lifecycle
-}
-
-// +kubebuilder:object:root=true
-type ServiceSpecList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Service `json:"items"`
-}
-
-*/
 
 const (
 	idListSeparator = " "

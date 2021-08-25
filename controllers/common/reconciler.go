@@ -26,8 +26,6 @@ func StopWithError(err error) (ctrl.Result, error) {
 	return ctrl.Result{}, errors.Wrapf(err, "requeue request")
 }
 
-
-
 // Reconciler implements basic functionality that is common to every solid reconciler (e.g, finalizers)
 type Reconciler interface {
 	client.Client
@@ -70,6 +68,7 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 	// 2. Manage the instance validity. We don’t want to try to do anything on an instance that does not
 	// carry valid values.
 	//
+	// TODO: ...
 
 	//
 	// 3. Manage instance initialization. If some values of the instance are not initialized,

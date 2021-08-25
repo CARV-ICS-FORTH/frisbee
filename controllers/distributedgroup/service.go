@@ -65,8 +65,12 @@ func (r *Reconciler) createService(ctx context.Context, group *v1alpha1.Distribu
 }
 
 func (r *Reconciler) deployAgents(ctx context.Context, group *v1alpha1.DistributedGroup, spec *v1alpha1.ServiceSpec, pod *corev1.Pod) error {
+	if spec.Agents == nil {
+		return nil
+	}
+
 	// import monitoring agents to the service
-	for _, ref := range spec.MonitorTemplateRefs {
+	for _, ref := range spec.Agents.Telemetry {
 		mon, err := helpers.GetMonitorSpec(ctx, helpers.ParseRef(group.GetNamespace(), ref))
 		if err != nil {
 			return errors.Wrapf(err, "cannot get monitor")
