@@ -86,10 +86,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			return lifecycle.Failed(ctx, &group, err)
 		}
 
-		return common.DoNotRequeue()
+		return common.Stop()
 
 	case v1alpha1.PhaseRunning: // Passthrough
-		return common.DoNotRequeue()
+		return common.Stop()
 
 	case v1alpha1.PhaseSuccess: // Passthrough
 		// remove the group upon completion
@@ -100,12 +100,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		r.Logger.Info("garbage collection was complete", "group", group.GetName())
 
-		return common.DoNotRequeue()
+		return common.Stop()
 
 	case v1alpha1.PhaseFailed:
 		r.Logger.Info("DistributedGroup has failed", "name", group.GetName())
 
-		return common.DoNotRequeue()
+		return common.Stop()
 
 	case v1alpha1.PhaseChaos: // Invalid
 		panic(errors.Errorf("invalid lifecycle phase %s", group.Status.Phase))

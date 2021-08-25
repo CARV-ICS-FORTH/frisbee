@@ -64,7 +64,7 @@ func (p *direct) pendingOutput(ctx context.Context, obj *v1alpha1.DataPort) (ctr
 	// If the offers satisfy certain conditions, accept them and go to Pending phase.
 	if obj.Status.ProtocolStatus.Direct == nil {
 		// no offer yet
-		return common.DoNotRequeue()
+		return common.Stop()
 	}
 
 	// for direct protocol, just accept anything
@@ -126,20 +126,20 @@ func (p *direct) runningInput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl
 					errors.Errorf("rewiring error(%s) -> (%s)", obj.GetName(), match.GetName()))
 			}
 
-			return common.DoNotRequeue()
+			return common.Stop()
 
 		default:
 			return lifecycle.Failed(ctx, obj, errors.Errorf("expected 1 server, but got multiple (%d)", len(matches.Items)))
 		}
 	}()
 
-	return common.DoNotRequeue()
+	return common.Stop()
 }
 
 func (p *direct) runningOutput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
 	logrus.Warn("Running port ", obj.GetName(), " info ", obj.Status.Direct)
 
-	return common.DoNotRequeue()
+	return common.Stop()
 }
 
 func (p *direct) connect(ctx context.Context, ref, match *v1alpha1.DataPort) error {

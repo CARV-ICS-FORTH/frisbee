@@ -49,7 +49,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	// if the template is already registered, there is nothing else to do.
 	if obj.Status.IsRegistered {
-		return common.DoNotRequeue()
+		return common.Stop()
 	}
 
 	// validate services

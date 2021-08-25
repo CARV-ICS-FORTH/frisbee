@@ -125,7 +125,7 @@ func (p *kafka) pendingOutput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl
 	// If the offers satisfy certain conditions, accept them and go to Pending phase.
 	if obj.Status.ProtocolStatus.Kafka.RemoteQueue == "" {
 		// no offer yet
-		return common.DoNotRequeue()
+		return common.Stop()
 	}
 
 	// FIXME:  just accept anything ?
@@ -185,14 +185,14 @@ func (p *kafka) runningInput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.
 					errors.Errorf("rewiring error(%s) -> (%s)", obj.GetName(), match.GetName()))
 			}
 
-			return common.DoNotRequeue()
+			return common.Stop()
 
 		default:
 			return lifecycle.Failed(ctx, obj, errors.Errorf("expected 1 server, but got multiple (%d)", len(matches.Items)))
 		}
 	}()
 
-	return common.DoNotRequeue()
+	return common.Stop()
 }
 
 func (p *kafka) runningOutput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl.Result, error) {
@@ -217,7 +217,7 @@ func (p *kafka) runningOutput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl
 
 	p.r.Logger.Info("Kafka rewiring was successful", "from", params.LocalQueue, "to", params.RemoteQueue)
 
-	return common.DoNotRequeue()
+	return common.Stop()
 }
 
 func (p *kafka) connect(ctx context.Context, ref, match *v1alpha1.DataPort) error {
