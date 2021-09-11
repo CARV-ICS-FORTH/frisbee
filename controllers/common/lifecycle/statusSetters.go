@@ -46,7 +46,7 @@ func WaitRunningAndUpdate(ctx context.Context, obj InnerObject) error {
 		return errors.Wrapf(err, "Phase failed")
 	}
 
-	err = common.Common.Client.Get(ctx, client.ObjectKeyFromObject(obj), obj)
+	err = common.Globals.Client.Get(ctx, client.ObjectKeyFromObject(obj), obj)
 
 	return errors.Wrapf(err, "update failed")
 }
@@ -133,7 +133,7 @@ func Failed(ctx context.Context, obj InnerObject, err error) (ctrl.Result, error
 		panic("invalid args")
 	}
 
-	common.Common.Logger.Error(err, "object failed", "name", obj.GetName())
+	common.Globals.Logger.Error(err, "object failed", "name", obj.GetName())
 
 	obj.SetLifecycle(v1alpha1.Lifecycle{
 		Kind:      reflect.TypeOf(obj).String(),

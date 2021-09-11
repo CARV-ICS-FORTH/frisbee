@@ -90,7 +90,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	common.InitCommon(mgr, setupLog)
+	common.SetCommon(mgr, setupLog)
 
 	if err := template.NewController(mgr, setupLog); err != nil {
 		runtimeutil.HandleError(errors.Wrapf(err, "unable to create Templates controller"))
@@ -148,11 +148,13 @@ func main() {
 		if err != nil {
 			runtimeutil.HandleError(errors.Wrapf(err, "unable to start profiling server"))
 		}
+
 		setupLog.Info("Profiler started", "addr", "localhost:6060")
 	}()
 
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		runtimeutil.HandleError(errors.Wrapf(err, "problem running manager"))
+
 		os.Exit(1)
 	}
 }

@@ -43,11 +43,6 @@ type ServiceSpec struct {
 	// Container is the container running the application
 	Container v1.Container `json:"container,omitempty"`
 
-	// Domain specifies the location where Service will be placed. For this to work,
-	// the nodes included in the domain must have the label domain:{{domain-name}}
-	// +optional
-	Domain string `json:"domain,omitempty"`
-
 	// Resources specifies limitations as to how the container will access host resources.
 	// +optional
 	Resources *Resources `json:"resources,omitempty"`

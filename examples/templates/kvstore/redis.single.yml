@@ -6,9 +6,16 @@ spec:
   services:
     # Master node servicing requests
     "master":
+      inputs:
+        parameters:
+          memory: ""
+          cpu: ""
       spec: |
         agents:
           telemetry: [ sysmon/container, redismon/telegraf ]
+        resources:
+          memory: {{.Inputs.Parameters.memory}}
+          cpu: {{.Inputs.Parameters.cpu}}
         container:
           name: app
           image: redis
@@ -107,41 +114,7 @@ spec:
           server: localhost
           port: "6379"
           offset: "0"
-          recordcount: "100000"
-      spec: |
-        agents:
-          telemetry: [ sysmon/container, ycsbmon/goycsb ]
-        container:
-          name: app
-          image: aylei/go-ycsb:20201029
-          command:
-            - /bin/sh   # Run shell
-            - -c        # Read from string
-            - |         # Multi-line str
-              set -eum
-              trap "touch /dev/shm/stop" EXIT
-
-              echo Loader: insert {{.Inputs.Parameters.recordcount}} keys into \
-                "{{.Inputs.Parameters.server}}:{{.Inputs.Parameters.port}}" @  {{.Inputs.Parameters.offset}}
-
-              ./go-ycsb load redis                                                              \
-                  -p recordcount={{.Inputs.Parameters.recordcount}}                             \
-                  -p insertstart={{.Inputs.Parameters.offset}}                                  \
-                  -p threadcount=1                                                              \
-                  -p redis.mode="single"                                                        \
-                  -p redis.addr="{{.Inputs.Parameters.server}}:{{.Inputs.Parameters.port}}"     \
-              >> /dev/shm/pipe
-
-
-
-    # Run queries against a single server
-    "runner":
-      inputs:
-        parameters:
-          server: localhost
-          port: "6379"
-          workload: "workloada"
-          operationcount: "100000"
+          recordcount: "1000000"
       spec: |
         agents:
           telemetry: [ sysmon/container, ycsbmon/goycsb ]
@@ -157,12 +130,46 @@ spec:
 
               addr={{.Inputs.Parameters.server}}:{{.Inputs.Parameters.port}}
 
-              echo Runner: {{.Inputs.Parameters.workload}} with {{.Inputs.Parameters.operationcount}} to $addr"
+              echo "Loader: $addr <- {{.Inputs.Parameters.recordcount}}:{{.Inputs.Parameters.offset}}"
+
+              ./go-ycsb load redis                                                              \
+                  -p recordcount={{.Inputs.Parameters.recordcount}}                             \
+                  -p insertstart={{.Inputs.Parameters.offset}}                                  \
+                  -p threadcount=1                                                              \
+                  -p redis.mode="single"                                                        \
+                  -p redis.addr="$addr"                                                         \
+              >> /dev/shm/pipe
+
+
+    # Run queries against a single server
+    "runner":
+      inputs:
+        parameters:
+          server: localhost
+          port: "6379"
+          workload: "workloada"
+          operationcount: "5000000"
+      spec: |
+        agents:
+          telemetry: [ sysmon/container, ycsbmon/goycsb ]
+        container:
+          name: app
+          image: aylei/go-ycsb:20201029
+          command:
+            - /bin/sh   # Run shell
+            - -c        # Read from string
+            - |         # Multi-line str
+              set -eum
+              trap "touch /dev/shm/stop" EXIT
+
+              addr={{.Inputs.Parameters.server}}:{{.Inputs.Parameters.port}}
+
+              echo "Runner: $addr <- {{.Inputs.Parameters.workload}}:{{.Inputs.Parameters.operationcount}}"
 
               ./go-ycsb run redis                                                                   \
                     -P workloads/{{.Inputs.Parameters.workload}}                                    \
                     -p operationcount={{.Inputs.Parameters.operationcount}}                         \
                     -p threadcount=1                                                                \
-                    -p redis.mode="single"                                                         \
+                    -p redis.mode="single"                                                          \
                     -p redis.addr="$addr"                                                           \
               >> /dev/shm/pipe

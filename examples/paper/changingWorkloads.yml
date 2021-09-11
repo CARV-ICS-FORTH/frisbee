@@ -41,11 +41,11 @@ spec:
       distributedGroup:
         templateRef: redis/runner
         inputs:
-          - { server: .group.masters.any, workload: "workloada", operationcount: "10000000" }
-          - { server: .group.masters.any, workload: "workloadb", operationcount: "10000000" }
-          - { server: .group.masters.any, workload: "workloadc", operationcount: "10000000" }
-          - { server: .group.masters.any, workload: "workloadd", operationcount: "10000000" }
-          - { server: .group.masters.any, workload: "workloada", operationcount: "10000000" }
+          - { server: .group.masters.any, workload: workloada, operationcount: "10000000" }
+          - { server: .group.masters.any, workload: workloadb, operationcount: "10000000" }
+          - { server: .group.masters.any, workload: workloadc, operationcount: "10000000" }
+          - { server: .group.masters.any, workload: workloadd, operationcount: "10000000" }
+          - { server: .group.masters.any, workload: workloada, operationcount: "10000000" }
         schedule:
           cron: "@every 2m"
 

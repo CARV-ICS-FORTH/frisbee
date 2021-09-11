@@ -110,7 +110,7 @@ func Pod() StatusAccessor {
 				EndTime:   pod.GetDeletionTimestamp(),
 			}}
 		default:
-			return []*v1alpha1.Lifecycle{}
+			panic(errors.Errorf("unexpected phase %s", pod.Status.Phase))
 		}
 	}
 }

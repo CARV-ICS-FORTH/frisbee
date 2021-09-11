@@ -204,7 +204,7 @@ func (p *kafka) runningOutput(ctx context.Context, obj *v1alpha1.DataPort) (ctrl
 	err := retry.OnError(common.DefaultBackoff, func(error) bool { return true }, func() error {
 		logrus.Warn("retry rewiring")
 
-		ret, err := common.Common.Executor.Exec(req.pod, req.containerID, req.cmd)
+		ret, err := common.Globals.Executor.Exec(req.pod, req.containerID, req.cmd)
 		logrus.Warn("RET ", errors.Wrapf(err, ret.Stderr.String()))
 
 		return errors.Wrapf(err, ret.Stderr.String())

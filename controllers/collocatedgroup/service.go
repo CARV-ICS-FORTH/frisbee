@@ -162,18 +162,19 @@ func (r *Reconciler) deployDiscoveryService(ctx context.Context, group *v1alpha1
 
 	kubeService := corev1.Service{}
 	kubeService.SetName(b.spec.Name)
+	kubeService.Spec.Ports = allPorts
+	kubeService.Spec.ClusterIP = clusterIP
+
+	// bind service to the group
 
 	if err := common.SetOwner(group, &kubeService); err != nil {
 		return errors.Wrapf(err, "ownership failed %s", kubeService.GetName())
 	}
 
-	kubeService.Spec.Ports = allPorts
-	kubeService.Spec.ClusterIP = clusterIP
+	service2Pod := map[string]string{b.spec.Name: "discover"}
 
-	// enable kubeservice to discover the service containers
-	b.labels = map[string]string{b.spec.Name: "discover"}
-
-	kubeService.Spec.Selector = b.labels
+	kubeService.Spec.Selector = service2Pod
+	b.labels = service2Pod
 
 	if err := r.Client.Create(ctx, &kubeService); err != nil {
 		return errors.Wrapf(err, "cannot create discovery service")

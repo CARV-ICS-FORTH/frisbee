@@ -8,11 +8,14 @@ import (
 	"github.com/fnikolai/frisbee/pkg/wait"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 // BoundedFSM calculates the present state of the parent by using a set of predefined children.
 // A BoundedFSM is useful in group where the parent becomes running only if all the (predefined) children are running.
 type BoundedFSM struct {
+	annotaror Annotator
+
 	logger logr.Logger
 
 	getChildLifecycle StatusAccessor
@@ -67,6 +70,8 @@ func (n *BoundedFSM) HandleEvent(obj interface{}) {
 			panic(errors.Errorf("controller panic due to invalid args. name: %s, kind:%s", event.Name, event.Kind))
 		}
 
+		logrus.Warn("Handle Event ", event)
+
 		switch event.Phase {
 		case v1alpha1.PhaseUninitialized, v1alpha1.PhasePending, v1alpha1.PhaseChaos:
 			return
@@ -96,6 +101,12 @@ func (n *BoundedFSM) HandleEvent(obj interface{}) {
 			}
 
 		case v1alpha1.PhaseFailed:
+			// stupid thing but we need for Kubernetes v.1.19.
+			// In v.1.21 this is captured by the DeleteFunc of the watcher
+			if event.EndTime != nil {
+				n.annotaror.Delete(obj)
+			}
+
 			n.failed <- errors.New(event.String())
 		}
 	}
@@ -138,7 +149,7 @@ func (n *BoundedFSM) getNextRunning() (phase v1alpha1.Phase, msg, valid error) {
 var errIsFinal = errors.New("Phase is final")
 
 // listen for all the expected transition from PhaseSuccess.
-func (n *BoundedFSM) getNextComplete() (phase v1alpha1.Phase, msg, valid error) {
+func (n *BoundedFSM) getNextSuccess() (phase v1alpha1.Phase, msg, valid error) {
 	return v1alpha1.PhaseSuccess, nil, errIsFinal
 }
 
@@ -199,7 +210,7 @@ func (n *BoundedFSM) Expect(expected v1alpha1.Phase) error {
 			phase, msg, valid = n.getNextRunning()
 
 		case v1alpha1.PhaseSuccess:
-			phase, msg, valid = n.getNextComplete()
+			phase, msg, valid = n.getNextSuccess()
 
 		case v1alpha1.PhaseFailed:
 			phase, msg, valid = n.getNextFailed()
@@ -266,6 +277,7 @@ func (n *BoundedFSM) Update(ctx context.Context, parent InnerObject) error {
 				return
 
 			case v1alpha1.PhaseFailed:
+				// TODO: find a more graceful way to propagate failure. Combine it with expression
 				_, _ = Failed(ctx, parent, msg)
 
 				return

@@ -101,6 +101,15 @@ By default Grafana is configured without any login requirements, so we must leav
 $ kubectl -n frisbee delete -f  ../paper/elasticity.yml
 ```
 
+#### Step 5. Remote Kubernetes Cluster
+
+To manage remote kubernetes cluster, the steps are the same. The only difference is that `~/.kube/config` should have the credentials for the remote cluster.
+
+```
+ssh -L 6443:192.168.1.213:6443 thegates
+```
+
+
 ## Bugs and Feedback
 
 For bug report, questions and discussions please

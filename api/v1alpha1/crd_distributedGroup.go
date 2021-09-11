@@ -27,7 +27,7 @@ type DistributedGroup struct {
 type DistributedGroupSpec struct {
 	// ServiceSpec includes a service specification. It conflicts with TemplateRef.
 	// +optional
-	ServiceSpec *ServiceSpec `json:"service"`
+	ServiceSpec *ServiceSpec `json:"service,omitempty"`
 
 	// TemplateRef refers to a service template. It conflicts with Service.
 	// +optional
@@ -48,6 +48,12 @@ type DistributedGroupSpec struct {
 	// container to a Pod once it has been created
 	// +optional
 	Schedule *SchedulerSpec `json:"schedule,omitempty"`
+
+	// Domain specifies the location where Service will be placed. For this to work,
+	// the nodes included in the domain must have the label domain:{{domain-name}}.
+	// for the moment simply match domain to a specific node. this will change in the future
+	// +optional
+	Domain string `json:"domain,omitempty"`
 }
 
 type DistributedGroupStatus struct {
@@ -56,7 +62,7 @@ type DistributedGroupStatus struct {
 	// ExpectedServices is a list of services that belong to this group.
 	// These services will be located in the same namespace as the group.
 	// +optional
-	ExpectedServices ServiceSpecList `json:"expectedServices"`
+	ExpectedServices ServiceSpecList `json:"expectedServices,omitempty"`
 }
 
 func (s *DistributedGroup) GetLifecycle() []*Lifecycle {

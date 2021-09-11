@@ -52,11 +52,13 @@ spec:
                         description: Match contains the rules to select target
                         properties:
                           servicegroup:
+                            additionalProperties:
+                              type: string
                             description: ServiceGroup defines the service group where
                               services belong. A ServiceGroup may refer either to
                               a DistributedGroup or a CollocatedGroup. Therefore,
                               we need to search both of them.
-                            type: string
+                            type: object
                         type: object
                       mode:
                         description: 'Mode defines which of the selected services

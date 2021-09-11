@@ -32,6 +32,10 @@ spec:
             configMap:
               name: grafana-config
 
+        resources:
+          memory: 3Gi
+          cpu: 1
+
         container:
           name: grafana
           image: "grafana/grafana:latest"
@@ -67,14 +71,12 @@ data:
     # regular expressions,
     # explained in examples.
 
-
     # Remember, there are default values for each item if it's missing.
     # regex is (.*),
     # replacement is $1,
     # separator is ;
     # ,and action is replace
     global:
-
       # Can be overridden
       scrape_interval: 15s
 
@@ -89,9 +91,9 @@ data:
         # Use Kubernetes Service Discovery
         kubernetes_sd_configs:
           - role: endpoints
-            namespaces:
-              names:
-                - "frisbee"  # Variable is automatically assigned by frisbee
+          #  namespaces:
+          #    names:
+          #      - "frisbee"  # Variable is automatically assigned by frisbee
 
         relabel_configs:
            # Condition 1. Monitor only the ports with name "mon-*". The * is used as type to the dashboard

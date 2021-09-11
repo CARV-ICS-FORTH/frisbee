@@ -7,6 +7,7 @@ import (
 
 	"github.com/fnikolai/frisbee/controllers/common"
 	"github.com/grafana-tools/sdk"
+	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -39,7 +40,7 @@ func (a *PointAnnotation) Add(obj interface{}) {
 		Text: fmt.Sprintf("Child added. Kind:%s Name:%s", reflect.TypeOf(obj), objMeta.GetName()),
 	}
 
-	common.Common.Annotator.Insert(ga)
+	common.Globals.Annotator.Insert(ga)
 }
 
 func (a *PointAnnotation) Delete(obj interface{}) {
@@ -48,13 +49,20 @@ func (a *PointAnnotation) Delete(obj interface{}) {
 		panic("this should never happen")
 	}
 
+	ts := objMeta.GetDeletionTimestamp()
+	if ts == nil {
+		ts = &metav1.Time{Time: time.Now()}
+	}
+
 	ga := sdk.CreateAnnotationRequest{
-		Time: objMeta.GetDeletionTimestamp().Unix() * 1000, // unix ts in ms
+		Time: ts.Unix() * 1000, // unix ts in ms
 		Tags: []string{"exit"},
 		Text: fmt.Sprintf("Child Deleted. Kind:%s Name:%s", reflect.TypeOf(obj), objMeta.GetName()),
 	}
 
-	common.Common.Annotator.Insert(ga)
+	logrus.Warn("DELETION GA ", ga)
+
+	common.Globals.Annotator.Insert(ga)
 }
 
 // ///////////////////////////////////////////
@@ -84,7 +92,7 @@ func (a *RangeAnnotation) Add(obj interface{}) {
 		Text:    fmt.Sprintf("Chaos injected. Kind:%s Name:%s", reflect.TypeOf(obj), objMeta.GetName()),
 	}
 
-	a.reqID = common.Common.Annotator.Insert(ga)
+	a.reqID = common.Globals.Annotator.Insert(ga)
 }
 
 func (a *RangeAnnotation) Delete(obj interface{}) {
@@ -106,5 +114,5 @@ func (a *RangeAnnotation) Delete(obj interface{}) {
 		Text:    fmt.Sprintf("Chaos revoked. Kind:%s Name:%s", reflect.TypeOf(obj), objMeta.GetName()),
 	}
 
-	common.Common.Annotator.Patch(a.reqID, ga)
+	common.Globals.Annotator.Patch(a.reqID, ga)
 }
