@@ -82,7 +82,7 @@ func (r *Reconciler) wait(ctx context.Context, w Workflow, action v1alpha1.Actio
 
 		err := lifecycle.New(
 			lifecycle.Watch(kind, spec.Success...),
-			lifecycle.WithFilters(lifecycle.FilterByParent(w.GetUID()), lifecycle.FilterByNames(spec.Success...)),
+			lifecycle.WithFilters(lifecycle.FilterByParent(w), lifecycle.FilterByNames(spec.Success...)),
 			lifecycle.WithLogger(r.Logger),
 			lifecycle.WithExpectedPhase(v1alpha1.PhaseSuccess),
 		).Run(ctx)
@@ -109,7 +109,7 @@ func (r *Reconciler) wait(ctx context.Context, w Workflow, action v1alpha1.Actio
 
 		err := lifecycle.New(
 			lifecycle.Watch(kind, spec.Running...),
-			lifecycle.WithFilters(lifecycle.FilterByParent(w.GetUID()), lifecycle.FilterByNames(spec.Running...)),
+			lifecycle.WithFilters(lifecycle.FilterByParent(w), lifecycle.FilterByNames(spec.Running...)),
 			lifecycle.WithLogger(r.Logger),
 			lifecycle.WithExpectedPhase(v1alpha1.PhaseRunning),
 		).Run(ctx)
@@ -207,26 +207,26 @@ func (r *Reconciler) stop(ctx context.Context, w Workflow, action v1alpha1.Actio
 	// Without Schedule
 	if action.Stop.Schedule == nil {
 		for _, service := range services {
-			// for this to work we assume that a pod is dependent to a discovery service.
-			// Using this assumption, by removing the service Kubernetes garbage collects the pod.
-			discovery := corev1.Service{}
+			discovery := corev1.Pod{}
+
 			discovery.SetNamespace(service.Namespace)
 			discovery.SetName(service.Name)
+
+			logrus.Warn("DELETE ")
 
 			err := lifecycle.Delete(ctx, r.Client, &discovery)
 			if err != nil && !k8errors.IsNotFound(err) {
 				return errors.Wrapf(err, "cannot delete service %s", service.NamespacedName)
 			}
 
-			r.Logger.Info("stop", "service", service)
+			r.Logger.Info("stop", "service", service.NamespacedName)
 		}
 	} else { // With Schedule
 		r.Logger.Info("Yield with Schedule", "services", services)
 
 		for service := range common.YieldByTime(ctx, action.Stop.Schedule.Cron, services...) {
-			// for this to work we assume that a pod is dependent to a discovery service.
-			// Using this assumption, by removing the service Kubernetes garbage collects the pod.
-			discovery := corev1.Service{}
+			discovery := corev1.Pod{}
+
 			discovery.SetNamespace(service.Namespace)
 			discovery.SetName(service.Name)
 

@@ -24,6 +24,18 @@ type Workflow struct {
 	Status WorkflowStatus `json:"status,omitempty"`
 }
 
+// Ingress is a collection of routing rules that govern how external users access services running in a Kubernetes cluster.
+type Ingress struct {
+	// Host is the postfix from which the ingress will be available.
+	// Example: grafana.localhost, grafana.{MYIP}.nip.io, grafana.platform.science-hangar.eu
+	Host string `json:"host,omitempty"`
+
+	// UseAmbassador if set annotates ingresses with 'kubernetes.io/ingress.class=ambassador'
+	// so to be managed by the Ambassador Ingress controller.
+	// +optional
+	UseAmbassador bool `json:"useAmbassador"`
+}
+
 type WorkflowSpec struct {
 	// ImportMonitors are references to monitoring packages that will be used in the monitoring stack.
 	// +optional
@@ -32,9 +44,8 @@ type WorkflowSpec struct {
 	// Actions are the tasks that will be taken.
 	Actions []Action `json:"actions"`
 
-	// Ingress defines external access to the services in a cluster, typically HTTP
-	// Example: grafana.localhost, grafana.{MYIP}.nip.io,
-	Ingress string `json:"ingress,omitempty"`
+	// Ingress defines how to get traffic into your Kubernetes cluster.
+	Ingress *Ingress `json:"ingress,omitempty"`
 }
 
 // Action delegates arguments to the proper action handler

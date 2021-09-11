@@ -66,6 +66,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			return lifecycle.Failed(ctx, &w, err)
 		}
 
+		// FIXME: this is a simple hack to set the default namespace for searching objects
+		common.SetNamespace(w.GetNamespace())
+
 		return lifecycle.Pending(ctx, &w, "workflow verified")
 
 	case v1alpha1.PhasePending:

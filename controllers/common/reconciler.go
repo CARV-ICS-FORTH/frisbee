@@ -41,7 +41,7 @@ type Reconciler interface {
 	Finalize(object client.Object) error
 }
 
-// Reconcile provides the most Common functions for all the Reconcilers. That includes acquisition of the CR object
+// Reconcile provides the most Globals functions for all the Reconcilers. That includes acquisition of the CR object
 //  and management of the CR (Custom Resource) finalizers.
 //
 // Bool indicate whether the caller should return immediately (true) or continue (false).
@@ -103,35 +103,33 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 	}
 
 	//
-	// 4. Manage instance deletion. If the instance is being deleted and we need to do some specific clean up,
+	// 4. Manage instance deletion. If the instance is being deleted, and we need to do some specific clean up,
 	// this is where we manage it.
 	//
 
 	if !obj.GetDeletionTimestamp().IsZero() {
-		if controllerutil.ContainsFinalizer(obj, r.Finalizer()) {
-			// Run finalization logic to remove external dependencies. If the
-			// finalization logic fails, don't remove the finalizer so
-			// that we can retry during the next reconciliation.
-			if err := r.Finalize(obj); err != nil {
-				return StopWithError(err)
-			}
-
-			// Remove CR (Custom Resource) finalizer.
-			// Once all finalizers have been removed, the object will be deleted.
-			controllerutil.RemoveFinalizer(obj, r.Finalizer())
-			controllerutil.RemoveFinalizer(obj, metav1.FinalizerDeleteDependents)
-
-			if ret, err := Update(ctx, obj); err != nil {
-				runtimeutil.HandleError(errors.Wrapf(err, "unable to remove finalizer for %s", req.NamespacedName))
-
-				return ret, err
-			}
-
-			// r.Info("remove finalizers", "name", req.NamespacedName)
-			*ret = true
+		// check if the finalizer owned by this controller is present.
+		if !controllerutil.ContainsFinalizer(obj, r.Finalizer()) {
+			// Stop reconciliation as the item is being deleted
+			return Stop()
 		}
-		// Stop reconciliation as the item is being deleted
-		return Stop()
+
+		// Run finalization logic to remove external dependencies. If the
+		// finalization logic fails, don't remove the finalizer so
+		// that we can retry during the next reconciliation.
+		if err := r.Finalize(obj); err != nil {
+			return StopWithError(err)
+		}
+
+		// Remove CR (Custom Resource) finalizer.
+		// Once all finalizers have been removed, the object will be deleted.
+		controllerutil.RemoveFinalizer(obj, r.Finalizer())
+
+		if res, err := Update(ctx, obj); err != nil {
+			runtimeutil.HandleError(errors.Wrapf(err, "unable to remove finalizer for %s", req.NamespacedName))
+
+			return res, err
+		}
 	}
 
 	*ret = false
@@ -142,7 +140,7 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 func Update(ctx context.Context, obj client.Object) (ctrl.Result, error) {
 	// we need to Update a delete object in order to remove the finalizers.
 	updateError := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		return Common.Client.Update(ctx, obj)
+		return Globals.Client.Update(ctx, obj)
 	})
 
 	switch {
@@ -150,7 +148,7 @@ func Update(ctx context.Context, obj client.Object) (ctrl.Result, error) {
 		return Stop()
 
 	case k8errors.IsInvalid(updateError):
-		Common.Logger.Error(updateError, "Update error")
+		Globals.Logger.Error(updateError, "Update error")
 
 		return Stop()
 
@@ -178,9 +176,9 @@ func UpdateStatus(ctx context.Context, obj client.Object) (ctrl.Result, error) {
 	// The status subresource ignores changes to spec, so it’s less likely to conflict with any other updates,
 	// and can have separate permissions.
 	updateError := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		Common.Logger.V(4).Info("(re) to update status of ", obj.GetName())
+		Globals.Logger.V(4).Info("(re) to update status of ", obj.GetName())
 
-		return Common.Client.Status().Update(ctx, obj)
+		return Globals.Client.Status().Update(ctx, obj)
 	})
 
 	switch {
@@ -188,7 +186,7 @@ func UpdateStatus(ctx context.Context, obj client.Object) (ctrl.Result, error) {
 		return Stop()
 
 	case k8errors.IsInvalid(updateError):
-		Common.Logger.Error(updateError, "Update status error")
+		Globals.Logger.Error(updateError, "Update status error")
 
 		return Stop()
 

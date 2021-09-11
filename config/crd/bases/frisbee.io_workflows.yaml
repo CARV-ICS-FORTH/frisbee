@@ -65,12 +65,14 @@ spec:
                                     target
                                   properties:
                                     servicegroup:
+                                      additionalProperties:
+                                        type: string
                                       description: ServiceGroup defines the service
                                         group where services belong. A ServiceGroup
                                         may refer either to a DistributedGroup or
                                         a CollocatedGroup. Therefore, we need to search
                                         both of them.
-                                      type: string
+                                      type: object
                                   type: object
                                 mode:
                                   description: 'Mode defines which of the selected
@@ -1397,11 +1399,6 @@ spec:
                               required:
                               - name
                               type: object
-                            domain:
-                              description: Domain specifies the location where Service
-                                will be placed. For this to work, the nodes included
-                                in the domain must have the label domain:{{domain-name}}
-                              type: string
                             namespacedName:
                               description: NamespacedName is the name of the desired
                                 service. If unspecified, it is automatically set by
@@ -3143,6 +3140,13 @@ spec:
                       type: object
                     distributedGroup:
                       properties:
+                        domain:
+                          description: Domain specifies the location where Service
+                            will be placed. For this to work, the nodes included in
+                            the domain must have the label domain:{{domain-name}}.
+                            for the moment simply match domain to a specific node.
+                            this will change in the future
+                          type: string
                         inputs:
                           description: Inputs are list of inputs passed to the objects.
                             When used in conjunction with Instances, there can be
@@ -4456,11 +4460,6 @@ spec:
                               required:
                               - name
                               type: object
-                            domain:
-                              description: Domain specifies the location where Service
-                                will be placed. For this to work, the nodes included
-                                in the domain must have the label domain:{{domain-name}}
-                              type: string
                             namespacedName:
                               description: NamespacedName is the name of the desired
                                 service. If unspecified, it is automatically set by
@@ -6214,11 +6213,13 @@ spec:
                               description: Match contains the rules to select target
                               properties:
                                 servicegroup:
+                                  additionalProperties:
+                                    type: string
                                   description: ServiceGroup defines the service group
                                     where services belong. A ServiceGroup may refer
                                     either to a DistributedGroup or a CollocatedGroup.
                                     Therefore, we need to search both of them.
-                                  type: string
+                                  type: object
                               type: object
                             mode:
                               description: 'Mode defines which of the selected services
@@ -6266,9 +6267,19 @@ spec:
                   type: string
                 type: array
               ingress:
-                description: 'Ingress defines external access to the services in a
-                  cluster, typically HTTP Example: grafana.localhost, grafana.{MYIP}.nip.io,'
-                type: string
+                description: Ingress defines how to get traffic into your Kubernetes
+                  cluster.
+                properties:
+                  host:
+                    description: 'Host is the postfix from which the ingress will
+                      be available. Example: grafana.localhost, grafana.{MYIP}.nip.io,
+                      grafana.platform.science-hangar.eu'
+                    type: string
+                  useAmbassador:
+                    description: UseAmbassador if set annotates ingresses with 'kubernetes.io/ingress.class=ambassador'
+                      so to be managed by the Ambassador Ingress controller.
+                    type: boolean
+                type: object
             required:
             - actions
             type: object

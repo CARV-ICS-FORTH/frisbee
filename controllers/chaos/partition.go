@@ -73,9 +73,9 @@ func (f *partition) Inject(ctx context.Context, obj *v1alpha1.Chaos) error {
 
 	err = lifecycle.New(
 		lifecycle.WatchExternal(&chaos, AccessChaosStatus, chaos.GetName()),
-		lifecycle.WithFilters(lifecycle.FilterByParent(obj.GetUID())),
+		lifecycle.WithFilters(lifecycle.FilterByParent(obj)),
 		lifecycle.WithAnnotator(&lifecycle.RangeAnnotation{}),
-		lifecycle.WithUpdateParent(obj),
+		lifecycle.WithUpdateParent(obj.DeepCopy()),
 	).Run(ctx)
 
 	return errors.Wrapf(err, "lifecycle failed")
@@ -107,7 +107,7 @@ func (f *partition) WaitForDuration(ctx context.Context, obj *v1alpha1.Chaos) er
 
 func (f *partition) Revoke(ctx context.Context, obj *v1alpha1.Chaos) error {
 	// because the internal Chaos object (managed by Chaos controller) owns the external Chaos implementation
-	// (managed by Chaos-Mesh) it suffice to remove the internal object, and the external will be garbage collected.
+	// (managed by Chaos-Mesh) it suffices to remove the internal object, and the external will be garbage collected.
 	if err := lifecycle.Delete(ctx, f.r, obj); err != nil {
 		return errors.Wrapf(err, "unable to revoke %s", obj.GetName())
 	}

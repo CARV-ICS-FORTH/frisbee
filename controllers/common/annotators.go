@@ -7,7 +7,6 @@ import (
 	"github.com/grafana-tools/sdk"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/util/retry"
 )
 
 type Annotator interface {
@@ -22,13 +21,13 @@ type Annotator interface {
 type DefaultAnnotator struct{}
 
 func (a *DefaultAnnotator) Insert(ga sdk.CreateAnnotationRequest) (id uint) {
-	Common.Logger.Info("omit annotation", "msg", ga.Text)
+	Globals.Logger.Info("omit annotation", "msg", ga.Text)
 
 	return uint(rand.Uint64())
 }
 
 func (a *DefaultAnnotator) Patch(_ uint, ga sdk.PatchAnnotationRequest) {
-	Common.Logger.Info("omit patch annotation", "msg", ga.Text)
+	Globals.Logger.Info("omit patch annotation", "msg", ga.Text)
 }
 
 // ///////////////////////////////////////////
@@ -45,31 +44,6 @@ type GrafanaAnnotator struct {
 	ctx context.Context
 
 	*sdk.Client
-}
-
-func EnableGrafanaAnnotator(ctx context.Context, apiURI string) error {
-	client, err := sdk.NewClient(apiURI, "", sdk.DefaultHTTPClient)
-	if err != nil {
-		return errors.Wrapf(err, "client error")
-	}
-
-	// retry until Grafana is ready to receive annotations.
-	err = retry.OnError(DefaultBackoff, func(_ error) bool { return true }, func() error {
-		_, err := client.GetHealth(ctx)
-
-		return errors.Wrapf(err, "grafana health error")
-	})
-
-	if err != nil {
-		return errors.Wrapf(err, "grafana is unreachable")
-	}
-
-	Common.Annotator = &GrafanaAnnotator{
-		ctx:    ctx,
-		Client: client,
-	}
-
-	return nil
 }
 
 // Insert inserts a new annotation to Grafana

@@ -14,13 +14,18 @@ import (
 
 type FilterFunc func(obj interface{}) bool
 
+type Parent interface {
+	GetUID() types.UID
+	GetName() string
+}
+
 // FilterByParent applies the provided FilterByParent to all events coming in, and decides which events will be handled
 // by this controller. It does this by looking at the objects metadata.ownerReferences field for an
 // appropriate OwnerReference. It then enqueues that Foo resource to be processed. If the object does not
 // have an appropriate OwnerReference, it will simply be skipped. If the parent is empty, the object is passed
 // as if it belongs to this parent.
-func FilterByParent(parentUID types.UID) FilterFunc {
-	if len(parentUID) == 0 {
+func FilterByParent(parent Parent) FilterFunc {
+	if len(parent.GetUID()) == 0 {
 		panic("invalid parent UID")
 	}
 
@@ -51,13 +56,13 @@ func FilterByParent(parentUID types.UID) FilterFunc {
 
 		// Update locate view of the dependent services
 		for _, owner := range object.GetOwnerReferences() {
-			if owner.UID == parentUID {
+			if owner.UID == parent.GetUID() {
 				return true
 			}
 		}
 
 		// TODO: use it for debugging is you believe that you get more messages than expected
-		// logrus.Warn("Mismatch parent for object ", object.GetName())
+		// logrus.Warnf("Mismatch parent %s for object %s", parent.GetName(), object.GetName())
 
 		return false
 	}

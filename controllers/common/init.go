@@ -1,16 +1,18 @@
 package common
 
 import (
-	"time"
+	"context"
 
 	"github.com/go-logr/logr"
-	"k8s.io/apimachinery/pkg/util/wait"
+	"github.com/grafana-tools/sdk"
+	"github.com/pkg/errors"
+	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var Common struct {
+var Globals struct {
 	cache.Cache
 	client.Client
 	logr.Logger
@@ -20,23 +22,43 @@ var Common struct {
 
 	// Execute run commands within containers
 	Executor
+
+	Namespace string
 }
 
-func InitCommon(mgr ctrl.Manager, logger logr.Logger) {
-	Common.Cache = mgr.GetCache()
-	Common.Client = mgr.GetClient()
-	Common.Logger = logger.WithName("Common")
-	Common.Annotator = &DefaultAnnotator{}
-	Common.Executor = NewExecutor(mgr.GetConfig())
+func SetNamespace(nm string) {
+	Globals.Namespace = nm
 }
 
-var DefaultBackoff = wait.Backoff{
-	Duration: 5 * time.Second,
-	Factor:   5,
-	Jitter:   0.1,
-	Steps:    4,
+func SetCommon(mgr ctrl.Manager, logger logr.Logger) {
+	Globals.Cache = mgr.GetCache()
+	Globals.Client = mgr.GetClient()
+	Globals.Logger = logger.WithName("Globals")
+	Globals.Annotator = &DefaultAnnotator{}
+	Globals.Executor = NewExecutor(mgr.GetConfig())
 }
 
-var DefaultTimeout = 30 * time.Second
+func SetGrafana(ctx context.Context, apiURI string) error {
+	client, err := sdk.NewClient(apiURI, "", sdk.DefaultHTTPClient)
+	if err != nil {
+		return errors.Wrapf(err, "client error")
+	}
 
-var GracefulPeriodToRun = 1 * time.Minute
+	// retry until Grafana is ready to receive annotations.
+	err = retry.OnError(DefaultBackoff, func(_ error) bool { return true }, func() error {
+		_, err := client.GetHealth(ctx)
+
+		return errors.Wrapf(err, "grafana health error")
+	})
+
+	if err != nil {
+		return errors.Wrapf(err, "grafana is unreachable")
+	}
+
+	Globals.Annotator = &GrafanaAnnotator{
+		ctx:    ctx,
+		Client: client,
+	}
+
+	return nil
+}

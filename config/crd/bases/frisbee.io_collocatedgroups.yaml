@@ -1214,11 +1214,6 @@ spec:
                     required:
                     - name
                     type: object
-                  domain:
-                    description: Domain specifies the location where Service will
-                      be placed. For this to work, the nodes included in the domain
-                      must have the label domain:{{domain-name}}
-                    type: string
                   namespacedName:
                     description: NamespacedName is the name of the desired service.
                       If unspecified, it is automatically set by the respective controller.
@@ -3943,11 +3938,6 @@ spec:
                       required:
                       - name
                       type: object
-                    domain:
-                      description: Domain specifies the location where Service will
-                        be placed. For this to work, the nodes included in the domain
-                        must have the label domain:{{domain-name}}
-                      type: string
                     namespacedName:
                       description: NamespacedName is the name of the desired service.
                         If unspecified, it is automatically set by the respective

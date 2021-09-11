@@ -12,7 +12,6 @@ import (
 	"github.com/fnikolai/frisbee/controllers/common"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -33,8 +32,8 @@ func parseMacro(ss *v1alpha1.ServiceSelector) {
 
 	switch kind {
 	case "group":
-		ss.Match.ServiceGroup = object
-		ss.Mode = v1alpha1.Mode(filter)
+		ss.Match.ServiceGroup = map[string]string{common.Globals.Namespace: object}
+		ss.Mode = v1alpha1.Convert(filter)
 
 	default:
 		panic(errors.Errorf("%v is not a valid macro", ss.Macro))
@@ -94,7 +93,7 @@ func selectServices(ctx context.Context, ss *v1alpha1.MatchServiceSpec) (v1alpha
 					Name:      name,
 				}
 
-				if err := common.Common.Client.Get(ctx, key, &service); err != nil {
+				if err := common.Globals.Client.Get(ctx, key, &service); err != nil {
 					return nil, errors.Wrapf(err, "unable to find %s", key)
 				}
 
@@ -107,17 +106,18 @@ func selectServices(ctx context.Context, ss *v1alpha1.MatchServiceSpec) (v1alpha
 
 	// case 2. servicegroups are specifically specified. Owner labels ia automatically attached to all
 	// components by SetOwnerRef(). Thus, we are looking for services that are owned by the desired servicegroup.
-	if len(ss.ServiceGroup) > 0 {
-		var groupedServiceList v1alpha1.ServiceSpecList
-
-		// TODO: fix the manual namespace
-		key := types.NamespacedName{Namespace: "frisbee", Name: ss.ServiceGroup}
+	var groupedServiceList v1alpha1.ServiceSpecList
+	for nm, groupname := range ss.ServiceGroup {
+		key := client.ObjectKey{ // search all
+			Namespace: nm,
+			Name:      groupname,
+		}
 
 		// a servicegroup can be either a distributedgroup or a collocated group. thus, we need to search both of them
 		{
 			var group v1alpha1.DistributedGroup
 
-			if err := common.Common.Client.Get(ctx, key, &group); client.IgnoreNotFound(err) != nil {
+			if err := common.Globals.Client.Get(ctx, key, &group); client.IgnoreNotFound(err) != nil {
 				return nil, errors.Wrapf(err, "unable to find group %s", key)
 			}
 
@@ -127,7 +127,7 @@ func selectServices(ctx context.Context, ss *v1alpha1.MatchServiceSpec) (v1alpha
 		{
 			var group v1alpha1.CollocatedGroup
 
-			if err := common.Common.Client.Get(ctx, key, &group); client.IgnoreNotFound(err) != nil {
+			if err := common.Globals.Client.Get(ctx, key, &group); client.IgnoreNotFound(err) != nil {
 				return nil, errors.Wrapf(err, "unable to find group %s", key)
 			}
 
@@ -135,7 +135,7 @@ func selectServices(ctx context.Context, ss *v1alpha1.MatchServiceSpec) (v1alpha
 		}
 
 		if len(groupedServiceList) == 0 {
-			common.Common.Logger.Error(errors.New("potential error detected"), "empty group", "name", key)
+			common.Globals.Logger.Error(errors.New("potential error detected"), "empty group", "name", key)
 		}
 
 		serviceList = append(serviceList, groupedServiceList...)
@@ -145,6 +145,7 @@ func selectServices(ctx context.Context, ss *v1alpha1.MatchServiceSpec) (v1alpha
 			})
 		*/
 	}
+
 	/*
 		// case 3. labels
 		var listOptions client.ListOptions
@@ -165,14 +166,14 @@ func selectServices(ctx context.Context, ss *v1alpha1.MatchServiceSpec) (v1alpha
 				for _, namespace := range ss.Namespaces {
 					listOptions.Namespace = namespace
 
-					if err := common.Common.Client.List(ctx, &serviceList, &listOptions); err != nil {
+					if err := common.Globals.Client.List(ctx, &serviceList, &listOptions); err != nil {
 						return nil, err
 					}
 
 					services = append(services, serviceList.Items...)
 				}
 			} else { // search all namespaces
-				if err := common.Common.Client.List(ctx, &serviceList, &listOptions); err != nil {
+				if err := common.Globals.Client.List(ctx, &serviceList, &listOptions); err != nil {
 					return nil, errors.Wrapf(err, "namespace error")
 				}
 

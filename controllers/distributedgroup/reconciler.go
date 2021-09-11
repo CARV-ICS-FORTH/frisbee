@@ -9,6 +9,7 @@ import (
 	"github.com/fnikolai/frisbee/controllers/common/lifecycle"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -17,6 +18,9 @@ import (
 // +kubebuilder:rbac:groups=frisbee.io,resources=distributedgroups,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=frisbee.io,resources=distributedgroups/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=frisbee.io,resources=distributedgroups/finalizers,verbs=update
+
+// +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch;
+// +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;
 
 func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 	return ctrl.NewControllerManagedBy(mgr).
@@ -28,7 +32,7 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 		})
 }
 
-// Reconciler reconciles a Templates object
+// Reconciler reconciles a Templates object.
 type Reconciler struct {
 	client.Client
 	logr.Logger
@@ -65,16 +69,18 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			return lifecycle.Failed(ctx, &group, errors.New("no services are expected. stall condition ?"))
 		}
 
+		logrus.Warn("Listening for children:", expected)
+
 		// start listening for events.
 		// If any of the services is created, the group will go to the running phase.
 		// If any of the services is failed, the group will go to the failed phase.
-		// if all services are successfully terminated, the group will go to the success phase
+		// if all services are successfully terminated, the group will go to the success phase.
 		err := lifecycle.New(
 			lifecycle.WatchExternal(&v1.Pod{}, lifecycle.Pod(), expected...),
-			lifecycle.WithFilters(lifecycle.FilterByParent(group.GetUID())),
+			lifecycle.WithFilters(lifecycle.FilterByParent(&group)),
 			lifecycle.WithAnnotator(&lifecycle.PointAnnotation{}), // Register event to grafana
 			lifecycle.WithLogger(r.Logger),
-			lifecycle.WithUpdateParent(&group),
+			lifecycle.WithUpdateParent(group.DeepCopy()),
 		).Run(ctx)
 
 		if err != nil {
@@ -88,10 +94,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		return common.Stop()
 
-	case v1alpha1.PhaseRunning: // Passthrough
+	case v1alpha1.PhaseRunning:
 		return common.Stop()
 
-	case v1alpha1.PhaseSuccess: // Passthrough
+	case v1alpha1.PhaseSuccess:
 		// remove the group upon completion
 
 		if err := r.Client.Delete(ctx, &group); err != nil {
