@@ -33,7 +33,7 @@ type Inputs struct {
 type Scheme struct {
 	// Inputs are dynamic fields that populate the spec.
 	// +optional
-	Inputs Inputs `json:"inputs"`
+	Inputs *Inputs `json:"inputs,omitempty"`
 
 	// Spec is the Service specification whose values will be replaced by arameters.
 	Spec string `json:"spec"`

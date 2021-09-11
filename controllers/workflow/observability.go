@@ -41,7 +41,7 @@ func (r *Reconciler) newMonitoringStack(ctx context.Context, obj *v1alpha1.Workf
 	}
 
 	// Make Prometheus and Grafana accessible from outside the Cluster
-	if len(obj.Spec.Ingress) > 0 {
+	if obj.Spec.Ingress != nil {
 		if err := r.installIngress(ctx, obj, prometheus, grafana); err != nil {
 			return errors.Wrapf(err, "ingress error")
 		}
@@ -49,9 +49,9 @@ func (r *Reconciler) newMonitoringStack(ctx context.Context, obj *v1alpha1.Workf
 		r.Logger.Info("Ingress is installed")
 
 		// use the public Grafana address (via Ingress) because the controller runs outside of the cluster
-		grafanaPublicURI := fmt.Sprintf("http://%s", virtualhost(grafana.GetName(), obj.Spec.Ingress))
+		grafanaPublicURI := fmt.Sprintf("http://%s", virtualhost(grafana.GetName(), obj.Spec.Ingress.Host))
 
-		if err := common.EnableGrafanaAnnotator(ctx, grafanaPublicURI); err != nil {
+		if err := common.SetGrafana(ctx, grafanaPublicURI); err != nil {
 			return errors.Wrapf(err, "grafana client error")
 		}
 	}
@@ -183,13 +183,13 @@ func (r *Reconciler) installIngress(ctx context.Context, obj *v1alpha1.Workflow,
 	ingress := netv1.Ingress{}
 
 	{ // metadata
-		ingress.SetName("ingress")
+		ingress.SetName("frisbee")
 
-		// Ingresses annotated with 'kubernetes.io/ingress.class=ambassador' will be managed by Ambassador.
-		// Without annotation, the default Ingress is used.
-		ingress.SetAnnotations(map[string]string{
-			"kubernetes.io/ingress.class": "ambassador",
-		})
+		if obj.Spec.Ingress.UseAmbassador {
+			ingress.SetAnnotations(map[string]string{
+				"kubernetes.io/ingress.class": "ambassador",
+			})
+		}
 
 		if err := common.SetOwner(obj, &ingress); err != nil {
 			return errors.Wrapf(err, "ownership failed")
@@ -208,7 +208,7 @@ func (r *Reconciler) installIngress(ctx context.Context, obj *v1alpha1.Workflow,
 			port := service.Container.Ports[0]
 
 			rule := netv1.IngressRule{
-				Host: virtualhost(service.Name, obj.Spec.Ingress),
+				Host: virtualhost(service.Name, obj.Spec.Ingress.Host),
 				IngressRuleValue: netv1.IngressRuleValue{
 					HTTP: &netv1.HTTPIngressRuleValue{
 						Paths: []netv1.HTTPIngressPath{

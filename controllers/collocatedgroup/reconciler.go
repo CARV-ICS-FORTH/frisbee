@@ -72,10 +72,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		// if all services are successfully terminated, the group will go to the success phase
 		err := lifecycle.New(
 			lifecycle.WatchExternal(&v1.Pod{}, lifecycle.Containers(), expected...),
-			lifecycle.WithFilters(lifecycle.FilterByParent(group.GetUID())),
+			lifecycle.WithFilters(lifecycle.FilterByParent(&group)),
 			lifecycle.WithAnnotator(&lifecycle.PointAnnotation{}), // Register event to grafana
 			lifecycle.WithLogger(r.Logger),
-			lifecycle.WithUpdateParent(&group),
+			lifecycle.WithUpdateParent(group.DeepCopy()),
 		).Run(ctx)
 
 		if err != nil {

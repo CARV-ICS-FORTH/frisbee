@@ -18,6 +18,23 @@ const (
 	RandomMaxPercentMode Mode = "random-max-percent"
 )
 
+func Convert(mode string) Mode {
+	switch mode {
+	case "any":
+		return AnyMode
+	case "all":
+		return AllMode
+	case "fixed":
+		return FixedMode
+	case "fixed-percent":
+		return FixedPercentMode
+	case "random-max-percent":
+		return RandomMaxPercentMode
+	default:
+		panic("invalid mode")
+	}
+}
+
 // +kubebuilder:validation:Enum=one;all;fixed;fixed-percent;random-max-percent
 
 // TemplateSelectorSpec defines some selectors for chosing a template
@@ -55,7 +72,7 @@ type MatchServiceSpec struct {
 	// ServiceGroup defines the service group where services belong. A ServiceGroup may refer either to
 	// a DistributedGroup or a CollocatedGroup. Therefore, we need to search both of them.
 	// +optional
-	ServiceGroup string `json:"servicegroup,omitempty"`
+	ServiceGroup map[string]string `json:"servicegroup,omitempty"`
 
 	// Namespaces is a set of namespace to which objects belong.
 	// +optional

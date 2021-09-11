@@ -8,6 +8,7 @@ import (
 	"github.com/fnikolai/frisbee/controllers/common"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	cachetypes "k8s.io/client-go/tools/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -209,6 +210,7 @@ func New(opts ...Option) *ManagedLifecycle {
 	} else {
 		fsm = NewBoundedFSM(options.ChildrenNames)
 		fsm.logger = lifecycle.logger
+		fsm.annotaror = options.Annotator
 	}
 
 	// set watchtype
@@ -219,6 +221,8 @@ func New(opts ...Option) *ManagedLifecycle {
 	}
 
 	if options.Annotator != nil {
+		logrus.Warn("Use annotator ")
+
 		lifecycle.eventHandlers = eventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				options.Annotator.Add(obj)
@@ -227,12 +231,15 @@ func New(opts ...Option) *ManagedLifecycle {
 			},
 			UpdateFunc: fsm.HandleEvent,
 			DeleteFunc: func(obj interface{}) {
+				logrus.Warn("----------Deleted object ---------")
 				options.Annotator.Delete(obj)
 
 				fsm.HandleEvent(obj)
 			},
 		}
 	} else {
+		logrus.Warn("Without  annotator ")
+
 		lifecycle.eventHandlers = eventHandlerFuncs{
 			AddFunc:    fsm.HandleEvent,
 			UpdateFunc: fsm.HandleEvent,
@@ -252,7 +259,7 @@ type eventHandlerFuncs struct {
 }
 
 func (lc *ManagedLifecycle) Run(ctx context.Context) error {
-	informer, err := common.Common.Cache.GetInformer(ctx, unwrap(lc.options.WatchType))
+	informer, err := common.Globals.Cache.GetInformer(ctx, unwrap(lc.options.WatchType))
 	if err != nil {
 		return errors.Wrapf(err, "unable to get informer for %s", unwrap(lc.options.WatchType).GetName())
 	}
