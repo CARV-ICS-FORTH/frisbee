@@ -65,7 +65,7 @@ func (r *Reconciler) newMonitoringStack(ctx context.Context, obj *v1alpha1.Workf
 
 		r.Logger.Info("Ingress is installed")
 
-		// use the public Grafana address (via Ingress) because the controller runs outside of the cluster
+		// use the public Grafana address (via Ingress) because the controller runs outside the cluster
 		grafanaPublicURI := fmt.Sprintf("http://%s", virtualhost(grafana.GetName(), obj.Spec.Ingress.Host))
 
 		if err := common.SetGrafana(ctx, grafanaPublicURI); err != nil {

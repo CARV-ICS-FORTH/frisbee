@@ -32,7 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// +kubebuilder:rbac:groups=frisbee.io,resources=workflows,verbs=get;list;watch;distributedGroup;update;patch;delete
+// +kubebuilder:rbac:groups=frisbee.io,resources=workflows,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=frisbee.io,resources=workflows/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=frisbee.io,resources=workflows/finalizers,verbs=update
 
@@ -72,7 +72,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		r.Logger.Info("<- Reconcile", "kind", reflect.TypeOf(w), "name", w.GetName(), "lifecycle", w.Status.Phase)
 	}()
 
-	// The reconcile logic
+	// Here goes the actual reconcile logic
 	switch w.Status.Phase {
 	case v1alpha1.PhaseUninitialized:
 		if action := w.Spec.Actions[len(w.Spec.Actions)-1]; action.ActionType != "Wait" {

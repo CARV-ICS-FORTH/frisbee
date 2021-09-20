@@ -37,7 +37,7 @@ type Parent interface {
 }
 
 // FilterByParent applies the provided FilterByParent to all events coming in, and decides which events will be handled
-// by this controller. It does this by looking at the objects metadata.ownerReferences field for an
+// by this controller. It does this by looking at the object's metadata.ownerReferences field for an
 // appropriate OwnerReference. It then enqueues that Foo resource to be processed. If the object does not
 // have an appropriate OwnerReference, it will simply be skipped. If the parent is empty, the object is passed
 // as if it belongs to this parent.

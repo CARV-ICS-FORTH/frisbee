@@ -85,14 +85,14 @@ func (r *Reconciler) prepare(ctx context.Context, group *v1alpha1.CollocatedGrou
 
 			logrus.Warn("Generate scheme", scheme.Inputs)
 
-			service, err := helpers.GenerateServiceSpec(scheme)
+			instance, err := helpers.GenerateServiceSpec(scheme)
 			if err != nil {
-				return errors.Wrapf(err, "scheme to service")
+				return errors.Wrapf(err, "scheme to instance")
 			}
 
-			service.NamespacedName = generateName(group, i)
+			instance.NamespacedName = generateName(group, i)
 
-			group.Status.ExpectedServices = append(group.Status.ExpectedServices, service)
+			group.Status.ExpectedServices = append(group.Status.ExpectedServices, instance)
 		}
 
 		return nil

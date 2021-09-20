@@ -89,9 +89,9 @@ func (a *PointAnnotation) Delete(obj interface{}) {
 // RangeAnnotation uses range annotations to indicate the duration of a Chaos.
 // It consists of two parts. In the first part, a failure annotation is created
 // with open end. When a new value is pushed to the timeEnd channel, the annotation is updated
-// accordingly. TimeEnd channel can be used as many time as wished. The client is responsible to close the channel.
+// accordingly. TimeEnd channel can be used as many times as wished. The client is responsible to close the channel.
 type RangeAnnotation struct {
-	// Currently the Annotator works for a single wtached object. If we want to support more, use a map with
+	// Currently the Annotator works for a single watched object. If we want to support more, use a map with
 	// the key being the object Name.
 	reqID uint
 }

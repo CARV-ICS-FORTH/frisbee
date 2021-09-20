@@ -72,9 +72,9 @@ type Action struct {
 	// Name is a unique identifier of the action
 	Name string `json:"name"`
 
-	// Depends define the conditions for the execution of this action
+	// DependsOn defines the conditions for the execution of this action
 	// +optional
-	Depends *WaitSpec `json:"depends,omitempty"`
+	DependsOn *WaitSpec `json:"depends,omitempty"`
 
 	*EmbedActions `json:",inline"`
 }
@@ -120,14 +120,15 @@ type WorkflowStatus struct {
 	Lifecycle `json:",inline"`
 }
 
-func (s *Workflow) GetLifecycle() []*Lifecycle {
-	return []*Lifecycle{&s.Status.Lifecycle}
+func (in *Workflow) GetLifecycle() []*Lifecycle {
+	return []*Lifecycle{&in.Status.Lifecycle}
 }
 
-func (s *Workflow) SetLifecycle(lifecycle Lifecycle) {
-	s.Status.Lifecycle = lifecycle
+func (in *Workflow) SetLifecycle(lifecycle Lifecycle) {
+	in.Status.Lifecycle = lifecycle
 }
 
+// WorkflowList returns a list of Workflow objects
 // +kubebuilder:object:root=true
 type WorkflowList struct {
 	metav1.TypeMeta `json:",inline"`

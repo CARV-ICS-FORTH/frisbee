@@ -33,24 +33,6 @@ import (
 			Lifecycle Getters
 /******************************************************/
 
-// WaitRunning is a lifecycle wrapper that waits until an object has reached the Running Phase.
-// If another Phase is reached (e.g, failed), it returns error.
-func WaitRunning(ctx context.Context, obj InnerObject) error {
-	return New(
-		Watch(obj, obj.GetName()),
-		WithExpectedPhase(v1alpha1.PhaseRunning),
-	).Run(ctx)
-}
-
-// WaitSuccess is a lifecycle wrapper that waits until an object has reached the Running Phase.
-// If another Phase is reached (e.g, failed), it returns error.
-func WaitSuccess(ctx context.Context, obj InnerObject) error {
-	return New(
-		Watch(obj, obj.GetName()),
-		WithExpectedPhase(v1alpha1.PhaseSuccess),
-	).Run(ctx)
-}
-
 // WaitRunningAndUpdate is a lifecycle that waits for WaitRunning and then replaced given object with the updated object.
 func WaitRunningAndUpdate(ctx context.Context, obj InnerObject) error {
 	err := New(

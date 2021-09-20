@@ -16,7 +16,7 @@ We make it possible to:
 
 * **Debug tests:**  through extensive monitoring and comprehensive dashboards
 
-  
+
 
 In this walk-through, we explain how to install and execute the runtime with given examples. We will discuss later how to use the language to build custom experiments.
 
@@ -46,7 +46,7 @@ $ microk8s config > config
 
 #### Install CRDs
 
-CRDs are extensions of the Kubernetes API. 
+CRDs are extensions of the Kubernetes API.
 
 ```bash
 # Install Frisbee CRD (from Frisbee homefolder)
@@ -80,7 +80,7 @@ $ kubectl -n frisbee delete -f  ../paper/elasticity.yml
 
 #### On remote cluster
 
-In order to access your Kubernetes cluster, `frisbee` uses kubeconfig to to find the information it needs to choose a cluster and communicate with it.
+In order to access your Kubernetes cluster, `frisbee` uses kubeconfig to find the information it needs to choose a cluster and communicate with it.
 
 `kubeconfig` files organize information about clusters, users, namespaces, and authentication mechanisms.
 
@@ -143,7 +143,7 @@ Briefly,
 
 ###### Permissions
 
-By default Grafana is configured without any login requirements, so we must leave this field blank
+By default, Grafana is configured without any login requirements, so we must leave this field blank
 
 "":"" denotes empty username:password.
 
@@ -163,7 +163,7 @@ ssh -L 6443:192.168.1.213:6443 thegates
 
 
 ## Bugs and Feedback
-For bug report, questions and discussions please submit [GitHub Issues](https://github.com/CARV-ICS-FORTH/frisbee/issues). 
+For bug report, questions and discussions please submit [GitHub Issues](https://github.com/CARV-ICS-FORTH/frisbee/issues).
 
 
 You can also contact us via:

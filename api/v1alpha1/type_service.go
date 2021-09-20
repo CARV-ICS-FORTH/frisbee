@@ -100,24 +100,24 @@ const (
 
 type ServiceSpecList []*ServiceSpec
 
-func (list ServiceSpecList) String() string {
-	return strings.Join(list.GetNames(), idListSeparator)
+func (in ServiceSpecList) String() string {
+	return strings.Join(in.GetNames(), idListSeparator)
 }
 
-func (list ServiceSpecList) GetNames() []string {
-	names := make([]string, len(list))
+func (in ServiceSpecList) GetNames() []string {
+	names := make([]string, len(in))
 
-	for i, service := range list {
+	for i, service := range in {
 		names[i] = service.NamespacedName.Name
 	}
 
 	return names
 }
 
-func (list ServiceSpecList) GetNamespaces() []string {
-	namespace := make([]string, len(list))
+func (in ServiceSpecList) GetNamespaces() []string {
+	namespace := make([]string, len(in))
 
-	for i, service := range list {
+	for i, service := range in {
 		namespace[i] = service.NamespacedName.Namespace
 	}
 
@@ -125,10 +125,10 @@ func (list ServiceSpecList) GetNamespaces() []string {
 }
 
 // ByNamespace return the services by the namespace they belong to.
-func (list ServiceSpecList) ByNamespace() map[string][]string {
+func (in ServiceSpecList) ByNamespace() map[string][]string {
 	all := make(map[string][]string)
 
-	for _, s := range list {
+	for _, s := range in {
 		// get namespace
 		sublist := all[s.NamespacedName.Namespace]
 

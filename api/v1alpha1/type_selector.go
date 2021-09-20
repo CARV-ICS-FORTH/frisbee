@@ -29,9 +29,9 @@ const (
 	AllMode Mode = "all"
 	// FixedMode represents that the system will select a specific number of running objects.
 	FixedMode Mode = "fixed"
-	// FixedPercentMode to specify a fixed % that can be inject chaos action.
+	// FixedPercentMode to specify a fixed % that can be injected chaos action.
 	FixedPercentMode Mode = "fixed-percent"
-	// RandomMaxPercentMode to specify a maximum % that can be inject chaos action.
+	// RandomMaxPercentMode to specify a maximum % that can be injected chaos action.
 	RandomMaxPercentMode Mode = "random-max-percent"
 )
 
@@ -72,12 +72,11 @@ type TemplateSelector struct {
 	Selector TemplateSelectorSpec `json:"selector"`
 }
 
-// MatchServiceSpec defines the some selectors to select services.
+// MatchServiceSpec defines the selectors for services.
 // If the all selectors are empty, all services will be selected.
 type MatchServiceSpec struct {
 	// ServiceNames is a map of string keys and a set values that used to select services.
-	// The key defines the namespace which services belong,
-	// and the each values is a set of service names.
+	// The key defines the namespace which services belong, and the values is a set of service names.
 	// +optional
 	// ServiceNames map[string][]string `json:"names,omitempty"`
 

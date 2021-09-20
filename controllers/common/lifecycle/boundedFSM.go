@@ -73,8 +73,8 @@ func NewBoundedFSM(serviceNames []string) *BoundedFSM {
 
 // HandleEvent monitors the Phase of children and Update the channels of the parent.
 // To deliver idempotent operation, we want to ensure exactly-once notifications. However, an object may
-// be in the same Phase during different iterations. For this Reason, we close the channel only the first
-// and then we nil it. If the second iterations finds a nil for the given child,
+// be in the same Phase during different iterations. For this Reason, we close the channel only the first,
+// and then we nullify it. If the second iterations finds a nil for the given child,
 // it returns immediately as it assumes that the closing is already delivered.
 func (n *BoundedFSM) HandleEvent(obj interface{}) {
 

@@ -5,7 +5,6 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.4.1
-  creationTimestamp: null
   name: workflows.frisbee.io
 spec:
   group: frisbee.io
@@ -3120,7 +3119,7 @@ spec:
                           type: string
                       type: object
                     depends:
-                      description: Depends define the conditions for the execution
+                      description: DependsOn defines the conditions for the execution
                         of this action
                       properties:
                         duration:
@@ -6313,11 +6312,3 @@ spec:
         type: object
     served: true
     storage: true
-    subresources:
-      status: {}
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: []
-  storedVersions: []

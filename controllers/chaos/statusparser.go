@@ -29,12 +29,10 @@ import (
 )
 
 const (
-	ChaosRunning = "Running"
+	ExperimentRunning = "ExperimentRunning"
 
-	ChaosFailed = "Failed"
+	ExperimentFailed = "Failed"
 )
-
-type metadata struct{}
 
 type v1alpha1ChaosStatus struct {
 	FailedMessage string `json:"failedMessage"`
@@ -78,7 +76,7 @@ func AccessChaosStatus(obj interface{}) []*v1alpha1.Lifecycle {
 	}
 
 	switch {
-	case parsed.Experiment.Phase == ChaosFailed || parsed.FailedMessage != "":
+	case parsed.Experiment.Phase == ExperimentFailed || parsed.FailedMessage != "":
 		return []*v1alpha1.Lifecycle{{
 			Kind:      "chaos",
 			Name:      chaos.GetName(),
@@ -88,7 +86,7 @@ func AccessChaosStatus(obj interface{}) []*v1alpha1.Lifecycle {
 			EndTime:   strToTime(parsed.Experiment.EndTime),
 		}}
 
-	case parsed.Experiment.Phase == ChaosRunning:
+	case parsed.Experiment.Phase == ExperimentRunning:
 		return []*v1alpha1.Lifecycle{{
 			Kind:      "chaos",
 			Name:      chaos.GetName(),

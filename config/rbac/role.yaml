@@ -3,7 +3,6 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  creationTimestamp: null
   name: manager-role
 rules:
 - apiGroups:
@@ -51,32 +50,6 @@ rules:
 - apiGroups:
   - frisbee.io
   resources:
-  - dataports
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - frisbee.io
-  resources:
-  - dataports/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - frisbee.io
-  resources:
-  - dataports/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - frisbee.io
-  resources:
   - distributedgroups
   verbs:
   - create
@@ -105,8 +78,8 @@ rules:
   resources:
   - workflows
   verbs:
+  - create
   - delete
-  - distributedGroup
   - get
   - list
   - patch
