@@ -1,4 +1,4 @@
-![logo](https://https://www.vectorstock.com/royalty-free-vector/disc-golf-frisbee-eps-vector-25179185)  
+<figure><img src="/docs/images/logo.jpg" width="400"></figure>
 
 
 
