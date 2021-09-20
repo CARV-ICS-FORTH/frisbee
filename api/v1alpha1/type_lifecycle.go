@@ -42,7 +42,7 @@ const (
 	// Ports discovery and rewiring, and placement of Pods.
 	PhasePending = Phase("Pending")
 
-	// PhaseRunning means that the service has been bound to a node and all of the containers have been started.
+	// PhaseRunning means that the service has been bound to a node and all the containers have been started.
 	// At least one container is still running or is in the process of being restarted.
 	PhaseRunning = Phase("Running")
 
@@ -83,21 +83,21 @@ type Lifecycle struct {
 	EndTime *metav1.Time `json:"endTime,omitempty"`
 }
 
-func (lf *Lifecycle) String() string {
-	if lf.Phase == PhaseFailed {
-		if lf.Reason == "" {
-			lf.Reason = "check the logs"
+func (in *Lifecycle) String() string {
+	if in.Phase == PhaseFailed {
+		if in.Reason == "" {
+			in.Reason = "check the logs"
 		}
 
 		return fmt.Sprintf("object:%s, Name:%s, phase:%s reason:%s",
-			lf.Kind,
-			lf.Name,
-			lf.Phase,
-			lf.Reason)
+			in.Kind,
+			in.Name,
+			in.Phase,
+			in.Reason)
 	}
 
 	return fmt.Sprintf("object:%s, Name:%s, phase:%s ",
-		lf.Kind,
-		lf.Name,
-		lf.Phase)
+		in.Kind,
+		in.Name,
+		in.Phase)
 }

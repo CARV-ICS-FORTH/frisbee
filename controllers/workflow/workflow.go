@@ -50,7 +50,7 @@ func (r *Reconciler) scheduleActions(topCtx context.Context, obj *v1alpha1.Workf
 	var err error
 
 	for _, action := range obj.Spec.Actions {
-		r.Logger.Info("Exec Action", "type", action.ActionType, "name", action.Name, "depends", action.Depends)
+		r.Logger.Info("Exec Action", "type", action.ActionType, "name", action.Name, "depends", action.DependsOn)
 
 		switch action.ActionType {
 		case "Wait": // expect command will block the entire controller
@@ -153,8 +153,8 @@ func (r *Reconciler) wait(ctx context.Context, w Workflow, action v1alpha1.Actio
 }
 
 func (r *Reconciler) distributedGroup(ctx context.Context, w Workflow, action v1alpha1.Action) error {
-	if action.Depends != nil {
-		if err := r.wait(ctx, w, action, *action.Depends); err != nil {
+	if action.DependsOn != nil {
+		if err := r.wait(ctx, w, action, *action.DependsOn); err != nil {
 			return errors.Wrapf(err, "dependencies failed")
 		}
 	}
@@ -180,8 +180,8 @@ func (r *Reconciler) distributedGroup(ctx context.Context, w Workflow, action v1
 }
 
 func (r *Reconciler) collocatedGroup(ctx context.Context, w Workflow, action v1alpha1.Action) error {
-	if action.Depends != nil {
-		if err := r.wait(ctx, w, action, *action.Depends); err != nil {
+	if action.DependsOn != nil {
+		if err := r.wait(ctx, w, action, *action.DependsOn); err != nil {
 			return errors.Wrapf(err, "dependencies failed")
 		}
 	}
@@ -207,8 +207,8 @@ func (r *Reconciler) collocatedGroup(ctx context.Context, w Workflow, action v1a
 }
 
 func (r *Reconciler) stop(ctx context.Context, w Workflow, action v1alpha1.Action) error {
-	if action.Depends != nil {
-		if err := r.wait(ctx, w, action, *action.Depends); err != nil {
+	if action.DependsOn != nil {
+		if err := r.wait(ctx, w, action, *action.DependsOn); err != nil {
 			return errors.Wrapf(err, "dependencies failed")
 		}
 	}
@@ -223,36 +223,36 @@ func (r *Reconciler) stop(ctx context.Context, w Workflow, action v1alpha1.Actio
 
 	// Without Schedule
 	if action.Stop.Schedule == nil {
-		for _, service := range services {
+		for _, instance := range services {
 			discovery := corev1.Pod{}
 
-			discovery.SetNamespace(service.Namespace)
-			discovery.SetName(service.Name)
+			discovery.SetNamespace(instance.Namespace)
+			discovery.SetName(instance.Name)
 
 			logrus.Warn("DELETE ")
 
 			err := lifecycle.Delete(ctx, r.Client, &discovery)
 			if err != nil && !k8errors.IsNotFound(err) {
-				return errors.Wrapf(err, "cannot delete service %s", service.NamespacedName)
+				return errors.Wrapf(err, "cannot delete instance %s", instance.NamespacedName)
 			}
 
-			r.Logger.Info("stop", "service", service.NamespacedName)
+			r.Logger.Info("stop", "instance", instance.NamespacedName)
 		}
 	} else { // With Schedule
 		r.Logger.Info("Yield with Schedule", "services", services)
 
-		for service := range common.YieldByTime(ctx, action.Stop.Schedule.Cron, services...) {
+		for instance := range common.YieldByTime(ctx, action.Stop.Schedule.Cron, services...) {
 			discovery := corev1.Pod{}
 
-			discovery.SetNamespace(service.Namespace)
-			discovery.SetName(service.Name)
+			discovery.SetNamespace(instance.Namespace)
+			discovery.SetName(instance.Name)
 
 			err := lifecycle.Delete(ctx, r.Client, &discovery)
 			if err != nil && !k8errors.IsNotFound(err) {
-				return errors.Wrapf(err, "cannot delete service %s", service.NamespacedName)
+				return errors.Wrapf(err, "cannot delete instance %s", instance.NamespacedName)
 			}
 
-			r.Logger.Info("stop", "service", service)
+			r.Logger.Info("stop", "instance", instance)
 		}
 	}
 
@@ -268,8 +268,8 @@ func (r *Reconciler) chaos(ctx context.Context, w Workflow, action v1alpha1.Acti
 		return errors.Wrapf(err, "ownership failed")
 	}
 
-	if action.Depends != nil {
-		if err := r.wait(ctx, w, action, *action.Depends); err != nil {
+	if action.DependsOn != nil {
+		if err := r.wait(ctx, w, action, *action.DependsOn); err != nil {
 			return errors.Wrapf(err, "dependencies failed")
 		}
 	}

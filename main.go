@@ -42,7 +42,6 @@ import (
 	"github.com/fnikolai/frisbee/controllers/chaos"
 	"github.com/fnikolai/frisbee/controllers/collocatedgroup"
 	"github.com/fnikolai/frisbee/controllers/common"
-	"github.com/fnikolai/frisbee/controllers/dataport"
 	"github.com/fnikolai/frisbee/controllers/distributedgroup"
 	"github.com/fnikolai/frisbee/controllers/template"
 	"github.com/fnikolai/frisbee/controllers/workflow"
@@ -129,12 +128,6 @@ func main() {
 
 	if err := workflow.NewController(mgr, setupLog); err != nil {
 		runtimeutil.HandleError(errors.Wrapf(err, "unable to create workflow controller"))
-
-		os.Exit(1)
-	}
-
-	if err := dataport.NewController(mgr, setupLog); err != nil {
-		runtimeutil.HandleError(errors.Wrapf(err, "unable to create dataport controller"))
 
 		os.Exit(1)
 	}

@@ -70,14 +70,15 @@ type ChaosStatus struct {
 	Lifecycle `json:",inline"`
 }
 
-func (s *Chaos) GetLifecycle() []*Lifecycle {
-	return []*Lifecycle{&s.Status.Lifecycle}
+func (in *Chaos) GetLifecycle() []*Lifecycle {
+	return []*Lifecycle{&in.Status.Lifecycle}
 }
 
-func (s *Chaos) SetLifecycle(lifecycle Lifecycle) {
-	s.Status.Lifecycle = lifecycle
+func (in *Chaos) SetLifecycle(lifecycle Lifecycle) {
+	in.Status.Lifecycle = lifecycle
 }
 
+// ChaosList returns a list of Chaos objects
 // +kubebuilder:object:root=true
 type ChaosList struct {
 	metav1.TypeMeta `json:",inline"`

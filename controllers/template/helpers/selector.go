@@ -30,11 +30,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func IsRef(templateRef string) bool {
-	parsed := strings.Split(templateRef, "/")
-	return len(parsed) == 2
-}
-
 // ParseRef parse the templateRef and returns a template selector. If the templateRef is invalid, the selector
 // will be nil, and any subsequence select operation will return empty value.
 func ParseRef(nm, templateRef string) *v1alpha1.TemplateSelector {

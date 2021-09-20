@@ -33,7 +33,7 @@ import (
 
 // create collocated services consists of two steps.
 // first, to create a common pods
-// second, populate the pod spec for every  service -- which may involve more than one containers.
+// second, populate the pod spec for every  service -- which may involve more than one container.
 func (r *Reconciler) create(ctx context.Context, group *v1alpha1.CollocatedGroup, serviceList v1alpha1.ServiceSpecList) error {
 	pod := corev1.Pod{}
 
