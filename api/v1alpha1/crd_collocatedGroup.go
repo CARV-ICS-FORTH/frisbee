@@ -69,14 +69,15 @@ type CollocatedGroupStatus struct {
 	ExpectedServices ServiceSpecList `json:"expectedServices"`
 }
 
-func (s *CollocatedGroup) GetLifecycle() []*Lifecycle {
-	return []*Lifecycle{&s.Status.Lifecycle}
+func (in *CollocatedGroup) GetLifecycle() []*Lifecycle {
+	return []*Lifecycle{&in.Status.Lifecycle}
 }
 
-func (s *CollocatedGroup) SetLifecycle(lifecycle Lifecycle) {
-	s.Status.Lifecycle = lifecycle
+func (in *CollocatedGroup) SetLifecycle(lifecycle Lifecycle) {
+	in.Status.Lifecycle = lifecycle
 }
 
+// CollocatedGroupList returns a list of CollocatedGroup objects
 // +kubebuilder:object:root=true
 type CollocatedGroupList struct {
 	metav1.TypeMeta `json:",inline"`

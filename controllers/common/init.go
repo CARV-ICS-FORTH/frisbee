@@ -56,14 +56,14 @@ func SetCommon(mgr ctrl.Manager, logger logr.Logger) {
 }
 
 func SetGrafana(ctx context.Context, apiURI string) error {
-	client, err := sdk.NewClient(apiURI, "", sdk.DefaultHTTPClient)
+	grafanaClient, err := sdk.NewClient(apiURI, "", sdk.DefaultHTTPClient)
 	if err != nil {
-		return errors.Wrapf(err, "client error")
+		return errors.Wrapf(err, "grafanaClient error")
 	}
 
 	// retry until Grafana is ready to receive annotations.
 	err = retry.OnError(DefaultBackoff, func(_ error) bool { return true }, func() error {
-		_, err := client.GetHealth(ctx)
+		_, err := grafanaClient.GetHealth(ctx)
 
 		return errors.Wrapf(err, "grafana health error")
 	})
@@ -74,7 +74,7 @@ func SetGrafana(ctx context.Context, apiURI string) error {
 
 	Globals.Annotator = &GrafanaAnnotator{
 		ctx:    ctx,
-		Client: client,
+		Client: grafanaClient,
 	}
 
 	return nil

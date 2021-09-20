@@ -82,14 +82,15 @@ type DistributedGroupStatus struct {
 	ExpectedServices ServiceSpecList `json:"expectedServices,omitempty"`
 }
 
-func (s *DistributedGroup) GetLifecycle() []*Lifecycle {
-	return []*Lifecycle{&s.Status.Lifecycle}
+func (in *DistributedGroup) GetLifecycle() []*Lifecycle {
+	return []*Lifecycle{&in.Status.Lifecycle}
 }
 
-func (s *DistributedGroup) SetLifecycle(lifecycle Lifecycle) {
-	s.Status.Lifecycle = lifecycle
+func (in *DistributedGroup) SetLifecycle(lifecycle Lifecycle) {
+	in.Status.Lifecycle = lifecycle
 }
 
+// DistributedGroupList returns a list of DistributedGroup objects
 // +kubebuilder:object:root=true
 type DistributedGroupList struct {
 	metav1.TypeMeta `json:",inline"`

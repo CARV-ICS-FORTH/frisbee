@@ -18,37 +18,8 @@
 package wait
 
 import (
-	"fmt"
 	"sync"
 )
-
-/*
-// ChannelMerge forwards the output of multiple channels into a single channel.
-func ChannelMerge(cs ...<-chan interface{}) <-chan interface{} {
-	var wg sync.WaitGroup
-
-	wg.Add(len(cs))
-
-	out := make(chan interface{})
-
-	for _, c := range cs {
-		go func(c <-chan interface{}) {
-			for v := range c {
-				out <- v
-			}
-			wg.Done()
-		}(c)
-	}
-
-	go func() {
-		wg.Wait()
-		close(out)
-	}()
-
-	return out
-}
-
-*/
 
 // ChannelWaitForChildren blocks waiting for the returned children to be closed (by the caller) before
 // closing the parent channel.
@@ -81,32 +52,4 @@ func ChannelWaitForChildren(num int) (parent chan struct{}, children []chan stru
 	}()
 
 	return parent, children
-}
-
-// ChannelWait blocks waiting for the received channels to be closed before closing the outgoing parent channel.
-// The chans is expected to be at least 1. If not, the functions panics.
-func ChannelWait(chans ...<-chan struct{}) <-chan struct{} {
-	if len(chans) < 1 {
-		panic(fmt.Sprintf("chans is expected to be greater than 1. Current: %d", len(chans)))
-	}
-
-	out := make(chan struct{})
-
-	var wg sync.WaitGroup
-
-	wg.Add(len(chans))
-
-	for i := 0; i < len(chans); i++ {
-		go func(c <-chan struct{}) {
-			<-c
-			wg.Done()
-		}(chans[i])
-	}
-
-	go func() {
-		wg.Wait()
-		close(out)
-	}()
-
-	return out
 }

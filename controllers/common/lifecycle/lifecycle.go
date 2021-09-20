@@ -150,7 +150,7 @@ func WithLogger(logger logr.Logger) Option {
 }
 
 // WithExpectedPhase blocks waiting for the next Phase of the parent. If it is the one expected, it returns nil.
-// Otherwise it returns an error stating what was expected and what was got.
+// Otherwise, it returns an error stating what was expected and what was got.
 func WithExpectedPhase(expected v1alpha1.Phase) Option {
 	return func(s *Options) {
 		s.ExpectedPhase = expected
@@ -282,7 +282,7 @@ func (lc *ManagedLifecycle) Run(ctx context.Context) error {
 	}
 
 	// Set up an event handler for when DistributedGroup resources change. This
-	// handler will lookup the owner of the given DistributedGroup, and if it is
+	// handler will check the owner of the given DistributedGroup, and if it is
 	// owned by a Foo (DistributedGroup) resource will enqueue that Foo resource for
 	// processing. This way, we don't need to implement custom logic for
 	// handling DistributedGroup resources. More info on this pattern:

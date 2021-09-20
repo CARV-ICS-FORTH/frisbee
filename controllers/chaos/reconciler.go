@@ -68,7 +68,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	handler := r.dispatch(obj.Spec.Type)
 
-	// The reconcile logic
+	// Here goes the actual reconcile logic
 	switch obj.Status.Phase {
 	case v1alpha1.PhaseUninitialized:
 		return lifecycle.Pending(ctx, &obj, "received chaos request")

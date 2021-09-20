@@ -155,7 +155,6 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 }
 
 func Update(ctx context.Context, obj client.Object) (ctrl.Result, error) {
-	// we need to Update a delete object in order to remove the finalizers.
 	updateError := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		return Globals.Client.Update(ctx, obj)
 	})

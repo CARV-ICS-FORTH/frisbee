@@ -31,5 +31,3 @@ var DefaultBackoff = wait.Backoff{
 }
 
 var DefaultTimeout = 30 * time.Second
-
-var GracefulPeriodToRun = 1 * time.Minute

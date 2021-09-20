@@ -52,16 +52,16 @@ type Scheme struct {
 	// +optional
 	Inputs *Inputs `json:"inputs,omitempty"`
 
-	// Spec is the Service specification whose values will be replaced by arameters.
+	// Spec is the Service specification whose values will be replaced by parameters.
 	Spec string `json:"spec"`
 }
 
 type TemplateSpec struct {
-	// Services are lookups to service specifications
+	// Services are indices to service specifications
 	// +optional
 	Services map[string]Scheme `json:"services,omitempty"`
 
-	// Monitors are lookups to monitoring packages
+	// Monitors are indices to monitoring packages
 	// +optional
 	Monitors map[string]Scheme `json:"monitors,omitempty"`
 }
@@ -86,14 +86,15 @@ type TemplateStatus struct {
 	IsRegistered bool `json:"isRegistered"`
 }
 
-func (s *Template) GetLifecycle() []*Lifecycle {
-	return []*Lifecycle{&s.Status.Lifecycle}
+func (in *Template) GetLifecycle() []*Lifecycle {
+	return []*Lifecycle{&in.Status.Lifecycle}
 }
 
-func (s *Template) SetLifecycle(lifecycle Lifecycle) {
-	s.Status.Lifecycle = lifecycle
+func (in *Template) SetLifecycle(lifecycle Lifecycle) {
+	in.Status.Lifecycle = lifecycle
 }
 
+// TemplateList returns a list of Template objects
 // +kubebuilder:object:root=true
 type TemplateList struct {
 	metav1.TypeMeta `json:",inline"`

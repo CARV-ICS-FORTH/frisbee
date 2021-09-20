@@ -78,7 +78,7 @@ func (c *GrafanaAnnotator) Insert(ga sdk.CreateAnnotationRequest) (reqID uint) {
 
 	if gaResp.Message == nil {
 		runtime.HandleError(errors.Wrapf(err, "empty annotation response"))
-	} else if *gaResp.Message != string(statusAnnotationAdded) {
+	} else if *gaResp.Message != statusAnnotationAdded {
 		runtime.HandleError(errors.Wrapf(err, "expected message '%s', but got '%s'", statusAnnotationAdded, *gaResp.Message))
 	}
 
@@ -100,7 +100,7 @@ func (c *GrafanaAnnotator) Patch(reqID uint, ga sdk.PatchAnnotationRequest) {
 
 	if gaResp.Message == nil {
 		runtime.HandleError(errors.Wrapf(err, "empty annotation response"))
-	} else if *gaResp.Message != string(statusAnnotationPatched) {
+	} else if *gaResp.Message != statusAnnotationPatched {
 		runtime.HandleError(errors.Wrapf(err, "expected message '%s', but got '%s'", statusAnnotationPatched, *gaResp.Message))
 	}
 }

@@ -27,7 +27,7 @@ Actually, it is impossible to list them completely. Just remember one principle:
 
 ### Preparation
 
-Before you contribute, you need to register a Github ID. Prepare the following environment:
+Before you contribute, you need to register a GitHub ID. Prepare the following environment:
 
 * go
 * git
@@ -96,8 +96,8 @@ message. In general, we advocate the following commit message type:
 * feat: A new feature
 * fix: A bug fix
 * docs: Documentation only changes
-* style: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)
-* refactor: A code change that neither fixes a bug or adds a feature
+* style: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc.)
+* refactor: A code change that neither fixes a bug nor adds a feature
 * perf: A code change that improves performance
 * test: Adding missing or correcting existing tests
 * chore: Changes to the build process or auxiliary tools and libraries such as documentation generation
@@ -142,7 +142,7 @@ few individual PRs.
 All code should be well reviewed by one or more committers. Some principles:
 
 - Readability: Important code should be well-documented. Comply with our code style.
-- Elegance: New functions, classes or components should be well designed.
+- Elegance: New functions, classes or components should be well-designed.
 - Testability: Important code should be well-tested (high unit test coverage).
 
 ## Others
