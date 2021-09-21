@@ -28,6 +28,7 @@ import (
 	"github.com/fnikolai/frisbee/controllers/common/lifecycle"
 	"github.com/fnikolai/frisbee/controllers/template/helpers"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 	netv1 "k8s.io/api/networking/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -47,17 +48,23 @@ func (r *Reconciler) newMonitoringStack(ctx context.Context, obj *v1alpha1.Workf
 		return nil
 	}
 
+	logrus.Warnf("Create Prometheus")
+
 	prometheus, err := r.installPrometheus(ctx, obj)
 	if err != nil {
 		return errors.Wrapf(err, "prometheus error")
 	}
+
+	logrus.Warnf("Create Grafana")
 
 	grafana, err := r.installGrafana(ctx, obj)
 	if err != nil {
 		return errors.Wrapf(err, "grafana error")
 	}
 
-	// Make Prometheus and Grafana accessible from outside the Cluster
+	logrus.Warnf("Create Ingress")
+
+	// Make Prometheus and Grafana accessible from outside the ByCluster
 	if obj.Spec.Ingress != nil {
 		if err := r.installIngress(ctx, obj, prometheus, grafana); err != nil {
 			return errors.Wrapf(err, "ingress error")
@@ -78,25 +85,29 @@ func (r *Reconciler) newMonitoringStack(ctx context.Context, obj *v1alpha1.Workf
 	return nil
 }
 
-func (r *Reconciler) installPrometheus(ctx context.Context, obj *v1alpha1.Workflow) (*v1alpha1.DistributedGroup, error) {
-	prom := v1alpha1.DistributedGroup{}
+func (r *Reconciler) installPrometheus(ctx context.Context, obj *v1alpha1.Workflow) (*v1alpha1.Service, error) {
+	prom := v1alpha1.Service{}
 
 	{ // metadata
+		common.SetOwner(obj, &prom)
 		prom.SetName("prometheus")
-		if err := common.SetOwner(obj, &prom); err != nil {
-			return nil, errors.Wrapf(err, "ownership error")
-		}
 	}
 
 	{ // spec
-		prom.Spec.Instances = 1
-		prom.Spec.TemplateRef = prometheusTemplate
+		spec, err := helpers.GetServiceSpec(ctx, helpers.ParseRef(obj.GetNamespace(), prometheusTemplate))
+		if err != nil {
+			return nil, errors.Wrapf(err, "spec spec error")
+		}
+
+		spec.DeepCopyInto(&prom.Spec)
 	}
 
 	{ // deployment
-		if err := r.Client.Create(ctx, &prom); err != nil {
+		if err := r.GetClient().Create(ctx, &prom); err != nil {
 			return nil, errors.Wrapf(err, "request error")
 		}
+
+		logrus.Warnf("Waiting for prometheus to become ready ...")
 
 		if err := lifecycle.WaitRunningAndUpdate(ctx, &prom); err != nil {
 			return nil, errors.Wrapf(err, "prometheus is not running")
@@ -108,14 +119,12 @@ func (r *Reconciler) installPrometheus(ctx context.Context, obj *v1alpha1.Workfl
 	return &prom, nil
 }
 
-func (r *Reconciler) installGrafana(ctx context.Context, obj *v1alpha1.Workflow) (*v1alpha1.DistributedGroup, error) {
-	grafana := v1alpha1.DistributedGroup{}
+func (r *Reconciler) installGrafana(ctx context.Context, obj *v1alpha1.Workflow) (*v1alpha1.Service, error) {
+	grafana := v1alpha1.Service{}
 
 	{ // metadata
+		common.SetOwner(obj, &grafana)
 		grafana.SetName("grafana")
-		if err := common.SetOwner(obj, &grafana); err != nil {
-			return nil, errors.Wrapf(err, "ownership error")
-		}
 	}
 
 	{ // spec
@@ -129,12 +138,11 @@ func (r *Reconciler) installGrafana(ctx context.Context, obj *v1alpha1.Workflow)
 			return nil, errors.Wrapf(err, "import dashboards")
 		}
 
-		grafana.Spec.Instances = 1
-		grafana.Spec.ServiceSpec = spec
+		spec.DeepCopyInto(&grafana.Spec)
 	}
 
 	{ // deployment
-		if err := r.Client.Create(ctx, &grafana); err != nil {
+		if err := r.GetClient().Create(ctx, &grafana); err != nil {
 			return nil, errors.Wrapf(err, "request error")
 		}
 
@@ -160,7 +168,7 @@ func (r *Reconciler) importDashboards(ctx context.Context, obj *v1alpha1.Workflo
 		configMapKey := client.ObjectKey{Namespace: obj.GetNamespace(), Name: monSpec.Dashboard.FromConfigMap}
 		configMap := corev1.ConfigMap{}
 
-		if err := r.Client.Get(ctx, configMapKey, &configMap); err != nil {
+		if err := r.GetClient().Get(ctx, configMapKey, &configMap); err != nil {
 			return errors.Wrapf(err, "cannot get configmap %s", configMapKey)
 		}
 
@@ -196,10 +204,11 @@ func (r *Reconciler) importDashboards(ctx context.Context, obj *v1alpha1.Workflo
 	return nil
 }
 
-func (r *Reconciler) installIngress(ctx context.Context, obj *v1alpha1.Workflow, groups ...*v1alpha1.DistributedGroup) error {
+func (r *Reconciler) installIngress(ctx context.Context, obj *v1alpha1.Workflow, services ...*v1alpha1.Service) error {
 	ingress := netv1.Ingress{}
 
 	{ // metadata
+		common.SetOwner(obj, &ingress)
 		ingress.SetName("frisbee")
 
 		if obj.Spec.Ingress.UseAmbassador {
@@ -207,22 +216,16 @@ func (r *Reconciler) installIngress(ctx context.Context, obj *v1alpha1.Workflow,
 				"kubernetes.io/ingress.class": "ambassador",
 			})
 		}
-
-		if err := common.SetOwner(obj, &ingress); err != nil {
-			return errors.Wrapf(err, "ownership failed")
-		}
 	}
 
 	{ // spec
 		pathtype := netv1.PathTypePrefix
 
-		rules := make([]netv1.IngressRule, 0, len(groups))
+		rules := make([]netv1.IngressRule, 0, len(services))
 
-		for _, group := range groups {
-			service := group.Status.ExpectedServices[0]
-
+		for _, service := range services {
 			// we now that prometheus and grafana have a single container
-			port := service.Container.Ports[0]
+			port := service.Spec.Container.Ports[0]
 
 			rule := netv1.IngressRule{
 				Host: virtualhost(service.Name, obj.Spec.Ingress.Host),
@@ -253,7 +256,7 @@ func (r *Reconciler) installIngress(ctx context.Context, obj *v1alpha1.Workflow,
 	}
 
 	{ // deployment
-		if err := r.Client.Create(ctx, &ingress); err != nil {
+		if err := r.GetClient().Create(ctx, &ingress); err != nil {
 			return errors.Wrapf(err, "unable to create ingress")
 		}
 	}

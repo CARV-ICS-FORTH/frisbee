@@ -24,11 +24,8 @@ import (
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/common"
 	"github.com/fnikolai/frisbee/controllers/common/lifecycle"
-	"github.com/fnikolai/frisbee/controllers/common/selector/service"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	corev1 "k8s.io/api/core/v1"
-	k8errors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 type Workflow struct {
@@ -56,11 +53,8 @@ func (r *Reconciler) scheduleActions(topCtx context.Context, obj *v1alpha1.Workf
 		case "Wait": // expect command will block the entire controller
 			err = r.wait(ctx, w, action, *action.Wait)
 
-		case "DistributedGroup":
-			err = r.distributedGroup(ctx, w, action)
-
-		case "CollocatedGroup":
-			err = r.collocatedGroup(ctx, w, action)
+		case "Cluster":
+			err = r.cluster(ctx, w, action)
 
 		case "Stop":
 			err = r.stop(ctx, w, action)
@@ -99,7 +93,7 @@ func (r *Reconciler) wait(ctx context.Context, w Workflow, action v1alpha1.Actio
 
 		err := lifecycle.New(
 			lifecycle.Watch(kind, spec.Success...),
-			lifecycle.WithFilters(lifecycle.FilterByParent(w), lifecycle.FilterByNames(spec.Success...)),
+			lifecycle.WithFilters(lifecycle.FilterByParent(w.GetUID()), lifecycle.FilterByNames(spec.Success...)),
 			lifecycle.WithLogger(r.Logger),
 			lifecycle.WithExpectedPhase(v1alpha1.PhaseSuccess),
 		).Run(ctx)
@@ -126,7 +120,7 @@ func (r *Reconciler) wait(ctx context.Context, w Workflow, action v1alpha1.Actio
 
 		err := lifecycle.New(
 			lifecycle.Watch(kind, spec.Running...),
-			lifecycle.WithFilters(lifecycle.FilterByParent(w), lifecycle.FilterByNames(spec.Running...)),
+			lifecycle.WithFilters(lifecycle.FilterByParent(w.GetUID()), lifecycle.FilterByNames(spec.Running...)),
 			lifecycle.WithLogger(r.Logger),
 			lifecycle.WithExpectedPhase(v1alpha1.PhaseRunning),
 		).Run(ctx)
@@ -152,56 +146,28 @@ func (r *Reconciler) wait(ctx context.Context, w Workflow, action v1alpha1.Actio
 	return nil
 }
 
-func (r *Reconciler) distributedGroup(ctx context.Context, w Workflow, action v1alpha1.Action) error {
+func (r *Reconciler) cluster(ctx context.Context, w Workflow, action v1alpha1.Action) error {
 	if action.DependsOn != nil {
 		if err := r.wait(ctx, w, action, *action.DependsOn); err != nil {
-			return errors.Wrapf(err, "dependencies failed")
+			return errors.Wrapf(err, "cluster dependencies")
 		}
 	}
 
-	group := v1alpha1.DistributedGroup{}
-	group.SetName(action.Name)
-	action.DistributedGroup.DeepCopyInto(&group.Spec)
+	cluster := v1alpha1.Cluster{}
 
-	if err := common.SetOwner(w.Workflow, &group); err != nil {
-		return errors.Wrapf(err, "ownership failed")
-	}
+	common.SetOwner(w.Workflow, &cluster)
+	cluster.SetName(action.Name)
 
-	if err := r.Client.Create(ctx, &group); err != nil {
-		return errors.Wrapf(err, "create failed")
-	}
+	action.Cluster.DeepCopyInto(&cluster.Spec)
 
-	// TODO: Fix it with respect to threads
-	// common.Update(ctx, w, &v1alpha1.DistributedGroup{}, group.GetName())
-
-	w.waitableActions[action.Name] = &group
-
-	return nil
-}
-
-func (r *Reconciler) collocatedGroup(ctx context.Context, w Workflow, action v1alpha1.Action) error {
-	if action.DependsOn != nil {
-		if err := r.wait(ctx, w, action, *action.DependsOn); err != nil {
-			return errors.Wrapf(err, "dependencies failed")
-		}
-	}
-
-	group := v1alpha1.CollocatedGroup{}
-	group.SetName(action.Name)
-	action.CollocatedGroup.DeepCopyInto(&group.Spec)
-
-	if err := common.SetOwner(w.Workflow, &group); err != nil {
-		return errors.Wrapf(err, "ownership failed")
-	}
-
-	if err := r.Client.Create(ctx, &group); err != nil {
-		return errors.Wrapf(err, "create failed")
+	if err := r.GetClient().Create(ctx, &cluster); err != nil {
+		return errors.Wrapf(err, "cluster create")
 	}
 
 	// TODO: Fix it with respect to threads
-	// common.Update(ctx, w, &v1alpha1.CollocatedGroup{}, group.GetName())
+	// common.Update(ctx, w, &v1alpha1.ByCluster{}, cluster.GetName())
 
-	w.waitableActions[action.Name] = &group
+	w.waitableActions[action.Name] = &cluster
 
 	return nil
 }
@@ -213,60 +179,64 @@ func (r *Reconciler) stop(ctx context.Context, w Workflow, action v1alpha1.Actio
 		}
 	}
 
-	// Resolve affected services
-	services := service.Select(ctx, action.Stop.Selector)
-	if len(services) == 0 {
-		r.Logger.Info("no services to stop", "action", action.Name)
+	panic("STOP IS NOT SUPPORTED")
 
-		return nil
-	}
+	/*
+		// Resolve affected services
+		services := service.Select(ctx, action.Stop.Selector)
+		if len(services) == 0 {
+			r.Logger.Info("no services to stop", "action", action.Name)
 
-	// Without Schedule
-	if action.Stop.Schedule == nil {
-		for _, instance := range services {
-			discovery := corev1.Pod{}
-
-			discovery.SetNamespace(instance.Namespace)
-			discovery.SetName(instance.Name)
-
-			logrus.Warn("DELETE ")
-
-			err := lifecycle.Delete(ctx, r.Client, &discovery)
-			if err != nil && !k8errors.IsNotFound(err) {
-				return errors.Wrapf(err, "cannot delete instance %s", instance.NamespacedName)
-			}
-
-			r.Logger.Info("stop", "instance", instance.NamespacedName)
+			return nil
 		}
-	} else { // With Schedule
-		r.Logger.Info("Yield with Schedule", "services", services)
 
-		for instance := range common.YieldByTime(ctx, action.Stop.Schedule.Cron, services...) {
-			discovery := corev1.Pod{}
+		// Without Schedule
+		if action.Stop.Schedule == nil {
+			for _, instance := range services {
+				discovery := corev1.Pod{}
 
-			discovery.SetNamespace(instance.Namespace)
-			discovery.SetName(instance.Name)
+				discovery.SetNamespace(instance.Namespace)
+				discovery.SetName(instance.Name)
 
-			err := lifecycle.Delete(ctx, r.Client, &discovery)
-			if err != nil && !k8errors.IsNotFound(err) {
-				return errors.Wrapf(err, "cannot delete instance %s", instance.NamespacedName)
+				logrus.Warn("DELETE ")
+
+				err := lifecycle.Delete(ctx, r.Client, &discovery)
+				if err != nil && !k8errors.IsNotFound(err) {
+					return errors.Wrapf(err, "cannot delete instance %s", instance.NamespacedName)
+				}
+
+				r.Logger.Info("stop", "instance", instance.NamespacedName)
 			}
+		} else { // With Schedule
+			r.Logger.Info("Yield with Schedule", "services", services)
 
-			r.Logger.Info("stop", "instance", instance)
+			for instance := range common.YieldByTime(ctx, action.Stop.Schedule.Cron, services...) {
+				discovery := corev1.Pod{}
+
+				discovery.SetNamespace(instance.Namespace)
+				discovery.SetName(instance.Name)
+
+				err := lifecycle.Delete(ctx, r.Client, &discovery)
+				if err != nil && !k8errors.IsNotFound(err) {
+					return errors.Wrapf(err, "cannot delete instance %s", instance.NamespacedName)
+				}
+
+				r.Logger.Info("stop", "instance", instance)
+			}
 		}
-	}
 
-	return nil
+	*/
+
+	// return nil
 }
 
 func (r *Reconciler) chaos(ctx context.Context, w Workflow, action v1alpha1.Action) error {
 	chaos := v1alpha1.Chaos{}
-	chaos.SetName(action.Name)
-	action.Chaos.DeepCopyInto(&chaos.Spec)
 
-	if err := common.SetOwner(w.Workflow, &chaos); err != nil {
-		return errors.Wrapf(err, "ownership failed")
-	}
+	common.SetOwner(w.Workflow, &chaos)
+	chaos.SetName(action.Name)
+
+	action.Chaos.DeepCopyInto(&chaos.Spec)
 
 	if action.DependsOn != nil {
 		if err := r.wait(ctx, w, action, *action.DependsOn); err != nil {
@@ -274,7 +244,7 @@ func (r *Reconciler) chaos(ctx context.Context, w Workflow, action v1alpha1.Acti
 		}
 	}
 
-	if err := r.Client.Create(ctx, &chaos); err != nil {
+	if err := r.GetClient().Create(ctx, &chaos); err != nil {
 		return errors.Wrapf(err, "chaos injection failed")
 	}
 

@@ -18,20 +18,28 @@
 package v1alpha1
 
 import (
-	"strings"
-
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type NamespacedName struct {
-	Namespace string `json:"namespace"`
-	Name      string `json:"name"`
+func init() {
+	SchemeBuilder.Register(&Service{}, &ServiceList{})
 }
 
-type Mesh struct {
-	// PortRef is a list of names of Ports that participate in the Mesh (autodiscovery + rewiring).
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+
+type Service struct {
+	metav1.TypeMeta `json:",inline"`
+
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	// Spec defines the behavior of the object
+	Spec ServiceSpec `json:"spec"`
+
+	// Most recently observed status of the object
 	// +optional
-	PortRefs []string `json:"addPorts"`
+	Status ServiceStatus `json:"status,omitempty"`
 }
 
 // Agents are sidecar services will be deployed in the same Pod as the Service container.
@@ -42,20 +50,9 @@ type Agents struct {
 }
 
 type ServiceSpec struct {
-	// NamespacedName is the name of the desired service. If unspecified, it is automatically set by
-	// the respective controller.
-	// +optional
-	NamespacedName `json:"namespacedName"`
-
-	*Mesh `json:",inline"`
-
 	// List of sidecar agents
 	// +optional
 	Agents *Agents `json:"agents,omitempty"`
-
-	// List of volumes that can be mounted by containers belonging to the pod.
-	// +optional
-	Volumes []v1.Volume `json:"volumes,omitempty"`
 
 	// Container is the container running the application
 	Container v1.Container `json:"container,omitempty"`
@@ -63,6 +60,16 @@ type ServiceSpec struct {
 	// Resources specifies limitations as to how the container will access host resources.
 	// +optional
 	Resources *Resources `json:"resources,omitempty"`
+
+	// List of volumes that can be mounted by containers belonging to the pod.
+	// +optional
+	Volumes []v1.Volume `json:"volumes,omitempty"`
+
+	// Domain specifies the location where Service will be placed. For this to work,
+	// the nodes included in the domain must have the label domain:{{domain-name}}.
+	// for the moment simply match domain to a specific node. this will change in the future
+	// +optional
+	Domain string `json:"domain,omitempty"`
 }
 
 // NIC specifies the capabilities of the emulated network interface.
@@ -94,50 +101,22 @@ type Resources struct {
 	Disk   Disk   `json:"disk,omitempty"`
 }
 
-const (
-	idListSeparator = " "
-)
-
-type ServiceSpecList []*ServiceSpec
-
-func (in ServiceSpecList) String() string {
-	return strings.Join(in.GetNames(), idListSeparator)
+type ServiceStatus struct {
+	Lifecycle `json:",inline"`
 }
 
-func (in ServiceSpecList) GetNames() []string {
-	names := make([]string, len(in))
-
-	for i, service := range in {
-		names[i] = service.NamespacedName.Name
-	}
-
-	return names
+func (in *Service) GetLifecycle() []*Lifecycle {
+	return []*Lifecycle{&in.Status.Lifecycle}
 }
 
-func (in ServiceSpecList) GetNamespaces() []string {
-	namespace := make([]string, len(in))
-
-	for i, service := range in {
-		namespace[i] = service.NamespacedName.Namespace
-	}
-
-	return namespace
+func (in *Service) SetLifecycle(lifecycle Lifecycle) {
+	in.Status.Lifecycle = lifecycle
 }
 
-// ByNamespace return the services by the namespace they belong to.
-func (in ServiceSpecList) ByNamespace() map[string][]string {
-	all := make(map[string][]string)
-
-	for _, s := range in {
-		// get namespace
-		sublist := all[s.NamespacedName.Namespace]
-
-		// append service to the namespace
-		sublist = append(sublist, s.NamespacedName.Name)
-
-		// update namespace
-		all[s.NamespacedName.Namespace] = sublist
-	}
-
-	return all
+// ServiceList returns a list of Service objects
+// +kubebuilder:object:root=true
+type ServiceList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           SList `json:"items"`
 }

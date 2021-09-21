@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package chaos
+package service
 
 import (
 	"context"
@@ -26,25 +26,29 @@ import (
 	"github.com/fnikolai/frisbee/controllers/common/lifecycle"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
+	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// +kubebuilder:rbac:groups=frisbee.io,resources=chaoss,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=frisbee.io,resources=chaoss/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=frisbee.io,resources=chaoss/finalizers,verbs=update
+// +kubebuilder:rbac:groups=frisbee.io,resources=services,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=frisbee.io,resources=services/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=frisbee.io,resources=services/finalizers,verbs=update
 
-func NewController(mgr ctrl.Manager, logger logr.Logger) error {
+// +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch;
+// +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;
+
+func NewController(ctx context.Context, mgr ctrl.Manager, logger logr.Logger) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1alpha1.Chaos{}).
-		Named("chaos").
+		Named("service").
+		For(&v1alpha1.Service{}).
 		Complete(&Reconciler{
 			Manager: mgr,
-			Logger:  logger.WithName("chaos"),
+			Logger:  logger.WithName("service"),
 		})
 }
 
-// Reconciler reconciles a Reference object
+// Reconciler reconciles a Templates object.
 type Reconciler struct {
 	ctrl.Manager
 	logr.Logger
@@ -53,7 +57,7 @@ type Reconciler struct {
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	var obj v1alpha1.Chaos
+	var obj v1alpha1.Service
 
 	var ret bool
 	result, err := common.Reconcile(ctx, r, req, &obj, &ret)
@@ -66,43 +70,47 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		r.Logger.Info("<- Reconcile", "kind", reflect.TypeOf(obj), "name", obj.GetName(), "lifecycle", obj.Status.Phase)
 	}()
 
-	handler := r.dispatch(obj.Spec.Type)
-
-	// Here goes the actual reconcile logic
+	// reconciliation logic
 	switch obj.Status.Phase {
 	case v1alpha1.PhaseUninitialized:
-		return lifecycle.Pending(ctx, &obj, "received chaos request")
+		pod, err := r.prepare(ctx, &obj)
+		if err != nil {
+			return lifecycle.Failed(ctx, &obj, errors.Wrapf(err, "unable to create pod"))
+		}
+
+		if err := lifecycle.New(
+			lifecycle.WatchExternal(&corev1.Pod{}, lifecycle.Pod(), pod.GetName()),
+			lifecycle.WithFilters(lifecycle.FilterByParent(obj.GetUID())),
+			lifecycle.WithAnnotator(&lifecycle.PointAnnotation{}), // Register event to grafana
+			lifecycle.WithLogger(r.Logger),
+			lifecycle.WithUpdateParentStatus(obj.DeepCopy()),
+		).Run(ctx); err != nil {
+			return lifecycle.Failed(ctx, &obj, errors.Wrapf(err, "watcher failed"))
+		}
+
+		if err := r.GetClient().Create(ctx, pod); err != nil {
+			return lifecycle.Failed(ctx, &obj, err)
+		}
+
+		return common.Stop()
 
 	case v1alpha1.PhasePending:
-		if err := handler.Inject(ctx, &obj); err != nil {
-			return lifecycle.Failed(ctx, &obj, errors.Wrapf(err, "injection failed"))
-		}
+		// lifecycle.WatchExternal(&v1.Pod{}, lifecycle.Pod(), expected.GetNames()...),
 
 		return common.Stop()
 
 	case v1alpha1.PhaseRunning:
-		if err := handler.WaitForDuration(ctx, &obj); err != nil {
-			return lifecycle.Failed(ctx, &obj, errors.Wrapf(err, "chaos failed"))
-		}
-
-		return lifecycle.Success(ctx, &obj, "chaos revoked")
+		return common.Stop()
 
 	case v1alpha1.PhaseSuccess:
-		r.Logger.Info("Chaos completed", "name", obj.GetName())
-
-		if err := handler.Revoke(ctx, &obj); err != nil {
-			return lifecycle.Failed(ctx, &obj, errors.Wrapf(err, "unable to revoke chaos"))
-		}
-
+		r.Logger.Info("garbage collection was complete", "group", obj.GetName())
 		return common.Stop()
 
 	case v1alpha1.PhaseFailed:
-		r.Logger.Info("Chaos failed", "name", obj.GetName())
-
+		r.Logger.Info("Service has failed", "name", obj.GetName())
 		return common.Stop()
 
-	case v1alpha1.PhaseChaos:
-		// These phases should not happen in the workflow
+	case v1alpha1.PhaseChaos: // Invalid
 		panic(errors.Errorf("invalid lifecycle phase %s", obj.Status.Phase))
 
 	default:
@@ -111,27 +119,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 }
 
 func (r *Reconciler) Finalizer() string {
-	return "chaoss.frisbee.io/finalizer"
+	return "services.frisbee.io/finalizer"
 }
 
 func (r *Reconciler) Finalize(obj client.Object) error {
 	r.Logger.Info("Finalize", "kind", reflect.TypeOf(obj), "name", obj.GetName())
 
 	return nil
-}
-
-type chaoHandler interface {
-	Inject(ctx context.Context, obj *v1alpha1.Chaos) error
-	WaitForDuration(ctx context.Context, obj *v1alpha1.Chaos) error
-	Revoke(ctx context.Context, obj *v1alpha1.Chaos) error
-}
-
-func (r *Reconciler) dispatch(faultType v1alpha1.FaultType) chaoHandler {
-	switch faultType {
-	case v1alpha1.FaultPartition:
-		return &partition{r: r}
-
-	default:
-		panic("should never happen")
-	}
 }

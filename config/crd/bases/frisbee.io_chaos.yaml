@@ -43,21 +43,29 @@ spec:
                     properties:
                       macro:
                         description: Macro abstract selector parameters into a structured
-                          string (e.g, .groupservice.master.all). Every parsed field
-                          is represents an inner structure of the selector. In case
-                          of invalid macro, the selector will return empty results.
-                          Macro conflicts with any other parameter.
+                          string (e.g, .cluster.master.all). Every parsed field is
+                          represents an inner structure of the selector. In case of
+                          invalid macro, the selector will return empty results. Macro
+                          conflicts with any other parameter.
                         type: string
                       match:
                         description: Match contains the rules to select target
                         properties:
-                          servicegroup:
+                          byCluster:
                             additionalProperties:
                               type: string
-                            description: ServiceGroup defines the service group where
-                              services belong. A ServiceGroup may refer either to
-                              a DistributedGroup or a CollocatedGroup. Therefore,
-                              we need to search both of them.
+                            description: ByCluster defines the service group where
+                              services belong.
+                            type: object
+                          byName:
+                            additionalProperties:
+                              items:
+                                type: string
+                              type: array
+                            description: ByName is a map of string keys and a set
+                              values that used to select services. The key defines
+                              the namespace which services belong, and the values
+                              is a set of service names.
                             type: object
                         type: object
                       mode:

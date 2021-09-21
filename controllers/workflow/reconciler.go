@@ -26,9 +26,7 @@ import (
 	"github.com/fnikolai/frisbee/controllers/common/lifecycle"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
-	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -37,25 +35,18 @@ import (
 // +kubebuilder:rbac:groups=frisbee.io,resources=workflows/finalizers,verbs=update
 
 func NewController(mgr ctrl.Manager, logger logr.Logger) error {
-	logger.Info("Start workflow reconciler")
-
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.Workflow{}).
 		Named("workflow").
 		Complete(&Reconciler{
-			Client:        mgr.GetClient(),
-			Logger:        logger.WithName("workflow"),
-			eventRecorder: mgr.GetEventRecorderFor("workflow"),
-			cache:         mgr.GetCache(),
+			Manager: mgr,
+			Logger:  logger.WithName("workflow"),
 		})
 }
 
 type Reconciler struct {
-	client.Client
+	ctrl.Manager
 	logr.Logger
-	eventRecorder record.EventRecorder
-
-	cache cache.Cache
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {

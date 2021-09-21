@@ -48,20 +48,20 @@ func parseMacro(ss *v1alpha1.ServiceSelector) {
 	filter := fields[3]
 
 	switch kind {
-	case "group":
-		ss.Match.ServiceGroup = map[string]string{common.Globals.Namespace: object}
+	case "cluster":
+		ss.Match.ByCluster = map[string]string{common.Globals.Namespace: object}
 		ss.Mode = v1alpha1.Convert(filter)
 
 	default:
-		panic(errors.Errorf("%v is not a valid macro", ss.Macro))
+		logrus.Warnf("%v is not a valid macro", *ss.Macro)
 	}
 }
 
-func Select(ctx context.Context, ss *v1alpha1.ServiceSelector) v1alpha1.ServiceSpecList {
+func Select(ctx context.Context, ss *v1alpha1.ServiceSelector) v1alpha1.SList {
 	if ss == nil {
 		logrus.Warn("empty service selector")
 
-		return []*v1alpha1.ServiceSpec{}
+		return nil
 	}
 
 	if ss.Macro != nil {
@@ -73,11 +73,11 @@ func Select(ctx context.Context, ss *v1alpha1.ServiceSelector) v1alpha1.ServiceS
 	if err != nil {
 		logrus.Warn(err)
 
-		return []*v1alpha1.ServiceSpec{}
+		return nil
 	}
 
 	if len(services) == 0 {
-		return []*v1alpha1.ServiceSpec{}
+		return nil
 	}
 
 	// filter services based on the pods
@@ -85,25 +85,24 @@ func Select(ctx context.Context, ss *v1alpha1.ServiceSelector) v1alpha1.ServiceS
 	if err != nil {
 		logrus.Warn(err)
 
-		return []*v1alpha1.ServiceSpec{}
+		return nil
 	}
 
 	return filteredServices
 }
 
-func selectServices(ctx context.Context, ss *v1alpha1.MatchServiceSpec) (v1alpha1.ServiceSpecList, error) {
+func selectServices(ctx context.Context, ss *v1alpha1.MatchService) (v1alpha1.SList, error) {
 	if ss == nil {
 		return nil, nil
 	}
 
-	var serviceList v1alpha1.ServiceSpecList
+	var serviceList v1alpha1.SList
 
-	/*  == Deprecated ==
-	// case 1. services are specifically specified
-	if len(ss.ServiceNames) > 0 {
-		for ns, names := range ss.ServiceNames {
+	// case 1. select services by namespace and by name.
+	if len(ss.ByName) > 0 {
+		for ns, names := range ss.ByName {
 			for _, name := range names {
-				var service v1alpha1.ServiceSpec
+				var service v1alpha1.Service
 
 				key := client.ObjectKey{
 					Namespace: ns,
@@ -111,56 +110,36 @@ func selectServices(ctx context.Context, ss *v1alpha1.MatchServiceSpec) (v1alpha
 				}
 
 				if err := common.Globals.Client.Get(ctx, key, &service); err != nil {
-					return nil, errors.Wrapf(err, "unable to find %s", key)
+					return nil, errors.Wrapf(err, "unable to find service %s", key)
 				}
 
-				services = append(services, service)
+				serviceList = append(serviceList, service)
 			}
 		}
 	}
 
-	*/
-
-	// case 2. servicegroups are specifically specified. Owner labels ia automatically attached to all
-	// components by SetOwnerRef(). Thus, we are looking for services that are owned by the desired servicegroup.
-	var groupedServiceList v1alpha1.ServiceSpecList
-	for nm, groupname := range ss.ServiceGroup {
+	// case 2. select services by they clusterName they belong to.
+	for nm, clusterName := range ss.ByCluster {
 		key := client.ObjectKey{ // search all
 			Namespace: nm,
-			Name:      groupname,
-		}
-
-		// a servicegroup can be either a distributedgroup or a collocated group. thus, we need to search both of them
-		{
-			var group v1alpha1.DistributedGroup
-
-			if err := common.Globals.Client.Get(ctx, key, &group); client.IgnoreNotFound(err) != nil {
-				return nil, errors.Wrapf(err, "unable to find group %s", key)
-			}
-
-			groupedServiceList = append(groupedServiceList, group.Status.ExpectedServices...)
+			Name:      clusterName,
 		}
 
 		{
-			var group v1alpha1.CollocatedGroup
+			var cluster v1alpha1.Cluster
 
-			if err := common.Globals.Client.Get(ctx, key, &group); client.IgnoreNotFound(err) != nil {
-				return nil, errors.Wrapf(err, "unable to find group %s", key)
+			if err := common.Globals.Client.Get(ctx, key, &cluster); err != nil {
+				return nil, errors.Wrapf(err, "unable to find clusterName %s", key)
 			}
 
-			groupedServiceList = append(groupedServiceList, group.Status.ExpectedServices...)
-		}
+			var slist v1alpha1.ServiceList
 
-		if len(groupedServiceList) == 0 {
-			common.Globals.Logger.Error(errors.New("potential error detected"), "empty group", "name", key)
-		}
-
-		serviceList = append(serviceList, groupedServiceList...)
-		/*
-			ss.Labels = labels.Merge(ss.Labels, map[string]string{
-				"owner": ss.ServiceGroup,
+			common.Globals.Client.List(ctx, &slist, client.MatchingLabels{
+				"owner": string(cluster.GetName()),
 			})
-		*/
+
+			serviceList = append(serviceList, slist.Items...)
+		}
 	}
 
 	/*
@@ -205,7 +184,7 @@ func selectServices(ctx context.Context, ss *v1alpha1.MatchServiceSpec) (v1alpha
 	return serviceList, nil
 }
 
-func filterServicesByMode(services []*v1alpha1.ServiceSpec, mode v1alpha1.Mode, value string) (v1alpha1.ServiceSpecList, error) {
+func filterServicesByMode(services v1alpha1.SList, mode v1alpha1.Mode, value string) (v1alpha1.SList, error) {
 	if len(services) == 0 {
 		return nil, errors.New("cannot generate services from empty list")
 	}
@@ -215,7 +194,7 @@ func filterServicesByMode(services []*v1alpha1.ServiceSpec, mode v1alpha1.Mode, 
 		index := getRandomNumber(len(services))
 		service := services[index]
 
-		return []*v1alpha1.ServiceSpec{service}, nil
+		return v1alpha1.SList{service}, nil
 	case v1alpha1.AllMode:
 		return services, nil
 
@@ -281,10 +260,10 @@ func getRandomNumber(max int) uint64 {
 	return num.Uint64()
 }
 
-func getFixedSubListFromServiceList(services v1alpha1.ServiceSpecList, num int) v1alpha1.ServiceSpecList {
+func getFixedSubListFromServiceList(services v1alpha1.SList, num int) v1alpha1.SList {
 	indexes := RandomFixedIndexes(0, uint(len(services)), uint(num))
 
-	filteredServices := make([]*v1alpha1.ServiceSpec, 0, len(indexes))
+	var filteredServices v1alpha1.SList
 
 	for _, index := range indexes {
 		filteredServices = append(filteredServices, services[index])

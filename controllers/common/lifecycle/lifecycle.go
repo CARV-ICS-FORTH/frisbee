@@ -62,8 +62,8 @@ type Options struct {
 	// ExpectedPhase indicate the next expected phase
 	ExpectedPhase v1alpha1.Phase
 
-	// UpdateParentObject will update the parent object
-	UpdateParentObject InnerObject
+	// UpdateParentObjectStatus will update the parent object
+	UpdateParentObjectStatus InnerObject
 }
 
 // Option is a wrapper for Functional Options.
@@ -157,10 +157,10 @@ func WithExpectedPhase(expected v1alpha1.Phase) Option {
 	}
 }
 
-// WithUpdateParent ...
-func WithUpdateParent(obj InnerObject) Option {
+// WithUpdateParentStatus ...
+func WithUpdateParentStatus(obj InnerObject) Option {
 	return func(s *Options) {
-		s.UpdateParentObject = obj
+		s.UpdateParentObjectStatus = obj
 	}
 }
 
@@ -192,7 +192,7 @@ func New(opts ...Option) *ManagedLifecycle {
 	lifecycle := ManagedLifecycle{
 		options:      options,
 		logger:       options.Logger,
-		parentObject: options.UpdateParentObject,
+		parentObject: options.UpdateParentObjectStatus,
 	}
 
 	// validate fields
@@ -281,11 +281,11 @@ func (lc *ManagedLifecycle) Run(ctx context.Context) error {
 		return errors.Wrapf(err, "unable to get informer for %s", unwrap(lc.options.WatchType).GetName())
 	}
 
-	// Set up an event handler for when DistributedGroup resources change. This
-	// handler will check the owner of the given DistributedGroup, and if it is
-	// owned by a Foo (DistributedGroup) resource will enqueue that Foo resource for
+	// Set up an event handler for when ByCluster resources change. This
+	// handler will check the owner of the given ByCluster, and if it is
+	// owned by a Foo (ByCluster) resource will enqueue that Foo resource for
 	// processing. This way, we don't need to implement custom logic for
-	// handling DistributedGroup resources. More info on this pattern:
+	// handling ByCluster resources. More info on this pattern:
 	// https://github.com/kubernetes/community/blob/8cafef897a22026d42f5e5bb3f104febe7e29830/contributors/devel/controllers.md
 	informer.AddEventHandler(cachetypes.FilteringResourceEventHandler{
 		FilterFunc: lc.filterFunc,

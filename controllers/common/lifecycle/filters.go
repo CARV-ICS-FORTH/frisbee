@@ -31,6 +31,18 @@ import (
 
 type FilterFunc func(obj interface{}) bool
 
+// MergeFilters run a combined list of filters.
+func MergeFilters(filters ...FilterFunc) FilterFunc {
+	return func(obj interface{}) bool {
+		for _, f := range filters {
+			if !f(obj) {
+				return false
+			}
+		}
+		return true
+	}
+}
+
 type Parent interface {
 	GetUID() types.UID
 	GetName() string
@@ -41,8 +53,8 @@ type Parent interface {
 // appropriate OwnerReference. It then enqueues that Foo resource to be processed. If the object does not
 // have an appropriate OwnerReference, it will simply be skipped. If the parent is empty, the object is passed
 // as if it belongs to this parent.
-func FilterByParent(parent Parent) FilterFunc {
-	if len(parent.GetUID()) == 0 {
+func FilterByParent(parent types.UID) FilterFunc {
+	if len(parent) == 0 {
 		panic("invalid parent UID")
 	}
 
@@ -73,11 +85,13 @@ func FilterByParent(parent Parent) FilterFunc {
 
 		// Update locate view of the dependent services
 		for _, owner := range object.GetOwnerReferences() {
-			if owner.UID == parent.GetUID() {
+			if owner.UID == parent {
 				return true
 			}
 		}
 
+		// The controller we found with this Name is not the same one that the
+		// ControllerRef points to.
 		// TODO: use it for debugging is you believe that you get more messages than expected
 		// logrus.Warnf("Mismatch parent %s for object %s", parent.GetName(), object.GetName())
 

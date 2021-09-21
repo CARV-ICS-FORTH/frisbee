@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package distributedgroup
+package cluster
 
 import (
 	"context"
@@ -26,87 +26,83 @@ import (
 	"github.com/fnikolai/frisbee/controllers/common/lifecycle"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
-	v1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// +kubebuilder:rbac:groups=frisbee.io,resources=distributedgroups,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=frisbee.io,resources=distributedgroups/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=frisbee.io,resources=distributedgroups/finalizers,verbs=update
+// +kubebuilder:rbac:groups=frisbee.io,resources=clusters,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=frisbee.io,resources=clusters/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=frisbee.io,resources=clusters/finalizers,verbs=update
 
 // +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch;
 // +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;
 
 func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1alpha1.DistributedGroup{}).
-		Named("distributedgroups").
+		For(&v1alpha1.Cluster{}).
+		Named("cluster").
 		Complete(&Reconciler{
-			Client: mgr.GetClient(),
-			Logger: logger.WithName("distributedgroups"),
+			Manager: mgr,
+			Logger:  logger.WithName("cluster"),
 		})
 }
 
-// Reconciler reconciles a Templates object.
+// Reconciler reconciles a ByCluster object.
 type Reconciler struct {
-	client.Client
+	ctrl.Manager
 	logr.Logger
 }
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	var group v1alpha1.DistributedGroup
+	var cluster v1alpha1.Cluster
 
 	var ret bool
-	result, err := common.Reconcile(ctx, r, req, &group, &ret)
+	result, err := common.Reconcile(ctx, r, req, &cluster, &ret)
 	if ret {
 		return result, err
 	}
 
-	r.Logger.Info("-> Reconcile", "kind", reflect.TypeOf(group), "name", group.GetName(), "lifecycle", group.Status.Phase)
+	r.Logger.Info("-> Reconcile", "kind", reflect.TypeOf(cluster), "name", cluster.GetName(), "lifecycle", cluster.Status.Phase)
 	defer func() {
-		r.Logger.Info("<- Reconcile", "kind", reflect.TypeOf(group), "name", group.GetName(), "lifecycle", group.Status.Phase)
+		r.Logger.Info("<- Reconcile", "kind", reflect.TypeOf(cluster), "name", cluster.GetName(), "lifecycle", cluster.Status.Phase)
 	}()
 
 	// reconciliation logic
-	switch group.Status.Phase {
+	switch cluster.Status.Phase {
 	case v1alpha1.PhaseUninitialized:
-		if err := r.prepare(ctx, &group); err != nil {
-			return lifecycle.Failed(ctx, &group, err)
-		}
-
-		return lifecycle.Pending(ctx, &group, "waiting for services to become ready")
+		return lifecycle.Pending(ctx, &cluster, "waiting for services to become ready")
 
 	case v1alpha1.PhasePending:
-		expected := group.Status.ExpectedServices.GetNames()
-		if len(expected) == 0 {
-			return lifecycle.Failed(ctx, &group, errors.New("no services are expected. stall condition ?"))
+		if err := r.prepare(ctx, &cluster); err != nil {
+			return lifecycle.Failed(ctx, &cluster, err)
 		}
 
-		logrus.Warn("Listening for children:", expected)
+		expected := cluster.Status.ExpectedServices
+		if len(expected) == 0 {
+			return lifecycle.Failed(ctx, &cluster, errors.New("no services are expected. stall condition ?"))
+		}
 
 		// start listening for events.
-		// If any of the services is created, the group will go to the running phase.
-		// If any of the services is failed, the group will go to the failed phase.
-		// if all services are successfully terminated, the group will go to the success phase.
+		// If any of the services is created, the cluster will go to the running phase.
+		// If any of the services is failed, the cluster will go to the failed phase.
+		// if all services are successfully terminated, the cluster will go to the success phase.
 		err := lifecycle.New(
-			lifecycle.WatchExternal(&v1.Pod{}, lifecycle.Pod(), expected...),
-			lifecycle.WithFilters(lifecycle.FilterByParent(&group)),
+			lifecycle.Watch(&v1alpha1.Service{}, expected.GetNames()...),
+			lifecycle.WithFilters(lifecycle.FilterByParent(cluster.GetUID())),
 			lifecycle.WithAnnotator(&lifecycle.PointAnnotation{}), // Register event to grafana
 			lifecycle.WithLogger(r.Logger),
-			lifecycle.WithUpdateParent(group.DeepCopy()),
+			lifecycle.WithUpdateParentStatus(&cluster),
 		).Run(ctx)
 
 		if err != nil {
-			return lifecycle.Failed(ctx, &group, err)
+			return lifecycle.Failed(ctx, &cluster, err)
 		}
 
 		// start creating services
-		if err := r.create(ctx, &group, group.Status.ExpectedServices); err != nil {
-			return lifecycle.Failed(ctx, &group, err)
+		if err := r.create(ctx, &cluster, expected); err != nil {
+			return lifecycle.Failed(ctx, &cluster, err)
 		}
 
 		return common.Stop()
@@ -115,31 +111,31 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return common.Stop()
 
 	case v1alpha1.PhaseSuccess:
-		// remove the group upon completion
+		// remove the cluster upon completion
 
-		if err := r.Client.Delete(ctx, &group); err != nil {
-			r.Logger.Error(err, "garbage collection failed", "group", group.GetName())
+		if err := r.GetClient().Delete(ctx, &cluster); err != nil {
+			r.Logger.Error(err, "garbage collection failed", "cluster", cluster.GetName())
 		}
 
-		r.Logger.Info("garbage collection was complete", "group", group.GetName())
+		r.Logger.Info("garbage collection was complete", "cluster", cluster.GetName())
 
 		return common.Stop()
 
 	case v1alpha1.PhaseFailed:
-		r.Logger.Info("DistributedGroup has failed", "name", group.GetName())
+		r.Logger.Info("Cluster has failed", "name", cluster.GetName())
 
 		return common.Stop()
 
 	case v1alpha1.PhaseChaos: // Invalid
-		panic(errors.Errorf("invalid lifecycle phase %s", group.Status.Phase))
+		panic(errors.Errorf("invalid lifecycle phase %s", cluster.Status.Phase))
 
 	default:
-		panic(errors.Errorf("unknown lifecycle phase: %s", group.Status.Phase))
+		panic(errors.Errorf("unknown lifecycle phase: %s", cluster.Status.Phase))
 	}
 }
 
 func (r *Reconciler) Finalizer() string {
-	return "distributedgroups.frisbee.io/finalizer"
+	return "clusters.frisbee.io/finalizer"
 }
 
 func (r *Reconciler) Finalize(obj client.Object) error {

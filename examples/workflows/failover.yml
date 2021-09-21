@@ -1,0 +1,74 @@
+apiVersion: frisbee.io/v1alpha1
+kind: Workflow
+metadata:
+  name: redis-failover
+spec:
+  importMonitors: [ "sysmon/container", "redismon/telegraf", "ycsbmon/goycsb" ]
+  ingress:
+    host: localhost
+    useAmbassador: true
+
+  actions:
+    # Create a Master node
+    - actiontype: Cluster
+      name: masters
+      cluster:
+        templateRef: redis/master
+        instances: 1
+
+    # Create a Slave node
+    - actiontype: Cluster
+      name: slaves
+      depends: { running: [ masters ] }
+      cluster:
+        templateRef: redis/slave
+        inputs: # parameters to template ENV variables
+          - { master: .cluster.masters.any }
+
+
+    # Create a failover manager
+    - actiontype: Cluster
+      name: sentinel
+      depends: { running: [ masters, slaves ] }
+      cluster:
+        templateRef: redis/sentinel
+        inputs:
+          - { master: .cluster.masters.any }
+
+
+    # Ingest keys in parallel into different ranges
+    - actiontype: Cluster
+      name: loaders
+      depends: { running: [ masters ] }
+      cluster:
+        templateRef: redis/loader
+        inputs:
+          - { server: .cluster.masters.any, recordcount: "100000000", offset: "0" }
+
+
+    # Cause two partition failures with different duration
+    - actiontype: Chaos
+      name: partition0
+      depends: { running: [ masters, slaves ], duration: "5m" }
+      chaos:
+        type: partition
+        partition:
+          selector:
+            macro: .cluster.masters.any
+          duration: "2m"
+
+    - actiontype: Chaos
+      name: partition1
+      depends: { running: [ masters, slaves ], success: [ partition0 ], duration: "3m" }
+      chaos:
+        type: partition
+        partition:
+          selector: { macro: .cluster.masters.any }
+          duration: "2m"
+
+
+    # Wait until servers are removed
+    - actiontype: Wait
+      name: "terminate"
+      wait:
+        success: [ loaders ]

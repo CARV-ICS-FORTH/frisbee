@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package distributedgroup
+package service
 
 import (
 	"context"
@@ -25,60 +25,52 @@ import (
 	"github.com/fnikolai/frisbee/controllers/common"
 	"github.com/fnikolai/frisbee/controllers/template/helpers"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/labels"
 )
 
-func (r *Reconciler) createService(ctx context.Context, group *v1alpha1.DistributedGroup, spec *v1alpha1.ServiceSpec) error {
+func (r *Reconciler) prepare(ctx context.Context, obj *v1alpha1.Service) (*corev1.Pod, error) {
 	pod := corev1.Pod{}
 
 	{ // metadata
-		pod.SetName(spec.NamespacedName.Name)
-		pod.SetLabels(group.GetLabels())
-		pod.SetAnnotations(group.GetAnnotations())
-
-		if err := common.SetOwner(group, &pod); err != nil {
-			return errors.Wrapf(err, "ownership failed")
-		}
-
+		common.SetOwner(obj, &pod)
+		pod.SetName(obj.GetName())
+		pod.SetLabels(obj.GetLabels())
+		pod.SetAnnotations(obj.GetAnnotations())
 	}
 
 	{ // spec
-		if err := setPlacement(group, &pod); err != nil {
-			return errors.Wrapf(err, "placement policies failed")
+		if err := setPlacement(obj, &pod); err != nil {
+			return nil, errors.Wrapf(err, "placement policies failed")
 		}
 
-		if err := prepareContainer(spec); err != nil {
-			return errors.Wrapf(err, "resource  error")
+		if err := prepareContainer(obj); err != nil {
+			return nil, errors.Wrapf(err, "resource  error")
 		}
 
 		pod.Spec.RestartPolicy = corev1.RestartPolicyNever
-		pod.Spec.Volumes = spec.Volumes
+		pod.Spec.Volumes = obj.Spec.Volumes
 
-		pod.Spec.Containers = []corev1.Container{spec.Container}
+		pod.Spec.Containers = []corev1.Container{obj.Spec.Container}
 	}
 
 	{ // deployment
-		if err := deployAgents(ctx, group, spec, &pod); err != nil {
-			return errors.Wrapf(err, "agent deployment error")
+		if err := deployAgents(ctx, obj, &pod); err != nil {
+			return nil, errors.Wrapf(err, "agent deployment error")
 		}
 
-		if err := r.deployDiscoveryService(ctx, group, spec, &pod); err != nil {
-			return errors.Wrapf(err, "discovery deployment error")
+		if err := r.deployDiscoveryService(ctx, obj, &pod); err != nil {
+			return nil, errors.Wrapf(err, "discovery deployment error")
 		}
-
-		if err := r.Client.Create(ctx, &pod); err != nil {
-			return errors.Wrapf(err, "pod error")
-		}
-
 	}
 
-	return nil
+	return &pod, nil
 }
 
-func prepareContainer(spec *v1alpha1.ServiceSpec) error {
+func prepareContainer(obj *v1alpha1.Service) error {
+	spec := obj.Spec
+
 	container := &spec.Container
 
 	// security
@@ -110,20 +102,19 @@ func prepareContainer(spec *v1alpha1.ServiceSpec) error {
 			Requests: resources,
 		}
 	}
-
-	logrus.Warnf("Resources %s -> %v", spec.Name, spec.Container.Resources)
-
 	return nil
 }
 
-func deployAgents(ctx context.Context, group *v1alpha1.DistributedGroup, spec *v1alpha1.ServiceSpec, pod *corev1.Pod) error {
+func deployAgents(ctx context.Context, obj *v1alpha1.Service, pod *corev1.Pod) error {
+	spec := obj.Spec
+
 	if spec.Agents == nil {
 		return nil
 	}
 
 	// import monitoring agents to the service
 	for _, ref := range spec.Agents.Telemetry {
-		mon, err := helpers.GetMonitorSpec(ctx, helpers.ParseRef(group.GetNamespace(), ref))
+		mon, err := helpers.GetMonitorSpec(ctx, helpers.ParseRef(obj.GetNamespace(), ref))
 		if err != nil {
 			return errors.Wrapf(err, "cannot get monitor")
 		}
@@ -135,7 +126,9 @@ func deployAgents(ctx context.Context, group *v1alpha1.DistributedGroup, spec *v
 	return nil
 }
 
-func (r *Reconciler) deployDiscoveryService(ctx context.Context, group *v1alpha1.DistributedGroup, spec *v1alpha1.ServiceSpec, pod *corev1.Pod) error {
+func (r *Reconciler) deployDiscoveryService(ctx context.Context, obj *v1alpha1.Service, pod *corev1.Pod) error {
+	spec := obj.Spec
+
 	// register ports from containers and sidecars
 	var allPorts []corev1.ServicePort
 
@@ -162,14 +155,12 @@ func (r *Reconciler) deployDiscoveryService(ctx context.Context, group *v1alpha1
 	}
 
 	kubeService := corev1.Service{}
+
+	common.SetOwner(obj, &kubeService)
 	kubeService.SetName(pod.GetName())
+
 	kubeService.Spec.Ports = allPorts
 	kubeService.Spec.ClusterIP = clusterIP
-
-	// bind service to the group
-	if err := common.SetOwner(group, &kubeService); err != nil {
-		return errors.Wrapf(err, "ownership failed %s", pod.GetName())
-	}
 
 	// bind service to the pod
 	service2Pod := map[string]string{pod.GetName(): "discover"}
@@ -177,21 +168,19 @@ func (r *Reconciler) deployDiscoveryService(ctx context.Context, group *v1alpha1
 	kubeService.Spec.Selector = service2Pod
 	pod.SetLabels(labels.Merge(pod.GetLabels(), service2Pod))
 
-	if err := r.Client.Create(ctx, &kubeService); err != nil {
+	if err := r.GetClient().Create(ctx, &kubeService); err != nil {
 		return errors.Wrapf(err, "cannot create discovery service")
-	}
-
-	if err := common.SetOwner(&kubeService, pod); err != nil {
-		return errors.Wrapf(err, "ownership failed %s", pod.GetName())
 	}
 
 	return nil
 }
 
-func setPlacement(group *v1alpha1.DistributedGroup, pod *corev1.Pod) error {
+func setPlacement(obj *v1alpha1.Service, pod *corev1.Pod) error {
+	spec := obj.Spec
+
 	// for the moment simply match domain to a specific node. this will change in the future
-	if len(group.Spec.Domain) > 0 {
-		pod.Spec.NodeName = group.Spec.Domain
+	if len(spec.Domain) > 0 {
+		pod.Spec.NodeName = spec.Domain
 	}
 
 	return nil

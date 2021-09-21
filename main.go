@@ -15,34 +15,19 @@
 // specific language governing permissions and limitations
 // under the License.
 
-/*
-Copyright 2021.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
 package main
 
 import (
+	"context"
 	"flag"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
 
 	"github.com/fnikolai/frisbee/controllers/chaos"
-	"github.com/fnikolai/frisbee/controllers/collocatedgroup"
+	"github.com/fnikolai/frisbee/controllers/cluster"
 	"github.com/fnikolai/frisbee/controllers/common"
-	"github.com/fnikolai/frisbee/controllers/distributedgroup"
+	"github.com/fnikolai/frisbee/controllers/service"
 	"github.com/fnikolai/frisbee/controllers/template"
 	"github.com/fnikolai/frisbee/controllers/workflow"
 	"github.com/pkg/errors"
@@ -106,6 +91,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	ctx := context.Background()
+
 	common.SetCommon(mgr, setupLog)
 
 	if err := template.NewController(mgr, setupLog); err != nil {
@@ -114,26 +101,26 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := distributedgroup.NewController(mgr, setupLog); err != nil {
-		runtimeutil.HandleError(errors.Wrapf(err, "unable to create DistributedGroup controller"))
+	if err := service.NewController(ctx, mgr, setupLog); err != nil {
+		runtimeutil.HandleError(errors.Wrapf(err, "unable to create Service controller"))
 
 		os.Exit(1)
 	}
 
-	if err := collocatedgroup.NewController(mgr, setupLog); err != nil {
-		runtimeutil.HandleError(errors.Wrapf(err, "unable to create DistributedGroup controller"))
+	if err := cluster.NewController(mgr, setupLog); err != nil {
+		runtimeutil.HandleError(errors.Wrapf(err, "unable to create Cluster controller"))
 
 		os.Exit(1)
 	}
 
 	if err := workflow.NewController(mgr, setupLog); err != nil {
-		runtimeutil.HandleError(errors.Wrapf(err, "unable to create workflow controller"))
+		runtimeutil.HandleError(errors.Wrapf(err, "unable to create Workflow controller"))
 
 		os.Exit(1)
 	}
 
 	if err := chaos.NewController(mgr, setupLog); err != nil {
-		runtimeutil.HandleError(errors.Wrapf(err, "unable to create fault controller"))
+		runtimeutil.HandleError(errors.Wrapf(err, "unable to create Chaos controller"))
 
 		os.Exit(1)
 	}

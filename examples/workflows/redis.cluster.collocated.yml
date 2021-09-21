@@ -24,7 +24,7 @@ spec:
       distributedGroup:
         templateRef: rediscluster/bootstrap
         inputs:
-          - { servers: .group.masters.all, ports: "6379 6380 6381"}
+          - { servers: .group.masters.all, ports: "6379 6380 6381" }
 
     # Ingest keys in parallel into different ranges
     - actiontype: DistributedGroup

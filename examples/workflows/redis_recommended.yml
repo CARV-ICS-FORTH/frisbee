@@ -14,8 +14,8 @@ spec:
         domain: jedi5.cluster.ics.forth.gr
         templateRef: redis/master
         instances: 1
-        #inputs:
-          #- { memory: 30Gi, cpu: "8" }
+          #inputs:
+        #- { memory: 30Gi, cpu: "8" }
 
     # Ingest keys in parallel into different ranges
     - actiontype: DistributedGroup
