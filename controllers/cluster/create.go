@@ -15,26 +15,22 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package common
+package cluster
 
 import (
+	"context"
+
+	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/pkg/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-// SetOwner is a helper method to make sure the given object contains an object reference to the object provided.
-// It also names the child after the parent, with a potential postfix.
-func SetOwner(parent, child metav1.Object) {
-	child.SetNamespace(parent.GetNamespace())
+func (r *Reconciler) create(ctx context.Context, cluster *v1alpha1.Cluster, serviceList v1alpha1.SList) error {
 
-	if err := controllerutil.SetOwnerReference(parent, child, Globals.Client.Scheme()); err != nil {
-		panic(errors.Wrapf(err, "unable to set parent"))
+	for instance := range serviceList.Yield(ctx, cluster.Spec.Schedule) {
+		if err := r.GetClient().Create(ctx, instance); err != nil {
+			return errors.Wrapf(err, "cannot create service %s", instance.GetName())
+		}
 	}
 
-	// owner labels are used by the selectors
-	child.SetLabels(labels.Merge(child.GetLabels(), map[string]string{
-		"owner": parent.GetName(),
-	}))
+	return nil
 }

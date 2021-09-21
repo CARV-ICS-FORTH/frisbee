@@ -41,7 +41,7 @@ func (f *partition) generate(ctx context.Context, obj *v1alpha1.Chaos) unstructu
 
 	f.r.Logger.Info("Inject network partition",
 		"name", obj.GetName(),
-		"targets", affectedPods.String(),
+		"targets", affectedPods.ToString(),
 	)
 
 	return unstructured.Unstructured{
@@ -72,13 +72,11 @@ func (f *partition) generate(ctx context.Context, obj *v1alpha1.Chaos) unstructu
 func (f *partition) Inject(ctx context.Context, obj *v1alpha1.Chaos) error {
 	chaos := f.generate(ctx, obj)
 
-	if err := common.SetOwner(obj, &chaos); err != nil {
-		return errors.Wrapf(err, "ownership error")
-	}
+	common.SetOwner(obj, &chaos)
 
 	// occasionally Chaos-Mesh throws an internal timeout. in this case, just retry the operation.
 	err := retry.OnError(common.DefaultBackoff, k8errors.IsInternalError, func() error {
-		err := f.r.Create(ctx, &chaos)
+		err := f.r.GetClient().Create(ctx, &chaos)
 
 		return errors.Wrapf(err, "create error")
 	})
@@ -90,9 +88,9 @@ func (f *partition) Inject(ctx context.Context, obj *v1alpha1.Chaos) error {
 
 	err = lifecycle.New(
 		lifecycle.WatchExternal(&chaos, AccessChaosStatus, chaos.GetName()),
-		lifecycle.WithFilters(lifecycle.FilterByParent(obj)),
+		lifecycle.WithFilters(lifecycle.FilterByParent(obj.GetUID())),
 		lifecycle.WithAnnotator(&lifecycle.RangeAnnotation{}),
-		lifecycle.WithUpdateParent(obj.DeepCopy()),
+		lifecycle.WithUpdateParentStatus(obj.DeepCopy()),
 	).Run(ctx)
 
 	return errors.Wrapf(err, "lifecycle failed")
@@ -125,7 +123,7 @@ func (f *partition) WaitForDuration(ctx context.Context, obj *v1alpha1.Chaos) er
 func (f *partition) Revoke(ctx context.Context, obj *v1alpha1.Chaos) error {
 	// because the internal Chaos object (managed by Chaos controller) owns the external Chaos implementation
 	// (managed by Chaos-Mesh) it suffices to remove the internal object, and the external will be garbage collected.
-	if err := lifecycle.Delete(ctx, f.r, obj); err != nil {
+	if err := lifecycle.Delete(ctx, f.r.GetClient(), obj); err != nil {
 		return errors.Wrapf(err, "unable to revoke %s", obj.GetName())
 	}
 

@@ -45,7 +45,8 @@ func StopWithError(err error) (ctrl.Result, error) {
 
 // Reconciler implements basic functionality that is common to every solid reconciler (e.g, finalizers)
 type Reconciler interface {
-	client.Client
+	GetClient() client.Client
+
 	logr.Logger
 	Finalizer() string
 
@@ -68,7 +69,7 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 	//
 	// 1. Retrieve the interested CR instance.
 	//
-	if err := r.Get(ctx, req.NamespacedName, obj); err != nil {
+	if err := r.GetClient().Get(ctx, req.NamespacedName, obj); err != nil {
 		if k8errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
@@ -202,7 +203,7 @@ func UpdateStatus(ctx context.Context, obj client.Object) (ctrl.Result, error) {
 		return Stop()
 
 	case k8errors.IsInvalid(updateError):
-		Globals.Logger.Error(updateError, "Update status error")
+		Globals.Logger.Error(updateError, "Update status error", "object", obj.GetName())
 
 		return Stop()
 

@@ -55,16 +55,16 @@ Rather than:
 // wrong example
 // ContainerManager is the default implement of interface ContainerMgr.
 type ContainerManager struct {
-	// Store stores containers in Backend store.
-	// Element operated in store must has a type of *ContainerMeta.
-	// By default, Store will use local filesystem with json format to store containers.
-	Store *meta.Store
-	// Client is used to interact with containerd.
-	Client ctrd.APIClient
-	// NameToID stores relations between container's name and ID.
-	// It is used to get container ID via container name.
-	NameToID *collect.SafeMap
-	......
+// Store stores containers in Backend store.
+// Element operated in store must has a type of *ContainerMeta.
+// By default, Store will use local filesystem with json format to store containers.
+Store *meta.Store
+// Client is used to interact with containerd.
+Client ctrd.APIClient
+// NameToID stores relations between container's name and ID.
+// It is used to get container ID via container name.
+NameToID *collect.SafeMap
+......
 }
 ```
 

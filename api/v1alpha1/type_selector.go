@@ -72,23 +72,22 @@ type TemplateSelector struct {
 	Selector TemplateSelectorSpec `json:"selector"`
 }
 
-// MatchServiceSpec defines the selectors for services.
+// MatchService defines the selectors for services.
 // If the all selectors are empty, all services will be selected.
-type MatchServiceSpec struct {
-	// ServiceNames is a map of string keys and a set values that used to select services.
+type MatchService struct {
+	// ByName is a map of string keys and a set values that used to select services.
 	// The key defines the namespace which services belong, and the values is a set of service names.
 	// +optional
-	// ServiceNames map[string][]string `json:"names,omitempty"`
+	ByName map[string][]string `json:"byName,omitempty"`
 
 	// Map of string keys and values that can be used to select objects.
 	// A selector based on labels.
 	// +optional
 	// Labels map[string]string `json:"labels,omitempty"`
 
-	// ServiceGroup defines the service group where services belong. A ServiceGroup may refer either to
-	// a DistributedGroup or a CollocatedGroup. Therefore, we need to search both of them.
+	// ByCluster defines the service group where services belong.
 	// +optional
-	ServiceGroup map[string]string `json:"servicegroup,omitempty"`
+	ByCluster map[string]string `json:"byCluster,omitempty"`
 
 	// Namespaces is a set of namespace to which objects belong.
 	// +optional
@@ -98,7 +97,7 @@ type MatchServiceSpec struct {
 type ServiceSelector struct {
 	// Match contains the rules to select target
 	// +optional
-	Match MatchServiceSpec `json:"match,omitempty"`
+	Match MatchService `json:"match,omitempty"`
 
 	// Mode defines which of the selected services to use. If undefined, all() is used
 	// Supported mode: one / all / fixed / fixed-percent / random-max-percent
@@ -112,7 +111,7 @@ type ServiceSelector struct {
 	// +optional
 	Value string `json:"value,omitempty"`
 
-	// Macro abstract selector parameters into a structured string (e.g, .groupservice.master.all). Every parsed field is
+	// Macro abstract selector parameters into a structured string (e.g, .cluster.master.all). Every parsed field is
 	// represents an inner structure of the selector.
 	// In case of invalid macro, the selector will return empty results.
 	// Macro conflicts with any other parameter.

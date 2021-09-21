@@ -51,12 +51,12 @@ spec:
                       type: object
                     spec:
                       description: Spec is the Service specification whose values
-                        will be replaced by arameters.
+                        will be replaced by parameters.
                       type: string
                   required:
                   - spec
                   type: object
-                description: Monitors are lookups to monitoring packages
+                description: Monitors are indices to monitoring packages
                 type: object
               services:
                 additionalProperties:
@@ -74,12 +74,12 @@ spec:
                       type: object
                     spec:
                       description: Spec is the Service specification whose values
-                        will be replaced by arameters.
+                        will be replaced by parameters.
                       type: string
                   required:
                   - spec
                   type: object
-                description: Services are lookups to service specifications
+                description: Services are indices to service specifications
                 type: object
             type: object
           status:

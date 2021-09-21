@@ -81,10 +81,7 @@ type Action struct {
 
 type EmbedActions struct {
 	// +optional
-	DistributedGroup *DistributedGroupSpec `json:"distributedGroup,omitempty"`
-
-	// +optional
-	CollocatedGroup *CollocatedGroupSpec `json:"collocatedGroup,omitempty"`
+	Cluster *ClusterSpec `json:"cluster,omitempty"`
 
 	// +optional
 	Stop *StopSpec `json:"stop,omitempty"`

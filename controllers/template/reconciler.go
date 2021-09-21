@@ -42,14 +42,14 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 		For(&v1alpha1.Template{}).
 		Named("template").
 		Complete(&Reconciler{
-			Client: mgr.GetClient(),
-			Logger: logger.WithName("template"),
+			Manager: mgr,
+			Logger:  logger.WithName("template"),
 		})
 }
 
 // Reconciler reconciles a Templates object
 type Reconciler struct {
-	client.Client
+	ctrl.Manager
 	logr.Logger
 }
 
