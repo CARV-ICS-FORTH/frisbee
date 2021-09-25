@@ -72,14 +72,14 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// validate services
 	for name, spec := range obj.Spec.Services {
 		if _, err := helpers.GenerateServiceSpec(&spec); err != nil {
-			return lifecycle.Failed(ctx, &obj, errors.Wrapf(err, "service template %s error", name))
+			return lifecycle.Failed(ctx, r, &obj, errors.Wrapf(err, "service template %s error", name))
 		}
 	}
 
 	// validate monitors
 	for name, spec := range obj.Spec.Monitors {
 		if _, err := helpers.GenerateMonitorSpec(&spec); err != nil {
-			return lifecycle.Failed(ctx, &obj, errors.Wrapf(err, "monitor template %s error", name))
+			return lifecycle.Failed(ctx, r, &obj, errors.Wrapf(err, "monitor template %s error", name))
 		}
 	}
 
@@ -91,7 +91,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	obj.Status.IsRegistered = true
 
-	return lifecycle.Running(ctx, &obj, "all templates are loaded")
+	return lifecycle.Running(ctx, r, &obj, "all templates are loaded")
 }
 
 func (r *Reconciler) Finalizer() string {

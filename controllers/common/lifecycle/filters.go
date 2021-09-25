@@ -31,6 +31,7 @@ import (
 
 type FilterFunc func(obj interface{}) bool
 
+/*
 // MergeFilters run a combined list of filters.
 func MergeFilters(filters ...FilterFunc) FilterFunc {
 	return func(obj interface{}) bool {
@@ -42,6 +43,7 @@ func MergeFilters(filters ...FilterFunc) FilterFunc {
 		return true
 	}
 }
+*/
 
 type Parent interface {
 	GetUID() types.UID

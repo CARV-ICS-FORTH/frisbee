@@ -158,11 +158,6 @@ func WithExpectedPhase(expected v1alpha1.Phase) Option {
 }
 
 // WithUpdateParentStatus ...
-func WithUpdateParentStatus(obj InnerObject) Option {
-	return func(s *Options) {
-		s.UpdateParentObjectStatus = obj
-	}
-}
 
 type ManagedLifecycle struct {
 	options Options
@@ -238,8 +233,6 @@ func New(opts ...Option) *ManagedLifecycle {
 	}
 
 	if options.Annotator != nil {
-		logrus.Warn("Use annotator ")
-
 		lifecycle.eventHandlers = eventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				options.Annotator.Add(obj)
@@ -255,8 +248,6 @@ func New(opts ...Option) *ManagedLifecycle {
 			},
 		}
 	} else {
-		logrus.Warn("Without  annotator ")
-
 		lifecycle.eventHandlers = eventHandlerFuncs{
 			AddFunc:    fsm.HandleEvent,
 			UpdateFunc: fsm.HandleEvent,
@@ -275,7 +266,7 @@ type eventHandlerFuncs struct {
 	DeleteFunc func(obj interface{})
 }
 
-func (lc *ManagedLifecycle) Run(ctx context.Context) error {
+func (lc *ManagedLifecycle) Run(ctx context.Context, r common.Reconciler) error {
 	informer, err := common.Globals.Cache.GetInformer(ctx, unwrap(lc.options.WatchType))
 	if err != nil {
 		return errors.Wrapf(err, "unable to get informer for %s", unwrap(lc.options.WatchType).GetName())
@@ -319,7 +310,7 @@ func (lc *ManagedLifecycle) Run(ctx context.Context) error {
 	}
 
 	if lc.parentObject != nil {
-		return lc.notifier.Update(ctx, lc.parentObject)
+		return lc.notifier.Update(ctx, r, lc.parentObject)
 	}
 
 	return nil

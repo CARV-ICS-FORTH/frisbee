@@ -15,22 +15,25 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package cluster
+package service
 
 import (
-	"context"
-
 	"github.com/fnikolai/frisbee/api/v1alpha1"
-	"github.com/pkg/errors"
+	"github.com/fnikolai/frisbee/controllers/common/lifecycle"
+	corev1 "k8s.io/api/core/v1"
 )
 
-func (r *Reconciler) create(ctx context.Context, cluster *v1alpha1.Cluster, serviceList v1alpha1.SList) error {
+// calculateLifecycle returns the update lifecycle of the cluster.
+func calculateLifecycle(service *v1alpha1.Service, pod *corev1.Pod) v1alpha1.Lifecycle {
 
-	for instance := range serviceList.Yield(ctx, cluster.Spec.Schedule) {
-		if err := r.GetClient().Create(ctx, instance); err != nil {
-			return errors.Wrapf(err, "cannot create service %s", instance.GetName())
+	if pod.CreationTimestamp.IsZero() {
+		return v1alpha1.Lifecycle{
+			Kind:   "Service",
+			Name:   service.GetName(),
+			Phase:  v1alpha1.PhaseInitialized,
+			Reason: "submitting pod request",
 		}
 	}
 
-	return nil
+	return *lifecycle.Pod()(pod)[0]
 }

@@ -1,6 +1,6 @@
 #### On remote cluster
 
-In order to access your Kubernetes cluster, `frisbee` uses kubeconfig to to find the information it needs to choose a
+In order to access your Kubernetes cluster, `frisbee` uses kubeconfig to find the information it needs to choose a
 cluster and communicate with it.
 
 `kubeconfig` files organize information about clusters, users, namespaces, and authentication mechanisms.

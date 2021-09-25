@@ -127,7 +127,12 @@ func Pod() StatusAccessor {
 				EndTime:   pod.GetDeletionTimestamp(),
 			}}
 		default:
-			panic(errors.Errorf("unexpected phase %s", pod.Status.Phase))
+			return []*v1alpha1.Lifecycle{{
+				Kind:   "Pod",
+				Name:   pod.GetName(),
+				Phase:  v1alpha1.PhaseUninitialized,
+				Reason: "not yet initialized",
+			}}
 		}
 	}
 }

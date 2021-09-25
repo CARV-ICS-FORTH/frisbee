@@ -94,7 +94,7 @@ func (r *Reconciler) installPrometheus(ctx context.Context, obj *v1alpha1.Workfl
 	}
 
 	{ // spec
-		spec, err := helpers.GetServiceSpec(ctx, helpers.ParseRef(obj.GetNamespace(), prometheusTemplate))
+		spec, err := helpers.GetServiceSpec(ctx, r, helpers.ParseRef(obj.GetNamespace(), prometheusTemplate))
 		if err != nil {
 			return nil, errors.Wrapf(err, "spec spec error")
 		}
@@ -109,7 +109,7 @@ func (r *Reconciler) installPrometheus(ctx context.Context, obj *v1alpha1.Workfl
 
 		logrus.Warnf("Waiting for prometheus to become ready ...")
 
-		if err := lifecycle.WaitRunningAndUpdate(ctx, &prom); err != nil {
+		if err := lifecycle.WaitRunningAndUpdate(ctx, r, &prom); err != nil {
 			return nil, errors.Wrapf(err, "prometheus is not running")
 		}
 	}
@@ -129,12 +129,12 @@ func (r *Reconciler) installGrafana(ctx context.Context, obj *v1alpha1.Workflow)
 
 	{ // spec
 		// to perform the necessary automations, we load the spec locally and push the modified version for creation.
-		spec, err := helpers.GetServiceSpec(ctx, helpers.ParseRef(obj.GetNamespace(), grafanaTemplate))
+		spec, err := helpers.GetServiceSpec(ctx, r, helpers.ParseRef(obj.GetNamespace(), grafanaTemplate))
 		if err != nil {
 			return nil, errors.Wrapf(err, "spec spec error")
 		}
 
-		if err := r.importDashboards(ctx, obj, spec); err != nil {
+		if err := r.importDashboards(ctx, obj, &spec); err != nil {
 			return nil, errors.Wrapf(err, "import dashboards")
 		}
 
@@ -146,7 +146,7 @@ func (r *Reconciler) installGrafana(ctx context.Context, obj *v1alpha1.Workflow)
 			return nil, errors.Wrapf(err, "request error")
 		}
 
-		if err := lifecycle.WaitRunningAndUpdate(ctx, &grafana); err != nil {
+		if err := lifecycle.WaitRunningAndUpdate(ctx, r, &grafana); err != nil {
 			return nil, errors.Wrapf(err, "grafana is not running")
 		}
 	}
@@ -159,7 +159,7 @@ func (r *Reconciler) installGrafana(ctx context.Context, obj *v1alpha1.Workflow)
 func (r *Reconciler) importDashboards(ctx context.Context, obj *v1alpha1.Workflow, spec *v1alpha1.ServiceSpec) error {
 	// iterate monitoring services
 	for _, monRef := range obj.Spec.ImportMonitors {
-		monSpec, err := helpers.GetMonitorSpec(ctx, helpers.ParseRef(obj.GetNamespace(), monRef))
+		monSpec, err := helpers.GetMonitorSpec(ctx, r, helpers.ParseRef(obj.GetNamespace(), monRef))
 		if err != nil {
 			return errors.Errorf("monitor failed")
 		}

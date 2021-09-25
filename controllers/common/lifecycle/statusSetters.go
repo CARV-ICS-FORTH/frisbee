@@ -34,12 +34,12 @@ import (
 /******************************************************/
 
 // WaitRunningAndUpdate is a lifecycle that waits for WaitRunning and then replaced given object with the updated object.
-func WaitRunningAndUpdate(ctx context.Context, obj InnerObject) error {
+func WaitRunningAndUpdate(ctx context.Context, r common.Reconciler, obj InnerObject) error {
 	err := New(
 		Watch(obj, obj.GetName()),
 		WithFilters(FilterByNames(obj.GetName())),
 		WithExpectedPhase(v1alpha1.PhaseRunning),
-	).Run(ctx)
+	).Run(ctx, r)
 
 	if err != nil {
 		return errors.Wrapf(err, "Phase failed")
@@ -55,7 +55,7 @@ func WaitRunningAndUpdate(ctx context.Context, obj InnerObject) error {
 /******************************************************/
 
 // Pending is a wrapper that sets Phase to Pending and does not requeue the request.
-func Pending(ctx context.Context, obj InnerObject, reason string) (ctrl.Result, error) {
+func Pending(ctx context.Context, r common.Reconciler, obj InnerObject, reason string) (ctrl.Result, error) {
 	if ctx == nil || obj == nil || reason == "" {
 		panic("invalid args")
 	}
@@ -69,11 +69,11 @@ func Pending(ctx context.Context, obj InnerObject, reason string) (ctrl.Result, 
 		EndTime:   nil,
 	})
 
-	return common.UpdateStatus(ctx, obj)
+	return common.UpdateStatus(ctx, r, obj)
 }
 
 // Running is a wrapper that sets Phase to Running and does not requeue the request.
-func Running(ctx context.Context, obj InnerObject, reason string) (ctrl.Result, error) {
+func Running(ctx context.Context, r common.Reconciler, obj InnerObject, reason string) (ctrl.Result, error) {
 	if ctx == nil || obj == nil || reason == "" {
 		panic("invalid args")
 	}
@@ -87,11 +87,11 @@ func Running(ctx context.Context, obj InnerObject, reason string) (ctrl.Result, 
 		EndTime:   nil,
 	})
 
-	return common.UpdateStatus(ctx, obj)
+	return common.UpdateStatus(ctx, r, obj)
 }
 
 // Success is a wrapper that sets Phase to Success and does not requeue the request.
-func Success(ctx context.Context, obj InnerObject, reason string) (ctrl.Result, error) {
+func Success(ctx context.Context, r common.Reconciler, obj InnerObject, reason string) (ctrl.Result, error) {
 	if ctx == nil || obj == nil || reason == "" {
 		panic("invalid args")
 	}
@@ -105,11 +105,11 @@ func Success(ctx context.Context, obj InnerObject, reason string) (ctrl.Result, 
 		EndTime:   obj.GetDeletionTimestamp(),
 	})
 
-	return common.UpdateStatus(ctx, obj)
+	return common.UpdateStatus(ctx, r, obj)
 }
 
 // Chaos is a wrapper that sets Phase to Chaos and does not requeue the request.
-func Chaos(ctx context.Context, obj InnerObject, reason string) (ctrl.Result, error) {
+func Chaos(ctx context.Context, r common.Reconciler, obj InnerObject, reason string) (ctrl.Result, error) {
 	if ctx == nil || obj == nil || reason == "" {
 		panic("invalid args")
 	}
@@ -123,16 +123,16 @@ func Chaos(ctx context.Context, obj InnerObject, reason string) (ctrl.Result, er
 		EndTime:   nil,
 	})
 
-	return common.UpdateStatus(ctx, obj)
+	return common.UpdateStatus(ctx, r, obj)
 }
 
 // Failed is a wrap that logs the error, updates the status, and does not requeue the request.
-func Failed(ctx context.Context, obj InnerObject, err error) (ctrl.Result, error) {
+func Failed(ctx context.Context, r common.Reconciler, obj InnerObject, err error) (ctrl.Result, error) {
 	if ctx == nil || obj == nil || err == nil {
 		panic("invalid args")
 	}
 
-	common.Globals.Logger.Error(err, "object failed", "name", obj.GetName())
+	r.Error(err, "object failed", "name", obj.GetName())
 
 	obj.SetLifecycle(v1alpha1.Lifecycle{
 		Kind:      reflect.TypeOf(obj).String(),
@@ -143,5 +143,5 @@ func Failed(ctx context.Context, obj InnerObject, err error) (ctrl.Result, error
 		EndTime:   obj.GetDeletionTimestamp(),
 	})
 
-	return common.UpdateStatus(ctx, obj)
+	return common.UpdateStatus(ctx, r, obj)
 }

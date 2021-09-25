@@ -53,6 +53,9 @@ func (r *Reconciler) scheduleActions(topCtx context.Context, obj *v1alpha1.Workf
 		case "Wait": // expect command will block the entire controller
 			err = r.wait(ctx, w, action, *action.Wait)
 
+		case "Service":
+			err = r.service(ctx, w, action)
+
 		case "Cluster":
 			err = r.cluster(ctx, w, action)
 
@@ -67,13 +70,13 @@ func (r *Reconciler) scheduleActions(topCtx context.Context, obj *v1alpha1.Workf
 		}
 
 		if err != nil {
-			_, _ = lifecycle.Failed(ctx, w.Workflow, errors.Wrapf(err, "action %s failed", action.Name))
+			_, _ = lifecycle.Failed(ctx, r, w.Workflow, errors.Wrapf(err, "action %s failed", action.Name))
 
 			return
 		}
 	}
 
-	_, _ = lifecycle.Success(ctx, w.Workflow, "all actions are complete")
+	_, _ = lifecycle.Success(ctx, r, w.Workflow, "all actions are complete")
 }
 
 func (r *Reconciler) wait(ctx context.Context, w Workflow, action v1alpha1.Action, spec v1alpha1.WaitSpec) error {
@@ -96,7 +99,7 @@ func (r *Reconciler) wait(ctx context.Context, w Workflow, action v1alpha1.Actio
 			lifecycle.WithFilters(lifecycle.FilterByParent(w.GetUID()), lifecycle.FilterByNames(spec.Success...)),
 			lifecycle.WithLogger(r.Logger),
 			lifecycle.WithExpectedPhase(v1alpha1.PhaseSuccess),
-		).Run(ctx)
+		).Run(ctx, r)
 		if err != nil {
 			return errors.Wrapf(err, "wait error")
 		}
@@ -123,7 +126,7 @@ func (r *Reconciler) wait(ctx context.Context, w Workflow, action v1alpha1.Actio
 			lifecycle.WithFilters(lifecycle.FilterByParent(w.GetUID()), lifecycle.FilterByNames(spec.Running...)),
 			lifecycle.WithLogger(r.Logger),
 			lifecycle.WithExpectedPhase(v1alpha1.PhaseRunning),
-		).Run(ctx)
+		).Run(ctx, r)
 		if err != nil {
 			return errors.Wrapf(err, "wait error")
 		}
@@ -142,6 +145,32 @@ func (r *Reconciler) wait(ctx context.Context, w Workflow, action v1alpha1.Actio
 
 		logrus.Warnf("<- Action %s waiting for duration of %v", action.Name, spec.Duration.Duration.String())
 	}
+
+	return nil
+}
+
+func (r *Reconciler) service(ctx context.Context, w Workflow, action v1alpha1.Action) error {
+	if action.DependsOn != nil {
+		if err := r.wait(ctx, w, action, *action.DependsOn); err != nil {
+			return errors.Wrapf(err, "cluster dependencies")
+		}
+	}
+
+	service := v1alpha1.Service{}
+
+	common.SetOwner(w.Workflow, &service)
+	service.SetName(action.Name)
+
+	action.Service.DeepCopyInto(&service.Spec)
+
+	if err := r.GetClient().Create(ctx, &service); err != nil {
+		return errors.Wrapf(err, "service create")
+	}
+
+	// TODO: Fix it with respect to threads
+	// common.Update(ctx, w, &v1alpha1.ByCluster{}, cluster.GetName())
+
+	w.waitableActions[action.Name] = &service
 
 	return nil
 }

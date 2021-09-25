@@ -32,7 +32,6 @@ import (
 var Globals struct {
 	cache.Cache
 	client.Client
-	logr.Logger
 
 	// Annotator pushes annotation for evenete
 	Annotator
@@ -50,8 +49,6 @@ func SetNamespace(nm string) {
 func SetCommon(mgr ctrl.Manager, logger logr.Logger) {
 	Globals.Cache = mgr.GetCache()
 	Globals.Client = mgr.GetClient()
-	Globals.Logger = logger.WithName("Globals")
-	Globals.Annotator = &DefaultAnnotator{}
 	Globals.Executor = NewExecutor(mgr.GetConfig())
 }
 

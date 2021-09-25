@@ -25,13 +25,25 @@ import (
 )
 
 // SetOwner is a helper method to make sure the given object contains an object reference to the object provided.
-// It also names the child after the parent, with a potential postfix.
+// This behavior is instrumental to guarantee correct garbage collection of resources especially when resources
+// control other resources in a multilevel hierarchy (think deployment-> repilcaset->pod).
 func SetOwner(parent, child metav1.Object) {
 	child.SetNamespace(parent.GetNamespace())
 
-	if err := controllerutil.SetOwnerReference(parent, child, Globals.Client.Scheme()); err != nil {
-		panic(errors.Wrapf(err, "unable to set parent"))
+	// SetControllerReference sets owner as a Controller OwnerReference on controlled.
+	// This is used for garbage collection of the controlled object and for
+	// reconciling the owner object on changes to controlled (with a Watch + EnqueueRequestForOwner).
+	// Since only one OwnerReference can be a controller, it returns an error if
+	// there is another OwnerReference with Controller flag set.
+	if err := controllerutil.SetControllerReference(parent, child, Globals.Client.Scheme()); err != nil {
+		panic(errors.Wrapf(err, "set controller reference"))
 	}
+
+	/*
+		if err := controllerutil.SetOwnerReference(parent, child, Globals.Client.Scheme()); err != nil {
+			panic(errors.Wrapf(err, "set owner reference"))
+		}
+	*/
 
 	// owner labels are used by the selectors
 	child.SetLabels(labels.Merge(child.GetLabels(), map[string]string{

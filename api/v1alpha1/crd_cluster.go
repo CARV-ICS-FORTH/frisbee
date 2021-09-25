@@ -67,15 +67,26 @@ type ClusterSpec struct {
 	// for the moment simply match domain to a specific node. this will change in the future
 	// +optional
 	Domain string `json:"domain,omitempty"`
+
+	// This flag tells the controller to suspend subsequent executions, it does
+	// not apply to already started executions.  Defaults to false.
+	// +optional
+	Suspend *bool `json:"suspend,omitempty"`
 }
 
 type ClusterStatus struct {
 	Lifecycle `json:",inline"`
 
-	// ExpectedServices is a list of services that belong to this group.
-	// These services will be located in the same namespace as the group.
+	// Expected is a list of services scheduled for creation by the cluster.
 	// +optional
-	ExpectedServices SList `json:"expectedServices,omitempty"`
+	Expected []ServiceSpec `json:"expected,omitempty"`
+
+	// A list of pointers to currently running services.
+	// +optional
+	Active []*Service `json:"active,omitempty"`
+
+	// LastScheduleTime provide information about  the last time a Service was successfully scheduled.
+	LastScheduleTime *metav1.Time `json:"lastScheduleTime,omitempty"`
 }
 
 func (in *Cluster) GetLifecycle() []*Lifecycle {

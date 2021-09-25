@@ -28,4 +28,9 @@ type SchedulerSpec struct {
 	//
 	// More rule info: https://godoc.org/github.com/robfig/cron
 	Cron string `json:"cron"`
+
+	// StartingDeadlineSeconds is an optional deadline in seconds for starting the job if it misses scheduled
+	// time for any reason. if we miss this deadline, we'll just wait till the next scheduled time
+	// +optional
+	StartingDeadlineSeconds *int64 `json:"startingDeadlineSeconds,omitempty"`
 }

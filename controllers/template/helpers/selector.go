@@ -50,7 +50,7 @@ func ParseRef(nm, templateRef string) *v1alpha1.TemplateSelector {
 	}
 }
 
-func SelectServiceTemplate(ctx context.Context, ts *v1alpha1.TemplateSelector) *v1alpha1.Scheme {
+func SelectServiceTemplate(ctx context.Context, r common.Reconciler, ts *v1alpha1.TemplateSelector) *v1alpha1.Scheme {
 	if ts == nil {
 		return nil
 	}
@@ -65,7 +65,7 @@ func SelectServiceTemplate(ctx context.Context, ts *v1alpha1.TemplateSelector) *
 	// if the template is created in parallel with the workflow, it is possible to meet race conditions.
 	// We avoid it with a simple retry mechanism based on adaptive backoff.
 	err := retry.OnError(retry.DefaultRetry, k8errors.IsNotFound, func() error {
-		return common.Globals.Client.Get(ctx, key, &template)
+		return r.GetClient().Get(ctx, key, &template)
 	})
 	if err != nil {
 		logrus.Warn(err)
@@ -91,7 +91,7 @@ func SelectServiceTemplate(ctx context.Context, ts *v1alpha1.TemplateSelector) *
 	}
 }
 
-func SelectMonitorTemplate(ctx context.Context, ts *v1alpha1.TemplateSelector) *v1alpha1.Scheme {
+func SelectMonitorTemplate(ctx context.Context, r common.Reconciler, ts *v1alpha1.TemplateSelector) *v1alpha1.Scheme {
 	if ts == nil {
 		return nil
 	}
@@ -106,7 +106,7 @@ func SelectMonitorTemplate(ctx context.Context, ts *v1alpha1.TemplateSelector) *
 	// if the template is created in parallel with the workflow, it is possible to meet race conditions.
 	// We avoid it with a simple retry mechanism based on adaptive backoff.
 	err := retry.OnError(retry.DefaultRetry, k8errors.IsNotFound, func() error {
-		return common.Globals.Client.Get(ctx, key, &template)
+		return r.GetClient().Get(ctx, key, &template)
 	})
 	if err != nil {
 		logrus.Warn(err)
