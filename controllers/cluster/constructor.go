@@ -26,21 +26,36 @@ import (
 	"github.com/fnikolai/frisbee/controllers/common/selector/service"
 	"github.com/fnikolai/frisbee/controllers/template/helpers"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 )
 
-func (r *Reconciler) prepare(ctx context.Context, cluster *v1alpha1.Cluster) error {
+func constructJob(cluster *v1alpha1.Cluster, i int) *v1alpha1.Service {
+	var instance v1alpha1.Service
+
+	{ // metadata
+		common.SetOwner(cluster, &instance)
+		instance.SetName(generateName(cluster, i))
+	}
+
+	{ // spec
+		cluster.Status.Expected[i].DeepCopyInto(&instance.Spec)
+	}
+
+	return &instance
+}
+
+func constructJobSpecList(ctx context.Context, r *Controller, cluster *v1alpha1.Cluster) ([]v1alpha1.ServiceSpec, error) {
+	var specs []v1alpha1.ServiceSpec
 
 	// all inputs are explicitly defined. no instances were given
 	if cluster.Spec.Instances == 0 {
 		if len(cluster.Spec.Inputs) == 0 {
-			return errors.New("at least one of instances || inputs must be defined")
+			return nil, errors.New("at least one of instances || inputs must be defined")
 		}
 
 		cluster.Spec.Instances = len(cluster.Spec.Inputs)
 	}
 
-	scheme := helpers.SelectServiceTemplate(ctx, helpers.ParseRef(cluster.GetNamespace(), cluster.Spec.TemplateRef))
+	scheme := helpers.SelectServiceTemplate(ctx, r, helpers.ParseRef(cluster.GetNamespace(), cluster.Spec.TemplateRef))
 
 	// cache the results of macro as to avoid asking the Kubernetes API. This, however, is only applicable
 	// to the level of a cluster, because different groups may be created in different moments
@@ -54,36 +69,25 @@ func (r *Reconciler) prepare(ctx context.Context, cluster *v1alpha1.Cluster) err
 		case 1:
 			// use a common set of inputs for all instances
 			if err := inputs2Env(ctx, scheme.Inputs.Parameters, cluster.Spec.Inputs[0], lookupCache); err != nil {
-				return errors.Wrapf(err, "macro expansion failed")
+				return nil, errors.Wrapf(err, "macro expansion failed")
 			}
 
 		default:
 			// use a different set of inputs for every instance
 			if err := inputs2Env(ctx, scheme.Inputs.Parameters, cluster.Spec.Inputs[i], lookupCache); err != nil {
-				return errors.Wrapf(err, "macro expansion failed")
+				return nil, errors.Wrapf(err, "macro expansion failed")
 			}
 		}
 
-		var instance v1alpha1.Service
-
-		common.SetOwner(cluster, &instance)
-		instance.SetName(generateName(cluster, i))
-
-		// set the service specification
 		spec, err := helpers.GenerateServiceSpec(scheme)
 		if err != nil {
-			return errors.Wrapf(err, "scheme to instance")
+			return nil, errors.Wrapf(err, "scheme to instance")
 		}
 
-		spec.DeepCopyInto(&instance.Spec)
-
-		// add service to the expected list
-		cluster.Status.ExpectedServices = append(cluster.Status.ExpectedServices, instance)
-
-		logrus.Warn("Generate scheme", scheme.Inputs)
+		specs = append(specs, spec)
 	}
 
-	return nil
+	return specs, nil
 }
 
 // if there is only one instance, it will be named after the group. otherwise, the instances will be named

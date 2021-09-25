@@ -67,24 +67,24 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	switch w.Status.Phase {
 	case v1alpha1.PhaseUninitialized:
 		if action := w.Spec.Actions[len(w.Spec.Actions)-1]; action.ActionType != "Wait" {
-			return lifecycle.Failed(ctx, &w, errors.New("All experiments must end with a wait function"))
+			return lifecycle.Failed(ctx, r, &w, errors.New("All experiments must end with a wait function"))
 		}
 
 		if err := r.newMonitoringStack(ctx, &w); err != nil {
-			return lifecycle.Failed(ctx, &w, err)
+			return lifecycle.Failed(ctx, r, &w, err)
 		}
 
 		// FIXME: this is a simple hack to set the default namespace for searching objects
 		common.SetNamespace(w.GetNamespace())
 
-		return lifecycle.Pending(ctx, &w, "workflow verified")
+		return lifecycle.Pending(ctx, r, &w, "workflow verified")
 
 	case v1alpha1.PhasePending:
 		// schedule action in a separate thread in order to support delete operation.
 		// otherwise, the deletion of the workflow will be suspended until all actions are complete.
 		go r.scheduleActions(ctx, w.DeepCopy())
 
-		return lifecycle.Running(ctx, &w, "start running actions")
+		return lifecycle.Running(ctx, r, &w, "start running actions")
 
 	case v1alpha1.PhaseRunning:
 		return common.Stop()

@@ -22,6 +22,7 @@ import (
 	"reflect"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
+	"github.com/fnikolai/frisbee/controllers/common"
 	"github.com/fnikolai/frisbee/pkg/wait"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -244,7 +245,7 @@ func (n *BoundedFSM) Expect(expected v1alpha1.Phase) error {
 // When using this function, there are two rules that must be respected in order to avoid conflicts
 // 1) This method should not be followed by status updates (e.g., Pending, Success).
 // 2) When deleting the parent object, use the provided Delete() method of this package.
-func (n *BoundedFSM) Update(ctx context.Context, parent InnerObject) error {
+func (n *BoundedFSM) Update(ctx context.Context, r common.Reconciler, parent InnerObject) error {
 
 	var phase v1alpha1.Phase
 
@@ -273,11 +274,11 @@ func (n *BoundedFSM) Update(ctx context.Context, parent InnerObject) error {
 				panic("this should not happen")
 
 			case v1alpha1.PhaseRunning:
-				_, _ = Running(ctx, parent, "all children are running")
+				_, _ = Running(ctx, r, parent, "all children are running")
 				phase, msg, valid = n.getNextRunning()
 
 			case v1alpha1.PhaseChaos:
-				_, _ = Chaos(ctx, parent, "at least one of the children is experiencing chaos")
+				_, _ = Chaos(ctx, r, parent, "at least one of the children is experiencing chaos")
 
 				// If the parent is in PhaseChaos mode, it means that failing conditions are expected and therefore
 				// do not cause a failure to the controller. Instead, they should be handled by the system under evaluation.
@@ -289,13 +290,13 @@ func (n *BoundedFSM) Update(ctx context.Context, parent InnerObject) error {
 				phase, msg, valid = n.getNextChaos()
 
 			case v1alpha1.PhaseSuccess:
-				_, _ = Success(ctx, parent, "all children are complete")
+				_, _ = Success(ctx, r, parent, "all children are complete")
 
 				return
 
 			case v1alpha1.PhaseFailed:
 				// TODO: find a more graceful way to propagate failure. Combine it with expression
-				_, _ = Failed(ctx, parent, msg)
+				_, _ = Failed(ctx, r, parent, msg)
 
 				return
 

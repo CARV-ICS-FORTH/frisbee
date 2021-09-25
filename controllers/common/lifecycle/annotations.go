@@ -57,7 +57,9 @@ func (a *PointAnnotation) Add(obj interface{}) {
 		Text: fmt.Sprintf("Child added. Kind:%s Name:%s", reflect.TypeOf(obj), objMeta.GetName()),
 	}
 
-	common.Globals.Annotator.Insert(ga)
+	if common.Globals.Annotator != nil {
+		common.Globals.Annotator.Insert(ga)
+	}
 }
 
 func (a *PointAnnotation) Delete(obj interface{}) {
@@ -79,7 +81,9 @@ func (a *PointAnnotation) Delete(obj interface{}) {
 
 	logrus.Warn("DELETION GA ", ga)
 
-	common.Globals.Annotator.Insert(ga)
+	if common.Globals.Annotator != nil {
+		common.Globals.Annotator.Insert(ga)
+	}
 }
 
 // ///////////////////////////////////////////
@@ -109,7 +113,9 @@ func (a *RangeAnnotation) Add(obj interface{}) {
 		Text:    fmt.Sprintf("Chaos injected. Kind:%s Name:%s", reflect.TypeOf(obj), objMeta.GetName()),
 	}
 
-	a.reqID = common.Globals.Annotator.Insert(ga)
+	if common.Globals.Annotator != nil {
+		a.reqID = common.Globals.Annotator.Insert(ga)
+	}
 }
 
 func (a *RangeAnnotation) Delete(obj interface{}) {
@@ -131,5 +137,7 @@ func (a *RangeAnnotation) Delete(obj interface{}) {
 		Text:    fmt.Sprintf("Chaos revoked. Kind:%s Name:%s", reflect.TypeOf(obj), objMeta.GetName()),
 	}
 
-	common.Globals.Annotator.Patch(a.reqID, ga)
+	if common.Globals.Annotator != nil {
+		common.Globals.Annotator.Patch(a.reqID, ga)
+	}
 }

@@ -113,7 +113,7 @@ func selectServices(ctx context.Context, ss *v1alpha1.MatchService) (v1alpha1.SL
 					return nil, errors.Wrapf(err, "unable to find service %s", key)
 				}
 
-				serviceList = append(serviceList, service)
+				serviceList = append(serviceList, &service)
 			}
 		}
 	}
@@ -134,9 +134,12 @@ func selectServices(ctx context.Context, ss *v1alpha1.MatchService) (v1alpha1.SL
 
 			var slist v1alpha1.ServiceList
 
-			common.Globals.Client.List(ctx, &slist, client.MatchingLabels{
-				"owner": string(cluster.GetName()),
+			err := common.Globals.Client.List(ctx, &slist, client.MatchingLabels{
+				"owner": cluster.GetName(),
 			})
+			if err != nil {
+				return nil, errors.Wrapf(err, "cannot get services")
+			}
 
 			serviceList = append(serviceList, slist.Items...)
 		}

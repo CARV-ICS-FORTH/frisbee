@@ -28,14 +28,39 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/labels"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-func (r *Reconciler) prepare(ctx context.Context, obj *v1alpha1.Service) (*corev1.Pod, error) {
-	pod := corev1.Pod{}
+func (r *Controller) runJob(ctx context.Context, obj *v1alpha1.Service) error {
+
+	pod, err := constructPod(ctx, r, obj)
+	if err != nil {
+		return err
+	}
+
+	discovery, err := constructDiscoveryService(ctx, obj, pod)
+	if err != nil {
+		return err
+	}
+
+	if _, err := ctrl.CreateOrUpdate(ctx, r.GetClient(), discovery, func() error { return nil }); err != nil {
+		return errors.Wrapf(err, "cannot create discovery service")
+	}
+
+	if _, err := ctrl.CreateOrUpdate(ctx, r.GetClient(), pod, func() error { return nil }); err != nil {
+		return errors.Wrapf(err, "cannot create pod")
+	}
+
+	return nil
+}
+
+func constructPod(ctx context.Context, r *Controller, obj *v1alpha1.Service) (*corev1.Pod, error) {
+	var pod corev1.Pod
 
 	{ // metadata
 		common.SetOwner(obj, &pod)
 		pod.SetName(obj.GetName())
+
 		pod.SetLabels(obj.GetLabels())
 		pod.SetAnnotations(obj.GetAnnotations())
 	}
@@ -45,7 +70,7 @@ func (r *Reconciler) prepare(ctx context.Context, obj *v1alpha1.Service) (*corev
 			return nil, errors.Wrapf(err, "placement policies failed")
 		}
 
-		if err := prepareContainer(obj); err != nil {
+		if err := setContainer(obj); err != nil {
 			return nil, errors.Wrapf(err, "resource  error")
 		}
 
@@ -56,19 +81,16 @@ func (r *Reconciler) prepare(ctx context.Context, obj *v1alpha1.Service) (*corev
 	}
 
 	{ // deployment
-		if err := deployAgents(ctx, obj, &pod); err != nil {
+		if err := setAgents(ctx, r, obj, &pod); err != nil {
 			return nil, errors.Wrapf(err, "agent deployment error")
 		}
 
-		if err := r.deployDiscoveryService(ctx, obj, &pod); err != nil {
-			return nil, errors.Wrapf(err, "discovery deployment error")
-		}
 	}
 
 	return &pod, nil
 }
 
-func prepareContainer(obj *v1alpha1.Service) error {
+func setContainer(obj *v1alpha1.Service) error {
 	spec := obj.Spec
 
 	container := &spec.Container
@@ -105,7 +127,7 @@ func prepareContainer(obj *v1alpha1.Service) error {
 	return nil
 }
 
-func deployAgents(ctx context.Context, obj *v1alpha1.Service, pod *corev1.Pod) error {
+func setAgents(ctx context.Context, r *Controller, obj *v1alpha1.Service, pod *corev1.Pod) error {
 	spec := obj.Spec
 
 	if spec.Agents == nil {
@@ -114,7 +136,7 @@ func deployAgents(ctx context.Context, obj *v1alpha1.Service, pod *corev1.Pod) e
 
 	// import monitoring agents to the service
 	for _, ref := range spec.Agents.Telemetry {
-		mon, err := helpers.GetMonitorSpec(ctx, helpers.ParseRef(obj.GetNamespace(), ref))
+		mon, err := helpers.GetMonitorSpec(ctx, r, helpers.ParseRef(obj.GetNamespace(), ref))
 		if err != nil {
 			return errors.Wrapf(err, "cannot get monitor")
 		}
@@ -126,7 +148,18 @@ func deployAgents(ctx context.Context, obj *v1alpha1.Service, pod *corev1.Pod) e
 	return nil
 }
 
-func (r *Reconciler) deployDiscoveryService(ctx context.Context, obj *v1alpha1.Service, pod *corev1.Pod) error {
+func setPlacement(obj *v1alpha1.Service, pod *corev1.Pod) error {
+	spec := obj.Spec
+
+	// for the moment simply match domain to a specific node. this will change in the future
+	if len(spec.Domain) > 0 {
+		pod.Spec.NodeName = spec.Domain
+	}
+
+	return nil
+}
+
+func constructDiscoveryService(ctx context.Context, obj *v1alpha1.Service, pod *corev1.Pod) (*corev1.Service, error) {
 	spec := obj.Spec
 
 	// register ports from containers and sidecars
@@ -168,26 +201,11 @@ func (r *Reconciler) deployDiscoveryService(ctx context.Context, obj *v1alpha1.S
 	kubeService.Spec.Selector = service2Pod
 	pod.SetLabels(labels.Merge(pod.GetLabels(), service2Pod))
 
-	if err := r.GetClient().Create(ctx, &kubeService); err != nil {
-		return errors.Wrapf(err, "cannot create discovery service")
-	}
-
-	return nil
-}
-
-func setPlacement(obj *v1alpha1.Service, pod *corev1.Pod) error {
-	spec := obj.Spec
-
-	// for the moment simply match domain to a specific node. this will change in the future
-	if len(spec.Domain) > 0 {
-		pod.Spec.NodeName = spec.Domain
-	}
-
-	return nil
+	return &kubeService, nil
 }
 
 /*
-func (*Reconciler) setPlacementConstraints(obj *v1alpha1.Service, pod *corev1.Pod) {
+func (*Controller) setPlacementConstraints(obj *v1alpha1.Service, pod *corev1.Pod) {
 	domainLabels := map[string]string{"domain": obj.Spec.Domain}
 	obj.SetLabels(labels.Merge(obj.GetLabels(), domainLabels))
 

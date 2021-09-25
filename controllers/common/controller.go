@@ -19,11 +19,11 @@ package common
 
 import (
 	"context"
+	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	k8errors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -39,8 +39,12 @@ func Requeue() (ctrl.Result, error) {
 	return ctrl.Result{Requeue: true}, nil
 }
 
+func RequeueAfter(delay time.Duration) (ctrl.Result, error) {
+	return ctrl.Result{RequeueAfter: delay}, nil
+}
+
 func StopWithError(err error) (ctrl.Result, error) {
-	return ctrl.Result{}, errors.Wrapf(err, "requeue request")
+	return ctrl.Result{}, err
 }
 
 // Reconciler implements basic functionality that is common to every solid reconciler (e.g, finalizers)
@@ -48,6 +52,7 @@ type Reconciler interface {
 	GetClient() client.Client
 
 	logr.Logger
+
 	Finalizer() string
 
 	// Finalize deletes any external resources associated with the service
@@ -59,41 +64,43 @@ type Reconciler interface {
 	Finalize(object client.Object) error
 }
 
-// Reconcile provides the most Globals functions for all the Reconcilers. That includes acquisition of the CR object
+// Reconcile provides the most common functions for all the Reconcilers. That includes acquisition of the CR object
 //  and management of the CR (Custom Resource) finalizers.
 //
 // Bool indicate whether the caller should return immediately (true) or continue (false).
+// The reconciliation cycle is where the framework gives us back control after a watch has passed up an event.
 func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.Object, ret *bool) (ctrl.Result, error) {
 	*ret = true
 
-	//
-	// 1. Retrieve the interested CR instance.
-	//
-	if err := r.GetClient().Get(ctx, req.NamespacedName, obj); err != nil {
-		if k8errors.IsNotFound(err) {
-			// Request object not found, could have been deleted after reconcile request.
-			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
-			// r.Info("object not found", "name", req.NamespacedName)
-			return Stop()
-		}
+	/*
+		### 1: Retrieve the CR by name
 
-		r.Error(err, "error reading the object", "name", req.NamespacedName)
-		// Error reading the object - requeue the request.
-		return StopWithError(err)
+		We'll fetch the obj using our client.  All client methods take a
+		context (to allow for cancellation) as their first argument, and the object
+		in question as their last.  Get is a bit special, in that it takes a
+		[`NamespacedName`](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/client?tab=doc#ObjectKey)
+		as the middle argument (most don't have a middle argument, as we'll see
+		below).
+	*/
+	if err := r.GetClient().Get(ctx, req.NamespacedName, obj); err != nil {
+		// Request object not found, could have been deleted after reconcile request.
+		// We'll ignore not-found errors, since they can't be fixed by an immediate
+		// requeue (we'll need to wait for a new notification), and we can get them
+		// on added / deleted requests.
+		return StopWithError(client.IgnoreNotFound(err))
 	}
 
-	//
-	// 2. Manage the instance validity. We don’t want to try to do anything on an instance that does not
-	// carry valid values.
-	//
-	// TODO: ...
+	/*
+		### 2: Manage the instance validity
+		It is better to reject an invalid CR rather than to accept it in etcd and then manage the error condition.
+		TODO: ...
+	*/
 
-	//
-	// 3. Manage instance initialization. If some values of the instance are not initialized,
-	// this section will take care of it.
-	//
-
-	// Check if the object is marked to be deleted, which is indicated by the deletion timestamp being set.
+	/*
+		### 3: Manage instance initialization
+		Finalizers provide a mechanism to inform the Kubernetes control plane that an action needs to take place
+		before the standard Kubernetes garbage collection logic can be performed.
+	*/
 	if obj.GetDeletionTimestamp().IsZero() {
 		// The object is not being deleted, so if it does not have our finalizer,
 		// then lets add the finalizer and Update the object. This is equivalent
@@ -103,28 +110,20 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 			// see Foreground cascading deletion.
 			// Note that in the "foregroundDeletion", only dependents with ownerReference.blockOwnerDeletion
 			// block the deletion of the owner object.
-			controllerutil.AddFinalizer(obj, metav1.FinalizerDeleteDependents)
+			// controllerutil.AddFinalizer(obj, metav1.FinalizerDeleteDependents)
 			controllerutil.AddFinalizer(obj, r.Finalizer())
-
-			if ret, err := Update(ctx, obj); err != nil {
-				runtimeutil.HandleError(errors.Wrapf(err, "unable to add finalizer for %s", req.NamespacedName))
-
-				return ret, err
-			}
 
 			// This code changes the spec and metadata, whereas the solid Reconciler changes the status.
 			// If we do not return at this point, there will be a conflict because the solid Reconciler will try
 			// to Update the status of a modified object.
-			// To cause the solid Reconciler to return immediate, we use *ret=true
-			return Stop()
+			return Update(ctx, r, obj)
 		}
 	}
 
-	//
-	// 4. Manage instance deletion. If the instance is being deleted, and we need to do some specific clean up,
-	// this is where we manage it.
-	//
-
+	/*
+		### 4: Manage instance deletion
+		If the instance is being deleted, and we need to do some specific clean up, this is where we manage it.
+	*/
 	if !obj.GetDeletionTimestamp().IsZero() {
 		// check if the finalizer owned by this controller is present.
 		if !controllerutil.ContainsFinalizer(obj, r.Finalizer()) {
@@ -143,11 +142,7 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 		// Once all finalizers have been removed, the object will be deleted.
 		controllerutil.RemoveFinalizer(obj, r.Finalizer())
 
-		if res, err := Update(ctx, obj); err != nil {
-			runtimeutil.HandleError(errors.Wrapf(err, "unable to remove finalizer for %s", req.NamespacedName))
-
-			return res, err
-		}
+		return Update(ctx, r, obj)
 	}
 
 	*ret = false
@@ -155,9 +150,9 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 	return Stop()
 }
 
-func Update(ctx context.Context, obj client.Object) (ctrl.Result, error) {
+func Update(ctx context.Context, r Reconciler, obj client.Object) (ctrl.Result, error) {
 	updateError := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		return Globals.Client.Update(ctx, obj)
+		return r.GetClient().Update(ctx, obj)
 	})
 
 	switch {
@@ -165,7 +160,7 @@ func Update(ctx context.Context, obj client.Object) (ctrl.Result, error) {
 		return Stop()
 
 	case k8errors.IsInvalid(updateError):
-		Globals.Logger.Error(updateError, "Update error")
+		r.Error(updateError, "Invalid Update() for", "object", obj.GetName())
 
 		return Stop()
 
@@ -177,8 +172,6 @@ func Update(ctx context.Context, obj client.Object) (ctrl.Result, error) {
 	case k8errors.IsConflict(updateError):
 		// The object has been updated since we read it.
 		// Requeue the object to try to reconciliate again.
-		runtimeutil.HandleError(errors.Wrapf(updateError, "update error"))
-
 		return Requeue()
 
 	default:
@@ -189,13 +182,11 @@ func Update(ctx context.Context, obj client.Object) (ctrl.Result, error) {
 	}
 }
 
-func UpdateStatus(ctx context.Context, obj client.Object) (ctrl.Result, error) {
+func UpdateStatus(ctx context.Context, r Reconciler, obj client.Object) (ctrl.Result, error) {
 	// The status subresource ignores changes to spec, so it’s less likely to conflict with any other updates,
 	// and can have separate permissions.
 	updateError := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		Globals.Logger.V(4).Info("(re) to update status of ", obj.GetName())
-
-		return Globals.Client.Status().Update(ctx, obj)
+		return r.GetClient().Status().Update(ctx, obj)
 	})
 
 	switch {
@@ -203,21 +194,18 @@ func UpdateStatus(ctx context.Context, obj client.Object) (ctrl.Result, error) {
 		return Stop()
 
 	case k8errors.IsInvalid(updateError):
-		Globals.Logger.Error(updateError, "Update status error", "object", obj.GetName())
+		r.Error(updateError, "Invalid UpdateStatus() for", "object", obj.GetName())
 
-		return Stop()
+		return Requeue()
 
 	case k8errors.IsNotFound(updateError):
 		// The object has been deleted since we read it.
-		// Requeue the object to try to reconciliate again.
+		// Requeue the object to try to reconcile again.
 		return Requeue()
 
 	case k8errors.IsConflict(updateError):
 		// The object has been updated since we read it.
-		// Requeue the object to try to reconciliate again.
-
-		runtimeutil.HandleError(errors.Wrapf(updateError, "update status error"))
-
+		// Requeue the object to try to reconcile again.
 		return Requeue()
 
 	default:

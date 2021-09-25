@@ -1,0 +1,34 @@
+apiVersion: frisbee.io/v1alpha1
+kind: Workflow
+metadata:
+  name: redis-load
+spec:
+  importMonitors: [ "sysmon/container", "redismon/telegraf", "ycsbmon/goycsb" ]
+  ingress:
+    host: localhost
+    useAmbassador: true
+
+  actions:
+    # Create a single Master node
+    - action: Cluster
+      name: masters
+      cluster:
+        templateRef: redis/master
+        instances: 1
+
+    # Ingest keys in parallel, into different ranges
+    - action: Cluster
+      name: loaders
+      depends: { running: [ masters ] }
+      cluster:
+        templateRef: redis/loader
+        inputs:
+          - { server: .cluster.masters.any, recordcount: "1000000", offset: "0" }
+          - { server: .cluster.masters.any, recordcount: "1000000", offset: "1000000" }
+          - { server: .cluster.masters.any, recordcount: "1000000", offset: "2000000" }
+
+    # Wait until loaders are complete
+    - action: Wait
+      name: "teardown"
+      wait:
+        success: [ loaders ]

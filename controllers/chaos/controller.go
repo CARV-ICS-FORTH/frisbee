@@ -34,87 +34,92 @@ import (
 // +kubebuilder:rbac:groups=frisbee.io,resources=chaoss/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=frisbee.io,resources=chaoss/finalizers,verbs=update
 
-func NewController(mgr ctrl.Manager, logger logr.Logger) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1alpha1.Chaos{}).
-		Named("chaos").
-		Complete(&Reconciler{
-			Manager: mgr,
-			Logger:  logger.WithName("chaos"),
-		})
-}
-
-// Reconciler reconciles a Reference object
-type Reconciler struct {
+// Controller reconciles a Reference object
+type Controller struct {
 	ctrl.Manager
 	logr.Logger
 }
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
-func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	var obj v1alpha1.Chaos
+func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	/*
+		### 1: Load the chaos by name.
+	*/
+
+	var chaos v1alpha1.Chaos
 
 	var ret bool
-	result, err := common.Reconcile(ctx, r, req, &obj, &ret)
+	result, err := common.Reconcile(ctx, r, req, &chaos, &ret)
 	if ret {
 		return result, err
 	}
 
-	r.Logger.Info("-> Reconcile", "kind", reflect.TypeOf(obj), "name", obj.GetName(), "lifecycle", obj.Status.Phase)
+	r.Logger.Info("-> Reconcile",
+		"kind", reflect.TypeOf(chaos),
+		"name", chaos.GetName(),
+		"lifecycle", chaos.Status.Phase,
+		"deleted", !chaos.GetDeletionTimestamp().IsZero(),
+	)
+
 	defer func() {
-		r.Logger.Info("<- Reconcile", "kind", reflect.TypeOf(obj), "name", obj.GetName(), "lifecycle", obj.Status.Phase)
+		r.Logger.Info("<- Reconcile",
+			"kind", reflect.TypeOf(chaos),
+			"name", chaos.GetName(),
+			"lifecycle", chaos.Status.Phase,
+			"deleted", !chaos.GetDeletionTimestamp().IsZero(),
+		)
 	}()
 
-	handler := r.dispatch(obj.Spec.Type)
+	handler := r.dispatch(chaos.Spec.Type)
 
 	// Here goes the actual reconcile logic
-	switch obj.Status.Phase {
+	switch chaos.Status.Phase {
 	case v1alpha1.PhaseUninitialized:
-		return lifecycle.Pending(ctx, &obj, "received chaos request")
+		return lifecycle.Pending(ctx, r, &chaos, "received chaos request")
 
 	case v1alpha1.PhasePending:
-		if err := handler.Inject(ctx, &obj); err != nil {
-			return lifecycle.Failed(ctx, &obj, errors.Wrapf(err, "injection failed"))
+		if err := handler.Inject(ctx, &chaos); err != nil {
+			return lifecycle.Failed(ctx, r, &chaos, errors.Wrapf(err, "injection failed"))
 		}
 
 		return common.Stop()
 
 	case v1alpha1.PhaseRunning:
-		if err := handler.WaitForDuration(ctx, &obj); err != nil {
-			return lifecycle.Failed(ctx, &obj, errors.Wrapf(err, "chaos failed"))
+		if err := handler.WaitForDuration(ctx, &chaos); err != nil {
+			return lifecycle.Failed(ctx, r, &chaos, errors.Wrapf(err, "chaos failed"))
 		}
 
-		return lifecycle.Success(ctx, &obj, "chaos revoked")
+		return lifecycle.Success(ctx, r, &chaos, "chaos revoked")
 
 	case v1alpha1.PhaseSuccess:
-		r.Logger.Info("Chaos completed", "name", obj.GetName())
+		r.Logger.Info("Chaos completed", "name", chaos.GetName())
 
-		if err := handler.Revoke(ctx, &obj); err != nil {
-			return lifecycle.Failed(ctx, &obj, errors.Wrapf(err, "unable to revoke chaos"))
+		if err := handler.Revoke(ctx, &chaos); err != nil {
+			return lifecycle.Failed(ctx, r, &chaos, errors.Wrapf(err, "unable to revoke chaos"))
 		}
 
 		return common.Stop()
 
 	case v1alpha1.PhaseFailed:
-		r.Logger.Info("Chaos failed", "name", obj.GetName())
+		r.Logger.Info("Chaos failed", "name", chaos.GetName())
 
 		return common.Stop()
 
 	case v1alpha1.PhaseChaos:
 		// These phases should not happen in the workflow
-		panic(errors.Errorf("invalid lifecycle phase %s", obj.Status.Phase))
+		panic(errors.Errorf("invalid lifecycle phase %s", chaos.Status.Phase))
 
 	default:
-		panic(errors.Errorf("unknown lifecycle phase: %s", obj.Status.Phase))
+		panic(errors.Errorf("unknown lifecycle phase: %s", chaos.Status.Phase))
 	}
 }
 
-func (r *Reconciler) Finalizer() string {
+func (r *Controller) Finalizer() string {
 	return "chaoss.frisbee.io/finalizer"
 }
 
-func (r *Reconciler) Finalize(obj client.Object) error {
+func (r *Controller) Finalize(obj client.Object) error {
 	r.Logger.Info("Finalize", "kind", reflect.TypeOf(obj), "name", obj.GetName())
 
 	return nil
@@ -126,7 +131,7 @@ type chaoHandler interface {
 	Revoke(ctx context.Context, obj *v1alpha1.Chaos) error
 }
 
-func (r *Reconciler) dispatch(faultType v1alpha1.FaultType) chaoHandler {
+func (r *Controller) dispatch(faultType v1alpha1.FaultType) chaoHandler {
 	switch faultType {
 	case v1alpha1.FaultPartition:
 		return &partition{r: r}
@@ -134,4 +139,14 @@ func (r *Reconciler) dispatch(faultType v1alpha1.FaultType) chaoHandler {
 	default:
 		panic("should never happen")
 	}
+}
+
+func NewController(mgr ctrl.Manager, logger logr.Logger) error {
+	return ctrl.NewControllerManagedBy(mgr).
+		For(&v1alpha1.Chaos{}).
+		Named("chaos").
+		Complete(&Controller{
+			Manager: mgr,
+			Logger:  logger.WithName("chaos"),
+		})
 }

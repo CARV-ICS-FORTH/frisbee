@@ -9,15 +9,15 @@ spec:
     useAmbassador: true
 
   actions:
-    # Create a Master node
-    - actiontype: Cluster
+    # Create a single Master node
+    - action: Cluster
       name: masters
       cluster:
         templateRef: redis/master
         instances: 1
 
     # Create a Slave node
-    - actiontype: Cluster
+    - action: Cluster
       name: slaves
       depends: { running: [ masters ] }
       cluster:
@@ -27,7 +27,7 @@ spec:
 
 
     # Create a failover manager
-    - actiontype: Cluster
+    - action: Cluster
       name: sentinel
       depends: { running: [ masters, slaves ] }
       cluster:
@@ -36,18 +36,20 @@ spec:
           - { master: .cluster.masters.any }
 
 
-    # Ingest keys in parallel into different ranges
-    - actiontype: Cluster
-      name: loaders
-      depends: { running: [ masters ] }
+    # Ingest keys in parallel, into different ranges
+    - action: Cluster
+      name: "loaders"
+      depends: { running: [ masters ], duration: 30s }
       cluster:
         templateRef: redis/loader
         inputs:
-          - { server: .cluster.masters.any, recordcount: "100000000", offset: "0" }
+          - { server: .cluster.masters.any, recordcount: "1000000", offset: "0" }
+          - { server: .cluster.masters.any, recordcount: "1000000", offset: "1000000" }
+          - { server: .cluster.masters.any, recordcount: "1000000", offset: "2000000" }
 
 
     # Cause two partition failures with different duration
-    - actiontype: Chaos
+    - action: Chaos
       name: partition0
       depends: { running: [ masters, slaves ], duration: "5m" }
       chaos:
@@ -57,7 +59,7 @@ spec:
             macro: .cluster.masters.any
           duration: "2m"
 
-    - actiontype: Chaos
+    - action: Chaos
       name: partition1
       depends: { running: [ masters, slaves ], success: [ partition0 ], duration: "3m" }
       chaos:
@@ -67,8 +69,8 @@ spec:
           duration: "2m"
 
 
-    # Wait until servers are removed
-    - actiontype: Wait
-      name: "terminate"
+    # Wait until loaders are complete
+    - action: Wait
+      name: "teardown"
       wait:
         success: [ loaders ]

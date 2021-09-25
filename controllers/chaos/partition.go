@@ -33,7 +33,7 @@ import (
 )
 
 type partition struct {
-	r *Reconciler
+	r *Controller
 }
 
 func (f *partition) generate(ctx context.Context, obj *v1alpha1.Chaos) unstructured.Unstructured {
@@ -90,8 +90,8 @@ func (f *partition) Inject(ctx context.Context, obj *v1alpha1.Chaos) error {
 		lifecycle.WatchExternal(&chaos, AccessChaosStatus, chaos.GetName()),
 		lifecycle.WithFilters(lifecycle.FilterByParent(obj.GetUID())),
 		lifecycle.WithAnnotator(&lifecycle.RangeAnnotation{}),
-		lifecycle.WithUpdateParentStatus(obj.DeepCopy()),
-	).Run(ctx)
+		//	lifecycle.WithUpdateParentStatus(obj.DeepCopy()),
+	).Run(ctx, f.r)
 
 	return errors.Wrapf(err, "lifecycle failed")
 }

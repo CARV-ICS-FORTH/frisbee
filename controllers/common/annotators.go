@@ -19,7 +19,6 @@ package common
 
 import (
 	"context"
-	"math/rand"
 
 	"github.com/grafana-tools/sdk"
 	"github.com/pkg/errors"
@@ -29,22 +28,6 @@ import (
 type Annotator interface {
 	Insert(sdk.CreateAnnotationRequest) (id uint)
 	Patch(reqID uint, ga sdk.PatchAnnotationRequest)
-}
-
-// ///////////////////////////////////////////
-//		Logger Annotator
-// ///////////////////////////////////////////
-
-type DefaultAnnotator struct{}
-
-func (a *DefaultAnnotator) Insert(ga sdk.CreateAnnotationRequest) (id uint) {
-	Globals.Logger.Info("omit annotation", "msg", ga.Text)
-
-	return uint(rand.Uint64())
-}
-
-func (a *DefaultAnnotator) Patch(_ uint, ga sdk.PatchAnnotationRequest) {
-	Globals.Logger.Info("omit patch annotation", "msg", ga.Text)
 }
 
 // ///////////////////////////////////////////

@@ -24,18 +24,19 @@ import (
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/fnikolai/frisbee/api/v1alpha1"
+	"github.com/fnikolai/frisbee/controllers/common"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
-func GetServiceSpec(ctx context.Context, ts *v1alpha1.TemplateSelector) (*v1alpha1.ServiceSpec, error) {
-	scheme := SelectServiceTemplate(ctx, ts)
+func GetServiceSpec(ctx context.Context, r common.Reconciler, ts *v1alpha1.TemplateSelector) (v1alpha1.ServiceSpec, error) {
+	scheme := SelectServiceTemplate(ctx, r, ts)
 
 	return GenerateServiceSpec(scheme)
 }
 
 // GenerateServiceSpec parses a given scheme and returns the respective ServiceSpec.
-func GenerateServiceSpec(tspec *v1alpha1.Scheme) (*v1alpha1.ServiceSpec, error) {
+func GenerateServiceSpec(tspec *v1alpha1.Scheme) (v1alpha1.ServiceSpec, error) {
 	// replaced templated expression with actual values
 	t := template.Must(
 		template.New("").
@@ -46,21 +47,21 @@ func GenerateServiceSpec(tspec *v1alpha1.Scheme) (*v1alpha1.ServiceSpec, error) 
 	var out strings.Builder
 
 	if err := t.Execute(&out, tspec); err != nil {
-		return nil, errors.Wrapf(err, "execution error")
+		return v1alpha1.ServiceSpec{}, errors.Wrapf(err, "execution error")
 	}
 
 	// convert the payload with actual values into a spec
 	spec := v1alpha1.ServiceSpec{}
 
 	if err := yaml.Unmarshal([]byte(out.String()), &spec); err != nil {
-		return nil, errors.Wrapf(err, "service decode")
+		return v1alpha1.ServiceSpec{}, errors.Wrapf(err, "service decode")
 	}
 
-	return &spec, nil
+	return spec, nil
 }
 
-func GetMonitorSpec(ctx context.Context, ts *v1alpha1.TemplateSelector) (*v1alpha1.MonitorSpec, error) {
-	scheme := SelectMonitorTemplate(ctx, ts)
+func GetMonitorSpec(ctx context.Context, r common.Reconciler, ts *v1alpha1.TemplateSelector) (*v1alpha1.MonitorSpec, error) {
+	scheme := SelectMonitorTemplate(ctx, r, ts)
 
 	return GenerateMonitorSpec(scheme)
 }

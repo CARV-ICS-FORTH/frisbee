@@ -67,7 +67,7 @@ type WorkflowSpec struct {
 
 // Action delegates arguments to the proper action handler
 type Action struct {
-	ActionType string `json:"actiontype"`
+	ActionType string `json:"action"`
 
 	// Name is a unique identifier of the action
 	Name string `json:"name"`
@@ -80,6 +80,9 @@ type Action struct {
 }
 
 type EmbedActions struct {
+	// +optional
+	Service *ServiceSpec `json:"service,omitempty"`
+
 	// +optional
 	Cluster *ClusterSpec `json:"cluster,omitempty"`
 

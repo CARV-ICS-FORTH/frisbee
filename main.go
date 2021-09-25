@@ -18,7 +18,6 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"net/http"
 	_ "net/http/pprof"
@@ -91,8 +90,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	ctx := context.Background()
-
 	common.SetCommon(mgr, setupLog)
 
 	if err := template.NewController(mgr, setupLog); err != nil {
@@ -101,7 +98,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := service.NewController(ctx, mgr, setupLog); err != nil {
+	if err := service.NewController(mgr, setupLog); err != nil {
 		runtimeutil.HandleError(errors.Wrapf(err, "unable to create Service controller"))
 
 		os.Exit(1)

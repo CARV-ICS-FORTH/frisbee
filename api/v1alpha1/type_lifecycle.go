@@ -34,8 +34,11 @@ type Phase string
 // PhaseUninitialized -> PhaseRunning* -> PhaseChaos -> Completed
 // The asterix (*) Indicate that the same phase may appear recursively.
 const (
-	// PhaseUninitialized means that the service has been accepted by the system.
+	// PhaseUninitialized means that request is not yet accepted by the controller.
 	PhaseUninitialized = Phase("")
+
+	// PhaseInitialized means that the request has been accepted by the controller.
+	PhaseInitialized = Phase("Initialized")
 
 	// PhasePending means that the service been accepted by the Kubernetes cluster, but one of the dependent
 	// conditions is not met yet. This includes the time waiting for logical dependencies (e.g, Run, Success),

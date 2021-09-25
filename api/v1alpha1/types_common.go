@@ -14,7 +14,7 @@ const (
 )
 
 // SList is a service list
-type SList []Service
+type SList []*Service
 
 func (in SList) ToString() string {
 	if len(in) == 0 {
@@ -99,7 +99,7 @@ func (in SList) Yield(ctx context.Context, schedule *SchedulerSpec) <-chan *Serv
 		ret := make(chan *Service, len(in))
 
 		for _, instance := range in {
-			ret <- &instance
+			ret <- instance
 		}
 
 		close(ret)
@@ -122,7 +122,7 @@ func (in SList) Yield(ctx context.Context, schedule *SchedulerSpec) <-chan *Serv
 
 			switch {
 			case v < uint32(len(in)):
-				ret <- &in[last]
+				ret <- in[last]
 			case v == uint32(len(in)):
 				close(stop)
 			case v > uint32(len(in)):
