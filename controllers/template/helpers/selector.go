@@ -22,7 +22,7 @@ import (
 	"strings"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
-	"github.com/fnikolai/frisbee/controllers/common"
+	"github.com/fnikolai/frisbee/controllers/utils"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	k8errors "k8s.io/apimachinery/pkg/api/errors"
@@ -50,7 +50,7 @@ func ParseRef(nm, templateRef string) *v1alpha1.TemplateSelector {
 	}
 }
 
-func SelectServiceTemplate(ctx context.Context, r common.Reconciler, ts *v1alpha1.TemplateSelector) *v1alpha1.Scheme {
+func SelectServiceTemplate(ctx context.Context, r utils.Reconciler, ts *v1alpha1.TemplateSelector) *v1alpha1.Scheme {
 	if ts == nil {
 		return nil
 	}
@@ -91,7 +91,7 @@ func SelectServiceTemplate(ctx context.Context, r common.Reconciler, ts *v1alpha
 	}
 }
 
-func SelectMonitorTemplate(ctx context.Context, r common.Reconciler, ts *v1alpha1.TemplateSelector) *v1alpha1.Scheme {
+func SelectMonitorTemplate(ctx context.Context, r utils.Reconciler, ts *v1alpha1.TemplateSelector) *v1alpha1.Scheme {
 	if ts == nil {
 		return nil
 	}

@@ -40,17 +40,19 @@ building more controllers.
 Next, we present the family of controllers that each available controller belongs to.
 
 * Service: provides the skeleton for managing an external object (e.g, Pod) via the Typed client's API.
-  
-* Chaos: provides a skeleton for managing an external object (e.g, Chaos) via the [Unstructured](https://pkg.go.dev/k8s.io/apimachinery/pkg/apis/meta/v1/unstructured#Unstructured) client's API.  
+
+* Chaos: provides a skeleton for managing an external object (e.g, Chaos) via
+  the [Unstructured](https://pkg.go.dev/k8s.io/apimachinery/pkg/apis/meta/v1/unstructured#Unstructured) client's API.  
   This method allows objects that do not have Golang structs registered to be manipulated generically. This can be used
   to deal with the API objects from a plug-in. Unstructured objects still have functioning TypeMeta features-- kind,
   version, etc.
 
 * Cluster: provides the skeleton for managing a collection of similar objects (e.g, Frisbee Services). In contrast to
-  the previous cases, the cluster lifecycle is not tied to a particular Service, but it rather depends on the aggregated outcome. For
-  example, a cluster may be running even if some services have failed. 
+  the previous cases, the cluster lifecycle is not tied to a particular Service, but it rather depends on the aggregated
+  outcome. For example, a cluster may be running even if some services have failed.
 
-* Workflow:  provides the skeleton for a Frisbee controller that manage a collection of unsimilar objects (e.g, Services, Chaos, Clusters, ...).
+* Workflow:  provides the skeleton for a Frisbee controller that manage a collection of unsimilar objects (e.g,
+  Services, Chaos, Clusters, ...).
 
 ## Be Careful
 

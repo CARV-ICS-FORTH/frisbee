@@ -25,9 +25,9 @@ import (
 
 	"github.com/fnikolai/frisbee/controllers/chaos"
 	"github.com/fnikolai/frisbee/controllers/cluster"
-	"github.com/fnikolai/frisbee/controllers/common"
 	"github.com/fnikolai/frisbee/controllers/service"
 	"github.com/fnikolai/frisbee/controllers/template"
+	"github.com/fnikolai/frisbee/controllers/utils"
 	"github.com/fnikolai/frisbee/controllers/workflow"
 	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
@@ -90,7 +90,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	common.SetCommon(mgr, setupLog)
+	utils.SetCommon(mgr)
 
 	if err := template.NewController(mgr, setupLog); err != nil {
 		runtimeutil.HandleError(errors.Wrapf(err, "unable to create Templates controller"))

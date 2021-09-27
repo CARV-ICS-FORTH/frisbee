@@ -23,8 +23,8 @@ import (
 	"time"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
-	"github.com/fnikolai/frisbee/controllers/common"
-	"github.com/fnikolai/frisbee/controllers/common/lifecycle"
+	"github.com/fnikolai/frisbee/controllers/utils"
+	"github.com/fnikolai/frisbee/controllers/utils/lifecycle"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -60,7 +60,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	var cluster v1alpha1.Cluster
 
 	var ret bool
-	result, err := common.Reconcile(ctx, r, req, &cluster, &ret)
+	result, err := utils.Reconcile(ctx, r, req, &cluster, &ret)
 	if ret {
 		return result, err
 	}
@@ -101,7 +101,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		cluster.Status.Expected = jobList
 
-		if _, err := common.UpdateStatus(ctx, r, &cluster); err != nil {
+		if _, err := utils.UpdateStatus(ctx, r, &cluster); err != nil {
 			r.Logger.Error(err, "update status error")
 			return lifecycle.Failed(ctx, r, &cluster, errors.Wrapf(err, "status update"))
 		}
@@ -191,7 +191,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	newStatus := calculateLifecycle(&cluster, activeJobs, successfulJobs, failedJobs)
 	cluster.Status.Lifecycle = newStatus
 
-	if _, err := common.UpdateStatus(ctx, r, &cluster); err != nil {
+	if _, err := utils.UpdateStatus(ctx, r, &cluster); err != nil {
 		r.Logger.Error(err, "update status error")
 
 		return lifecycle.Failed(ctx, r, &cluster, errors.Wrapf(err, "status update"))
@@ -207,7 +207,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	switch newStatus.Phase {
 	case v1alpha1.PhaseRunning:
-		return common.Stop()
+		return utils.Stop()
 
 	case v1alpha1.PhaseSuccess:
 		// Delete the cluster when all its jobs are doned
@@ -215,7 +215,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			return lifecycle.Failed(ctx, r, &cluster, errors.Wrapf(err, "cluster deletion"))
 		}
 
-		return common.Stop()
+		return utils.Stop()
 
 	case v1alpha1.PhaseFailed:
 		r.Logger.Info("Oracle has failed for ",
@@ -223,7 +223,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			"reason", newStatus.Reason,
 		)
 
-		return common.Stop()
+		return utils.Stop()
 	}
 
 	/*
@@ -236,7 +236,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if cluster.Spec.Suspend != nil && *cluster.Spec.Suspend {
 		r.Logger.Info("cluster suspended, skipping")
 
-		return common.Stop()
+		return utils.Stop()
 	}
 
 	/*
@@ -259,13 +259,13 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// the index already shows the next position.
 	nextExpectedJob := len(childJobs.Items)
 
-	missedRun, nextRun, err := getNextSchedule(&cluster, time.Now())
+	missedRun, nextRun, err := utils.GetNextSchedule(cluster.GetObjectMeta(), cluster.Spec.Schedule, cluster.Status.LastScheduleTime)
 	if err != nil {
 		r.Logger.Error(err, "unable to figure out execution schedule")
 
 		// we don't really care about requeuing until we get an update that
 		// fixes the schedule, so don't return an error
-		return common.Stop()
+		return utils.Stop()
 	}
 
 	r.Logger.Info("next run", "missed ", missedRun, "next", nextRun, " job ", nextExpectedJob)
@@ -274,12 +274,12 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		if nextRun.IsZero() {
 			r.Logger.Info("scheduling is complete.")
 
-			return common.Stop()
+			return utils.Stop()
 		}
 
 		r.Logger.Info("no upcoming scheduled times, sleeping until next")
 
-		return common.RequeueAfter(nextRun.Sub(time.Now()))
+		return utils.RequeueAfter(nextRun.Sub(time.Now()))
 	}
 
 	if schedule := cluster.Spec.Schedule; schedule != nil {
@@ -296,13 +296,11 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	/*
-		### 9  Run a new job if it's on schedule, not past the deadline, and not blocked by our concurrency policy
+		### 9  Running a new job if it's on schedule, not past the deadline, and not blocked by our concurrency policy
 	*/
 	nextJob := constructJob(&cluster, nextExpectedJob)
 
-	// if the next reconciliation cycle happens faster than the API update, it is possible to
-	// reschedule the creation of a Job. To avoid that, get if the Job is already submitted.
-	if _, err := ctrl.CreateOrUpdate(ctx, r.GetClient(), nextJob, func() error { return nil }); err != nil {
+	if err := utils.CreateUnlessExists(ctx, r, nextJob); err != nil {
 		return lifecycle.Failed(ctx, r, &cluster, errors.Wrapf(err, "cannot create job"))
 	}
 
@@ -312,7 +310,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	)
 
 	// exit and wait for watchers to trigger the next reconcile cycle
-	return common.Stop()
+	return utils.Stop()
 }
 
 /*

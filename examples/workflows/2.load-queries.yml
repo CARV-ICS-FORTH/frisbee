@@ -19,7 +19,7 @@ spec:
     # Ingest keys in parallel, into different ranges
     - action: Cluster
       name: loaders
-      depends: { running: [ masters ], duration: 30s  }
+      depends: { running: [ masters ], duration: 30s }
       cluster:
         templateRef: redis/loader
         inputs:

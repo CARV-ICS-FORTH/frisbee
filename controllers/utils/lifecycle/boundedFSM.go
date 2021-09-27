@@ -22,11 +22,12 @@ import (
 	"reflect"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
-	"github.com/fnikolai/frisbee/controllers/common"
+	"github.com/fnikolai/frisbee/controllers/utils"
 	"github.com/fnikolai/frisbee/pkg/wait"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // BoundedFSM calculates the present state of the parent by using a set of predefined children.
@@ -84,9 +85,12 @@ func (n *BoundedFSM) HandleEvent(obj interface{}) {
 			continue
 		}
 
-		if event.Name == "" || event.Kind == "" {
-			panic(errors.Errorf("controller panic due to invalid args. name: %s, kind:%s", event.Name, event.Kind))
-		}
+		/*
+			if event.Name == "" || event.Kind == "" {
+				panic(errors.Errorf("controller panic due to invalid args. name: %s, kind:%s", event.Name, event.Kind))
+			}
+
+		*/
 
 		logrus.Warn("Handle Event ", event)
 
@@ -122,7 +126,7 @@ func (n *BoundedFSM) HandleEvent(obj interface{}) {
 			// stupid thing but we need for Kubernetes v.1.19.
 			// In v.1.21 this is captured by the DeleteFunc of the watcher
 			if event.EndTime != nil {
-				n.annotaror.Delete(obj)
+				n.annotaror.Delete(obj.(client.Object))
 			}
 
 			n.failed <- errors.New(event.String())
@@ -164,16 +168,16 @@ func (n *BoundedFSM) getNextRunning() (phase v1alpha1.Phase, msg, valid error) {
 	}
 }
 
-var errIsFinal = errors.New("Phase is final")
+var errIsTerminal = errors.New("Phase is final")
 
 // listen for all the expected transition from PhaseSuccess.
 func (n *BoundedFSM) getNextSuccess() (phase v1alpha1.Phase, msg, valid error) {
-	return v1alpha1.PhaseSuccess, nil, errIsFinal
+	return v1alpha1.PhaseSuccess, nil, errIsTerminal
 }
 
 // listen for all the expected transition from Failed.
 func (n *BoundedFSM) getNextFailed() (phase v1alpha1.Phase, msg, valid error) {
-	return v1alpha1.PhaseFailed, nil, errIsFinal
+	return v1alpha1.PhaseFailed, nil, errIsTerminal
 }
 
 // listen for all the expected transition from Chaos.
@@ -209,7 +213,7 @@ func (n *BoundedFSM) Expect(expected v1alpha1.Phase) error {
 		case phase == expected: // correct Phase
 			return nil
 
-		case errors.Is(valid, errIsFinal): // the transition is valid, but not the expected one
+		case errors.Is(valid, errIsTerminal): // the transition is valid, but not the expected one
 			if msg == nil {
 				return errors.Errorf("expected %s but got %s", expected, phase)
 			}
@@ -245,7 +249,7 @@ func (n *BoundedFSM) Expect(expected v1alpha1.Phase) error {
 // When using this function, there are two rules that must be respected in order to avoid conflicts
 // 1) This method should not be followed by status updates (e.g., Pending, Success).
 // 2) When deleting the parent object, use the provided Delete() method of this package.
-func (n *BoundedFSM) Update(ctx context.Context, r common.Reconciler, parent InnerObject) error {
+func (n *BoundedFSM) Update(ctx context.Context, r utils.Reconciler, parent InnerObject) error {
 
 	var phase v1alpha1.Phase
 

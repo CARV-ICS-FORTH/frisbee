@@ -15,12 +15,11 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package common
+package utils
 
 import (
 	"context"
 
-	"github.com/go-logr/logr"
 	"github.com/grafana-tools/sdk"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/util/retry"
@@ -46,7 +45,7 @@ func SetNamespace(nm string) {
 	Globals.Namespace = nm
 }
 
-func SetCommon(mgr ctrl.Manager, logger logr.Logger) {
+func SetCommon(mgr ctrl.Manager) {
 	Globals.Cache = mgr.GetCache()
 	Globals.Client = mgr.GetClient()
 	Globals.Executor = NewExecutor(mgr.GetConfig())

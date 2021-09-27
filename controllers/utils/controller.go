@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package common
+package utils
 
 import (
 	"context"
@@ -214,4 +214,16 @@ func UpdateStatus(ctx context.Context, r Reconciler, obj client.Object) (ctrl.Re
 
 		return Stop()
 	}
+}
+
+// CreateUnlessExists ignores existing objects.
+// if the next reconciliation cycle happens faster than the API update, it is possible to
+// reschedule the creation of a Job. To avoid that, get if the Job is already submitted.
+func CreateUnlessExists(ctx context.Context, r Reconciler, obj client.Object) error {
+	err := r.GetClient().Create(ctx, obj)
+	if err != nil && !k8errors.IsAlreadyExists(err) {
+		return errors.Wrapf(err, "creation failed")
+	}
+
+	return nil
 }

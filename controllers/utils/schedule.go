@@ -14,11 +14,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
-// Most of this part is adapted from:
-// https://github.com/kubernetes-sigs/kubebuilder/blob/master/docs/book/src/cronjob-tutorial/testdata/project/controllers/cronjob_controller.go
 
-package cluster
+package utils
 
 import (
 	"time"
@@ -26,11 +23,16 @@ import (
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/robfig/cron/v3"
-	"github.com/sirupsen/logrus"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func getNextSchedule(cluster *v1alpha1.Cluster, cur time.Time) (lastMissed time.Time, next time.Time, err error) {
-	scheduler := cluster.Spec.Schedule
+// GetNextSchedule returns the next scheduling time based on the cron hob.
+func GetNextSchedule(
+	obj metav1.Object,
+	scheduler *v1alpha1.SchedulerSpec,
+	lastScheduleTime *metav1.Time,
+) (lastMissed time.Time, next time.Time, err error) {
+	cur := time.Now()
 
 	// if there is no scheduler defined, start the job immediately.
 	if scheduler == nil {
@@ -46,10 +48,10 @@ func getNextSchedule(cluster *v1alpha1.Cluster, cur time.Time) (lastMissed time.
 	// we could reconstitute this here, but there's not much point, since we've
 	// just updated it.
 	var earliestTime time.Time
-	if cluster.Status.LastScheduleTime != nil {
-		earliestTime = cluster.Status.LastScheduleTime.Time
+	if lastScheduleTime != nil {
+		earliestTime = lastScheduleTime.Time
 	} else {
-		earliestTime = cluster.ObjectMeta.CreationTimestamp.Time
+		earliestTime = obj.GetCreationTimestamp().Time
 	}
 	if scheduler.StartingDeadlineSeconds != nil {
 		// controller is not going to schedule anything below this point
@@ -88,71 +90,4 @@ func getNextSchedule(cluster *v1alpha1.Cluster, cur time.Time) (lastMissed time.
 		}
 	}
 	return lastMissed, sched.Next(cur), nil
-}
-
-// calculateLifecycle returns the update lifecycle of the cluster.
-func calculateLifecycle(cluster *v1alpha1.Cluster, activeJobs, successfulJobs, failedJobs v1alpha1.SList) v1alpha1.Lifecycle {
-	allJobs := cluster.Status.Expected
-	newStatus := v1alpha1.Lifecycle{}
-
-	logrus.Warnf("instances: (%d), activeJobs (%d): %s, successfulJobs (%d): %s, failedJobs (%d): %s",
-		len(cluster.Status.Expected),
-		len(activeJobs), activeJobs.ToString(),
-		len(successfulJobs), successfulJobs.ToString(),
-		len(failedJobs), failedJobs.ToString(),
-	)
-
-	switch {
-	case len(activeJobs) == 0 &&
-		len(successfulJobs) == 0 &&
-		len(failedJobs) == 0:
-		return v1alpha1.Lifecycle{
-			Kind:   "Cluster",
-			Name:   cluster.GetName(),
-			Phase:  v1alpha1.PhaseInitialized,
-			Reason: "submitting job request",
-		}
-
-	case len(failedJobs) > 0:
-		newStatus = v1alpha1.Lifecycle{ // One job has failed
-			Kind:   "Cluster",
-			Name:   cluster.GetName(),
-			Phase:  v1alpha1.PhaseFailed,
-			Reason: failedJobs.ToString(),
-		}
-
-		return newStatus
-
-	case len(successfulJobs) == len(allJobs): // All jobs are successfully completed
-		newStatus = v1alpha1.Lifecycle{
-			Kind:   "Cluster",
-			Name:   cluster.GetName(),
-			Phase:  v1alpha1.PhaseSuccess,
-			Reason: successfulJobs.ToString(),
-		}
-
-		return newStatus
-
-	case len(activeJobs)+len(successfulJobs) == len(allJobs): // All jobs are created, and at least one is still running
-		newStatus = v1alpha1.Lifecycle{
-			Kind:   "Cluster",
-			Name:   cluster.GetName(),
-			Phase:  v1alpha1.PhaseRunning,
-			Reason: activeJobs.ToString(),
-		}
-
-		return newStatus
-
-	default: // There are still pending jobs to be created
-		newStatus = v1alpha1.Lifecycle{
-			Kind:   "Cluster",
-			Name:   cluster.GetName(),
-			Phase:  v1alpha1.PhasePending,
-			Reason: "waiting for jobs to start",
-		}
-
-		return newStatus
-	}
-
-	// TODO: validate the transition. For example, we cannot go from running to pending
 }

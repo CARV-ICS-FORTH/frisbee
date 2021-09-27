@@ -28,9 +28,9 @@ import (
 	"reflect"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
-	"github.com/fnikolai/frisbee/controllers/common"
-	"github.com/fnikolai/frisbee/controllers/common/lifecycle"
 	"github.com/fnikolai/frisbee/controllers/template/helpers"
+	"github.com/fnikolai/frisbee/controllers/utils"
+	"github.com/fnikolai/frisbee/controllers/utils/lifecycle"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -59,14 +59,14 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	var obj v1alpha1.Template
 
 	var ret bool
-	result, err := common.Reconcile(ctx, r, req, &obj, &ret)
+	result, err := utils.Reconcile(ctx, r, req, &obj, &ret)
 	if ret {
 		return result, err
 	}
 
 	// if the template is already registered, there is nothing else to do.
 	if obj.Status.IsRegistered {
-		return common.Stop()
+		return utils.Stop()
 	}
 
 	// validate services

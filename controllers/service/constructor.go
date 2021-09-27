@@ -22,13 +22,12 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/fnikolai/frisbee/api/v1alpha1"
-	"github.com/fnikolai/frisbee/controllers/common"
 	"github.com/fnikolai/frisbee/controllers/template/helpers"
+	"github.com/fnikolai/frisbee/controllers/utils"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/labels"
-	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 func (r *Controller) runJob(ctx context.Context, obj *v1alpha1.Service) error {
@@ -38,16 +37,16 @@ func (r *Controller) runJob(ctx context.Context, obj *v1alpha1.Service) error {
 		return err
 	}
 
-	discovery, err := constructDiscoveryService(ctx, obj, pod)
+	discovery, err := constructDiscoveryService(obj, pod)
 	if err != nil {
 		return err
 	}
 
-	if _, err := ctrl.CreateOrUpdate(ctx, r.GetClient(), discovery, func() error { return nil }); err != nil {
+	if err := utils.CreateUnlessExists(ctx, r, discovery); err != nil {
 		return errors.Wrapf(err, "cannot create discovery service")
 	}
 
-	if _, err := ctrl.CreateOrUpdate(ctx, r.GetClient(), pod, func() error { return nil }); err != nil {
+	if err := utils.CreateUnlessExists(ctx, r, pod); err != nil {
 		return errors.Wrapf(err, "cannot create pod")
 	}
 
@@ -58,7 +57,7 @@ func constructPod(ctx context.Context, r *Controller, obj *v1alpha1.Service) (*c
 	var pod corev1.Pod
 
 	{ // metadata
-		common.SetOwner(obj, &pod)
+		utils.SetOwner(obj, &pod)
 		pod.SetName(obj.GetName())
 
 		pod.SetLabels(obj.GetLabels())
@@ -159,7 +158,7 @@ func setPlacement(obj *v1alpha1.Service, pod *corev1.Pod) error {
 	return nil
 }
 
-func constructDiscoveryService(ctx context.Context, obj *v1alpha1.Service, pod *corev1.Pod) (*corev1.Service, error) {
+func constructDiscoveryService(obj *v1alpha1.Service, pod *corev1.Pod) (*corev1.Service, error) {
 	spec := obj.Spec
 
 	// register ports from containers and sidecars
@@ -189,7 +188,7 @@ func constructDiscoveryService(ctx context.Context, obj *v1alpha1.Service, pod *
 
 	kubeService := corev1.Service{}
 
-	common.SetOwner(obj, &kubeService)
+	utils.SetOwner(obj, &kubeService)
 	kubeService.SetName(pod.GetName())
 
 	kubeService.Spec.Ports = allPorts

@@ -26,7 +26,7 @@ import (
 	"strings"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
-	"github.com/fnikolai/frisbee/controllers/common"
+	"github.com/fnikolai/frisbee/controllers/utils"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -49,7 +49,7 @@ func parseMacro(ss *v1alpha1.ServiceSelector) {
 
 	switch kind {
 	case "cluster":
-		ss.Match.ByCluster = map[string]string{common.Globals.Namespace: object}
+		ss.Match.ByCluster = map[string]string{utils.Globals.Namespace: object}
 		ss.Mode = v1alpha1.Convert(filter)
 
 	default:
@@ -109,7 +109,7 @@ func selectServices(ctx context.Context, ss *v1alpha1.MatchService) (v1alpha1.SL
 					Name:      name,
 				}
 
-				if err := common.Globals.Client.Get(ctx, key, &service); err != nil {
+				if err := utils.Globals.Client.Get(ctx, key, &service); err != nil {
 					return nil, errors.Wrapf(err, "unable to find service %s", key)
 				}
 
@@ -128,13 +128,13 @@ func selectServices(ctx context.Context, ss *v1alpha1.MatchService) (v1alpha1.SL
 		{
 			var cluster v1alpha1.Cluster
 
-			if err := common.Globals.Client.Get(ctx, key, &cluster); err != nil {
+			if err := utils.Globals.Client.Get(ctx, key, &cluster); err != nil {
 				return nil, errors.Wrapf(err, "unable to find clusterName %s", key)
 			}
 
 			var slist v1alpha1.ServiceList
 
-			err := common.Globals.Client.List(ctx, &slist, client.MatchingLabels{
+			err := utils.Globals.Client.List(ctx, &slist, client.MatchingLabels{
 				"owner": cluster.GetName(),
 			})
 			if err != nil {
