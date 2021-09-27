@@ -22,9 +22,9 @@ import (
 	"fmt"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
-	"github.com/fnikolai/frisbee/controllers/common"
-	"github.com/fnikolai/frisbee/controllers/common/selector/service"
 	"github.com/fnikolai/frisbee/controllers/template/helpers"
+	"github.com/fnikolai/frisbee/controllers/utils"
+	"github.com/fnikolai/frisbee/controllers/utils/selector/service"
 	"github.com/pkg/errors"
 )
 
@@ -32,7 +32,7 @@ func constructJob(cluster *v1alpha1.Cluster, i int) *v1alpha1.Service {
 	var instance v1alpha1.Service
 
 	{ // metadata
-		common.SetOwner(cluster, &instance)
+		utils.SetOwner(cluster, &instance)
 		instance.SetName(generateName(cluster, i))
 	}
 

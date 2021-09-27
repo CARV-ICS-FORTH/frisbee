@@ -22,8 +22,8 @@ import (
 	"reflect"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
-	"github.com/fnikolai/frisbee/controllers/common"
-	"github.com/fnikolai/frisbee/controllers/common/lifecycle"
+	"github.com/fnikolai/frisbee/controllers/utils"
+	"github.com/fnikolai/frisbee/controllers/utils/lifecycle"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -53,7 +53,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	var w v1alpha1.Workflow
 
 	var ret bool
-	result, err := common.Reconcile(ctx, r, req, &w, &ret)
+	result, err := utils.Reconcile(ctx, r, req, &w, &ret)
 	if ret {
 		return result, err
 	}
@@ -75,7 +75,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		}
 
 		// FIXME: this is a simple hack to set the default namespace for searching objects
-		common.SetNamespace(w.GetNamespace())
+		utils.SetNamespace(w.GetNamespace())
 
 		return lifecycle.Pending(ctx, r, &w, "workflow verified")
 
@@ -87,7 +87,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return lifecycle.Running(ctx, r, &w, "start running actions")
 
 	case v1alpha1.PhaseRunning:
-		return common.Stop()
+		return utils.Stop()
 
 	case v1alpha1.PhaseSuccess:
 		r.Logger.Info("Workflow succeeded",
@@ -102,7 +102,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			}
 		*/
 
-		return common.Stop()
+		return utils.Stop()
 
 	case v1alpha1.PhaseFailed:
 		r.Logger.Error(errors.New(w.Status.Reason), "Workflow failed",
@@ -113,7 +113,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		// FIXME: it should send a "suspend command"
 
-		return common.Stop()
+		return utils.Stop()
 
 	case v1alpha1.PhaseChaos:
 		// These phases should not happen in the workflow

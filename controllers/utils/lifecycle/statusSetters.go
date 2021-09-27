@@ -22,7 +22,7 @@ import (
 	"reflect"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
-	"github.com/fnikolai/frisbee/controllers/common"
+	"github.com/fnikolai/frisbee/controllers/utils"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -34,7 +34,7 @@ import (
 /******************************************************/
 
 // WaitRunningAndUpdate is a lifecycle that waits for WaitRunning and then replaced given object with the updated object.
-func WaitRunningAndUpdate(ctx context.Context, r common.Reconciler, obj InnerObject) error {
+func WaitRunningAndUpdate(ctx context.Context, r utils.Reconciler, obj InnerObject) error {
 	err := New(
 		Watch(obj, obj.GetName()),
 		WithFilters(FilterByNames(obj.GetName())),
@@ -45,7 +45,7 @@ func WaitRunningAndUpdate(ctx context.Context, r common.Reconciler, obj InnerObj
 		return errors.Wrapf(err, "Phase failed")
 	}
 
-	err = common.Globals.Client.Get(ctx, client.ObjectKeyFromObject(obj), obj)
+	err = utils.Globals.Client.Get(ctx, client.ObjectKeyFromObject(obj), obj)
 
 	return errors.Wrapf(err, "update failed")
 }
@@ -55,7 +55,7 @@ func WaitRunningAndUpdate(ctx context.Context, r common.Reconciler, obj InnerObj
 /******************************************************/
 
 // Pending is a wrapper that sets Phase to Pending and does not requeue the request.
-func Pending(ctx context.Context, r common.Reconciler, obj InnerObject, reason string) (ctrl.Result, error) {
+func Pending(ctx context.Context, r utils.Reconciler, obj InnerObject, reason string) (ctrl.Result, error) {
 	if ctx == nil || obj == nil || reason == "" {
 		panic("invalid args")
 	}
@@ -69,11 +69,11 @@ func Pending(ctx context.Context, r common.Reconciler, obj InnerObject, reason s
 		EndTime:   nil,
 	})
 
-	return common.UpdateStatus(ctx, r, obj)
+	return utils.UpdateStatus(ctx, r, obj)
 }
 
 // Running is a wrapper that sets Phase to Running and does not requeue the request.
-func Running(ctx context.Context, r common.Reconciler, obj InnerObject, reason string) (ctrl.Result, error) {
+func Running(ctx context.Context, r utils.Reconciler, obj InnerObject, reason string) (ctrl.Result, error) {
 	if ctx == nil || obj == nil || reason == "" {
 		panic("invalid args")
 	}
@@ -87,11 +87,11 @@ func Running(ctx context.Context, r common.Reconciler, obj InnerObject, reason s
 		EndTime:   nil,
 	})
 
-	return common.UpdateStatus(ctx, r, obj)
+	return utils.UpdateStatus(ctx, r, obj)
 }
 
 // Success is a wrapper that sets Phase to Success and does not requeue the request.
-func Success(ctx context.Context, r common.Reconciler, obj InnerObject, reason string) (ctrl.Result, error) {
+func Success(ctx context.Context, r utils.Reconciler, obj InnerObject, reason string) (ctrl.Result, error) {
 	if ctx == nil || obj == nil || reason == "" {
 		panic("invalid args")
 	}
@@ -105,11 +105,11 @@ func Success(ctx context.Context, r common.Reconciler, obj InnerObject, reason s
 		EndTime:   obj.GetDeletionTimestamp(),
 	})
 
-	return common.UpdateStatus(ctx, r, obj)
+	return utils.UpdateStatus(ctx, r, obj)
 }
 
 // Chaos is a wrapper that sets Phase to Chaos and does not requeue the request.
-func Chaos(ctx context.Context, r common.Reconciler, obj InnerObject, reason string) (ctrl.Result, error) {
+func Chaos(ctx context.Context, r utils.Reconciler, obj InnerObject, reason string) (ctrl.Result, error) {
 	if ctx == nil || obj == nil || reason == "" {
 		panic("invalid args")
 	}
@@ -123,11 +123,11 @@ func Chaos(ctx context.Context, r common.Reconciler, obj InnerObject, reason str
 		EndTime:   nil,
 	})
 
-	return common.UpdateStatus(ctx, r, obj)
+	return utils.UpdateStatus(ctx, r, obj)
 }
 
 // Failed is a wrap that logs the error, updates the status, and does not requeue the request.
-func Failed(ctx context.Context, r common.Reconciler, obj InnerObject, err error) (ctrl.Result, error) {
+func Failed(ctx context.Context, r utils.Reconciler, obj InnerObject, err error) (ctrl.Result, error) {
 	if ctx == nil || obj == nil || err == nil {
 		panic("invalid args")
 	}
@@ -143,5 +143,5 @@ func Failed(ctx context.Context, r common.Reconciler, obj InnerObject, err error
 		EndTime:   obj.GetDeletionTimestamp(),
 	})
 
-	return common.UpdateStatus(ctx, r, obj)
+	return utils.UpdateStatus(ctx, r, obj)
 }

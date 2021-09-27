@@ -15,19 +15,25 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package common
+package service
 
 import (
-	"time"
-
-	"k8s.io/apimachinery/pkg/util/wait"
+	"github.com/fnikolai/frisbee/api/v1alpha1"
+	"github.com/fnikolai/frisbee/controllers/utils/lifecycle"
+	corev1 "k8s.io/api/core/v1"
 )
 
-var DefaultBackoff = wait.Backoff{
-	Duration: 5 * time.Second,
-	Factor:   5,
-	Jitter:   0.1,
-	Steps:    4,
-}
+// calculateLifecycle returns the update lifecycle of the cluster.
+func calculateLifecycle(service *v1alpha1.Service, pod *corev1.Pod) v1alpha1.Lifecycle {
 
-var DefaultTimeout = 30 * time.Second
+	if pod.CreationTimestamp.IsZero() {
+		return v1alpha1.Lifecycle{
+			Kind:   "Service",
+			Name:   service.GetName(),
+			Phase:  v1alpha1.PhaseInitializing,
+			Reason: "submitting pod request",
+		}
+	}
+
+	return *lifecycle.Pod()(pod)[0]
+}

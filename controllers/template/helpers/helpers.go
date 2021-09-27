@@ -24,12 +24,12 @@ import (
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/fnikolai/frisbee/api/v1alpha1"
-	"github.com/fnikolai/frisbee/controllers/common"
+	"github.com/fnikolai/frisbee/controllers/utils"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
-func GetServiceSpec(ctx context.Context, r common.Reconciler, ts *v1alpha1.TemplateSelector) (v1alpha1.ServiceSpec, error) {
+func GetServiceSpec(ctx context.Context, r utils.Reconciler, ts *v1alpha1.TemplateSelector) (v1alpha1.ServiceSpec, error) {
 	scheme := SelectServiceTemplate(ctx, r, ts)
 
 	return GenerateServiceSpec(scheme)
@@ -60,7 +60,7 @@ func GenerateServiceSpec(tspec *v1alpha1.Scheme) (v1alpha1.ServiceSpec, error) {
 	return spec, nil
 }
 
-func GetMonitorSpec(ctx context.Context, r common.Reconciler, ts *v1alpha1.TemplateSelector) (*v1alpha1.MonitorSpec, error) {
+func GetMonitorSpec(ctx context.Context, r utils.Reconciler, ts *v1alpha1.TemplateSelector) (*v1alpha1.MonitorSpec, error) {
 	scheme := SelectMonitorTemplate(ctx, r, ts)
 
 	return GenerateMonitorSpec(scheme)

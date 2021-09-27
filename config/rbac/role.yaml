@@ -7,6 +7,32 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
+  - chaos-mesh.org
+  resources:
+  - networkchaos
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - chaos-mesh.org
+  resources:
+  - networkchaos/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - chaos-mesh.org
+  resources:
+  - networkchaos/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - ""
   resources:
   - pods
@@ -37,7 +63,7 @@ rules:
 - apiGroups:
   - frisbee.io
   resources:
-  - chaoss
+  - chaos
   verbs:
   - create
   - delete
@@ -49,13 +75,13 @@ rules:
 - apiGroups:
   - frisbee.io
   resources:
-  - chaoss/finalizers
+  - chaos/finalizers
   verbs:
   - update
 - apiGroups:
   - frisbee.io
   resources:
-  - chaoss/status
+  - chaos/status
   verbs:
   - get
   - patch

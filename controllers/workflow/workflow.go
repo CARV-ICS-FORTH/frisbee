@@ -22,8 +22,8 @@ import (
 	"time"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
-	"github.com/fnikolai/frisbee/controllers/common"
-	"github.com/fnikolai/frisbee/controllers/common/lifecycle"
+	"github.com/fnikolai/frisbee/controllers/utils"
+	"github.com/fnikolai/frisbee/controllers/utils/lifecycle"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -158,7 +158,7 @@ func (r *Reconciler) service(ctx context.Context, w Workflow, action v1alpha1.Ac
 
 	service := v1alpha1.Service{}
 
-	common.SetOwner(w.Workflow, &service)
+	utils.SetOwner(w.Workflow, &service)
 	service.SetName(action.Name)
 
 	action.Service.DeepCopyInto(&service.Spec)
@@ -184,7 +184,7 @@ func (r *Reconciler) cluster(ctx context.Context, w Workflow, action v1alpha1.Ac
 
 	cluster := v1alpha1.Cluster{}
 
-	common.SetOwner(w.Workflow, &cluster)
+	utils.SetOwner(w.Workflow, &cluster)
 	cluster.SetName(action.Name)
 
 	action.Cluster.DeepCopyInto(&cluster.Spec)
@@ -262,7 +262,7 @@ func (r *Reconciler) stop(ctx context.Context, w Workflow, action v1alpha1.Actio
 func (r *Reconciler) chaos(ctx context.Context, w Workflow, action v1alpha1.Action) error {
 	chaos := v1alpha1.Chaos{}
 
-	common.SetOwner(w.Workflow, &chaos)
+	utils.SetOwner(w.Workflow, &chaos)
 	chaos.SetName(action.Name)
 
 	action.Chaos.DeepCopyInto(&chaos.Spec)

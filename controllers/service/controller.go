@@ -22,8 +22,8 @@ import (
 	"reflect"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
-	"github.com/fnikolai/frisbee/controllers/common"
-	"github.com/fnikolai/frisbee/controllers/common/lifecycle"
+	"github.com/fnikolai/frisbee/controllers/utils"
+	"github.com/fnikolai/frisbee/controllers/utils/lifecycle"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -58,7 +58,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	var service v1alpha1.Service
 
 	var ret bool
-	result, err := common.Reconcile(ctx, r, req, &service, &ret)
+	result, err := utils.Reconcile(ctx, r, req, &service, &ret)
 	if ret {
 		return result, err
 	}
@@ -103,7 +103,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	newStatus := calculateLifecycle(&service, &pod)
 	service.Status.Lifecycle = newStatus
 
-	if _, err := common.UpdateStatus(ctx, r, &service); err != nil {
+	if _, err := utils.UpdateStatus(ctx, r, &service); err != nil {
 		r.Logger.Error(err, "update status error")
 
 		return lifecycle.Failed(ctx, r, &service, errors.Wrapf(err, "status update"))
@@ -119,12 +119,12 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	case v1alpha1.PhaseUninitialized:
 		panic("this should never happen")
 
-	case v1alpha1.PhaseInitialized:
+	case v1alpha1.PhaseInitializing:
 		// ... proceed to create pod
 
 	case v1alpha1.PhasePending, v1alpha1.PhaseRunning:
 		// ... Pod is already scheduled. nothing to do
-		return common.Stop()
+		return utils.Stop()
 
 	case v1alpha1.PhaseSuccess:
 		// Although we can remove a service when is complete, we recommend not to id as it will break the
@@ -136,12 +136,12 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			}
 		*/
 
-		return common.Stop()
+		return utils.Stop()
 
 	case v1alpha1.PhaseFailed:
 		r.Logger.Error(errors.New(newStatus.Reason), "cluster failed", "cluster", service.GetName())
 
-		return common.Stop()
+		return utils.Stop()
 	}
 
 	/*
@@ -158,7 +158,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	)
 
 	// exit and wait for watchers to trigger the next reconcile cycle
-	return common.Stop()
+	return utils.Stop()
 }
 
 /*

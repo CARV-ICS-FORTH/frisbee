@@ -22,7 +22,7 @@ import (
 	"reflect"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
-	"github.com/fnikolai/frisbee/controllers/common"
+	"github.com/fnikolai/frisbee/controllers/utils"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -235,14 +235,14 @@ func New(opts ...Option) *ManagedLifecycle {
 	if options.Annotator != nil {
 		lifecycle.eventHandlers = eventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				options.Annotator.Add(obj)
+				options.Annotator.Add(obj.(client.Object))
 
 				fsm.HandleEvent(obj)
 			},
 			UpdateFunc: fsm.HandleEvent,
 			DeleteFunc: func(obj interface{}) {
 				logrus.Warn("----------Deleted object ---------")
-				options.Annotator.Delete(obj)
+				options.Annotator.Delete(obj.(client.Object))
 
 				fsm.HandleEvent(obj)
 			},
@@ -266,8 +266,8 @@ type eventHandlerFuncs struct {
 	DeleteFunc func(obj interface{})
 }
 
-func (lc *ManagedLifecycle) Run(ctx context.Context, r common.Reconciler) error {
-	informer, err := common.Globals.Cache.GetInformer(ctx, unwrap(lc.options.WatchType))
+func (lc *ManagedLifecycle) Run(ctx context.Context, r utils.Reconciler) error {
+	informer, err := utils.Globals.Cache.GetInformer(ctx, unwrap(lc.options.WatchType))
 	if err != nil {
 		return errors.Wrapf(err, "unable to get informer for %s", unwrap(lc.options.WatchType).GetName())
 	}

@@ -19,13 +19,19 @@ package lifecycle
 
 import (
 	"fmt"
-	"reflect"
 	"time"
 
-	"github.com/fnikolai/frisbee/controllers/common"
+	"github.com/fnikolai/frisbee/controllers/utils"
 	"github.com/grafana-tools/sdk"
 	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+const (
+	AnnotationRun     = "run"
+	AnnotationExit    = "exit"
+	AnnotationFailure = "failure"
 )
 
 // Annotator provides a way to mark points on the graph with rich events.
@@ -33,10 +39,10 @@ import (
 // // The text field can include links to other systems with more detail.
 type Annotator interface {
 	// Add  pushes an annotation to grafana indicating that a new component has joined the experiment.
-	Add(obj interface{})
+	Add(obj client.Object)
 
 	// Delete pushes an annotation to grafana indicating that a new component has left the experiment.
-	Delete(obj interface{})
+	Delete(obj client.Object)
 }
 
 // ///////////////////////////////////////////
@@ -45,44 +51,37 @@ type Annotator interface {
 
 type PointAnnotation struct{}
 
-func (a *PointAnnotation) Add(obj interface{}) {
-	objMeta, ok := obj.(metav1.Object)
-	if !ok {
-		panic("this should never happen")
-	}
+func (a *PointAnnotation) Add(obj client.Object) {
 
 	ga := sdk.CreateAnnotationRequest{
-		Time: objMeta.GetCreationTimestamp().Unix() * 1000, // unix ts in ms
-		Tags: []string{"run"},
-		Text: fmt.Sprintf("Child added. Kind:%s Name:%s", reflect.TypeOf(obj), objMeta.GetName()),
+		Time: obj.GetCreationTimestamp().Unix() * 1000, // unix ts in ms
+		Tags: []string{AnnotationRun},
+		Text: fmt.Sprintf("Child added. Kind:%s Name:%s",
+			obj.GetObjectKind().GroupVersionKind().String(), obj.GetName()),
 	}
 
-	if common.Globals.Annotator != nil {
-		common.Globals.Annotator.Insert(ga)
+	if utils.Globals.Annotator != nil {
+		utils.Globals.Annotator.Insert(ga)
 	}
 }
 
-func (a *PointAnnotation) Delete(obj interface{}) {
-	objMeta, ok := obj.(metav1.Object)
-	if !ok {
-		panic("this should never happen")
-	}
-
-	ts := objMeta.GetDeletionTimestamp()
+func (a *PointAnnotation) Delete(obj client.Object) {
+	ts := obj.GetDeletionTimestamp()
 	if ts == nil {
 		ts = &metav1.Time{Time: time.Now()}
 	}
 
 	ga := sdk.CreateAnnotationRequest{
 		Time: ts.Unix() * 1000, // unix ts in ms
-		Tags: []string{"exit"},
-		Text: fmt.Sprintf("Child Deleted. Kind:%s Name:%s", reflect.TypeOf(obj), objMeta.GetName()),
+		Tags: []string{AnnotationExit},
+		Text: fmt.Sprintf("Child Deleted. Kind:%s Name:%s",
+			obj.GetObjectKind().GroupVersionKind().String(), obj.GetName()),
 	}
 
 	logrus.Warn("DELETION GA ", ga)
 
-	if common.Globals.Annotator != nil {
-		common.Globals.Annotator.Insert(ga)
+	if utils.Globals.Annotator != nil {
+		utils.Globals.Annotator.Insert(ga)
 	}
 }
 
@@ -100,44 +99,37 @@ type RangeAnnotation struct {
 	reqID uint
 }
 
-func (a *RangeAnnotation) Add(obj interface{}) {
-	objMeta, ok := obj.(metav1.Object)
-	if !ok {
-		panic("this should never happen")
-	}
-
+func (a *RangeAnnotation) Add(obj client.Object) {
 	ga := sdk.CreateAnnotationRequest{
-		Time:    objMeta.GetCreationTimestamp().Unix() * 1000, // unix ts in ms
+		Time:    obj.GetCreationTimestamp().Unix() * 1000, // unix ts in ms
 		TimeEnd: 0,
-		Tags:    []string{"failure"},
-		Text:    fmt.Sprintf("Chaos injected. Kind:%s Name:%s", reflect.TypeOf(obj), objMeta.GetName()),
+		Tags:    []string{AnnotationFailure},
+		Text: fmt.Sprintf("Chaos injected. Kind:%s Name:%s",
+			obj.GetObjectKind().GroupVersionKind().String(), obj.GetName()),
 	}
 
-	if common.Globals.Annotator != nil {
-		a.reqID = common.Globals.Annotator.Insert(ga)
+	if utils.Globals.Annotator != nil {
+		a.reqID = utils.Globals.Annotator.Insert(ga)
 	}
 }
 
-func (a *RangeAnnotation) Delete(obj interface{}) {
-	objMeta, ok := obj.(metav1.Object)
-	if !ok {
-		panic("this should never happen")
-	}
+func (a *RangeAnnotation) Delete(obj client.Object) {
 
 	// in some cases the deletion timestamp is nil. If so, just use the present time.
-	ts := objMeta.GetDeletionTimestamp()
+	ts := obj.GetDeletionTimestamp()
 	if ts == nil {
 		ts = &metav1.Time{Time: time.Now()}
 	}
 
 	ga := sdk.PatchAnnotationRequest{
-		Time:    objMeta.GetCreationTimestamp().Unix() * 1000, // unix ts in ms
+		Time:    obj.GetCreationTimestamp().Unix() * 1000, // unix ts in ms
 		TimeEnd: ts.Unix() * 1000,
-		Tags:    []string{"failure"},
-		Text:    fmt.Sprintf("Chaos revoked. Kind:%s Name:%s", reflect.TypeOf(obj), objMeta.GetName()),
+		Tags:    []string{AnnotationFailure},
+		Text: fmt.Sprintf("Chaos revoked. Kind:%s Name:%s",
+			obj.GetObjectKind().GroupVersionKind().String(), obj.GetName()),
 	}
 
-	if common.Globals.Annotator != nil {
-		common.Globals.Annotator.Patch(a.reqID, ga)
+	if utils.Globals.Annotator != nil {
+		utils.Globals.Annotator.Patch(a.reqID, ga)
 	}
 }

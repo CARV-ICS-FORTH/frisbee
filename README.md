@@ -111,7 +111,7 @@ Briefly,
 
 > node grafana_pdf.js "http://grafana.localhost/d/A2EjFbsMk/ycsb-services?viewPanel=74" "":"" output.pdf
 
-######        
+######          
 
 ###### Permissions
 
@@ -128,28 +128,19 @@ the credentials for the remote cluster.
 ssh -L 6443:192.168.1.213:6443 thegates
 ```
 
-## Bugs and Feedback
+## Bugs, Feedback, and Contributions
+
+The original intention of our open source project is to lower the threshold of testing distributed systems, so we highly
+value the use of the project in enterprises and in academia.
 
 For bug report, questions and discussions please
 submit [GitHub Issues](https://github.com/CARV-ICS-FORTH/frisbee/issues).
 
-You can also contact us via:
+We welcome also every contribution, even if it is just punctuation. See details of [CONTRIBUTING](docs/CONTRIBUTING.md)
+
+For more information, you can contact us via:
 
 * Email: fnikol@ics.forth.gr
-* Slack group: ...
-* Twitter: ...
-
-## Contributing
-
-We welcome every contribution, even if it is just punctuation. See details of [CONTRIBUTING](docs/CONTRIBUTING.md)
-
-## Business Registration
-
-The original intention of our open source project is to lower the threshold for chaos engineering to be implemented in
-enterprises, so we highly value the use of the project in enterprises. Welcome everyone
-here [ISSUE](https://github.com/chaosblade-io/chaosblade/issues/32). After registration, you will be invited to join the
-corporate mail group to discuss the problems encountered by Chaos Engineering in the landing of the company and share
-the landing experience.
 
 ## License
 

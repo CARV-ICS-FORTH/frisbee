@@ -24,9 +24,9 @@ import (
 
 	pet "github.com/dustinkirkland/golang-petname"
 	"github.com/fnikolai/frisbee/api/v1alpha1"
-	"github.com/fnikolai/frisbee/controllers/common"
-	"github.com/fnikolai/frisbee/controllers/common/lifecycle"
 	"github.com/fnikolai/frisbee/controllers/template/helpers"
+	"github.com/fnikolai/frisbee/controllers/utils"
+	"github.com/fnikolai/frisbee/controllers/utils/lifecycle"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
@@ -75,7 +75,7 @@ func (r *Reconciler) newMonitoringStack(ctx context.Context, obj *v1alpha1.Workf
 		// use the public Grafana address (via Ingress) because the controller runs outside the cluster
 		grafanaPublicURI := fmt.Sprintf("http://%s", virtualhost(grafana.GetName(), obj.Spec.Ingress.Host))
 
-		if err := common.SetGrafana(ctx, grafanaPublicURI); err != nil {
+		if err := utils.SetGrafana(ctx, grafanaPublicURI); err != nil {
 			return errors.Wrapf(err, "grafana client error")
 		}
 	}
@@ -89,7 +89,7 @@ func (r *Reconciler) installPrometheus(ctx context.Context, obj *v1alpha1.Workfl
 	prom := v1alpha1.Service{}
 
 	{ // metadata
-		common.SetOwner(obj, &prom)
+		utils.SetOwner(obj, &prom)
 		prom.SetName("prometheus")
 	}
 
@@ -123,7 +123,7 @@ func (r *Reconciler) installGrafana(ctx context.Context, obj *v1alpha1.Workflow)
 	grafana := v1alpha1.Service{}
 
 	{ // metadata
-		common.SetOwner(obj, &grafana)
+		utils.SetOwner(obj, &grafana)
 		grafana.SetName("grafana")
 	}
 
@@ -208,7 +208,7 @@ func (r *Reconciler) installIngress(ctx context.Context, obj *v1alpha1.Workflow,
 	ingress := netv1.Ingress{}
 
 	{ // metadata
-		common.SetOwner(obj, &ingress)
+		utils.SetOwner(obj, &ingress)
 		ingress.SetName("frisbee")
 
 		if obj.Spec.Ingress.UseAmbassador {
