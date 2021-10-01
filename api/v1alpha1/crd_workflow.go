@@ -59,10 +59,15 @@ type WorkflowSpec struct {
 	ImportMonitors []string `json:"importMonitors,omitempty"`
 
 	// Actions are the tasks that will be taken.
-	Actions []Action `json:"actions"`
+	Actions ActionList `json:"actions"`
 
 	// Ingress defines how to get traffic into your Kubernetes cluster.
 	Ingress *Ingress `json:"ingress,omitempty"`
+
+	// Suspend flag tells the controller to suspend subsequent executions, it does
+	// not apply to already started executions.  Defaults to false.
+	// +optional
+	Suspend *bool `json:"suspend,omitempty"`
 }
 
 // Action delegates arguments to the proper action handler
@@ -118,13 +123,18 @@ type WaitSpec struct {
 
 type WorkflowStatus struct {
 	Lifecycle `json:",inline"`
+
+	// Scheduled is a list of scheduled actions.
+	// Do no add "omitempty" as it will break the initialization
+	// +optional
+	Scheduled map[string]bool `json:"scheduled"`
 }
 
-func (in *Workflow) GetLifecycle() []*Lifecycle {
-	return []*Lifecycle{&in.Status.Lifecycle}
+func (in *Workflow) GetReconcileStatus() Lifecycle {
+	return in.Status.Lifecycle
 }
 
-func (in *Workflow) SetLifecycle(lifecycle Lifecycle) {
+func (in *Workflow) SetReconcileStatus(lifecycle Lifecycle) {
 	in.Status.Lifecycle = lifecycle
 }
 

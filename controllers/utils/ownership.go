@@ -21,13 +21,19 @@ import (
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+)
+
+const (
+	Owner = "owner"
 )
 
 // SetOwner is a helper method to make sure the given object contains an object reference to the object provided.
 // This behavior is instrumental to guarantee correct garbage collection of resources especially when resources
 // control other resources in a multilevel hierarchy (think deployment-> repilcaset->pod).
-func SetOwner(parent, child metav1.Object) {
+func SetOwner(r Reconciler, parent, child metav1.Object) {
 	child.SetNamespace(parent.GetNamespace())
 
 	// SetControllerReference sets owner as a Controller OwnerReference on controlled.
@@ -35,7 +41,7 @@ func SetOwner(parent, child metav1.Object) {
 	// reconciling the owner object on changes to controlled (with a Watch + EnqueueRequestForOwner).
 	// Since only one OwnerReference can be a controller, it returns an error if
 	// there is another OwnerReference with Controller flag set.
-	if err := controllerutil.SetControllerReference(parent, child, Globals.Client.Scheme()); err != nil {
+	if err := controllerutil.SetControllerReference(parent, child, r.GetClient().Scheme()); err != nil {
 		panic(errors.Wrapf(err, "set controller reference"))
 	}
 
@@ -47,6 +53,22 @@ func SetOwner(parent, child metav1.Object) {
 
 	// owner labels are used by the selectors
 	child.SetLabels(labels.Merge(child.GetLabels(), map[string]string{
-		"owner": parent.GetName(),
+		Owner: parent.GetName(),
 	}))
+}
+
+// IsManagedByThisController returns true if the object is managed by the specified controller.
+// If it is managed by another controller, or no controller is being resolved, it returns false.
+func IsManagedByThisController(obj client.Object, controller schema.GroupVersionKind) bool {
+	owner := metav1.GetControllerOf(obj)
+	if owner == nil {
+		return false
+	}
+
+	if owner.APIVersion != controller.GroupVersion().String() ||
+		owner.Kind != controller.Kind {
+		return false
+	}
+
+	return true
 }

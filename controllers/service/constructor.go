@@ -37,7 +37,7 @@ func (r *Controller) runJob(ctx context.Context, obj *v1alpha1.Service) error {
 		return err
 	}
 
-	discovery, err := constructDiscoveryService(obj, pod)
+	discovery, err := constructDiscoveryService(r, obj, pod)
 	if err != nil {
 		return err
 	}
@@ -57,7 +57,7 @@ func constructPod(ctx context.Context, r *Controller, obj *v1alpha1.Service) (*c
 	var pod corev1.Pod
 
 	{ // metadata
-		utils.SetOwner(obj, &pod)
+		utils.SetOwner(r, obj, &pod)
 		pod.SetName(obj.GetName())
 
 		pod.SetLabels(obj.GetLabels())
@@ -158,7 +158,7 @@ func setPlacement(obj *v1alpha1.Service, pod *corev1.Pod) error {
 	return nil
 }
 
-func constructDiscoveryService(obj *v1alpha1.Service, pod *corev1.Pod) (*corev1.Service, error) {
+func constructDiscoveryService(r *Controller, obj *v1alpha1.Service, pod *corev1.Pod) (*corev1.Service, error) {
 	spec := obj.Spec
 
 	// register ports from containers and sidecars
@@ -188,7 +188,7 @@ func constructDiscoveryService(obj *v1alpha1.Service, pod *corev1.Pod) (*corev1.
 
 	kubeService := corev1.Service{}
 
-	utils.SetOwner(obj, &kubeService)
+	utils.SetOwner(r, obj, &kubeService)
 	kubeService.SetName(pod.GetName())
 
 	kubeService.Spec.Ports = allPorts

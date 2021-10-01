@@ -69,35 +69,17 @@ func CalculateLifecycle(fault *Fault) v1alpha1.Lifecycle {
 	}
 
 	switch phase := parsed.Experiment.DesiredPhase; phase {
-	case "":
-		return v1alpha1.Lifecycle{
-			Kind:   "chaos",
-			Name:   fault.GetName(),
-			Phase:  v1alpha1.PhaseInitializing,
-			Reason: "Initializing",
-		}
 
 	case RunningPhase:
-		ts := fault.GetCreationTimestamp()
-
 		return v1alpha1.Lifecycle{
-			Kind:      "chaos",
-			Name:      fault.GetName(),
-			Phase:     v1alpha1.PhaseRunning,
-			Reason:    "Fault injected",
-			StartTime: &ts,
+			Phase:  v1alpha1.PhaseRunning,
+			Reason: "Fault injected",
 		}
 
 	case StoppedPhase:
-		ts := fault.GetCreationTimestamp()
-
 		return v1alpha1.Lifecycle{
-			Kind:      "chaos",
-			Name:      fault.GetName(),
-			Phase:     v1alpha1.PhaseSuccess,
-			Reason:    "Fault recovered or paused",
-			StartTime: &ts,
-			EndTime:   fault.GetDeletionTimestamp(),
+			Phase:  v1alpha1.PhaseSuccess,
+			Reason: "Fault recovered or paused",
 		}
 
 	default:

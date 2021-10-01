@@ -154,3 +154,28 @@ func (in SList) Yield(ctx context.Context, schedule *SchedulerSpec) <-chan *Serv
 
 	return nil
 }
+
+// ActionList is a list of actions
+type ActionList []Action
+
+func (in ActionList) ToString() string {
+	if len(in) == 0 {
+		return ""
+	}
+
+	return strings.Join(in.GetNames(), idListSeparator)
+}
+
+func (in ActionList) GetNames() []string {
+	if len(in) == 0 {
+		return nil
+	}
+
+	names := make([]string, len(in))
+
+	for i, action := range in {
+		names[i] = action.Name
+	}
+
+	return names
+}

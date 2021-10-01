@@ -23,7 +23,6 @@ import (
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/utils"
-	"github.com/fnikolai/frisbee/controllers/utils/lifecycle"
 	"github.com/go-logr/logr"
 	cmap "github.com/orcaman/concurrent-map"
 	"github.com/pkg/errors"
@@ -69,7 +68,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		"kind", reflect.TypeOf(chaos),
 		"name", chaos.GetName(),
 		"lifecycle", chaos.Status.Phase,
-		"deleted", !chaos.GetDeletionTimestamp().IsZero(),
+		"epoch", chaos.GetResourceVersion(),
 	)
 
 	defer func() {
@@ -77,16 +76,25 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			"kind", reflect.TypeOf(chaos),
 			"name", chaos.GetName(),
 			"lifecycle", chaos.Status.Phase,
-			"deleted", !chaos.GetDeletionTimestamp().IsZero(),
+			"epoch", chaos.GetResourceVersion(),
 		)
 	}()
 
 	/*
-		### 2: Load the Chaos's components.
+		### 2:  Initialize the CR
+	*/
+	if chaos.Status.Phase == v1alpha1.PhaseUninitialized {
+		if _, err := utils.Pending(ctx, r, &chaos, "submitting jobs"); err != nil {
+			return utils.Failed(ctx, r, &chaos, errors.Wrapf(err, "status update"))
+		}
+	}
 
-		Because we use the unstructured type,  Get will return an empty if there is no object. In turn, the
-		client's parses will return the following error: "Object 'Kind' is missing in 'unstructured object has no kind'"
-		To avoid that, we ignore errors if the map is empty -- yielding the same behavior as empty, but valid objects.
+	/*
+	   ### 3: Load the Chaos's components.
+
+	   Because we use the unstructured type,  Get will return an empty if there is no object. In turn, the
+	   client's parses will return the following error: "Object 'Kind' is missing in 'unstructured object has no kind'"
+	   To avoid that, we ignore errors if the map is empty -- yielding the same behavior as empty, but valid objects.
 	*/
 	handler := r.dispatch(&chaos)
 
@@ -96,12 +104,12 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		err := r.GetClient().Get(ctx, key, fault)
 		if err != nil && !k8errors.IsNotFound(err) {
-			return lifecycle.Failed(ctx, r, &chaos, errors.Wrapf(err, "retrieve fault"))
+			return utils.Failed(ctx, r, &chaos, errors.Wrapf(err, "retrieve fault"))
 		}
 	}
 
 	/*
-		### 3: Calculate and update the service status
+		### 4: Calculate and update the service status
 
 		Using the date we've gathered, we'll update the status of our CRD.
 		Depending on the outcome, the execution may proceed or terminate.
@@ -110,14 +118,14 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	newStatus := CalculateLifecycle(fault)
 	chaos.Status.Lifecycle = newStatus
 
-	if _, err := utils.UpdateStatus(ctx, r, &chaos); err != nil {
+	if err := utils.UpdateStatus(ctx, r, &chaos); err != nil {
 		r.Logger.Error(err, "update status error")
 
-		return lifecycle.Failed(ctx, r, &chaos, errors.Wrapf(err, "status update"))
+		return utils.Failed(ctx, r, &chaos, errors.Wrapf(err, "status update"))
 	}
 
 	/*
-		### 4: Based on the current status, decide what to do next.
+		### 5: Based on the current status, decide what to do next.
 
 		We may inject a failure, revoke a failure, or wait ...
 	*/
@@ -125,17 +133,13 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	switch newStatus.Phase {
 	case v1alpha1.PhaseUninitialized:
 		panic("this should never happen")
-	case v1alpha1.PhaseInitializing:
-		// ... proceed to inject the fault
 
 	case v1alpha1.PhasePending, v1alpha1.PhaseRunning:
 		// ... fault is already scheduled. nothing to do
 		return utils.Stop()
 
 	case v1alpha1.PhaseSuccess:
-		if err := r.GetClient().Delete(ctx, &chaos); client.IgnoreNotFound(err) != nil {
-			return lifecycle.Failed(ctx, r, &chaos, errors.Wrapf(err, "fault revoke"))
-		}
+		utils.Delete(ctx, r, &chaos)
 
 		return utils.Stop()
 
@@ -148,10 +152,10 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	/*
 		### 6: Inject the fault
 	*/
-	nextFault := handler.ConstructJob(ctx, &chaos)
+	nextFault := handler.ConstructJob(ctx, r, &chaos)
 
 	if err := utils.CreateUnlessExists(ctx, r, &nextFault); err != nil {
-		return lifecycle.Failed(ctx, r, &chaos, errors.Wrapf(err, "injection failed"))
+		return utils.Failed(ctx, r, &chaos, errors.Wrapf(err, "injection failed"))
 	}
 
 	r.Logger.Info("Injected fault",
@@ -167,8 +171,11 @@ func (r *Controller) Finalizer() string {
 }
 
 func (r *Controller) Finalize(obj client.Object) error {
-	r.Logger.Info("Finalize", "kind", reflect.TypeOf(obj), "name", obj.GetName())
-
+	r.Logger.Info("XX Finalize",
+		"kind", reflect.TypeOf(obj),
+		"name", obj.GetName(),
+		"epoch", obj.GetResourceVersion(),
+	)
 	return nil
 }
 
@@ -196,7 +203,7 @@ type chaoHandler interface {
 
 	GetName() string
 
-	ConstructJob(ctx context.Context, obj *v1alpha1.Chaos) Fault
+	ConstructJob(ctx context.Context, r *Controller, obj *v1alpha1.Chaos) Fault
 
 	// Inject(ctx context.Context, obj *v1alpha1.Chaos) error
 	// WaitForDuration(ctx context.Context, obj *v1alpha1.Chaos) error

@@ -21,8 +21,8 @@ import (
 	"context"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
+	"github.com/fnikolai/frisbee/controllers/service/helpers"
 	"github.com/fnikolai/frisbee/controllers/utils"
-	"github.com/fnikolai/frisbee/controllers/utils/selector/service"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
@@ -50,13 +50,13 @@ func (f *partition) GetFault() *Fault {
 	return &fault
 }
 
-func (f partition) ConstructJob(ctx context.Context, obj *v1alpha1.Chaos) Fault {
+func (f partition) ConstructJob(ctx context.Context, r *Controller, obj *v1alpha1.Chaos) Fault {
 	spec := obj.Spec.Partition
 
 	var fault Fault
 
 	{ // spec
-		affectedPods := service.Select(ctx, &spec.Selector)
+		affectedPods := helpers.Select(ctx, r, obj.GetNamespace(), &spec.Selector)
 
 		fault.SetUnstructuredContent(map[string]interface{}{
 			"spec": map[string]interface{}{
@@ -81,7 +81,7 @@ func (f partition) ConstructJob(ctx context.Context, obj *v1alpha1.Chaos) Fault 
 		// Reverse the spec and metadata order as to avoid overwrites.
 		AsPartition(&fault)
 
-		utils.SetOwner(obj, &fault)
+		utils.SetOwner(r, obj, &fault)
 		fault.SetName(obj.GetName())
 	}
 

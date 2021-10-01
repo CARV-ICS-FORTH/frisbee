@@ -86,11 +86,11 @@ type TemplateStatus struct {
 	IsRegistered bool `json:"isRegistered"`
 }
 
-func (in *Template) GetLifecycle() []*Lifecycle {
-	return []*Lifecycle{&in.Status.Lifecycle}
+func (in *Template) GetReconcileStatus() Lifecycle {
+	return in.Status.Lifecycle
 }
 
-func (in *Template) SetLifecycle(lifecycle Lifecycle) {
+func (in *Template) SetReconcileStatus(lifecycle Lifecycle) {
 	in.Status.Lifecycle = lifecycle
 }
 

@@ -26,68 +26,82 @@ import (
 )
 
 // calculateLifecycle returns the update lifecycle of the cluster.
+// Summary:
+// * if all services are successfully complete the cluster will terminate successfully.
+// * If there is a failed job, the cluster will fail itself.
 func calculateLifecycle(cluster *v1alpha1.Cluster, activeJobs, successfulJobs, failedJobs v1alpha1.SList) v1alpha1.Lifecycle {
-	allJobs := cluster.Status.Expected
-	newStatus := v1alpha1.Lifecycle{}
+	status := cluster.Status
 
-	logrus.Warnf("instances: (%d), activeJobs (%d): %s, successfulJobs (%d): %s, failedJobs (%d): %s",
-		len(cluster.Status.Expected),
-		len(activeJobs), activeJobs.ToString(),
-		len(successfulJobs), successfulJobs.ToString(),
-		len(failedJobs), failedJobs.ToString(),
-	)
+	allJobs := len(cluster.Status.Expected)
+
+	/*
+		logrus.Warnf("Cluster - instances: (%d), activeJobs (%d): %s, successfulJobs (%d): %s, failedJobs (%d): %s",
+			len(status.Expected),
+			len(activeJobs), activeJobs.ToString(),
+			len(successfulJobs), successfulJobs.ToString(),
+			len(failedJobs), failedJobs.ToString(),
+		)
+
+	*/
 
 	switch {
-	case len(activeJobs) == 0 &&
-		len(successfulJobs) == 0 &&
-		len(failedJobs) == 0:
-		return v1alpha1.Lifecycle{
-			Kind:   "Cluster",
-			Name:   cluster.GetName(),
-			Phase:  v1alpha1.PhaseInitializing,
-			Reason: "submitting job request",
-		}
+	case status.Phase == v1alpha1.PhaseUninitialized ||
+		status.Phase == v1alpha1.PhaseSuccess ||
+		status.Phase == v1alpha1.PhaseFailed:
+		return status.Lifecycle
 
 	case len(failedJobs) > 0:
-		newStatus = v1alpha1.Lifecycle{ // One job has failed
-			Kind:   "Cluster",
-			Name:   cluster.GetName(),
+		// A job has failed during execution.
+		return v1alpha1.Lifecycle{
 			Phase:  v1alpha1.PhaseFailed,
 			Reason: failedJobs.ToString(),
 		}
 
-		return newStatus
-
-	case len(successfulJobs) == len(allJobs): // All jobs are successfully completed
-		newStatus = v1alpha1.Lifecycle{
-			Kind:   "Cluster",
-			Name:   cluster.GetName(),
+	case len(successfulJobs) == allJobs:
+		// All jobs are successfully completed
+		return v1alpha1.Lifecycle{
 			Phase:  v1alpha1.PhaseSuccess,
 			Reason: successfulJobs.ToString(),
 		}
 
-		return newStatus
-
-	case len(activeJobs)+len(successfulJobs) == len(allJobs): // All jobs are created, and at least one is still running
-		newStatus = v1alpha1.Lifecycle{
-			Kind:   "Cluster",
-			Name:   cluster.GetName(),
+	case len(activeJobs)+len(successfulJobs) == allJobs:
+		// All jobs are created, and at least one is still running
+		return v1alpha1.Lifecycle{
 			Phase:  v1alpha1.PhaseRunning,
 			Reason: activeJobs.ToString(),
 		}
 
-		return newStatus
+	case status.Phase == v1alpha1.PhasePending:
+		// Not all Jobs are constructed created
+		return v1alpha1.Lifecycle{
+			Phase:  v1alpha1.PhasePending,
+			Reason: "Jobs are not yet created",
+		}
 
-	default: // There are still pending jobs to be created
-		newStatus = v1alpha1.Lifecycle{
+	default:
+		logrus.Warn("Cluster Debug info \n",
+			" current ", status.Lifecycle.Phase,
+			" total jobs: ", allJobs,
+			" activeJobs: ", activeJobs,
+			" successfulJobs: ", successfulJobs,
+			" failedJobs: ", failedJobs,
+			" cur status: ", status,
+		)
+
+		panic("this should never happen")
+	}
+
+	/*
+
+		// There are still pending jobs to be created
+		return v1alpha1.Lifecycle{
 			Kind:   "Cluster",
 			Name:   cluster.GetName(),
 			Phase:  v1alpha1.PhasePending,
 			Reason: "waiting for jobs to start",
 		}
 
-		return newStatus
-	}
+	*/
 
 	// TODO: validate the transition. For example, we cannot go from running to pending
 }

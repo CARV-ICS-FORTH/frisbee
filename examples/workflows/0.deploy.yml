@@ -1,0 +1,23 @@
+apiVersion: frisbee.io/v1alpha1
+kind: Workflow
+metadata:
+  name: redis-load
+spec:
+  importMonitors: [ "sysmon/container", "redismon/telegraf", "ycsbmon/goycsb" ]
+  ingress:
+    host: localhost
+    useAmbassador: true
+
+  actions:
+    # Create a single Master node
+    - action: Cluster
+      name: masters
+      cluster:
+        templateRef: redis/master
+        instances: 1
+
+    # Wait until the master is active
+    - action: Wait
+      name: "teardown"
+      wait:
+        success: [ masters ]

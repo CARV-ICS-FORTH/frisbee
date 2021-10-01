@@ -37,9 +37,6 @@ const (
 	// PhaseUninitialized means that request is not yet accepted by the controller.
 	PhaseUninitialized = Phase("")
 
-	// PhaseInitializing means that the request has been accepted by the controller.
-	PhaseInitializing = Phase("Initialized")
-
 	// PhasePending means that the service been accepted by the Kubernetes cluster, but one of the dependent
 	// conditions is not met yet. This includes the time waiting for logical dependencies (e.g, Run, Success),
 	// Ports discovery and rewiring, and placement of Pods.
@@ -56,19 +53,35 @@ const (
 	// PhaseFailed means that all containers in the pod have terminated, and at least one container has
 	// terminated in a failure (exited with a non-zero exit code or was stopped by the system).
 	PhaseFailed = Phase("Failed")
-
-	// PhaseChaos indicates a managed abnormal condition such STOP or KILL. In this phase, the controller ignores
-	// any subsequent failures and let the system under evaluation to progress as it can.
-	PhaseChaos = Phase("Chaos")
 )
 
+func (p Phase) toInt() int {
+	switch p {
+	case PhaseUninitialized:
+		return 0
+	case PhasePending:
+		return 1
+	case PhaseRunning:
+		return 2
+	case PhaseSuccess:
+		return 3
+	case PhaseFailed:
+		return 4
+	default:
+		panic("invalid phase")
+	}
+}
+
+// IsValid return true if the given phase precedes the reference phase.
+func (p Phase) IsValid(ref Phase) bool {
+	return p.toInt() < ref.toInt()
+}
+
+func (p Phase) Equals(ref Phase) bool {
+	return p == ref
+}
+
 type Lifecycle struct {
-	// Is it needed ?
-	Kind string `json:"kind,omitempty"`
-
-	// Is it needed ?
-	Name string `json:"name,omitempty"`
-
 	Phase Phase `json:"phase,omitempty"`
 
 	// A brief CamelCase message indicating details about why the service is in this Phase.
@@ -76,14 +89,8 @@ type Lifecycle struct {
 	// +optional
 	Reason string `json:"reason,omitempty"`
 
-	// RFC 3339 date and time at which the object was acknowledged by the Kubelet.
-	// This is before the Kubelet pulled the container image(s) for the pod.
-	// +optional
-	StartTime *metav1.Time `json:"startTime,omitempty"`
-
-	// Most recently observed status of the object
-	// +optional
-	EndTime *metav1.Time `json:"endTime,omitempty"`
+	// RFC 3339 date and time at which the object was last updated
+	LastUpdate metav1.Time `json:"lastUpdate,omitempty"`
 }
 
 func (in *Lifecycle) String() string {
@@ -92,15 +99,8 @@ func (in *Lifecycle) String() string {
 			in.Reason = "check the logs"
 		}
 
-		return fmt.Sprintf("object:%s, Name:%s, phase:%s reason:%s",
-			in.Kind,
-			in.Name,
-			in.Phase,
-			in.Reason)
+		return fmt.Sprintf("phase:%s reason:%s", in.Phase, in.Reason)
 	}
 
-	return fmt.Sprintf("object:%s, Name:%s, phase:%s ",
-		in.Kind,
-		in.Name,
-		in.Phase)
+	return fmt.Sprintf("phase:%s ", in.Phase)
 }

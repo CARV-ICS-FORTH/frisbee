@@ -20,13 +20,15 @@ package service
 import (
 	"context"
 	"reflect"
+	"time"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/utils"
-	"github.com/fnikolai/frisbee/controllers/utils/lifecycle"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -46,28 +48,29 @@ type Controller struct {
 	logr.Logger
 
 	// annotator sends annotations to grafana
-	annotator lifecycle.Annotator
+	annotator utils.Annotator
 }
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	/*
-		### 1: Load the service by name.
+		1: Load CR by name.
+		------------------------------------------------------------------
 	*/
 	var service v1alpha1.Service
 
-	var ret bool
-	result, err := utils.Reconcile(ctx, r, req, &service, &ret)
-	if ret {
-		return result, err
+	var requeue bool
+	result, err := utils.Reconcile(ctx, r, req, &service, &requeue)
+	if requeue {
+		return result, errors.Wrapf(err, "initialization error")
 	}
 
 	r.Logger.Info("-> Reconcile",
 		"kind", reflect.TypeOf(service),
 		"name", service.GetName(),
 		"lifecycle", service.Status.Phase,
-		"deleted", !service.GetDeletionTimestamp().IsZero(),
+		"epoch", service.GetResourceVersion(),
 	)
 
 	defer func() {
@@ -75,90 +78,92 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			"kind", reflect.TypeOf(service),
 			"name", service.GetName(),
 			"lifecycle", service.Status.Phase,
-			"deleted", !service.GetDeletionTimestamp().IsZero(),
+			"epoch", service.GetResourceVersion(),
 		)
 	}()
 
 	/*
-		### 2: Load the service's components.
+		2: Load CR's components.
+		------------------------------------------------------------------
 
-		In particular, the component is a pod with the same name as the service.
+		The component is a pod with the same name as the service.
 	*/
-
 	var pod corev1.Pod
 	{
 		key := client.ObjectKeyFromObject(&service)
 
 		if err := r.GetClient().Get(ctx, key, &pod); client.IgnoreNotFound(err) != nil {
-			return lifecycle.Failed(ctx, r, &service, errors.Wrapf(err, "retrieve pod"))
+			return utils.Failed(ctx, r, &service, errors.Wrapf(err, "retrieve pod"))
 		}
 	}
 
 	/*
-		### 3: Calculate and update the service status
-
-		Using the date we've gathered, we'll update the status of our CRD.
-		Depending on the outcome, the execution may proceed or terminate.
+		3: Update the CR status using the data we've gathered
+		------------------------------------------------------------------
 	*/
 	newStatus := calculateLifecycle(&service, &pod)
 	service.Status.Lifecycle = newStatus
 
-	if _, err := utils.UpdateStatus(ctx, r, &service); err != nil {
-		r.Logger.Error(err, "update status error")
-
-		return lifecycle.Failed(ctx, r, &service, errors.Wrapf(err, "status update"))
+	if err := utils.UpdateStatus(ctx, r, &service); err != nil {
+		// due to the multiple updates, it is possible for this function to
+		// be in conflict. We fix this issue by re-queueing the request.
+		// We also omit verbose error reporting as to avoid polluting the output.
+		runtime.HandleError(err)
+		return utils.Requeue()
 	}
 
 	/*
-		### 4: Based on the current status, decide what to do next.
+		4: Clean up the controller from finished jobs
+		------------------------------------------------------------------
+
+		First, we'll try to clean up old jobs, so that we don't leave too many lying
+		around.
+	*/
+	if newStatus.Phase == v1alpha1.PhaseSuccess {
+		return utils.Stop()
+	}
+
+	if newStatus.Phase == v1alpha1.PhaseFailed {
+		r.Logger.Error(errors.New(service.Status.Lifecycle.Reason),
+			"service failed",
+			"service", service.GetName())
+
+		return utils.Stop()
+	}
+
+	/*
+		5: Make the world matching what we want in our spec
+		------------------------------------------------------------------
+
+		Once we've updated our status, we can move on to ensuring that the status of
+		the world matches what we want in our spec.
 
 		We may delete the service, add a pod, or wait for existing pod to change its status.
 	*/
-
-	switch newStatus.Phase {
-	case v1alpha1.PhaseUninitialized:
-		panic("this should never happen")
-
-	case v1alpha1.PhaseInitializing:
-		// ... proceed to create pod
-
-	case v1alpha1.PhasePending, v1alpha1.PhaseRunning:
-		// ... Pod is already scheduled. nothing to do
+	if service.Status.LastScheduleTime != nil {
+		// next reconciliation cycle will be trigger by the watchers
 		return utils.Stop()
+	}
 
-	case v1alpha1.PhaseSuccess:
-		// Although we can remove a service when is complete, we recommend not to id as it will break the
-		// cluster manager -- it needs to track the total number of created services.
-
-		/*
-			if err := r.GetClient().Delete(ctx, &service); client.IgnoreNotFound(err) != nil {
-				return lifecycle.Failed(ctx, r, &service, errors.Wrapf(err, "service deletion"))
-			}
-		*/
-
-		return utils.Stop()
-
-	case v1alpha1.PhaseFailed:
-		r.Logger.Error(errors.New(newStatus.Reason), "cluster failed", "cluster", service.GetName())
-
-		return utils.Stop()
+	if err := r.runJob(ctx, &service); err != nil {
+		return utils.Failed(ctx, r, &service, errors.Wrapf(err, "cannot create pod"))
 	}
 
 	/*
-		### 5: Create new Pod for the service
+		6: Avoid double actions
+		------------------------------------------------------------------
+
+		If this process restarts at this point (after posting a job, but
+		before updating the status), then we might try to start the job on
+		the next time.  Actually, if we re-list the Jobs on the next cycle
+		we might not see our own status update, and then post one again.
+		So, we need to use the job name as a lock to prevent us from making the job twice.
 	*/
 
-	if err := r.runJob(ctx, &service); err != nil {
-		return lifecycle.Failed(ctx, r, &service, errors.Wrapf(err, "cannot create pod"))
-	}
+	// Add the just-started jobs to the status list.
+	service.Status.LastScheduleTime = &metav1.Time{Time: time.Now()}
 
-	r.Logger.Info("Create pod",
-		"service", service.GetName(),
-		"pod", pod.GetName(),
-	)
-
-	// exit and wait for watchers to trigger the next reconcile cycle
-	return utils.Stop()
+	return utils.Pending(ctx, r, &service, "create pod")
 }
 
 /*
@@ -170,8 +175,11 @@ func (r *Controller) Finalizer() string {
 }
 
 func (r *Controller) Finalize(obj client.Object) error {
-	r.Logger.Info("Finalize", "kind", reflect.TypeOf(obj), "name", obj.GetName())
-
+	r.Logger.Info("XX Finalize",
+		"kind", reflect.TypeOf(obj),
+		"name", obj.GetName(),
+		"epoch", obj.GetResourceVersion(),
+	)
 	return nil
 }
 
@@ -184,11 +192,13 @@ func (r *Controller) Finalize(obj client.Object) error {
 	deleted, etc.
 */
 
+var controllerKind = v1alpha1.GroupVersion.WithKind("Service")
+
 func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 	r := &Controller{
 		Manager:   mgr,
 		Logger:    logger.WithName("service"),
-		annotator: &lifecycle.PointAnnotation{},
+		annotator: &utils.PointAnnotation{},
 	}
 
 	return ctrl.NewControllerManagedBy(mgr).

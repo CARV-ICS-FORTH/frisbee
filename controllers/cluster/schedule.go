@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package utils
+package cluster
 
 import (
 	"time"
@@ -26,8 +26,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// GetNextSchedule returns the next scheduling time based on the cron hob.
-func GetNextSchedule(
+// GetNextScheduledJob returns the next scheduling time based on the cron hob.
+func GetNextScheduledJob(
 	obj metav1.Object,
 	scheduler *v1alpha1.SchedulerSpec,
 	lastScheduleTime *metav1.Time,

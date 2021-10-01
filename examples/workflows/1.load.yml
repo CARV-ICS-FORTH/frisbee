@@ -30,5 +30,6 @@ spec:
     # Wait until loaders are complete
     - action: Wait
       name: "teardown"
+      depends: { success: [ loaders ] }
       wait:
         success: [ loaders ]

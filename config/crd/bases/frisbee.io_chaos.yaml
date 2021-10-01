@@ -97,15 +97,9 @@ spec:
           status:
             description: Most recently observed status of the object
             properties:
-              endTime:
-                description: Most recently observed status of the object
+              lastUpdate:
+                description: RFC 3339 date and time at which the object was last updated
                 format: date-time
-                type: string
-              kind:
-                description: Is it needed ?
-                type: string
-              name:
-                description: Is it needed ?
                 type: string
               phase:
                 description: Phase is the current status of an object
@@ -113,12 +107,6 @@ spec:
               reason:
                 description: A brief CamelCase message indicating details about why
                   the service is in this Phase. e.g. 'Evicted'
-                type: string
-              startTime:
-                description: RFC 3339 date and time at which the object was acknowledged
-                  by the Kubelet. This is before the Kubelet pulled the container
-                  image(s) for the pod.
-                format: date-time
                 type: string
             type: object
         required:

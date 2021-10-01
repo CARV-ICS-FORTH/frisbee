@@ -19,14 +19,15 @@ package utils
 
 import (
 	"context"
+	"reflect"
 	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	k8errors "k8s.io/apimachinery/pkg/api/errors"
-	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -35,21 +36,26 @@ func Stop() (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
+// RequeueAfter will place the request in a queue, but it will be dequeue after the specified period.
+func RequeueAfter(delay time.Duration) (ctrl.Result, error) {
+	return ctrl.Result{RequeueAfter: delay, Requeue: true}, nil
+}
+
+// Requeue will place the request in a queue, and will be immediately dequeued.
 func Requeue() (ctrl.Result, error) {
 	return ctrl.Result{Requeue: true}, nil
 }
 
-func RequeueAfter(delay time.Duration) (ctrl.Result, error) {
-	return ctrl.Result{RequeueAfter: delay}, nil
-}
-
-func StopWithError(err error) (ctrl.Result, error) {
+// RequeueWithError will place the request in a queue, and will be immediately dequeued.
+// After dequeuing the request, the controller will report the error.
+func RequeueWithError(err error) (ctrl.Result, error) {
 	return ctrl.Result{}, err
 }
 
 // Reconciler implements basic functionality that is common to every solid reconciler (e.g, finalizers)
 type Reconciler interface {
 	GetClient() client.Client
+	GetCache() cache.Cache
 
 	logr.Logger
 
@@ -69,8 +75,8 @@ type Reconciler interface {
 //
 // Bool indicate whether the caller should return immediately (true) or continue (false).
 // The reconciliation cycle is where the framework gives us back control after a watch has passed up an event.
-func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.Object, ret *bool) (ctrl.Result, error) {
-	*ret = true
+func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.Object, requeue *bool) (ctrl.Result, error) {
+	*requeue = true
 
 	/*
 		### 1: Retrieve the CR by name
@@ -87,7 +93,13 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 		// We'll ignore not-found errors, since they can't be fixed by an immediate
 		// requeue (we'll need to wait for a new notification), and we can get them
 		// on added / deleted requests.
-		return StopWithError(client.IgnoreNotFound(err))
+		if k8errors.IsNotFound(err) {
+			return Stop()
+		}
+
+		r.Error(err, "obj retrieval")
+
+		return Requeue()
 	}
 
 	/*
@@ -97,10 +109,23 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 	*/
 
 	/*
-		### 3: Manage instance initialization
+		### 3: Manage Resource initialization
 		Finalizers provide a mechanism to inform the Kubernetes control plane that an action needs to take place
 		before the standard Kubernetes garbage collection logic can be performed.
 	*/
+
+	/*	### 4: Manage Resource Finalization
+			This is the pseudo code algorithm to manage finalizers:
+
+		    If needed, add finalizers during the initialization method.
+		    If the resource is being deleted, check if the finalizer owned by this controller is present.
+		        If not, return
+		        If yes, execute the cleanup logic
+		            If successful, update the CR by removing the finalizer.
+		            If failure decide whether to retry or give up and likely leave garbage (in some situations this can be acceptable).
+	*/
+
+	// examine DeletionTimestamp to determine if object is under deletion
 	if obj.GetDeletionTimestamp().IsZero() {
 		// The object is not being deleted, so if it does not have our finalizer,
 		// then lets add the finalizer and Update the object. This is equivalent
@@ -113,107 +138,76 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 			// controllerutil.AddFinalizer(obj, metav1.FinalizerDeleteDependents)
 			controllerutil.AddFinalizer(obj, r.Finalizer())
 
-			// This code changes the spec and metadata, whereas the solid Reconciler changes the status.
-			// If we do not return at this point, there will be a conflict because the solid Reconciler will try
-			// to Update the status of a modified object.
-			return Update(ctx, r, obj)
-		}
-	}
+			if err := Update(ctx, r, obj); err != nil {
+				r.Error(err, "unable to add finalizers", "instance", obj.GetName())
 
-	/*
-		### 4: Manage instance deletion
-		If the instance is being deleted, and we need to do some specific clean up, this is where we manage it.
-	*/
-	if !obj.GetDeletionTimestamp().IsZero() {
-		// check if the finalizer owned by this controller is present.
-		if !controllerutil.ContainsFinalizer(obj, r.Finalizer()) {
+				return Requeue()
+			}
+		}
+	} else {
+		// The object is being deleted
+		if controllerutil.ContainsFinalizer(obj, r.Finalizer()) {
+			// our finalizer is present, so lets handle any external dependency
+
+			if err := r.Finalize(obj); err != nil {
+				// Run finalization logic to remove external dependencies. If the
+				// finalization logic fails, don't remove the finalizer so
+				// that we can retry during the next reconciliation.
+				r.Error(err, "unable to finalize instance", "instance", obj.GetName())
+
+				return Requeue()
+			}
+
+			// Remove CR (Custom Resource) finalizer.
+			// Once all finalizers have been removed, the object will be deleted.
+			controllerutil.RemoveFinalizer(obj, r.Finalizer())
+
+			if err := Update(ctx, r, obj); err != nil {
+				// r.Error(err, "unable to delete instance", "instance", obj.GetName())
+
+				return Requeue()
+			}
+
 			// Stop reconciliation as the item is being deleted
 			return Stop()
 		}
-
-		// Run finalization logic to remove external dependencies. If the
-		// finalization logic fails, don't remove the finalizer so
-		// that we can retry during the next reconciliation.
-		if err := r.Finalize(obj); err != nil {
-			return StopWithError(err)
-		}
-
-		// Remove CR (Custom Resource) finalizer.
-		// Once all finalizers have been removed, the object will be deleted.
-		controllerutil.RemoveFinalizer(obj, r.Finalizer())
-
-		return Update(ctx, r, obj)
 	}
 
-	*ret = false
+	*requeue = false
 
 	return Stop()
 }
 
-func Update(ctx context.Context, r Reconciler, obj client.Object) (ctrl.Result, error) {
+// Update will update the metadata and the spec of the Object. If there is a conflict, it will retry again.
+func Update(ctx context.Context, r Reconciler, obj client.Object) error {
 	updateError := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		return r.GetClient().Update(ctx, obj)
 	})
 
-	switch {
-	case updateError == nil:
-		return Stop()
+	r.Info("OO UpdtMeta",
+		"kind", reflect.TypeOf(obj),
+		"name", obj.GetName(),
+		"line", GetCallerLine(),
+		"epoch", obj.GetResourceVersion(),
+	)
 
-	case k8errors.IsInvalid(updateError):
-		r.Error(updateError, "Invalid Update() for", "object", obj.GetName())
-
-		return Stop()
-
-	case k8errors.IsNotFound(updateError):
-		// The object has been deleted since we read it.
-		// Requeue the object to try to reconciliate again.
-		return Requeue()
-
-	case k8errors.IsConflict(updateError):
-		// The object has been updated since we read it.
-		// Requeue the object to try to reconciliate again.
-		return Requeue()
-
-	default:
-		runtimeutil.HandleError(errors.Wrapf(updateError, "Update failed for %s [%s]",
-			obj.GetName(), obj.GetObjectKind().GroupVersionKind()))
-
-		return Stop()
-	}
+	return updateError
 }
 
-func UpdateStatus(ctx context.Context, r Reconciler, obj client.Object) (ctrl.Result, error) {
-	// The status subresource ignores changes to spec, so it’s less likely to conflict with any other updates,
-	// and can have separate permissions.
+// UpdateStatus will update the status of the Object. If there is a conflict, it will retry again.
+func UpdateStatus(ctx context.Context, r Reconciler, obj client.Object) error {
 	updateError := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		return r.GetClient().Status().Update(ctx, obj)
 	})
 
-	switch {
-	case updateError == nil:
-		return Stop()
+	r.Info("OO UpdtStatus",
+		"kind", reflect.TypeOf(obj),
+		"name", obj.GetName(),
+		"line", GetCallerLine(),
+		"epoch", obj.GetResourceVersion(),
+	)
 
-	case k8errors.IsInvalid(updateError):
-		r.Error(updateError, "Invalid UpdateStatus() for", "object", obj.GetName())
-
-		return Requeue()
-
-	case k8errors.IsNotFound(updateError):
-		// The object has been deleted since we read it.
-		// Requeue the object to try to reconcile again.
-		return Requeue()
-
-	case k8errors.IsConflict(updateError):
-		// The object has been updated since we read it.
-		// Requeue the object to try to reconcile again.
-		return Requeue()
-
-	default:
-		runtimeutil.HandleError(errors.Wrapf(updateError, "status Update failed for %s [%s]",
-			obj.GetName(), obj.GetObjectKind().GroupVersionKind()))
-
-		return Stop()
-	}
+	return updateError
 }
 
 // CreateUnlessExists ignores existing objects.
@@ -221,9 +215,32 @@ func UpdateStatus(ctx context.Context, r Reconciler, obj client.Object) (ctrl.Re
 // reschedule the creation of a Job. To avoid that, get if the Job is already submitted.
 func CreateUnlessExists(ctx context.Context, r Reconciler, obj client.Object) error {
 	err := r.GetClient().Create(ctx, obj)
-	if err != nil && !k8errors.IsAlreadyExists(err) {
+	if err != nil /*&& !k8errors.IsAlreadyExists(err) */ {
 		return errors.Wrapf(err, "creation failed")
 	}
 
+	r.Info("++ Create",
+		"kind", reflect.TypeOf(obj),
+		"name", obj.GetName(),
+		"line", GetCallerLine(),
+		"epoch", obj.GetResourceVersion(),
+	)
+
 	return nil
+}
+
+// Delete removes a Kubernetes object, ignoring the NotFound error. If any error exists,
+// it is recorded in the reconciler's logger.
+func Delete(ctx context.Context, r Reconciler, obj client.Object) {
+	err := r.GetClient().Delete(ctx, obj)
+	if err != nil && !k8errors.IsNotFound(err) {
+		r.Error(err, "unable to delete %s", obj.GetName())
+	}
+
+	r.Info("-- Delete",
+		"kind", reflect.TypeOf(obj),
+		"name", obj.GetName(),
+		"line", GetCallerLine(),
+		"epoch", obj.GetResourceVersion(),
+	)
 }

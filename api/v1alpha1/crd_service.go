@@ -103,13 +103,16 @@ type Resources struct {
 
 type ServiceStatus struct {
 	Lifecycle `json:",inline"`
+
+	// LastScheduleTime provide information about  the last time a Pod was scheduled.
+	LastScheduleTime *metav1.Time `json:"lastScheduleTime,omitempty"`
 }
 
-func (in *Service) GetLifecycle() []*Lifecycle {
-	return []*Lifecycle{&in.Status.Lifecycle}
+func (in *Service) GetReconcileStatus() Lifecycle {
+	return in.Status.Lifecycle
 }
 
-func (in *Service) SetLifecycle(lifecycle Lifecycle) {
+func (in *Service) SetReconcileStatus(lifecycle Lifecycle) {
 	in.Status.Lifecycle = lifecycle
 }
 

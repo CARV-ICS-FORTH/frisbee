@@ -37,6 +37,10 @@ func GetServiceSpec(ctx context.Context, r utils.Reconciler, ts *v1alpha1.Templa
 
 // GenerateServiceSpec parses a given scheme and returns the respective ServiceSpec.
 func GenerateServiceSpec(tspec *v1alpha1.Scheme) (v1alpha1.ServiceSpec, error) {
+	if tspec == nil {
+		return v1alpha1.ServiceSpec{}, errors.Errorf("empty service spec")
+	}
+
 	// replaced templated expression with actual values
 	t := template.Must(
 		template.New("").

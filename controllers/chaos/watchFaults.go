@@ -1,7 +1,7 @@
 package chaos
 
 import (
-	"github.com/fnikolai/frisbee/controllers/utils/lifecycle"
+	"github.com/fnikolai/frisbee/controllers/utils"
 	"github.com/pkg/errors"
 	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -27,7 +27,7 @@ func (r *Controller) create(e event.CreateEvent) bool {
 	r.Logger.Info("Detected: fault creation", "name ", e.Object.GetName())
 
 	// because the range annotator has state (uid), we need to save in the controller's store.
-	annotator := &lifecycle.RangeAnnotation{}
+	annotator := &utils.RangeAnnotation{}
 	annotator.Add(e.Object)
 
 	r.annotators.Set(e.Object.GetName(), annotator)
@@ -81,7 +81,7 @@ func (r *Controller) delete(e event.DeleteEvent) bool {
 		panic("this should never happen")
 	}
 
-	annotator.(*lifecycle.RangeAnnotation).Delete(e.Object)
+	annotator.(*utils.RangeAnnotation).Delete(e.Object)
 
 	r.annotators.Remove(e.Object.GetName())
 

@@ -70,11 +70,11 @@ type ChaosStatus struct {
 	Lifecycle `json:",inline"`
 }
 
-func (in *Chaos) GetLifecycle() []*Lifecycle {
-	return []*Lifecycle{&in.Status.Lifecycle}
+func (in *Chaos) GetReconcileStatus() Lifecycle {
+	return in.Status.Lifecycle
 }
 
-func (in *Chaos) SetLifecycle(lifecycle Lifecycle) {
+func (in *Chaos) SetReconcileStatus(lifecycle Lifecycle) {
 	in.Status.Lifecycle = lifecycle
 }
 
