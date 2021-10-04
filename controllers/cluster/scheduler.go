@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package utils
+package cluster
 
 import (
 	"time"
@@ -26,8 +26,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// GetNextSchedule returns the next scheduling time based on the cron hob.
-func GetNextSchedule(
+// GetNextScheduledJob returns the next scheduling time based on the cron hob.
+func GetNextScheduledJob(
 	obj metav1.Object,
 	scheduler *v1alpha1.SchedulerSpec,
 	lastScheduleTime *metav1.Time,
@@ -53,6 +53,7 @@ func GetNextSchedule(
 	} else {
 		earliestTime = obj.GetCreationTimestamp().Time
 	}
+
 	if scheduler.StartingDeadlineSeconds != nil {
 		// controller is not going to schedule anything below this point
 		schedulingDeadline := cur.Add(-time.Second * time.Duration(*scheduler.StartingDeadlineSeconds))
@@ -61,11 +62,13 @@ func GetNextSchedule(
 			earliestTime = schedulingDeadline
 		}
 	}
+
 	if earliestTime.After(cur) {
 		return time.Time{}, sched.Next(cur), nil
 	}
 
 	starts := 0
+
 	for t := sched.Next(earliestTime); !t.After(cur); t = sched.Next(t) {
 		lastMissed = t
 		// An object might miss several starts. For example, if

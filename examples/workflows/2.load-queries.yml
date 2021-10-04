@@ -10,36 +10,29 @@ spec:
 
   actions:
     # Create a single Master node
-    - action: Cluster
-      name: masters
-      cluster:
-        templateRef: redis/master
-        instances: 1
+    - action: Service
+      name: master
+      service:
+        fromTemplate:
+          templateRef: redis/master
 
     # Ingest keys in parallel, into different ranges
     - action: Cluster
       name: loaders
-      depends: { running: [ masters ], duration: 30s }
+      depends: { running: [ master ], duration: 30s }
       cluster:
         templateRef: redis/loader
         inputs:
-          - { server: .cluster.masters.any, recordcount: "100000", offset: "0" }
-          - { server: .cluster.masters.any, recordcount: "100000", offset: "100000" }
-          - { server: .cluster.masters.any, recordcount: "100000", offset: "200000" }
-
+          - { server: .service.master.any, recordcount: "100000", offset: "0" }
+          - { server: .service.master.any, recordcount: "100000", offset: "100000" }
+          - { server: .service.master.any, recordcount: "100000", offset: "200000" }
 
     # Run queries
     - action: Cluster
       name: runners
-      depends: { running: [ masters ], success: [ loaders ] }
+      depends: { running: [ master ], success: [ loaders ] }
       cluster:
         templateRef: redis/runner
         instances: 3
         inputs:
-          - { server: .cluster.masters.any, workload: workloada,  operationcount: "300000" }
-
-    # Wait until loaders are complete
-    - action: Wait
-      name: "teardown"
-      wait:
-        success: [ runners ]
+          - { server: .service.master.any, workload: workloada,  operationcount: "300000" }

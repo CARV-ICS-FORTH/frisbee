@@ -1,6 +1,10 @@
 package service
 
 import (
+	"fmt"
+	"reflect"
+
+	"github.com/fnikolai/frisbee/controllers/utils"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"
@@ -18,20 +22,32 @@ func (r *Controller) Watchers() predicate.Funcs {
 }
 
 func (r *Controller) create(e event.CreateEvent) bool {
+	if !utils.IsManagedByThisController(e.Object, controllerKind) {
+		return false
+	}
+
 	if !e.Object.GetDeletionTimestamp().IsZero() {
 		// on a restart of the controller manager, it's possible a new pod shows up in a state that
 		// is already pending deletion. Prevent the pod from being a creation observation.
 		return false
 	}
 
-	r.Logger.Info("Detected: pod creation", "name ", e.Object.GetName())
+	r.Logger.Info("** Detected",
+		"Request", "Create",
+		"kind", reflect.TypeOf(e.Object),
+		"name", e.Object.GetName(),
+		"epoch", e.Object.GetResourceVersion(),
+	)
 
 	r.annotator.Add(e.Object)
 
-	return true
+	return false
 }
 
 func (r *Controller) update(e event.UpdateEvent) bool {
+	if !utils.IsManagedByThisController(e.ObjectNew, controllerKind) {
+		return false
+	}
 
 	if e.ObjectOld.GetResourceVersion() == e.ObjectNew.GetResourceVersion() {
 		// Periodic resync will send update events for all known pods.
@@ -48,24 +64,31 @@ func (r *Controller) update(e event.UpdateEvent) bool {
 	}
 
 	// if the status is the same, there is no need to inform the service
-	oldPod := e.ObjectOld.(*corev1.Pod)
-	newPod := e.ObjectNew.(*corev1.Pod)
+	prev := e.ObjectOld.(*corev1.Pod)
+	latest := e.ObjectNew.(*corev1.Pod)
 
-	if oldPod.Status.Phase == newPod.Status.Phase {
+	if prev.Status.Phase == latest.Status.Phase {
 		// a controller never initiates a phase change, and so is never asleep waiting for the same.
 		return false
 	}
 
-	r.Logger.Info("Detected: pod update",
-		"name ", e.ObjectNew.GetName(),
-		"from", oldPod.Status.Phase,
-		"to", newPod.Status.Phase,
+	r.Logger.Info("** Detected",
+		"Request", "Update",
+		"kind", reflect.TypeOf(e.ObjectNew),
+		"name", e.ObjectNew.GetName(),
+		"from", prev.Status.Phase,
+		"to", latest.Status.Phase,
+		"epoch", fmt.Sprintf("%s -> %s", prev.GetResourceVersion(), latest.GetResourceVersion()),
 	)
 
 	return true
 }
 
 func (r *Controller) delete(e event.DeleteEvent) bool {
+	if !utils.IsManagedByThisController(e.Object, controllerKind) {
+		return false
+	}
+
 	// An object was deleted but the watch deletion event was missed while disconnected from apiserver.
 	// In this case we don't know the final "resting" state of the object,
 	// so there's a chance the included `Obj` is stale.
@@ -75,9 +98,14 @@ func (r *Controller) delete(e event.DeleteEvent) bool {
 		return false
 	}
 
-	r.Logger.Info("Detected: pod deletion", "name ", e.Object.GetName())
-
 	r.annotator.Delete(e.Object)
+
+	r.Logger.Info("** Detected",
+		"Request", "Delete",
+		"kind", reflect.TypeOf(e.Object),
+		"name", e.Object.GetName(),
+		"epoch", e.Object.GetResourceVersion(),
+	)
 
 	return true
 }

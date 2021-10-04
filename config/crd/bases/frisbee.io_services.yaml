@@ -1159,6 +1159,26 @@ spec:
                   label domain:{{domain-name}}. for the moment simply match domain
                   to a specific node. this will change in the future
                 type: string
+              fromTemplate:
+                description: ServiceFromTemplate populates the service fields from
+                  a template. This is used for backward compatibility with Cluster
+                  with just one instance. This field cannot be used in conjunction
+                  with other fields.
+                properties:
+                  inputs:
+                    description: Inputs is a list of inputs passed to the objects.
+                    items:
+                      additionalProperties:
+                        type: string
+                      type: object
+                    type: array
+                  templateRef:
+                    description: TemplateRef refers to a service template. It conflicts
+                      with Service.
+                    type: string
+                required:
+                - templateRef
+                type: object
               resources:
                 description: Resources specifies limitations as to how the container
                   will access host resources.
@@ -2628,15 +2648,10 @@ spec:
           status:
             description: Most recently observed status of the object
             properties:
-              endTime:
-                description: Most recently observed status of the object
+              lastScheduleTime:
+                description: LastScheduleTime provide information about  the last
+                  time a Pod was scheduled.
                 format: date-time
-                type: string
-              kind:
-                description: Is it needed ?
-                type: string
-              name:
-                description: Is it needed ?
                 type: string
               phase:
                 description: Phase is the current status of an object
@@ -2644,12 +2659,6 @@ spec:
               reason:
                 description: A brief CamelCase message indicating details about why
                   the service is in this Phase. e.g. 'Evicted'
-                type: string
-              startTime:
-                description: RFC 3339 date and time at which the object was acknowledged
-                  by the Kubelet. This is before the Kubelet pulled the container
-                  image(s) for the pod.
-                format: date-time
                 type: string
             type: object
         required:

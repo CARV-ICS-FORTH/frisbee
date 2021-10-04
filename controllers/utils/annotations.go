@@ -15,16 +15,17 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package lifecycle
+package utils
 
 import (
+	"context"
 	"fmt"
 	"time"
 
-	"github.com/fnikolai/frisbee/controllers/utils"
 	"github.com/grafana-tools/sdk"
-	"github.com/sirupsen/logrus"
+	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -52,7 +53,6 @@ type Annotator interface {
 type PointAnnotation struct{}
 
 func (a *PointAnnotation) Add(obj client.Object) {
-
 	ga := sdk.CreateAnnotationRequest{
 		Time: obj.GetCreationTimestamp().Unix() * 1000, // unix ts in ms
 		Tags: []string{AnnotationRun},
@@ -60,8 +60,8 @@ func (a *PointAnnotation) Add(obj client.Object) {
 			obj.GetObjectKind().GroupVersionKind().String(), obj.GetName()),
 	}
 
-	if utils.Globals.Annotator != nil {
-		utils.Globals.Annotator.Insert(ga)
+	if v := Annotate; v != nil {
+		v.Insert(ga)
 	}
 }
 
@@ -78,10 +78,8 @@ func (a *PointAnnotation) Delete(obj client.Object) {
 			obj.GetObjectKind().GroupVersionKind().String(), obj.GetName()),
 	}
 
-	logrus.Warn("DELETION GA ", ga)
-
-	if utils.Globals.Annotator != nil {
-		utils.Globals.Annotator.Insert(ga)
+	if v := Annotate; v != nil {
+		v.Insert(ga)
 	}
 }
 
@@ -108,13 +106,13 @@ func (a *RangeAnnotation) Add(obj client.Object) {
 			obj.GetObjectKind().GroupVersionKind().String(), obj.GetName()),
 	}
 
-	if utils.Globals.Annotator != nil {
-		a.reqID = utils.Globals.Annotator.Insert(ga)
+	if v := Annotate; v != nil {
+		a.reqID = v.Insert(ga)
+		v.Insert(ga)
 	}
 }
 
 func (a *RangeAnnotation) Delete(obj client.Object) {
-
 	// in some cases the deletion timestamp is nil. If so, just use the present time.
 	ts := obj.GetDeletionTimestamp()
 	if ts == nil {
@@ -129,7 +127,67 @@ func (a *RangeAnnotation) Delete(obj client.Object) {
 			obj.GetObjectKind().GroupVersionKind().String(), obj.GetName()),
 	}
 
-	if utils.Globals.Annotator != nil {
-		utils.Globals.Annotator.Patch(a.reqID, ga)
+	if v := Annotate; v != nil {
+		v.Patch(a.reqID, ga)
+	}
+}
+
+// ///////////////////////////////////////////
+//		Grafana Annotator
+// ///////////////////////////////////////////
+
+var AnnotationTimeout = 30 * time.Second
+
+const (
+	statusAnnotationAdded = "Annotation added"
+
+	statusAnnotationPatched = "Annotation patched"
+)
+
+type GrafanaAnnotator struct {
+	ctx context.Context
+
+	*sdk.Client
+}
+
+// Insert inserts a new annotation to Grafana.
+func (c *GrafanaAnnotator) Insert(ga sdk.CreateAnnotationRequest) (reqID uint) {
+	ctx, cancel := context.WithTimeout(c.ctx, AnnotationTimeout)
+	defer cancel()
+
+	// submit
+	gaResp, err := c.Client.CreateAnnotation(ctx, ga)
+	if err != nil {
+		runtime.HandleError(errors.Wrapf(err, "annotation failed"))
+
+		return
+	}
+
+	if gaResp.Message == nil {
+		runtime.HandleError(errors.Wrapf(err, "empty annotation response"))
+	} else if *gaResp.Message != statusAnnotationAdded {
+		runtime.HandleError(errors.Wrapf(err, "expected message '%s', but got '%s'", statusAnnotationAdded, *gaResp.Message))
+	}
+
+	return *gaResp.ID
+}
+
+// Patch updates an existing annotation to Grafana.
+func (c *GrafanaAnnotator) Patch(reqID uint, ga sdk.PatchAnnotationRequest) {
+	ctx, cancel := context.WithTimeout(c.ctx, AnnotationTimeout)
+	defer cancel()
+
+	// submit
+	gaResp, err := c.Client.PatchAnnotation(ctx, reqID, ga)
+	if err != nil {
+		runtime.HandleError(errors.Wrapf(err, "annotation failed"))
+
+		return
+	}
+
+	if gaResp.Message == nil {
+		runtime.HandleError(errors.Wrapf(err, "empty annotation response"))
+	} else if *gaResp.Message != statusAnnotationPatched {
+		runtime.HandleError(errors.Wrapf(err, "expected message '%s', but got '%s'", statusAnnotationPatched, *gaResp.Message))
 	}
 }

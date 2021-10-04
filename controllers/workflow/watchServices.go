@@ -1,9 +1,27 @@
-package chaos
+// Licensed to FORTH/ICS under one or more contributor
+// license agreements. See the NOTICE file distributed with
+// this work for additional information regarding copyright
+// ownership. FORTH/ICS licenses this file to you under
+// the Apache License, Version 2.0 (the "License"); you may
+// not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
+package workflow
 
 import (
 	"fmt"
 	"reflect"
 
+	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/utils"
 	"github.com/pkg/errors"
 	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"
@@ -11,16 +29,19 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
-func (r *Controller) Watchers() predicate.Funcs {
+// controllerKind contains the schema.GroupVersionKind for this controller type.
+// var controllerKind = apps.SchemeGroupVersion.WithKind("Deployment")
+
+func (r *Controller) WatchServices() predicate.Funcs {
 	return predicate.Funcs{
-		CreateFunc:  r.create,
-		DeleteFunc:  r.delete,
-		UpdateFunc:  r.update,
-		GenericFunc: generic,
+		CreateFunc:  r.watchServiceCreate,
+		DeleteFunc:  r.watchServiceDelete,
+		UpdateFunc:  r.watchServiceUpdate,
+		GenericFunc: r.watchServiceGeneric,
 	}
 }
 
-func (r *Controller) create(e event.CreateEvent) bool {
+func (r *Controller) watchServiceCreate(e event.CreateEvent) bool {
 	if !utils.IsManagedByThisController(e.Object, controllerKind) {
 		return false
 	}
@@ -38,16 +59,10 @@ func (r *Controller) create(e event.CreateEvent) bool {
 		"epoch", e.Object.GetResourceVersion(),
 	)
 
-	// because the range annotator has state (uid), we need to save in the controller's store.
-	annotator := &utils.RangeAnnotation{}
-	annotator.Add(e.Object)
-
-	r.annotators.Set(e.Object.GetName(), annotator)
-
 	return true
 }
 
-func (r *Controller) update(e event.UpdateEvent) bool {
+func (r *Controller) watchServiceUpdate(e event.UpdateEvent) bool {
 	if !utils.IsManagedByThisController(e.ObjectNew, controllerKind) {
 		return false
 	}
@@ -67,34 +82,40 @@ func (r *Controller) update(e event.UpdateEvent) bool {
 	}
 
 	// if the status is the same, there is no need to inform the service
-	oldFault := e.ObjectOld.(*Fault)
-	newFault := e.ObjectNew.(*Fault)
+	prev := e.ObjectOld.(*v1alpha1.Service)
+	latest := e.ObjectNew.(*v1alpha1.Service)
 
-	oldLF := convertLifecycle(oldFault)
-	newLF := convertLifecycle(newFault)
-
-	if oldLF.Phase == newLF.Phase {
+	if prev.Status.Phase == latest.Status.Phase {
+		// a controller never initiates a phase change, and so is never asleep waiting for the same.
 		return false
+	}
+
+	if latest.GetName() == "prometheus" {
+		r.prometheus <- &latest.Status.Lifecycle
+	}
+
+	if latest.GetName() == "grafana" {
+		r.grafana <- &latest.Status.Lifecycle
 	}
 
 	r.Logger.Info("** Detected",
 		"Request", "Update",
 		"kind", reflect.TypeOf(e.ObjectNew),
 		"name", e.ObjectNew.GetName(),
-		"from", oldLF.Phase,
-		"to", newLF.Phase,
-		"epoch", fmt.Sprintf("%s -> %s", oldFault.GetResourceVersion(), newFault.GetResourceVersion()),
+		"from", prev.Status.Phase,
+		"to", latest.Status.Phase,
+		"epoch", fmt.Sprintf("%s -> %s", prev.GetResourceVersion(), latest.GetResourceVersion()),
 	)
 
 	return true
 }
 
-func (r *Controller) delete(e event.DeleteEvent) bool {
+func (r *Controller) watchServiceDelete(e event.DeleteEvent) bool {
 	if !utils.IsManagedByThisController(e.Object, controllerKind) {
 		return false
 	}
 
-	// An object was deleted but the watch deletion event was missed while disconnected from apiserver.
+	// an object was deleted but the watch deletion event was missed while disconnected from apiserver.
 	// In this case we don't know the final "resting" state of the object,
 	// so there's a chance the included `Obj` is stale.
 	if e.DeleteStateUnknown {
@@ -110,18 +131,9 @@ func (r *Controller) delete(e event.DeleteEvent) bool {
 		"epoch", e.Object.GetResourceVersion(),
 	)
 
-	annotator, ok := r.annotators.Get(e.Object.GetName())
-	if !ok {
-		panic("this should never happen")
-	}
-
-	annotator.(*utils.RangeAnnotation).Delete(e.Object)
-
-	r.annotators.Remove(e.Object.GetName())
-
 	return true
 }
 
-func generic(event.GenericEvent) bool {
+func (r *Controller) watchServiceGeneric(event.GenericEvent) bool {
 	return true
 }

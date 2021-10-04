@@ -68,7 +68,7 @@ type ClusterSpec struct {
 	// +optional
 	Domain string `json:"domain,omitempty"`
 
-	// This flag tells the controller to suspend subsequent executions, it does
+	// Suspend flag tells the controller to suspend subsequent executions, it does
 	// not apply to already started executions.  Defaults to false.
 	// +optional
 	Suspend *bool `json:"suspend,omitempty"`
@@ -81,19 +81,18 @@ type ClusterStatus struct {
 	// +optional
 	Expected []ServiceSpec `json:"expected,omitempty"`
 
-	// A list of pointers to currently running services.
-	// +optional
-	Active []*Service `json:"active,omitempty"`
+	// LastScheduleJob points to the next Expect Job
+	LastScheduleJob int `json:"lastScheduleJob,omitempty"`
 
 	// LastScheduleTime provide information about  the last time a Service was successfully scheduled.
 	LastScheduleTime *metav1.Time `json:"lastScheduleTime,omitempty"`
 }
 
-func (in *Cluster) GetLifecycle() []*Lifecycle {
-	return []*Lifecycle{&in.Status.Lifecycle}
+func (in *Cluster) GetReconcileStatus() Lifecycle {
+	return in.Status.Lifecycle
 }
 
-func (in *Cluster) SetLifecycle(lifecycle Lifecycle) {
+func (in *Cluster) SetReconcileStatus(lifecycle Lifecycle) {
 	in.Status.Lifecycle = lifecycle
 }
 

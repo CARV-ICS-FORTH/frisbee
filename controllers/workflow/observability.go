@@ -26,7 +26,6 @@ import (
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/template/helpers"
 	"github.com/fnikolai/frisbee/controllers/utils"
-	"github.com/fnikolai/frisbee/controllers/utils/lifecycle"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
@@ -43,7 +42,7 @@ const (
 	grafanaTemplate    = "observability/grafana"
 )
 
-func (r *Reconciler) newMonitoringStack(ctx context.Context, obj *v1alpha1.Workflow) error {
+func (r *Controller) newMonitoringStack(ctx context.Context, obj *v1alpha1.Workflow) error {
 	if len(obj.Spec.ImportMonitors) == 0 {
 		return nil
 	}
@@ -85,16 +84,16 @@ func (r *Reconciler) newMonitoringStack(ctx context.Context, obj *v1alpha1.Workf
 	return nil
 }
 
-func (r *Reconciler) installPrometheus(ctx context.Context, obj *v1alpha1.Workflow) (*v1alpha1.Service, error) {
-	prom := v1alpha1.Service{}
+func (r *Controller) installPrometheus(ctx context.Context, w *v1alpha1.Workflow) (*v1alpha1.Service, error) {
+	var prom v1alpha1.Service
 
 	{ // metadata
-		utils.SetOwner(obj, &prom)
+		utils.SetOwner(r, w, &prom)
 		prom.SetName("prometheus")
 	}
 
 	{ // spec
-		spec, err := helpers.GetServiceSpec(ctx, r, helpers.ParseRef(obj.GetNamespace(), prometheusTemplate))
+		spec, err := helpers.GetServiceSpec(ctx, r, helpers.ParseRef(w.GetNamespace(), prometheusTemplate))
 		if err != nil {
 			return nil, errors.Wrapf(err, "spec spec error")
 		}
@@ -103,15 +102,23 @@ func (r *Reconciler) installPrometheus(ctx context.Context, obj *v1alpha1.Workfl
 	}
 
 	{ // deployment
-		if err := r.GetClient().Create(ctx, &prom); err != nil {
-			return nil, errors.Wrapf(err, "request error")
+		err := r.GetClient().Create(ctx, &prom)
+
+		switch {
+		// case k8errors.IsAlreadyExists(err):
+		//	close(r.prometheus)
+		case err != nil:
+			return nil, errors.Wrapf(err, "creation failed")
+		default:
+			logrus.Warnf("Waiting for prometheus to become ready ...")
+
+			if err := WaitUntil(r.prometheus, v1alpha1.PhaseRunning); err != nil {
+				return nil, errors.Wrapf(err, "prometheus is not running")
+			}
+
+			close(r.prometheus)
 		}
 
-		logrus.Warnf("Waiting for prometheus to become ready ...")
-
-		if err := lifecycle.WaitRunningAndUpdate(ctx, r, &prom); err != nil {
-			return nil, errors.Wrapf(err, "prometheus is not running")
-		}
 	}
 
 	r.Logger.Info("Prometheus is installed")
@@ -119,22 +126,22 @@ func (r *Reconciler) installPrometheus(ctx context.Context, obj *v1alpha1.Workfl
 	return &prom, nil
 }
 
-func (r *Reconciler) installGrafana(ctx context.Context, obj *v1alpha1.Workflow) (*v1alpha1.Service, error) {
+func (r *Controller) installGrafana(ctx context.Context, w *v1alpha1.Workflow) (*v1alpha1.Service, error) {
 	grafana := v1alpha1.Service{}
 
 	{ // metadata
-		utils.SetOwner(obj, &grafana)
+		utils.SetOwner(r, w, &grafana)
 		grafana.SetName("grafana")
 	}
 
 	{ // spec
 		// to perform the necessary automations, we load the spec locally and push the modified version for creation.
-		spec, err := helpers.GetServiceSpec(ctx, r, helpers.ParseRef(obj.GetNamespace(), grafanaTemplate))
+		spec, err := helpers.GetServiceSpec(ctx, r, helpers.ParseRef(w.GetNamespace(), grafanaTemplate))
 		if err != nil {
 			return nil, errors.Wrapf(err, "spec spec error")
 		}
 
-		if err := r.importDashboards(ctx, obj, &spec); err != nil {
+		if err := r.importDashboards(ctx, w, &spec); err != nil {
 			return nil, errors.Wrapf(err, "import dashboards")
 		}
 
@@ -142,12 +149,21 @@ func (r *Reconciler) installGrafana(ctx context.Context, obj *v1alpha1.Workflow)
 	}
 
 	{ // deployment
-		if err := r.GetClient().Create(ctx, &grafana); err != nil {
-			return nil, errors.Wrapf(err, "request error")
-		}
+		err := r.GetClient().Create(ctx, &grafana)
 
-		if err := lifecycle.WaitRunningAndUpdate(ctx, r, &grafana); err != nil {
-			return nil, errors.Wrapf(err, "grafana is not running")
+		switch {
+		// case k8errors.IsAlreadyExists(err):
+		//	close(r.grafana)
+		case err != nil:
+			return nil, errors.Wrapf(err, "creation failed")
+		default:
+			logrus.Warnf("Waiting for grafana to become ready ...")
+
+			if err := WaitUntil(r.grafana, v1alpha1.PhaseRunning); err != nil {
+				return nil, errors.Wrapf(err, "grafana is not running")
+			}
+
+			close(r.grafana)
 		}
 	}
 
@@ -156,7 +172,21 @@ func (r *Reconciler) installGrafana(ctx context.Context, obj *v1alpha1.Workflow)
 	return &grafana, nil
 }
 
-func (r *Reconciler) importDashboards(ctx context.Context, obj *v1alpha1.Workflow, spec *v1alpha1.ServiceSpec) error {
+func WaitUntil(src <-chan *v1alpha1.Lifecycle, phase v1alpha1.Phase) error {
+	for lf := range src {
+		if lf.Phase.Equals(v1alpha1.PhaseRunning) {
+			break
+		}
+		if lf.Phase.IsValid(v1alpha1.PhaseRunning) {
+			continue
+		}
+		return errors.Errorf("expected %s but got %s", phase, lf.Phase)
+	}
+
+	return nil
+}
+
+func (r *Controller) importDashboards(ctx context.Context, obj *v1alpha1.Workflow, spec *v1alpha1.ServiceSpec) error {
 	// iterate monitoring services
 	for _, monRef := range obj.Spec.ImportMonitors {
 		monSpec, err := helpers.GetMonitorSpec(ctx, r, helpers.ParseRef(obj.GetNamespace(), monRef))
@@ -182,7 +212,7 @@ func (r *Reconciler) importDashboards(ctx context.Context, obj *v1alpha1.Workflo
 			},
 		}
 
-		// create mountpoints
+		// Create mountpoints
 		mounts := make([]corev1.VolumeMount, 0, len(configMap.Data))
 
 		for file := range configMap.Data {
@@ -204,11 +234,11 @@ func (r *Reconciler) importDashboards(ctx context.Context, obj *v1alpha1.Workflo
 	return nil
 }
 
-func (r *Reconciler) installIngress(ctx context.Context, obj *v1alpha1.Workflow, services ...*v1alpha1.Service) error {
+func (r *Controller) installIngress(ctx context.Context, obj *v1alpha1.Workflow, services ...*v1alpha1.Service) error {
 	ingress := netv1.Ingress{}
 
 	{ // metadata
-		utils.SetOwner(obj, &ingress)
+		utils.SetOwner(r, obj, &ingress)
 		ingress.SetName("frisbee")
 
 		if obj.Spec.Ingress.UseAmbassador {
@@ -256,7 +286,7 @@ func (r *Reconciler) installIngress(ctx context.Context, obj *v1alpha1.Workflow,
 	}
 
 	{ // deployment
-		if err := r.GetClient().Create(ctx, &ingress); err != nil {
+		if err := utils.CreateUnlessExists(ctx, r, &ingress); err != nil {
 			return errors.Wrapf(err, "unable to create ingress")
 		}
 	}

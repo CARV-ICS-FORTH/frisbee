@@ -1,0 +1,17 @@
+apiVersion: frisbee.io/v1alpha1
+kind: Workflow
+metadata:
+  name: redis-deploy
+spec:
+  importMonitors: [ "sysmon/container", "redismon/telegraf", "ycsbmon/goycsb" ]
+  ingress:
+    host: localhost
+    useAmbassador: true
+
+  actions:
+    # Create a single Master node
+    - action: Service
+      name: master
+      service:
+        fromTemplate:
+          templateRef: redis/master

@@ -160,9 +160,9 @@ spec:
                           - cron
                           type: object
                         suspend:
-                          description: This flag tells the controller to suspend subsequent
-                            executions, it does not apply to already started executions.  Defaults
-                            to false.
+                          description: Suspend flag tells the controller to suspend
+                            subsequent executions, it does not apply to already started
+                            executions.  Defaults to false.
                           type: boolean
                         templateRef:
                           description: TemplateRef refers to a service template. It
@@ -1407,6 +1407,27 @@ spec:
                             for the moment simply match domain to a specific node.
                             this will change in the future
                           type: string
+                        fromTemplate:
+                          description: ServiceFromTemplate populates the service fields
+                            from a template. This is used for backward compatibility
+                            with Cluster with just one instance. This field cannot
+                            be used in conjunction with other fields.
+                          properties:
+                            inputs:
+                              description: Inputs is a list of inputs passed to the
+                                objects.
+                              items:
+                                additionalProperties:
+                                  type: string
+                                type: object
+                              type: array
+                            templateRef:
+                              description: TemplateRef refers to a service template.
+                                It conflicts with Service.
+                              type: string
+                          required:
+                          - templateRef
+                          type: object
                         resources:
                           description: Resources specifies limitations as to how the
                             container will access host resources.
@@ -3103,23 +3124,6 @@ spec:
                               type: string
                           type: object
                       type: object
-                    wait:
-                      properties:
-                        duration:
-                          description: Duration blocks waiting for the duration to
-                            expire
-                          type: string
-                        running:
-                          description: Running waits for the given groups to be running
-                          items:
-                            type: string
-                          type: array
-                        success:
-                          description: Success waits for the given groups to be succeeded
-                          items:
-                            type: string
-                          type: array
-                      type: object
                   required:
                   - action
                   - name
@@ -3145,22 +3149,17 @@ spec:
                       so to be managed by the Ambassador Ingress controller.
                     type: boolean
                 type: object
+              suspend:
+                description: Suspend flag tells the controller to suspend subsequent
+                  executions, it does not apply to already started executions.  Defaults
+                  to false.
+                type: boolean
             required:
             - actions
             type: object
           status:
             description: Most recently observed status of the workflow
             properties:
-              endTime:
-                description: Most recently observed status of the object
-                format: date-time
-                type: string
-              kind:
-                description: Is it needed ?
-                type: string
-              name:
-                description: Is it needed ?
-                type: string
               phase:
                 description: Phase is the current status of an object
                 type: string
@@ -3168,12 +3167,12 @@ spec:
                 description: A brief CamelCase message indicating details about why
                   the service is in this Phase. e.g. 'Evicted'
                 type: string
-              startTime:
-                description: RFC 3339 date and time at which the object was acknowledged
-                  by the Kubelet. This is before the Kubelet pulled the container
-                  image(s) for the pod.
-                format: date-time
-                type: string
+              scheduled:
+                additionalProperties:
+                  type: boolean
+                description: Scheduled is a list of scheduled actions. Do no add "omitempty"
+                  as it will break the initialization
+                type: object
             type: object
         type: object
     served: true

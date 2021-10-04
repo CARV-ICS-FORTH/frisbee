@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package service
+package helpers
 
 import (
 	"context"
@@ -36,7 +36,7 @@ func IsMacro(macro string) bool {
 	return strings.HasPrefix(macro, ".")
 }
 
-func parseMacro(ss *v1alpha1.ServiceSelector) {
+func parseMacro(namespace string, ss *v1alpha1.ServiceSelector) {
 	fields := strings.Split(*ss.Macro, ".")
 
 	if len(fields) != 4 {
@@ -49,15 +49,19 @@ func parseMacro(ss *v1alpha1.ServiceSelector) {
 
 	switch kind {
 	case "cluster":
-		ss.Match.ByCluster = map[string]string{utils.Globals.Namespace: object}
+		ss.Match.ByCluster = map[string]string{namespace: object}
+		ss.Mode = v1alpha1.Convert(filter)
+
+	case "service":
+		ss.Match.ByName = map[string][]string{namespace: {object}}
 		ss.Mode = v1alpha1.Convert(filter)
 
 	default:
-		logrus.Warnf("%v is not a valid macro", *ss.Macro)
+		panic(errors.Errorf("%v is not a valid macro", *ss.Macro))
 	}
 }
 
-func Select(ctx context.Context, ss *v1alpha1.ServiceSelector) v1alpha1.SList {
+func Select(ctx context.Context, r utils.Reconciler, nm string, ss *v1alpha1.ServiceSelector) v1alpha1.SList {
 	if ss == nil {
 		logrus.Warn("empty service selector")
 
@@ -65,11 +69,11 @@ func Select(ctx context.Context, ss *v1alpha1.ServiceSelector) v1alpha1.SList {
 	}
 
 	if ss.Macro != nil {
-		parseMacro(ss)
+		parseMacro(nm, ss)
 	}
 
 	// get all available services that match the criteria
-	services, err := selectServices(ctx, &ss.Match)
+	services, err := selectServices(ctx, r, &ss.Match)
 	if err != nil {
 		logrus.Warn(err)
 
@@ -77,11 +81,12 @@ func Select(ctx context.Context, ss *v1alpha1.ServiceSelector) v1alpha1.SList {
 	}
 
 	if len(services) == 0 {
-		return nil
+		panic("no service were found")
+		//return nil
 	}
 
 	// filter services based on the pods
-	filteredServices, err := filterServicesByMode(services, ss.Mode, ss.Value)
+	filteredServices, err := filterByMode(services, ss.Mode, ss.Value)
 	if err != nil {
 		logrus.Warn(err)
 
@@ -91,7 +96,7 @@ func Select(ctx context.Context, ss *v1alpha1.ServiceSelector) v1alpha1.SList {
 	return filteredServices
 }
 
-func selectServices(ctx context.Context, ss *v1alpha1.MatchService) (v1alpha1.SList, error) {
+func selectServices(ctx context.Context, r utils.Reconciler, ss *v1alpha1.MatchService) (v1alpha1.SList, error) {
 	if ss == nil {
 		return nil, nil
 	}
@@ -109,7 +114,7 @@ func selectServices(ctx context.Context, ss *v1alpha1.MatchService) (v1alpha1.SL
 					Name:      name,
 				}
 
-				if err := utils.Globals.Client.Get(ctx, key, &service); err != nil {
+				if err := r.GetClient().Get(ctx, key, &service); err != nil {
 					return nil, errors.Wrapf(err, "unable to find service %s", key)
 				}
 
@@ -128,15 +133,13 @@ func selectServices(ctx context.Context, ss *v1alpha1.MatchService) (v1alpha1.SL
 		{
 			var cluster v1alpha1.Cluster
 
-			if err := utils.Globals.Client.Get(ctx, key, &cluster); err != nil {
-				return nil, errors.Wrapf(err, "unable to find clusterName %s", key)
+			if err := r.GetClient().Get(ctx, key, &cluster); err != nil {
+				return nil, errors.Wrapf(err, "unable to find cluster %s", key)
 			}
 
 			var slist v1alpha1.ServiceList
 
-			err := utils.Globals.Client.List(ctx, &slist, client.MatchingLabels{
-				"owner": cluster.GetName(),
-			})
+			err := r.GetClient().List(ctx, &slist, client.MatchingLabels{"owner": cluster.GetName()})
 			if err != nil {
 				return nil, errors.Wrapf(err, "cannot get services")
 			}
@@ -187,7 +190,7 @@ func selectServices(ctx context.Context, ss *v1alpha1.MatchService) (v1alpha1.SL
 	return serviceList, nil
 }
 
-func filterServicesByMode(services v1alpha1.SList, mode v1alpha1.Mode, value string) (v1alpha1.SList, error) {
+func filterByMode(services v1alpha1.SList, mode v1alpha1.Mode, value string) (v1alpha1.SList, error) {
 	if len(services) == 0 {
 		return nil, errors.New("cannot generate services from empty list")
 	}
@@ -276,7 +279,7 @@ func getFixedSubListFromServiceList(services v1alpha1.SList, num int) v1alpha1.S
 }
 
 // RandomFixedIndexes returns the `count` random indexes between `start` and `end`.
-// [start, end)
+// [start, end).
 func RandomFixedIndexes(start, end, count uint) []uint {
 	var indexes []uint
 

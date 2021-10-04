@@ -27,7 +27,6 @@ import (
 	"github.com/fnikolai/frisbee/controllers/cluster"
 	"github.com/fnikolai/frisbee/controllers/service"
 	"github.com/fnikolai/frisbee/controllers/template"
-	"github.com/fnikolai/frisbee/controllers/utils"
 	"github.com/fnikolai/frisbee/controllers/workflow"
 	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
@@ -89,8 +88,6 @@ func main() {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
-
-	utils.SetCommon(mgr)
 
 	if err := template.NewController(mgr, setupLog); err != nil {
 		runtimeutil.HandleError(errors.Wrapf(err, "unable to create Templates controller"))

@@ -10,67 +10,59 @@ spec:
 
   actions:
     # Create a single Master node
-    - action: Cluster
-      name: masters
-      cluster:
-        templateRef: redis/master
-        instances: 1
+    - action: Service
+      name: master
+      service:
+        fromTemplate:
+          templateRef: redis/master
 
     # Create a Slave node
-    - action: Cluster
-      name: slaves
-      depends: { running: [ masters ] }
-      cluster:
-        templateRef: redis/slave
-        inputs: # parameters to template ENV variables
-          - { master: .cluster.masters.any }
+    - action: Service
+      name: slave
+      depends: { running: [ master ] }
+      service:
+        fromTemplate:
+          templateRef: redis/slave
+          inputs:
+            - { master: .service.master.any }
 
 
     # Create a failover manager
-    - action: Cluster
+    - action: Service
       name: sentinel
-      depends: { running: [ masters, slaves ] }
-      cluster:
-        templateRef: redis/sentinel
-        inputs:
-          - { master: .cluster.masters.any }
+      depends: { running: [ master, slave ] }
+      service:
+        fromTemplate:
+          templateRef: redis/sentinel
+          inputs:
+            - { master: .service.master.any }
 
 
     # Ingest keys in parallel, into different ranges
     - action: Cluster
       name: "loaders"
-      depends: { running: [ masters ], duration: 30s }
+      depends: { running: [ master ], duration: 30s }
       cluster:
         templateRef: redis/loader
         inputs:
-          - { server: .cluster.masters.any, recordcount: "1000000", offset: "0" }
-          - { server: .cluster.masters.any, recordcount: "1000000", offset: "1000000" }
-          - { server: .cluster.masters.any, recordcount: "1000000", offset: "2000000" }
-
+          - { server: .service.master.any, recordcount: "100000000", offset: "0" }
 
     # Cause two partition failures with different duration
     - action: Chaos
       name: partition0
-      depends: { running: [ masters, slaves ], duration: "5m" }
+      depends: { running: [ master, slave ], duration: "1m" }
       chaos:
         type: partition
         partition:
           selector:
-            macro: .cluster.masters.any
-          duration: "2m"
+            macro: .service.master.any
+          duration: "30s"
 
     - action: Chaos
       name: partition1
-      depends: { running: [ masters, slaves ], success: [ partition0 ], duration: "3m" }
+      depends: { running: [ master, slave ], success: [ partition0 ], duration: "2m" }
       chaos:
         type: partition
         partition:
-          selector: { macro: .cluster.masters.any }
-          duration: "2m"
-
-
-    # Wait until loaders are complete
-    - action: Wait
-      name: "teardown"
-      wait:
-        success: [ loaders ]
+          selector: { macro: .service.master.any }
+          duration: "1m"

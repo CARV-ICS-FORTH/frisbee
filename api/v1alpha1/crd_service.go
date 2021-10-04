@@ -49,7 +49,21 @@ type Agents struct {
 	Telemetry []string `json:"telemetry,omitempty"`
 }
 
+type ServiceFromTemplate struct {
+	// TemplateRef refers to a service template. It conflicts with Service.
+	TemplateRef string `json:"templateRef"`
+
+	// Inputs is a list of inputs passed to the objects.
+	// +optional
+	Inputs []map[string]string `json:"inputs,omitempty"`
+}
+
 type ServiceSpec struct {
+	// ServiceFromTemplate populates the service fields from a template. This is used for backward compatibility
+	// with Cluster with just one instance. This field cannot be used in conjunction with other fields.
+	// +optional
+	*ServiceFromTemplate `json:"fromTemplate,omitempty"`
+
 	// List of sidecar agents
 	// +optional
 	Agents *Agents `json:"agents,omitempty"`
@@ -103,13 +117,16 @@ type Resources struct {
 
 type ServiceStatus struct {
 	Lifecycle `json:",inline"`
+
+	// LastScheduleTime provide information about  the last time a Pod was scheduled.
+	LastScheduleTime *metav1.Time `json:"lastScheduleTime,omitempty"`
 }
 
-func (in *Service) GetLifecycle() []*Lifecycle {
-	return []*Lifecycle{&in.Status.Lifecycle}
+func (in *Service) GetReconcileStatus() Lifecycle {
+	return in.Status.Lifecycle
 }
 
-func (in *Service) SetLifecycle(lifecycle Lifecycle) {
+func (in *Service) SetReconcileStatus(lifecycle Lifecycle) {
 	in.Status.Lifecycle = lifecycle
 }
 

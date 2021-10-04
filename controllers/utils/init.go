@@ -19,37 +19,23 @@ package utils
 
 import (
 	"context"
+	"time"
 
 	"github.com/grafana-tools/sdk"
 	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/retry"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/cache"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var Globals struct {
-	cache.Cache
-	client.Client
-
-	// Annotator pushes annotation for evenete
-	Annotator
-
-	// Execute run commands within containers
-	Executor
-
-	Namespace string
+var HealthCheckTimeout = wait.Backoff{
+	Duration: 5 * time.Second,
+	Factor:   5,
+	Jitter:   0.1,
+	Steps:    4,
 }
 
-func SetNamespace(nm string) {
-	Globals.Namespace = nm
-}
-
-func SetCommon(mgr ctrl.Manager) {
-	Globals.Cache = mgr.GetCache()
-	Globals.Client = mgr.GetClient()
-	Globals.Executor = NewExecutor(mgr.GetConfig())
-}
+// Annotate pushes annotation for evenete
+var Annotate *GrafanaAnnotator
 
 func SetGrafana(ctx context.Context, apiURI string) error {
 	grafanaClient, err := sdk.NewClient(apiURI, "", sdk.DefaultHTTPClient)
@@ -58,7 +44,7 @@ func SetGrafana(ctx context.Context, apiURI string) error {
 	}
 
 	// retry until Grafana is ready to receive annotations.
-	err = retry.OnError(DefaultBackoff, func(_ error) bool { return true }, func() error {
+	err = retry.OnError(HealthCheckTimeout, func(_ error) bool { return true }, func() error {
 		_, err := grafanaClient.GetHealth(ctx)
 
 		return errors.Wrapf(err, "grafana health error")
@@ -68,7 +54,7 @@ func SetGrafana(ctx context.Context, apiURI string) error {
 		return errors.Wrapf(err, "grafana is unreachable")
 	}
 
-	Globals.Annotator = &GrafanaAnnotator{
+	Annotate = &GrafanaAnnotator{
 		ctx:    ctx,
 		Client: grafanaClient,
 	}

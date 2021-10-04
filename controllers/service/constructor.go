@@ -31,13 +31,18 @@ import (
 )
 
 func (r *Controller) runJob(ctx context.Context, obj *v1alpha1.Service) error {
+	if obj.Spec.ServiceFromTemplate != nil {
+		if err := r.populateSpecFromTemplate(ctx, obj); err != nil {
+			return errors.Wrapf(err, "cannot populate service from template")
+		}
+	}
 
 	pod, err := constructPod(ctx, r, obj)
 	if err != nil {
 		return err
 	}
 
-	discovery, err := constructDiscoveryService(obj, pod)
+	discovery, err := constructDiscoveryService(r, obj, pod)
 	if err != nil {
 		return err
 	}
@@ -53,11 +58,24 @@ func (r *Controller) runJob(ctx context.Context, obj *v1alpha1.Service) error {
 	return nil
 }
 
+func (r *Controller) populateSpecFromTemplate(ctx context.Context, obj *v1alpha1.Service) error {
+	scheme := helpers.SelectServiceTemplate(ctx, r, helpers.ParseRef(obj.GetNamespace(), obj.Spec.TemplateRef))
+
+	spec, err := helpers.GenerateServiceSpec(scheme)
+	if err != nil {
+		return errors.Wrapf(err, "scheme to instance")
+	}
+
+	obj.Spec = spec
+
+	return nil
+}
+
 func constructPod(ctx context.Context, r *Controller, obj *v1alpha1.Service) (*corev1.Pod, error) {
 	var pod corev1.Pod
 
 	{ // metadata
-		utils.SetOwner(obj, &pod)
+		utils.SetOwner(r, obj, &pod)
 		pod.SetName(obj.GetName())
 
 		pod.SetLabels(obj.GetLabels())
@@ -123,6 +141,7 @@ func setContainer(obj *v1alpha1.Service) error {
 			Requests: resources,
 		}
 	}
+
 	return nil
 }
 
@@ -158,7 +177,7 @@ func setPlacement(obj *v1alpha1.Service, pod *corev1.Pod) error {
 	return nil
 }
 
-func constructDiscoveryService(obj *v1alpha1.Service, pod *corev1.Pod) (*corev1.Service, error) {
+func constructDiscoveryService(r *Controller, obj *v1alpha1.Service, pod *corev1.Pod) (*corev1.Service, error) {
 	spec := obj.Spec
 
 	// register ports from containers and sidecars
@@ -188,7 +207,7 @@ func constructDiscoveryService(obj *v1alpha1.Service, pod *corev1.Pod) (*corev1.
 
 	kubeService := corev1.Service{}
 
-	utils.SetOwner(obj, &kubeService)
+	utils.SetOwner(r, obj, &kubeService)
 	kubeService.SetName(pod.GetName())
 
 	kubeService.Spec.Ports = allPorts

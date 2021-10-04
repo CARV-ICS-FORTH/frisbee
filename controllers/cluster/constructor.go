@@ -22,17 +22,17 @@ import (
 	"fmt"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
+	helpers2 "github.com/fnikolai/frisbee/controllers/service/helpers"
 	"github.com/fnikolai/frisbee/controllers/template/helpers"
 	"github.com/fnikolai/frisbee/controllers/utils"
-	"github.com/fnikolai/frisbee/controllers/utils/selector/service"
 	"github.com/pkg/errors"
 )
 
-func constructJob(cluster *v1alpha1.Cluster, i int) *v1alpha1.Service {
+func getJob(r *Controller, cluster *v1alpha1.Cluster, i int) *v1alpha1.Service {
 	var instance v1alpha1.Service
 
 	{ // metadata
-		utils.SetOwner(cluster, &instance)
+		utils.SetOwner(r, cluster, &instance)
 		instance.SetName(generateName(cluster, i))
 	}
 
@@ -68,13 +68,13 @@ func constructJobSpecList(ctx context.Context, r *Controller, cluster *v1alpha1.
 			// no inputs
 		case 1:
 			// use a common set of inputs for all instances
-			if err := inputs2Env(ctx, scheme.Inputs.Parameters, cluster.Spec.Inputs[0], lookupCache); err != nil {
+			if err := inputs2Env(ctx, r, cluster.GetNamespace(), scheme.Inputs.Parameters, cluster.Spec.Inputs[0], lookupCache); err != nil {
 				return nil, errors.Wrapf(err, "macro expansion failed")
 			}
 
 		default:
 			// use a different set of inputs for every instance
-			if err := inputs2Env(ctx, scheme.Inputs.Parameters, cluster.Spec.Inputs[i], lookupCache); err != nil {
+			if err := inputs2Env(ctx, r, cluster.GetNamespace(), scheme.Inputs.Parameters, cluster.Spec.Inputs[i], lookupCache); err != nil {
 				return nil, errors.Wrapf(err, "macro expansion failed")
 			}
 		}
@@ -100,7 +100,7 @@ func generateName(group *v1alpha1.Cluster, i int) string {
 	return fmt.Sprintf("%s-%d", group.GetName(), i)
 }
 
-func inputs2Env(ctx context.Context, dst, src map[string]string, cache map[string]v1alpha1.SList) error {
+func inputs2Env(ctx context.Context, r *Controller, namespace string, dst, src map[string]string, cache map[string]v1alpha1.SList) error {
 	for key := range dst {
 		// if there is no user-given value, use the default.
 		value, ok := src[key]
@@ -109,12 +109,12 @@ func inputs2Env(ctx context.Context, dst, src map[string]string, cache map[strin
 		}
 
 		// if the value is not a macro, write it directly to the inputs
-		if !service.IsMacro(value) {
+		if !helpers2.IsMacro(value) {
 			dst[key] = value
 		} else { // expand macro
 			services, ok := cache[value]
 			if !ok {
-				services = service.Select(ctx, &v1alpha1.ServiceSelector{Macro: &value})
+				services = helpers2.Select(ctx, r, namespace, &v1alpha1.ServiceSelector{Macro: &value})
 
 				if len(services) == 0 {
 					return errors.Errorf("macro %s yields no services", value)

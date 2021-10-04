@@ -21,6 +21,7 @@ import (
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -61,7 +62,21 @@ type ExperimentStatus struct {
 	DesiredPhase `mapstructure:",omitempty"`
 }
 
-func CalculateLifecycle(fault *Fault) v1alpha1.Lifecycle {
+func calculateLifecycle(cr *v1alpha1.Chaos, fault *Fault) v1alpha1.Lifecycle {
+	status := cr.Status
+
+	switch {
+	case status.Phase == v1alpha1.PhaseUninitialized ||
+		status.Phase == v1alpha1.PhaseSuccess ||
+		status.Phase == v1alpha1.PhaseFailed:
+		return status.Lifecycle
+	default:
+		return convertLifecycle(fault)
+	}
+}
+
+// Pod translates the Chaos-MeshLifecycle to Frisbee Lifecycle.
+func convertLifecycle(fault *Fault) v1alpha1.Lifecycle {
 	var parsed v1alpha1ChaosStatus
 
 	if err := mapstructure.Decode(fault.Object["status"], &parsed); err != nil {
@@ -71,36 +86,25 @@ func CalculateLifecycle(fault *Fault) v1alpha1.Lifecycle {
 	switch phase := parsed.Experiment.DesiredPhase; phase {
 	case "":
 		return v1alpha1.Lifecycle{
-			Kind:   "chaos",
-			Name:   fault.GetName(),
-			Phase:  v1alpha1.PhaseInitializing,
-			Reason: "Initializing",
+			Phase:  v1alpha1.PhasePending,
+			Reason: "Pending for fault injection",
 		}
 
 	case RunningPhase:
-		ts := fault.GetCreationTimestamp()
-
 		return v1alpha1.Lifecycle{
-			Kind:      "chaos",
-			Name:      fault.GetName(),
-			Phase:     v1alpha1.PhaseRunning,
-			Reason:    "Fault injected",
-			StartTime: &ts,
+			Phase:  v1alpha1.PhaseRunning,
+			Reason: "Fault injected",
 		}
 
 	case StoppedPhase:
-		ts := fault.GetCreationTimestamp()
-
 		return v1alpha1.Lifecycle{
-			Kind:      "chaos",
-			Name:      fault.GetName(),
-			Phase:     v1alpha1.PhaseSuccess,
-			Reason:    "Fault recovered or paused",
-			StartTime: &ts,
-			EndTime:   fault.GetDeletionTimestamp(),
+			Phase:  v1alpha1.PhaseSuccess,
+			Reason: "Fault recovered or paused",
 		}
 
 	default:
+		logrus.Warn("DEBUG ", fault.Object["status"])
+
 		panic("this should never happen")
 	}
 }

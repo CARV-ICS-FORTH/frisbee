@@ -18,16 +18,27 @@
 package utils
 
 import (
-	"time"
-
-	"k8s.io/apimachinery/pkg/util/wait"
+	"fmt"
+	"path"
+	"path/filepath"
+	"runtime"
 )
 
-var DefaultBackoff = wait.Backoff{
-	Duration: 5 * time.Second,
-	Factor:   5,
-	Jitter:   0.1,
-	Steps:    4,
+func GetCallerInfo(skip int) (fileName, funcName string, line int) {
+	pc, file, line, ok := runtime.Caller(skip)
+	if !ok {
+		fmt.Println("get info failed")
+		return
+	}
+	fileName = path.Base(file)
+	funcName = runtime.FuncForPC(pc).Name()
+	return
 }
 
-var DefaultTimeout = 30 * time.Second
+func GetCallerLine() string {
+	fileName, funcName, line := GetCallerInfo(3)
+
+	_ = fileName
+
+	return fmt.Sprintf("%s:%d", filepath.Base(funcName), line)
+}
