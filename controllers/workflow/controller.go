@@ -20,6 +20,7 @@ package workflow
 import (
 	"context"
 	"reflect"
+	"time"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/utils"
@@ -237,21 +238,26 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		7: Run jobs that meeting the logical dependencies
 		------------------------------------------------------------------
 	*/
+	var actionList v1alpha1.ActionList
 
-	// TODO: add support for time dependencies
-	actionList := GetNextLogicalJob(w.Spec.Actions, r.state, w.Status.Scheduled)
+	var needsRequeue time.Duration
+
+	for _, action := range GetNextLogicalJob(&w, w.Spec.Actions, r.state, &needsRequeue) {
+		if r.state.IsActive(action.Name) || isJobInScheduledList(action.Name, w.Status.Scheduled) {
+			// Not starting action because it is already processed
+			continue
+		}
+
+		actionList = append(actionList, action)
+	}
 
 	if len(actionList) == 0 {
-		return utils.Stop()
+		return utils.RequeueAfter(needsRequeue)
 	}
 
 	logrus.Warn("Ready to start ", actionList)
 
 	for _, action := range actionList {
-		if r.state.IsActive(action.Name) || isJobInScheduledList(action.Name, w.Status.Scheduled) {
-			r.Logger.Info("Not starting action because it is already processed", "action", action.Name)
-		}
-
 		if err := r.runJob(ctx, &w, action); err != nil {
 			return utils.Failed(ctx, r, &w, errors.Wrapf(err, "waiting failed"))
 		}
@@ -267,8 +273,6 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		we might not see our own status update, and then post one again.
 		So, we need to use the job name as a lock to prevent us from making the job twice.
 	*/
-
-	// Add the just-started jobs to the status list.
 	for _, action := range actionList {
 		w.Status.Scheduled[action.Name] = true
 	}

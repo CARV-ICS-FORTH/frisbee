@@ -20,6 +20,7 @@ package chaos
 import (
 	"context"
 	"reflect"
+	"time"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/utils"
@@ -27,7 +28,8 @@ import (
 	cmap "github.com/orcaman/concurrent-map"
 	"github.com/pkg/errors"
 	k8errors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -54,117 +56,123 @@ type Controller struct {
 // move the current state of the cluster closer to the desired state.
 func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	/*
-		### 1: Load the chaos by name.
+		1: Load CR by name.
+		------------------------------------------------------------------
 	*/
-	var chaos v1alpha1.Chaos
+	var cr v1alpha1.Chaos
 
-	var ret bool
-	result, err := utils.Reconcile(ctx, r, req, &chaos, &ret)
-	if ret {
-		return result, err
+	var requeue bool
+	result, err := utils.Reconcile(ctx, r, req, &cr, &requeue)
+
+	if requeue {
+		return result, errors.Wrapf(err, "initialization error")
 	}
 
 	r.Logger.Info("-> Reconcile",
-		"kind", reflect.TypeOf(chaos),
-		"name", chaos.GetName(),
-		"lifecycle", chaos.Status.Phase,
-		"epoch", chaos.GetResourceVersion(),
+		"kind", reflect.TypeOf(cr),
+		"name", cr.GetName(),
+		"lifecycle", cr.Status.Phase,
+		"epoch", cr.GetResourceVersion(),
 	)
 
 	defer func() {
 		r.Logger.Info("<- Reconcile",
-			"kind", reflect.TypeOf(chaos),
-			"name", chaos.GetName(),
-			"lifecycle", chaos.Status.Phase,
-			"epoch", chaos.GetResourceVersion(),
+			"kind", reflect.TypeOf(cr),
+			"name", cr.GetName(),
+			"lifecycle", cr.Status.Phase,
+			"epoch", cr.GetResourceVersion(),
 		)
 	}()
 
 	/*
-		### 2:  Initialize the CR
+		2: Load CR's components.
+		------------------------------------------------------------------
+
+		Because we use the unstructured type,  Get will return an empty if there is no object. In turn, the
+		client's parses will return the following error: "Object 'Kind' is missing in 'unstructured object has no kind'"
+		To avoid that, we ignore errors if the map is empty -- yielding the same behavior as empty, but valid objects.
 	*/
-	if chaos.Status.Phase == v1alpha1.PhaseUninitialized {
-		if _, err := utils.Pending(ctx, r, &chaos, "submitting jobs"); err != nil {
-			return utils.Failed(ctx, r, &chaos, errors.Wrapf(err, "status update"))
-		}
-	}
+	handler := dispatch(&cr)
 
-	/*
-	   ### 3: Load the Chaos's components.
-
-	   Because we use the unstructured type,  Get will return an empty if there is no object. In turn, the
-	   client's parses will return the following error: "Object 'Kind' is missing in 'unstructured object has no kind'"
-	   To avoid that, we ignore errors if the map is empty -- yielding the same behavior as empty, but valid objects.
-	*/
-	handler := r.dispatch(&chaos)
-
-	fault := handler.GetFault()
+	fault := handler.GetFault(r)
 	{
-		key := client.ObjectKeyFromObject(&chaos)
+		key := client.ObjectKeyFromObject(&cr)
 
 		err := r.GetClient().Get(ctx, key, fault)
 		if err != nil && !k8errors.IsNotFound(err) {
-			return utils.Failed(ctx, r, &chaos, errors.Wrapf(err, "retrieve fault"))
+			return utils.Failed(ctx, r, &cr, errors.Wrapf(err, "retrieve fault"))
 		}
 	}
 
 	/*
-		### 4: Calculate and update the service status
+		3: Update the CR status using the data we've gathered
+		------------------------------------------------------------------
 
-		Using the date we've gathered, we'll update the status of our CRD.
-		Depending on the outcome, the execution may proceed or terminate.
+		Using the date we've gathered, we'll update the status of our CR.
 	*/
 
-	newStatus := CalculateLifecycle(fault)
-	chaos.Status.Lifecycle = newStatus
+	newStatus := calculateLifecycle(&cr, fault)
+	cr.Status.Lifecycle = newStatus
 
-	if err := utils.UpdateStatus(ctx, r, &chaos); err != nil {
-		r.Logger.Error(err, "update status error")
+	if err := utils.UpdateStatus(ctx, r, &cr); err != nil {
+		// due to the multiple updates, it is possible for this function to
+		// be in conflict. We fix this issue by re-queueing the request.
+		// We also omit verbose error reporting as to avoid polluting the output.
+		runtime.HandleError(err)
 
-		return utils.Failed(ctx, r, &chaos, errors.Wrapf(err, "status update"))
+		return utils.Requeue()
 	}
 
 	/*
-		### 5: Based on the current status, decide what to do next.
+		4: Clean up the controller from finished jobs
+		------------------------------------------------------------------
 
-		We may inject a failure, revoke a failure, or wait ...
+		First, we'll try to clean up old jobs, so that we don't leave too many lying
+		around.
 	*/
-
-	switch newStatus.Phase {
-	case v1alpha1.PhaseUninitialized:
-		panic("this should never happen")
-
-	case v1alpha1.PhasePending, v1alpha1.PhaseRunning:
-		// ... fault is already scheduled. nothing to do
-		return utils.Stop()
-
-	case v1alpha1.PhaseSuccess:
-		utils.Delete(ctx, r, &chaos)
+	if newStatus.Phase == v1alpha1.PhaseSuccess {
+		utils.Delete(ctx, r, fault)
 
 		return utils.Stop()
+	}
 
-	case v1alpha1.PhaseFailed:
-		r.Logger.Error(errors.New(newStatus.Reason), "chaos failed", "cluster", chaos.GetName())
+	if newStatus.Phase == v1alpha1.PhaseFailed {
+		r.Logger.Error(errors.New(cr.Status.Lifecycle.Reason),
+			"chaos failed",
+			"chaos", cr.GetName())
 
 		return utils.Stop()
 	}
 
 	/*
-		### 6: Inject the fault
-	*/
-	nextFault := handler.ConstructJob(ctx, r, &chaos)
+		5: Make the world matching what we want in our spec
+		------------------------------------------------------------------
 
-	if err := utils.CreateUnlessExists(ctx, r, &nextFault); err != nil {
-		return utils.Failed(ctx, r, &chaos, errors.Wrapf(err, "injection failed"))
+		Once we've updated our status, we can move on to ensuring that the status of
+		the world matches what we want in our spec.
+
+		We may delete the cr, add a pod, or wait for existing pod to change its status.
+	*/
+	if cr.Status.LastScheduleTime != nil {
+		// next reconciliation cycle will be trigger by the watchers
+		return utils.Stop()
 	}
 
-	r.Logger.Info("Injected fault",
-		"Chaos", chaos.GetName(),
-		"type", handler.GetName(),
-	)
+	nextFault := handler.ConstructJob(ctx, r)
 
-	return utils.Stop()
+	if err := utils.CreateUnlessExists(ctx, r, nextFault); err != nil {
+		return utils.Failed(ctx, r, &cr, errors.Wrapf(err, "injection failed"))
+	}
+
+	// Add the just-started jobs to the status list.
+	cr.Status.LastScheduleTime = &metav1.Time{Time: time.Now()}
+
+	return utils.Pending(ctx, r, &cr, "injecting fault")
 }
+
+/*
+### Finalizers
+*/
 
 func (r *Controller) Finalizer() string {
 	return "chaos.frisbee.io/finalizer"
@@ -179,6 +187,17 @@ func (r *Controller) Finalize(obj client.Object) error {
 	return nil
 }
 
+/*
+### Setup
+	Finally, we'll update our setup.
+
+	We'll inform the manager that this controller owns some Services, so that it
+	will automatically call Reconcile on the underlying Service when a Pod changes, is
+	deleted, etc.
+*/
+
+var controllerKind = v1alpha1.GroupVersion.WithKind("Chaos")
+
 func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 	r := &Controller{
 		Manager:    mgr,
@@ -187,6 +206,7 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 	}
 
 	var fault Fault
+
 	AsPartition(&fault)
 
 	return ctrl.NewControllerManagedBy(mgr).
@@ -194,28 +214,4 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 		For(&v1alpha1.Chaos{}).
 		Owns(&fault, builder.WithPredicates(r.Watchers())).
 		Complete(r)
-}
-
-type Fault = unstructured.Unstructured
-
-type chaoHandler interface {
-	GetFault() *Fault
-
-	GetName() string
-
-	ConstructJob(ctx context.Context, r *Controller, obj *v1alpha1.Chaos) Fault
-
-	// Inject(ctx context.Context, obj *v1alpha1.Chaos) error
-	// WaitForDuration(ctx context.Context, obj *v1alpha1.Chaos) error
-	// Revoke(ctx context.Context, obj *v1alpha1.Chaos) error
-}
-
-func (r *Controller) dispatch(chaos *v1alpha1.Chaos) chaoHandler {
-	switch chaos.Spec.Type {
-	case v1alpha1.FaultPartition:
-		return &partition{spec: chaos.Spec.Partition}
-
-	default:
-		panic("should never happen")
-	}
 }

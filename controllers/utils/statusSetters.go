@@ -23,7 +23,6 @@ import (
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/pkg/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -44,9 +43,8 @@ func Pending(ctx context.Context, r Reconciler, obj client.Object, reason string
 	}
 
 	status := v1alpha1.Lifecycle{
-		Phase:      v1alpha1.PhasePending,
-		Reason:     reason,
-		LastUpdate: metav1.Now(),
+		Phase:  v1alpha1.PhasePending,
+		Reason: reason,
 	}
 
 	if statusAware, updateStatus := obj.(ReconcileStatusAware); updateStatus {
@@ -74,9 +72,8 @@ func Running(ctx context.Context, r Reconciler, obj client.Object, reason string
 	}
 
 	status := v1alpha1.Lifecycle{
-		Phase:      v1alpha1.PhaseRunning,
-		Reason:     reason,
-		LastUpdate: metav1.Now(),
+		Phase:  v1alpha1.PhaseRunning,
+		Reason: reason,
 	}
 
 	if statusAware, updateStatus := obj.(ReconcileStatusAware); updateStatus {
@@ -104,9 +101,8 @@ func Success(ctx context.Context, r Reconciler, obj client.Object, reason string
 	}
 
 	status := v1alpha1.Lifecycle{
-		Phase:      v1alpha1.PhaseSuccess,
-		Reason:     reason,
-		LastUpdate: metav1.Now(),
+		Phase:  v1alpha1.PhaseSuccess,
+		Reason: reason,
 	}
 
 	if statusAware, updateStatus := obj.(ReconcileStatusAware); updateStatus {

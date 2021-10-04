@@ -18,18 +18,28 @@
 package workflow
 
 import (
+	"time"
+
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/utils"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// GetNextLogicalJob returns a list of jobs that meet the logical constraints.
+// GetNextLogicalJob returns a list of jobs that meet the logical and time constraints.
 // That is, either the job has no dependencies, or the dependencies are met.
 //
-// If the reconciliation cycle is fast enough, it is possible for the next cycle not to account for
-// components that are scheduled but not yet created. To handle this race condition, we add a local state
-// to keep track of what components are already scheduled.
-func GetNextLogicalJob(all v1alpha1.ActionList, gs utils.LifecycleClassifier, scheduled map[string]bool) v1alpha1.ActionList {
-	var filtered v1alpha1.ActionList
+// It is possible for the logical dependencies to be met, but the timeout not yet expired.
+// If at least one action exists, when the workflow is updated it will trigger another reconciliation cycle.
+// However, if there are no actions, the workflow will stop the reconciliation cycle, and we will miss the
+// next timeout. To handle this scenario, we have to requeue the request with the given duration.
+// In this case, the given duration is the nearest expected timeout.
+func GetNextLogicalJob(
+	obj metav1.Object,
+	all v1alpha1.ActionList,
+	gs utils.LifecycleClassifier,
+	nextCycle *time.Duration,
+) v1alpha1.ActionList {
+	var candidates v1alpha1.ActionList
 
 	successOK := func(deps *v1alpha1.WaitSpec) bool {
 		// validate Success dependencies
@@ -53,25 +63,43 @@ func GetNextLogicalJob(all v1alpha1.ActionList, gs utils.LifecycleClassifier, sc
 		return true
 	}
 
+	timeOK := func(deps *v1alpha1.WaitSpec) bool {
+		if dur := deps.Duration; dur != nil {
+			earliestTime := obj.GetCreationTimestamp().Time
+			deadline := earliestTime.Add(dur.Duration)
+
+			if metav1.Now().After(deadline) {
+				return true
+			}
+
+			// calculate time to the next shortest timeout
+			timeToNextTimeout := time.Until(deadline)
+
+			if nextCycle == nil {
+				*nextCycle = timeToNextTimeout
+			}
+
+			if timeToNextTimeout < *nextCycle {
+				*nextCycle = timeToNextTimeout
+			}
+
+			return false
+		}
+
+		return true
+	}
+
 	for _, action := range all {
 		if deps := action.DependsOn; deps != nil {
-			if successOK(deps) && runningOK(deps) {
-				_, exists := scheduled[action.Name]
-				if !exists {
-					filtered = append(filtered, action)
-				}
+			if !successOK(deps) || !runningOK(deps) || !timeOK(deps) {
+				continue
 			}
+
+			candidates = append(candidates, action)
 		} else {
-			_, exists := scheduled[action.Name]
-			if !exists {
-				filtered = append(filtered, action)
-			}
+			candidates = append(candidates, action)
 		}
 	}
 
-	for _, action := range filtered {
-		scheduled[action.Name] = true
-	}
-
-	return filtered
+	return candidates
 }

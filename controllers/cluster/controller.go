@@ -286,9 +286,9 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			return utils.Stop()
 		}
 
-		r.Logger.Info("no upcoming scheduled times, sleeping until next")
+		r.Logger.Info("no upcoming scheduled times, sleeping until", "next", nextRun)
 
-		return utils.RequeueAfter(nextRun.Sub(time.Now()))
+		return utils.RequeueAfter(time.Until(nextRun))
 	}
 
 	if schedule := cluster.Spec.Schedule; schedule != nil {

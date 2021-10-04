@@ -53,6 +53,7 @@ func GetNextScheduledJob(
 	} else {
 		earliestTime = obj.GetCreationTimestamp().Time
 	}
+
 	if scheduler.StartingDeadlineSeconds != nil {
 		// controller is not going to schedule anything below this point
 		schedulingDeadline := cur.Add(-time.Second * time.Duration(*scheduler.StartingDeadlineSeconds))
@@ -61,11 +62,13 @@ func GetNextScheduledJob(
 			earliestTime = schedulingDeadline
 		}
 	}
+
 	if earliestTime.After(cur) {
 		return time.Time{}, sched.Next(cur), nil
 	}
 
 	starts := 0
+
 	for t := sched.Next(earliestTime); !t.After(cur); t = sched.Next(t) {
 		lastMissed = t
 		// An object might miss several starts. For example, if

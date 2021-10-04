@@ -51,13 +51,13 @@ spec:
     # Cause two partition failures with different duration
     - action: Chaos
       name: partition0
-      depends: { running: [ masters, slaves ], duration: "5m" }
+      depends: { running: [ masters, slaves ], duration: "1m" }
       chaos:
         type: partition
         partition:
           selector:
             macro: .cluster.masters.any
-          duration: "2m"
+          duration: "30s"
 
     - action: Chaos
       name: partition1
@@ -67,10 +67,3 @@ spec:
         partition:
           selector: { macro: .cluster.masters.any }
           duration: "2m"
-
-
-    # Wait until loaders are complete
-    - action: Wait
-      name: "teardown"
-      wait:
-        success: [ loaders ]

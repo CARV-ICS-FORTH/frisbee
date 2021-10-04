@@ -23,9 +23,8 @@ import (
 )
 
 // calculateLifecycle returns the update lifecycle of the cluster.
-func calculateLifecycle(service *v1alpha1.Service, pod *corev1.Pod) v1alpha1.Lifecycle {
-
-	status := service.Status
+func calculateLifecycle(cr *v1alpha1.Service, pod *corev1.Pod) v1alpha1.Lifecycle {
+	status := cr.Status
 
 	switch {
 	case status.Phase == v1alpha1.PhaseUninitialized ||
@@ -38,8 +37,7 @@ func calculateLifecycle(service *v1alpha1.Service, pod *corev1.Pod) v1alpha1.Lif
 }
 
 // Pod translates the Pod's Lifecycle to Frisbee Lifecycle.
-func convert(obj interface{}) v1alpha1.Lifecycle {
-	pod := obj.(*corev1.Pod)
+func convert(pod *corev1.Pod) v1alpha1.Lifecycle {
 
 	switch pod.Status.Phase {
 	case corev1.PodPending:

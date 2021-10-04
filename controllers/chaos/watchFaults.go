@@ -1,6 +1,9 @@
 package chaos
 
 import (
+	"fmt"
+	"reflect"
+
 	"github.com/fnikolai/frisbee/controllers/utils"
 	"github.com/pkg/errors"
 	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"
@@ -18,13 +21,22 @@ func (r *Controller) Watchers() predicate.Funcs {
 }
 
 func (r *Controller) create(e event.CreateEvent) bool {
+	if !utils.IsManagedByThisController(e.Object, controllerKind) {
+		return false
+	}
+
 	if !e.Object.GetDeletionTimestamp().IsZero() {
 		// on a restart of the controller manager, it's possible a new pod shows up in a state that
 		// is already pending deletion. Prevent the pod from being a creation observation.
 		return false
 	}
 
-	r.Logger.Info("Detected: fault creation", "name ", e.Object.GetName())
+	r.Logger.Info("** Detected",
+		"Request", "Create",
+		"kind", reflect.TypeOf(e.Object),
+		"name", e.Object.GetName(),
+		"epoch", e.Object.GetResourceVersion(),
+	)
 
 	// because the range annotator has state (uid), we need to save in the controller's store.
 	annotator := &utils.RangeAnnotation{}
@@ -36,6 +48,10 @@ func (r *Controller) create(e event.CreateEvent) bool {
 }
 
 func (r *Controller) update(e event.UpdateEvent) bool {
+	if !utils.IsManagedByThisController(e.ObjectNew, controllerKind) {
+		return false
+	}
+
 	if e.ObjectOld.GetResourceVersion() == e.ObjectNew.GetResourceVersion() {
 		// Periodic resync will send update events for all known pods.
 		// Two different versions of the same pod will always have different RVs.
@@ -54,17 +70,30 @@ func (r *Controller) update(e event.UpdateEvent) bool {
 	oldFault := e.ObjectOld.(*Fault)
 	newFault := e.ObjectNew.(*Fault)
 
-	oldLF := CalculateLifecycle(oldFault)
-	newLF := CalculateLifecycle(newFault)
+	oldLF := convertLifecycle(oldFault)
+	newLF := convertLifecycle(newFault)
 
 	if oldLF.Phase == newLF.Phase {
 		return false
 	}
 
+	r.Logger.Info("** Detected",
+		"Request", "Update",
+		"kind", reflect.TypeOf(e.ObjectNew),
+		"name", e.ObjectNew.GetName(),
+		"from", oldLF.Phase,
+		"to", newLF.Phase,
+		"epoch", fmt.Sprintf("%s -> %s", oldFault.GetResourceVersion(), newFault.GetResourceVersion()),
+	)
+
 	return true
 }
 
 func (r *Controller) delete(e event.DeleteEvent) bool {
+	if !utils.IsManagedByThisController(e.Object, controllerKind) {
+		return false
+	}
+
 	// An object was deleted but the watch deletion event was missed while disconnected from apiserver.
 	// In this case we don't know the final "resting" state of the object,
 	// so there's a chance the included `Obj` is stale.
@@ -74,7 +103,12 @@ func (r *Controller) delete(e event.DeleteEvent) bool {
 		return false
 	}
 
-	r.Logger.Info("Detected: fault deletion", "name ", e.Object.GetName())
+	r.Logger.Info("** Detected",
+		"Request", "Delete",
+		"kind", reflect.TypeOf(e.Object),
+		"name", e.Object.GetName(),
+		"epoch", e.Object.GetResourceVersion(),
+	)
 
 	annotator, ok := r.annotators.Get(e.Object.GetName())
 	if !ok {

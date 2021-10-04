@@ -19,8 +19,6 @@ package v1alpha1
 
 import (
 	"fmt"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // Phase is the current status of an object
@@ -88,9 +86,6 @@ type Lifecycle struct {
 	// e.g. 'Evicted'
 	// +optional
 	Reason string `json:"reason,omitempty"`
-
-	// RFC 3339 date and time at which the object was last updated
-	LastUpdate metav1.Time `json:"lastUpdate,omitempty"`
 }
 
 func (in *Lifecycle) String() string {

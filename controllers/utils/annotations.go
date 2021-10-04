@@ -53,7 +53,6 @@ type Annotator interface {
 type PointAnnotation struct{}
 
 func (a *PointAnnotation) Add(obj client.Object) {
-
 	ga := sdk.CreateAnnotationRequest{
 		Time: obj.GetCreationTimestamp().Unix() * 1000, // unix ts in ms
 		Tags: []string{AnnotationRun},
@@ -114,7 +113,6 @@ func (a *RangeAnnotation) Add(obj client.Object) {
 }
 
 func (a *RangeAnnotation) Delete(obj client.Object) {
-
 	// in some cases the deletion timestamp is nil. If so, just use the present time.
 	ts := obj.GetDeletionTimestamp()
 	if ts == nil {
@@ -152,7 +150,7 @@ type GrafanaAnnotator struct {
 	*sdk.Client
 }
 
-// Insert inserts a new annotation to Grafana
+// Insert inserts a new annotation to Grafana.
 func (c *GrafanaAnnotator) Insert(ga sdk.CreateAnnotationRequest) (reqID uint) {
 	ctx, cancel := context.WithTimeout(c.ctx, AnnotationTimeout)
 	defer cancel()
@@ -174,7 +172,7 @@ func (c *GrafanaAnnotator) Insert(ga sdk.CreateAnnotationRequest) (reqID uint) {
 	return *gaResp.ID
 }
 
-// Patch updates an existing annotation to Grafana
+// Patch updates an existing annotation to Grafana.
 func (c *GrafanaAnnotator) Patch(reqID uint, ga sdk.PatchAnnotationRequest) {
 	ctx, cancel := context.WithTimeout(c.ctx, AnnotationTimeout)
 	defer cancel()

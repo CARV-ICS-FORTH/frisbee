@@ -23,8 +23,33 @@ import (
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/service/helpers"
 	"github.com/fnikolai/frisbee/controllers/utils"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
+
+type Fault = unstructured.Unstructured
+
+type chaoHandler interface {
+	GetFault(r *Controller) *Fault
+
+	GetName() string
+
+	ConstructJob(ctx context.Context, r *Controller) *Fault
+
+	// Inject(ctx context.Context, obj *v1alpha1.Chaos) error
+	// WaitForDuration(ctx context.Context, obj *v1alpha1.Chaos) error
+	// Revoke(ctx context.Context, obj *v1alpha1.Chaos) error
+}
+
+func dispatch(chaos *v1alpha1.Chaos) chaoHandler {
+	switch chaos.Spec.Type {
+	case v1alpha1.FaultPartition:
+		return &partitionHandler{cr: chaos}
+
+	default:
+		panic("should never happen")
+	}
+}
 
 func AsPartition(fault *Fault) {
 	fault.SetGroupVersionKind(schema.GroupVersionKind{
@@ -34,36 +59,43 @@ func AsPartition(fault *Fault) {
 	})
 }
 
-type partition struct {
-	spec *v1alpha1.PartitionSpec
+/*
+	Network Partition Handler
+*/
+
+type partitionHandler struct {
+	cr *v1alpha1.Chaos
 }
 
-func (f partition) GetName() string {
+func (f partitionHandler) GetName() string {
 	return "partition"
 }
 
-func (f *partition) GetFault() *Fault {
+func (f *partitionHandler) GetFault(r *Controller) *Fault {
 	var fault Fault
 
 	AsPartition(&fault)
 
+	utils.SetOwner(r, f.cr, &fault)
+	fault.SetName(f.cr.GetName())
+
 	return &fault
 }
 
-func (f partition) ConstructJob(ctx context.Context, r *Controller, obj *v1alpha1.Chaos) Fault {
-	spec := obj.Spec.Partition
+func (f partitionHandler) ConstructJob(ctx context.Context, r *Controller) *Fault {
+	spec := f.cr.Spec.Partition
 
 	var fault Fault
 
 	{ // spec
-		affectedPods := helpers.Select(ctx, r, obj.GetNamespace(), &spec.Selector)
+		affectedPods := helpers.Select(ctx, r, f.cr.GetNamespace(), &spec.Selector)
 
 		fault.SetUnstructuredContent(map[string]interface{}{
 			"spec": map[string]interface{}{
 				"action": "partition",
 				"mode":   "all",
 				"selector": map[string]interface{}{
-					"namespaces": []string{obj.GetNamespace()},
+					"namespaces": []string{f.cr.GetNamespace()},
 				},
 				"direction": "both",
 				"target": map[string]interface{}{
@@ -77,13 +109,10 @@ func (f partition) ConstructJob(ctx context.Context, r *Controller, obj *v1alpha
 		})
 	}
 
-	{ // metadata
-		// Reverse the spec and metadata order as to avoid overwrites.
-		AsPartition(&fault)
+	AsPartition(&fault)
 
-		utils.SetOwner(r, obj, &fault)
-		fault.SetName(obj.GetName())
-	}
+	utils.SetOwner(r, f.cr, &fault)
+	fault.SetName(f.cr.GetName())
 
-	return fault
+	return &fault
 }

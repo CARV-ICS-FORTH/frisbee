@@ -234,7 +234,7 @@ func CreateUnlessExists(ctx context.Context, r Reconciler, obj client.Object) er
 func Delete(ctx context.Context, r Reconciler, obj client.Object) {
 	err := r.GetClient().Delete(ctx, obj)
 	if err != nil && !k8errors.IsNotFound(err) {
-		r.Error(err, "unable to delete %s", obj.GetName())
+		r.Error(err, "unable to delete", "obj", obj.GetName())
 	}
 
 	r.Info("-- Delete",

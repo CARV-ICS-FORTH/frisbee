@@ -24,7 +24,6 @@ import (
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/utils"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -92,15 +91,11 @@ func (r *Controller) watchServiceUpdate(e event.UpdateEvent) bool {
 	}
 
 	if newService.GetName() == "prometheus" {
-		logrus.Warn("AAA")
 		r.prometheus <- &newService.Status.Lifecycle
-		logrus.Warn("BBB")
 	}
 
 	if newService.GetName() == "grafana" {
-		logrus.Warn("CCC")
 		r.grafana <- &newService.Status.Lifecycle
-		logrus.Warn("DDD")
 	}
 
 	r.Logger.Info("** Detected",

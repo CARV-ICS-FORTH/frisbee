@@ -97,8 +97,9 @@ spec:
           status:
             description: Most recently observed status of the object
             properties:
-              lastUpdate:
-                description: RFC 3339 date and time at which the object was last updated
+              lastScheduleTime:
+                description: LastScheduleTime provide information about  the last
+                  time a Pod was scheduled.
                 format: date-time
                 type: string
               phase:

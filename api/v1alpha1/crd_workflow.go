@@ -84,29 +84,6 @@ type Action struct {
 	*EmbedActions `json:",inline"`
 }
 
-type EmbedActions struct {
-	// +optional
-	Service *ServiceSpec `json:"service,omitempty"`
-
-	// +optional
-	Cluster *ClusterSpec `json:"cluster,omitempty"`
-
-	// +optional
-	Stop *StopSpec `json:"stop,omitempty"`
-
-	// +optional
-	Wait *WaitSpec `json:"wait,omitempty"`
-
-	// +optional
-	Chaos *ChaosSpec `json:"chaos,omitempty"`
-}
-
-type StopSpec struct {
-	Selector *ServiceSelector `json:"selector,omitempty"`
-
-	Schedule *SchedulerSpec `json:"schedule,omitempty"`
-}
-
 type WaitSpec struct {
 	// Running waits for the given groups to be running
 	// +optional
@@ -119,6 +96,26 @@ type WaitSpec struct {
 	// Duration blocks waiting for the duration to expire
 	// +optional
 	Duration *metav1.Duration `json:"duration,omitempty"`
+}
+
+type EmbedActions struct {
+	// +optional
+	Service *ServiceSpec `json:"service,omitempty"`
+
+	// +optional
+	Cluster *ClusterSpec `json:"cluster,omitempty"`
+
+	// +optional
+	Stop *StopSpec `json:"stop,omitempty"`
+
+	// +optional
+	Chaos *ChaosSpec `json:"chaos,omitempty"`
+}
+
+type StopSpec struct {
+	Selector *ServiceSelector `json:"selector,omitempty"`
+
+	Schedule *SchedulerSpec `json:"schedule,omitempty"`
 }
 
 type WorkflowStatus struct {

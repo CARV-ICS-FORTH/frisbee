@@ -32,9 +32,6 @@ func (r *Controller) runJob(ctx context.Context, w *v1alpha1.Workflow, action v1
 	logrus.Warn("Handle job ", action.Name)
 
 	switch action.ActionType {
-	case "Wait": // expect command will block the entire controller
-		return r.wait(ctx, action, *action.Wait)
-
 	case "Service":
 		return r.service(ctx, w, action)
 
@@ -51,90 +48,6 @@ func (r *Controller) runJob(ctx context.Context, w *v1alpha1.Workflow, action v1
 		return errors.Errorf("unknown action %s", action.ActionType)
 	}
 
-}
-
-func (r *Controller) wait(ctx context.Context, action v1alpha1.Action, spec v1alpha1.WaitSpec) error {
-
-	/*
-		if len(spec.Running) > 0 {
-			logrus.Warnf("-> Action %s waiting for running of %v", action.Name, spec.Running)
-
-			for _, waitFor := range spec.Running {
-				lf, exists := r.state.activeJobs[waitFor]
-				if !exists {
-
-					// the phase has not been reached yet.
-					return true, nil
-				}
-
-				switch {
-				case lf.Phase.Equals(v1alpha1.PhaseRunning):
-					// reached the desired phase
-					continue
-
-				case lf.Phase.IsValid(v1alpha1.PhaseRunning):
-					// the phase has not been reached yet.
-					return true, nil
-
-				default:
-					return false, errors.Errorf("phase violation [%s] <- [%s] <- [%s]",
-						action.Name,
-						lf.Phase,
-						waitFor,
-					)
-				}
-			}
-
-			logrus.Warnf("<- Action %s waiting for running of %v", action.Name, spec.Running)
-		}
-
-		if len(spec.Success) > 0 {
-			logrus.Warnf("-> Action %s waiting for Success of %v", action.Name, spec.Success)
-
-			for _, waitFor := range spec.Success {
-				lf, exists := r.state.successfulJobs[waitFor]
-				if !exists {
-					// the phase has not been reached yet.
-					return true, nil
-				}
-
-				switch {
-				case lf.Phase.Equals(v1alpha1.PhaseSuccess):
-					// reached the desired phase
-					continue
-
-				case lf.Phase.IsValid(v1alpha1.PhaseSuccess):
-					// the phase has not been reached yet.
-					return true, nil
-
-				default:
-					return false, errors.Errorf("phase violation [%s] <- [%s] <- [%s]",
-						action.Name,
-						lf.Phase,
-						waitFor,
-					)
-				}
-			}
-
-			logrus.Warnf("<- Action %s waiting for Success of %v", action.Name, spec.Success)
-		}
-
-		/*
-			if spec.Duration != nil {
-				logrus.Warnf("-> Action %s waiting for duration of %v", action.Name, spec.Duration.Duration.IsBefore())
-
-				select {
-				case <-ctx.Done():
-					return errors.Wrapf(ctx.Err(), "wait error")
-				case <-time.After(spec.Duration.Duration):
-				}
-
-				logrus.Warnf("<- Action %s waiting for duration of %v", action.Name, spec.Duration.Duration.IsBefore())
-			}
-
-	*/
-
-	return nil
 }
 
 func (r *Controller) service(ctx context.Context, w *v1alpha1.Workflow, action v1alpha1.Action) error {

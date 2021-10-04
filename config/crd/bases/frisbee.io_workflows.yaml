@@ -3103,23 +3103,6 @@ spec:
                               type: string
                           type: object
                       type: object
-                    wait:
-                      properties:
-                        duration:
-                          description: Duration blocks waiting for the duration to
-                            expire
-                          type: string
-                        running:
-                          description: Running waits for the given groups to be running
-                          items:
-                            type: string
-                          type: array
-                        success:
-                          description: Success waits for the given groups to be succeeded
-                          items:
-                            type: string
-                          type: array
-                      type: object
                   required:
                   - action
                   - name
@@ -3156,10 +3139,6 @@ spec:
           status:
             description: Most recently observed status of the workflow
             properties:
-              lastUpdate:
-                description: RFC 3339 date and time at which the object was last updated
-                format: date-time
-                type: string
               phase:
                 description: Phase is the current status of an object
                 type: string

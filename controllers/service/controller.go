@@ -58,27 +58,28 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		1: Load CR by name.
 		------------------------------------------------------------------
 	*/
-	var service v1alpha1.Service
+	var cr v1alpha1.Service
 
 	var requeue bool
-	result, err := utils.Reconcile(ctx, r, req, &service, &requeue)
+	result, err := utils.Reconcile(ctx, r, req, &cr, &requeue)
+
 	if requeue {
 		return result, errors.Wrapf(err, "initialization error")
 	}
 
 	r.Logger.Info("-> Reconcile",
-		"kind", reflect.TypeOf(service),
-		"name", service.GetName(),
-		"lifecycle", service.Status.Phase,
-		"epoch", service.GetResourceVersion(),
+		"kind", reflect.TypeOf(cr),
+		"name", cr.GetName(),
+		"lifecycle", cr.Status.Phase,
+		"epoch", cr.GetResourceVersion(),
 	)
 
 	defer func() {
 		r.Logger.Info("<- Reconcile",
-			"kind", reflect.TypeOf(service),
-			"name", service.GetName(),
-			"lifecycle", service.Status.Phase,
-			"epoch", service.GetResourceVersion(),
+			"kind", reflect.TypeOf(cr),
+			"name", cr.GetName(),
+			"lifecycle", cr.Status.Phase,
+			"epoch", cr.GetResourceVersion(),
 		)
 	}()
 
@@ -86,14 +87,14 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		2: Load CR's components.
 		------------------------------------------------------------------
 
-		The component is a pod with the same name as the service.
+		The component is a pod with the same name as the cr.
 	*/
 	var pod corev1.Pod
 	{
-		key := client.ObjectKeyFromObject(&service)
+		key := client.ObjectKeyFromObject(&cr)
 
 		if err := r.GetClient().Get(ctx, key, &pod); client.IgnoreNotFound(err) != nil {
-			return utils.Failed(ctx, r, &service, errors.Wrapf(err, "retrieve pod"))
+			return utils.Failed(ctx, r, &cr, errors.Wrapf(err, "retrieve pod"))
 		}
 	}
 
@@ -101,14 +102,15 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		3: Update the CR status using the data we've gathered
 		------------------------------------------------------------------
 	*/
-	newStatus := calculateLifecycle(&service, &pod)
-	service.Status.Lifecycle = newStatus
+	newStatus := calculateLifecycle(&cr, &pod)
+	cr.Status.Lifecycle = newStatus
 
-	if err := utils.UpdateStatus(ctx, r, &service); err != nil {
+	if err := utils.UpdateStatus(ctx, r, &cr); err != nil {
 		// due to the multiple updates, it is possible for this function to
 		// be in conflict. We fix this issue by re-queueing the request.
 		// We also omit verbose error reporting as to avoid polluting the output.
 		runtime.HandleError(err)
+
 		return utils.Requeue()
 	}
 
@@ -124,9 +126,9 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	if newStatus.Phase == v1alpha1.PhaseFailed {
-		r.Logger.Error(errors.New(service.Status.Lifecycle.Reason),
+		r.Logger.Error(errors.New(cr.Status.Lifecycle.Reason),
 			"service failed",
-			"service", service.GetName())
+			"service", cr.GetName())
 
 		return utils.Stop()
 	}
@@ -140,13 +142,13 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		We may delete the service, add a pod, or wait for existing pod to change its status.
 	*/
-	if service.Status.LastScheduleTime != nil {
+	if cr.Status.LastScheduleTime != nil {
 		// next reconciliation cycle will be trigger by the watchers
 		return utils.Stop()
 	}
 
-	if err := r.runJob(ctx, &service); err != nil {
-		return utils.Failed(ctx, r, &service, errors.Wrapf(err, "cannot create pod"))
+	if err := r.runJob(ctx, &cr); err != nil {
+		return utils.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot create pod"))
 	}
 
 	/*
@@ -161,9 +163,9 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	*/
 
 	// Add the just-started jobs to the status list.
-	service.Status.LastScheduleTime = &metav1.Time{Time: time.Now()}
+	cr.Status.LastScheduleTime = &metav1.Time{Time: time.Now()}
 
-	return utils.Pending(ctx, r, &service, "create pod")
+	return utils.Pending(ctx, r, &cr, "create pod")
 }
 
 /*

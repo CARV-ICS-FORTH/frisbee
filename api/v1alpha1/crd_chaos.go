@@ -68,6 +68,9 @@ type PartitionSpec struct {
 
 type ChaosStatus struct {
 	Lifecycle `json:",inline"`
+
+	// LastScheduleTime provide information about  the last time a Pod was scheduled.
+	LastScheduleTime *metav1.Time `json:"lastScheduleTime,omitempty"`
 }
 
 func (in *Chaos) GetReconcileStatus() Lifecycle {
