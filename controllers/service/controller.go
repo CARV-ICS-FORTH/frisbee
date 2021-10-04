@@ -122,6 +122,8 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		around.
 	*/
 	if newStatus.Phase == v1alpha1.PhaseSuccess {
+		// TODO: delete pod and service, but leave the service descriptor.
+
 		return utils.Stop()
 	}
 

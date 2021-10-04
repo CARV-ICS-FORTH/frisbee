@@ -52,8 +52,12 @@ func parseMacro(namespace string, ss *v1alpha1.ServiceSelector) {
 		ss.Match.ByCluster = map[string]string{namespace: object}
 		ss.Mode = v1alpha1.Convert(filter)
 
+	case "service":
+		ss.Match.ByName = map[string][]string{namespace: {object}}
+		ss.Mode = v1alpha1.Convert(filter)
+
 	default:
-		logrus.Warnf("%v is not a valid macro", *ss.Macro)
+		panic(errors.Errorf("%v is not a valid macro", *ss.Macro))
 	}
 }
 
@@ -77,11 +81,12 @@ func Select(ctx context.Context, r utils.Reconciler, nm string, ss *v1alpha1.Ser
 	}
 
 	if len(services) == 0 {
-		return nil
+		panic("no service were found")
+		//return nil
 	}
 
 	// filter services based on the pods
-	filteredServices, err := filterServicesByMode(services, ss.Mode, ss.Value)
+	filteredServices, err := filterByMode(services, ss.Mode, ss.Value)
 	if err != nil {
 		logrus.Warn(err)
 
@@ -185,7 +190,7 @@ func selectServices(ctx context.Context, r utils.Reconciler, ss *v1alpha1.MatchS
 	return serviceList, nil
 }
 
-func filterServicesByMode(services v1alpha1.SList, mode v1alpha1.Mode, value string) (v1alpha1.SList, error) {
+func filterByMode(services v1alpha1.SList, mode v1alpha1.Mode, value string) (v1alpha1.SList, error) {
 	if len(services) == 0 {
 		return nil, errors.New("cannot generate services from empty list")
 	}

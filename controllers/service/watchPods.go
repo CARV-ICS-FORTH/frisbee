@@ -64,10 +64,10 @@ func (r *Controller) update(e event.UpdateEvent) bool {
 	}
 
 	// if the status is the same, there is no need to inform the service
-	oldPod := e.ObjectOld.(*corev1.Pod)
-	newPod := e.ObjectNew.(*corev1.Pod)
+	prev := e.ObjectOld.(*corev1.Pod)
+	latest := e.ObjectNew.(*corev1.Pod)
 
-	if oldPod.Status.Phase == newPod.Status.Phase {
+	if prev.Status.Phase == latest.Status.Phase {
 		// a controller never initiates a phase change, and so is never asleep waiting for the same.
 		return false
 	}
@@ -76,9 +76,9 @@ func (r *Controller) update(e event.UpdateEvent) bool {
 		"Request", "Update",
 		"kind", reflect.TypeOf(e.ObjectNew),
 		"name", e.ObjectNew.GetName(),
-		"from", oldPod.Status.Phase,
-		"to", newPod.Status.Phase,
-		"epoch", fmt.Sprintf("%s -> %s", oldPod.GetResourceVersion(), newPod.GetResourceVersion()),
+		"from", prev.Status.Phase,
+		"to", latest.Status.Phase,
+		"epoch", fmt.Sprintf("%s -> %s", prev.GetResourceVersion(), latest.GetResourceVersion()),
 	)
 
 	return true

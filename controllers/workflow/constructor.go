@@ -27,8 +27,6 @@ import (
 )
 
 func (r *Controller) runJob(ctx context.Context, w *v1alpha1.Workflow, action v1alpha1.Action) error {
-	r.Logger.Info("Exec Action", "type", action.ActionType, "name", action.Name, "depends", action.DependsOn)
-
 	logrus.Warn("Handle job ", action.Name)
 
 	switch action.ActionType {
@@ -47,7 +45,6 @@ func (r *Controller) runJob(ctx context.Context, w *v1alpha1.Workflow, action v1
 	default:
 		return errors.Errorf("unknown action %s", action.ActionType)
 	}
-
 }
 
 func (r *Controller) service(ctx context.Context, w *v1alpha1.Workflow, action v1alpha1.Action) error {

@@ -160,6 +160,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	newStatus := calculateLifecycle(&cluster, activeJobs, successfulJobs, failedJobs)
+
 	cluster.Status.Lifecycle = newStatus
 
 	if err := utils.UpdateStatus(ctx, r, &cluster); err != nil {
@@ -244,7 +245,8 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		pause runs to investigate or putz with the cluster, without deleting the object.
 	*/
 	if cluster.Spec.Suspend != nil && *cluster.Spec.Suspend {
-		r.Logger.Info("cluster suspended, skipping")
+		r.Logger.Info("Not starting job because the cluster is suspended",
+			"cluster", cluster.GetName())
 
 		return utils.Stop()
 	}

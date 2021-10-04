@@ -20,7 +20,6 @@ package workflow
 import (
 	"context"
 	"reflect"
-	"time"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/utils"
@@ -223,11 +222,16 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		If we are not suspended, initialize the workflow. At this step, we create the observability stack
 	*/
 	if w.Status.Phase == v1alpha1.PhaseUninitialized {
-		logrus.Warn(" -- Observability Stack --")
+		// validate dependencies
+		if err := ValidateDAG(w.Spec.Actions); err != nil {
+			return utils.Failed(ctx, r, &w, errors.Wrapf(err, "invalid dependency DAG"))
+		}
 
 		if err := r.newMonitoringStack(ctx, &w); err != nil {
 			return utils.Failed(ctx, r, &w, errors.Wrapf(err, "unable to create the observability stack"))
 		}
+
+		logrus.Warn(" -- Observability Stack --")
 
 		w.Status.Scheduled = make(map[string]bool)
 
@@ -238,21 +242,17 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		7: Run jobs that meeting the logical dependencies
 		------------------------------------------------------------------
 	*/
-	var actionList v1alpha1.ActionList
 
-	var needsRequeue time.Duration
-
-	for _, action := range GetNextLogicalJob(&w, w.Spec.Actions, r.state, &needsRequeue) {
-		if r.state.IsActive(action.Name) || isJobInScheduledList(action.Name, w.Status.Scheduled) {
-			// Not starting action because it is already processed
-			continue
-		}
-
-		actionList = append(actionList, action)
-	}
+	actionList, requeueAfter := GetNextLogicalJob(&w, w.Spec.Actions, r.state, w.Status.Scheduled)
 
 	if len(actionList) == 0 {
-		return utils.RequeueAfter(needsRequeue)
+		r.Logger.Info("Empty action list", "Requeue after ", requeueAfter)
+
+		if requeueAfter != nil {
+			return utils.RequeueAfter(*requeueAfter)
+		}
+
+		return utils.Stop()
 	}
 
 	logrus.Warn("Ready to start ", actionList)
@@ -321,6 +321,7 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 		For(&v1alpha1.Workflow{}).
 		Owns(&v1alpha1.Service{}, builder.WithPredicates(r.WatchServices())).
 		Owns(&v1alpha1.Cluster{}, builder.WithPredicates(r.WatchClusters())).
+		Owns(&v1alpha1.Chaos{}, builder.WithPredicates(r.WatchChaos())).
 		Complete(r)
 }
 

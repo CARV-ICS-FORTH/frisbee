@@ -23,6 +23,7 @@ import (
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/service/helpers"
 	"github.com/fnikolai/frisbee/controllers/utils"
+	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -34,7 +35,7 @@ type chaoHandler interface {
 
 	GetName() string
 
-	ConstructJob(ctx context.Context, r *Controller) *Fault
+	Inject(ctx context.Context, r *Controller) error
 
 	// Inject(ctx context.Context, obj *v1alpha1.Chaos) error
 	// WaitForDuration(ctx context.Context, obj *v1alpha1.Chaos) error
@@ -82,7 +83,7 @@ func (f *partitionHandler) GetFault(r *Controller) *Fault {
 	return &fault
 }
 
-func (f partitionHandler) ConstructJob(ctx context.Context, r *Controller) *Fault {
+func (f partitionHandler) Inject(ctx context.Context, r *Controller) error {
 	spec := f.cr.Spec.Partition
 
 	var fault Fault
@@ -114,5 +115,9 @@ func (f partitionHandler) ConstructJob(ctx context.Context, r *Controller) *Faul
 	utils.SetOwner(r, f.cr, &fault)
 	fault.SetName(f.cr.GetName())
 
-	return &fault
+	if err := utils.CreateUnlessExists(ctx, r, &fault); err != nil {
+		return errors.Wrapf(err, "cannot inject fault")
+	}
+
+	return nil
 }

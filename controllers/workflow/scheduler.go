@@ -22,8 +22,54 @@ import (
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/utils"
+	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+// ValidateDAG returns true if all the dependencies point to a valid action.
+func ValidateDAG(list v1alpha1.ActionList) error {
+	index := make(map[string]*v1alpha1.Action)
+
+	for i, action := range list {
+		index[action.Name] = &list[i]
+	}
+
+	successOK := func(deps *v1alpha1.WaitSpec) bool {
+		for _, dep := range deps.Success {
+			_, ok := index[dep]
+			if !ok {
+				return false
+			}
+		}
+
+		return true
+	}
+
+	runningOK := func(deps *v1alpha1.WaitSpec) bool {
+		for _, dep := range deps.Running {
+			_, ok := index[dep]
+			if !ok {
+				return false
+			}
+		}
+
+		return true
+	}
+
+	for _, action := range list {
+		if deps := action.DependsOn; deps != nil {
+			if !successOK(deps) || !runningOK(deps) {
+				return errors.Errorf("invalid dependency on action %s", action.Name)
+			}
+		}
+	}
+
+	// TODO:
+	// 1) add validation for templateRef
+	// 2) make validation as webhook so to validate the experiment before it begins.
+
+	return nil
+}
 
 // GetNextLogicalJob returns a list of jobs that meet the logical and time constraints.
 // That is, either the job has no dependencies, or the dependencies are met.
@@ -37,9 +83,11 @@ func GetNextLogicalJob(
 	obj metav1.Object,
 	all v1alpha1.ActionList,
 	gs utils.LifecycleClassifier,
-	nextCycle *time.Duration,
-) v1alpha1.ActionList {
+	scheduled map[string]bool,
+) (v1alpha1.ActionList, *time.Duration) {
 	var candidates v1alpha1.ActionList
+
+	var nextCycle *time.Duration
 
 	successOK := func(deps *v1alpha1.WaitSpec) bool {
 		// validate Success dependencies
@@ -76,11 +124,11 @@ func GetNextLogicalJob(
 			timeToNextTimeout := time.Until(deadline)
 
 			if nextCycle == nil {
-				*nextCycle = timeToNextTimeout
+				nextCycle = &timeToNextTimeout
 			}
 
 			if timeToNextTimeout < *nextCycle {
-				*nextCycle = timeToNextTimeout
+				nextCycle = &timeToNextTimeout
 			}
 
 			return false
@@ -90,16 +138,24 @@ func GetNextLogicalJob(
 	}
 
 	for _, action := range all {
+		if gs.IsActive(action.Name) || isJobInScheduledList(action.Name, scheduled) {
+			// Not starting action because it is already processed.
+
+			// logrus.Warnf("Ignore action %s since it is already processed", action.Name)
+			continue
+		}
+
 		if deps := action.DependsOn; deps != nil {
 			if !successOK(deps) || !runningOK(deps) || !timeOK(deps) {
+				// Not starting action because the dependencies are not met.
+
+				// logrus.Warnf("Ignore action %s because dependency are not met", action.Name)
 				continue
 			}
-
-			candidates = append(candidates, action)
-		} else {
-			candidates = append(candidates, action)
 		}
+
+		candidates = append(candidates, action)
 	}
 
-	return candidates
+	return candidates, nextCycle
 }

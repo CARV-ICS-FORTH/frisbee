@@ -1272,6 +1272,26 @@ spec:
                         simply match domain to a specific node. this will change in
                         the future
                       type: string
+                    fromTemplate:
+                      description: ServiceFromTemplate populates the service fields
+                        from a template. This is used for backward compatibility with
+                        Cluster with just one instance. This field cannot be used
+                        in conjunction with other fields.
+                      properties:
+                        inputs:
+                          description: Inputs is a list of inputs passed to the objects.
+                          items:
+                            additionalProperties:
+                              type: string
+                            type: object
+                          type: array
+                        templateRef:
+                          description: TemplateRef refers to a service template. It
+                            conflicts with Service.
+                          type: string
+                      required:
+                      - templateRef
+                      type: object
                     resources:
                       description: Resources specifies limitations as to how the container
                         will access host resources.

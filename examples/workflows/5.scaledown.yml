@@ -1,0 +1,45 @@
+apiVersion: frisbee.io/v1alpha1
+kind: Workflow
+metadata:
+  name: redis-scaledown
+spec:
+  importMonitors: [ "sysmon/container", "redismon/telegraf", "ycsbmon/goycsb" ]
+  ingress:
+    host: localhost
+    useAmbassador: true
+
+  actions:
+    # Create a single Master node
+    - action: Cluster
+      name: "masters"
+      cluster:
+        templateRef: redis/master
+        instances: 1
+
+
+    # Ingest keys in parallel, into different ranges
+    - action: Cluster
+      name: "loaders"
+      depends: { running: [ masters ], duration: 30s }
+      cluster:
+        templateRef: redis/loader
+        inputs:
+          - { server: .cluster.masters.any, recordcount: "1000000", offset: "0" }
+          - { server: .cluster.masters.any, recordcount: "1000000", offset: "1000000" }
+          - { server: .cluster.masters.any, recordcount: "1000000", offset: "2000000" }
+
+
+    # Wait for ingestion to complete, and start querying clients, with different workloads
+    - action: Cluster
+      name: "runners"
+      depends: { running: [ masters ], success: [ loaders ] }
+      cluster:
+        templateRef: redis/runner
+        inputs:
+          - { server: .cluster.masters.any, workload: workloada, operationcount: "1000000" }
+          - { server: .cluster.masters.any, workload: workloadb, operationcount: "1000000" }
+          - { server: .cluster.masters.any, workload: workloadc, operationcount: "1000000" }
+          - { server: .cluster.masters.any, workload: workloadd, operationcount: "1000000" }
+          - { server: .cluster.masters.any, workload: workloada, operationcount: "1000000" }
+        schedule:
+          cron: "@every 2m"

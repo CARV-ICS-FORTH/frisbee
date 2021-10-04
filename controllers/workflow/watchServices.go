@@ -82,29 +82,29 @@ func (r *Controller) watchServiceUpdate(e event.UpdateEvent) bool {
 	}
 
 	// if the status is the same, there is no need to inform the service
-	oldService := e.ObjectOld.(*v1alpha1.Service)
-	newService := e.ObjectNew.(*v1alpha1.Service)
+	prev := e.ObjectOld.(*v1alpha1.Service)
+	latest := e.ObjectNew.(*v1alpha1.Service)
 
-	if oldService.Status.Phase == newService.Status.Phase {
+	if prev.Status.Phase == latest.Status.Phase {
 		// a controller never initiates a phase change, and so is never asleep waiting for the same.
 		return false
 	}
 
-	if newService.GetName() == "prometheus" {
-		r.prometheus <- &newService.Status.Lifecycle
+	if latest.GetName() == "prometheus" {
+		r.prometheus <- &latest.Status.Lifecycle
 	}
 
-	if newService.GetName() == "grafana" {
-		r.grafana <- &newService.Status.Lifecycle
+	if latest.GetName() == "grafana" {
+		r.grafana <- &latest.Status.Lifecycle
 	}
 
 	r.Logger.Info("** Detected",
 		"Request", "Update",
 		"kind", reflect.TypeOf(e.ObjectNew),
 		"name", e.ObjectNew.GetName(),
-		"from", oldService.Status.Phase,
-		"to", newService.Status.Phase,
-		"epoch", fmt.Sprintf("%s -> %s", oldService.GetResourceVersion(), newService.GetResourceVersion()),
+		"from", prev.Status.Phase,
+		"to", latest.Status.Phase,
+		"epoch", fmt.Sprintf("%s -> %s", prev.GetResourceVersion(), latest.GetResourceVersion()),
 	)
 
 	return true

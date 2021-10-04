@@ -31,6 +31,11 @@ import (
 )
 
 func (r *Controller) runJob(ctx context.Context, obj *v1alpha1.Service) error {
+	if obj.Spec.ServiceFromTemplate != nil {
+		if err := r.populateSpecFromTemplate(ctx, obj); err != nil {
+			return errors.Wrapf(err, "cannot populate service from template")
+		}
+	}
 
 	pod, err := constructPod(ctx, r, obj)
 	if err != nil {
@@ -49,6 +54,19 @@ func (r *Controller) runJob(ctx context.Context, obj *v1alpha1.Service) error {
 	if err := utils.CreateUnlessExists(ctx, r, pod); err != nil {
 		return errors.Wrapf(err, "cannot create pod")
 	}
+
+	return nil
+}
+
+func (r *Controller) populateSpecFromTemplate(ctx context.Context, obj *v1alpha1.Service) error {
+	scheme := helpers.SelectServiceTemplate(ctx, r, helpers.ParseRef(obj.GetNamespace(), obj.Spec.TemplateRef))
+
+	spec, err := helpers.GenerateServiceSpec(scheme)
+	if err != nil {
+		return errors.Wrapf(err, "scheme to instance")
+	}
+
+	obj.Spec = spec
 
 	return nil
 }
@@ -123,6 +141,7 @@ func setContainer(obj *v1alpha1.Service) error {
 			Requests: resources,
 		}
 	}
+
 	return nil
 }
 

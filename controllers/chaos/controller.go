@@ -27,7 +27,6 @@ import (
 	"github.com/go-logr/logr"
 	cmap "github.com/orcaman/concurrent-map"
 	"github.com/pkg/errors"
-	k8errors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -98,17 +97,14 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	{
 		key := client.ObjectKeyFromObject(&cr)
 
-		err := r.GetClient().Get(ctx, key, fault)
-		if err != nil && !k8errors.IsNotFound(err) {
-			return utils.Failed(ctx, r, &cr, errors.Wrapf(err, "retrieve fault"))
+		if err := r.GetClient().Get(ctx, key, fault); client.IgnoreNotFound(err) != nil {
+			return utils.Failed(ctx, r, &cr, errors.Wrapf(err, "retrieve chaos"))
 		}
 	}
 
 	/*
 		3: Update the CR status using the data we've gathered
 		------------------------------------------------------------------
-
-		Using the date we've gathered, we'll update the status of our CR.
 	*/
 
 	newStatus := calculateLifecycle(&cr, fault)
@@ -158,9 +154,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return utils.Stop()
 	}
 
-	nextFault := handler.ConstructJob(ctx, r)
-
-	if err := utils.CreateUnlessExists(ctx, r, nextFault); err != nil {
+	if err := handler.Inject(ctx, r); err != nil {
 		return utils.Failed(ctx, r, &cr, errors.Wrapf(err, "injection failed"))
 	}
 
