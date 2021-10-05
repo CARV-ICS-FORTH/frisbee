@@ -18,16 +18,13 @@
 package utils
 
 import (
+	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-)
-
-const (
-	Owner = "owner"
 )
 
 // SetOwner is a helper method to make sure the given object contains an object reference to the object provided.
@@ -53,7 +50,7 @@ func SetOwner(r Reconciler, parent, child metav1.Object) {
 
 	// owner labels are used by the selectors
 	child.SetLabels(labels.Merge(child.GetLabels(), map[string]string{
-		Owner: parent.GetName(),
+		v1alpha1.LabelManagedBy: parent.GetName(),
 	}))
 }
 

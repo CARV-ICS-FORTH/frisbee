@@ -1279,12 +1279,10 @@ spec:
                         in conjunction with other fields.
                       properties:
                         inputs:
+                          additionalProperties:
+                            type: string
                           description: Inputs is a list of inputs passed to the objects.
-                          items:
-                            additionalProperties:
-                              type: string
-                            type: object
-                          type: array
+                          type: object
                         templateRef:
                           description: TemplateRef refers to a service template. It
                             conflicts with Service.

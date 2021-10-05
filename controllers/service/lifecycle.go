@@ -32,6 +32,19 @@ func calculateLifecycle(cr *v1alpha1.Service, pod *corev1.Pod) v1alpha1.Lifecycl
 		status.Phase == v1alpha1.PhaseFailed:
 		return status.Lifecycle
 	default:
+		if pod.CreationTimestamp.IsZero() {
+			//  the pod is uninitialized or deleted. find it by checking the cr status.
+			if status.LastScheduleTime == nil {
+				// initialized. return the present status
+				return status.Lifecycle
+			}
+
+			return v1alpha1.Lifecycle{
+				Phase:  v1alpha1.PhaseFailed,
+				Reason: "pod is probably deleted by a chaos event",
+			}
+		}
+
 		return convert(pod)
 	}
 }
@@ -70,9 +83,6 @@ func convert(pod *corev1.Pod) v1alpha1.Lifecycle {
 			Reason: "unknown state",
 		}
 	default:
-		return v1alpha1.Lifecycle{
-			Phase:  v1alpha1.PhaseUninitialized,
-			Reason: "not yet initialized",
-		}
+		return v1alpha1.Lifecycle{}
 	}
 }

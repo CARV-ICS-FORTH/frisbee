@@ -46,6 +46,79 @@ spec:
                       type: string
                     chaos:
                       properties:
+                        kill:
+                          properties:
+                            schedule:
+                              description: SchedulerSpec defines information about
+                                schedule of the chaos experiment.
+                              properties:
+                                cron:
+                                  description: "Cron defines a cron job rule. \n Some
+                                    rule examples: \"0 30 * * * *\" means to \"Every
+                                    hour on the half hour\" \"@hourly\"      means
+                                    to \"Every hour\" \"@every 1h30m\" means to \"Every
+                                    hour thirty\" \n More rule info: https://godoc.org/github.com/robfig/cron"
+                                  type: string
+                                startingDeadlineSeconds:
+                                  description: StartingDeadlineSeconds is an optional
+                                    deadline in seconds for starting the job if it
+                                    misses scheduled time for any reason. if we miss
+                                    this deadline, we'll just wait till the next scheduled
+                                    time
+                                  format: int64
+                                  type: integer
+                              required:
+                              - cron
+                              type: object
+                            selector:
+                              properties:
+                                macro:
+                                  description: Macro abstract selector parameters
+                                    into a structured string (e.g, .cluster.master.all).
+                                    Every parsed field is represents an inner structure
+                                    of the selector. In case of invalid macro, the
+                                    selector will return empty results. Macro conflicts
+                                    with any other parameter.
+                                  type: string
+                                match:
+                                  description: Match contains the rules to select
+                                    target
+                                  properties:
+                                    byCluster:
+                                      additionalProperties:
+                                        type: string
+                                      description: ByCluster defines the service group
+                                        where services belong.
+                                      type: object
+                                    byName:
+                                      additionalProperties:
+                                        items:
+                                          type: string
+                                        type: array
+                                      description: ByName is a map of string keys
+                                        and a set values that used to select services.
+                                        The key defines the namespace which services
+                                        belong, and the values is a set of service
+                                        names.
+                                      type: object
+                                  type: object
+                                mode:
+                                  description: 'Mode defines which of the selected
+                                    services to use. If undefined, all() is used Supported
+                                    mode: one / all / fixed / fixed-percent / random-max-percent'
+                                  type: string
+                                value:
+                                  description: Value is required when the mode is
+                                    set to `FixedPodMode` / `FixedPercentPodMod` /
+                                    `RandomMaxPercentPodMod`. If `FixedPodMode`, provide
+                                    an integer of pods to do chaos action. If `FixedPercentPodMod`,
+                                    provide a number from 0-100 to specify the percent
+                                    of pods the server can do chaos action. IF `RandomMaxPercentPodMod`,  provide
+                                    a number from 0-100 to specify the max percent
+                                    of pods to do chaos action
+                                  type: string
+                              type: object
+                          type: object
                         partition:
                           properties:
                             duration:
@@ -105,6 +178,7 @@ spec:
                           description: Type indicate the type of the injected fault
                           enum:
                           - partition
+                          - kill
                           type: string
                       required:
                       - type
@@ -1414,13 +1488,11 @@ spec:
                             be used in conjunction with other fields.
                           properties:
                             inputs:
+                              additionalProperties:
+                                type: string
                               description: Inputs is a list of inputs passed to the
                                 objects.
-                              items:
-                                additionalProperties:
-                                  type: string
-                                type: object
-                              type: array
+                              type: object
                             templateRef:
                               description: TemplateRef refers to a service template.
                                 It conflicts with Service.
@@ -3053,76 +3125,6 @@ spec:
                             - name
                             type: object
                           type: array
-                      type: object
-                    stop:
-                      properties:
-                        schedule:
-                          description: SchedulerSpec defines information about schedule
-                            of the chaos experiment.
-                          properties:
-                            cron:
-                              description: "Cron defines a cron job rule. \n Some
-                                rule examples: \"0 30 * * * *\" means to \"Every hour
-                                on the half hour\" \"@hourly\"      means to \"Every
-                                hour\" \"@every 1h30m\" means to \"Every hour thirty\"
-                                \n More rule info: https://godoc.org/github.com/robfig/cron"
-                              type: string
-                            startingDeadlineSeconds:
-                              description: StartingDeadlineSeconds is an optional
-                                deadline in seconds for starting the job if it misses
-                                scheduled time for any reason. if we miss this deadline,
-                                we'll just wait till the next scheduled time
-                              format: int64
-                              type: integer
-                          required:
-                          - cron
-                          type: object
-                        selector:
-                          properties:
-                            macro:
-                              description: Macro abstract selector parameters into
-                                a structured string (e.g, .cluster.master.all). Every
-                                parsed field is represents an inner structure of the
-                                selector. In case of invalid macro, the selector will
-                                return empty results. Macro conflicts with any other
-                                parameter.
-                              type: string
-                            match:
-                              description: Match contains the rules to select target
-                              properties:
-                                byCluster:
-                                  additionalProperties:
-                                    type: string
-                                  description: ByCluster defines the service group
-                                    where services belong.
-                                  type: object
-                                byName:
-                                  additionalProperties:
-                                    items:
-                                      type: string
-                                    type: array
-                                  description: ByName is a map of string keys and
-                                    a set values that used to select services. The
-                                    key defines the namespace which services belong,
-                                    and the values is a set of service names.
-                                  type: object
-                              type: object
-                            mode:
-                              description: 'Mode defines which of the selected services
-                                to use. If undefined, all() is used Supported mode:
-                                one / all / fixed / fixed-percent / random-max-percent'
-                              type: string
-                            value:
-                              description: Value is required when the mode is set
-                                to `FixedPodMode` / `FixedPercentPodMod` / `RandomMaxPercentPodMod`.
-                                If `FixedPodMode`, provide an integer of pods to do
-                                chaos action. If `FixedPercentPodMod`, provide a number
-                                from 0-100 to specify the percent of pods the server
-                                can do chaos action. IF `RandomMaxPercentPodMod`,  provide
-                                a number from 0-100 to specify the max percent of
-                                pods to do chaos action
-                              type: string
-                          type: object
                       type: object
                   required:
                   - action

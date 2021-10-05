@@ -71,7 +71,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		"kind", reflect.TypeOf(cr),
 		"name", cr.GetName(),
 		"lifecycle", cr.Status.Phase,
-		"epoch", cr.GetResourceVersion(),
+		"version", cr.GetResourceVersion(),
 	)
 
 	defer func() {
@@ -79,7 +79,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			"kind", reflect.TypeOf(cr),
 			"name", cr.GetName(),
 			"lifecycle", cr.Status.Phase,
-			"epoch", cr.GetResourceVersion(),
+			"version", cr.GetResourceVersion(),
 		)
 	}()
 
@@ -122,15 +122,17 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		around.
 	*/
 	if newStatus.Phase == v1alpha1.PhaseSuccess {
+		r.GetEventRecorderFor("").Event(&cr, corev1.EventTypeNormal,
+			newStatus.Reason, "service succeeded")
+
 		// TODO: delete pod and service, but leave the service descriptor.
 
 		return utils.Stop()
 	}
 
 	if newStatus.Phase == v1alpha1.PhaseFailed {
-		r.Logger.Error(errors.New(cr.Status.Lifecycle.Reason),
-			"service failed",
-			"service", cr.GetName())
+		r.GetEventRecorderFor("").Event(&cr, corev1.EventTypeWarning,
+			newStatus.Reason, "service failed")
 
 		return utils.Stop()
 	}
@@ -182,7 +184,7 @@ func (r *Controller) Finalize(obj client.Object) error {
 	r.Logger.Info("XX Finalize",
 		"kind", reflect.TypeOf(obj),
 		"name", obj.GetName(),
-		"epoch", obj.GetResourceVersion(),
+		"version", obj.GetResourceVersion(),
 	)
 	return nil
 }

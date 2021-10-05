@@ -55,7 +55,7 @@ type ServiceFromTemplate struct {
 
 	// Inputs is a list of inputs passed to the objects.
 	// +optional
-	Inputs []map[string]string `json:"inputs,omitempty"`
+	Inputs map[string]string `json:"inputs,omitempty"`
 }
 
 type ServiceSpec struct {

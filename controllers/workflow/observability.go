@@ -93,7 +93,7 @@ func (r *Controller) installPrometheus(ctx context.Context, w *v1alpha1.Workflow
 	}
 
 	{ // spec
-		spec, err := helpers.GetServiceSpec(ctx, r, helpers.ParseRef(w.GetNamespace(), prometheusTemplate))
+		spec, err := thelpers.GetServiceSpec(ctx, r, thelpers.ParseRef(w.GetNamespace(), prometheusTemplate))
 		if err != nil {
 			return nil, errors.Wrapf(err, "spec spec error")
 		}
@@ -136,7 +136,7 @@ func (r *Controller) installGrafana(ctx context.Context, w *v1alpha1.Workflow) (
 
 	{ // spec
 		// to perform the necessary automations, we load the spec locally and push the modified version for creation.
-		spec, err := helpers.GetServiceSpec(ctx, r, helpers.ParseRef(w.GetNamespace(), grafanaTemplate))
+		spec, err := thelpers.GetServiceSpec(ctx, r, thelpers.ParseRef(w.GetNamespace(), grafanaTemplate))
 		if err != nil {
 			return nil, errors.Wrapf(err, "spec spec error")
 		}
@@ -189,7 +189,7 @@ func WaitUntil(src <-chan *v1alpha1.Lifecycle, phase v1alpha1.Phase) error {
 func (r *Controller) importDashboards(ctx context.Context, obj *v1alpha1.Workflow, spec *v1alpha1.ServiceSpec) error {
 	// iterate monitoring services
 	for _, monRef := range obj.Spec.ImportMonitors {
-		monSpec, err := helpers.GetMonitorSpec(ctx, r, helpers.ParseRef(obj.GetNamespace(), monRef))
+		monSpec, err := thelpers.GetMonitorSpec(ctx, r, thelpers.ParseRef(obj.GetNamespace(), monRef))
 		if err != nil {
 			return errors.Errorf("monitor failed")
 		}

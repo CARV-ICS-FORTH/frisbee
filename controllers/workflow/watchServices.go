@@ -56,7 +56,7 @@ func (r *Controller) watchServiceCreate(e event.CreateEvent) bool {
 		"Request", "Create",
 		"kind", reflect.TypeOf(e.Object),
 		"name", e.Object.GetName(),
-		"epoch", e.Object.GetResourceVersion(),
+		"version", e.Object.GetResourceVersion(),
 	)
 
 	return true
@@ -104,7 +104,7 @@ func (r *Controller) watchServiceUpdate(e event.UpdateEvent) bool {
 		"name", e.ObjectNew.GetName(),
 		"from", prev.Status.Phase,
 		"to", latest.Status.Phase,
-		"epoch", fmt.Sprintf("%s -> %s", prev.GetResourceVersion(), latest.GetResourceVersion()),
+		"version", fmt.Sprintf("%s -> %s", prev.GetResourceVersion(), latest.GetResourceVersion()),
 	)
 
 	return true
@@ -128,7 +128,7 @@ func (r *Controller) watchServiceDelete(e event.DeleteEvent) bool {
 		"Request", "Delete",
 		"kind", reflect.TypeOf(e.Object),
 		"name", e.Object.GetName(),
-		"epoch", e.Object.GetResourceVersion(),
+		"version", e.Object.GetResourceVersion(),
 	)
 
 	return true

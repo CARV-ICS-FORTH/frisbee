@@ -36,9 +36,6 @@ func (r *Controller) runJob(ctx context.Context, w *v1alpha1.Workflow, action v1
 	case "Cluster":
 		return r.cluster(ctx, w, action)
 
-	case "Stop":
-		return r.stop(ctx, w, action)
-
 	case "Chaos":
 		return r.chaos(ctx, w, action)
 
@@ -90,57 +87,4 @@ func (r *Controller) chaos(ctx context.Context, w *v1alpha1.Workflow, action v1a
 	}
 
 	return nil
-}
-
-func (r *Controller) stop(ctx context.Context, w *v1alpha1.Workflow, action v1alpha1.Action) error {
-
-	panic("STOP IS NOT SUPPORTED")
-
-	/*
-		// Resolve affected services
-		services := service.Select(ctx, action.Stop.Selector)
-		if len(services) == 0 {
-			r.Logger.Info("no services to stop", "action", action.Name)
-
-			return nil
-		}
-
-		// Without Schedule
-		if action.Stop.Schedule == nil {
-			for _, instance := range services {
-				discovery := corev1.Pod{}
-
-				discovery.SetNamespace(instance.Namespace)
-				discovery.SetName(instance.Name)
-
-				logrus.Warn("DELETE ")
-
-				err := lifecycle.Delete(ctx, r.Client, &discovery)
-				if err != nil && !k8errors.IsNotFound(err) {
-					return errors.Wrapf(err, "cannot delete instance %s", instance.NamespacedName)
-				}
-
-				r.Logger.Info("stop", "instance", instance.NamespacedName)
-			}
-		} else { // With Schedule
-			r.Logger.Info("Yield with Schedule", "services", services)
-
-			for instance := range common.YieldByTime(ctx, action.Stop.Schedule.Cron, services...) {
-				discovery := corev1.Pod{}
-
-				discovery.SetNamespace(instance.Namespace)
-				discovery.SetName(instance.Name)
-
-				err := lifecycle.Delete(ctx, r.Client, &discovery)
-				if err != nil && !k8errors.IsNotFound(err) {
-					return errors.Wrapf(err, "cannot delete instance %s", instance.NamespacedName)
-				}
-
-				r.Logger.Info("stop", "instance", instance)
-			}
-		}
-
-	*/
-
-	// return nil
 }

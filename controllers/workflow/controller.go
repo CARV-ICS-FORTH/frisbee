@@ -64,7 +64,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		"kind", reflect.TypeOf(w),
 		"name", w.GetName(),
 		"lifecycle", w.Status.Phase,
-		"epoch", w.GetResourceVersion(),
+		"version", w.GetResourceVersion(),
 	)
 
 	defer func() {
@@ -72,7 +72,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			"kind", reflect.TypeOf(w),
 			"name", w.GetName(),
 			"lifecycle", w.Status.Phase,
-			"epoch", w.GetResourceVersion(),
+			"version", w.GetResourceVersion(),
 		)
 	}()
 
@@ -89,7 +89,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	*/
 	filters := []client.ListOption{
 		client.InNamespace(req.Namespace),
-		client.MatchingLabels{utils.Owner: req.Name},
+		client.MatchingLabels{v1alpha1.LabelManagedBy: req.Name},
 		//	client.MatchingFields{jobOwnerKey: req.Name},
 	}
 
@@ -292,7 +292,7 @@ func (r *Controller) Finalize(obj client.Object) error {
 	r.Logger.Info("XX Finalize",
 		"kind", reflect.TypeOf(obj),
 		"name", obj.GetName(),
-		"epoch", obj.GetResourceVersion(),
+		"version", obj.GetResourceVersion(),
 	)
 	return nil
 }

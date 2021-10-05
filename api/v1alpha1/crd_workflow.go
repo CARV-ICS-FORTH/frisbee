@@ -106,16 +106,7 @@ type EmbedActions struct {
 	Cluster *ClusterSpec `json:"cluster,omitempty"`
 
 	// +optional
-	Stop *StopSpec `json:"stop,omitempty"`
-
-	// +optional
 	Chaos *ChaosSpec `json:"chaos,omitempty"`
-}
-
-type StopSpec struct {
-	Selector *ServiceSelector `json:"selector,omitempty"`
-
-	Schedule *SchedulerSpec `json:"schedule,omitempty"`
 }
 
 type WorkflowStatus struct {

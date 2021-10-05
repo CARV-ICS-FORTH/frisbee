@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package helpers
+package thelpers
 
 import (
 	"context"
@@ -24,6 +24,7 @@ import (
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/fnikolai/frisbee/api/v1alpha1"
+	shelpers "github.com/fnikolai/frisbee/controllers/service/helpers"
 	"github.com/fnikolai/frisbee/controllers/utils"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/yaml"
@@ -32,11 +33,11 @@ import (
 func GetServiceSpec(ctx context.Context, r utils.Reconciler, ts *v1alpha1.TemplateSelector) (v1alpha1.ServiceSpec, error) {
 	scheme := SelectServiceTemplate(ctx, r, ts)
 
-	return GenerateServiceSpec(scheme)
+	return GenerateSpecFromScheme(scheme)
 }
 
-// GenerateServiceSpec parses a given scheme and returns the respective ServiceSpec.
-func GenerateServiceSpec(tspec *v1alpha1.Scheme) (v1alpha1.ServiceSpec, error) {
+// GenerateSpecFromScheme parses a given scheme and returns the respective ServiceSpec.
+func GenerateSpecFromScheme(tspec *v1alpha1.Scheme) (v1alpha1.ServiceSpec, error) {
 	if tspec == nil {
 		return v1alpha1.ServiceSpec{}, errors.Errorf("empty service spec")
 	}
@@ -93,4 +94,39 @@ func GenerateMonitorSpec(tspec *v1alpha1.Scheme) (*v1alpha1.MonitorSpec, error) 
 	}
 
 	return &spec, nil
+}
+
+func ExpandInputs(ctx context.Context,
+	r utils.Reconciler,
+	nm string,
+	dst,
+	src map[string]string,
+	cache map[string]v1alpha1.SList) error {
+	for key := range dst {
+		// if there is no user-given value, use the default.
+		value, ok := src[key]
+		if !ok {
+			continue
+		}
+
+		// if the value is not a macro, write it directly to the inputs
+		if !shelpers.IsMacro(value) {
+			dst[key] = value
+		} else { // expand macro
+			services, ok := cache[value]
+			if !ok {
+				services = shelpers.Select(ctx, r, nm, &v1alpha1.ServiceSelector{Macro: &value})
+
+				if len(services) == 0 {
+					return errors.Errorf("macro %s yields no services", value)
+				}
+
+				cache[value] = services
+			}
+
+			dst[key] = services.ToString()
+		}
+	}
+
+	return nil
 }

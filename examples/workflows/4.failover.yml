@@ -24,7 +24,7 @@ spec:
         fromTemplate:
           templateRef: redis/slave
           inputs:
-            - { master: .service.master.any }
+            { master: .service.master.any }
 
 
     # Create a failover manager
@@ -50,19 +50,19 @@ spec:
     # Cause two partition failures with different duration
     - action: Chaos
       name: partition0
-      depends: { running: [ master, slave ], duration: "1m" }
+      depends: { running: [ master, slave ], duration: "5m" }
       chaos:
         type: partition
         partition:
           selector:
             macro: .service.master.any
-          duration: "30s"
+          duration: "2m"
 
     - action: Chaos
       name: partition1
-      depends: { running: [ master, slave ], success: [ partition0 ], duration: "2m" }
+      depends: { running: [ master, slave ], success: [ partition0 ], duration: "3m" }
       chaos:
         type: partition
         partition:
           selector: { macro: .service.master.any }
-          duration: "1m"
+          duration: "2m"

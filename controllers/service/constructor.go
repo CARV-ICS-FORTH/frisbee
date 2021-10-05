@@ -59,9 +59,15 @@ func (r *Controller) runJob(ctx context.Context, obj *v1alpha1.Service) error {
 }
 
 func (r *Controller) populateSpecFromTemplate(ctx context.Context, obj *v1alpha1.Service) error {
-	scheme := helpers.SelectServiceTemplate(ctx, r, helpers.ParseRef(obj.GetNamespace(), obj.Spec.TemplateRef))
+	scheme := thelpers.SelectServiceTemplate(ctx, r, thelpers.ParseRef(obj.GetNamespace(), obj.Spec.TemplateRef))
 
-	spec, err := helpers.GenerateServiceSpec(scheme)
+	lookupCache := make(map[string]v1alpha1.SList)
+
+	if err := thelpers.ExpandInputs(ctx, r, obj.GetNamespace(), scheme.Inputs.Parameters, obj.Spec.Inputs, lookupCache); err != nil {
+		return errors.Wrapf(err, "unable to expand inputs")
+	}
+
+	spec, err := thelpers.GenerateSpecFromScheme(scheme)
 	if err != nil {
 		return errors.Wrapf(err, "scheme to instance")
 	}
@@ -83,13 +89,9 @@ func constructPod(ctx context.Context, r *Controller, obj *v1alpha1.Service) (*c
 	}
 
 	{ // spec
-		if err := setPlacement(obj, &pod); err != nil {
-			return nil, errors.Wrapf(err, "placement policies failed")
-		}
+		setPlacement(obj, &pod)
 
-		if err := setContainer(obj); err != nil {
-			return nil, errors.Wrapf(err, "resource  error")
-		}
+		setContainer(obj)
 
 		pod.Spec.RestartPolicy = corev1.RestartPolicyNever
 		pod.Spec.Volumes = obj.Spec.Volumes
@@ -101,13 +103,12 @@ func constructPod(ctx context.Context, r *Controller, obj *v1alpha1.Service) (*c
 		if err := setAgents(ctx, r, obj, &pod); err != nil {
 			return nil, errors.Wrapf(err, "agent deployment error")
 		}
-
 	}
 
 	return &pod, nil
 }
 
-func setContainer(obj *v1alpha1.Service) error {
+func setContainer(obj *v1alpha1.Service) {
 	spec := obj.Spec
 
 	container := &spec.Container
@@ -141,8 +142,6 @@ func setContainer(obj *v1alpha1.Service) error {
 			Requests: resources,
 		}
 	}
-
-	return nil
 }
 
 func setAgents(ctx context.Context, r *Controller, obj *v1alpha1.Service, pod *corev1.Pod) error {
@@ -154,7 +153,7 @@ func setAgents(ctx context.Context, r *Controller, obj *v1alpha1.Service, pod *c
 
 	// import monitoring agents to the service
 	for _, ref := range spec.Agents.Telemetry {
-		mon, err := helpers.GetMonitorSpec(ctx, r, helpers.ParseRef(obj.GetNamespace(), ref))
+		mon, err := thelpers.GetMonitorSpec(ctx, r, thelpers.ParseRef(obj.GetNamespace(), ref))
 		if err != nil {
 			return errors.Wrapf(err, "cannot get monitor")
 		}
@@ -166,15 +165,13 @@ func setAgents(ctx context.Context, r *Controller, obj *v1alpha1.Service, pod *c
 	return nil
 }
 
-func setPlacement(obj *v1alpha1.Service, pod *corev1.Pod) error {
+func setPlacement(obj *v1alpha1.Service, pod *corev1.Pod) {
 	spec := obj.Spec
 
 	// for the moment simply match domain to a specific node. this will change in the future
 	if len(spec.Domain) > 0 {
 		pod.Spec.NodeName = spec.Domain
 	}
-
-	return nil
 }
 
 func constructDiscoveryService(r *Controller, obj *v1alpha1.Service, pod *corev1.Pod) (*corev1.Service, error) {

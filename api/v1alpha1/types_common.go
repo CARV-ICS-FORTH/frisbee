@@ -10,6 +10,10 @@ import (
 )
 
 const (
+	LabelManagedBy = "managed-by"
+)
+
+const (
 	idListSeparator = " "
 )
 

@@ -88,7 +88,7 @@ func calculateLifecycle(cluster *v1alpha1.Cluster, activeJobs, successfulJobs, f
 			" cur status: ", status,
 		)
 
-		panic("this should never happen")
+		panic("unhandled lifecycle condition")
 	}
 
 	/*
