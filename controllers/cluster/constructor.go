@@ -22,8 +22,8 @@ import (
 	"fmt"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
-	helpers2 "github.com/fnikolai/frisbee/controllers/service/helpers"
-	"github.com/fnikolai/frisbee/controllers/template/helpers"
+	thelpers "github.com/fnikolai/frisbee/controllers/template/helpers"
+
 	"github.com/fnikolai/frisbee/controllers/utils"
 	"github.com/pkg/errors"
 )
@@ -55,7 +55,7 @@ func constructJobSpecList(ctx context.Context, r *Controller, cluster *v1alpha1.
 		cluster.Spec.Instances = len(cluster.Spec.Inputs)
 	}
 
-	scheme := helpers.SelectServiceTemplate(ctx, r, helpers.ParseRef(cluster.GetNamespace(), cluster.Spec.TemplateRef))
+	scheme := thelpers.SelectServiceTemplate(ctx, r, thelpers.ParseRef(cluster.GetNamespace(), cluster.Spec.TemplateRef))
 
 	// cache the results of macro as to avoid asking the Kubernetes API. This, however, is only applicable
 	// to the level of a cluster, because different groups may be created in different moments
@@ -68,18 +68,18 @@ func constructJobSpecList(ctx context.Context, r *Controller, cluster *v1alpha1.
 			// no inputs
 		case 1:
 			// use a common set of inputs for all instances
-			if err := inputs2Env(ctx, r, cluster.GetNamespace(), scheme.Inputs.Parameters, cluster.Spec.Inputs[0], lookupCache); err != nil {
+			if err := thelpers.ExpandInputs(ctx, r, cluster.GetNamespace(), scheme.Inputs.Parameters, cluster.Spec.Inputs[0], lookupCache); err != nil {
 				return nil, errors.Wrapf(err, "macro expansion failed")
 			}
 
 		default:
 			// use a different set of inputs for every instance
-			if err := inputs2Env(ctx, r, cluster.GetNamespace(), scheme.Inputs.Parameters, cluster.Spec.Inputs[i], lookupCache); err != nil {
+			if err := thelpers.ExpandInputs(ctx, r, cluster.GetNamespace(), scheme.Inputs.Parameters, cluster.Spec.Inputs[i], lookupCache); err != nil {
 				return nil, errors.Wrapf(err, "macro expansion failed")
 			}
 		}
 
-		spec, err := helpers.GenerateServiceSpec(scheme)
+		spec, err := thelpers.GenerateSpecFromScheme(scheme)
 		if err != nil {
 			return nil, errors.Wrapf(err, "scheme to instance")
 		}
@@ -98,34 +98,4 @@ func generateName(group *v1alpha1.Cluster, i int) string {
 	}
 
 	return fmt.Sprintf("%s-%d", group.GetName(), i)
-}
-
-func inputs2Env(ctx context.Context, r *Controller, namespace string, dst, src map[string]string, cache map[string]v1alpha1.SList) error {
-	for key := range dst {
-		// if there is no user-given value, use the default.
-		value, ok := src[key]
-		if !ok {
-			continue
-		}
-
-		// if the value is not a macro, write it directly to the inputs
-		if !helpers2.IsMacro(value) {
-			dst[key] = value
-		} else { // expand macro
-			services, ok := cache[value]
-			if !ok {
-				services = helpers2.Select(ctx, r, namespace, &v1alpha1.ServiceSelector{Macro: &value})
-
-				if len(services) == 0 {
-					return errors.Errorf("macro %s yields no services", value)
-				}
-
-				cache[value] = services
-			}
-
-			dst[key] = services.ToString()
-		}
-	}
-
-	return nil
 }

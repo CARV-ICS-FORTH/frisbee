@@ -105,6 +105,6 @@ func convertLifecycle(fault *Fault) v1alpha1.Lifecycle {
 	default:
 		logrus.Warn("DEBUG ", fault.Object["status"])
 
-		panic("this should never happen")
+		panic("unhandled lifecycle condition")
 	}
 }

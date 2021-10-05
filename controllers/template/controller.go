@@ -60,14 +60,14 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if !t.Status.IsRegistered {
 		// validate services
 		for name, spec := range t.Spec.Services {
-			if _, err := helpers.GenerateServiceSpec(&spec); err != nil {
+			if _, err := thelpers.GenerateSpecFromScheme(&spec); err != nil {
 				return utils.Failed(ctx, r, &t, errors.Wrapf(err, "service template %s error", name))
 			}
 		}
 
 		// validate monitors
 		for name, spec := range t.Spec.Monitors {
-			if _, err := helpers.GenerateMonitorSpec(&spec); err != nil {
+			if _, err := thelpers.GenerateMonitorSpec(&spec); err != nil {
 				return utils.Failed(ctx, r, &t, errors.Wrapf(err, "monitor template %s error", name))
 			}
 		}
@@ -92,7 +92,7 @@ func (r *Controller) Finalize(obj client.Object) error {
 	r.Logger.Info("XX Finalize",
 		"kind", reflect.TypeOf(obj),
 		"name", obj.GetName(),
-		"epoch", obj.GetResourceVersion(),
+		"version", obj.GetResourceVersion(),
 	)
 
 	return nil

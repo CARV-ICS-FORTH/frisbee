@@ -26,6 +26,7 @@ import (
 	"github.com/fnikolai/frisbee/controllers/utils"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -57,30 +58,30 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	/*
 		### 1: Load CR by name.
 	*/
-	var cluster v1alpha1.Cluster
+	var cr v1alpha1.Cluster
 
 	var requeue bool
-	result, err := utils.Reconcile(ctx, r, req, &cluster, &requeue)
+	result, err := utils.Reconcile(ctx, r, req, &cr, &requeue)
 
 	if requeue {
 		return result, errors.Wrapf(err, "initialization error")
 	}
 
 	r.Logger.Info("-> Reconcile",
-		"kind", reflect.TypeOf(cluster),
-		"name", cluster.GetName(),
-		"lifecycle", cluster.Status.Phase,
-		"deleted", !cluster.GetDeletionTimestamp().IsZero(),
-		"epoch", cluster.GetResourceVersion(),
+		"kind", reflect.TypeOf(cr),
+		"name", cr.GetName(),
+		"lifecycle", cr.Status.Phase,
+		"deleted", !cr.GetDeletionTimestamp().IsZero(),
+		"version", cr.GetResourceVersion(),
 	)
 
 	defer func() {
 		r.Logger.Info("<- Reconcile",
-			"kind", reflect.TypeOf(cluster),
-			"name", cluster.GetName(),
-			"lifecycle", cluster.Status.Phase,
-			"deleted", !cluster.GetDeletionTimestamp().IsZero(),
-			"epoch", cluster.GetResourceVersion(),
+			"kind", reflect.TypeOf(cr),
+			"name", cr.GetName(),
+			"lifecycle", cr.Status.Phase,
+			"deleted", !cr.GetDeletionTimestamp().IsZero(),
+			"version", cr.GetResourceVersion(),
 		)
 	}()
 
@@ -98,12 +99,12 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	filters := []client.ListOption{
 		client.InNamespace(req.Namespace),
-		client.MatchingLabels{utils.Owner: req.Name},
+		client.MatchingLabels{v1alpha1.LabelManagedBy: req.Name},
 		client.MatchingFields{jobOwnerKey: req.Name},
 	}
 
 	if err := r.GetClient().List(ctx, &childJobs, filters...); err != nil {
-		return utils.Failed(ctx, r, &cluster, errors.Wrapf(err, "unable to list child services"))
+		return utils.Failed(ctx, r, &cr, errors.Wrapf(err, "unable to list child services"))
 	}
 
 	/*
@@ -119,8 +120,11 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		We can check if a service is "finished" and whether it succeeded or failed using Frisbee Phases.
 	*/
 	var activeJobs v1alpha1.SList
+
 	var successfulJobs v1alpha1.SList
+
 	var failedJobs v1alpha1.SList
+
 	var mostRecentTime *time.Time // find the last run so we can update the status
 
 	for i, job := range childJobs.Items {
@@ -134,7 +138,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			failedJobs = append(failedJobs, childJobs.Items[i])
 
 		default:
-			panic("this should never happen")
+			panic("unhandled lifecycle condition")
 		}
 
 		scheduledTimeForJob := &job.CreationTimestamp.Time
@@ -154,16 +158,16 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		Using the date we've gathered, we'll update the status of our CRD.
 	*/
 	if mostRecentTime != nil {
-		cluster.Status.LastScheduleTime = &metav1.Time{Time: *mostRecentTime}
+		cr.Status.LastScheduleTime = &metav1.Time{Time: *mostRecentTime}
 	} else {
-		cluster.Status.LastScheduleTime = nil
+		cr.Status.LastScheduleTime = nil
 	}
 
-	newStatus := calculateLifecycle(&cluster, activeJobs, successfulJobs, failedJobs)
+	newStatus := calculateLifecycle(&cr, activeJobs, successfulJobs, failedJobs)
 
-	cluster.Status.Lifecycle = newStatus
+	cr.Status.Lifecycle = newStatus
 
-	if err := utils.UpdateStatus(ctx, r, &cluster); err != nil {
+	if err := utils.UpdateStatus(ctx, r, &cr); err != nil {
 		// due to the multiple updates, it is possible for this function to
 		// be in conflict. We fix this issue by re-queueing the request.
 		// We also omit verbose error re
@@ -179,8 +183,8 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		around.
 	*/
 	if newStatus.Phase == v1alpha1.PhaseSuccess {
-		// Remove cluster's children once the cluster is successfully complete.
-		// We should not remove the cluster descriptor itself, as we need to maintain its
+		// Remove cr children once the cr is successfully complete.
+		// We should not remove the cr descriptor itself, as we need to maintain its
 		// status for higher-entities like the Workflow.
 		for _, job := range successfulJobs {
 			utils.Delete(ctx, r, job)
@@ -191,8 +195,8 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	if newStatus.Phase == v1alpha1.PhaseFailed {
 		r.Logger.Info("Oracle has failed for ",
-			"cluster", cluster.GetName(),
-			"reason", cluster.Status.Reason,
+			"cluster", cr.GetName(),
+			"reason", cr.Status.Reason,
 		)
 
 		return utils.Stop()
@@ -217,23 +221,23 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			with any other updates, and can have separate permissions.
 		*/
 
-		jobList, err := constructJobSpecList(ctx, r, &cluster)
+		jobList, err := constructJobSpecList(ctx, r, &cr)
 		if err != nil {
-			return utils.Failed(ctx, r, &cluster, errors.Wrapf(err, "unable to construct job list"))
+			return utils.Failed(ctx, r, &cr, errors.Wrapf(err, "unable to construct job list"))
 		}
 
-		cluster.Status.Expected = jobList
-		cluster.Status.LastScheduleJob = -1
+		cr.Status.Expected = jobList
+		cr.Status.LastScheduleJob = -1
 
-		if _, err := utils.Pending(ctx, r, &cluster, "submitting job requests"); err != nil {
-			return utils.Failed(ctx, r, &cluster, errors.Wrapf(err, "status update"))
+		if _, err := utils.Pending(ctx, r, &cr, "submitting job requests"); err != nil {
+			return utils.Failed(ctx, r, &cr, errors.Wrapf(err, "status update"))
 		}
 
 		return utils.Stop()
 	}
 
 	/*
-		All the specified services are created. We are not waiting for them to terminate.
+		All the specified services are created. We wait for them to terminate.
 	*/
 	if newStatus.Phase == v1alpha1.PhaseRunning {
 		return utils.Stop()
@@ -244,9 +248,9 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		This is useful if something's broken with the job we're running, and we want to
 		pause runs to investigate or putz with the cluster, without deleting the object.
 	*/
-	if cluster.Spec.Suspend != nil && *cluster.Spec.Suspend {
+	if cr.Spec.Suspend != nil && *cr.Spec.Suspend {
 		r.Logger.Info("Not starting job because the cluster is suspended",
-			"cluster", cluster.GetName())
+			"cluster", cr.GetName())
 
 		return utils.Stop()
 	}
@@ -268,11 +272,11 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		and the next run, so that we can know when it's time to reconcile again.
 	*/
 	// figure out the next times that we need to create jobs at (or anything we missed).
-	missedRun, nextRun, err := GetNextScheduledJob(cluster.GetObjectMeta(), cluster.Spec.Schedule,
-		cluster.Status.LastScheduleTime)
+	missedRun, nextRun, err := utils.GetNextScheduleTime(&cr, cr.Spec.Schedule, cr.Status.LastScheduleTime)
 
 	if err != nil {
-		r.Logger.Error(err, "unable to figure out execution schedule")
+		r.GetEventRecorderFor("").Event(&cr, v1.EventTypeWarning,
+			err.Error(), "unable to figure execution schedule")
 
 		// we don't really care about re-queuing until we get an update that
 		// fixes the schedule, so don't return an error.
@@ -293,7 +297,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return utils.RequeueAfter(time.Until(nextRun))
 	}
 
-	if schedule := cluster.Spec.Schedule; schedule != nil {
+	if schedule := cr.Spec.Schedule; schedule != nil {
 		// if there is a schedule defined, make sure we're not too late to start the run
 		tooLate := false
 
@@ -302,7 +306,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		}
 
 		if tooLate {
-			return utils.Failed(ctx, r, &cluster, errors.New("scheduling violation"))
+			return utils.Failed(ctx, r, &cr, errors.New("scheduling violation"))
 		}
 	}
 
@@ -313,21 +317,21 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		initialization, all we need is to get a pointer to the next job.
 	*/
 
-	nextExpectedJob := cluster.Status.LastScheduleJob + 1
-	nextJob := getJob(r, &cluster, nextExpectedJob)
+	nextExpectedJob := cr.Status.LastScheduleJob + 1
+	nextJob := getJob(r, &cr, nextExpectedJob)
 
 	if err := utils.CreateUnlessExists(ctx, r, nextJob); err != nil {
-		return utils.Failed(ctx, r, &cluster, errors.Wrapf(err, "cannot create job"))
+		return utils.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot create job"))
 	}
 
 	r.Logger.Info("Create clustered job",
-		"cluster", cluster.GetName(),
+		"cluster", cr.GetName(),
 		"service", nextJob.GetName(),
 	)
 
-	cluster.Status.LastScheduleJob = nextExpectedJob
+	cr.Status.LastScheduleJob = nextExpectedJob
 
-	return utils.Pending(ctx, r, &cluster, "some jobs are still pending")
+	return utils.Pending(ctx, r, &cr, "some jobs are still pending")
 }
 
 /*
@@ -343,7 +347,7 @@ func (r *Controller) Finalize(obj client.Object) error {
 	r.Logger.Info("XX Finalize",
 		"kind", reflect.TypeOf(obj),
 		"name", obj.GetName(),
-		"epoch", obj.GetResourceVersion(),
+		"version", obj.GetResourceVersion(),
 	)
 	return nil
 }

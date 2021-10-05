@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package cluster
+package utils
 
 import (
 	"time"
@@ -26,15 +26,18 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// GetNextScheduledJob returns the next scheduling time based on the cron hob.
-func GetNextScheduledJob(
+// GetNextScheduleTime gets the time of next schedule after last scheduled and before now.
+//
+// If there are too many (>100) unstarted times, just give up and return an empty slice.
+// If there were missed times prior to the last known start time, then those are not returned.
+func GetNextScheduleTime(
 	obj metav1.Object,
 	scheduler *v1alpha1.SchedulerSpec,
 	lastScheduleTime *metav1.Time,
 ) (lastMissed time.Time, next time.Time, err error) {
 	cur := time.Now()
 
-	// if there is no scheduler defined, start the job immediately.
+	// start the job immediately if there is no defined scheduler.
 	if scheduler == nil {
 		return time.Now(), time.Time{}, nil
 	}
@@ -48,9 +51,16 @@ func GetNextScheduledJob(
 	// we could reconstitute this here, but there's not much point, since we've
 	// just updated it.
 	var earliestTime time.Time
+
 	if lastScheduleTime != nil {
 		earliestTime = lastScheduleTime.Time
 	} else {
+		// If none found, then this is either a recently created cronJob,
+		// or the active/completed info was somehow lost (contract for status
+		// in kubernetes says it may need to be recreated), or that we have
+		// started a job, but have not noticed it yet (distributed systems can
+		// have arbitrary delays).  In any case, use the creation time of the
+		// object as last known start time.
 		earliestTime = obj.GetCreationTimestamp().Time
 	}
 
@@ -64,6 +74,8 @@ func GetNextScheduledJob(
 	}
 
 	if earliestTime.After(cur) {
+		// the earliest time is later than now.
+		// return the next activation time (used for re-queuing the request)
 		return time.Time{}, sched.Next(cur), nil
 	}
 
@@ -92,5 +104,6 @@ func GetNextScheduledJob(
 				errors.New("too many missed start times (> 100). Set or decrease .spec.startingDeadlineSeconds or check clock skew.")
 		}
 	}
+
 	return lastMissed, sched.Next(cur), nil
 }

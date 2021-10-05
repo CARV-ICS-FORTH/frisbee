@@ -9,37 +9,52 @@ spec:
     useAmbassador: true
 
   actions:
-    # Create a single Master node
+    # Create 3 Redis nodes
     - action: Cluster
-      name: "masters"
+      name: masters
       cluster:
-        templateRef: redis/master
-        instances: 1
+        templateRef: rediscluster/master
+        instances: 3
+
+    # Run Redis-command to create a cluster from the given nodes
+    - action: Service
+      name: boot
+      depends: { running: [ masters ], duration: 30s }
+      service:
+        fromTemplate:
+          templateRef: rediscluster/bootstrap
+          inputs:
+            { servers: .cluster.masters.all }
 
 
     # Ingest keys in parallel, into different ranges
     - action: Cluster
       name: "loaders"
-      depends: { running: [ masters ], duration: 30s }
+      depends: { success: [ boot ], running: [ masters ], duration: 30s }
       cluster:
-        templateRef: redis/loader
+        templateRef: rediscluster/loader
         inputs:
-          - { server: .cluster.masters.any, recordcount: "1000000", offset: "0" }
-          - { server: .cluster.masters.any, recordcount: "1000000", offset: "1000000" }
-          - { server: .cluster.masters.any, recordcount: "1000000", offset: "2000000" }
+          - { server: .cluster.masters.any, recordcount: "100000000", offset: "0" }
+          - { server: .cluster.masters.any, recordcount: "100000000", offset: "100000000" }
+          - { server: .cluster.masters.any, recordcount: "100000000", offset: "200000000" }
 
 
-    # Wait for ingestion to complete, and start querying clients, with different workloads
-    - action: Cluster
-      name: "runners"
-      depends: { running: [ masters ], success: [ loaders ] }
-      cluster:
-        templateRef: redis/runner
-        inputs:
-          - { server: .cluster.masters.any, workload: workloada, operationcount: "1000000" }
-          - { server: .cluster.masters.any, workload: workloadb, operationcount: "1000000" }
-          - { server: .cluster.masters.any, workload: workloadc, operationcount: "1000000" }
-          - { server: .cluster.masters.any, workload: workloadd, operationcount: "1000000" }
-          - { server: .cluster.masters.any, workload: workloada, operationcount: "1000000" }
-        schedule:
-          cron: "@every 2m"
+    # Kill loaders, one every 1 minutes
+    - action: Chaos
+      name: load-killer
+      depends: { running: [ loaders ], duration: 30s }
+      chaos:
+        type: kill
+        kill:
+          selector: { macro: .cluster.loaders.any }
+          schedule: { cron: "@every 30s" }
+
+
+    # Kill all masters immediately
+    - action: Chaos
+      name: master-killer
+      depends: { success: [ load-killer ], running: [ masters ] }
+      chaos:
+        type: kill
+        kill:
+          selector: { macro: .cluster.masters.any }

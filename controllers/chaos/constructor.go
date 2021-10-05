@@ -31,15 +31,11 @@ import (
 type Fault = unstructured.Unstructured
 
 type chaoHandler interface {
+	GetScheduler() *v1alpha1.SchedulerSpec
+
 	GetFault(r *Controller) *Fault
 
-	GetName() string
-
 	Inject(ctx context.Context, r *Controller) error
-
-	// Inject(ctx context.Context, obj *v1alpha1.Chaos) error
-	// WaitForDuration(ctx context.Context, obj *v1alpha1.Chaos) error
-	// Revoke(ctx context.Context, obj *v1alpha1.Chaos) error
 }
 
 func dispatch(chaos *v1alpha1.Chaos) chaoHandler {
@@ -47,6 +43,8 @@ func dispatch(chaos *v1alpha1.Chaos) chaoHandler {
 	case v1alpha1.FaultPartition:
 		return &partitionHandler{cr: chaos}
 
+	case v1alpha1.FaultKill:
+		return &killHandler{cr: chaos}
 	default:
 		panic("should never happen")
 	}
@@ -60,6 +58,14 @@ func AsPartition(fault *Fault) {
 	})
 }
 
+func AsKill(fault *Fault) {
+	fault.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "chaos-mesh.org",
+		Version: "v1alpha1",
+		Kind:    "PodChaos",
+	})
+}
+
 /*
 	Network Partition Handler
 */
@@ -68,35 +74,36 @@ type partitionHandler struct {
 	cr *v1alpha1.Chaos
 }
 
-func (f partitionHandler) GetName() string {
-	return "partition"
-}
-
-func (f *partitionHandler) GetFault(r *Controller) *Fault {
+func (h partitionHandler) GetFault(r *Controller) *Fault {
 	var fault Fault
 
 	AsPartition(&fault)
 
-	utils.SetOwner(r, f.cr, &fault)
-	fault.SetName(f.cr.GetName())
+	utils.SetOwner(r, h.cr, &fault)
+	fault.SetName(h.cr.GetName())
 
 	return &fault
 }
 
-func (f partitionHandler) Inject(ctx context.Context, r *Controller) error {
-	spec := f.cr.Spec.Partition
+func (h partitionHandler) GetScheduler() *v1alpha1.SchedulerSpec {
+	// partition does not have scheduler
+	return nil
+}
+
+func (h partitionHandler) Inject(ctx context.Context, r *Controller) error {
+	spec := h.cr.Spec.Partition
 
 	var fault Fault
 
 	{ // spec
-		affectedPods := helpers.Select(ctx, r, f.cr.GetNamespace(), &spec.Selector)
+		affectedPods := helpers.Select(ctx, r, h.cr.GetNamespace(), &spec.Selector)
 
 		fault.SetUnstructuredContent(map[string]interface{}{
 			"spec": map[string]interface{}{
 				"action": "partition",
 				"mode":   "all",
 				"selector": map[string]interface{}{
-					"namespaces": []string{f.cr.GetNamespace()},
+					"namespaces": []string{h.cr.GetNamespace()},
 				},
 				"direction": "both",
 				"target": map[string]interface{}{
@@ -112,8 +119,62 @@ func (f partitionHandler) Inject(ctx context.Context, r *Controller) error {
 
 	AsPartition(&fault)
 
-	utils.SetOwner(r, f.cr, &fault)
-	fault.SetName(f.cr.GetName())
+	utils.SetOwner(r, h.cr, &fault)
+	fault.SetName(h.cr.GetName())
+
+	if err := utils.CreateUnlessExists(ctx, r, &fault); err != nil {
+		return errors.Wrapf(err, "cannot inject fault")
+	}
+
+	return nil
+}
+
+/*
+	Service Killer
+*/
+
+type killHandler struct {
+	cr *v1alpha1.Chaos
+}
+
+func (h *killHandler) GetFault(r *Controller) *Fault {
+	var fault Fault
+
+	AsKill(&fault)
+
+	utils.SetOwner(r, h.cr, &fault)
+	fault.SetName(h.cr.GetName())
+
+	return &fault
+}
+
+func (h killHandler) GetScheduler() *v1alpha1.SchedulerSpec {
+	return h.cr.Spec.Kill.Schedule
+}
+
+func (h killHandler) Inject(ctx context.Context, r *Controller) error {
+	spec := h.cr.Spec.Kill
+
+	var fault Fault
+
+	{ // spec
+		affectedPods := helpers.Select(ctx, r, h.cr.GetNamespace(), &spec.Selector)
+
+		fault.SetUnstructuredContent(map[string]interface{}{
+			"spec": map[string]interface{}{
+				"action": "pod-kill",
+				"mode":   "all",
+				"selector": map[string]interface{}{
+					"pods": affectedPods.ByNamespace(),
+				},
+			},
+		})
+	}
+
+	AsKill(&fault)
+
+	utils.SetOwner(r, h.cr, &fault)
+	fault.SetName(h.cr.GetName())
 
 	if err := utils.CreateUnlessExists(ctx, r, &fault); err != nil {
 		return errors.Wrapf(err, "cannot inject fault")

@@ -20,12 +20,19 @@ spec:
     # In order to make Redis Cluster working in such environments, a static
     # configuration where each node knows its public address is needed.
     #
-    # With that wraparound, the bootstrap stuck forever with the notorious "Waiting for the cluster to join".
+    # Without this wraparound, the bootstrap stuck forever with the notorious "Waiting for the cluster to join".
     "master":
       inputs:
         parameters:
           port: "6379"
+          memory: ""
+          cpu: ""
       spec: |
+        agents:
+          telemetry: [ sysmon/container, redismon/telegraf ]
+        resources:
+          memory: {{.Inputs.Parameters.memory}}
+          cpu: {{.Inputs.Parameters.cpu}}
         container:
           name: app
           image: redis
@@ -60,7 +67,7 @@ spec:
                 cluster-announce-bus-port {{$toClusterbus}}
               EOF
 
-              redis-server  redis.conf
+              redis-server redis.conf
 
 
 
@@ -84,6 +91,8 @@ spec:
 
               servers=( {{.Inputs.Parameters.servers}} )
               ports=( {{.Inputs.Parameters.ports}} )
+
+              echo "Create cluster from ${servers[*]}"
 
               ips=($(getent hosts ${servers[*]} | awk '{print $1}'))
 

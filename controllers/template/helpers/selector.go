@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package helpers
+package thelpers
 
 import (
 	"context"
@@ -24,7 +24,6 @@ import (
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/utils"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	k8errors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -68,7 +67,7 @@ func SelectServiceTemplate(ctx context.Context, r utils.Reconciler, ts *v1alpha1
 		return r.GetClient().Get(ctx, key, &template)
 	})
 	if err != nil {
-		logrus.Warn(err)
+		r.Error(err, "unable to find entry %s", key.String())
 
 		return nil
 	}
@@ -79,7 +78,7 @@ func SelectServiceTemplate(ctx context.Context, r utils.Reconciler, ts *v1alpha1
 	case len(ts.Selector.Reference) > 0:
 		scheme, ok := template.Spec.Services[ts.Selector.Reference]
 		if !ok {
-			logrus.Warn(errors.Errorf("unable to find entry %s", ts.Selector.Reference))
+			r.Error(err, "unable to find entry %s", ts.Selector.Reference)
 
 			return nil
 		}
@@ -109,7 +108,7 @@ func SelectMonitorTemplate(ctx context.Context, r utils.Reconciler, ts *v1alpha1
 		return r.GetClient().Get(ctx, key, &template)
 	})
 	if err != nil {
-		logrus.Warn(err)
+		r.Error(err, "unable to find entry %s", key.String())
 
 		return nil
 	}
@@ -120,7 +119,7 @@ func SelectMonitorTemplate(ctx context.Context, r utils.Reconciler, ts *v1alpha1
 	case len(ts.Selector.Reference) > 0:
 		scheme, ok := template.Spec.Monitors[ts.Selector.Reference]
 		if !ok {
-			logrus.Warn(errors.Errorf("unable to find entry %s", ts.Selector.Reference))
+			r.Error(err, "unable to find entry %s", ts.Selector.Reference)
 
 			return nil
 		}

@@ -82,7 +82,7 @@ func Select(ctx context.Context, r utils.Reconciler, nm string, ss *v1alpha1.Ser
 
 	if len(services) == 0 {
 		panic("no service were found")
-		//return nil
+		// return nil
 	}
 
 	// filter services based on the pods
@@ -139,7 +139,7 @@ func selectServices(ctx context.Context, r utils.Reconciler, ss *v1alpha1.MatchS
 
 			var slist v1alpha1.ServiceList
 
-			err := r.GetClient().List(ctx, &slist, client.MatchingLabels{"owner": cluster.GetName()})
+			err := r.GetClient().List(ctx, &slist, client.MatchingLabels{v1alpha1.LabelManagedBy: cluster.GetName()})
 			if err != nil {
 				return nil, errors.Wrapf(err, "cannot get services")
 			}

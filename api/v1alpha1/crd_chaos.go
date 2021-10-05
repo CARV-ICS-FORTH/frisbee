@@ -29,6 +29,7 @@ type FaultType string
 
 const (
 	FaultPartition = FaultType("partition")
+	FaultKill      = FaultType("kill")
 )
 
 // +kubebuilder:object:root=true
@@ -48,7 +49,7 @@ type Chaos struct {
 
 type ChaosSpec struct {
 	// Type indicate the type of the injected fault
-	// +kubebuilder:validation:Enum=partition;
+	// +kubebuilder:validation:Enum=partition;kill;
 	Type FaultType `json:"type"`
 
 	*EmbedFaultType `json:",inline"`
@@ -57,6 +58,8 @@ type ChaosSpec struct {
 type EmbedFaultType struct {
 	// +optional
 	Partition *PartitionSpec `json:"partition,omitempty"`
+
+	Kill *KillSpec `json:"kill,omitempty"`
 }
 
 type PartitionSpec struct {
@@ -64,6 +67,12 @@ type PartitionSpec struct {
 
 	// +optional
 	Duration *metav1.Duration `json:"duration,omitempty"`
+}
+
+type KillSpec struct {
+	Selector ServiceSelector `json:"selector,omitempty"`
+
+	Schedule *SchedulerSpec `json:"schedule,omitempty"`
 }
 
 type ChaosStatus struct {

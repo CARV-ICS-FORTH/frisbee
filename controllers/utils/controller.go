@@ -188,7 +188,7 @@ func Update(ctx context.Context, r Reconciler, obj client.Object) error {
 		"kind", reflect.TypeOf(obj),
 		"name", obj.GetName(),
 		"line", GetCallerLine(),
-		"epoch", obj.GetResourceVersion(),
+		"version", obj.GetResourceVersion(),
 	)
 
 	return updateError
@@ -204,7 +204,7 @@ func UpdateStatus(ctx context.Context, r Reconciler, obj client.Object) error {
 		"kind", reflect.TypeOf(obj),
 		"name", obj.GetName(),
 		"line", GetCallerLine(),
-		"epoch", obj.GetResourceVersion(),
+		"version", obj.GetResourceVersion(),
 	)
 
 	return updateError
@@ -223,7 +223,7 @@ func CreateUnlessExists(ctx context.Context, r Reconciler, obj client.Object) er
 		"kind", reflect.TypeOf(obj),
 		"name", obj.GetName(),
 		"line", GetCallerLine(),
-		"epoch", obj.GetResourceVersion(),
+		"version", obj.GetResourceVersion(),
 	)
 
 	return nil
@@ -243,6 +243,6 @@ func Delete(ctx context.Context, r Reconciler, obj client.Object) {
 		"kind", reflect.TypeOf(obj),
 		"name", obj.GetName(),
 		"line", GetCallerLine(),
-		"epoch", obj.GetResourceVersion(),
+		"version", obj.GetResourceVersion(),
 	)
 }

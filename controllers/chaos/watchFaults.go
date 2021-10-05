@@ -35,7 +35,7 @@ func (r *Controller) create(e event.CreateEvent) bool {
 		"Request", "Create",
 		"kind", reflect.TypeOf(e.Object),
 		"name", e.Object.GetName(),
-		"epoch", e.Object.GetResourceVersion(),
+		"version", e.Object.GetResourceVersion(),
 	)
 
 	// because the range annotator has state (uid), we need to save in the controller's store.
@@ -83,7 +83,7 @@ func (r *Controller) update(e event.UpdateEvent) bool {
 		"name", e.ObjectNew.GetName(),
 		"from", oldLF.Phase,
 		"to", newLF.Phase,
-		"epoch", fmt.Sprintf("%s -> %s", oldFault.GetResourceVersion(), newFault.GetResourceVersion()),
+		"version", fmt.Sprintf("%s -> %s", oldFault.GetResourceVersion(), newFault.GetResourceVersion()),
 	)
 
 	return true
@@ -107,7 +107,7 @@ func (r *Controller) delete(e event.DeleteEvent) bool {
 		"Request", "Delete",
 		"kind", reflect.TypeOf(e.Object),
 		"name", e.Object.GetName(),
-		"epoch", e.Object.GetResourceVersion(),
+		"version", e.Object.GetResourceVersion(),
 	)
 
 	annotator, ok := r.annotators.Get(e.Object.GetName())
