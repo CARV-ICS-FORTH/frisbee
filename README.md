@@ -13,120 +13,19 @@ We make it possible to:
 
 * **Debug tests:**  through extensive monitoring and comprehensive dashboards
 
-In this walk-through, we explain how to install and execute the runtime with given examples. We will discuss later how
-to use the language to build custom experiments.
+In this walk-through, we explain how to install and execute the examples in a single-node using the Microk8s flavor of Kubernetes.
 
-## Installation
 
-#### Local Kubernetes Installation
 
-*MicroK8s* is a CNCF certified upstream Kubernetes deployment that runs entirely on your workstation or edge device.
+For a single-node deployment click [here](docs/singlenode-deployment.md).
 
-```bash
-# Install microk8s
-$ sudo snap install microk8s --classic
+For a multi-node deployment click [here](docs/cluster-deployment.md).
 
-# Create alias 
-$ sudo snap alias microk8s.kubectl kubectl
+To learn how to build your custom experiment click [here](docs/cluster-deployment.md).
 
-# Enable features
-$ microk8s enable dns ingress ambassador
 
-# Use microk8s config as kubernetes config
-$ microk8s config > config
-```
 
-#### Install CRDs
 
-CRDs are extensions of the Kubernetes API.
-
-```bash
-# Install Frisbee CRD (from Frisbee homefolder)
-$ make install
-
-# Chaos Mesh provides Chaos engineering capabilities to Frisbee
-curl -sSL https://mirrors.chaos-mesh.org/latest/install.sh | bash -s -- --microk8s
-```
-
-### Run experiments
-
-#### On local installation
-
-```bash
-# Run an experiment
-$ kubectl -n frisbee apply -f  ../paper/elasticity.yml
-
-# Delete an experiment
-$ kubectl -n frisbee delete -f  ../paper/elasticity.yml
-```
-
-#### On remote cluster
-
-In order to access your Kubernetes cluster, `frisbee` uses kubeconfig to find the information it needs to choose a
-cluster and communicate with it.
-
-`kubeconfig` files organize information about clusters, users, namespaces, and authentication mechanisms.
-
-The configuration is the same as `kubectl` and is located at `~/.kube/config`.
-
-```bash
-# Create tunnel for sending requests to Kubernetes controller
-$ ssh -L 6443:192.168.1.213:6443 thegates
-
-# Run an experiment
-$ kubectl -kubeConfig /home/fnikol/.kube/config.evolve -n frisbee apply -f  ../paper/elasticity.yml 		
-
-# Delete an experiment
-$ kubectl -kubeConfig /home/fnikol/.kube/config.evolve -n frisbee delete -f  ../paper/elasticity.yml
-```
-
-### Dashboard
-
-Dashboard is a web-based Kubernetes user interface. You can use Dashboard to deploy containerized applications to a
-Kubernetes cluster, troubleshoot your containerized application, and manage the cluster resources.
-
-```bash
-# Run Kubernetes dashboard
-$ microk8s dashboard-proxy
-Dashboard will be available at https://127.0.0.1:10443
-
-# Run Chaos dashboard
-$ kubectl port-forward -n chaos-testing svc/chaos-dashboard 2333:2333
-Dashboard will be available at http://127.0.0.1:2333/dashboard/experiments
-
-# Run Frisbee dashboard (Grafana)
-# This parameter is configured using the ingress parameter of the workflow. By default, 
-Dashboard will be available at http://grafana.localhost
-```
-
-#### Fetch PDF from Grafana
-
-To fetch a PDF from Grafana follow the instructions of: https://gist.github.com/svet-b/1ad0656cd3ce0e1a633e16eb20f66425
-
-Briefly,
-
-1. Install Node.js on your local workstation
-2. wget https://gist.githubusercontent.com/svet-b/1ad0656cd3ce0e1a633e16eb20f66425/raw/grafana_pdf.js
-3. execute the grafana_fs.js over node.ns
-
-> node grafana_pdf.js "http://grafana.localhost/d/A2EjFbsMk/ycsb-services?viewPanel=74" "":"" output.pdf
-
-######                               
-
-###### Permissions
-
-By default, Grafana is configured without any login requirements, so we must leave this field blank
-
-"":"" denotes empty username:password.
-
-#### Step 5. Remote Kubernetes Cluster
-
-To manage remote kubernetes cluster, the steps are the same. The only difference is that `~/.kube/config` should have
-the credentials for the remote cluster.
-
-```
-ssh -L 6443:192.168.1.213:6443 thegates
-```
 
 ## Bugs, Feedback, and Contributions
 
@@ -146,5 +45,4 @@ For more information, you can contact us via:
 
 Frisbee is licensed under the Apache License, Version 2.0. See [LICENSE](http://www.apache.org/licenses/LICENSE-2.0) for
 the full license text.
-
 
