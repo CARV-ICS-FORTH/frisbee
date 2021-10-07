@@ -21,7 +21,10 @@
 package cluster
 
 import (
+	"fmt"
+
 	"github.com/fnikolai/frisbee/api/v1alpha1"
+	"github.com/fnikolai/frisbee/controllers/utils"
 	"github.com/sirupsen/logrus"
 )
 
@@ -29,20 +32,19 @@ import (
 // Summary:
 // * if all services are successfully complete the cluster will terminate successfully.
 // * If there is a failed job, the cluster will fail itself.
-func calculateLifecycle(cluster *v1alpha1.Cluster, activeJobs, successfulJobs, failedJobs v1alpha1.SList) v1alpha1.Lifecycle {
+func calculateLifecycle(cluster *v1alpha1.Cluster, gs utils.LifecycleClassifier) v1alpha1.Lifecycle {
 	status := cluster.Status
 
 	allJobs := len(cluster.Status.Expected)
 
-	/*
-		logrus.Warnf("Cluster - instances: (%d), activeJobs (%d): %s, successfulJobs (%d): %s, failedJobs (%d): %s",
-			len(status.Expected),
-			len(activeJobs), activeJobs.ToString(),
-			len(successfulJobs), successfulJobs.ToString(),
-			len(failedJobs), failedJobs.ToString(),
-		)
+	// we are only interested in the number of jobs in each category.
+	// expectedJobs := len(w.Spec.Actions) + len(systemService)
+	activeJobs := gs.NumActiveJobs()
+	runningJobs := gs.NumRunningJobs()
+	successfulJobs := gs.NumSuccessfulJobs()
+	failedJobs := gs.NumFailedJobs()
 
-	*/
+	_ = runningJobs
 
 	switch {
 	case status.Phase == v1alpha1.PhaseUninitialized ||
@@ -50,32 +52,42 @@ func calculateLifecycle(cluster *v1alpha1.Cluster, activeJobs, successfulJobs, f
 		status.Phase == v1alpha1.PhaseFailed:
 		return status.Lifecycle
 
-	case len(failedJobs) > 0:
-		// A job has failed during execution.
-		return v1alpha1.Lifecycle{
-			Phase:  v1alpha1.PhaseFailed,
-			Reason: failedJobs.ToString(),
+	case failedJobs > 0:
+		if tolerate := cluster.Spec.Tolerate; tolerate != nil {
+			if failedJobs > tolerate.FailedServices {
+				return v1alpha1.Lifecycle{
+					Phase:   v1alpha1.PhaseFailed,
+					Reason:  "TolerateLimitsExceeded",
+					Message: fmt.Sprintf("tolerate: %d. failed jobs: %s", tolerate.FailedServices, gs.FailedList()),
+				}
+			}
+
+			// Ignore the failure.
+			return status.Lifecycle
 		}
 
-	case len(successfulJobs) == allJobs:
+	case successfulJobs == allJobs:
 		// All jobs are successfully completed
 		return v1alpha1.Lifecycle{
-			Phase:  v1alpha1.PhaseSuccess,
-			Reason: successfulJobs.ToString(),
+			Phase:   v1alpha1.PhaseSuccess,
+			Reason:  "AllJobsCompleted",
+			Message: fmt.Sprintf("successful jobs: %s", gs.SuccessfulList()),
 		}
 
-	case len(activeJobs)+len(successfulJobs) == allJobs:
+	case activeJobs+successfulJobs == allJobs:
 		// All jobs are created, and at least one is still running
 		return v1alpha1.Lifecycle{
-			Phase:  v1alpha1.PhaseRunning,
-			Reason: activeJobs.ToString(),
+			Phase:   v1alpha1.PhaseRunning,
+			Reason:  "JobIsRunning",
+			Message: fmt.Sprintf("active jobs: %s", gs.ActiveList()),
 		}
 
 	case status.Phase == v1alpha1.PhasePending:
 		// Not all Jobs are constructed created
 		return v1alpha1.Lifecycle{
-			Phase:  v1alpha1.PhasePending,
-			Reason: "Jobs are not yet created",
+			Phase:   v1alpha1.PhasePending,
+			Reason:  "JobIsPending",
+			Message: "at least one jobs has not yet created",
 		}
 
 	default:
@@ -91,6 +103,9 @@ func calculateLifecycle(cluster *v1alpha1.Cluster, activeJobs, successfulJobs, f
 		panic("unhandled lifecycle condition")
 	}
 
+	panic("this should never happen")
+
+	// TODO: validate the transition. For example, we cannot go from running to pending
 	/*
 
 		// There are still pending jobs to be created
@@ -102,6 +117,4 @@ func calculateLifecycle(cluster *v1alpha1.Cluster, activeJobs, successfulJobs, f
 		}
 
 	*/
-
-	// TODO: validate the transition. For example, we cannot go from running to pending
 }

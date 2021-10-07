@@ -20,12 +20,14 @@ package workflow
 import (
 	"context"
 	"reflect"
+	"time"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/utils"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -122,8 +124,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		root object.  Instead, you should reconstruct it every run.  That's what we'll
 		do here.
 
-		However, to relief the garbage collector, we use a root structure that we reset
-		at every reconciliation cycle.
+		To relief the garbage collector, we use a root structure that we reset at every reconciliation cycle.
 	*/
 	r.state.Reset()
 
@@ -143,18 +144,18 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		4: Update the CR status using the data we've gathered
 		------------------------------------------------------------------
 
-		Just like before, we use our client.  To specifically update the status
-		subresource, we'll use the `Status` part of the client, with the `Update`
-		method.
-	*/
+		The Update at this step serves two functions.
+		First, it is like "journaling" for the upcoming operations.
+		Second, it is a roadblock for stall (queued) requests.
 
+		However, due to the multiple updates, it is possible for this function to
+		be in conflict. We fix this issue by re-queueing the request.
+		We also suppress verbose error reporting as to avoid polluting the output.
+	*/
 	newStatus := calculateLifecycle(&w, r.state)
 	w.Status.Lifecycle = newStatus
 
 	if err := utils.UpdateStatus(ctx, r, &w); err != nil {
-		// due to the multiple updates, it is possible for this function to
-		// be in conflict. We fix this issue by re-queueing the request.
-		// We also omit verbose error reporting as to avoid polluting the output.
 		runtime.HandleError(err)
 
 		return utils.Requeue()
@@ -167,9 +168,8 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		First, we'll try to clean up old jobs, so that we don't leave too many lying
 		around.
 	*/
-
 	if newStatus.Phase == v1alpha1.PhaseSuccess {
-		r.Logger.Info("Workflow succeeded", "name", w.GetName())
+		r.GetEventRecorderFor("").Event(&w, corev1.EventTypeNormal, newStatus.Reason, newStatus.Message)
 
 		// Remove the testing components once the experiment is successfully complete.
 		// We maintain testbed components (e.g, prometheus and grafana) for getting back the test results.
@@ -182,9 +182,16 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	if newStatus.Phase == v1alpha1.PhaseFailed {
-		r.Logger.Error(errors.New(w.Status.Reason), "Workflow failed", "name", w.GetName())
+		r.GetEventRecorderFor("").Event(&w, corev1.EventTypeWarning, newStatus.Reason, newStatus.Message)
 
-		// utils.Delete(ctx, r, &w)
+		// Remove the non-failed components. Leave the failed to postmortem analysis
+		for _, job := range r.state.SuccessfulJobs() {
+			utils.Delete(ctx, r, job)
+		}
+
+		for _, job := range r.state.ActiveJobs() {
+			utils.Delete(ctx, r, job)
+		}
 
 		return utils.Stop()
 	}
@@ -198,13 +205,6 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		We may delete the service, add a pod, or wait for existing pod to change its status.
 	*/
-
-	/*
-		If all actions are executed, just wait for them to complete.
-	*/
-	if newStatus.Phase == v1alpha1.PhaseRunning {
-		return utils.Stop()
-	}
 
 	/*
 		If this object is suspended, we don't want to run any jobs, so we'll stop now.
@@ -239,23 +239,23 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	/*
-		7: Run jobs that meeting the logical dependencies
+		7: Get the next logical run
 		------------------------------------------------------------------
 	*/
-
-	actionList, requeueAfter := GetNextLogicalJob(&w, w.Spec.Actions, r.state, w.Status.Scheduled)
+	actionList, nextRun := GetNextLogicalJob(&w, w.Spec.Actions, r.state, w.Status.Scheduled)
 
 	if len(actionList) == 0 {
-		r.Logger.Info("Empty action list", "Requeue after ", requeueAfter)
-
-		if requeueAfter != nil {
-			return utils.RequeueAfter(*requeueAfter)
+		if nextRun.IsZero() {
+			// nothing to do on this cycle. wait the next cycle trigger by watchers.
+			return utils.Stop()
 		}
 
-		return utils.Stop()
+		r.Logger.Info("no upcoming logical execution, sleeping until", "next", nextRun)
+
+		return utils.RequeueAfter(time.Until(nextRun))
 	}
 
-	logrus.Warn("Ready to start ", actionList)
+	logrus.Warn("Ready to start ", actionList.ToString())
 
 	for _, action := range actionList {
 		if err := r.runJob(ctx, &w, action); err != nil {
@@ -294,6 +294,7 @@ func (r *Controller) Finalize(obj client.Object) error {
 		"name", obj.GetName(),
 		"version", obj.GetResourceVersion(),
 	)
+
 	return nil
 }
 

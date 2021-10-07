@@ -28,5 +28,4 @@ Side effects
 
 Release note
 
-Please add a release note.
-If you don't think this PR needs a release note then fill it with None.
+Please add a release note. If you don't think this PR needs a release note then fill it with None.

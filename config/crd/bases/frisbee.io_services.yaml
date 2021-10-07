@@ -2651,12 +2651,15 @@ spec:
                   time a Pod was scheduled.
                 format: date-time
                 type: string
+              message:
+                description: Message provides more details for understanding the Reason.
+                type: string
               phase:
                 description: Phase is the current status of an object
                 type: string
               reason:
-                description: A brief CamelCase message indicating details about why
-                  the service is in this Phase. e.g. 'Evicted'
+                description: Reason is A brief CamelCase message indicating details
+                  about why the service is in this Phase. e.g. 'Evicted'
                 type: string
             type: object
         required:

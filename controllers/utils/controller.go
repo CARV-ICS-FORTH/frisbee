@@ -75,8 +75,8 @@ type Reconciler interface {
 //
 // Bool indicate whether the caller should return immediately (true) or continue (false).
 // The reconciliation cycle is where the framework gives us back control after a watch has passed up an event.
-func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.Object, requeue *bool) (ctrl.Result, error) {
-	*requeue = true
+func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.Object, returnNow *bool) (ctrl.Result, error) {
+	*returnNow = true
 
 	/*
 		### 1: Retrieve the CR by name
@@ -99,7 +99,7 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 
 		r.Error(err, "obj retrieval")
 
-		return Requeue()
+		return RequeueAfter(time.Second)
 	}
 
 	/*
@@ -114,66 +114,51 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 		before the standard Kubernetes garbage collection logic can be performed.
 	*/
 
-	/*	### 4: Manage Resource Finalization
-			This is the pseudo code algorithm to manage finalizers:
-
-		    If needed, add finalizers during the initialization method.
-		    If the resource is being deleted, check if the finalizer owned by this controller is present.
-		        If not, return
-		        If yes, execute the cleanup logic
-		            If successful, update the CR by removing the finalizer.
-		            If failure decide whether to retry or give up and likely leave garbage (in some situations this can be acceptable).
-	*/
-
 	// examine DeletionTimestamp to determine if object is under deletion
 	if obj.GetDeletionTimestamp().IsZero() {
 		// The object is not being deleted, so if it does not have our finalizer,
 		// then lets add the finalizer and Update the object. This is equivalent
 		// registering our finalizer.
 		if !controllerutil.ContainsFinalizer(obj, r.Finalizer()) {
-			// cause the delete operation to block until all dependents objects are removed
-			// see Foreground cascading deletion.
-			// Note that in the "foregroundDeletion", only dependents with ownerReference.blockOwnerDeletion
-			// block the deletion of the owner object.
-			// controllerutil.AddFinalizer(obj, metav1.FinalizerDeleteDependents)
 			controllerutil.AddFinalizer(obj, r.Finalizer())
 
 			if err := Update(ctx, r, obj); err != nil {
 				r.Error(err, "unable to add finalizers", "instance", obj.GetName())
 
-				return Requeue()
+				return RequeueAfter(time.Second)
 			}
 		}
 	} else {
 		// The object is being deleted
-		if controllerutil.ContainsFinalizer(obj, r.Finalizer()) {
-			// our finalizer is present, so lets handle any external dependency
-
-			if err := r.Finalize(obj); err != nil {
-				// Run finalization logic to remove external dependencies. If the
-				// finalization logic fails, don't remove the finalizer so
-				// that we can retry during the next reconciliation.
-				r.Error(err, "unable to finalize instance", "instance", obj.GetName())
-
-				return Requeue()
-			}
-
-			// Remove CR (Custom Resource) finalizer.
-			// Once all finalizers have been removed, the object will be deleted.
-			controllerutil.RemoveFinalizer(obj, r.Finalizer())
-
-			if err := Update(ctx, r, obj); err != nil {
-				// r.Error(err, "unable to delete instance", "instance", obj.GetName())
-
-				return Requeue()
-			}
-
-			// Stop reconciliation as the item is being deleted
+		if !controllerutil.ContainsFinalizer(obj, r.Finalizer()) {
 			return Stop()
 		}
+
+		// our finalizer is present, so lets handle any external dependency.
+		if err := r.Finalize(obj); err != nil {
+			// Run finalization logic to remove external dependencies.
+			// If the finalization logic fails, don't remove the finalizer
+			// so that we can retry during the next reconciliation.
+			r.Error(err, "unable to finalize instance", "instance", obj.GetName())
+
+			return Requeue()
+		}
+
+		// Once all finalizers have been removed, the object will be deleted.
+		controllerutil.RemoveFinalizer(obj, r.Finalizer())
+
+		if err := Update(ctx, r, obj); err != nil {
+			r.Error(err, "unable to delete instance", "instance", obj.GetName())
+
+			return RequeueAfter(time.Second)
+		}
+
+		// Stop reconciliation as the item is being deleted
+		return Stop()
 	}
 
-	*requeue = false
+	// delegate reconciliation logic to the concrete controller.
+	*returnNow = false
 
 	return Stop()
 }

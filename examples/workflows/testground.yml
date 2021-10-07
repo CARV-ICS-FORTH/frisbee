@@ -1,0 +1,44 @@
+apiVersion: frisbee.io/v1alpha1
+kind: Workflow
+metadata:
+  name: redis-testground
+spec:
+  importMonitors: [ "sysmon/container", "redismon/telegraf", "ycsbmon/goycsb" ]
+  ingress:
+    host: localhost
+    useAmbassador: true
+
+  actions:
+    # Create 3 Redis nodes
+    - action: Cluster
+      name: masters
+      cluster:
+        templateRef: rediscluster/master
+        instances: 3
+        tolerate:
+          failedServices: 3
+
+    # Kill loaders, one every 1 minutes
+    - action: Chaos
+      name: load-killer1
+      depends: { running: [ masters ], after: 30s }
+      chaos:
+        type: kill
+        kill:
+          selector: { macro: .cluster.masters.any }
+
+    - action: Chaos
+      name: load-killer2
+      depends: { running: [ masters, load-killer1 ], after: 1m }
+      chaos:
+        type: kill
+        kill:
+          selector: { macro: .cluster.masters.any }
+
+    - action: Chaos
+      name: load-killer3
+      depends: { running: [ masters, load-killer2 ], after: 2m }
+      chaos:
+        type: kill
+        kill:
+          selector: { macro: .cluster.masters.any }

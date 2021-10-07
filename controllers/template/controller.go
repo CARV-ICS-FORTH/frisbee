@@ -44,10 +44,11 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	*/
 	var t v1alpha1.Template
 
-	var ret bool
-	result, err := utils.Reconcile(ctx, r, req, &t, &ret)
-	if ret {
-		return result, err
+	var requeue bool
+	result, err := utils.Reconcile(ctx, r, req, &t, &requeue)
+
+	if requeue {
+		return result, errors.Wrapf(err, "initialization error")
 	}
 
 	if t.Status.Lifecycle.Phase == v1alpha1.PhaseRunning {
@@ -60,14 +61,14 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if !t.Status.IsRegistered {
 		// validate services
 		for name, spec := range t.Spec.Services {
-			if _, err := thelpers.GenerateSpecFromScheme(&spec); err != nil {
+			if _, err := thelpers.GenerateSpecFromScheme(spec.DeepCopy()); err != nil {
 				return utils.Failed(ctx, r, &t, errors.Wrapf(err, "service template %s error", name))
 			}
 		}
 
 		// validate monitors
 		for name, spec := range t.Spec.Monitors {
-			if _, err := thelpers.GenerateMonitorSpec(&spec); err != nil {
+			if _, err := thelpers.GenerateMonitorSpec(spec.DeepCopy()); err != nil {
 				return utils.Failed(ctx, r, &t, errors.Wrapf(err, "monitor template %s error", name))
 			}
 		}

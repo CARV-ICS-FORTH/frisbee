@@ -89,6 +89,18 @@ spec:
                 description: TemplateRef refers to a service template. It conflicts
                   with Service.
                 type: string
+              tolerate:
+                description: Tolerate specifies the conditions under which the cluster
+                  will fail. If left undefined, the cluster will fail immediately
+                  when a service has failed.
+                properties:
+                  failedServices:
+                    description: FailedServices indicate the number of services that
+                      may fail before the cluster fails itself.
+                    type: integer
+                required:
+                - failedServices
+                type: object
             required:
             - templateRef
             type: object
@@ -2850,12 +2862,15 @@ spec:
                   time a Service was successfully scheduled.
                 format: date-time
                 type: string
+              message:
+                description: Message provides more details for understanding the Reason.
+                type: string
               phase:
                 description: Phase is the current status of an object
                 type: string
               reason:
-                description: A brief CamelCase message indicating details about why
-                  the service is in this Phase. e.g. 'Evicted'
+                description: Reason is A brief CamelCase message indicating details
+                  about why the service is in this Phase. e.g. 'Evicted'
                 type: string
             type: object
         required:

@@ -93,9 +93,9 @@ type WaitSpec struct {
 	// +optional
 	Success []string `json:"success,omitempty"`
 
-	// Duration blocks waiting for the duration to expire
+	// After is the time offset since the beginning of this action.
 	// +optional
-	Duration *metav1.Duration `json:"duration,omitempty"`
+	After *metav1.Duration `json:"after,omitempty"`
 }
 
 type EmbedActions struct {

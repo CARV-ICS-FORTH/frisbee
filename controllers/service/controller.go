@@ -101,14 +101,19 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	/*
 		3: Update the CR status using the data we've gathered
 		------------------------------------------------------------------
+
+		The Update at this step serves two functions.
+		First, it is like "journaling" for the upcoming operations.
+		Second, it is a roadblock for stall (queued) requests.
+
+		However, due to the multiple updates, it is possible for this function to
+		be in conflict. We fix this issue by re-queueing the request.
+		We also suppress verbose error reporting as to avoid polluting the output.
 	*/
 	newStatus := calculateLifecycle(&cr, &pod)
 	cr.Status.Lifecycle = newStatus
 
 	if err := utils.UpdateStatus(ctx, r, &cr); err != nil {
-		// due to the multiple updates, it is possible for this function to
-		// be in conflict. We fix this issue by re-queueing the request.
-		// We also omit verbose error reporting as to avoid polluting the output.
 		runtime.HandleError(err)
 
 		return utils.Requeue()
@@ -122,11 +127,9 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		around.
 	*/
 	if newStatus.Phase == v1alpha1.PhaseSuccess {
-		r.GetEventRecorderFor("").Event(&cr, corev1.EventTypeNormal,
-			newStatus.Reason, "service succeeded")
-
+		// r.GetEventRecorderFor("").Event(&cr, corev1.EventTypeNormal,
+		//	newStatus.Reason, "service succeeded")
 		// TODO: delete pod and service, but leave the service descriptor.
-
 		return utils.Stop()
 	}
 
@@ -186,6 +189,7 @@ func (r *Controller) Finalize(obj client.Object) error {
 		"name", obj.GetName(),
 		"version", obj.GetResourceVersion(),
 	)
+
 	return nil
 }
 

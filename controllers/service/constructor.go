@@ -42,10 +42,7 @@ func (r *Controller) runJob(ctx context.Context, obj *v1alpha1.Service) error {
 		return err
 	}
 
-	discovery, err := constructDiscoveryService(r, obj, pod)
-	if err != nil {
-		return err
-	}
+	discovery := constructDiscoveryService(r, obj, pod)
 
 	if err := utils.CreateUnlessExists(ctx, r, discovery); err != nil {
 		return errors.Wrapf(err, "cannot create discovery service")
@@ -174,7 +171,7 @@ func setPlacement(obj *v1alpha1.Service, pod *corev1.Pod) {
 	}
 }
 
-func constructDiscoveryService(r *Controller, obj *v1alpha1.Service, pod *corev1.Pod) (*corev1.Service, error) {
+func constructDiscoveryService(r *Controller, obj *v1alpha1.Service, pod *corev1.Pod) *corev1.Service {
 	spec := obj.Spec
 
 	// register ports from containers and sidecars
@@ -216,7 +213,7 @@ func constructDiscoveryService(r *Controller, obj *v1alpha1.Service, pod *corev1
 	kubeService.Spec.Selector = service2Pod
 	pod.SetLabels(labels.Merge(pod.GetLabels(), service2Pod))
 
-	return &kubeService, nil
+	return &kubeService
 }
 
 /*

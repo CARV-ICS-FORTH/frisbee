@@ -24,11 +24,14 @@ import (
 	"math/big"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/utils"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -61,6 +64,13 @@ func parseMacro(namespace string, ss *v1alpha1.ServiceSelector) {
 	}
 }
 
+var RetryAfter = wait.Backoff{
+	Duration: 5 * time.Second,
+	Factor:   5,
+	Jitter:   0.1,
+	Steps:    4,
+}
+
 func Select(ctx context.Context, r utils.Reconciler, nm string, ss *v1alpha1.ServiceSelector) v1alpha1.SList {
 	if ss == nil {
 		logrus.Warn("empty service selector")
@@ -72,21 +82,32 @@ func Select(ctx context.Context, r utils.Reconciler, nm string, ss *v1alpha1.Ser
 		parseMacro(nm, ss)
 	}
 
-	// get all available services that match the criteria
-	services, err := selectServices(ctx, r, &ss.Match)
-	if err != nil {
-		logrus.Warn(err)
+	var runningServices v1alpha1.SList
+
+	// get all running services that match the criteria.
+	// it is possible that some services exist, but they are not in the Running phase.
+	// In this case, we simply retry.
+	_ = retry.OnError(RetryAfter, func(error) bool { return true }, func() error {
+		services, err := selectRunningServices(ctx, r, &ss.Match)
+		if err != nil {
+			logrus.Warn(err)
+
+			return nil
+		}
+
+		if len(services) == 0 {
+			r.Info("no running services were found. retry")
+
+			return errors.New("no running services were found. retry")
+		}
+
+		runningServices = services
 
 		return nil
-	}
-
-	if len(services) == 0 {
-		panic("no service were found")
-		// return nil
-	}
+	})
 
 	// filter services based on the pods
-	filteredServices, err := filterByMode(services, ss.Mode, ss.Value)
+	filteredServices, err := filterByMode(runningServices, ss.Mode, ss.Value)
 	if err != nil {
 		logrus.Warn(err)
 
@@ -96,7 +117,7 @@ func Select(ctx context.Context, r utils.Reconciler, nm string, ss *v1alpha1.Ser
 	return filteredServices
 }
 
-func selectServices(ctx context.Context, r utils.Reconciler, ss *v1alpha1.MatchService) (v1alpha1.SList, error) {
+func selectRunningServices(ctx context.Context, r utils.Reconciler, ss *v1alpha1.MatchService) (v1alpha1.SList, error) {
 	if ss == nil {
 		return nil, nil
 	}
@@ -118,7 +139,10 @@ func selectServices(ctx context.Context, r utils.Reconciler, ss *v1alpha1.MatchS
 					return nil, errors.Wrapf(err, "unable to find service %s", key)
 				}
 
-				serviceList = append(serviceList, &service)
+				// use only running services
+				if service.Status.Lifecycle.Phase == v1alpha1.PhaseRunning {
+					serviceList = append(serviceList, &service)
+				}
 			}
 		}
 	}
@@ -144,7 +168,12 @@ func selectServices(ctx context.Context, r utils.Reconciler, ss *v1alpha1.MatchS
 				return nil, errors.Wrapf(err, "cannot get services")
 			}
 
-			serviceList = append(serviceList, slist.Items...)
+			// use only the running services
+			for _, service := range slist.Items {
+				if service.Status.Lifecycle.Phase == v1alpha1.PhaseRunning {
+					serviceList = append(serviceList, service)
+				}
+			}
 		}
 	}
 

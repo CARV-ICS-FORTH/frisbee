@@ -23,7 +23,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
@@ -56,7 +55,7 @@ func SetOwner(r Reconciler, parent, child metav1.Object) {
 
 // IsManagedByThisController returns true if the object is managed by the specified controller.
 // If it is managed by another controller, or no controller is being resolved, it returns false.
-func IsManagedByThisController(obj client.Object, controller schema.GroupVersionKind) bool {
+func IsManagedByThisController(obj metav1.Object, controller schema.GroupVersionKind) bool {
 	owner := metav1.GetControllerOf(obj)
 	if owner == nil {
 		return false

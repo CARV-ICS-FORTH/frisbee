@@ -19,6 +19,7 @@ package service
 
 import (
 	"github.com/fnikolai/frisbee/api/v1alpha1"
+	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -40,49 +41,56 @@ func calculateLifecycle(cr *v1alpha1.Service, pod *corev1.Pod) v1alpha1.Lifecycl
 			}
 
 			return v1alpha1.Lifecycle{
-				Phase:  v1alpha1.PhaseFailed,
-				Reason: "pod is probably deleted by a chaos event",
+				Phase:   v1alpha1.PhaseFailed,
+				Reason:  "PodDeletion",
+				Message: "The Pod is empty but scheduled.",
 			}
 		}
 
-		return convert(pod)
+		return convertLifecycle(pod)
 	}
 }
 
-// Pod translates the Pod's Lifecycle to Frisbee Lifecycle.
-func convert(pod *corev1.Pod) v1alpha1.Lifecycle {
-
+// convertLifecycle translates the Pod's Lifecycle to Frisbee Lifecycle.
+func convertLifecycle(pod *corev1.Pod) v1alpha1.Lifecycle {
 	switch pod.Status.Phase {
 	case corev1.PodPending:
 		return v1alpha1.Lifecycle{
-			Phase:  v1alpha1.PhasePending,
-			Reason: pod.Status.Reason,
+			Phase:   v1alpha1.PhasePending,
+			Reason:  pod.Status.Reason,
+			Message: pod.Status.Message,
 		}
 
 	case corev1.PodRunning:
 		return v1alpha1.Lifecycle{
-			Phase:  v1alpha1.PhaseRunning,
-			Reason: pod.Status.Reason,
+			Phase:   v1alpha1.PhaseRunning,
+			Reason:  pod.Status.Reason,
+			Message: pod.Status.Message,
 		}
 
 	case corev1.PodSucceeded:
 		return v1alpha1.Lifecycle{
-			Phase:  v1alpha1.PhaseSuccess,
-			Reason: pod.Status.Reason,
+			Phase:   v1alpha1.PhaseSuccess,
+			Reason:  pod.Status.Reason,
+			Message: pod.Status.Message,
 		}
 
 	case corev1.PodFailed:
 		return v1alpha1.Lifecycle{
-			Phase:  v1alpha1.PhaseFailed,
-			Reason: pod.Status.Reason,
+			Phase:   v1alpha1.PhaseFailed,
+			Reason:  pod.Status.Reason,
+			Message: pod.Status.Message,
 		}
 
 	case corev1.PodUnknown:
 		return v1alpha1.Lifecycle{
-			Phase:  v1alpha1.PhaseFailed,
-			Reason: "unknown state",
+			Phase:   v1alpha1.PhaseFailed,
+			Reason:  "unknown state",
+			Message: pod.Status.Message,
 		}
 	default:
-		return v1alpha1.Lifecycle{}
+		logrus.Warn("DEBUG ", pod)
+
+		panic("unhandled lifecycle condition")
 	}
 }

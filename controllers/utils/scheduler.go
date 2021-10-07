@@ -26,10 +26,16 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// GetNextScheduleTime gets the time of next schedule after last scheduled and before now.
+// GetNextScheduleTime figure out the next times that we need to create jobs at (or anything we missed).
 //
-// If there are too many (>100) unstarted times, just give up and return an empty slice.
-// If there were missed times prior to the last known start time, then those are not returned.
+// We'll start calculating appropriate times from our last run, or the creation
+// of the CronJob if we can't find a last run. This gets the time of next schedule
+// after last scheduled and before now.
+//
+// If there are too many missed runs and we don't have any deadlines set, we'll
+// bail so that we don't cause issues on controller restarts or wedges.
+// Otherwise, we'll just return the missed runs (of which we'll just use the latest),
+// and the next run, so that we can know when it's time to reconcile again.
 func GetNextScheduleTime(
 	obj metav1.Object,
 	scheduler *v1alpha1.SchedulerSpec,
@@ -47,12 +53,12 @@ func GetNextScheduleTime(
 		return time.Time{}, time.Time{}, errors.Wrapf(err, "unparseable schedule %q", scheduler.Cron)
 	}
 
-	// for optimization purposes, cheat a bit and start from our last observed run time
-	// we could reconstitute this here, but there's not much point, since we've
-	// just updated it.
 	var earliestTime time.Time
 
 	if lastScheduleTime != nil {
+		// for optimization purposes, cheat a bit and start from our last observed run time
+		// we could reconstitute this here, but there's not much point, since we've
+		// just updated it.
 		earliestTime = lastScheduleTime.Time
 	} else {
 		// If none found, then this is either a recently created cronJob,
@@ -101,7 +107,7 @@ func GetNextScheduleTime(
 		if starts > 100 {
 			// We can't get the most recent times so just return an empty slice
 			return time.Time{}, time.Time{},
-				errors.New("too many missed start times (> 100). Set or decrease .spec.startingDeadlineSeconds or check clock skew.")
+				errors.New("too many missed start times (> 100). Set or decrease .spec.startingDeadlineSeconds or check clock skew")
 		}
 	}
 

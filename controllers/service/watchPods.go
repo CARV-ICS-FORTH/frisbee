@@ -98,14 +98,14 @@ func (r *Controller) delete(e event.DeleteEvent) bool {
 		return false
 	}
 
-	r.annotator.Delete(e.Object)
-
 	r.Logger.Info("** Detected",
 		"Request", "Delete",
 		"kind", reflect.TypeOf(e.Object),
 		"name", e.Object.GetName(),
 		"version", e.Object.GetResourceVersion(),
 	)
+
+	r.annotator.Delete(e.Object)
 
 	return true
 }
