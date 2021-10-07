@@ -19,7 +19,7 @@ spec:
     # Run Redis-command to create a cluster from the given nodes
     - action: Service
       name: boot
-      depends: { running: [ masters ], duration: 30s }
+      depends: { running: [ masters ], after: 30s }
       service:
         fromTemplate:
           templateRef: rediscluster/bootstrap
@@ -30,9 +30,12 @@ spec:
     # Ingest keys in parallel, into different ranges
     - action: Cluster
       name: "loaders"
-      depends: { success: [ boot ], running: [ masters ], duration: 30s }
+      depends: { success: [ boot ], running: [ masters ], after: 1m }
       cluster:
         templateRef: rediscluster/loader
+        # Tolerate indicate the number of services that may fail before the cluster fail itself.
+        tolerate:
+          failedServices: 3
         inputs:
           - { server: .cluster.masters.any, recordcount: "100000000", offset: "0" }
           - { server: .cluster.masters.any, recordcount: "100000000", offset: "100000000" }
@@ -41,20 +44,34 @@ spec:
 
     # Kill loaders, one every 1 minutes
     - action: Chaos
-      name: load-killer
-      depends: { running: [ loaders ], duration: 30s }
+      name: load-killer1
+      depends: { running: [ loaders ], duration: 1m }
       chaos:
         type: kill
         kill:
           selector: { macro: .cluster.loaders.any }
-          schedule: { cron: "@every 30s" }
 
+    - action: Chaos
+      name: load-killer2
+      depends: { running: [ loaders ], success: [ load-killer1 ] }
+      chaos:
+        type: kill
+        kill:
+          selector: { macro: .cluster.loaders.any }
+
+    - action: Chaos
+      name: load-killer3
+      depends: { running: [ loaders ],  success: [ load-killer2 ] }
+      chaos:
+        type: kill
+        kill:
+          selector: { macro: .cluster.loaders.any }
 
     # Kill all masters immediately
     - action: Chaos
       name: master-killer
-      depends: { success: [ load-killer ], running: [ masters ] }
+      depends: { running: [ masters ], success: [ load-killer3 ] }
       chaos:
         type: kill
         kill:
-          selector: { macro: .cluster.masters.any }
+          selector: { macro: .cluster.masters.all }

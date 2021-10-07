@@ -27,8 +27,6 @@ import (
 	"github.com/go-logr/logr"
 	cmap "github.com/orcaman/concurrent-map"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -107,14 +105,19 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	/*
 		3: Update the CR status using the data we've gathered
 		------------------------------------------------------------------
+
+		The Update at this step serves two functions.
+		First, it is like "journaling" for the upcoming operations.
+		Second, it is a roadblock for stall (queued) requests.
+
+		However, due to the multiple updates, it is possible for this function to
+		be in conflict. We fix this issue by re-queueing the request.
+		We also suppress verbose error reporting as to avoid polluting the output.
 	*/
 	newStatus := calculateLifecycle(&cr, fault)
 	cr.Status.Lifecycle = newStatus
 
 	if err := utils.UpdateStatus(ctx, r, &cr); err != nil {
-		// due to the multiple updates, it is possible for this function to
-		// be in conflict. We fix this issue by re-queueing the request.
-		// We also omit verbose error reporting as to avoid polluting the output.
 		runtime.HandleError(err)
 
 		return utils.Requeue()
@@ -131,7 +134,6 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		// Remove cr children once the cr is successfully complete.
 		// We should not remove the cr descriptor itself, as we need to maintain its
 		// status for higher-entities like the Workflow.
-
 		utils.Delete(ctx, r, fault)
 
 		return utils.Stop()
@@ -154,55 +156,25 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		We may delete the cr, add a pod, or wait for existing pod to change its status.
 	*/
-	if newStatus.Phase == v1alpha1.PhaseUninitialized {
-		cr.Status.LastScheduleTime = &metav1.Time{Time: time.Now()}
-
-		if _, err := utils.Pending(ctx, r, &cr, "submitting job requests"); err != nil {
-			return utils.Failed(ctx, r, &cr, errors.Wrapf(err, "status update"))
-		}
-
+	if cr.Status.LastScheduleTime != nil {
+		// next reconciliation cycle will be trigger by the watchers
 		return utils.Stop()
-	}
-
-	/*
-		All the specified services are created. We wait for them to terminate.
-	*/
-	if newStatus.Phase == v1alpha1.PhaseRunning {
-		return utils.Stop()
-	}
-
-	missedRun, nextRun, err := utils.GetNextScheduleTime(fault, handler.GetScheduler(), cr.Status.LastScheduleTime)
-
-	if err != nil {
-		r.GetEventRecorderFor("").Event(&cr, v1.EventTypeWarning,
-			err.Error(), "unable to figure execution schedule")
-
-		// we don't really care about re-queuing until we get an update that
-		// fixes the schedule, so don't return an error.
-		return utils.Stop()
-	}
-
-	logrus.Warn("CHAOS ", cr.GetName())
-
-	r.Logger.Info("next run", "missed ", missedRun, "next", nextRun)
-
-	if missedRun.IsZero() {
-		if nextRun.IsZero() {
-			r.Logger.Info("scheduling is complete.")
-
-			return utils.Stop()
-		}
-
-		r.Logger.Info("no upcoming scheduled times, sleeping until", "next", nextRun)
-
-		return utils.RequeueAfter(time.Until(nextRun))
 	}
 
 	if err := handler.Inject(ctx, r); err != nil {
 		return utils.Failed(ctx, r, &cr, errors.Wrapf(err, "injection failed"))
 	}
 
-	// Add the just-started jobs to the status list.
+	/*
+		6: Avoid double actions
+		------------------------------------------------------------------
+
+		If this process restarts at this point (after posting a job, but
+		before updating the status), then we might try to start the job on
+		the next time.  Actually, if we re-list the Jobs on the next cycle
+		we might not see our own status update, and then post one again.
+		So, we need to use the job name as a lock to prevent us from making the job twice.
+	*/
 	cr.Status.LastScheduleTime = &metav1.Time{Time: time.Now()}
 
 	return utils.Pending(ctx, r, &cr, "injecting fault")
@@ -222,6 +194,7 @@ func (r *Controller) Finalize(obj client.Object) error {
 		"name", obj.GetName(),
 		"version", obj.GetResourceVersion(),
 	)
+
 	return nil
 }
 

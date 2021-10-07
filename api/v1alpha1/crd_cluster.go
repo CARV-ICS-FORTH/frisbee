@@ -62,6 +62,11 @@ type ClusterSpec struct {
 	// +optional
 	Schedule *SchedulerSpec `json:"schedule,omitempty"`
 
+	// Tolerate specifies the conditions under which the cluster will fail. If left undefined, the cluster
+	// will fail immediately when a service has failed.
+	// +optional
+	Tolerate *TolerateSpec `json:"tolerate,omitempty"`
+
 	// Domain specifies the location where Service will be placed. For this to work,
 	// the nodes included in the domain must have the label domain:{{domain-name}}.
 	// for the moment simply match domain to a specific node. this will change in the future
@@ -72,6 +77,14 @@ type ClusterSpec struct {
 	// not apply to already started executions.  Defaults to false.
 	// +optional
 	Suspend *bool `json:"suspend,omitempty"`
+}
+
+// TolerateSpec specifies the system's ability to continue operating despite failures or malfunctions.
+// If tolerate is enable, a cluster will be "alive" even if some of the services have failed.
+// Such failures are likely to happen as part of a Chaos experiment.
+type TolerateSpec struct {
+	// FailedServices indicate the number of services that may fail before the cluster fails itself.
+	FailedServices int `json:"failedServices"`
 }
 
 type ClusterStatus struct {

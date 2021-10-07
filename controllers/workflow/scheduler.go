@@ -84,10 +84,10 @@ func GetNextLogicalJob(
 	all v1alpha1.ActionList,
 	gs utils.LifecycleClassifier,
 	scheduled map[string]bool,
-) (v1alpha1.ActionList, *time.Duration) {
+) (v1alpha1.ActionList, time.Time) {
 	var candidates v1alpha1.ActionList
 
-	var nextCycle *time.Duration
+	var nextCycle time.Time
 
 	successOK := func(deps *v1alpha1.WaitSpec) bool {
 		// validate Success dependencies
@@ -112,23 +112,20 @@ func GetNextLogicalJob(
 	}
 
 	timeOK := func(deps *v1alpha1.WaitSpec) bool {
-		if dur := deps.Duration; dur != nil {
-			earliestTime := obj.GetCreationTimestamp().Time
-			deadline := earliestTime.Add(dur.Duration)
+		if dur := deps.After; dur != nil {
+			cur := metav1.Now()
+			deadline := obj.GetCreationTimestamp().Time.Add(dur.Duration)
 
-			if metav1.Now().After(deadline) {
+			// the deadline has expired.
+			if deadline.Before(cur.Time) {
 				return true
 			}
 
 			// calculate time to the next shortest timeout
-			timeToNextTimeout := time.Until(deadline)
-
-			if nextCycle == nil {
-				nextCycle = &timeToNextTimeout
-			}
-
-			if timeToNextTimeout < *nextCycle {
-				nextCycle = &timeToNextTimeout
+			if nextCycle.IsZero() {
+				nextCycle = deadline
+			} else if deadline.Before(nextCycle) {
+				nextCycle = deadline
 			}
 
 			return false

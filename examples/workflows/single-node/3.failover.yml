@@ -35,13 +35,13 @@ spec:
         fromTemplate:
           templateRef: redis/sentinel
           inputs:
-            - { master: .service.master.any }
+            { master: .service.master.any }
 
 
     # Ingest keys in parallel, into different ranges
     - action: Cluster
       name: "loaders"
-      depends: { running: [ master ], duration: 30s }
+      depends: { running: [ master ] }
       cluster:
         templateRef: redis/loader
         inputs:
@@ -50,7 +50,7 @@ spec:
     # Cause two partition failures with different duration
     - action: Chaos
       name: partition0
-      depends: { running: [ master, slave ], duration: "5m" }
+      depends: { running: [ master, slave ], after: "3m" }
       chaos:
         type: partition
         partition:
@@ -60,9 +60,9 @@ spec:
 
     - action: Chaos
       name: partition1
-      depends: { running: [ master, slave ], success: [ partition0 ], duration: "3m" }
+      depends: { running: [ master, slave ], success: [ partition0 ], after: "6m" }
       chaos:
         type: partition
         partition:
           selector: { macro: .service.master.any }
-          duration: "2m"
+          duration: "1m"

@@ -1,0 +1,77 @@
+apiVersion: frisbee.io/v1alpha1
+kind: Workflow
+metadata:
+  name: redis-scaleup
+spec:
+  importMonitors: [ "sysmon/container", "redismon/telegraf", "ycsbmon/goycsb" ]
+  ingress:
+    host: localhost
+    useAmbassador: true
+
+  actions:
+    # Create 3 Redis nodes
+    - action: Cluster
+      name: masters
+      cluster:
+        templateRef: rediscluster/master
+        instances: 3
+
+    # Run Redis-command to create a cluster from the given nodes
+    - action: Service
+      name: boot
+      depends: { running: [ masters ], after: 30s }
+      service:
+        fromTemplate:
+          templateRef: rediscluster/bootstrap
+          inputs:
+            { servers: .cluster.masters.all }
+
+
+    # Ingest keys in parallel, into different ranges
+    - action: Cluster
+      name: "loaders"
+      depends: { success: [ boot ], running: [ masters ], after: 1m }
+      cluster:
+        templateRef: rediscluster/loader
+        # Tolerate indicate the number of services that may fail before the cluster fail itself.
+        tolerate:
+          failedServices: 3
+        inputs:
+          - { server: .cluster.masters.any, recordcount: "100000000", offset: "0" }
+          - { server: .cluster.masters.any, recordcount: "100000000", offset: "100000000" }
+          - { server: .cluster.masters.any, recordcount: "100000000", offset: "200000000" }
+
+
+    # Kill loaders, one every 1 minutes
+    - action: Chaos
+      name: load-killer1
+      depends: { running: [ loaders ], duration: 1m }
+      chaos:
+        type: kill
+        kill:
+          selector: { macro: .cluster.loaders.any }
+
+    - action: Chaos
+      name: load-killer2
+      depends: { running: [ loaders ], success: [ load-killer1 ] }
+      chaos:
+        type: kill
+        kill:
+          selector: { macro: .cluster.loaders.any }
+
+    - action: Chaos
+      name: load-killer3
+      depends: { running: [ loaders ],  success: [ load-killer2 ] }
+      chaos:
+        type: kill
+        kill:
+          selector: { macro: .cluster.loaders.any }
+
+    # Kill all masters immediately
+    - action: Chaos
+      name: master-killer
+      depends: { running: [ masters ], success: [ load-killer3 ] }
+      chaos:
+        type: kill
+        kill:
+          selector: { macro: .cluster.masters.all }

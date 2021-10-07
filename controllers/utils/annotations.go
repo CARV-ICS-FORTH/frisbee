@@ -20,10 +20,12 @@ package utils
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/grafana-tools/sdk"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -54,10 +56,10 @@ type PointAnnotation struct{}
 
 func (a *PointAnnotation) Add(obj client.Object) {
 	ga := sdk.CreateAnnotationRequest{
-		Time: obj.GetCreationTimestamp().Unix() * 1000, // unix ts in ms
-		Tags: []string{AnnotationRun},
-		Text: fmt.Sprintf("Child added. Kind:%s Name:%s",
-			obj.GetObjectKind().GroupVersionKind().String(), obj.GetName()),
+		Time:    obj.GetCreationTimestamp().UnixMilli(),
+		TimeEnd: 0,
+		Tags:    []string{AnnotationRun},
+		Text:    fmt.Sprintf("Job added. Kind:%s Name:%s", reflect.TypeOf(obj), obj.GetName()),
 	}
 
 	if v := Annotate; v != nil {
@@ -66,16 +68,11 @@ func (a *PointAnnotation) Add(obj client.Object) {
 }
 
 func (a *PointAnnotation) Delete(obj client.Object) {
-	ts := obj.GetDeletionTimestamp()
-	if ts == nil {
-		ts = &metav1.Time{Time: time.Now()}
-	}
-
 	ga := sdk.CreateAnnotationRequest{
-		Time: ts.Unix() * 1000, // unix ts in ms
-		Tags: []string{AnnotationExit},
-		Text: fmt.Sprintf("Child Deleted. Kind:%s Name:%s",
-			obj.GetObjectKind().GroupVersionKind().String(), obj.GetName()),
+		Time:    obj.GetDeletionTimestamp().UnixMilli(),
+		TimeEnd: 0,
+		Tags:    []string{AnnotationExit},
+		Text:    fmt.Sprintf("Job Deleted. Kind:%s Name:%s", reflect.TypeOf(obj), obj.GetName()),
 	}
 
 	if v := Annotate; v != nil {
@@ -99,12 +96,13 @@ type RangeAnnotation struct {
 
 func (a *RangeAnnotation) Add(obj client.Object) {
 	ga := sdk.CreateAnnotationRequest{
-		Time:    obj.GetCreationTimestamp().Unix() * 1000, // unix ts in ms
+		Time:    obj.GetCreationTimestamp().UnixMilli(),
 		TimeEnd: 0,
 		Tags:    []string{AnnotationFailure},
-		Text: fmt.Sprintf("Chaos injected. Kind:%s Name:%s",
-			obj.GetObjectKind().GroupVersionKind().String(), obj.GetName()),
+		Text:    fmt.Sprintf("Job Added. Kind:%s Name:%s", reflect.TypeOf(obj), obj.GetName()),
 	}
+
+	logrus.Warn("ADD ADD ANNOTATION ", ga)
 
 	if v := Annotate; v != nil {
 		a.reqID = v.Insert(ga)
@@ -113,19 +111,23 @@ func (a *RangeAnnotation) Add(obj client.Object) {
 }
 
 func (a *RangeAnnotation) Delete(obj client.Object) {
-	// in some cases the deletion timestamp is nil. If so, just use the present time.
-	ts := obj.GetDeletionTimestamp()
-	if ts == nil {
-		ts = &metav1.Time{Time: time.Now()}
+	timeStart := obj.GetCreationTimestamp()
+	timeEnd := obj.GetDeletionTimestamp()
+
+	// these nuances are caused by chaos partition events whose deletion time is the same as creation time.
+	// the result is that the ending line overlaps with the starting line, thus giving the feel of a period.
+	if timeEnd.IsZero() || timeEnd.Equal(&timeStart) {
+		timeEnd = &metav1.Time{Time: time.Now()}
 	}
 
 	ga := sdk.PatchAnnotationRequest{
-		Time:    obj.GetCreationTimestamp().Unix() * 1000, // unix ts in ms
-		TimeEnd: ts.Unix() * 1000,
+		Time:    0,
+		TimeEnd: timeEnd.UnixMilli(),
 		Tags:    []string{AnnotationFailure},
-		Text: fmt.Sprintf("Chaos revoked. Kind:%s Name:%s",
-			obj.GetObjectKind().GroupVersionKind().String(), obj.GetName()),
+		Text:    fmt.Sprintf("Job Deleted. Kind:%s Name:%s", reflect.TypeOf(obj), obj.GetName()),
 	}
+
+	logrus.Warn("ADD DELETE ANNOTATION ", ga)
 
 	if v := Annotate; v != nil {
 		v.Patch(a.reqID, ga)
@@ -166,7 +168,8 @@ func (c *GrafanaAnnotator) Insert(ga sdk.CreateAnnotationRequest) (reqID uint) {
 	if gaResp.Message == nil {
 		runtime.HandleError(errors.Wrapf(err, "empty annotation response"))
 	} else if *gaResp.Message != statusAnnotationAdded {
-		runtime.HandleError(errors.Wrapf(err, "expected message '%s', but got '%s'", statusAnnotationAdded, *gaResp.Message))
+		runtime.HandleError(errors.Wrapf(err, "expected message '%s', but got '%s'",
+			statusAnnotationAdded, *gaResp.Message))
 	}
 
 	return *gaResp.ID
@@ -188,6 +191,7 @@ func (c *GrafanaAnnotator) Patch(reqID uint, ga sdk.PatchAnnotationRequest) {
 	if gaResp.Message == nil {
 		runtime.HandleError(errors.Wrapf(err, "empty annotation response"))
 	} else if *gaResp.Message != statusAnnotationPatched {
-		runtime.HandleError(errors.Wrapf(err, "expected message '%s', but got '%s'", statusAnnotationPatched, *gaResp.Message))
+		runtime.HandleError(errors.Wrapf(err, "expected message '%s', but got '%s'",
+			statusAnnotationPatched, *gaResp.Message))
 	}
 }

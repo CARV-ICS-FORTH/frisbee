@@ -26,9 +26,8 @@ import (
 	"github.com/fnikolai/frisbee/controllers/utils"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -50,13 +49,16 @@ const (
 type Controller struct {
 	ctrl.Manager
 	logr.Logger
+
+	state utils.LifecycleClassifier
 }
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	/*
-		### 1: Load CR by name.
+		1: Load CR by name.
+		------------------------------------------------------------------
 	*/
 	var cr v1alpha1.Cluster
 
@@ -86,7 +88,8 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}()
 
 	/*
-		### 2: Load CR's components.
+		2: Load CR's components.
+		------------------------------------------------------------------
 
 		To fully update our status, we'll need to list all child objects in this namespace that belong to this CR.
 
@@ -108,38 +111,24 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	/*
-		### 3: Classify CR's components.
+		3: Classify CR's components.
+		------------------------------------------------------------------
 
-		Once we have all the jobs we own, we'll split them into active, successful, and failed services, keeping track
-		of the most recent run so that we can record it in status.
-		Remember, status should be able to be reconstituted from the state 	of the world, so it's generally not a good
-		idea to read from the status of the root object.
-		Instead, you should reconstruct it every run.  That's what we'll do here.
+		Once we have all the jobs we own, we'll split them into active, successful,
+		and failed jobs, keeping track of the most recent run so that we can record it
+		in status.  Remember, status should be able to be reconstituted from the state
+		of the world, so it's generally not a good idea to read from the status of the
+		root object.  Instead, you should reconstruct it every run.  That's what we'll
+		do here.
 
-
-		We can check if a service is "finished" and whether it succeeded or failed using Frisbee Phases.
+		To relief the garbage collector, we use a root structure that we reset at every reconciliation cycle.
 	*/
-	var activeJobs v1alpha1.SList
-
-	var successfulJobs v1alpha1.SList
-
-	var failedJobs v1alpha1.SList
+	r.state.Reset()
 
 	var mostRecentTime *time.Time // find the last run so we can update the status
 
-	for i, job := range childJobs.Items {
-		switch job.Status.Lifecycle.Phase {
-		case v1alpha1.PhaseUninitialized, v1alpha1.PhasePending, v1alpha1.PhaseRunning:
-			activeJobs = append(activeJobs, childJobs.Items[i])
-		case v1alpha1.PhaseSuccess:
-			successfulJobs = append(successfulJobs, childJobs.Items[i])
-
-		case v1alpha1.PhaseFailed:
-			failedJobs = append(failedJobs, childJobs.Items[i])
-
-		default:
-			panic("unhandled lifecycle condition")
-		}
+	for _, job := range childJobs.Items {
+		r.state.Classify(job.GetName(), job.DeepCopy())
 
 		scheduledTimeForJob := &job.CreationTimestamp.Time
 
@@ -153,9 +142,12 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	/*
-		### 4: Update the CR status using the data we've gathered
+		4: Update the CR status using the data we've gathered
+		------------------------------------------------------------------
 
-		Using the date we've gathered, we'll update the status of our CRD.
+		Just like before, we use our client.  To specifically update the status
+		subresource, we'll use the `Status` part of the client, with the `Update`
+		method.
 	*/
 	if mostRecentTime != nil {
 		cr.Status.LastScheduleTime = &metav1.Time{Time: *mostRecentTime}
@@ -163,7 +155,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		cr.Status.LastScheduleTime = nil
 	}
 
-	newStatus := calculateLifecycle(&cr, activeJobs, successfulJobs, failedJobs)
+	newStatus := calculateLifecycle(&cr, r.state)
 
 	cr.Status.Lifecycle = newStatus
 
@@ -172,21 +164,24 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		// be in conflict. We fix this issue by re-queueing the request.
 		// We also omit verbose error re
 		// porting as to avoid polluting the output.
-		runtime.HandleError(err)
 		return utils.Requeue()
 	}
 
 	/*
-		### 5: Clean up the controller from finished jobs
+		5: Clean up the controller from finished jobs
+		------------------------------------------------------------------
 
 		First, we'll try to clean up old jobs, so that we don't leave too many lying
 		around.
 	*/
 	if newStatus.Phase == v1alpha1.PhaseSuccess {
+		r.GetEventRecorderFor("").Event(&cr, corev1.EventTypeNormal,
+			newStatus.Reason, "cluster succeeded")
+
 		// Remove cr children once the cr is successfully complete.
 		// We should not remove the cr descriptor itself, as we need to maintain its
 		// status for higher-entities like the Workflow.
-		for _, job := range successfulJobs {
+		for _, job := range r.state.SuccessfulJobs() {
 			utils.Delete(ctx, r, job)
 		}
 
@@ -194,16 +189,14 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	if newStatus.Phase == v1alpha1.PhaseFailed {
-		r.Logger.Info("Oracle has failed for ",
-			"cluster", cr.GetName(),
-			"reason", cr.Status.Reason,
-		)
+		r.GetEventRecorderFor("").Event(&cr, corev1.EventTypeWarning, newStatus.Reason, newStatus.Message)
 
 		return utils.Stop()
 	}
 
 	/*
-		### 6: Make the world matching what we want in our spec
+		6: Make the world matching what we want in our spec
+		------------------------------------------------------------------
 
 		Once we've updated our status, we can move on to ensuring that the status of
 		the world matches what we want in our spec.
@@ -220,7 +213,6 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			method. The status subresource ignores changes to spec, so it's less likely to conflict
 			with any other updates, and can have separate permissions.
 		*/
-
 		jobList, err := constructJobSpecList(ctx, r, &cr)
 		if err != nil {
 			return utils.Failed(ctx, r, &cr, errors.Wrapf(err, "unable to construct job list"))
@@ -237,7 +229,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	/*
-		All the specified services are created. We wait for them to terminate.
+		If all actions are executed, just wait for them to complete.
 	*/
 	if newStatus.Phase == v1alpha1.PhaseRunning {
 		return utils.Stop()
@@ -256,26 +248,18 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	/*
-		### 7: Get the next scheduled run
+		7: Get the next scheduled run
+		------------------------------------------------------------------
 
 		If we're not paused, we'll need to calculate the next scheduled run, and whether
 		we've got a run that we haven't processed yet  (or anything we missed).
 
-		We'll calculate the next scheduled time using the helpful cron library.
-		We'll start calculating appropriate times from our last run, or the creation
-		of the Service if we can't find a last run.
-
 		If we've missed a run, and we're still within the deadline to start it, we'll need to run a job.
-		If there are too many missed runs, and we don't have any deadlines set, we'll
-		bail so that we don't cause issues on controller restarts or wedges.
-		Otherwise, we'll just return the missed runs (of which we'll just use the latest),
-		and the next run, so that we can know when it's time to reconcile again.
 	*/
-	// figure out the next times that we need to create jobs at (or anything we missed).
 	missedRun, nextRun, err := utils.GetNextScheduleTime(&cr, cr.Spec.Schedule, cr.Status.LastScheduleTime)
 
 	if err != nil {
-		r.GetEventRecorderFor("").Event(&cr, v1.EventTypeWarning,
+		r.GetEventRecorderFor("").Event(&cr, corev1.EventTypeWarning,
 			err.Error(), "unable to figure execution schedule")
 
 		// we don't really care about re-queuing until we get an update that
@@ -311,7 +295,8 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	/*
-		### 8 Construct our desired job ... and create it on the cluster
+		8: Construct our desired job  and create it on the cluster
+		------------------------------------------------------------------
 
 		We need to construct a job based on our Cluster's template. Since we have prepared these jobs at
 		initialization, all we need is to get a pointer to the next job.
@@ -329,6 +314,16 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		"service", nextJob.GetName(),
 	)
 
+	/*
+		8: Avoid double actions
+		------------------------------------------------------------------
+
+		If this process restarts at this point (after posting a job, but
+		before updating the status), then we might try to start the job on
+		the next time.  Actually, if we re-list the Jobs on the next cycle
+		we might not see our own status update, and then post one again.
+		So, we need to use the job name as a lock to prevent us from making the job twice.
+	*/
 	cr.Status.LastScheduleJob = nextExpectedJob
 
 	return utils.Pending(ctx, r, &cr, "some jobs are still pending")
@@ -354,12 +349,11 @@ func (r *Controller) Finalize(obj client.Object) error {
 
 /*
 ### Setup
-	Finally, we'll update our setup.  In order to allow our reconciler to quickly
-	look up Services by their owner, we'll need an index.  We declare an index key that
-	we can later use with the client as a pseudo-field name, and then describe how to
-	extract the indexed value from the Service object.  The indexer will automatically take
-	care of namespaces for us, so we just have to extract the owner name if the Service has
-	a Cluster owner.
+	Finally, we'll update our setup.  In order to allow to quickly look up Services by their owner,
+	we'll need an index.  We declare an index key that we can later use with the client as a pseudo-field name,
+	and then describe how to extract the indexed value from the Service object.
+	The indexer will automatically take care of namespaces for us, so we just have to extract the
+	owner name if the Service has a Cluster owner.
 
 	Additionally, we'll inform the manager that this controller owns some Services, so that it
 	will automatically call Reconcile on the underlying Cluster when a Service changes, is

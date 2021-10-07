@@ -77,6 +77,13 @@ func (r *Controller) cluster(ctx context.Context, w *v1alpha1.Workflow, action v
 func (r *Controller) chaos(ctx context.Context, w *v1alpha1.Workflow, action v1alpha1.Action) error {
 	var chaos v1alpha1.Chaos
 
+	switch chaos.Spec.Type {
+	case v1alpha1.FaultKill:
+		if action.DependsOn.Success != nil {
+			return errors.Errorf("kill is a inject-only chaos. it does not have success. only running")
+		}
+	}
+
 	utils.SetOwner(r, w, &chaos)
 	chaos.SetName(action.Name)
 

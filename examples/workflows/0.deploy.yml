@@ -15,3 +15,25 @@ spec:
       service:
         fromTemplate:
           templateRef: redis/master
+
+    # Cause two partition failures with different duration
+    - action: Chaos
+      name: partition0
+      depends: { running: [ master ] }
+      chaos:
+        type: partition
+        partition:
+          selector:
+            macro: .service.master.any
+          duration: "30s"
+
+    # Cause two partition failures with different duration
+    - action: Chaos
+      name: partition1
+      depends: { running: [ master ],  success: [ partition0 ], after: "1m" }
+      chaos:
+        type: partition
+        partition:
+          selector:
+            macro: .service.master.any
+          duration: "30s"

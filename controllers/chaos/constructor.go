@@ -24,6 +24,7 @@ import (
 	"github.com/fnikolai/frisbee/controllers/service/helpers"
 	"github.com/fnikolai/frisbee/controllers/utils"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -31,8 +32,6 @@ import (
 type Fault = unstructured.Unstructured
 
 type chaoHandler interface {
-	GetScheduler() *v1alpha1.SchedulerSpec
-
 	GetFault(r *Controller) *Fault
 
 	Inject(ctx context.Context, r *Controller) error
@@ -85,19 +84,14 @@ func (h partitionHandler) GetFault(r *Controller) *Fault {
 	return &fault
 }
 
-func (h partitionHandler) GetScheduler() *v1alpha1.SchedulerSpec {
-	// partition does not have scheduler
-	return nil
-}
-
 func (h partitionHandler) Inject(ctx context.Context, r *Controller) error {
 	spec := h.cr.Spec.Partition
 
 	var fault Fault
 
-	{ // spec
-		affectedPods := helpers.Select(ctx, r, h.cr.GetNamespace(), &spec.Selector)
+	affectedPods := helpers.Select(ctx, r, h.cr.GetNamespace(), &spec.Selector)
 
+	{ // spec
 		fault.SetUnstructuredContent(map[string]interface{}{
 			"spec": map[string]interface{}{
 				"action": "partition",
@@ -148,18 +142,14 @@ func (h *killHandler) GetFault(r *Controller) *Fault {
 	return &fault
 }
 
-func (h killHandler) GetScheduler() *v1alpha1.SchedulerSpec {
-	return h.cr.Spec.Kill.Schedule
-}
-
 func (h killHandler) Inject(ctx context.Context, r *Controller) error {
 	spec := h.cr.Spec.Kill
 
 	var fault Fault
 
-	{ // spec
-		affectedPods := helpers.Select(ctx, r, h.cr.GetNamespace(), &spec.Selector)
+	affectedPods := helpers.Select(ctx, r, h.cr.GetNamespace(), &spec.Selector)
 
+	{ // spec
 		fault.SetUnstructuredContent(map[string]interface{}{
 			"spec": map[string]interface{}{
 				"action": "pod-kill",
@@ -169,6 +159,8 @@ func (h killHandler) Inject(ctx context.Context, r *Controller) error {
 				},
 			},
 		})
+
+		logrus.Warn("KILL ", affectedPods.ToString())
 	}
 
 	AsKill(&fault)

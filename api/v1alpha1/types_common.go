@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	LabelManagedBy = "managed-by"
+	LabelManagedBy = "frisbee-controller"
 )
 
 const (

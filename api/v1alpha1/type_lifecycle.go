@@ -82,10 +82,13 @@ func (p Phase) Equals(ref Phase) bool {
 type Lifecycle struct {
 	Phase Phase `json:"phase,omitempty"`
 
-	// A brief CamelCase message indicating details about why the service is in this Phase.
+	// Reason is A brief CamelCase message indicating details about why the service is in this Phase.
 	// e.g. 'Evicted'
 	// +optional
 	Reason string `json:"reason,omitempty"`
+
+	// Message provides more details for understanding the Reason.
+	Message string `json:"message,omitempty"`
 }
 
 func (in *Lifecycle) String() string {

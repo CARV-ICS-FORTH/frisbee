@@ -55,6 +55,9 @@ func (in *LifecycleClassifier) Classify(name string, obj client.Object) {
 		case v1alpha1.PhaseRunning:
 			in.runningJobs[name] = obj
 			in.activeJobs[name] = obj
+
+		default:
+			panic("unhandled lifecycle condition")
 		}
 	} else {
 		logrus.Warn("Not RecocileStatusAware, not setting status for obj:", obj.GetName())

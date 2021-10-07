@@ -46,7 +46,8 @@ import (
 )
 
 var (
-	scheme   = runtime.NewScheme()
+	scheme = runtime.NewScheme()
+
 	setupLog = ctrl.Log.WithName("setup")
 )
 
@@ -130,8 +131,6 @@ func main() {
 		runtimeutil.HandleError(errors.Wrapf(err, "unable to set up ready check"))
 		os.Exit(1)
 	}
-
-	defer runtimeutil.HandleCrash(runtimeutil.PanicHandlers...)
 
 	// init webserver to get the pprof webserver
 	go func() {

@@ -47,29 +47,10 @@ spec:
                     chaos:
                       properties:
                         kill:
+                          description: KillSpec terminates the selected Pod. Because
+                            this failure is permanent, it can only be waited in the
+                            Running Phase. It does not go through Success.
                           properties:
-                            schedule:
-                              description: SchedulerSpec defines information about
-                                schedule of the chaos experiment.
-                              properties:
-                                cron:
-                                  description: "Cron defines a cron job rule. \n Some
-                                    rule examples: \"0 30 * * * *\" means to \"Every
-                                    hour on the half hour\" \"@hourly\"      means
-                                    to \"Every hour\" \"@every 1h30m\" means to \"Every
-                                    hour thirty\" \n More rule info: https://godoc.org/github.com/robfig/cron"
-                                  type: string
-                                startingDeadlineSeconds:
-                                  description: StartingDeadlineSeconds is an optional
-                                    deadline in seconds for starting the job if it
-                                    misses scheduled time for any reason. if we miss
-                                    this deadline, we'll just wait till the next scheduled
-                                    time
-                                  format: int64
-                                  type: integer
-                              required:
-                              - cron
-                              type: object
                             selector:
                               properties:
                                 macro:
@@ -120,6 +101,13 @@ spec:
                               type: object
                           type: object
                         partition:
+                          description: PartitionSpec separate the given Pod from the
+                            rest of the network. This chaos typeis retractable (either
+                            manually or after a duration) and can be waited at both
+                            Running and Success Phase. Running phase begins when the
+                            failure is injected. Success begins when the failure is
+                            retracted. If anything goes wrong in between, the chaos
+                            goes into Failed phase.
                           properties:
                             duration:
                               type: string
@@ -242,6 +230,18 @@ spec:
                           description: TemplateRef refers to a service template. It
                             conflicts with Service.
                           type: string
+                        tolerate:
+                          description: Tolerate specifies the conditions under which
+                            the cluster will fail. If left undefined, the cluster
+                            will fail immediately when a service has failed.
+                          properties:
+                            failedServices:
+                              description: FailedServices indicate the number of services
+                                that may fail before the cluster fails itself.
+                              type: integer
+                          required:
+                          - failedServices
+                          type: object
                       required:
                       - templateRef
                       type: object
@@ -249,9 +249,9 @@ spec:
                       description: DependsOn defines the conditions for the execution
                         of this action
                       properties:
-                        duration:
-                          description: Duration blocks waiting for the duration to
-                            expire
+                        after:
+                          description: After is the time offset since the beginning
+                            of this action.
                           type: string
                         running:
                           description: Running waits for the given groups to be running
@@ -3162,12 +3162,15 @@ spec:
           status:
             description: Most recently observed status of the workflow
             properties:
+              message:
+                description: Message provides more details for understanding the Reason.
+                type: string
               phase:
                 description: Phase is the current status of an object
                 type: string
               reason:
-                description: A brief CamelCase message indicating details about why
-                  the service is in this Phase. e.g. 'Evicted'
+                description: Reason is A brief CamelCase message indicating details
+                  about why the service is in this Phase. e.g. 'Evicted'
                 type: string
               scheduled:
                 additionalProperties:

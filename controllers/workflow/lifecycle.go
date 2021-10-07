@@ -43,29 +43,33 @@ func calculateLifecycle(w *v1alpha1.Workflow, gs utils.LifecycleClassifier) v1al
 	case failedJobs > 0:
 		// A job has failed during execution.
 		return v1alpha1.Lifecycle{
-			Phase:  v1alpha1.PhaseFailed,
-			Reason: fmt.Sprintf("failed jobs: %d", failedJobs),
+			Phase:   v1alpha1.PhaseFailed,
+			Reason:  "JobHasFailed",
+			Message: fmt.Sprintf("failed jobs: %s", gs.FailedList()),
 		}
 
 	case successfulJobs == expectedJobs:
 		// All jobs are created, and completed successfully
 		return v1alpha1.Lifecycle{
-			Phase:  v1alpha1.PhaseSuccess,
-			Reason: fmt.Sprint("all jobs completed: ", w.Spec.Actions.ToString()),
+			Phase:   v1alpha1.PhaseSuccess,
+			Reason:  "AllJobsCompleted",
+			Message: fmt.Sprintf("successful jobs: %s", gs.SuccessfulList()),
 		}
 
 	case activeJobs+successfulJobs == expectedJobs:
 		// All jobs are created, and at least one is still running
 		return v1alpha1.Lifecycle{
-			Phase:  v1alpha1.PhaseRunning,
-			Reason: "Jobs are still running",
+			Phase:   v1alpha1.PhaseRunning,
+			Reason:  "JobIsRunning",
+			Message: fmt.Sprintf("active jobs: %s", gs.ActiveList()),
 		}
 
 	case status.Phase == v1alpha1.PhasePending:
 		// Not all Jobs are constructed created
 		return v1alpha1.Lifecycle{
-			Phase:  v1alpha1.PhasePending,
-			Reason: "Jobs are still pending",
+			Phase:   v1alpha1.PhasePending,
+			Reason:  "JobIsPending",
+			Message: "at least one jobs has not yet created",
 		}
 
 	default:
@@ -80,10 +84,7 @@ func calculateLifecycle(w *v1alpha1.Workflow, gs utils.LifecycleClassifier) v1al
 
 		return status.Lifecycle
 	}
-
 	/*
-
-
 		case status.NextAction >= len(w.Spec.Actions):
 			// All jobs are created, and at least one is still running
 			return v1alpha1.Lifecycle{

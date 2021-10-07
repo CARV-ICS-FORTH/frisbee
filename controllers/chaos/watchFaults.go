@@ -66,24 +66,11 @@ func (r *Controller) update(e event.UpdateEvent) bool {
 		return true
 	}
 
-	// if the status is the same, there is no need to inform the service
-	oldFault := e.ObjectOld.(*Fault)
-	newFault := e.ObjectNew.(*Fault)
-
-	oldLF := convertLifecycle(oldFault)
-	newLF := convertLifecycle(newFault)
-
-	if oldLF.Phase == newLF.Phase {
-		return false
-	}
-
 	r.Logger.Info("** Detected",
 		"Request", "Update",
 		"kind", reflect.TypeOf(e.ObjectNew),
 		"name", e.ObjectNew.GetName(),
-		"from", oldLF.Phase,
-		"to", newLF.Phase,
-		"version", fmt.Sprintf("%s -> %s", oldFault.GetResourceVersion(), newFault.GetResourceVersion()),
+		"version", fmt.Sprintf("%s -> %s", e.ObjectOld.GetResourceVersion(), e.ObjectNew.GetResourceVersion()),
 	)
 
 	return true

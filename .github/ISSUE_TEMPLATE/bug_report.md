@@ -9,6 +9,7 @@ A clear and concise description of what the bug is.
 
 **To Reproduce**
 Steps to reproduce the behavior:
+
 1. Attach the template specification.
 2. Attach the workflow specification.
 3. Attach the output log.

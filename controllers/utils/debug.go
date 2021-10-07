@@ -27,11 +27,13 @@ import (
 func GetCallerInfo(skip int) (fileName, funcName string, line int) {
 	pc, file, line, ok := runtime.Caller(skip)
 	if !ok {
-		fmt.Println("get info failed")
+		fmt.Print("get info failed")
+
 		return
 	}
 	fileName = path.Base(file)
 	funcName = runtime.FuncForPC(pc).Name()
+
 	return
 }
 

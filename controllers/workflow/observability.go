@@ -30,6 +30,7 @@ import (
 	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 	netv1 "k8s.io/api/networking/v1"
+	k8errors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -105,22 +106,22 @@ func (r *Controller) installPrometheus(ctx context.Context, w *v1alpha1.Workflow
 		err := r.GetClient().Create(ctx, &prom)
 
 		switch {
-		// case k8errors.IsAlreadyExists(err):
-		//	close(r.prometheus)
+		case k8errors.IsAlreadyExists(err):
+			if !prom.GetDeletionTimestamp().IsZero() {
+				return nil, errors.Wrapf(err, "a previous prometheus instance is terminating")
+			}
+			close(r.prometheus)
+
 		case err != nil:
 			return nil, errors.Wrapf(err, "creation failed")
 		default:
 			logrus.Warnf("Waiting for prometheus to become ready ...")
-
 			if err := WaitUntil(r.prometheus, v1alpha1.PhaseRunning); err != nil {
 				return nil, errors.Wrapf(err, "prometheus is not running")
 			}
-
 			close(r.prometheus)
 		}
-
 	}
-
 	r.Logger.Info("Prometheus is installed")
 
 	return &prom, nil
@@ -152,8 +153,12 @@ func (r *Controller) installGrafana(ctx context.Context, w *v1alpha1.Workflow) (
 		err := r.GetClient().Create(ctx, &grafana)
 
 		switch {
-		// case k8errors.IsAlreadyExists(err):
-		//	close(r.grafana)
+		case k8errors.IsAlreadyExists(err):
+			if !grafana.GetDeletionTimestamp().IsZero() {
+				return nil, errors.Wrapf(err, "a previous grafana instance is terminating")
+			}
+
+			close(r.grafana)
 		case err != nil:
 			return nil, errors.Wrapf(err, "creation failed")
 		default:
@@ -177,9 +182,11 @@ func WaitUntil(src <-chan *v1alpha1.Lifecycle, phase v1alpha1.Phase) error {
 		if lf.Phase.Equals(v1alpha1.PhaseRunning) {
 			break
 		}
+
 		if lf.Phase.IsValid(v1alpha1.PhaseRunning) {
 			continue
 		}
+
 		return errors.Errorf("expected %s but got %s", phase, lf.Phase)
 	}
 
