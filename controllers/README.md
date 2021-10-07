@@ -28,8 +28,11 @@ source: https://cloud.redhat.com/blog/kubernetes-operators-best-practices
 ## Available Controllers
 
 * Service: deploys and manage all the necessary components (dns service, pod) to run a service instance
+
 * Cluster: deploys and manage a set of Services
+
 * Chaos: inject faults into the Services
+
 * Workflow: orchestrate the testbed
 
 ## Controller Families

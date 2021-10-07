@@ -30,7 +30,7 @@ BUNDLE_IMG ?= controller-bundle:$(VERSION)
 
 # Image URL to use all building/pushing image targets
 # IMG ?= controller:latest
-IMG ?= 139.91.92.82:5000/$(IMAGE_TAG_BASE):$(VERSION)
+IMG ?= $(IMAGE_TAG_BASE):$(VERSION)
 
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
@@ -97,7 +97,7 @@ docker-push: ## Push docker image with the manager.
 ##@ Deployment
 
 install: manifests kustomize  ## Install CRDs into the K8s cluster specified in ~/.kube/config.
-	$(KUSTOMIZE) build config/crd | kubectl $(KUBECONFIG) $(NAMESPACE) apply -f -
+	$(KUSTOMIZE) build config/crd | kubectl $(KUBECONFIG) apply -f -
 
 uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/crd | kubectl delete -f -
