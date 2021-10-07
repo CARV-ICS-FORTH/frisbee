@@ -113,9 +113,8 @@ type WorkflowStatus struct {
 	Lifecycle `json:",inline"`
 
 	// Scheduled is a list of scheduled actions.
-	// Do no add "omitempty" as it will break the initialization
 	// +optional
-	Scheduled map[string]bool `json:"scheduled"`
+	Scheduled map[string]bool `json:"scheduled,omitempty"`
 }
 
 func (in *Workflow) GetReconcileStatus() Lifecycle {

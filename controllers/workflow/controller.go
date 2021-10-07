@@ -233,8 +233,6 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		logrus.Warn(" -- Observability Stack --")
 
-		w.Status.Scheduled = make(map[string]bool)
-
 		return utils.Pending(ctx, r, &w, "monitoring stack has been started")
 	}
 
@@ -273,6 +271,10 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		we might not see our own status update, and then post one again.
 		So, we need to use the job name as a lock to prevent us from making the job twice.
 	*/
+	if w.Status.Scheduled == nil {
+		w.Status.Scheduled = make(map[string]bool)
+	}
+
 	for _, action := range actionList {
 		w.Status.Scheduled[action.Name] = true
 	}

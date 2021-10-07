@@ -27,28 +27,27 @@ import (
 func calculateLifecycle(cr *v1alpha1.Service, pod *corev1.Pod) v1alpha1.Lifecycle {
 	status := cr.Status
 
-	switch {
-	case status.Phase == v1alpha1.PhaseUninitialized ||
+	if status.Phase == v1alpha1.PhaseUninitialized ||
 		status.Phase == v1alpha1.PhaseSuccess ||
-		status.Phase == v1alpha1.PhaseFailed:
+		status.Phase == v1alpha1.PhaseFailed {
 		return status.Lifecycle
-	default:
-		if pod.CreationTimestamp.IsZero() {
-			//  the pod is uninitialized or deleted. find it by checking the cr status.
-			if status.LastScheduleTime == nil {
-				// initialized. return the present status
-				return status.Lifecycle
-			}
+	}
 
-			return v1alpha1.Lifecycle{
-				Phase:   v1alpha1.PhaseFailed,
-				Reason:  "PodDeletion",
-				Message: "The Pod is empty but scheduled.",
-			}
+	if pod.CreationTimestamp.IsZero() {
+		//  the pod is uninitialized or deleted. find it by checking the cr status.
+		if status.LastScheduleTime == nil {
+			// initialized. return the present status
+			return status.Lifecycle
 		}
 
-		return convertLifecycle(pod)
+		return v1alpha1.Lifecycle{
+			Phase:   v1alpha1.PhaseFailed,
+			Reason:  "PodDeletion",
+			Message: "The Pod is empty but scheduled.",
+		}
 	}
+
+	return convertLifecycle(pod)
 }
 
 // convertLifecycle translates the Pod's Lifecycle to Frisbee Lifecycle.

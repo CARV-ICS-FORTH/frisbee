@@ -30,6 +30,12 @@ var systemService = []string{"prometheus", "grafana"}
 func calculateLifecycle(w *v1alpha1.Workflow, gs utils.LifecycleClassifier) v1alpha1.Lifecycle {
 	status := w.Status
 
+	if status.Phase == v1alpha1.PhaseUninitialized ||
+		status.Phase == v1alpha1.PhaseSuccess ||
+		status.Phase == v1alpha1.PhaseFailed {
+		return status.Lifecycle
+	}
+
 	// we are only interested in the number of jobs in each category.
 	expectedJobs := len(w.Spec.Actions) + len(systemService)
 	activeJobs := gs.NumActiveJobs()
@@ -39,67 +45,60 @@ func calculateLifecycle(w *v1alpha1.Workflow, gs utils.LifecycleClassifier) v1al
 
 	_ = runningJobs
 
-	switch {
-	case failedJobs > 0:
-		// A job has failed during execution.
-		return v1alpha1.Lifecycle{
-			Phase:   v1alpha1.PhaseFailed,
-			Reason:  "JobHasFailed",
-			Message: fmt.Sprintf("failed jobs: %s", gs.FailedList()),
-		}
-
-	case successfulJobs == expectedJobs:
-		// All jobs are created, and completed successfully
-		return v1alpha1.Lifecycle{
-			Phase:   v1alpha1.PhaseSuccess,
-			Reason:  "AllJobsCompleted",
-			Message: fmt.Sprintf("successful jobs: %s", gs.SuccessfulList()),
-		}
-
-	case activeJobs+successfulJobs == expectedJobs:
-		// All jobs are created, and at least one is still running
-		return v1alpha1.Lifecycle{
-			Phase:   v1alpha1.PhaseRunning,
-			Reason:  "JobIsRunning",
-			Message: fmt.Sprintf("active jobs: %s", gs.ActiveList()),
-		}
-
-	case status.Phase == v1alpha1.PhasePending:
-		// Not all Jobs are constructed created
-		return v1alpha1.Lifecycle{
-			Phase:   v1alpha1.PhasePending,
-			Reason:  "JobIsPending",
-			Message: "at least one jobs has not yet created",
-		}
-
-	default:
-		logrus.Warn("Workflow Debug info \n",
-			" current ", status.Lifecycle.Phase,
-			" total actions: ", len(w.Spec.Actions),
-			" activeJobs: ", gs.ActiveList(),
-			" successfulJobs: ", gs.SuccessfulList(),
-			" failedJobs: ", gs.FailedList(),
-			" cur status: ", status,
-		)
-
-		return status.Lifecycle
+	type test struct {
+		condition bool
+		outcome   v1alpha1.Lifecycle
 	}
-	/*
-		case status.NextAction >= len(w.Spec.Actions):
-			// All jobs are created, and at least one is still running
-			return v1alpha1.Lifecycle{
-				Kind:   "Workflow",
-				Name:   w.GetName(),
-				Phase:  v1alpha1.PhaseRunning,
-				Reason: fmt.Sprint("all jobs completed: ", w.Spec.Actions.ToString()),
-			}
-		// There are still pending jobs to be created
-		return v1alpha1.Lifecycle{
-			Kind:   "Workflow",
-			Name:   w.GetName(),
-			Phase:  v1alpha1.PhasePending,
-			Reason: "waiting for jobs to start",
-		}
 
-	*/
+	tests := []test{
+		{ // A job has failed during execution.
+			condition: failedJobs > 0,
+			outcome: v1alpha1.Lifecycle{
+				Phase:   v1alpha1.PhaseFailed,
+				Reason:  "JobHasFailed",
+				Message: fmt.Sprintf("failed jobs: %s", gs.FailedList()),
+			},
+		},
+		{ // All jobs are created, and completed successfully
+			condition: successfulJobs == expectedJobs,
+			outcome: v1alpha1.Lifecycle{
+				Phase:   v1alpha1.PhaseSuccess,
+				Reason:  "AllJobsCompleted",
+				Message: fmt.Sprintf("successful jobs: %s", gs.SuccessfulList()),
+			},
+		},
+		{ // All jobs are created, and at least one is still running
+			condition: activeJobs+successfulJobs == expectedJobs,
+			outcome: v1alpha1.Lifecycle{
+				Phase:   v1alpha1.PhaseRunning,
+				Reason:  "JobIsRunning",
+				Message: fmt.Sprintf("active jobs: %s", gs.ActiveList()),
+			},
+		},
+		{ // Not all Jobs are constructed created
+			condition: status.Phase == v1alpha1.PhasePending,
+			outcome: v1alpha1.Lifecycle{
+				Phase:   v1alpha1.PhasePending,
+				Reason:  "JobIsPending",
+				Message: "at least one jobs has not yet created",
+			},
+		},
+	}
+
+	for _, testcase := range tests {
+		if testcase.condition {
+			return testcase.outcome
+		}
+	}
+
+	logrus.Warn("Workflow Debug info \n",
+		" current ", status.Lifecycle.Phase,
+		" total actions: ", len(w.Spec.Actions),
+		" activeJobs: ", gs.ActiveList(),
+		" successfulJobs: ", gs.SuccessfulList(),
+		" failedJobs: ", gs.FailedList(),
+		" cur status: ", status,
+	)
+
+	panic("unhandled lifecycle conditions")
 }

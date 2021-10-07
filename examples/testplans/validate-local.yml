@@ -1,7 +1,7 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Workflow
 metadata:
-  name: redis-deploy
+  name: validate-local
 spec:
   importMonitors: [ "sysmon/container", "redismon/telegraf", "ycsbmon/goycsb" ]
   ingress:
