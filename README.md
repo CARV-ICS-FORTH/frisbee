@@ -82,9 +82,7 @@ One way, is to access the workflow's description
 
 But why bother if you can access Grafana directly ? 
 
-
-
-[Here]: http://grafana.localhost/d/R5y4AE8Mz/kubernetes-cluster-monitoring-via-prometheus?orgId=1&amp;from=now-15m&amp;to=now
+[Click Here](http://grafana.localhost/d/R5y4AE8Mz/kubernetes-cluster-monitoring-via-prometheus?orgId=1&amp;from=now-15m&amp;to=now)
 
 
 
