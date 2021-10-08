@@ -2655,7 +2655,10 @@ spec:
                 description: Message provides more details for understanding the Reason.
                 type: string
               phase:
-                description: Phase is the current status of an object
+                description: Phase is a simple, high-level summary of where the Object
+                  is in its lifecycle. The conditions array, the reason and message
+                  fields, and the individual container status arrays contain more
+                  detail about the pod's status.
                 type: string
               reason:
                 description: Reason is A brief CamelCase message indicating details

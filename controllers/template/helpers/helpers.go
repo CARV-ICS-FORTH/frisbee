@@ -30,6 +30,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
+var sprigFuncMap = sprig.TxtFuncMap() // a singleton for better performance
+
 func GetServiceSpec(ctx context.Context, r utils.Reconciler, ts *v1alpha1.TemplateSelector) (v1alpha1.ServiceSpec, error) {
 	scheme := SelectServiceTemplate(ctx, r, ts)
 
@@ -45,7 +47,7 @@ func GenerateSpecFromScheme(tspec *v1alpha1.Scheme) (v1alpha1.ServiceSpec, error
 	// replaced templated expression with actual values
 	t := template.Must(
 		template.New("").
-			Funcs(sprig.TxtFuncMap()).
+			Funcs(sprigFuncMap).
 			Option("missingkey=error").
 			Parse(tspec.Spec))
 
@@ -76,7 +78,7 @@ func GenerateMonitorSpec(tspec *v1alpha1.Scheme) (*v1alpha1.MonitorSpec, error) 
 	// replaced templated expression with actual values
 	t := template.Must(
 		template.New("").
-			Funcs(sprig.TxtFuncMap()).
+			Funcs(sprigFuncMap).
 			Option("missingkey=error").
 			Parse(tspec.Spec))
 

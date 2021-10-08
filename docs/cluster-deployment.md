@@ -40,6 +40,10 @@ deployment.apps "hello-node" deleted
 ### Install CRDs
 
 ```bash
+# Fetch Frisbee 
+>> git clone git@github.com:CARV-ICS-FORTH/frisbee.git
+>> cd frisbee
+
 # Install Frisbee CRDs
 >> make install KUBECONFIG="--kubeconfig /home/fnikol/.kube/config.remote"
 customresourcedefinition.apiextensions.k8s.io/chaos.frisbee.io configured

@@ -3,9 +3,13 @@ kind: Workflow
 metadata:
   name: validate-remote
 spec:
-  importMonitors: [ "sysmon/container", "redismon/telegraf", "ycsbmon/goycsb" ]
+  importMonitors: [ "sysmon/container" ]
   ingress:
     host: platform.science-hangar.eu
+
+  testOracle:
+    pass: >-
+      {{.IsSuccessful "partition1"}} == true
 
   actions:
     # Create a single Master node

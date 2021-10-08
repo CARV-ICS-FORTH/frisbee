@@ -56,7 +56,7 @@ type ClusterSpec struct {
 	// +optional
 	Inputs []map[string]string `json:"inputs,omitempty"`
 
-	// Schedule defines the interval between the creation of services within the group. Scheduled creation is not
+	// Schedule defines the interval between the creation of services within the group. Executed creation is not
 	// supported in collocated mode. Since Pods are intended to be disposable and replaceable, we cannot add a
 	// container to a Pod once it has been created
 	// +optional
@@ -65,7 +65,7 @@ type ClusterSpec struct {
 	// Tolerate specifies the conditions under which the cluster will fail. If left undefined, the cluster
 	// will fail immediately when a service has failed.
 	// +optional
-	Tolerate *TolerateSpec `json:"tolerate,omitempty"`
+	Tolerate TolerateSpec `json:"tolerate,omitempty"`
 
 	// Domain specifies the location where Service will be placed. For this to work,
 	// the nodes included in the domain must have the label domain:{{domain-name}}.

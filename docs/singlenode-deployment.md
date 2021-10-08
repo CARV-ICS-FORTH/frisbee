@@ -48,6 +48,10 @@ deployment.apps "hello-node" deleted
 ### Install CRDs
 
 ```bash
+# Fetch Frisbee 
+>> git clone git@github.com:CARV-ICS-FORTH/frisbee.git
+
+
 # Install Frisbee CRDs
 >> make install
 customresourcedefinition.apiextensions.k8s.io/chaos.frisbee.io configured
@@ -117,7 +121,7 @@ configmap/ycsb-dashboard unchanged
 
 Frisbee uses Ingress controller to expose Grafana dashboard externally to the cluster. 
 
-We use Ambassador as the default Ingress controller, as shown in  `examples/workflows/validate-local.yml` .
+We use Ambassador as the default Ingress controller, as shown in  `examples/testplans/validate-local.yml` .
 
 ```bash
 ingress:
@@ -149,8 +153,6 @@ workflow.frisbee.io "validate-local" deleted
 
 
 ## Observe a Testplan
-
-
 
 #### Controller Logs
 

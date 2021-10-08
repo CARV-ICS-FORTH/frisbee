@@ -60,7 +60,7 @@ spec:
                 type: integer
               schedule:
                 description: Schedule defines the interval between the creation of
-                  services within the group. Scheduled creation is not supported in
+                  services within the group. Executed creation is not supported in
                   collocated mode. Since Pods are intended to be disposable and replaceable,
                   we cannot add a container to a Pod once it has been created
                 properties:
@@ -2866,7 +2866,10 @@ spec:
                 description: Message provides more details for understanding the Reason.
                 type: string
               phase:
-                description: Phase is the current status of an object
+                description: Phase is a simple, high-level summary of where the Object
+                  is in its lifecycle. The conditions array, the reason and message
+                  fields, and the individual container status arrays contain more
+                  detail about the pod's status.
                 type: string
               reason:
                 description: Reason is A brief CamelCase message indicating details

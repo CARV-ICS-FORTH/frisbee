@@ -8,6 +8,10 @@ spec:
     host: localhost
     useAmbassador: true
 
+  testOracle:
+    pass: >-
+      {{.IsSuccessful "master-killer"}} == true
+
   actions:
     # Create 3 Redis nodes
     - action: Cluster

@@ -21,7 +21,7 @@ import (
 	"fmt"
 )
 
-// Phase is the current status of an object
+// Phase is a simple, high-level summary of where the Object is in its lifecycle.
 type Phase string
 
 // These are the valid statuses of services. The following lifecycles are valid:
@@ -35,21 +35,21 @@ const (
 	// PhaseUninitialized means that request is not yet accepted by the controller.
 	PhaseUninitialized = Phase("")
 
-	// PhasePending means that the service been accepted by the Kubernetes cluster, but one of the dependent
-	// conditions is not met yet. This includes the time waiting for logical dependencies (e.g, Run, Success),
-	// Ports discovery and rewiring, and placement of Pods.
+	// PhasePending means that the CR has been accepted by the Kubernetes cluster, but one of the child
+	// jobs has not been created. This includes the time waiting for logical dependencies, Ports discovery,
+	// data rewiring, and placement of Pods.
 	PhasePending = Phase("Pending")
 
-	// PhaseRunning means that the service has been bound to a node and all the containers have been started.
-	// At least one container is still running or is in the process of being restarted.
+	// PhaseRunning means that all of the child jobs of a CR have been created, and at least one job
+	// is still running.
 	PhaseRunning = Phase("Running")
 
-	// PhaseSuccess means that all containers in the pod have voluntarily terminated
-	// with a container exit code of 0, and the system is not going to restart any of these containers.
+	// PhaseSuccess means that all jobs in a CR have voluntarily exited, and the system is not going
+	// to restart any of these Jobs.
 	PhaseSuccess = Phase("Success")
 
-	// PhaseFailed means that all containers in the pod have terminated, and at least one container has
-	// terminated in a failure (exited with a non-zero exit code or was stopped by the system).
+	// PhaseFailed means that at least one job of the CR has terminated in a failure (exited with a
+	// non-zero exit code or was stopped by the system).
 	PhaseFailed = Phase("Failed")
 )
 
@@ -80,6 +80,9 @@ func (p Phase) Equals(ref Phase) bool {
 }
 
 type Lifecycle struct {
+	// Phase is a simple, high-level summary of where the Object is in its lifecycle.
+	// The conditions array, the reason and message fields, and the individual container status
+	// arrays contain more detail about the pod's status.
 	Phase Phase `json:"phase,omitempty"`
 
 	// Reason is A brief CamelCase message indicating details about why the service is in this Phase.

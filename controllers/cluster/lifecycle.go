@@ -14,9 +14,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
-// Most of this part is adapted from:
-// https://github.com/kubernetes-sigs/kubebuilder/blob/master/docs/book/src/cronjob-tutorial/testdata/project/controllers/cronjob_controller.go
 
 package cluster
 
@@ -29,11 +26,15 @@ import (
 )
 
 // calculateLifecycle returns the update lifecycle of the cluster.
-// Summary:
-// * if all services are successfully complete the cluster will terminate successfully.
-// * If there is a failed job, the cluster will fail itself.
 func calculateLifecycle(cluster *v1alpha1.Cluster, gs utils.LifecycleClassifier) v1alpha1.Lifecycle {
 	status := cluster.Status
+
+	// Skip any CR which are already completed, or uninitialized.
+	if status.Phase == v1alpha1.PhaseUninitialized ||
+		status.Phase == v1alpha1.PhaseSuccess ||
+		status.Phase == v1alpha1.PhaseFailed {
+		return status.Lifecycle
+	}
 
 	allJobs := len(cluster.Status.Expected)
 
@@ -46,75 +47,62 @@ func calculateLifecycle(cluster *v1alpha1.Cluster, gs utils.LifecycleClassifier)
 
 	_ = runningJobs
 
-	switch {
-	case status.Phase == v1alpha1.PhaseUninitialized ||
-		status.Phase == v1alpha1.PhaseSuccess ||
-		status.Phase == v1alpha1.PhaseFailed:
-		return status.Lifecycle
-
-	case failedJobs > 0:
-		if tolerate := cluster.Spec.Tolerate; tolerate != nil {
-			if failedJobs > tolerate.FailedServices {
-				return v1alpha1.Lifecycle{
-					Phase:   v1alpha1.PhaseFailed,
-					Reason:  "TolerateLimitsExceeded",
-					Message: fmt.Sprintf("tolerate: %d. failed jobs: %s", tolerate.FailedServices, gs.FailedList()),
-				}
-			}
-
-			// Ignore the failure.
-			return status.Lifecycle
-		}
-
-	case successfulJobs == allJobs:
-		// All jobs are successfully completed
-		return v1alpha1.Lifecycle{
-			Phase:   v1alpha1.PhaseSuccess,
-			Reason:  "AllJobsCompleted",
-			Message: fmt.Sprintf("successful jobs: %s", gs.SuccessfulList()),
-		}
-
-	case activeJobs+successfulJobs == allJobs:
-		// All jobs are created, and at least one is still running
-		return v1alpha1.Lifecycle{
-			Phase:   v1alpha1.PhaseRunning,
-			Reason:  "JobIsRunning",
-			Message: fmt.Sprintf("active jobs: %s", gs.ActiveList()),
-		}
-
-	case status.Phase == v1alpha1.PhasePending:
-		// Not all Jobs are constructed created
-		return v1alpha1.Lifecycle{
-			Phase:   v1alpha1.PhasePending,
-			Reason:  "JobIsPending",
-			Message: "at least one jobs has not yet created",
-		}
-
-	default:
-		logrus.Warn("Cluster Debug info \n",
-			" current ", status.Lifecycle.Phase,
-			" total jobs: ", allJobs,
-			" activeJobs: ", activeJobs,
-			" successfulJobs: ", successfulJobs,
-			" failedJobs: ", failedJobs,
-			" cur status: ", status,
-		)
-
-		panic("unhandled lifecycle condition")
+	type test struct {
+		condition bool
+		outcome   v1alpha1.Lifecycle
 	}
 
-	panic("this should never happen")
+	tests := []test{
+		{
+			condition: failedJobs > 0 && failedJobs > cluster.Spec.Tolerate.FailedServices,
+			outcome: v1alpha1.Lifecycle{
+				Phase:  v1alpha1.PhaseFailed,
+				Reason: "TolerateLimitsExceeded",
+				Message: fmt.Sprintf("tolerate: %d. failed jobs: %s",
+					cluster.Spec.Tolerate.FailedServices, gs.FailedList()),
+			},
+		},
+		{ // All jobs are successfully completed
+			condition: successfulJobs == allJobs,
+			outcome: v1alpha1.Lifecycle{
+				Phase:   v1alpha1.PhaseSuccess,
+				Reason:  "AllJobsCompleted",
+				Message: fmt.Sprintf("successful jobs: %s", gs.SuccessfulList()),
+			},
+		},
+		{ // All jobs are created, and at least one is still running
+			condition: activeJobs+successfulJobs == allJobs,
+			outcome: v1alpha1.Lifecycle{
+				Phase:   v1alpha1.PhaseRunning,
+				Reason:  "JobIsRunning",
+				Message: fmt.Sprintf("active jobs: %s", gs.ActiveList()),
+			},
+		},
+		{ // Not all Jobs are constructed created
+			condition: status.Phase == v1alpha1.PhasePending,
+			outcome: v1alpha1.Lifecycle{
+				Phase:   v1alpha1.PhasePending,
+				Reason:  "JobIsPending",
+				Message: "at least one jobs has not yet created",
+			},
+		},
+	}
 
-	// TODO: validate the transition. For example, we cannot go from running to pending
-	/*
-
-		// There are still pending jobs to be created
-		return v1alpha1.Lifecycle{
-			Kind:   "Cluster",
-			Name:   cluster.GetName(),
-			Phase:  v1alpha1.PhasePending,
-			Reason: "waiting for jobs to start",
+	for _, testcase := range tests {
+		if testcase.condition {
+			return testcase.outcome
 		}
+	}
 
-	*/
+	logrus.Warn("Cluster Debug info \n",
+		" current ", status.Lifecycle.Phase,
+		" total jobs: ", allJobs,
+		" activeJobs: ", activeJobs,
+		" successfulJobs: ", successfulJobs,
+		" failedJobs: ", failedJobs,
+		" cur status: ", status,
+	)
+
+	panic("unhandled lifecycle conditions")
+
 }

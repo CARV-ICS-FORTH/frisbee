@@ -63,8 +63,8 @@ type EmbedFaultType struct {
 }
 
 // PartitionSpec separate the given Pod from the rest of the network. This chaos typeis retractable
-// (either manually or after a duration) and can be waited at both Running and Success Phase.
-// Running phase begins when the failure is injected. Success begins when the failure is retracted.
+// (either manually or after a duration) and can be waited at both Running and Pass Phase.
+// Running phase begins when the failure is injected. Pass begins when the failure is retracted.
 // If anything goes wrong in between, the chaos goes into Failed phase.
 type PartitionSpec struct {
 	Selector ServiceSelector `json:"selector"`
@@ -74,7 +74,7 @@ type PartitionSpec struct {
 }
 
 // KillSpec terminates the selected Pod. Because this failure is permanent, it can only be waited in the
-// Running Phase. It does not go through Success.
+// Running Phase. It does not go through Pass.
 type KillSpec struct {
 	Selector ServiceSelector `json:"selector,omitempty"`
 }

@@ -85,6 +85,7 @@ func main() {
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "233dac68.frisbee.io",
 	})
+
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)

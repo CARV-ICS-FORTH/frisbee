@@ -8,6 +8,10 @@ spec:
     host: localhost
     useAmbassador: true
 
+  testOracle:
+    pass: >-
+      {{.IsSuccessful "runners"}} == true
+
   actions:
     # Create a single Master node
     - action: Service
