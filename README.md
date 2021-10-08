@@ -101,6 +101,8 @@ spec:
         templateRef: redis/loader
         inputs:
           - { server: .service.master.any, recordcount: "100000000", offset: "0" }
+	  - { server: .service.master.any, recordcount: "100000000", offset: "100000000" }
+	  - { server: .service.master.any, recordcount: "100000000", offset: "200000000" }
 
 	# While the loaders are running, we inject a network partition fault to the master node. 
 	# The "after" dependency adds a delay so to have some keys before injecting the fault. 
