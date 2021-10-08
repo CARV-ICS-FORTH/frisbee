@@ -2,8 +2,8 @@
 
 # Why Frisbee ?
 
-Frisbee is a next generation testbed tool built for exploring, testing, and benchmarking modern applications. We address
-the key pain points developers and QA engineers face when testing cloud-native applications.
+Frisbee is a next generation platform designed to unify chaos testing and benchmarking recovery.
+We address the key pain points developers and QA engineers face when testing cloud-native applications.
 
 We make it possible to:
 
@@ -12,8 +12,6 @@ We make it possible to:
 * **Run tests:**  provides seamless scaling from a single workstation to hundreds of machines.
 
 * **Debug tests:**  through extensive monitoring and comprehensive dashboards
-
-
 
 
 
