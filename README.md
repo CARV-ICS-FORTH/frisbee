@@ -211,8 +211,6 @@ But why bother if you can access Grafana directly ?
 
 [Click Here](http://grafana.localhost/d/R5y4AE8Mz/kubernetes-cluster-monitoring-via-prometheus?orgId=1&amp;from=now-15m&amp;to=now)
 
-
-
 If everything went smoothly, you should see a similar dashboard.
 
 
