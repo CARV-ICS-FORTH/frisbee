@@ -17,15 +17,16 @@ We make it possible to:
 
 
 
-## How can I use it ?
+## How can I run a Frisbee experiment ?
 
 To see how Frisbee works, you can install it and run examples of simple workflows. 
 
 Firstly, you'll need a Kubernetes deployment and `kubectl` set-up
 
-For a single-node deployment click [here](docs/singlenode-deployment.md).
+* For a single-node deployment click [here](docs/singlenode-deployment.md).
 
-For a multi-node deployment click [here](docs/cluster-deployment.md).
+* For a multi-node deployment click [here](docs/cluster-deployment.md).
+  
 
 
 In this walk-through, we assume you have followed the instructions for the single-node deployment.
@@ -46,33 +47,58 @@ We can use the controller's output to reason about the experiments transition.
 On the other terminal, you can issue requests.
 
 ```bash
+# Create a dedicated Frisbee name
+>> kubectl create namespace frisbee
+
 # Run a testplan (from Frisbee directory)
->> kubectl apply -f examples/testplans/validate-local.yml 
+>> kubectl -n frisbee apply -f examples/testplans/0.validate-local.yml
 workflow.frisbee.io/validate-local created
 
 # Confirm that the workflow is running.
->> kubectl get workflows.frisbee.io
-NAME           AGE
-validate-local   47s
+>> kubectl -n frisbee get pods
+NAME         READY   STATUS    RESTARTS   AGE
+prometheus   1/1     Running   0          19s
+grafana      1/1     Running   0          16s
+master       3/3     Running   0          8s
+
+# Wait until the test oracle is triggered.
+>> kubectl -n frisbee wait --for=condition=oracle --timeout=3m workflows.frisbee.io/validate-local
+workflow.frisbee.io/validate-local condition met
 ```
 
 
 
+## How can I understand what happened ?
 
 
 
+One way, is to access the workflow's description
+
+```bash
+>> kubectl -n frisbee describe workflows.frisbee.io/validate-local
+```
 
 
 
+But why bother if you can access Grafana directly ? 
 
+
+
+[Here]: http://grafana.localhost/d/R5y4AE8Mz/kubernetes-cluster-monitoring-via-prometheus?orgId=1&amp;from=now-15m&amp;to=now
+
+
+
+If everything went smoothly, you should see a similar dashboard.
+
+
+
+![image-20211008220616364](docs/images/dashboard.png)
 
 
 
 
 
 To learn how to build your custom experiment click [here](docs/cluster-deployment.md).
-
-
 
 
 
