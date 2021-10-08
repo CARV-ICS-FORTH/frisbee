@@ -116,7 +116,7 @@ func (r *Controller) installPrometheus(ctx context.Context, w *v1alpha1.Workflow
 			return nil, errors.Wrapf(err, "creation failed")
 		default:
 			logrus.Warnf("Waiting for prometheus to become ready ...")
-			if err := WaitUntil(r.prometheus, v1alpha1.PhaseRunning); err != nil {
+			if err := utils.WaitUntil(r.prometheus, v1alpha1.PhaseRunning); err != nil {
 				return nil, errors.Wrapf(err, "prometheus is not running")
 			}
 			close(r.prometheus)
@@ -164,7 +164,7 @@ func (r *Controller) installGrafana(ctx context.Context, w *v1alpha1.Workflow) (
 		default:
 			logrus.Warnf("Waiting for grafana to become ready ...")
 
-			if err := WaitUntil(r.grafana, v1alpha1.PhaseRunning); err != nil {
+			if err := utils.WaitUntil(r.grafana, v1alpha1.PhaseRunning); err != nil {
 				return nil, errors.Wrapf(err, "grafana is not running")
 			}
 
@@ -175,22 +175,6 @@ func (r *Controller) installGrafana(ctx context.Context, w *v1alpha1.Workflow) (
 	r.Logger.Info("Grafana is installed")
 
 	return &grafana, nil
-}
-
-func WaitUntil(src <-chan *v1alpha1.Lifecycle, phase v1alpha1.Phase) error {
-	for lf := range src {
-		if lf.Phase.Equals(v1alpha1.PhaseRunning) {
-			break
-		}
-
-		if lf.Phase.IsValid(v1alpha1.PhaseRunning) {
-			continue
-		}
-
-		return errors.Errorf("expected %s but got %s", phase, lf.Phase)
-	}
-
-	return nil
 }
 
 func (r *Controller) importDashboards(ctx context.Context, obj *v1alpha1.Workflow, spec *v1alpha1.ServiceSpec) error {

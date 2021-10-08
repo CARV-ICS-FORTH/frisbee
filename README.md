@@ -13,15 +13,68 @@ We make it possible to:
 
 * **Debug tests:**  through extensive monitoring and comprehensive dashboards
 
-In this walk-through, we explain how to install and execute the examples in a single-node using the Microk8s flavor of Kubernetes.
 
 
+
+
+## How can I use it ?
+
+To see how Frisbee works, you can install it and run examples of simple workflows. 
+
+Firstly, you'll need a Kubernetes deployment and `kubectl` set-up
 
 For a single-node deployment click [here](docs/singlenode-deployment.md).
 
 For a multi-node deployment click [here](docs/cluster-deployment.md).
 
+
+In this walk-through, we assume you have followed the instructions for the single-node deployment.
+
+
+
+In one terminal, run the Frisbee controller.
+
+```bash
+# Run the Frisbee controller
+>> make run
+```
+
+We can use the controller's output to reason about the experiments transition. 
+
+
+
+On the other terminal, you can issue requests.
+
+```bash
+# Run a testplan (from Frisbee directory)
+>> kubectl apply -f examples/testplans/validate-local.yml 
+workflow.frisbee.io/validate-local created
+
+# Confirm that the workflow is running.
+>> kubectl get workflows.frisbee.io
+NAME           AGE
+validate-local   47s
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 To learn how to build your custom experiment click [here](docs/cluster-deployment.md).
+
+
+
+
 
 
 

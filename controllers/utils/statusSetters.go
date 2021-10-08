@@ -19,6 +19,7 @@ package utils
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
@@ -43,8 +44,9 @@ func Pending(ctx context.Context, r Reconciler, obj client.Object, reason string
 	}
 
 	status := v1alpha1.Lifecycle{
-		Phase:  v1alpha1.PhasePending,
-		Reason: reason,
+		Phase:   v1alpha1.PhasePending,
+		Reason:  fmt.Sprintf("%s%s", obj.GetName(), "Running"),
+		Message: reason,
 	}
 
 	if statusAware, updateStatus := obj.(ReconcileStatusAware); updateStatus {
@@ -57,8 +59,7 @@ func Pending(ctx context.Context, r Reconciler, obj client.Object, reason string
 		}
 	} else {
 		r.Info("Object does not support RecocileStatusAware interface. Not setting status",
-			"obj", obj.GetName(),
-			"status", status,
+			"obj", obj.GetName(), "status", status,
 		)
 	}
 
@@ -72,8 +73,9 @@ func Running(ctx context.Context, r Reconciler, obj client.Object, reason string
 	}
 
 	status := v1alpha1.Lifecycle{
-		Phase:  v1alpha1.PhaseRunning,
-		Reason: reason,
+		Phase:   v1alpha1.PhaseRunning,
+		Reason:  fmt.Sprintf("%s%s", obj.GetName(), "Running"),
+		Message: reason,
 	}
 
 	if statusAware, updateStatus := obj.(ReconcileStatusAware); updateStatus {
@@ -86,8 +88,7 @@ func Running(ctx context.Context, r Reconciler, obj client.Object, reason string
 		}
 	} else {
 		r.Info("Object does not support RecocileStatusAware interface. Not setting status",
-			"obj", obj.GetName(),
-			"status", status,
+			"obj", obj.GetName(), "status", status,
 		)
 	}
 
@@ -101,8 +102,9 @@ func Success(ctx context.Context, r Reconciler, obj client.Object, reason string
 	}
 
 	status := v1alpha1.Lifecycle{
-		Phase:  v1alpha1.PhaseSuccess,
-		Reason: reason,
+		Phase:   v1alpha1.PhaseSuccess,
+		Reason:  fmt.Sprintf("%s%s", obj.GetName(), "Success"),
+		Message: reason,
 	}
 
 	if statusAware, updateStatus := obj.(ReconcileStatusAware); updateStatus {
@@ -134,8 +136,9 @@ func Failed(ctx context.Context, r Reconciler, obj client.Object, issue error) (
 	// r.GetRecorder().Event(obj, "Warning", "ProcessingError", issue.Error())
 
 	status := v1alpha1.Lifecycle{
-		Phase: v1alpha1.PhaseFailed,
-		Reason: errors.Wrapf(issue, "unable to update status for %s (rv = %s): %v",
+		Phase:  v1alpha1.PhaseFailed,
+		Reason: fmt.Sprintf("%s%s", obj.GetName(), "Failed"),
+		Message: errors.Wrapf(issue, "unable to update status for %s (rv = %s): %v",
 			obj.GetNamespace(), obj.GetName(), obj.GetResourceVersion()).Error(),
 	}
 
@@ -149,8 +152,7 @@ func Failed(ctx context.Context, r Reconciler, obj client.Object, issue error) (
 		}
 	} else {
 		r.Info("Object does not support RecocileStatusAware interface. Not setting status",
-			"obj", obj.GetName(),
-			"status", status,
+			"obj", obj.GetName(), "status", status,
 		)
 	}
 

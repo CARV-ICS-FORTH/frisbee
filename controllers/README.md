@@ -2,7 +2,7 @@
 
 In Kubernetes, controllers are control loops that watch the state of
 your [cluster](https://kubernetes.io/docs/reference/glossary/?all=true#term-cluster), then make or request changes where
-needed. Each controller tries to move the current cluster state closer to the desired state.
+needed. A sync loop (also called reconciliation loop) is what must be done in  order to synchronize the ‘desired state’ with the ‘observed state’.
 
 The reconciliation cycle is where the framework gives us back control after a watch has passed up an event. At this
 point we don’t have the information about the type of event because we are working on level-based triggers. Below is a

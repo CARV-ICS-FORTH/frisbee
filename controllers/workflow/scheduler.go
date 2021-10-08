@@ -83,14 +83,13 @@ func GetNextLogicalJob(
 	obj metav1.Object,
 	all v1alpha1.ActionList,
 	gs utils.LifecycleClassifier,
-	scheduled map[string]bool,
+	scheduled map[string]metav1.Time,
 ) (v1alpha1.ActionList, time.Time) {
 	var candidates v1alpha1.ActionList
 
 	var nextCycle time.Time
 
 	successOK := func(deps *v1alpha1.WaitSpec) bool {
-		// validate Success dependencies
 		for _, dep := range deps.Success {
 			if !gs.IsSuccessful(dep) {
 				return false
@@ -101,7 +100,6 @@ func GetNextLogicalJob(
 	}
 
 	runningOK := func(deps *v1alpha1.WaitSpec) bool {
-		// validate Success dependencies
 		for _, dep := range deps.Running {
 			if !gs.IsRunning(dep) {
 				return false

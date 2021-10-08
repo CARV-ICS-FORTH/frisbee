@@ -111,8 +111,7 @@ func (s v1alpha1ChaosStatus) Extract() (phase DesiredPhase, selected, injected, 
 func calculateLifecycle(cr *v1alpha1.Chaos, fault *Fault) v1alpha1.Lifecycle {
 	status := cr.Status
 
-	// If uninitialized, there is nothing to calculate.
-	// if success or failed, the phases are terminal and shall be passed right away.
+	// Skip any CR which are already completed, or uninitialized.
 	if status.Phase == v1alpha1.PhaseUninitialized ||
 		status.Phase == v1alpha1.PhaseSuccess ||
 		status.Phase == v1alpha1.PhaseFailed {

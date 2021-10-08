@@ -27,7 +27,8 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -153,7 +154,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		We also suppress verbose error reporting as to avoid polluting the output.
 	*/
 	newStatus := calculateLifecycle(&w, r.state)
-	w.Status.Lifecycle = newStatus
+	w.Status = newStatus
 
 	if err := utils.UpdateStatus(ctx, r, &w); err != nil {
 		runtime.HandleError(err)
@@ -169,8 +170,6 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		around.
 	*/
 	if newStatus.Phase == v1alpha1.PhaseSuccess {
-		r.GetEventRecorderFor("").Event(&w, corev1.EventTypeNormal, newStatus.Reason, newStatus.Message)
-
 		// Remove the testing components once the experiment is successfully complete.
 		// We maintain testbed components (e.g, prometheus and grafana) for getting back the test results.
 		// These components are removed by deleting the Workflow.
@@ -182,8 +181,6 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	if newStatus.Phase == v1alpha1.PhaseFailed {
-		r.GetEventRecorderFor("").Event(&w, corev1.EventTypeWarning, newStatus.Reason, newStatus.Message)
-
 		// Remove the non-failed components. Leave the failed to postmortem analysis
 		for _, job := range r.state.SuccessfulJobs() {
 			utils.Delete(ctx, r, job)
@@ -227,20 +224,29 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			return utils.Failed(ctx, r, &w, errors.Wrapf(err, "invalid dependency DAG"))
 		}
 
+		if err := ValidateOracle(&w, r.state); err != nil {
+			return utils.Failed(ctx, r, &w, errors.Wrapf(err, "invalid TestOracle"))
+		}
+
 		if err := r.newMonitoringStack(ctx, &w); err != nil {
 			return utils.Failed(ctx, r, &w, errors.Wrapf(err, "unable to create the observability stack"))
 		}
 
-		logrus.Warn(" -- Observability Stack --")
+		meta.SetStatusCondition(&w.Status.Conditions, metav1.Condition{
+			Type:    v1alpha1.WorkflowInitialized.String(),
+			Status:  metav1.ConditionTrue,
+			Reason:  "WorkflowInitialized",
+			Message: "The observability stack has been installed",
+		})
 
-		return utils.Pending(ctx, r, &w, "monitoring stack has been started")
+		return utils.Pending(ctx, r, &w, "The observability stack has been installed")
 	}
 
 	/*
 		7: Get the next logical run
 		------------------------------------------------------------------
 	*/
-	actionList, nextRun := GetNextLogicalJob(&w, w.Spec.Actions, r.state, w.Status.Scheduled)
+	actionList, nextRun := GetNextLogicalJob(&w, w.Spec.Actions, r.state, w.Status.Executed)
 
 	if len(actionList) == 0 {
 		if nextRun.IsZero() {
@@ -271,12 +277,12 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		we might not see our own status update, and then post one again.
 		So, we need to use the job name as a lock to prevent us from making the job twice.
 	*/
-	if w.Status.Scheduled == nil {
-		w.Status.Scheduled = make(map[string]bool)
+	if w.Status.Executed == nil {
+		w.Status.Executed = make(map[string]metav1.Time)
 	}
 
 	for _, action := range actionList {
-		w.Status.Scheduled[action.Name] = true
+		w.Status.Executed[action.Name] = metav1.Now()
 	}
 
 	return utils.Pending(ctx, r, &w, "some jobs are still pending")
@@ -330,7 +336,7 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 
 // isJobInScheduledList take a job and checks if activeJobs has a job with the same
 // name and namespace.
-func isJobInScheduledList(name string, scheduledJobs map[string]bool) bool {
+func isJobInScheduledList(name string, scheduledJobs map[string]metav1.Time) bool {
 	_, ok := scheduledJobs[name]
 
 	return ok

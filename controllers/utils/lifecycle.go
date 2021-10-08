@@ -19,6 +19,7 @@ package utils
 
 import (
 	"github.com/fnikolai/frisbee/api/v1alpha1"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -182,4 +183,20 @@ func (in *LifecycleClassifier) FailedJobs() []client.Object {
 	}
 
 	return list
+}
+
+func WaitUntil(src <-chan *v1alpha1.Lifecycle, phase v1alpha1.Phase) error {
+	for lf := range src {
+		if lf.Phase.Equals(v1alpha1.PhaseRunning) {
+			break
+		}
+
+		if lf.Phase.IsValid(v1alpha1.PhaseRunning) {
+			continue
+		}
+
+		return errors.Errorf("expected %s but got %s", phase, lf.Phase)
+	}
+
+	return nil
 }

@@ -25,6 +25,30 @@ func init() {
 	SchemeBuilder.Register(&Workflow{}, &WorkflowList{})
 }
 
+// WorkflowConditionType is a valid value for WorkflowCondition.Type
+type WorkflowConditionType string
+
+func (t WorkflowConditionType) String() string {
+	return string(t)
+}
+
+// These are valid conditions of pod.
+const (
+	// WorkflowInitialized indicates whether the workflow has been initialized
+	WorkflowInitialized = WorkflowConditionType("initialized")
+
+	WorkflowHasFailedJobs = WorkflowConditionType("hasFailedJobs")
+
+	// WorkflowAllExecuted indicates whether all actions in the workflow have been executed.
+	WorkflowAllExecuted = WorkflowConditionType("allActions")
+
+	// WorkflowComplete indicates whether all actions in the workflow have been completed.
+	WorkflowComplete = WorkflowConditionType("complete")
+
+	// WorkflowOracle indicates the user-defined conditions are met.
+	WorkflowOracle = WorkflowConditionType("oracle")
+)
+
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:shortName=wf
 // +kubebuilder:subresource:status
@@ -41,7 +65,8 @@ type Workflow struct {
 	Status WorkflowStatus `json:"status,omitempty"`
 }
 
-// Ingress is a collection of routing rules that govern how external users access services running in a Kubernetes cluster.
+// Ingress is a collection of routing rules that govern how external users access services
+// running in a Kubernetes cluster.
 type Ingress struct {
 	// Host is the postfix from which the ingress will be available.
 	// Example: grafana.localhost, grafana.{MYIP}.nip.io, grafana.platform.science-hangar.eu
@@ -68,9 +93,21 @@ type WorkflowSpec struct {
 	// not apply to already started executions.  Defaults to false.
 	// +optional
 	Suspend *bool `json:"suspend,omitempty"`
+
+	// Oracle defines the conditions under which the workflow will terminate with a "passed" or "failed" message
+	// +optional
+	Oracle *TestOracle `json:"testOracle,omitempty"`
 }
 
-// Action delegates arguments to the proper action handler
+// TestOracle is a source of information about whether the state of the workflow after a given time is correct or not.
+// This is needed because some workflows may run in infinite-horizons.
+type TestOracle struct {
+	Pass *string `json:"pass,omitempty"`
+
+	Fail *string `json:"fail,omitempty"`
+}
+
+// Action delegates arguments to the proper action handler.
 type Action struct {
 	ActionType string `json:"action"`
 
@@ -112,9 +149,12 @@ type EmbedActions struct {
 type WorkflowStatus struct {
 	Lifecycle `json:",inline"`
 
-	// Scheduled is a list of scheduled actions.
 	// +optional
-	Scheduled map[string]bool `json:"scheduled,omitempty"`
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
+
+	// Executed is a list of executed actions.
+	// +optional
+	Executed map[string]metav1.Time `json:"scheduled,omitempty"`
 }
 
 func (in *Workflow) GetReconcileStatus() Lifecycle {

@@ -25,7 +25,6 @@ import (
 
 	"github.com/grafana-tools/sdk"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -102,8 +101,6 @@ func (a *RangeAnnotation) Add(obj client.Object) {
 		Text:    fmt.Sprintf("Job Added. Kind:%s Name:%s", reflect.TypeOf(obj), obj.GetName()),
 	}
 
-	logrus.Warn("ADD ADD ANNOTATION ", ga)
-
 	if v := Annotate; v != nil {
 		a.reqID = v.Insert(ga)
 		v.Insert(ga)
@@ -126,8 +123,6 @@ func (a *RangeAnnotation) Delete(obj client.Object) {
 		Tags:    []string{AnnotationFailure},
 		Text:    fmt.Sprintf("Job Deleted. Kind:%s Name:%s", reflect.TypeOf(obj), obj.GetName()),
 	}
-
-	logrus.Warn("ADD DELETE ANNOTATION ", ga)
 
 	if v := Annotate; v != nil {
 		v.Patch(a.reqID, ga)

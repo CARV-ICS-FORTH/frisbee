@@ -38,7 +38,7 @@ spec:
               kill:
                 description: KillSpec terminates the selected Pod. Because this failure
                   is permanent, it can only be waited in the Running Phase. It does
-                  not go through Success.
+                  not go through Pass.
                 properties:
                   selector:
                     properties:
@@ -88,10 +88,10 @@ spec:
               partition:
                 description: PartitionSpec separate the given Pod from the rest of
                   the network. This chaos typeis retractable (either manually or after
-                  a duration) and can be waited at both Running and Success Phase.
-                  Running phase begins when the failure is injected. Success begins
-                  when the failure is retracted. If anything goes wrong in between,
-                  the chaos goes into Failed phase.
+                  a duration) and can be waited at both Running and Pass Phase. Running
+                  phase begins when the failure is injected. Pass begins when the
+                  failure is retracted. If anything goes wrong in between, the chaos
+                  goes into Failed phase.
                 properties:
                   duration:
                     type: string
@@ -163,7 +163,10 @@ spec:
                 description: Message provides more details for understanding the Reason.
                 type: string
               phase:
-                description: Phase is the current status of an object
+                description: Phase is a simple, high-level summary of where the Object
+                  is in its lifecycle. The conditions array, the reason and message
+                  fields, and the individual container status arrays contain more
+                  detail about the pod's status.
                 type: string
               reason:
                 description: Reason is A brief CamelCase message indicating details
