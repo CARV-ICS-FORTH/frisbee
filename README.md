@@ -2,7 +2,7 @@
 
 # Why Frisbee ?
 
-Frisbee is a next generation platform designed to unify chaos testing and benchmarking recovery.
+Frisbee is a next generation platform designed to unify chaos testing and perfomance benchmarking.
 
 We address the key pain points developers and QA engineers face when testing cloud-native applications in the earlier stages of the software lifecycle.
 
