@@ -22,10 +22,12 @@ import (
 	"reflect"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
-	"github.com/fnikolai/frisbee/controllers/template/helpers"
+	thelpers "github.com/fnikolai/frisbee/controllers/template/helpers"
 	"github.com/fnikolai/frisbee/controllers/utils"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/util/yaml"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -40,50 +42,82 @@ type Controller struct {
 // move the current state of the cluster closer to the desired state.
 func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	/*
-		### 1: Load CR by name.
+		1: Load CR by name.
+		------------------------------------------------------------------
 	*/
-	var t v1alpha1.Template
+	var cr v1alpha1.Template
 
 	var requeue bool
-	result, err := utils.Reconcile(ctx, r, req, &t, &requeue)
+	result, err := utils.Reconcile(ctx, r, req, &cr, &requeue)
 
 	if requeue {
 		return result, errors.Wrapf(err, "initialization error")
 	}
 
-	if t.Status.Lifecycle.Phase == v1alpha1.PhaseRunning {
-		return utils.Stop()
+	/*
+		2: Update the CR status using the data we've gathered
+		------------------------------------------------------------------
+	*/
+	if err := utils.UpdateStatus(ctx, r, &cr); err != nil {
+		runtime.HandleError(err)
+
+		return utils.Requeue()
 	}
 
 	/*
-		### 2:  Initialize the CR
+		3: Clean up the controller from finished jobs
+		------------------------------------------------------------------
+
+		Not needed now.
 	*/
-	if !t.Status.IsRegistered {
+
+	/*
+		4: Make the world matching what we want in our spec
+		------------------------------------------------------------------
+	*/
+	if cr.Status.Lifecycle.Phase == v1alpha1.PhaseRunning {
+		return utils.Stop()
+	}
+
+	if cr.Status.Lifecycle.Phase == v1alpha1.PhaseUninitialized {
 		// validate services
-		for name, spec := range t.Spec.Services {
-			if _, err := thelpers.GenerateSpecFromScheme(spec.DeepCopy()); err != nil {
-				return utils.Failed(ctx, r, &t, errors.Wrapf(err, "service template %s error", name))
+		for name, scheme := range cr.Spec.Entries {
+			specStr, err := thelpers.GenerateSpecFromScheme(scheme.DeepCopy())
+			if err != nil {
+				return utils.Failed(ctx, r, &cr, errors.Wrapf(err, "template %s error", name))
+			}
+
+			sSpec := v1alpha1.ServiceSpec{}
+
+			if err := yaml.Unmarshal([]byte(specStr), &sSpec); err != nil {
+				// if it is not a service, it may be a monitor
+				mSpec := v1alpha1.MonitorSpec{}
+				if err := yaml.Unmarshal([]byte(specStr), &mSpec); err != nil {
+					return utils.Failed(ctx, r, &cr, errors.Wrapf(err, "unparsable scheme for %s", name))
+				}
 			}
 		}
 
-		// validate monitors
-		for name, spec := range t.Spec.Monitors {
-			if _, err := thelpers.GenerateMonitorSpec(spec.DeepCopy()); err != nil {
-				return utils.Failed(ctx, r, &t, errors.Wrapf(err, "monitor template %s error", name))
-			}
+		names := make([]string, 0, len(cr.Spec.Entries))
+
+		for name := range cr.Spec.Entries {
+			names = append(names, name)
 		}
 
 		r.Logger.Info("Import Template",
 			"name", req.NamespacedName,
-			"services", GetServiceNames(t.Spec),
-			"monitor", GetMonitorNames(t.Spec),
+			"entries", names,
 		)
+
+		return utils.Running(ctx, r, &cr, "all templates are loaded")
 	}
 
-	t.Status.IsRegistered = true
-
-	return utils.Running(ctx, r, &t, "all templates are loaded")
+	return utils.Stop()
 }
+
+/*
+### Finalizers
+*/
 
 func (r *Controller) Finalizer() string {
 	return "templates.frisbee.io/finalizer"
@@ -99,25 +133,14 @@ func (r *Controller) Finalize(obj client.Object) error {
 	return nil
 }
 
-func GetServiceNames(t v1alpha1.TemplateSpec) []string {
-	names := make([]string, 0, len(t.Services))
+/*
+### Setup
+	Finally, we'll update our setup.
 
-	for name := range t.Services {
-		names = append(names, name)
-	}
-
-	return names
-}
-
-func GetMonitorNames(t v1alpha1.TemplateSpec) []string {
-	names := make([]string, 0, len(t.Monitors))
-
-	for name := range t.Monitors {
-		names = append(names, name)
-	}
-
-	return names
-}
+	We'll inform the manager that this controller owns some resources, so that it
+	will automatically call Reconcile on the underlying controller when a resource changes, is
+	deleted, etc.
+*/
 
 func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 	return ctrl.NewControllerManagedBy(mgr).

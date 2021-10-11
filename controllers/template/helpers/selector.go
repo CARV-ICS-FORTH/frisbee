@@ -49,14 +49,14 @@ func ParseRef(nm, templateRef string) *v1alpha1.TemplateSelector {
 	}
 }
 
-func SelectServiceTemplate(ctx context.Context, r utils.Reconciler, ts *v1alpha1.TemplateSelector) *v1alpha1.Scheme {
+func Select(ctx context.Context, r utils.Reconciler, ts *v1alpha1.TemplateSelector) (v1alpha1.Scheme, error) {
 	if ts == nil {
-		return nil
+		return v1alpha1.Scheme{}, errors.New("empty selector")
 	}
 
 	var template v1alpha1.Template
 
-	key := client.ObjectKey{
+	templateKey := client.ObjectKey{
 		Namespace: ts.Namespace,
 		Name:      ts.Family,
 	}
@@ -64,67 +64,23 @@ func SelectServiceTemplate(ctx context.Context, r utils.Reconciler, ts *v1alpha1
 	// if the template is created in parallel with the workflow, it is possible to meet race conditions.
 	// We avoid it with a simple retry mechanism based on adaptive backoff.
 	err := retry.OnError(retry.DefaultRetry, k8errors.IsNotFound, func() error {
-		return r.GetClient().Get(ctx, key, &template)
+		return r.GetClient().Get(ctx, templateKey, &template)
 	})
 	if err != nil {
-		r.Error(err, "unable to find entry %s", key.String())
-
-		return nil
+		return v1alpha1.Scheme{}, errors.Wrapf(err, "unable to find template %s", templateKey.String())
 	}
 
 	// TODO: Change Get to List
 
 	switch {
-	case len(ts.Selector.Reference) > 0:
-		scheme, ok := template.Spec.Services[ts.Selector.Reference]
+	case ts.Selector.Reference != "":
+		scheme, ok := template.Spec.Entries[ts.Selector.Reference]
 		if !ok {
-			r.Error(err, "unable to find entry %s", ts.Selector.Reference)
-
-			return nil
+			return v1alpha1.Scheme{}, errors.Errorf("no %s scheme is defined in template %s",
+				ts.Selector.Reference, templateKey.String())
 		}
 
-		return &scheme
-
-	default:
-		panic(errors.Errorf("unspecified selection criteria"))
-	}
-}
-
-func SelectMonitorTemplate(ctx context.Context, r utils.Reconciler, ts *v1alpha1.TemplateSelector) *v1alpha1.Scheme {
-	if ts == nil {
-		return nil
-	}
-
-	var template v1alpha1.Template
-
-	key := client.ObjectKey{
-		Namespace: ts.Namespace,
-		Name:      ts.Family,
-	}
-
-	// if the template is created in parallel with the workflow, it is possible to meet race conditions.
-	// We avoid it with a simple retry mechanism based on adaptive backoff.
-	err := retry.OnError(retry.DefaultRetry, k8errors.IsNotFound, func() error {
-		return r.GetClient().Get(ctx, key, &template)
-	})
-	if err != nil {
-		r.Error(err, "unable to find entry %s", key.String())
-
-		return nil
-	}
-
-	// TODO: Change Get to List
-
-	switch {
-	case len(ts.Selector.Reference) > 0:
-		scheme, ok := template.Spec.Monitors[ts.Selector.Reference]
-		if !ok {
-			r.Error(err, "unable to find entry %s", ts.Selector.Reference)
-
-			return nil
-		}
-
-		return &scheme
+		return scheme, nil
 
 	default:
 		panic(errors.Errorf("unspecified selection criteria"))

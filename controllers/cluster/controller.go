@@ -349,14 +349,14 @@ func (r *Controller) Finalize(obj client.Object) error {
 
 /*
 ### Setup
-	Finally, we'll update our setup.  In order to allow to quickly look up Services by their owner,
+	Finally, we'll update our setup.  In order to allow to quickly look up Entries by their owner,
 	we'll need an index.  We declare an index key that we can later use with the client as a pseudo-field name,
 	and then describe how to extract the indexed value from the Service object.
 	The indexer will automatically take care of namespaces for us, so we just have to extract the
 	owner name if the Service has a Cluster owner.
 
-	Additionally, we'll inform the manager that this controller owns some Services, so that it
-	will automatically call Reconcile on the underlying Cluster when a Service changes, is
+	Additionally, We'll inform the manager that this controller owns some resources, so that it
+	will automatically call Reconcile on the underlying controller when a resource changes, is
 	deleted, etc.
 */
 

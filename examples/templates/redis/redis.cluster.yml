@@ -5,7 +5,7 @@ kind: Template
 metadata:
   name: rediscluster
 spec:
-  services:
+  entries:
     # Master server handling a keyspace
     # Every Redis Cluster node has an additional TCP port for receiving incoming connections from other
     # Redis Cluster nodes. This port is at a fixed offset from the normal TCP port used to receive incoming

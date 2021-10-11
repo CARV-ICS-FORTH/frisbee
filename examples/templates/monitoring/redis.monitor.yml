@@ -4,7 +4,7 @@ kind: Template
 metadata:
   name: redismon
 spec:
-  monitors:
+  entries:
     "telegraf":
       spec: |
         agent:

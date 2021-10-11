@@ -55,7 +55,12 @@ func constructJobSpecList(ctx context.Context, r *Controller, cluster *v1alpha1.
 		cluster.Spec.Instances = len(cluster.Spec.Inputs)
 	}
 
-	scheme := thelpers.SelectServiceTemplate(ctx, r, thelpers.ParseRef(cluster.GetNamespace(), cluster.Spec.TemplateRef))
+	ts := thelpers.ParseRef(cluster.GetNamespace(), cluster.Spec.TemplateRef)
+
+	scheme, err := thelpers.Select(ctx, r, ts)
+	if err != nil {
+		return nil, errors.Wrapf(err, "cannot get scheme for: %s", cluster.GetName())
+	}
 
 	// cache the results of macro as to avoid asking the Kubernetes API. This, however, is only applicable
 	// to the level of a cluster, because different groups may be created in different moments
@@ -79,9 +84,14 @@ func constructJobSpecList(ctx context.Context, r *Controller, cluster *v1alpha1.
 			}
 		}
 
-		spec, err := thelpers.GenerateSpecFromScheme(scheme)
+		genSpec, err := thelpers.GenerateSpecFromScheme(&scheme)
 		if err != nil {
-			return nil, errors.Wrapf(err, "scheme to instance")
+			return nil, errors.Wrapf(err, "scheme to generic spec")
+		}
+
+		spec, err := genSpec.ToServiceSpec()
+		if err != nil {
+			return nil, errors.Wrapf(err, "genSpec to Service spec")
 		}
 
 		specs = append(specs, spec)

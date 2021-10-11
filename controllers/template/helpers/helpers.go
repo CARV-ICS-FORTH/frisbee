@@ -30,51 +30,68 @@ import (
 	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
-var sprigFuncMap = sprig.TxtFuncMap() // a singleton for better performance
+type GenericSpec string
 
-func GetServiceSpec(ctx context.Context, r utils.Reconciler, ts *v1alpha1.TemplateSelector) (v1alpha1.ServiceSpec, error) {
-	scheme := SelectServiceTemplate(ctx, r, ts)
-
-	return GenerateSpecFromScheme(scheme)
-}
-
-// GenerateSpecFromScheme parses a given scheme and returns the respective ServiceSpec.
-func GenerateSpecFromScheme(tspec *v1alpha1.Scheme) (v1alpha1.ServiceSpec, error) {
-	if tspec == nil {
-		return v1alpha1.ServiceSpec{}, errors.Errorf("empty service spec")
-	}
-
-	// replaced templated expression with actual values
-	t := template.Must(
-		template.New("").
-			Funcs(sprigFuncMap).
-			Option("missingkey=error").
-			Parse(tspec.Spec))
-
-	var out strings.Builder
-
-	if err := t.Execute(&out, tspec); err != nil {
-		return v1alpha1.ServiceSpec{}, errors.Wrapf(err, "execution error")
-	}
-
+func (s GenericSpec) ToServiceSpec() (v1alpha1.ServiceSpec, error) {
 	// convert the payload with actual values into a spec
 	spec := v1alpha1.ServiceSpec{}
 
-	if err := yaml.Unmarshal([]byte(out.String()), &spec); err != nil {
+	if err := yaml.Unmarshal([]byte(s), &spec); err != nil {
 		return v1alpha1.ServiceSpec{}, errors.Wrapf(err, "service decode")
 	}
 
 	return spec, nil
 }
 
-func GetMonitorSpec(ctx context.Context, r utils.Reconciler, ts *v1alpha1.TemplateSelector) (*v1alpha1.MonitorSpec, error) {
-	scheme := SelectMonitorTemplate(ctx, r, ts)
+func (s GenericSpec) ToMonitorSpec() (v1alpha1.MonitorSpec, error) {
+	// convert the payload with actual values into a spec
+	spec := v1alpha1.MonitorSpec{}
 
-	return GenerateMonitorSpec(scheme)
+	if err := yaml.Unmarshal([]byte(s), &spec); err != nil {
+		return v1alpha1.MonitorSpec{}, errors.Wrapf(err, "monitor decode")
+	}
+
+	return spec, nil
 }
 
-// GenerateMonitorSpec parses a given scheme and returns the respective MonitorSpec.
-func GenerateMonitorSpec(tspec *v1alpha1.Scheme) (*v1alpha1.MonitorSpec, error) {
+func GetDefaultSpec(ctx context.Context, r utils.Reconciler, ts *v1alpha1.TemplateSelector) (GenericSpec, error) {
+	scheme, err := Select(ctx, r, ts)
+	if err != nil {
+		return "", errors.Wrapf(err, "scheme selection")
+	}
+
+	return GenerateSpecFromScheme(&scheme)
+}
+
+func GetParameterizedSpec(ctx context.Context, r utils.Reconciler, ts *v1alpha1.TemplateSelector,
+	namespace string, inputs map[string]string, cache map[string]v1alpha1.SList,
+
+) (GenericSpec, error) {
+	scheme, err := Select(ctx, r, ts)
+	if err != nil {
+		return "", errors.Wrapf(err, "unable to create service")
+	}
+
+	if err := ExpandInputs(ctx, r, namespace, scheme.Inputs.Parameters, inputs, cache); err != nil {
+		return "", errors.Wrapf(err, "unable to expand inputs")
+	}
+
+	specStr, err := GenerateSpecFromScheme(&scheme)
+	if err != nil {
+		return "", errors.Wrapf(err, "unable tto create spec")
+	}
+
+	return specStr, nil
+}
+
+var sprigFuncMap = sprig.TxtFuncMap() // a singleton for better performance
+
+// GenerateSpecFromScheme parses a given scheme and returns the respective ServiceSpec.
+func GenerateSpecFromScheme(tspec *v1alpha1.Scheme) (GenericSpec, error) {
+	if tspec == nil {
+		return "", errors.Errorf("empty scheme")
+	}
+
 	// replaced templated expression with actual values
 	t := template.Must(
 		template.New("").
@@ -85,17 +102,10 @@ func GenerateMonitorSpec(tspec *v1alpha1.Scheme) (*v1alpha1.MonitorSpec, error) 
 	var out strings.Builder
 
 	if err := t.Execute(&out, tspec); err != nil {
-		return nil, errors.Wrapf(err, "execution error")
+		return "", errors.Wrapf(err, "execution error")
 	}
 
-	// convert the payload with actual values into a spec
-	spec := v1alpha1.MonitorSpec{}
-
-	if err := yaml.Unmarshal([]byte(out.String()), &spec); err != nil {
-		return nil, errors.Wrapf(err, "monitor decode")
-	}
-
-	return &spec, nil
+	return GenericSpec(out.String()), nil
 }
 
 func ExpandInputs(ctx context.Context,

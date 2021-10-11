@@ -56,17 +56,18 @@ func (r *Controller) runJob(ctx context.Context, obj *v1alpha1.Service) error {
 }
 
 func (r *Controller) populateSpecFromTemplate(ctx context.Context, obj *v1alpha1.Service) error {
-	scheme := thelpers.SelectServiceTemplate(ctx, r, thelpers.ParseRef(obj.GetNamespace(), obj.Spec.TemplateRef))
-
 	lookupCache := make(map[string]v1alpha1.SList)
 
-	if err := thelpers.ExpandInputs(ctx, r, obj.GetNamespace(), scheme.Inputs.Parameters, obj.Spec.Inputs, lookupCache); err != nil {
+	s := thelpers.ParseRef(obj.GetNamespace(), obj.Spec.TemplateRef)
+
+	genspec, err := thelpers.GetParameterizedSpec(ctx, r, s, obj.GetNamespace(), obj.Spec.Inputs, lookupCache)
+	if err != nil {
 		return errors.Wrapf(err, "unable to expand inputs")
 	}
 
-	spec, err := thelpers.GenerateSpecFromScheme(scheme)
+	spec, err := genspec.ToServiceSpec()
 	if err != nil {
-		return errors.Wrapf(err, "scheme to instance")
+		return errors.Wrapf(err, "invalid spec")
 	}
 
 	obj.Spec = spec
@@ -150,7 +151,15 @@ func setAgents(ctx context.Context, r *Controller, obj *v1alpha1.Service, pod *c
 
 	// import monitoring agents to the service
 	for _, ref := range spec.Agents.Telemetry {
-		mon, err := thelpers.GetMonitorSpec(ctx, r, thelpers.ParseRef(obj.GetNamespace(), ref))
+
+		ts := thelpers.ParseRef(obj.GetNamespace(), ref)
+
+		genSpec, err := thelpers.GetDefaultSpec(ctx, r, ts)
+		if err != nil {
+			return errors.Wrapf(err, "cannot get monitor")
+		}
+
+		mon, err := genSpec.ToMonitorSpec()
 		if err != nil {
 			return errors.Wrapf(err, "cannot get monitor")
 		}
