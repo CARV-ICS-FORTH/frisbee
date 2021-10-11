@@ -195,12 +195,12 @@ func UpdateStatus(ctx context.Context, r Reconciler, obj client.Object) error {
 	return updateError
 }
 
-// CreateUnlessExists ignores existing objects.
+// Create ignores existing objects.
 // if the next reconciliation cycle happens faster than the API update, it is possible to
 // reschedule the creation of a Job. To avoid that, get if the Job is already submitted.
-func CreateUnlessExists(ctx context.Context, r Reconciler, obj client.Object) error {
+func Create(ctx context.Context, r Reconciler, obj client.Object) error {
 	err := r.GetClient().Create(ctx, obj)
-	if err != nil /*&& !k8errors.IsAlreadyExists(err) */ {
+	if err != nil {
 		return errors.Wrapf(err, "creation failed")
 	}
 

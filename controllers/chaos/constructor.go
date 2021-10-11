@@ -116,7 +116,7 @@ func (h partitionHandler) Inject(ctx context.Context, r *Controller) error {
 	utils.SetOwner(r, h.cr, &fault)
 	fault.SetName(h.cr.GetName())
 
-	if err := utils.CreateUnlessExists(ctx, r, &fault); err != nil {
+	if err := utils.Create(ctx, r, &fault); err != nil {
 		return errors.Wrapf(err, "cannot inject fault")
 	}
 
@@ -168,7 +168,7 @@ func (h killHandler) Inject(ctx context.Context, r *Controller) error {
 	utils.SetOwner(r, h.cr, &fault)
 	fault.SetName(h.cr.GetName())
 
-	if err := utils.CreateUnlessExists(ctx, r, &fault); err != nil {
+	if err := utils.Create(ctx, r, &fault); err != nil {
 		return errors.Wrapf(err, "cannot inject fault")
 	}
 

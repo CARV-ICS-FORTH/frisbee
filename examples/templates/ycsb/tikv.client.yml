@@ -1,7 +1,7 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
-  name: ycsb-redis
+  name: ycsb-tikv
 spec:
   entries:
     # Loader injecting keys into a single server
@@ -9,8 +9,7 @@ spec:
       inputs:
         parameters:
           server: localhost
-          port: "6379"
-          mode: "single"
+          port: "2379"
           offset: "0"
           recordcount: "1000000"
       spec: |
@@ -30,12 +29,13 @@ spec:
 
               echo "Loader: $addr <- {{.Inputs.Parameters.recordcount}}:{{.Inputs.Parameters.offset}}"
 
-              ./go-ycsb load redis                                                              \
+              ./go-ycsb load tikv                                                               \
                   -p recordcount={{.Inputs.Parameters.recordcount}}                             \
                   -p insertstart={{.Inputs.Parameters.offset}}                                  \
                   -p threadcount=1                                                              \
-                  -p redis.mode={{.Inputs.Parameters.mode}}                                     \
-                  -p redis.addr="$addr"                                                         \
+                  -p tikv.pd="$addr"                                                            \
+                  -p tikv.type="raw"                                                            \
+                  -p tikv.batchsize=128                                                         \
               >> /dev/shm/pipe
 
 
@@ -65,10 +65,11 @@ spec:
 
               echo "Runner: $addr <- {{.Inputs.Parameters.workload}}:{{.Inputs.Parameters.operationcount}}"
 
-              ./go-ycsb run redis                                                               \
-                    -P workloads/{{.Inputs.Parameters.workload}}                                \
-                    -p operationcount={{.Inputs.Parameters.operationcount}}                     \
-                    -p threadcount=1                                                            \
-                    -p redis.mode={{.Inputs.Parameters.mode}}                                   \
-                    -p redis.addr="$addr"                                                       \
+              ./go-ycsb run tikv                                                                  \
+                    -P workloads/{{.Inputs.Parameters.workload}}                                  \
+                    -p operationcount={{.Inputs.Parameters.operationcount}}                       \
+                    -p threadcount=1                                                              \
+                    -p tikv.pd="$addr"                                                            \
+                    -p tikv.type="raw"                                                            \
+                    -p tikv.batchsize=128                                                         \
               >> /dev/shm/pipe

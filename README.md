@@ -40,8 +40,7 @@ This plans uses the following templates:
 
 Because these templates are deployed as Kubernetes resources, they are references by name rather than by the relative path.
 
-This is way we need to have them installed before running the experiment. (for installation instructions check [here](docs/singlenode-deployment.md).)
-
+This is why we need to have them installed before running the experiment. (for installation instructions check [here](docs/singlenode-deployment.md).)
 
 
 ```yaml
@@ -55,7 +54,7 @@ spec:
   # Here we declare the Grafana dashboards that Frisbee will load. 
   importMonitors: [ "sysmon/container", "redismon/server", "ycsbmon/client" ]
   
-  # The ingress is used to provide direct access to Grafana container. 
+  # The ingress is used to make Grafana visualizations accessible outside the cluster. 
   ingress:
     host: localhost
     useAmbassador: true
@@ -131,13 +130,11 @@ spec:
   # Now, the experiment is over ... or not ? 
   # The loaders are complete, the partition are retracted, but the Redis nodes are still running.
   # Hence, how do we know if the test has passed or fail ? 
-  # This task is left to the testOracle. 
+  # This task is left to the oracle. 
   testOracle:
     pass: >-
       {{.IsSuccessful "partition1"}} == true          
 ```
-
-
 
 
 

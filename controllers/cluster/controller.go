@@ -175,6 +175,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		around.
 	*/
 	if newStatus.Phase == v1alpha1.PhaseSuccess {
+
 		r.GetEventRecorderFor("").Event(&cr, corev1.EventTypeNormal,
 			newStatus.Reason, "cluster succeeded")
 
@@ -189,7 +190,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	if newStatus.Phase == v1alpha1.PhaseFailed {
-		r.GetEventRecorderFor("").Event(&cr, corev1.EventTypeWarning, newStatus.Reason, newStatus.Message)
+		r.Logger.Error(errors.New(newStatus.Reason), newStatus.Message)
 
 		return utils.Stop()
 	}
@@ -305,7 +306,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	nextExpectedJob := cr.Status.LastScheduleJob + 1
 	nextJob := getJob(r, &cr, nextExpectedJob)
 
-	if err := utils.CreateUnlessExists(ctx, r, nextJob); err != nil {
+	if err := utils.Create(ctx, r, nextJob); err != nil {
 		return utils.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot create job"))
 	}
 

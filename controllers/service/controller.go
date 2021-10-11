@@ -134,8 +134,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	if newStatus.Phase == v1alpha1.PhaseFailed {
-		r.GetEventRecorderFor("").Event(&cr, corev1.EventTypeWarning,
-			newStatus.Reason, "service failed")
+		r.Logger.Error(errors.New(newStatus.Reason), newStatus.Message)
 
 		return utils.Stop()
 	}

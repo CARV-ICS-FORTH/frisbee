@@ -298,7 +298,7 @@ func (r *Controller) installIngress(ctx context.Context, obj *v1alpha1.Workflow,
 	}
 
 	{ // deployment
-		if err := utils.CreateUnlessExists(ctx, r, &ingress); err != nil {
+		if err := utils.Create(ctx, r, &ingress); err != nil {
 			return errors.Wrapf(err, "unable to create ingress")
 		}
 	}
