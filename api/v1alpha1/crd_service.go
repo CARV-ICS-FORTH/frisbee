@@ -111,8 +111,8 @@ type Disk struct {
 type Resources struct {
 	Memory string `json:"memory,omitempty"`
 	CPU    string `json:"cpu,omitempty"`
-	NIC    NIC    `json:"nic,omitempty"`
-	Disk   Disk   `json:"disk,omitempty"`
+	NIC    *NIC   `json:"nic,omitempty"`
+	Disk   *Disk  `json:"disk,omitempty"`
 }
 
 type ServiceStatus struct {

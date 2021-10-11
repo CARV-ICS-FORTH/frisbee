@@ -44,11 +44,11 @@ func (r *Controller) runJob(ctx context.Context, obj *v1alpha1.Service) error {
 
 	discovery := constructDiscoveryService(r, obj, pod)
 
-	if err := utils.CreateUnlessExists(ctx, r, discovery); err != nil {
+	if err := utils.Create(ctx, r, discovery); err != nil {
 		return errors.Wrapf(err, "cannot create discovery service")
 	}
 
-	if err := utils.CreateUnlessExists(ctx, r, pod); err != nil {
+	if err := utils.Create(ctx, r, pod); err != nil {
 		return errors.Wrapf(err, "cannot create pod")
 	}
 
@@ -89,12 +89,10 @@ func constructPod(ctx context.Context, r *Controller, obj *v1alpha1.Service) (*c
 	{ // spec
 		setPlacement(obj, &pod)
 
-		setContainer(obj)
-
 		pod.Spec.RestartPolicy = corev1.RestartPolicyNever
 		pod.Spec.Volumes = obj.Spec.Volumes
 
-		pod.Spec.Containers = []corev1.Container{obj.Spec.Container}
+		pod.Spec.Containers = []corev1.Container{setContainer(obj)}
 	}
 
 	{ // deployment
@@ -106,22 +104,24 @@ func constructPod(ctx context.Context, r *Controller, obj *v1alpha1.Service) (*c
 	return &pod, nil
 }
 
-func setContainer(obj *v1alpha1.Service) {
+func setContainer(obj *v1alpha1.Service) corev1.Container {
 	spec := obj.Spec
 
-	container := &spec.Container
+	container := obj.Spec.Container
 
 	// security
-	container.TTY = true
 	privilege := true
 
-	container.SecurityContext = &corev1.SecurityContext{
+	securityContext := corev1.SecurityContext{
 		Capabilities: &corev1.Capabilities{
-			Add:  []corev1.Capability{"SYS_ADMIN"},
+			Add:  []corev1.Capability{"SYS_ADMIN", "CAP_SYS_RESOURCE", "IPC_LOCK"},
 			Drop: nil,
 		},
 		Privileged: &privilege,
 	}
+
+	container.SecurityContext = &securityContext
+	container.TTY = true
 
 	// deployment
 	if spec.Resources != nil {
@@ -140,6 +140,8 @@ func setContainer(obj *v1alpha1.Service) {
 			Requests: resources,
 		}
 	}
+
+	return container
 }
 
 func setAgents(ctx context.Context, r *Controller, obj *v1alpha1.Service, pod *corev1.Pod) error {

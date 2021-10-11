@@ -52,7 +52,7 @@ func (r *Controller) service(ctx context.Context, w *v1alpha1.Workflow, action v
 
 	action.Service.DeepCopyInto(&service.Spec)
 
-	if err := utils.CreateUnlessExists(ctx, r, &service); err != nil {
+	if err := utils.Create(ctx, r, &service); err != nil {
 		return errors.Wrapf(err, "action %s execution failed", action.Name)
 	}
 
@@ -67,7 +67,7 @@ func (r *Controller) cluster(ctx context.Context, w *v1alpha1.Workflow, action v
 
 	action.Cluster.DeepCopyInto(&cluster.Spec)
 
-	if err := utils.CreateUnlessExists(ctx, r, &cluster); err != nil {
+	if err := utils.Create(ctx, r, &cluster); err != nil {
 		return errors.Wrapf(err, "action %s execution failed", action.Name)
 	}
 
@@ -89,7 +89,7 @@ func (r *Controller) chaos(ctx context.Context, w *v1alpha1.Workflow, action v1a
 
 	action.Chaos.DeepCopyInto(&chaos.Spec)
 
-	if err := utils.CreateUnlessExists(ctx, r, &chaos); err != nil {
+	if err := utils.Create(ctx, r, &chaos); err != nil {
 		return errors.Wrapf(err, "action %s execution failed", action.Name)
 	}
 
