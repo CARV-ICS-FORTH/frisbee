@@ -73,13 +73,13 @@ func constructJobSpecList(ctx context.Context, r *Controller, cluster *v1alpha1.
 			// no inputs
 		case 1:
 			// use a common set of inputs for all instances
-			if err := thelpers.ExpandInputs(ctx, r, cluster.GetNamespace(), scheme.Inputs.Parameters, cluster.Spec.Inputs[0], lookupCache); err != nil {
+			if err := thelpers.ExpandInputs(ctx, r, cluster.GetNamespace(), &scheme, cluster.Spec.Inputs[0], lookupCache); err != nil {
 				return nil, errors.Wrapf(err, "macro expansion failed")
 			}
 
 		default:
 			// use a different set of inputs for every instance
-			if err := thelpers.ExpandInputs(ctx, r, cluster.GetNamespace(), scheme.Inputs.Parameters, cluster.Spec.Inputs[i], lookupCache); err != nil {
+			if err := thelpers.ExpandInputs(ctx, r, cluster.GetNamespace(), &scheme, cluster.Spec.Inputs[i], lookupCache); err != nil {
 				return nil, errors.Wrapf(err, "macro expansion failed")
 			}
 		}

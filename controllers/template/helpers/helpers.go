@@ -72,7 +72,11 @@ func GetParameterizedSpec(ctx context.Context, r utils.Reconciler, ts *v1alpha1.
 		return "", errors.Wrapf(err, "unable to create service")
 	}
 
-	if err := ExpandInputs(ctx, r, namespace, scheme.Inputs.Parameters, inputs, cache); err != nil {
+	if scheme.Inputs == nil {
+		return "", errors.New("template is not parameterizable")
+	}
+
+	if err := ExpandInputs(ctx, r, namespace, &scheme, inputs, cache); err != nil {
 		return "", errors.Wrapf(err, "unable to expand inputs")
 	}
 
@@ -111,19 +115,28 @@ func GenerateSpecFromScheme(tspec *v1alpha1.Scheme) (GenericSpec, error) {
 func ExpandInputs(ctx context.Context,
 	r utils.Reconciler,
 	nm string,
-	dst,
-	src map[string]string,
+	scheme *v1alpha1.Scheme,
+	userInputs map[string]string,
 	cache map[string]v1alpha1.SList) error {
-	for key := range dst {
+
+	if scheme.Inputs == nil {
+		return errors.New("scheme does not support inputs")
+	}
+
+	if scheme.Inputs.Parameters == nil {
+		return errors.New("scheme does not support parameters")
+	}
+
+	for key := range scheme.Inputs.Parameters {
 		// if there is no user-given value, use the default.
-		value, ok := src[key]
+		value, ok := userInputs[key]
 		if !ok {
 			continue
 		}
 
 		// if the value is not a macro, write it directly to the inputs
 		if !shelpers.IsMacro(value) {
-			dst[key] = value
+			scheme.Inputs.Parameters[key] = value
 		} else { // expand macro
 			services, ok := cache[value]
 			if !ok {
@@ -136,7 +149,7 @@ func ExpandInputs(ctx context.Context,
 				cache[value] = services
 			}
 
-			dst[key] = services.ToString()
+			scheme.Inputs.Parameters[key] = services.ToString()
 		}
 	}
 

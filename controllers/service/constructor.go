@@ -56,13 +56,24 @@ func (r *Controller) runJob(ctx context.Context, obj *v1alpha1.Service) error {
 }
 
 func (r *Controller) populateSpecFromTemplate(ctx context.Context, obj *v1alpha1.Service) error {
-	lookupCache := make(map[string]v1alpha1.SList)
+	var genspec thelpers.GenericSpec
 
-	s := thelpers.ParseRef(obj.GetNamespace(), obj.Spec.TemplateRef)
+	var err error
 
-	genspec, err := thelpers.GetParameterizedSpec(ctx, r, s, obj.GetNamespace(), obj.Spec.Inputs, lookupCache)
-	if err != nil {
-		return errors.Wrapf(err, "unable to expand inputs")
+	ts := thelpers.ParseRef(obj.GetNamespace(), obj.Spec.TemplateRef)
+
+	if inputs := obj.Spec.Inputs; inputs != nil {
+		lookupCache := make(map[string]v1alpha1.SList)
+
+		genspec, err = thelpers.GetParameterizedSpec(ctx, r, ts, obj.GetNamespace(), inputs, lookupCache)
+		if err != nil {
+			return errors.Wrapf(err, "unable to expand inputs")
+		}
+	} else {
+		genspec, err = thelpers.GetDefaultSpec(ctx, r, ts)
+		if err != nil {
+			return errors.Wrapf(err, "unable to expand inputs")
+		}
 	}
 
 	spec, err := genspec.ToServiceSpec()

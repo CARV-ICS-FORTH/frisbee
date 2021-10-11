@@ -1,0 +1,66 @@
+apiVersion: frisbee.io/v1alpha1
+kind: Workflow
+metadata:
+  name: run-cockroachdb-cluster
+spec:
+  importMonitors: [ "sysmon/container", "ycsbmon/client" ]
+  ingress:
+    host: localhost
+    useAmbassador: true
+
+  testOracle:
+    pass: >-
+      {{.IsSuccessful "runners"}} == true
+
+  actions:
+    # Create 3 cockroach nodes.
+    # Notice that cockroachdb requires knowing the names of the clustered nodes, before they are started !.
+    - action: Cluster
+      name: master
+      cluster:
+        templateRef: cockroachdb-cluster/master
+        instances: 3
+        inputs:
+          - { servers: "master-1:26257,master-2:26257,master-3:26257" }
+
+
+    # Run cockroach command to create a cluster from the given nodes.
+    # However, there is a skew between the time the container says its ready,
+    # and the time the application is ready to accept requests.
+    # TODO: add readiness probes
+    - action: Service
+      name: boot
+      depends: { running: [ master ], after: 30s }
+      service:
+        fromTemplate:
+          templateRef: cockroachdb-cluster/bootstrap
+          inputs:
+            { server: .cluster.master.any }
+
+
+    # Ingest keys in parallel, into different ranges
+    - action: Cluster
+      name: "loaders"
+      depends: { running: [ master ], success: [ boot ] }
+      cluster:
+        templateRef: ycsb-cockroachdb/loader
+        inputs:
+          - { server: .cluster.master.any, recordcount: "1000000", offset: "0" }
+          - { server: .cluster.master.any, recordcount: "1000000", offset: "1000000" }
+          - { server: .cluster.master.any, recordcount: "1000000", offset: "2000000" }
+
+
+    # Wait for ingestion to complete, and start querying clients, with different workloads
+    - action: Cluster
+      name: "runners"
+      depends: { running: [ master ], success: [ loaders ] }
+      cluster:
+        templateRef: ycsb-cockroachdb/runner
+        inputs:
+          - { server: .cluster.master.any, workload: workloada, operationcount: "1000000" }
+          - { server: .cluster.master.any, workload: workloadb, operationcount: "1000000" }
+          - { server: .cluster.master.any, workload: workloadc, operationcount: "1000000" }
+          - { server: .cluster.master.any, workload: workloadd, operationcount: "1000000" }
+          - { server: .cluster.master.any, workload: workloada, operationcount: "1000000" }
+        schedule:
+          cron: "@every 2m"
