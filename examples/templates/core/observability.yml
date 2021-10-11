@@ -4,7 +4,7 @@ kind: Template
 metadata:
   name: observability
 spec:
-  services:
+  entries:
     prometheus:
       spec: |
         volumes:

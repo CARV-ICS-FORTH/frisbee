@@ -4,7 +4,7 @@ kind: Template
 metadata:
   name: sysmon
 spec:
-  monitors:
+  entries:
     "container":
       spec: |
         agent:

@@ -94,9 +94,16 @@ func (r *Controller) installPrometheus(ctx context.Context, w *v1alpha1.Workflow
 	}
 
 	{ // spec
-		spec, err := thelpers.GetServiceSpec(ctx, r, thelpers.ParseRef(w.GetNamespace(), prometheusTemplate))
+		ts := thelpers.ParseRef(w.GetNamespace(), prometheusTemplate)
+
+		genSpec, err := thelpers.GetDefaultSpec(ctx, r, ts)
 		if err != nil {
-			return nil, errors.Wrapf(err, "spec spec error")
+			return nil, errors.Wrapf(err, "scheme retrieval")
+		}
+
+		spec, err := genSpec.ToServiceSpec()
+		if err != nil {
+			return nil, errors.Wrapf(err, "scheme decoding")
 		}
 
 		spec.DeepCopyInto(&prom.Spec)
@@ -137,9 +144,16 @@ func (r *Controller) installGrafana(ctx context.Context, w *v1alpha1.Workflow) (
 
 	{ // spec
 		// to perform the necessary automations, we load the spec locally and push the modified version for creation.
-		spec, err := thelpers.GetServiceSpec(ctx, r, thelpers.ParseRef(w.GetNamespace(), grafanaTemplate))
+		ts := thelpers.ParseRef(w.GetNamespace(), grafanaTemplate)
+
+		genSpec, err := thelpers.GetDefaultSpec(ctx, r, ts)
 		if err != nil {
-			return nil, errors.Wrapf(err, "spec spec error")
+			return nil, errors.Wrapf(err, "cannot get scheme")
+		}
+
+		spec, err := genSpec.ToServiceSpec()
+		if err != nil {
+			return nil, errors.Wrapf(err, "spec failed")
 		}
 
 		if err := r.importDashboards(ctx, w, &spec); err != nil {
@@ -180,9 +194,16 @@ func (r *Controller) installGrafana(ctx context.Context, w *v1alpha1.Workflow) (
 func (r *Controller) importDashboards(ctx context.Context, obj *v1alpha1.Workflow, spec *v1alpha1.ServiceSpec) error {
 	// iterate monitoring services
 	for _, monRef := range obj.Spec.ImportMonitors {
-		monSpec, err := thelpers.GetMonitorSpec(ctx, r, thelpers.ParseRef(obj.GetNamespace(), monRef))
+		ts := thelpers.ParseRef(obj.GetNamespace(), monRef)
+
+		genSpec, err := thelpers.GetDefaultSpec(ctx, r, ts)
 		if err != nil {
-			return errors.Errorf("monitor failed")
+			return errors.Wrapf(err, "cannot get scheme")
+		}
+
+		monSpec, err := genSpec.ToMonitorSpec()
+		if err != nil {
+			return errors.Wrapf(err, "monitor failed")
 		}
 
 		// get the configmap which contains our desired dashboard

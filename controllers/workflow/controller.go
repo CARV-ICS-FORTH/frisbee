@@ -310,8 +310,8 @@ func (r *Controller) Finalize(obj client.Object) error {
 ### Setup
 	Finally, we'll update our setup.
 
-	We'll inform the manager that this controller owns some Services, so that it
-	will automatically call Reconcile on the underlying Service when a Pod changes, is
+	We'll inform the manager that this controller owns some resources, so that it
+	will automatically call Reconcile on the underlying controller when a resource changes, is
 	deleted, etc.
 */
 

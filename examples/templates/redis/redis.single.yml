@@ -3,7 +3,7 @@ kind: Template
 metadata:
   name: redis
 spec:
-  services:
+  entries:
     # Master node servicing requests
     "master":
       inputs:

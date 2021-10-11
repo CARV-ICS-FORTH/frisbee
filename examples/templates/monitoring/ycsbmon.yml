@@ -4,7 +4,7 @@ kind: Template
 metadata:
   name: ycsbmon
 spec:
-  monitors:
+  entries:
     "goycsb":
       spec: |
         agent:

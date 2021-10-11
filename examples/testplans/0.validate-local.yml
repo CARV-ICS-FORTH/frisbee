@@ -3,7 +3,7 @@ kind: Workflow
 metadata:
   name: validate-local
 spec:
-  importMonitors: [ "sysmon/container" ]
+  importMonitors: [ "sysmon/container", "iperfmon/client" ]
   ingress:
     host: localhost
     useAmbassador: true
@@ -13,31 +13,41 @@ spec:
       {{.IsSuccessful "partition1"}} == true
 
   actions:
-    # Create a single Master node
+    # Create an iperf server
     - action: Service
-      name: master
+      name: server
       service:
         fromTemplate:
-          templateRef: redis/master
+          templateRef: iperf/server
+
+    # Create an iperf client
+    - action: Service
+      name: client
+      depends: { running: [ server ] }
+      service:
+        fromTemplate:
+          templateRef: iperf/client
+          inputs:
+            { server: .service.server.any }
 
     # Cause two partition failures with different duration
     - action: Chaos
       name: partition0
-      depends: { running: [ master ] }
+      depends: { running: [ server ], after: "30s" }
       chaos:
         type: partition
         partition:
           selector:
-            macro: .service.master.any
+            macro: .service.server.any
           duration: "30s"
 
     # Cause two partition failures with different duration
     - action: Chaos
       name: partition1
-      depends: { running: [ master ],  success: [ partition0 ], after: "1m" }
+      depends: { running: [ server ],  success: [ partition0 ], after: "1m30s" }
       chaos:
         type: partition
         partition:
           selector:
-            macro: .service.master.any
+            macro: .service.server.any
           duration: "30s"

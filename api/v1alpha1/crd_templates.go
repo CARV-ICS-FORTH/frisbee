@@ -57,13 +57,9 @@ type Scheme struct {
 }
 
 type TemplateSpec struct {
-	// Services are indices to service specifications
+	// Entries are indices to service specifications
 	// +optional
-	Services map[string]Scheme `json:"services,omitempty"`
-
-	// Monitors are indices to monitoring packages
-	// +optional
-	Monitors map[string]Scheme `json:"monitors,omitempty"`
+	Entries map[string]Scheme `json:"entries,omitempty"`
 }
 
 type MonitorSpec struct {
@@ -82,8 +78,6 @@ type DashboardSpec struct {
 
 type TemplateStatus struct {
 	Lifecycle `json:",inline"`
-
-	IsRegistered bool `json:"isRegistered"`
 }
 
 func (in *Template) GetReconcileStatus() Lifecycle {

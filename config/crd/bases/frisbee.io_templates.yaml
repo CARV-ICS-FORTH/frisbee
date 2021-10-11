@@ -35,7 +35,7 @@ spec:
           spec:
             description: MonitorSpec defines the template of services
             properties:
-              monitors:
+              entries:
                 additionalProperties:
                   properties:
                     inputs:
@@ -56,37 +56,12 @@ spec:
                   required:
                   - spec
                   type: object
-                description: Monitors are indices to monitoring packages
-                type: object
-              services:
-                additionalProperties:
-                  properties:
-                    inputs:
-                      description: Inputs are dynamic fields that populate the spec.
-                      properties:
-                        parameters:
-                          additionalProperties:
-                            type: string
-                          description: Parameters define dynamically valued fields.
-                            The values are given by higher level entities, such as
-                            the workflow.
-                          type: object
-                      type: object
-                    spec:
-                      description: Spec is the Service specification whose values
-                        will be replaced by parameters.
-                      type: string
-                  required:
-                  - spec
-                  type: object
-                description: Services are indices to service specifications
+                description: Entries are indices to service specifications
                 type: object
             type: object
           status:
             description: Most recently observed status of the object
             properties:
-              isRegistered:
-                type: boolean
               message:
                 description: Message provides more details for understanding the Reason.
                 type: string
@@ -100,8 +75,6 @@ spec:
                 description: Reason is A brief CamelCase message indicating details
                   about why the service is in this Phase. e.g. 'Evicted'
                 type: string
-            required:
-            - isRegistered
             type: object
         required:
         - spec
