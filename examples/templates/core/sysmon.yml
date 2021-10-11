@@ -20,7 +20,9 @@ spec:
               - |  # Multi-line str
                 set -eum
 
-                cadvisor -port=9442 &
+                # https://github.com/google/cadvisor/blob/master/docs/storage/prometheus.md
+                cadvisor -port=9442  &
+                # -enable_metrics=diskIO,cpuLoad,hugetlb,memory,network
 
                 while [ ! -f "/dev/shm/stop" ];
                 do

@@ -37,7 +37,7 @@ func (s GenericSpec) ToServiceSpec() (v1alpha1.ServiceSpec, error) {
 	spec := v1alpha1.ServiceSpec{}
 
 	if err := yaml.Unmarshal([]byte(s), &spec); err != nil {
-		return v1alpha1.ServiceSpec{}, errors.Wrapf(err, "service decode")
+		return v1alpha1.ServiceSpec{}, errors.Wrapf(err, "decoding error")
 	}
 
 	return spec, nil
@@ -48,7 +48,7 @@ func (s GenericSpec) ToMonitorSpec() (v1alpha1.MonitorSpec, error) {
 	spec := v1alpha1.MonitorSpec{}
 
 	if err := yaml.Unmarshal([]byte(s), &spec); err != nil {
-		return v1alpha1.MonitorSpec{}, errors.Wrapf(err, "monitor decode")
+		return v1alpha1.MonitorSpec{}, errors.Wrapf(err, "decoding error")
 	}
 
 	return spec, nil

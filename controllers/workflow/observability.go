@@ -198,12 +198,12 @@ func (r *Controller) importDashboards(ctx context.Context, obj *v1alpha1.Workflo
 
 		genSpec, err := thelpers.GetDefaultSpec(ctx, r, ts)
 		if err != nil {
-			return errors.Wrapf(err, "cannot get scheme")
+			return errors.Wrapf(err, "cannot get scheme for %s", monRef)
 		}
 
 		monSpec, err := genSpec.ToMonitorSpec()
 		if err != nil {
-			return errors.Wrapf(err, "monitor failed")
+			return errors.Wrapf(err, "spec error for %s", monRef)
 		}
 
 		// get the configmap which contains our desired dashboard

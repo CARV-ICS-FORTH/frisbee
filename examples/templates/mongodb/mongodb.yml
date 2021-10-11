@@ -1,0 +1,33 @@
+---
+apiVersion: frisbee.io/v1alpha1
+kind: Template
+metadata:
+  name: mongodb
+spec:
+  entries:
+    "master":
+      inputs:
+        parameters:
+          port: "27017"
+          memory: ""
+          cpu: ""
+      spec: |
+        agents:
+          telemetry: [ sysmon/container, mongomon/telegraf ]
+        resources:
+          memory: {{.Inputs.Parameters.memory}}
+          cpu: {{.Inputs.Parameters.cpu}}
+        container:
+          name: app
+          image: bitnami/mongodb
+          ports:
+            - name: to-clients
+              containerPort: {{.Inputs.Parameters.port}}
+          command:
+            - /bin/sh   # Run shell
+            - -c        # Read from string
+            - |         # Multi-line str
+              set -eum
+              trap "touch /dev/shm/stop" EXIT
+
+              mongod --bind_ip_all --dbpath /bitnami/mongodb/data/

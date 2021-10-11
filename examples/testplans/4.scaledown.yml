@@ -36,14 +36,14 @@ spec:
       name: "loaders"
       depends: { success: [ boot ], running: [ masters ], after: 1m }
       cluster:
-        templateRef: rediscluster/loader
+        templateRef: ycsb-redis/loader
         # Tolerate indicate the number of services that may fail before the cluster fail itself.
         tolerate:
           failedServices: 3
         inputs:
-          - { server: .cluster.masters.any, recordcount: "100000000", offset: "0" }
-          - { server: .cluster.masters.any, recordcount: "100000000", offset: "100000000" }
-          - { server: .cluster.masters.any, recordcount: "100000000", offset: "200000000" }
+          - { server: .cluster.masters.any, mode: "cluster", recordcount: "100000000", offset: "0" }
+          - { server: .cluster.masters.any, mode: "cluster", recordcount: "100000000", offset: "100000000" }
+          - { server: .cluster.masters.any, mode: "cluster", recordcount: "100000000", offset: "200000000" }
 
 
     # Kill loaders, one every 1 minutes

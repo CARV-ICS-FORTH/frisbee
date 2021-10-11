@@ -35,6 +35,7 @@ This plans uses the following templates:
 
 * `examples/templates/core/sysmon.yml`
 * `examples/templates/redis/redis.cluster.yml`
+* `examples/templates/ycsb/redis.client.yml`
 
 
 
@@ -53,7 +54,7 @@ metadata:
 spec:
 
   # Here we declare the Grafana dashboards that Frisbee will load. 
-  importMonitors: [ "sysmon/container", "redismon/telegraf", "ycsbmon/goycsb" ]
+  importMonitors: [ "sysmon/container", "redismon/server", "ycsbmon/client" ]
   
   # The ingress is used to provide direct access to Grafana container. 
   ingress:
@@ -99,7 +100,7 @@ spec:
       name: "loaders"
       depends: { running: [ master ] }
       cluster:
-        templateRef: redis/loader
+        templateRef: ycsb-redis/loader
         inputs:
           - { server: .service.master.any, recordcount: "100000000", offset: "0" }
 

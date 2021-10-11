@@ -5,7 +5,7 @@ metadata:
   name: redismon
 spec:
   entries:
-    "telegraf":
+    "server":
       spec: |
         agent:
           container:

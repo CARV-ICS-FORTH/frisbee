@@ -151,7 +151,6 @@ func setAgents(ctx context.Context, r *Controller, obj *v1alpha1.Service, pod *c
 
 	// import monitoring agents to the service
 	for _, ref := range spec.Agents.Telemetry {
-
 		ts := thelpers.ParseRef(obj.GetNamespace(), ref)
 
 		genSpec, err := thelpers.GetDefaultSpec(ctx, r, ts)

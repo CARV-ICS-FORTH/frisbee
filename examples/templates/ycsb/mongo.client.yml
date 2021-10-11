@@ -1,0 +1,70 @@
+apiVersion: frisbee.io/v1alpha1
+kind: Template
+metadata:
+  name: ycsb-mongo
+spec:
+  entries:
+    # Loader injecting keys into a single server
+    "loader":
+      inputs:
+        parameters:
+          server: localhost
+          port: "27017"
+          offset: "0"
+          recordcount: "1000000"
+      spec: |
+        agents:
+          telemetry: [ sysmon/container, ycsbmon/client ]
+        container:
+          name: app
+          image: aylei/go-ycsb:20201029
+          command:
+            - /bin/sh   # Run shell
+            - -c        # Read from string
+            - |         # Multi-line str
+              set -eum
+              trap "touch /dev/shm/stop" EXIT
+
+              addr={{.Inputs.Parameters.server}}:{{.Inputs.Parameters.port}}
+
+              echo "Loader: $addr <- {{.Inputs.Parameters.recordcount}}:{{.Inputs.Parameters.offset}}"
+
+              ./go-ycsb load mongodb                                                            \
+                  -p recordcount={{.Inputs.Parameters.recordcount}}                             \
+                  -p insertstart={{.Inputs.Parameters.offset}}                                  \
+                  -p threadcount=1                                                              \
+                  -p mongodb.uri="mongodb://$addr"                                              \
+              >> /dev/shm/pipe
+
+
+    # Run queries against a single server
+    "runner":
+      inputs:
+        parameters:
+          server: localhost
+          port: "27017"
+          workload: "workloada"
+          operationcount: "5000000"
+      spec: |
+        agents:
+          telemetry: [ sysmon/container, ycsbmon/client ]
+        container:
+          name: app
+          image: aylei/go-ycsb:20201029
+          command:
+            - /bin/sh   # Run shell
+            - -c        # Read from string
+            - |         # Multi-line str
+              set -eum
+              trap "touch /dev/shm/stop" EXIT
+
+              addr={{.Inputs.Parameters.server}}:{{.Inputs.Parameters.port}}
+
+              echo "Runner: $addr <- {{.Inputs.Parameters.workload}}:{{.Inputs.Parameters.operationcount}}"
+
+              ./go-ycsb run redis                                                                   \
+                    -P workloads/{{.Inputs.Parameters.workload}}                                    \
+                    -p operationcount={{.Inputs.Parameters.operationcount}}                         \
+                    -p threadcount=1                                                                \
+                  -p mongodb.uri="mongodb://$addr"                                                  \
+              >> /dev/shm/pipe
