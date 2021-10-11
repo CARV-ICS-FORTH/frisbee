@@ -114,10 +114,7 @@ func (r *Controller) installPrometheus(ctx context.Context, w *v1alpha1.Workflow
 
 		switch {
 		case k8errors.IsAlreadyExists(err):
-			if !prom.GetDeletionTimestamp().IsZero() {
-				return nil, errors.Wrapf(err, "a previous prometheus instance is terminating")
-			}
-			close(r.prometheus)
+			return nil, errors.Wrapf(err, "a previous prometheus instance is running")
 
 		case err != nil:
 			return nil, errors.Wrapf(err, "creation failed")
@@ -168,11 +165,8 @@ func (r *Controller) installGrafana(ctx context.Context, w *v1alpha1.Workflow) (
 
 		switch {
 		case k8errors.IsAlreadyExists(err):
-			if !grafana.GetDeletionTimestamp().IsZero() {
-				return nil, errors.Wrapf(err, "a previous grafana instance is terminating")
-			}
+			return nil, errors.Wrapf(err, "a previous grafana instance is running")
 
-			close(r.grafana)
 		case err != nil:
 			return nil, errors.Wrapf(err, "creation failed")
 		default:
