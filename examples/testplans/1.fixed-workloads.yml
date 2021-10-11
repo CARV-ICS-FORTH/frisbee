@@ -3,7 +3,7 @@ kind: Workflow
 metadata:
   name: redis-queries
 spec:
-  importMonitors: [ "sysmon/container", "redismon/telegraf", "ycsbmon/goycsb" ]
+  importMonitors: [ "sysmon/container", "redismon/server", "ycsbmon/client" ]
   ingress:
     host: localhost
     useAmbassador: true
@@ -25,7 +25,7 @@ spec:
       name: loaders
       depends: { running: [ master ], after: 30s }
       cluster:
-        templateRef: redis/loader
+        templateRef: ycsb-redis/loader
         inputs:
           - { server: .service.master.any, recordcount: "100000", offset: "0" }
           - { server: .service.master.any, recordcount: "100000", offset: "100000" }
@@ -36,7 +36,7 @@ spec:
       name: runners
       depends: { running: [ master ], success: [ loaders ] }
       cluster:
-        templateRef: redis/runner
+        templateRef: ycsb-redis/runner
         instances: 3
         inputs:
           - { server: .service.master.any, workload: workloada,  operationcount: "300000" }

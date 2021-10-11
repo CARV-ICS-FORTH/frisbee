@@ -3,7 +3,7 @@ kind: Workflow
 metadata:
   name: redis-failover
 spec:
-  importMonitors: [ "sysmon/container", "redismon/telegraf", "ycsbmon/goycsb" ]
+  importMonitors: [ "sysmon/container", "redismon/server", "ycsbmon/client" ]
   ingress:
     host: localhost
     useAmbassador: true
@@ -47,7 +47,7 @@ spec:
       name: "loaders"
       depends: { running: [ master ] }
       cluster:
-        templateRef: redis/loader
+        templateRef: ycsb-redis/loader
         inputs:
           - { server: .service.master.any, recordcount: "100000000", offset: "0" }
 

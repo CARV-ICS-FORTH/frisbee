@@ -19,6 +19,8 @@ spec:
       service:
         fromTemplate:
           templateRef: iperf/server
+          inputs:
+            {"cpu": "2", memory: "4Gi"}
 
     # Create an iperf client
     - action: Service
@@ -33,7 +35,7 @@ spec:
     # Cause two partition failures with different duration
     - action: Chaos
       name: partition0
-      depends: { running: [ server ], after: "30s" }
+      depends: { running: [ server ], after: "1m" }
       chaos:
         type: partition
         partition:
@@ -44,7 +46,7 @@ spec:
     # Cause two partition failures with different duration
     - action: Chaos
       name: partition1
-      depends: { running: [ server ],  success: [ partition0 ], after: "1m30s" }
+      depends: { running: [ server ],  success: [ partition0 ], after: "2m15s" }
       chaos:
         type: partition
         partition:
