@@ -14,34 +14,26 @@ We make it possible to:
 
 * **Debug tests:**  through extensive monitoring and comprehensive dashboards
 
-
-
 # Frisbee in a nutshell
 
-
-
-Perhaps the simplest way to begin with is by have a look at the examples folder. 
-It consists of two sub-directories.
+The easiest way to begin with is by have a look at the examples folder. It consists of two sub-directories:
 
 * **Templates:** are libraries of frequently-used specifications that are reusable throughout the testing plan.
 * **Testplans:** are lists of actions that define what will happen throughout the test.
 
-
-
 We will use the `examples/testplans/3.failover.yml` as a reference.
 
-This plans uses the following templates: 
+This plans uses the following templates:
 
 * `examples/templates/core/sysmon.yml`
 * `examples/templates/redis/redis.cluster.yml`
 * `examples/templates/ycsb/redis.client.yml`
 
+Because these templates are deployed as Kubernetes resources, they are references by name rather than by the relative
+path.
 
-
-Because these templates are deployed as Kubernetes resources, they are references by name rather than by the relative path.
-
-This is why we need to have them installed before running the experiment. (for installation instructions check [here](docs/singlenode-deployment.md).)
-
+This is why we need to have them installed before running the experiment. (for installation instructions
+check [here](docs/singlenode-deployment.md).)
 
 ```yaml
 # Standard Kubernetes boilerplate
@@ -53,7 +45,7 @@ spec:
 
   # Here we declare the Grafana dashboards that Frisbee will load. 
   importMonitors: [ "sysmon/container", "redismon/server", "ycsbmon/client" ]
-  
+
   # The ingress is used to make Grafana visualizations accessible outside the cluster. 
   ingress:
     host: localhost
@@ -61,8 +53,8 @@ spec:
 
   # Here we specify the workflow as a directed-acyclic graph (DAG) by specifying the dependencies of each action.
   actions:
-     # Service creates an instance of a Redis Master
-     # To create the instance we use the redis/master with the default parameters.
+    # Service creates an instance of a Redis Master
+    # To create the instance we use the redis/master with the default parameters.
     - action: Service
       name: master
       service:
@@ -126,7 +118,7 @@ spec:
         partition:
           selector: { macro: .service.master.any }
           duration: "1m"
-         
+
   # Now, the experiment is over ... or not ? 
   # The loaders are complete, the partition are retracted, but the Redis nodes are still running.
   # Hence, how do we know if the test has passed or fail ? 
@@ -136,10 +128,6 @@ spec:
       {{.IsSuccessful "partition1"}} == true          
 ```
 
-
-
-
-
 # Run the experiment
 
 Firstly, you'll need a Kubernetes deployment and `kubectl` set-up
@@ -148,10 +136,7 @@ Firstly, you'll need a Kubernetes deployment and `kubectl` set-up
 
 * For a multi-node deployment click [here](docs/cluster-deployment.md).
 
-
-
 In this walk-through, we assume you have followed the instructions for the single-node deployment.
-
 
 In one terminal, run the Frisbee controller.
 
@@ -161,8 +146,6 @@ In one terminal, run the Frisbee controller.
 ```
 
 We can use the controller's output to reason about the experiments transition.
-
-
 
 On the other terminal, you can issue requests.
 
@@ -190,13 +173,7 @@ sentinel     1/1     Running   0          11m
 ...
 ```
 
-
-
-
-
 ## How can I understand what happened ?
-
-
 
 One way, is to access the workflow's description
 
@@ -204,37 +181,19 @@ One way, is to access the workflow's description
 >> kubectl -n frisbee describe workflows.frisbee.io/validate-local
 ```
 
-
-
 But why bother if you can access Grafana directly ?
 
 [Click Here](http://grafana.localhost/d/R5y4AE8Mz/kubernetes-cluster-monitoring-via-prometheus?orgId=1&amp;from=now-15m&amp;to=now)
 
 If everything went smoothly, you should see a similar dashboard.
 
-
-
 #### Client-View (YCSB-Dashboard)
-
-
 
 ![image-20211008230432961](docs/images/partitions.png)
 
-
-
-
-
-
-
 #### Client-View (Redis-Dashboard)
 
-
-
 ![](docs/images/masterdashboard.png)
-
-
-
-
 
 ## Bugs, Feedback, and Contributions
 
@@ -249,8 +208,6 @@ We welcome also every contribution, even if it is just punctuation. See details 
 For more information, you can contact us via:
 
 * Email: fnikol@ics.forth.gr
-
-  
 
 ## License
 

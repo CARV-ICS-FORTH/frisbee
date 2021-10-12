@@ -1,10 +1,6 @@
 # Run Frisbee Locally
 
-
-
 ## Before Starting
-
-
 
 ### Install Microk8s
 
@@ -24,8 +20,6 @@
 >> microk8s config > config
 ```
 
-
-
 Verify the installation
 
 ```
@@ -42,8 +36,6 @@ hello-node   1/1     1            1           36s
 >> kubectl delete deployments hello-node
 deployment.apps "hello-node" deleted
 ```
-
-
 
 ### Install CRDs
 
@@ -76,11 +68,7 @@ workflows.frisbee.io                    2021-10-07T10:33:05Z
 -- Expected all CRDS to be successfully created --
 ```
 
-
-
 ## Deploy a Testplan
-
-
 
 #### Run Controller
 
@@ -88,14 +76,14 @@ There are three ways to run the operator:
 
 - As Go program outside a cluster
 - As a Deployment inside a Kubernetes cluster
-- Managed by the [Operator Lifecycle Manager (OLM)](https://sdk.operatorframework.io/docs/olm-integration/tutorial-bundle/#enabling-olm) in [bundle](https://sdk.operatorframework.io/docs/olm-integration/quickstart-bundle) format.
+- Managed by
+  the [Operator Lifecycle Manager (OLM)](https://sdk.operatorframework.io/docs/olm-integration/tutorial-bundle/#enabling-olm)
+  in [bundle](https://sdk.operatorframework.io/docs/olm-integration/quickstart-bundle) format.
 
 ```bash
 # Run Frisbee controller outside a cluster (from Frisbee directory)
 >> make run
 ```
-
-
 
 #### Install Templates
 
@@ -115,11 +103,9 @@ template.frisbee.io/ycsbmon unchanged
 configmap/ycsb-dashboard unchanged
 ```
 
-
-
 #### Access Grafana outside the Cluster
 
-Frisbee uses Ingress controller to expose Grafana dashboard externally to the cluster. 
+Frisbee uses Ingress controller to expose Grafana dashboard externally to the cluster.
 
 We use Ambassador as the default Ingress controller, as shown in  `examples/testplans/validate-local.yml` .
 
@@ -128,8 +114,6 @@ ingress:
   host: localhost
    useAmbassador: true
 ```
-
-
 
 #### Deploy the plan
 
@@ -148,26 +132,18 @@ validate-local   47s
 workflow.frisbee.io "validate-local" deleted
 ```
 
-
-
-
-
 ## Observe a Testplan
 
 #### Controller Logs
 
 The logs of the controller are accessible by the terminal on which the controller is running (see make run)
 
-
-
-#### Grafana Dashboards  & Alerts
+#### Grafana Dashboards & Alerts
 
 ```bash
 # Access Grafana via your browser
 http://grafana.localhost/
 ```
-
-
 
 ### Kubernetes Dashboard
 
@@ -186,8 +162,6 @@ Dashboard will be available at https://127.0.0.1:10443
 # Now access Dashboard at:
 https://127.0.0.1:10443
 ```
-
-
 
 ### Chaos Dashboard
 

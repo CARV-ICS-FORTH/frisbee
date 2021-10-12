@@ -1,10 +1,6 @@
 # Run Frisbee on a Remote Kubernetes Cluster
 
-
-
 ## Before Starting
-
-
 
 ### Ensure Connectivity
 
@@ -34,8 +30,6 @@ hello-node   1/1     1            1           36s
 >> kubectl --kubeconfig ~/.kube/config.remote delete deployments hello-node
 deployment.apps "hello-node" deleted
 ```
-
-
 
 ### Install CRDs
 
@@ -72,11 +66,7 @@ workflows.frisbee.io                    2021-10-07T10:33:05Z
 -- Expected all CRDS to be successfully created --
 ```
 
-
-
 ## Deploy a Testplan
-
-
 
 #### Run Controller
 
@@ -84,14 +74,14 @@ There are three ways to run the operator:
 
 - As Go program outside a cluster
 - As a Deployment inside a Kubernetes cluster
-- Managed by the [Operator Lifecycle Manager (OLM)](https://sdk.operatorframework.io/docs/olm-integration/tutorial-bundle/#enabling-olm) in [bundle](https://sdk.operatorframework.io/docs/olm-integration/quickstart-bundle) format.
+- Managed by
+  the [Operator Lifecycle Manager (OLM)](https://sdk.operatorframework.io/docs/olm-integration/tutorial-bundle/#enabling-olm)
+  in [bundle](https://sdk.operatorframework.io/docs/olm-integration/quickstart-bundle) format.
 
 ```bash
 # Run Frisbee controller outside a cluster (from Frisbee directory)
 >> make run
 ```
-
-
 
 #### Install Templates
 
@@ -111,13 +101,11 @@ template.frisbee.io/ycsbmon unchanged
 configmap/ycsb-dashboard unchanged
 ```
 
-
-
 #### Access Grafana outside the Cluster
 
-Frisbee uses Ingress controller to expose Grafana dashboard externally to the cluster. 
+Frisbee uses Ingress controller to expose Grafana dashboard externally to the cluster.
 
-The Ingress controller, however, requires a hostname. 
+The Ingress controller, however, requires a hostname.
 
 Open `examples/workflows/validate-remote.yml` and change the ingress field to point to your Kubernetes manager.
 
@@ -125,8 +113,6 @@ Open `examples/workflows/validate-remote.yml` and change the ingress field to po
 ingress:
   host: platform.science-hangar.eu
 ```
-
-
 
 #### Deploy the plan
 
@@ -145,33 +131,21 @@ validate   47s
 workflow.frisbee.io "validate-remote" deleted
 ```
 
-
-
-
-
-
-
 ## Observe a Testplan
-
-
 
 #### Controller Logs
 
 The logs of the controller are accessible by the terminal on which the controller is running (see make run)
 
-
-
-#### Grafana Dashboards  & Alerts
+#### Grafana Dashboards & Alerts
 
 ```bash
 # Access Grafana via your browser
 http://grafana.platform.science-hangar.eu 
 ```
 
-The domain depends on the provided values at the previous step  (see Access Grafana outside the cluster).
-In this case, we use provided domain is linked to our testbed "platform.science-hangar.eu".
-
-
+The domain depends on the provided values at the previous step  (see Access Grafana outside the cluster). In this case,
+we use provided domain is linked to our testbed "platform.science-hangar.eu".
 
 ### Kubernetes Dashboard
 
@@ -189,8 +163,6 @@ Starting to serve on 127.0.0.1:8001
 # Now access Dashboard at:
 http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/.
 ```
-
-
 
 ### Chaos Dashboard
 
