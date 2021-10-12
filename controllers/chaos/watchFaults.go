@@ -99,7 +99,8 @@ func (r *Controller) delete(e event.DeleteEvent) bool {
 
 	annotator, ok := r.annotators.Get(e.Object.GetName())
 	if !ok {
-		panic("this should never happen")
+		// this is a stall condition that happens when the controller is restarted. just ignore it
+		return false
 	}
 
 	annotator.(*utils.RangeAnnotation).Delete(e.Object)

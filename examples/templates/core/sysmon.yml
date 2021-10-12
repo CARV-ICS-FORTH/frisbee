@@ -125,17 +125,13 @@ data:
       "gnetId": 315,
       "graphTooltip": 0,
       "id": 1,
-      "iteration": 1633714938369,
+      "iteration": 1634033734556,
       "links": [],
       "liveNow": false,
       "panels": [
         {
           "collapsed": false,
           "datasource": null,
-          "fieldConfig": {
-            "defaults": {},
-            "overrides": []
-          },
           "gridPos": {
             "h": 1,
             "w": 24,
@@ -209,7 +205,7 @@ data:
             "text": {},
             "textMode": "auto"
           },
-          "pluginVersion": "8.2.0",
+          "pluginVersion": "8.2.1",
           "targets": [
             {
               "exemplar": true,
@@ -287,7 +283,7 @@ data:
             "text": {},
             "textMode": "auto"
           },
-          "pluginVersion": "8.2.0",
+          "pluginVersion": "8.2.1",
           "targets": [
             {
               "exemplar": true,
@@ -364,7 +360,7 @@ data:
             "text": {},
             "textMode": "auto"
           },
-          "pluginVersion": "8.2.0",
+          "pluginVersion": "8.2.1",
           "targets": [
             {
               "exemplar": true,
@@ -442,7 +438,7 @@ data:
             "text": {},
             "textMode": "auto"
           },
-          "pluginVersion": "8.2.0",
+          "pluginVersion": "8.2.1",
           "targets": [
             {
               "exemplar": true,
@@ -490,7 +486,7 @@ data:
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "8.2.0",
+          "pluginVersion": "8.2.1",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -559,10 +555,6 @@ data:
         {
           "collapsed": false,
           "datasource": null,
-          "fieldConfig": {
-            "defaults": {},
-            "overrides": []
-          },
           "gridPos": {
             "h": 1,
             "w": 24,
@@ -612,7 +604,7 @@ data:
               }
             ]
           },
-          "pluginVersion": "8.2.0",
+          "pluginVersion": "8.2.1",
           "targets": [
             {
               "exemplar": false,
@@ -711,7 +703,7 @@ data:
             "alertThreshold": false
           },
           "percentage": false,
-          "pluginVersion": "8.2.0",
+          "pluginVersion": "8.2.1",
           "pointradius": 2,
           "points": true,
           "renderer": "flot",
@@ -832,7 +824,7 @@ data:
             "alertThreshold": false
           },
           "percentage": false,
-          "pluginVersion": "8.2.0",
+          "pluginVersion": "8.2.1",
           "pointradius": 0.5,
           "points": true,
           "renderer": "flot",
@@ -958,7 +950,7 @@ data:
             "alertThreshold": false
           },
           "percentage": false,
-          "pluginVersion": "8.2.0",
+          "pluginVersion": "8.2.1",
           "pointradius": 2,
           "points": true,
           "renderer": "flot",
@@ -1075,7 +1067,7 @@ data:
             "alertThreshold": false
           },
           "percentage": false,
-          "pluginVersion": "8.2.0",
+          "pluginVersion": "8.2.1",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -1183,7 +1175,7 @@ data:
             "alertThreshold": false
           },
           "percentage": false,
-          "pluginVersion": "8.2.0",
+          "pluginVersion": "8.2.1",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -1293,7 +1285,7 @@ data:
             "alertThreshold": false
           },
           "percentage": false,
-          "pluginVersion": "8.2.0",
+          "pluginVersion": "8.2.1",
           "pointradius": 0.5,
           "points": true,
           "renderer": "flot",
@@ -1372,10 +1364,6 @@ data:
         {
           "collapsed": false,
           "datasource": null,
-          "fieldConfig": {
-            "defaults": {},
-            "overrides": []
-          },
           "gridPos": {
             "h": 1,
             "w": 24,
@@ -1613,7 +1601,7 @@ data:
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "8.2.0",
+          "pluginVersion": "8.2.1",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -1675,10 +1663,6 @@ data:
         {
           "collapsed": false,
           "datasource": null,
-          "fieldConfig": {
-            "defaults": {},
-            "overrides": []
-          },
           "gridPos": {
             "h": 1,
             "w": 24,
@@ -1691,109 +1675,97 @@ data:
           "type": "row"
         },
         {
-          "aliasColors": {},
-          "bars": false,
           "cacheTimeout": null,
-          "dashLength": 10,
-          "dashes": false,
           "datasource": "Prometheus",
-          "fill": 1,
-          "fillGradient": 0,
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
           "gridPos": {
             "h": 5,
             "w": 8,
             "x": 0,
             "y": 63
           },
-          "hiddenSeries": false,
           "id": 7,
           "interval": null,
-          "legend": {
-            "avg": false,
-            "current": false,
-            "max": false,
-            "min": false,
-            "show": true,
-            "total": false,
-            "values": false
-          },
-          "lines": true,
-          "linewidth": 1,
           "links": [],
           "maxDataPoints": 100,
-          "nullPointMode": "null",
           "options": {
-            "alertThreshold": true
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single"
+            }
           },
-          "percentage": false,
-          "pluginVersion": "8.2.0",
-          "pointradius": 2,
-          "points": false,
-          "renderer": "flot",
-          "seriesOverrides": [],
-          "spaceLength": 10,
-          "stack": false,
-          "steppedLine": false,
+          "pluginVersion": "8.2.1",
           "targets": [
             {
-              "expr": "sum (container_fs_usage_bytes{device=~\"^/dev/[sv]d[a-z][1-9]$\",id=\"/\",host=~\"^$Node$\"}) / sum (container_fs_limit_bytes{device=~\"^/dev/[sv]d[a-z][1-9]$\",id=\"/\",host=~\"^$Node$\"}) * 100",
+              "exemplar": true,
+              "expr": "sum (container_fs_usage_bytes{device=~\"^/dev/[sv]d[a-z][1-9]$\",id=\"/\",host=\"$host\"}) / sum (container_fs_limit_bytes{device=~\"^/dev/[sv]d[a-z][1-9]$\",id=\"/\",host=\"$host\"}) * 100",
+              "hide": false,
               "interval": "10s",
               "intervalFactor": 1,
-              "legendFormat": "",
+              "legendFormat": "fs capacity utilization",
               "metric": "",
               "refId": "A",
               "step": 10
-            },
-            {
-              "expr": "container_fs_io_current",
-              "hide": false,
-              "interval": "",
-              "legendFormat": "",
-              "refId": "B"
             }
           ],
-          "thresholds": [],
           "timeFrom": null,
-          "timeRegions": [],
           "timeShift": null,
           "title": "Cluster filesystem usage",
-          "tooltip": {
-            "shared": true,
-            "sort": 0,
-            "value_type": "individual"
-          },
-          "type": "graph",
-          "xaxis": {
-            "buckets": null,
-            "mode": "time",
-            "name": null,
-            "show": true,
-            "values": []
-          },
-          "yaxes": [
-            {
-              "$$hashKey": "object:1848",
-              "format": "short",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            },
-            {
-              "$$hashKey": "object:1849",
-              "format": "short",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            }
-          ],
-          "yaxis": {
-            "align": false,
-            "alignLevel": null
-          }
+          "type": "timeseries"
         },
         {
           "cacheTimeout": null,
@@ -1857,7 +1829,7 @@ data:
             "text": {},
             "textMode": "auto"
           },
-          "pluginVersion": "8.2.0",
+          "pluginVersion": "8.2.1",
           "targets": [
             {
               "exemplar": true,
@@ -1934,7 +1906,7 @@ data:
             "text": {},
             "textMode": "auto"
           },
-          "pluginVersion": "8.2.0",
+          "pluginVersion": "8.2.1",
           "targets": [
             {
               "expr": "sum (container_fs_limit_bytes{device=~\"^/dev/[sv]d[a-z][1-9]$\",id=\"/\",host=~\"^$Node$\"})",
@@ -1951,10 +1923,6 @@ data:
         {
           "collapsed": false,
           "datasource": null,
-          "fieldConfig": {
-            "defaults": {},
-            "overrides": []
-          },
           "gridPos": {
             "h": 1,
             "w": 24,
@@ -2009,7 +1977,7 @@ data:
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "8.2.0",
+          "pluginVersion": "8.2.1",
           "pointradius": 5,
           "points": false,
           "renderer": "flot",
@@ -2075,10 +2043,6 @@ data:
         {
           "collapsed": false,
           "datasource": null,
-          "fieldConfig": {
-            "defaults": {},
-            "overrides": []
-          },
           "gridPos": {
             "h": 1,
             "w": 24,
@@ -2093,10 +2057,6 @@ data:
         {
           "collapsed": false,
           "datasource": null,
-          "fieldConfig": {
-            "defaults": {},
-            "overrides": []
-          },
           "gridPos": {
             "h": 1,
             "w": 24,
@@ -2151,7 +2111,7 @@ data:
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "8.2.0",
+          "pluginVersion": "8.2.1",
           "pointradius": 5,
           "points": false,
           "renderer": "flot",
@@ -2161,7 +2121,8 @@ data:
           "steppedLine": true,
           "targets": [
             {
-              "expr": "sum (rate (container_cpu_usage_seconds_total{host=~\"^$Node$\"}[1m])) by (id)",
+              "exemplar": true,
+              "expr": "sum (rate (container_cpu_usage_seconds_total{host=\"$host\"}[1m])) by (id)",
               "hide": false,
               "interval": "10s",
               "intervalFactor": 1,
@@ -2216,10 +2177,6 @@ data:
         {
           "collapsed": false,
           "datasource": null,
-          "fieldConfig": {
-            "defaults": {},
-            "overrides": []
-          },
           "gridPos": {
             "h": 1,
             "w": 24,
@@ -2274,7 +2231,7 @@ data:
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "8.2.0",
+          "pluginVersion": "8.2.1",
           "pointradius": 5,
           "points": false,
           "renderer": "flot",
@@ -2284,10 +2241,11 @@ data:
           "steppedLine": true,
           "targets": [
             {
-              "expr": "sum (container_memory_working_set_bytes{host=~\"^$Node$\"}) by (self)",
+              "exemplar": true,
+              "expr": "sum (container_memory_working_set_bytes{host=\"$host\"})",
               "interval": "10s",
               "intervalFactor": 1,
-              "legendFormat": "{{ self }}",
+              "legendFormat": "Working Memory",
               "metric": "container_memory_usage:sort_desc",
               "refId": "A",
               "step": 10
@@ -2347,9 +2305,9 @@ data:
           {
             "allValue": ".*",
             "current": {
-              "selected": false,
-              "text": "moumia",
-              "value": "moumia"
+              "selected": true,
+              "text": "jedi7.cluster.ics.forth.gr",
+              "value": "jedi7.cluster.ics.forth.gr"
             },
             "datasource": null,
             "definition": "label_values(up, host)",

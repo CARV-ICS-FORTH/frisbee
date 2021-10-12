@@ -29,6 +29,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -260,6 +261,12 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	logrus.Warn("Ready to start ", actionList.ToString())
+
+	// this label will be adopted by all children objects of this workflow.
+	// it is not persisted in order to avoid additional updates.
+	w.SetLabels(labels.Merge(w.GetLabels(), map[string]string{
+		v1alpha1.BelongsToWorkflow: w.GetName(),
+	}))
 
 	for _, action := range actionList {
 		if err := r.runJob(ctx, &w, action); err != nil {
