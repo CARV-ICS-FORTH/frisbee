@@ -1,6 +1,9 @@
 ---
 name: "\U0001F914 Question"
 about: Usage question that isn't answered in docs or discussion
+title: ''
+labels: ''
+assignees: ''
 
 ---
 
@@ -13,4 +16,3 @@ Before asking a question, make sure you have:
 - Read the documentation:
     - [Frisbee Readme](https://github.com/CARV-ICS-FORTH/frisbee/blob/main/README.md)
     - [Frisbee Doc](https://github.com/CARV-ICS-FORTH/frisbee/tree/main/docs)
-

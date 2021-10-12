@@ -2,8 +2,9 @@
 
 # Why Frisbee ?
 
-Frisbee is a next generation testbed tool built for exploring, testing, and benchmarking modern applications. We address
-the key pain points developers and QA engineers face when testing cloud-native applications.
+Frisbee is a next generation platform designed to unify chaos testing and perfomance benchmarking.
+
+We address the key pain points developers and QA engineers face when testing cloud-native applications in the earlier stages of the software lifecycle.
 
 We make it possible to:
 
@@ -92,6 +93,8 @@ spec:
         templateRef: ycsb-redis/loader
         inputs:
           - { server: .service.master.any, recordcount: "100000000", offset: "0" }
+          - { server: .service.master.any, recordcount: "100000000", offset: "100000000" }
+          - { server: .service.master.any, recordcount: "100000000", offset: "200000000" }
 
     # While the loaders are running, we inject a network partition fault to the master node. 
     # The "after" dependency adds a delay so to have some keys before injecting the fault. 
