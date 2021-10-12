@@ -915,42 +915,6 @@ data:
           "type": "timeseries"
         },
         {
-          "alert": {
-            "alertRuleTags": {},
-            "conditions": [
-              {
-                "evaluator": {
-                  "params": [
-                    2
-                  ],
-                  "type": "gt"
-                },
-                "operator": {
-                  "type": "and"
-                },
-                "query": {
-                  "params": [
-                    "C",
-                    "10s",
-                    "now"
-                  ]
-                },
-                "reducer": {
-                  "params": [],
-                  "type": "avg"
-                },
-                "type": "query"
-              }
-            ],
-            "executionErrorState": "alerting",
-            "for": "5m",
-            "frequency": "1m",
-            "handler": 1,
-            "message": "fwefwefew",
-            "name": "Network I/O pressure alert",
-            "noDataState": "keep_state",
-            "notifications": []
-          },
           "datasource": "Prometheus",
           "fieldConfig": {
             "defaults": {
@@ -1048,14 +1012,7 @@ data:
               "step": 10
             }
           ],
-          "thresholds": [
-            {
-              "colorMode": "critical",
-              "op": "gt",
-              "value": 2,
-              "visible": true
-            }
-          ],
+          "thresholds": [],
           "timeFrom": null,
           "timeShift": null,
           "title": "Network I/O pressure",
