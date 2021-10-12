@@ -1,9 +1,5 @@
 # Grafana
 
-
-
-
-
 ## Create PDF from dashboards
 
 To fetch a PDF from Grafana follow the instructions of: https://gist.github.com/svet-b/1ad0656cd3ce0e1a633e16eb20f66425
@@ -16,7 +12,7 @@ Briefly,
 
 > node grafana_pdf.js "http://grafana.localhost/d/A2EjFbsMk/ycsb-services?viewPanel=74" "":"" output.pdf
 
-######                                
+######                                    
 
 ###### Permissions
 
