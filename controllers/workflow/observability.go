@@ -20,17 +20,24 @@ package workflow
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"path/filepath"
+	"time"
 
 	pet "github.com/dustinkirkland/golang-petname"
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/template/helpers"
 	"github.com/fnikolai/frisbee/controllers/utils"
+	"github.com/fnikolai/frisbee/pkg/netutils"
+	notifier "github.com/golanghelper/grafana-webhook"
+	"github.com/grafana-tools/sdk"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 	netv1 "k8s.io/api/networking/v1"
 	k8errors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -48,21 +55,15 @@ func (r *Controller) newMonitoringStack(ctx context.Context, obj *v1alpha1.Workf
 		return nil
 	}
 
-	logrus.Warnf("Create Prometheus")
-
 	prometheus, err := r.installPrometheus(ctx, obj)
 	if err != nil {
 		return errors.Wrapf(err, "prometheus error")
 	}
 
-	logrus.Warnf("Create Grafana")
-
 	grafana, err := r.installGrafana(ctx, obj)
 	if err != nil {
 		return errors.Wrapf(err, "grafana error")
 	}
-
-	logrus.Warnf("Create Ingress")
 
 	// Make Prometheus and Grafana accessible from outside the ByCluster
 	if obj.Spec.Ingress != nil {
@@ -75,7 +76,7 @@ func (r *Controller) newMonitoringStack(ctx context.Context, obj *v1alpha1.Workf
 		// use the public Grafana address (via Ingress) because the controller runs outside the cluster
 		grafanaPublicURI := fmt.Sprintf("http://%s", virtualhost(grafana.GetName(), obj.Spec.Ingress.Host))
 
-		if err := utils.SetGrafana(ctx, grafanaPublicURI); err != nil {
+		if err := r.initGrafana(ctx, grafanaPublicURI); err != nil {
 			return errors.Wrapf(err, "grafana client error")
 		}
 	}
@@ -302,4 +303,96 @@ func (r *Controller) installIngress(ctx context.Context, obj *v1alpha1.Workflow,
 
 func virtualhost(serviceName, ingress string) string {
 	return fmt.Sprintf("%s.%s", serviceName, ingress)
+}
+
+func (r *Controller) initGrafana(ctx context.Context, apiURI string) error {
+	var healthCheckTimeout = wait.Backoff{
+		Duration: 5 * time.Second,
+		Factor:   5,
+		Jitter:   0.1,
+		Steps:    4,
+	}
+
+	grafanaClient, err := sdk.NewClient(apiURI, "", sdk.DefaultHTTPClient)
+	if err != nil {
+		return errors.Wrapf(err, "grafanaClient error")
+	}
+
+	// retry until Grafana is ready to receive annotations.
+	err = retry.OnError(healthCheckTimeout, func(_ error) bool { return true }, func() error {
+		_, err := grafanaClient.GetHealth(ctx)
+
+		return errors.Wrapf(err, "grafana health error")
+	})
+
+	if err != nil {
+		return errors.Wrapf(err, "grafana is unreachable")
+	}
+
+	url, err := runNotificationWebhook(ctx, "6666")
+	if err != nil {
+		return errors.Wrapf(err, "cannot run a notification webhook")
+	}
+
+	r.Logger.Info("Grafana webhook is listening on", "url", url)
+
+	// create a feedback alert notification channel
+	feedback := sdk.AlertNotification{
+		Name:                  "to-frisbee-controller",
+		Type:                  "webhook",
+		IsDefault:             true,
+		DisableResolveMessage: true,
+		SendReminder:          false,
+		Settings: map[string]string{
+			"url": url,
+		},
+	}
+
+	if _, err := grafanaClient.CreateAlertNotification(ctx, feedback); err != nil {
+		return errors.Wrapf(err, "cannot create feedback notification channel")
+	}
+
+	utils.SetAnnotator(ctx, grafanaClient)
+
+	return nil
+}
+
+func runNotificationWebhook(ctx context.Context, port string) (string, error) {
+	// get local ip
+	ip, err := netutils.GetPublicIP()
+	if err != nil {
+		return "", errors.Wrapf(err, "cannot get controller's public ip")
+	}
+
+	handler := http.DefaultServeMux
+	handler.HandleFunc("/", notifier.HandleWebhook(func(w http.ResponseWriter, b *notifier.Body) {
+		logrus.Warn("SKATA ", b)
+
+		// msg := fmt.Sprintf("Grafana status: %s\n%s", b.Title, b.Message)
+		// sendMessage(msg)
+
+	}, 0))
+
+	addr := fmt.Sprintf("%s:%s", ip.String(), port)
+
+	errCh := make(chan error, 1)
+
+	go func() {
+		errCh <- http.ListenAndServe(addr, handler)
+	}()
+
+	select {
+	case err := <-errCh:
+		if err != nil {
+			return "", errors.Wrapf(err, "webhook server failed")
+		}
+	case <-ctx.Done():
+		return "", errors.Wrapf(ctx.Err(), "webhook server failed")
+	default:
+		url := fmt.Sprintf("http://%s", addr)
+
+		return url, nil
+	}
+
+	panic("should never happen")
 }

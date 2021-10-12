@@ -141,10 +141,19 @@ const (
 	statusAnnotationPatched = "Annotation patched"
 )
 
+var Annotate *GrafanaAnnotator
+
 type GrafanaAnnotator struct {
 	ctx context.Context
 
 	*sdk.Client
+}
+
+func SetAnnotator(ctx context.Context, client *sdk.Client) {
+	Annotate = &GrafanaAnnotator{
+		ctx:    ctx,
+		Client: client,
+	}
 }
 
 // Insert inserts a new annotation to Grafana.
