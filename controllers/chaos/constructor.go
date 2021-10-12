@@ -97,7 +97,9 @@ func (h partitionHandler) Inject(ctx context.Context, r *Controller) error {
 				"action": "partition",
 				"mode":   "all",
 				"selector": map[string]interface{}{
-					"namespaces": []string{h.cr.GetNamespace()},
+					"labelSelectors": map[string]string{
+						v1alpha1.BelongsToWorkflow: h.cr.GetLabels()[v1alpha1.BelongsToWorkflow],
+					},
 				},
 				"direction": "both",
 				"target": map[string]interface{}{

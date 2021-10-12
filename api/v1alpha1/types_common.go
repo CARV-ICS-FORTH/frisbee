@@ -10,7 +10,12 @@ import (
 )
 
 const (
+	// LabelManagedBy binds an object  back to a specific controller.
 	LabelManagedBy = "frisbee-controller"
+
+	// BelongsToWorkflow is a label that is passed from parent to the child, in order to identify all
+	// the various objects that belong to a specific workflow.
+	BelongsToWorkflow = "frisbee-workflow"
 )
 
 const (

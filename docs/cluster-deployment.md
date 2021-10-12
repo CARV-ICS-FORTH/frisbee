@@ -62,8 +62,12 @@ workflows.frisbee.io                    2021-10-07T10:33:05Z
 # Remove any previous Chaos-Mesh dependency
 >> curl -sSL https://mirrors.chaos-mesh.org/latest/install.sh | bash -s -- --template | kubectl  --kubeconfig ~/.kube/config.remote delete -f -
 
-# Install a fresh Chaos-Mesh 
->> curl -sSL https://mirrors.chaos-mesh.org/latest/install.sh | bash -s -- --template | kubectl  --kubeconfig ~/.kube/config.remote create -f -
+# Install a fresh Chaos-Mesh. Beware of the runtime engine. It may be containerd or docker
+# https://github.com/chaos-mesh/chaos-mesh/issues/2300
+>> curl -sSL https://mirrors.chaos-mesh.org/latest/install.sh | bash -s -- -r d --template | kubectl  --kubeconfig ~/.kube/config.remote create -f -
+
+# Alternatively, you can look at the Chaos-Mesh instructions directly.
+# https://chaos-mesh.org/docs/production-installation-using-helm/
 
 -- Expected all CRDS to be successfully created --
 ```

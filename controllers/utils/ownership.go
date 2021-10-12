@@ -47,9 +47,12 @@ func SetOwner(r Reconciler, parent, child metav1.Object) {
 		}
 	*/
 
-	// owner labels are used by the selectors
+	// owner labels are used by the selectors.
+	// workflow labels are used to select only objects that belong to this experiment.
+	// used to narrow down the scope of fault injection in a common namespace
 	child.SetLabels(labels.Merge(child.GetLabels(), map[string]string{
-		v1alpha1.LabelManagedBy: parent.GetName(),
+		v1alpha1.LabelManagedBy:    parent.GetName(),
+		v1alpha1.BelongsToWorkflow: parent.GetLabels()[v1alpha1.BelongsToWorkflow],
 	}))
 }
 
