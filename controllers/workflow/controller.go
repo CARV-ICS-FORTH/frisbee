@@ -55,28 +55,28 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		1: Load CR by name.
 		------------------------------------------------------------------
 	*/
-	var w v1alpha1.Workflow
+	var cr v1alpha1.Workflow
 
 	var requeue bool
-	result, err := utils.Reconcile(ctx, r, req, &w, &requeue)
+	result, err := utils.Reconcile(ctx, r, req, &cr, &requeue)
 
 	if requeue {
 		return result, errors.Wrapf(err, "initialization error")
 	}
 
 	r.Logger.Info("-> Reconcile",
-		"kind", reflect.TypeOf(w),
-		"name", w.GetName(),
-		"lifecycle", w.Status.Phase,
-		"version", w.GetResourceVersion(),
+		"kind", reflect.TypeOf(cr),
+		"name", cr.GetName(),
+		"lifecycle", cr.Status.Phase,
+		"version", cr.GetResourceVersion(),
 	)
 
 	defer func() {
 		r.Logger.Info("<- Reconcile",
-			"kind", reflect.TypeOf(w),
-			"name", w.GetName(),
-			"lifecycle", w.Status.Phase,
-			"version", w.GetResourceVersion(),
+			"kind", reflect.TypeOf(cr),
+			"name", cr.GetName(),
+			"lifecycle", cr.Status.Phase,
+			"version", cr.GetResourceVersion(),
 		)
 	}()
 
@@ -100,19 +100,19 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	var serviceJobs v1alpha1.ServiceList
 
 	if err := r.GetClient().List(ctx, &serviceJobs, filters...); err != nil {
-		return utils.Failed(ctx, r, &w, errors.Wrapf(err, "unable to list child serviceJobs"))
+		return utils.Failed(ctx, r, &cr, errors.Wrapf(err, "unable to list child serviceJobs"))
 	}
 
 	var clusterJobs v1alpha1.ClusterList
 
 	if err := r.GetClient().List(ctx, &clusterJobs, filters...); err != nil {
-		return utils.Failed(ctx, r, &w, errors.Wrapf(err, "unable to list child clusterJobs"))
+		return utils.Failed(ctx, r, &cr, errors.Wrapf(err, "unable to list child clusterJobs"))
 	}
 
 	var chaosJobs v1alpha1.ChaosList
 
 	if err := r.GetClient().List(ctx, &chaosJobs, filters...); err != nil {
-		return utils.Failed(ctx, r, &w, errors.Wrapf(err, "unable to list child chaosJobs"))
+		return utils.Failed(ctx, r, &cr, errors.Wrapf(err, "unable to list child chaosJobs"))
 	}
 
 	/*
@@ -154,13 +154,13 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		be in conflict. We fix this issue by re-queueing the request.
 		We also suppress verbose error reporting as to avoid polluting the output.
 	*/
-	newStatus := calculateLifecycle(&w, r.state)
-	w.Status = newStatus
+	newStatus := calculateLifecycle(&cr, r.state)
+	cr.Status = newStatus
 
-	if err := utils.UpdateStatus(ctx, r, &w); err != nil {
+	if err := utils.UpdateStatus(ctx, r, &cr); err != nil {
 		runtime.HandleError(err)
 
-		return utils.Requeue()
+		return utils.RequeueAfter(time.Second)
 	}
 
 	/*
@@ -182,6 +182,8 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	if newStatus.Phase == v1alpha1.PhaseFailed {
+		r.Logger.Error(errors.New(newStatus.Reason), newStatus.Message)
+
 		// Remove the non-failed components. Leave the failed to postmortem analysis
 		for _, job := range r.state.SuccessfulJobs() {
 			utils.Delete(ctx, r, job)
@@ -191,6 +193,13 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			utils.Delete(ctx, r, job)
 		}
 
+		return utils.Stop()
+	}
+
+	/*
+		All jobs are running. Nothing more to do. Just wait for events.
+	*/
+	if newStatus.Phase == v1alpha1.PhaseRunning {
 		return utils.Stop()
 	}
 
@@ -209,45 +218,45 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		This is useful if something's broken with the job we're running and we want to
 		pause runs to investigate or putz with the cluster, without deleting the object.
 	*/
-	if w.Spec.Suspend != nil && *w.Spec.Suspend {
+	if cr.Spec.Suspend != nil && *cr.Spec.Suspend {
 		r.Logger.Info("Not starting job because the workflow is suspended",
-			"workflow", w.GetName())
+			"workflow", cr.GetName())
 
 		return utils.Stop()
 	}
 
 	/*
-		If we are not suspended, initialize the workflow. At this step, we create the observability stack
+		If we are not suspended, initialize the CR.
 	*/
-	if w.Status.Phase == v1alpha1.PhaseUninitialized {
+	if cr.Status.Phase == v1alpha1.PhaseUninitialized {
 		// validate dependencies
-		if err := ValidateDAG(w.Spec.Actions); err != nil {
-			return utils.Failed(ctx, r, &w, errors.Wrapf(err, "invalid dependency DAG"))
+		if err := ValidateDAG(cr.Spec.Actions); err != nil {
+			return utils.Failed(ctx, r, &cr, errors.Wrapf(err, "invalid dependency DAG"))
 		}
 
-		if err := ValidateOracle(&w, r.state); err != nil {
-			return utils.Failed(ctx, r, &w, errors.Wrapf(err, "invalid TestOracle"))
+		if err := ValidateOracle(&cr, r.state); err != nil {
+			return utils.Failed(ctx, r, &cr, errors.Wrapf(err, "invalid TestOracle"))
 		}
 
-		if err := r.newMonitoringStack(ctx, &w); err != nil {
-			return utils.Failed(ctx, r, &w, errors.Wrapf(err, "unable to create the observability stack"))
+		if err := r.newMonitoringStack(ctx, &cr); err != nil {
+			return utils.Failed(ctx, r, &cr, errors.Wrapf(err, "unable to create the observability stack"))
 		}
 
-		meta.SetStatusCondition(&w.Status.Conditions, metav1.Condition{
-			Type:    v1alpha1.WorkflowInitialized.String(),
+		meta.SetStatusCondition(&cr.Status.Conditions, metav1.Condition{
+			Type:    v1alpha1.ConditionCRInitialized.String(),
 			Status:  metav1.ConditionTrue,
 			Reason:  "WorkflowInitialized",
 			Message: "The observability stack has been installed",
 		})
 
-		return utils.Pending(ctx, r, &w, "The observability stack has been installed")
+		return utils.Pending(ctx, r, &cr, "The Workflow is ready to start submitting jobs.")
 	}
 
 	/*
 		7: Get the next logical run
 		------------------------------------------------------------------
 	*/
-	actionList, nextRun := GetNextLogicalJob(&w, w.Spec.Actions, r.state, w.Status.Executed)
+	actionList, nextRun := GetNextLogicalJob(&cr, cr.Spec.Actions, r.state, cr.Status.Executed)
 
 	if len(actionList) == 0 {
 		if nextRun.IsZero() {
@@ -264,13 +273,13 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	// this label will be adopted by all children objects of this workflow.
 	// it is not persisted in order to avoid additional updates.
-	w.SetLabels(labels.Merge(w.GetLabels(), map[string]string{
-		v1alpha1.BelongsToWorkflow: w.GetName(),
+	cr.SetLabels(labels.Merge(cr.GetLabels(), map[string]string{
+		v1alpha1.BelongsToWorkflow: cr.GetName(),
 	}))
 
 	for _, action := range actionList {
-		if err := r.runJob(ctx, &w, action); err != nil {
-			return utils.Failed(ctx, r, &w, errors.Wrapf(err, "waiting failed"))
+		if err := r.runJob(ctx, &cr, action); err != nil {
+			return utils.Failed(ctx, r, &cr, errors.Wrapf(err, "waiting failed"))
 		}
 	}
 
@@ -284,15 +293,15 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		we might not see our own status update, and then post one again.
 		So, we need to use the job name as a lock to prevent us from making the job twice.
 	*/
-	if w.Status.Executed == nil {
-		w.Status.Executed = make(map[string]metav1.Time)
+	if cr.Status.Executed == nil {
+		cr.Status.Executed = make(map[string]metav1.Time)
 	}
 
 	for _, action := range actionList {
-		w.Status.Executed[action.Name] = metav1.Now()
+		cr.Status.Executed[action.Name] = metav1.Now()
 	}
 
-	return utils.Pending(ctx, r, &w, "some jobs are still pending")
+	return utils.Pending(ctx, r, &cr, "some jobs are still pending")
 }
 
 /*

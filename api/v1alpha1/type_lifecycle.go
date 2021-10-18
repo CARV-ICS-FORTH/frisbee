@@ -105,3 +105,27 @@ func (in *Lifecycle) String() string {
 
 	return fmt.Sprintf("phase:%s ", in.Phase)
 }
+
+// ConditionType is a valid value for WorkflowCondition.Type
+type ConditionType string
+
+func (t ConditionType) String() string {
+	return string(t)
+}
+
+// These are valid conditions of pod.
+const (
+	// ConditionCRInitialized indicates whether the workflow has been initialized
+	ConditionCRInitialized = ConditionType("initialized")
+
+	ConditionJobFailed = ConditionType("hasFailedJobs")
+
+	// ConditionAllJobs indicates whether all actions in the workflow have been executed.
+	ConditionAllJobs = ConditionType("allActions")
+
+	// ConditionAllJobsDone indicates whether all actions in the workflow have been completed.
+	ConditionAllJobsDone = ConditionType("complete")
+
+	// WorkflowOracle indicates the user-defined conditions are met.
+	WorkflowOracle = ConditionType("oracle")
+)

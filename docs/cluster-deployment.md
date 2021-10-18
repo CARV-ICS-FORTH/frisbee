@@ -54,7 +54,7 @@ templates.frisbee.io                    2021-10-07T11:48:00Z
 workflows.frisbee.io                    2021-10-07T10:33:05Z
 
 # Remove any previous Chaos-Mesh dependency
->> curl -sSL https://mirrors.chaos-mesh.org/latest/install.sh | bash -s -- --template | kubectl  --kubeconfig ~/.kube/config.remote delete -f -
+>> curl -sSL https://mirrors.chaos-mesh.org/latest/install.sh | bash -s -- --template | kubectl  --kubeconfig ~/.kube/config.remote delete --cascade=foreground -f -
 
 # Install a fresh Chaos-Mesh. Beware of the runtime engine. It may be containerd or docker
 # https://github.com/chaos-mesh/chaos-mesh/issues/2300
@@ -127,7 +127,7 @@ NAME           AGE
 validate   47s
 
 # Delete a workflow
->> kubectl --kubeconfig ~/.kube/config.remote  delete -f examples/testplans/validate-remote.yml 
+>> kubectl --kubeconfig ~/.kube/config.remote  delete --cascade=foreground -f examples/testplans/validate-remote.yml 
 workflow.frisbee.io "validate-remote" deleted
 ```
 

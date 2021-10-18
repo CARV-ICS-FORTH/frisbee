@@ -20,6 +20,7 @@ package template
 import (
 	"context"
 	"reflect"
+	"time"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	thelpers "github.com/fnikolai/frisbee/controllers/template/helpers"
@@ -61,7 +62,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if err := utils.UpdateStatus(ctx, r, &cr); err != nil {
 		runtime.HandleError(err)
 
-		return utils.Requeue()
+		return utils.RequeueAfter(time.Second)
 	}
 
 	/*

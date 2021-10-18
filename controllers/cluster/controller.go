@@ -73,7 +73,6 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		"kind", reflect.TypeOf(cr),
 		"name", cr.GetName(),
 		"lifecycle", cr.Status.Phase,
-		"deleted", !cr.GetDeletionTimestamp().IsZero(),
 		"version", cr.GetResourceVersion(),
 	)
 
@@ -82,7 +81,6 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			"kind", reflect.TypeOf(cr),
 			"name", cr.GetName(),
 			"lifecycle", cr.Status.Phase,
-			"deleted", !cr.GetDeletionTimestamp().IsZero(),
 			"version", cr.GetResourceVersion(),
 		)
 	}()
@@ -157,14 +155,14 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	newStatus := calculateLifecycle(&cr, r.state)
 
-	cr.Status.Lifecycle = newStatus
+	cr.Status = newStatus
 
 	if err := utils.UpdateStatus(ctx, r, &cr); err != nil {
 		// due to the multiple updates, it is possible for this function to
 		// be in conflict. We fix this issue by re-queueing the request.
 		// We also omit verbose error re
 		// porting as to avoid polluting the output.
-		return utils.Requeue()
+		return utils.RequeueAfter(time.Second)
 	}
 
 	/*
@@ -175,7 +173,6 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		around.
 	*/
 	if newStatus.Phase == v1alpha1.PhaseSuccess {
-
 		r.GetEventRecorderFor("").Event(&cr, corev1.EventTypeNormal,
 			newStatus.Reason, "cluster succeeded")
 

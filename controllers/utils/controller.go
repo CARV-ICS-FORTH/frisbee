@@ -141,7 +141,7 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 			// so that we can retry during the next reconciliation.
 			r.Error(err, "unable to finalize instance", "instance", obj.GetName())
 
-			return Requeue()
+			return RequeueAfter(time.Second)
 		}
 
 		// Once all finalizers have been removed, the object will be deleted.

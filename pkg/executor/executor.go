@@ -36,8 +36,8 @@ type Executor struct {
 	KubeConfig *rest.Config
 }
 
-// ExecutorResult contains the outputs of the execution.
-type ExecutorResult struct {
+// Result contains the outputs of the execution.
+type Result struct {
 	Stdout bytes.Buffer
 	Stderr bytes.Buffer
 }
@@ -51,7 +51,7 @@ func NewExecutor(kubeConfig *rest.Config) Executor {
 }
 
 // Exec runs an exec call on the container without a shell.
-func (e *Executor) Exec(pod types.NamespacedName, containerID string, command []string) (*ExecutorResult, error) {
+func (e *Executor) Exec(pod types.NamespacedName, containerID string, command []string) (*Result, error) {
 	request := e.KubeClient.
 		CoreV1().
 		RESTClient().
@@ -69,7 +69,7 @@ func (e *Executor) Exec(pod types.NamespacedName, containerID string, command []
 			// TTY:       true, // If TTY is enabled the call will be blocking
 		}, scheme.ParameterCodec)
 
-	result := new(ExecutorResult)
+	result := new(Result)
 
 	// Prepare the API URL used to execute another process within the Pod.  In
 	// this case, we'll run a remote shell.

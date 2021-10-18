@@ -25,30 +25,6 @@ func init() {
 	SchemeBuilder.Register(&Workflow{}, &WorkflowList{})
 }
 
-// WorkflowConditionType is a valid value for WorkflowCondition.Type
-type WorkflowConditionType string
-
-func (t WorkflowConditionType) String() string {
-	return string(t)
-}
-
-// These are valid conditions of pod.
-const (
-	// WorkflowInitialized indicates whether the workflow has been initialized
-	WorkflowInitialized = WorkflowConditionType("initialized")
-
-	WorkflowHasFailedJobs = WorkflowConditionType("hasFailedJobs")
-
-	// WorkflowAllExecuted indicates whether all actions in the workflow have been executed.
-	WorkflowAllExecuted = WorkflowConditionType("allActions")
-
-	// WorkflowComplete indicates whether all actions in the workflow have been completed.
-	WorkflowComplete = WorkflowConditionType("complete")
-
-	// WorkflowOracle indicates the user-defined conditions are met.
-	WorkflowOracle = WorkflowConditionType("oracle")
-)
-
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:shortName=wf
 // +kubebuilder:subresource:status

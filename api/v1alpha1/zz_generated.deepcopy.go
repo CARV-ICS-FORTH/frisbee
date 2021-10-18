@@ -294,6 +294,13 @@ func (in *ClusterSpec) DeepCopy() *ClusterSpec {
 func (in *ClusterStatus) DeepCopyInto(out *ClusterStatus) {
 	*out = *in
 	out.Lifecycle = in.Lifecycle
+	if in.Conditions != nil {
+		in, out := &in.Conditions, &out.Conditions
+		*out = make([]v1.Condition, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
 	if in.Expected != nil {
 		in, out := &in.Expected, &out.Expected
 		*out = make([]ServiceSpec, len(*in))

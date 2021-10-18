@@ -50,12 +50,24 @@ rules:
   - pods/status
   verbs:
   - get
-  - patch
-  - update
+  - list
+  - watch
 - apiGroups:
   - ""
   resources:
   - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - services/status
   verbs:
   - get
   - list
