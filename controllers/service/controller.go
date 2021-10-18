@@ -39,8 +39,9 @@ import (
 // +kubebuilder:rbac:groups=frisbee.io,resources=services/finalizers,verbs=update
 
 // +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=core,resources=pods/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;
+// +kubebuilder:rbac:groups=core,resources=pods/status,verbs=get;list;watch
+// +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=core,resources=services/status,verbs=get;list;watch
 
 // Controller reconciles a Service object.
 type Controller struct {

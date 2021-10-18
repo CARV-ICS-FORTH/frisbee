@@ -128,7 +128,7 @@ NAME           AGE
 validate-local   47s
 
 # Delete a workflow
->> kubectl delete -f examples/testplans/validate-local.yml 
+>> kubectl delete -f examples/testplans/validate-local.yml --cascade=foreground
 workflow.frisbee.io "validate-local" deleted
 ```
 

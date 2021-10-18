@@ -120,7 +120,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if err := utils.UpdateStatus(ctx, r, &cr); err != nil {
 		runtime.HandleError(err)
 
-		return utils.Requeue()
+		return utils.RequeueAfter(time.Second)
 	}
 
 	/*

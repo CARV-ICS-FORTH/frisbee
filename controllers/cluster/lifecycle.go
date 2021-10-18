@@ -23,64 +23,76 @@ import (
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/utils"
 	"github.com/sirupsen/logrus"
+	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+type test struct {
+	expression bool
+	lifecycle  v1alpha1.Lifecycle
+	condition  metav1.Condition
+}
+
 // calculateLifecycle returns the update lifecycle of the cluster.
-func calculateLifecycle(cluster *v1alpha1.Cluster, gs utils.LifecycleClassifier) v1alpha1.Lifecycle {
+func calculateLifecycle(cluster *v1alpha1.Cluster, gs utils.LifecycleClassifier) v1alpha1.ClusterStatus {
 	status := cluster.Status
 
 	// Skip any CR which are already completed, or uninitialized.
 	if status.Phase == v1alpha1.PhaseUninitialized ||
 		status.Phase == v1alpha1.PhaseSuccess ||
 		status.Phase == v1alpha1.PhaseFailed {
-		return status.Lifecycle
+		return status
 	}
 
-	allJobs := len(cluster.Status.Expected)
+	expectedJobs := len(cluster.Status.Expected)
 
-	// we are only interested in the number of jobs in each category.
-	// expectedJobs := len(w.Spec.Actions) + len(systemService)
-	activeJobs := gs.NumActiveJobs()
-	runningJobs := gs.NumRunningJobs()
-	successfulJobs := gs.NumSuccessfulJobs()
-	failedJobs := gs.NumFailedJobs()
-
-	_ = runningJobs
-
-	type test struct {
-		condition bool
-		outcome   v1alpha1.Lifecycle
-	}
-
-	tests := []test{
-		{
-			condition: failedJobs > 0 && failedJobs > cluster.Spec.Tolerate.FailedServices,
-			outcome: v1alpha1.Lifecycle{
+	autotests := []test{
+		{ // A job has failed during execution.
+			expression: gs.NumFailedJobs() > 0 && gs.NumFailedJobs() > cluster.Spec.Tolerate.FailedServices,
+			lifecycle: v1alpha1.Lifecycle{
 				Phase:  v1alpha1.PhaseFailed,
-				Reason: "TolerateLimitsExceeded",
+				Reason: "TolerateFailuresExceeded",
 				Message: fmt.Sprintf("tolerate: %d. failed jobs: %s",
 					cluster.Spec.Tolerate.FailedServices, gs.FailedList()),
 			},
+			condition: metav1.Condition{
+				Type:    v1alpha1.ConditionJobFailed.String(),
+				Status:  metav1.ConditionTrue,
+				Reason:  "JobHasFailed",
+				Message: fmt.Sprintf("failed jobs: %s", gs.FailedList()),
+			},
 		},
 		{ // All jobs are successfully completed
-			condition: successfulJobs == allJobs,
-			outcome: v1alpha1.Lifecycle{
+			expression: gs.NumSuccessfulJobs() == expectedJobs,
+			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseSuccess,
+				Reason:  "AllJobsCompleted",
+				Message: fmt.Sprintf("successful jobs: %s", gs.SuccessfulList()),
+			},
+			condition: metav1.Condition{
+				Type:    v1alpha1.ConditionAllJobsDone.String(),
+				Status:  metav1.ConditionTrue,
 				Reason:  "AllJobsCompleted",
 				Message: fmt.Sprintf("successful jobs: %s", gs.SuccessfulList()),
 			},
 		},
 		{ // All jobs are created, and at least one is still running
-			condition: activeJobs+successfulJobs == allJobs,
-			outcome: v1alpha1.Lifecycle{
+			expression: gs.NumActiveJobs()+gs.NumSuccessfulJobs() == expectedJobs,
+			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseRunning,
 				Reason:  "JobIsRunning",
 				Message: fmt.Sprintf("active jobs: %s", gs.ActiveList()),
 			},
+			condition: metav1.Condition{
+				Type:    v1alpha1.ConditionAllJobs.String(),
+				Status:  metav1.ConditionTrue,
+				Reason:  "AllJobsRunning",
+				Message: fmt.Sprintf("active jobs: %s", gs.ActiveList()),
+			},
 		},
-		{ // Not all Jobs are constructed created
-			condition: status.Phase == v1alpha1.PhasePending,
-			outcome: v1alpha1.Lifecycle{
+		{ // Not all Jobs are yet created
+			expression: status.Phase == v1alpha1.PhasePending,
+			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhasePending,
 				Reason:  "JobIsPending",
 				Message: "at least one jobs has not yet created",
@@ -88,21 +100,26 @@ func calculateLifecycle(cluster *v1alpha1.Cluster, gs utils.LifecycleClassifier)
 		},
 	}
 
-	for _, testcase := range tests {
-		if testcase.condition {
-			return testcase.outcome
+	for _, testcase := range autotests {
+		if testcase.expression {
+			status.Lifecycle = testcase.lifecycle
+
+			if testcase.condition != (metav1.Condition{}) {
+				meta.SetStatusCondition(&status.Conditions, testcase.condition)
+			}
+
+			return status
 		}
 	}
 
 	logrus.Warn("Cluster Debug info \n",
 		" current ", status.Lifecycle.Phase,
-		" total jobs: ", allJobs,
-		" activeJobs: ", activeJobs,
-		" successfulJobs: ", successfulJobs,
-		" failedJobs: ", failedJobs,
+		" total actions: ", expectedJobs,
+		" activeJobs: ", gs.ActiveList(),
+		" successfulJobs: ", gs.SuccessfulList(),
+		" failedJobs: ", gs.FailedList(),
 		" cur status: ", status,
 	)
 
 	panic("unhandled lifecycle conditions")
-
 }

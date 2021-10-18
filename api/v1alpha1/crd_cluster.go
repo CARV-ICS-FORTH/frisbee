@@ -90,6 +90,9 @@ type TolerateSpec struct {
 type ClusterStatus struct {
 	Lifecycle `json:",inline"`
 
+	// +optional
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
+
 	// Expected is a list of services scheduled for creation by the cluster.
 	// +optional
 	Expected []ServiceSpec `json:"expected,omitempty"`

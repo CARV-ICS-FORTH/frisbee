@@ -18,6 +18,8 @@
 package utils
 
 import (
+	"sort"
+
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -112,6 +114,8 @@ func (in *LifecycleClassifier) ActiveList() []string {
 		list = append(list, jobName)
 	}
 
+	sort.Strings(list)
+
 	return list
 }
 
@@ -121,6 +125,8 @@ func (in *LifecycleClassifier) RunningList() []string {
 	for jobName := range in.runningJobs {
 		list = append(list, jobName)
 	}
+
+	sort.Strings(list)
 
 	return list
 }
@@ -132,6 +138,8 @@ func (in *LifecycleClassifier) SuccessfulList() []string {
 		list = append(list, jobName)
 	}
 
+	sort.Strings(list)
+
 	return list
 }
 
@@ -141,6 +149,8 @@ func (in *LifecycleClassifier) FailedList() []string {
 	for jobName := range in.failedJobs {
 		list = append(list, jobName)
 	}
+
+	sort.Strings(list)
 
 	return list
 }

@@ -127,19 +127,17 @@ data:
         ]
       },
       "editable": true,
+      "fiscalYearStartMonth": 0,
       "gnetId": null,
       "graphTooltip": 1,
       "id": 2,
-      "iteration": 1631286550872,
+      "iteration": 1634310198288,
       "links": [],
+      "liveNow": false,
       "panels": [
         {
           "collapsed": false,
           "datasource": null,
-          "fieldConfig": {
-            "defaults": {},
-            "overrides": []
-          },
           "gridPos": {
             "h": 1,
             "w": 24,
@@ -355,124 +353,17 @@ data:
           "fieldConfig": {
             "defaults": {
               "color": {
-                "mode": "continuous-BlYlRd"
-              },
-              "custom": {
-                "align": null,
-                "displayMode": "auto",
-                "filterable": true
-              },
-              "mappings": [
-                {
-                  "options": {
-                    "": {
-                      "text": ""
-                    }
-                  },
-                  "type": "value"
-                }
-              ],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": []
-              },
-              "unit": "short"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 7,
-            "w": 8,
-            "x": 16,
-            "y": 1
-          },
-          "id": 75,
-          "links": [],
-          "options": {
-            "showHeader": true,
-            "sortBy": []
-          },
-          "pluginVersion": "8.1.3",
-          "targets": [
-            {
-              "exemplar": false,
-              "expr": "sum(ycsb_count{instance=~\"$instance\", host=~\"$host\"}) by (instance)",
-              "format": "time_series",
-              "hide": false,
-              "instant": false,
-              "interval": "",
-              "intervalFactor": 2,
-              "legendFormat": "{{instance}}",
-              "refId": "Operations"
-            }
-          ],
-          "timeFrom": null,
-          "timeShift": null,
-          "title": "Top Clients (#operations)",
-          "transformations": [
-            {
-              "id": "reduce",
-              "options": {
-                "includeTimeField": false,
-                "mode": "seriesToRows",
-                "reducers": [
-                  "max"
-                ]
-              }
-            }
-          ],
-          "type": "table"
-        },
-        {
-          "datasource": "Prometheus",
-          "fieldConfig": {
-            "defaults": {
-              "color": {
                 "mode": "palette-classic"
               },
               "custom": {
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 0,
-                "gradientMode": "none",
                 "hideFrom": {
                   "legend": false,
                   "tooltip": false,
                   "viz": false
-                },
-                "lineInterpolation": "linear",
-                "lineWidth": 2,
-                "pointSize": 3,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "always",
-                "spanNulls": true,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
                 }
               },
               "mappings": [],
               "min": 0,
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
-                  }
-                ]
-              },
               "unit": "short"
             },
             "overrides": [
@@ -550,20 +441,85 @@ data:
                     }
                   }
                 ]
-              },
-              {
-                "matcher": {
-                  "id": "byRegexp",
-                  "options": "/Max.*/"
-                },
-                "properties": [
-                  {
-                    "id": "custom.fillOpacity",
-                    "value": 0
-                  }
-                ]
               }
             ]
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 8,
+            "x": 16,
+            "y": 1
+          },
+          "id": 93,
+          "links": [],
+          "options": {
+            "displayLabels": [
+              "name",
+              "percent"
+            ],
+            "legend": {
+              "displayMode": "hidden",
+              "placement": "right"
+            },
+            "pieType": "pie",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "tooltip": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "8.1.3",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "sum(ycsb_count) by (operation)",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "{{operation}}",
+              "refId": "A"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Top Operations",
+          "transformations": [],
+          "type": "piechart"
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "custom": {
+                "align": "left",
+                "displayMode": "auto",
+                "filterable": false
+              },
+              "mappings": [],
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
           },
           "gridPos": {
             "h": 7,
@@ -574,44 +530,63 @@ data:
           "id": 83,
           "links": [],
           "options": {
-            "legend": {
-              "calcs": [
-                "mean",
-                "max",
-                "min"
-              ],
-              "displayMode": "hidden",
-              "placement": "bottom"
-            },
-            "tooltip": {
-              "mode": "single"
-            }
+            "showHeader": true,
+            "sortBy": [
+              {
+                "desc": true,
+                "displayName": "Value"
+              }
+            ]
           },
-          "pluginVersion": "8.1.3",
+          "pluginVersion": "8.2.1",
           "targets": [
             {
-              "expr": "sum(up{dash=~\"ycsb\"}) ",
+              "exemplar": true,
+              "expr": "sum(ycsb_count) by (host, instance)",
+              "format": "table",
               "hide": false,
-              "instant": false,
+              "instant": true,
               "interval": "",
-              "intervalFactor": 1,
               "legendFormat": "",
-              "refId": "Operations"
+              "refId": "B"
             }
           ],
           "timeFrom": null,
           "timeShift": null,
-          "title": "Total Clients",
-          "transformations": [],
-          "type": "timeseries"
+          "title": "Operation Per client",
+          "transformations": [
+            {
+              "id": "filterFieldsByName",
+              "options": {
+                "include": {
+                  "names": [
+                    "host",
+                    "instance",
+                    "Value"
+                  ]
+                }
+              }
+            },
+            {
+              "id": "organize",
+              "options": {
+                "excludeByName": {},
+                "indexByName": {
+                  "Value": 1,
+                  "host": 2,
+                  "instance": 0
+                },
+                "renameByName": {
+                  "Value": "Total Ops"
+                }
+              }
+            }
+          ],
+          "type": "table"
         },
         {
           "collapsed": false,
           "datasource": null,
-          "fieldConfig": {
-            "defaults": {},
-            "overrides": []
-          },
           "gridPos": {
             "h": 1,
             "w": 24,
@@ -1285,10 +1260,6 @@ data:
         {
           "collapsed": false,
           "datasource": null,
-          "fieldConfig": {
-            "defaults": {},
-            "overrides": []
-          },
           "gridPos": {
             "h": 1,
             "w": 24,
@@ -1920,7 +1891,7 @@ data:
         }
       ],
       "refresh": "30s",
-      "schemaVersion": 30,
+      "schemaVersion": 31,
       "style": "dark",
       "tags": [
         "ycsb"
@@ -1930,12 +1901,16 @@ data:
           {
             "allValue": ".*",
             "current": {
-              "selected": false,
-              "text": "All",
-              "value": "$__all"
+              "selected": true,
+              "text": [
+                "All"
+              ],
+              "value": [
+                "$__all"
+              ]
             },
             "datasource": null,
-            "definition": "query_result(count (up{dash=~\"ycsb\"}) by (instance))",
+            "definition": "query_result(count (up{mon=~\"ycsb\"}) by (instance))",
             "description": null,
             "error": null,
             "hide": 0,
@@ -1945,7 +1920,7 @@ data:
             "name": "instance",
             "options": [],
             "query": {
-              "query": "query_result(count (up{dash=~\"ycsb\"}) by (instance))",
+              "query": "query_result(count (up{mon=~\"ycsb\"}) by (instance))",
               "refId": "StandardVariableQuery"
             },
             "refresh": 2,
@@ -1960,12 +1935,16 @@ data:
           {
             "allValue": ".*",
             "current": {
-              "selected": false,
-              "text": "All",
-              "value": "$__all"
+              "selected": true,
+              "text": [
+                "All"
+              ],
+              "value": [
+                "$__all"
+              ]
             },
             "datasource": null,
-            "definition": "query_result(count (up{dash=\"ycsb\"}) by (host))",
+            "definition": "query_result(count (up{mon=\"ycsb\"}) by (host))",
             "description": null,
             "error": null,
             "hide": 0,
@@ -1975,7 +1954,7 @@ data:
             "name": "host",
             "options": [],
             "query": {
-              "query": "query_result(count (up{dash=\"ycsb\"}) by (host))",
+              "query": "query_result(count (up{mon=\"ycsb\"}) by (host))",
               "refId": "StandardVariableQuery"
             },
             "refresh": 2,
@@ -2021,5 +2000,5 @@ data:
       "timezone": "browser",
       "title": "YCSB Services",
       "uid": "A2EjFbsMk",
-      "version": 3
+      "version": 1
     }

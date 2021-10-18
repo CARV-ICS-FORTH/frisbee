@@ -64,7 +64,7 @@ func calculateLifecycle(w *v1alpha1.Workflow, gs utils.LifecycleClassifier) v1al
 				Message: fmt.Sprintf("failed jobs: %s", gs.FailedList()),
 			},
 			condition: metav1.Condition{
-				Type:    v1alpha1.WorkflowHasFailedJobs.String(),
+				Type:    v1alpha1.ConditionJobFailed.String(),
 				Status:  metav1.ConditionTrue,
 				Reason:  "JobHasFailed",
 				Message: fmt.Sprintf("failed jobs: %s", gs.FailedList()),
@@ -78,7 +78,7 @@ func calculateLifecycle(w *v1alpha1.Workflow, gs utils.LifecycleClassifier) v1al
 				Message: fmt.Sprintf("successful jobs: %s", gs.SuccessfulList()),
 			},
 			condition: metav1.Condition{
-				Type:    v1alpha1.WorkflowComplete.String(),
+				Type:    v1alpha1.ConditionAllJobsDone.String(),
 				Status:  metav1.ConditionTrue,
 				Reason:  "AllJobsCompleted",
 				Message: fmt.Sprintf("successful jobs: %s", gs.SuccessfulList()),
@@ -92,13 +92,13 @@ func calculateLifecycle(w *v1alpha1.Workflow, gs utils.LifecycleClassifier) v1al
 				Message: fmt.Sprintf("active jobs: %s", gs.ActiveList()),
 			},
 			condition: metav1.Condition{
-				Type:    v1alpha1.WorkflowAllExecuted.String(),
+				Type:    v1alpha1.ConditionAllJobs.String(),
 				Status:  metav1.ConditionTrue,
 				Reason:  "AllJobsRunning",
 				Message: fmt.Sprintf("active jobs: %s", gs.ActiveList()),
 			},
 		},
-		{ // Not all Jobs are constructed created
+		{ // Not all Jobs are yet created
 			expression: status.Phase == v1alpha1.PhasePending,
 			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhasePending,
