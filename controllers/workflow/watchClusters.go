@@ -39,7 +39,7 @@ func (r *Controller) WatchClusters() predicate.Funcs {
 }
 
 func (r *Controller) watchClusterCreate(e event.CreateEvent) bool {
-	if !utils.IsManagedByThisController(e.Object, controllerKind) {
+	if !utils.IsManagedByThisController(e.Object, r.gvk) {
 		return false
 	}
 
@@ -60,7 +60,7 @@ func (r *Controller) watchClusterCreate(e event.CreateEvent) bool {
 }
 
 func (r *Controller) watchClusterUpdate(e event.UpdateEvent) bool {
-	if !utils.IsManagedByThisController(e.ObjectNew, controllerKind) {
+	if !utils.IsManagedByThisController(e.ObjectNew, r.gvk) {
 		return false
 	}
 
@@ -100,7 +100,7 @@ func (r *Controller) watchClusterUpdate(e event.UpdateEvent) bool {
 }
 
 func (r *Controller) watchClusterDelete(e event.DeleteEvent) bool {
-	if !utils.IsManagedByThisController(e.Object, controllerKind) {
+	if !utils.IsManagedByThisController(e.Object, r.gvk) {
 		return false
 	}
 

@@ -22,7 +22,7 @@ func (r *Controller) WatchServices() predicate.Funcs {
 }
 
 func (r *Controller) watchServiceCreate(e event.CreateEvent) bool {
-	if !utils.IsManagedByThisController(e.Object, controllerKind) {
+	if !utils.IsManagedByThisController(e.Object, r.gvk) {
 		return false
 	}
 
@@ -43,7 +43,7 @@ func (r *Controller) watchServiceCreate(e event.CreateEvent) bool {
 }
 
 func (r *Controller) watchServiceUpdate(e event.UpdateEvent) bool {
-	if !utils.IsManagedByThisController(e.ObjectNew, controllerKind) {
+	if !utils.IsManagedByThisController(e.ObjectNew, r.gvk) {
 		return false
 	}
 
@@ -83,7 +83,7 @@ func (r *Controller) watchServiceUpdate(e event.UpdateEvent) bool {
 }
 
 func (r *Controller) watchServiceDelete(e event.DeleteEvent) bool {
-	if !utils.IsManagedByThisController(e.Object, controllerKind) {
+	if !utils.IsManagedByThisController(e.Object, r.gvk) {
 		return false
 	}
 

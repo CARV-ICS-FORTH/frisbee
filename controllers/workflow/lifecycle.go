@@ -25,7 +25,7 @@ import (
 	"github.com/Knetic/govaluate"
 	"github.com/Masterminds/sprig/v3"
 	"github.com/fnikolai/frisbee/api/v1alpha1"
-	"github.com/fnikolai/frisbee/controllers/utils"
+	"github.com/fnikolai/frisbee/controllers/utils/lifecycle"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -40,7 +40,7 @@ type test struct {
 	condition  metav1.Condition
 }
 
-func calculateLifecycle(w *v1alpha1.Workflow, gs utils.LifecycleClassifier) v1alpha1.WorkflowStatus {
+func calculateLifecycle(w *v1alpha1.Workflow, gs lifecycle.Classifier) v1alpha1.WorkflowStatus {
 	status := w.Status
 
 	// Skip any CR which are already completed, or uninitialized.
@@ -136,7 +136,7 @@ func calculateLifecycle(w *v1alpha1.Workflow, gs utils.LifecycleClassifier) v1al
 
 // useOracle enforces user-driven decisions as to when the test has passed or has fail.
 // the return arguments are: lifecycle, apply, error.
-func useOracle(w *v1alpha1.Workflow, gs utils.LifecycleClassifier) []test {
+func useOracle(w *v1alpha1.Workflow, gs lifecycle.Classifier) []test {
 	oracle := w.Spec.Oracle
 
 	if oracle == nil {
@@ -202,7 +202,7 @@ func useOracle(w *v1alpha1.Workflow, gs utils.LifecycleClassifier) []test {
 	return testlist
 }
 
-func ValidateOracle(w *v1alpha1.Workflow, gs utils.LifecycleClassifier) error {
+func ValidateOracle(w *v1alpha1.Workflow, gs lifecycle.Classifier) error {
 	oracle := w.Spec.Oracle
 
 	if oracle == nil {
@@ -239,7 +239,7 @@ func ValidateOracle(w *v1alpha1.Workflow, gs utils.LifecycleClassifier) error {
 var sprigFuncMap = sprig.TxtFuncMap() // a singleton for better performance
 
 // deference gives access to the gs from the template.
-func dereference(oracle string, gs utils.LifecycleClassifier) (string, error) {
+func dereference(oracle string, gs lifecycle.Classifier) (string, error) {
 	t := template.Must(
 		template.New("").
 			Funcs(sprigFuncMap).

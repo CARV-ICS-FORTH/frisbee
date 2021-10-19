@@ -69,10 +69,22 @@ func convertLifecycle(pod *corev1.Pod) v1alpha1.Lifecycle {
 		}
 
 	case corev1.PodFailed:
+		reason := pod.Status.Reason
+		message := pod.Status.Message
+
+		// A usual source for empty reason is invalid container parameters
+		if reason == "" {
+			reason = "ContainerError"
+		}
+
+		if message == "" {
+			message = "Check the container logs"
+		}
+
 		return v1alpha1.Lifecycle{
 			Phase:   v1alpha1.PhaseFailed,
-			Reason:  pod.Status.Reason,
-			Message: pod.Status.Message,
+			Reason:  reason,
+			Message: message,
 		}
 
 	case corev1.PodUnknown:

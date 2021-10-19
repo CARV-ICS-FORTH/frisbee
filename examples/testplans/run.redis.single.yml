@@ -1,0 +1,47 @@
+apiVersion: frisbee.io/v1alpha1
+kind: Workflow
+metadata:
+  name: redis-mixed-workloads
+spec:
+  importMonitors: [ "sysmon/container", "redismon/server", "ycsbmon/client" ]
+  ingress:
+    host: localhost
+    useAmbassador: true
+
+  testOracle:
+    pass: >-
+      {{.IsSuccessful "runners"}} == true
+
+  actions:
+    # Create a single Master node
+    - action: Service
+      name: master
+      service:
+        fromTemplate:
+          templateRef: redis/master
+
+    # Ingest keys in parallel, into different ranges
+    - action: Cluster
+      name: "loaders"
+      depends: { running: [ master ] }
+      cluster:
+        templateRef: ycsb-redis/loader
+        inputs:
+          - { server: .service.master.any, recordcount: "1000000", offset: "0" }
+          - { server: .service.master.any, recordcount: "1000000", offset: "1000000" }
+          - { server: .service.master.any, recordcount: "1000000", offset: "2000000" }
+
+    # Wait for ingestion to complete, and start querying clients, with different workloads
+    - action: Cluster
+      name: "runners"
+      depends: { running: [ master ], success: [ loaders ] }
+      cluster:
+        templateRef: ycsb-redis/runner
+        inputs:
+          - { server: .service.master.any, workload: workloada, operationcount: "1000000" }
+          - { server: .service.master.any, workload: workloadb, operationcount: "1000000" }
+          - { server: .service.master.any, workload: workloadc, operationcount: "1000000" }
+          - { server: .service.master.any, workload: workloadd, operationcount: "1000000" }
+          - { server: .service.master.any, workload: workloada, operationcount: "1000000" }
+        schedule:
+          cron: "@every 2m"

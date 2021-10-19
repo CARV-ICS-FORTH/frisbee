@@ -25,6 +25,7 @@ import (
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	thelpers "github.com/fnikolai/frisbee/controllers/template/helpers"
 	"github.com/fnikolai/frisbee/controllers/utils"
+	"github.com/fnikolai/frisbee/controllers/utils/lifecycle"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/runtime"
@@ -85,7 +86,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		for name, scheme := range cr.Spec.Entries {
 			specStr, err := thelpers.GenerateSpecFromScheme(scheme.DeepCopy())
 			if err != nil {
-				return utils.Failed(ctx, r, &cr, errors.Wrapf(err, "template %s error", name))
+				return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "template %s error", name))
 			}
 
 			sSpec := v1alpha1.ServiceSpec{}
@@ -94,7 +95,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 				// if it is not a service, it may be a monitor
 				mSpec := v1alpha1.MonitorSpec{}
 				if err := yaml.Unmarshal([]byte(specStr), &mSpec); err != nil {
-					return utils.Failed(ctx, r, &cr, errors.Wrapf(err, "unparsable scheme for %s", name))
+					return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "unparsable scheme for %s", name))
 				}
 			}
 		}
@@ -110,7 +111,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			"entries", names,
 		)
 
-		return utils.Running(ctx, r, &cr, "all templates are loaded")
+		return lifecycle.Running(ctx, r, &cr, "all templates are loaded")
 	}
 
 	return utils.Stop()

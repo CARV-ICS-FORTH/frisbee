@@ -5,6 +5,7 @@ import (
 	"reflect"
 
 	"github.com/fnikolai/frisbee/controllers/utils"
+	"github.com/fnikolai/frisbee/controllers/utils/grafana"
 	"github.com/pkg/errors"
 	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -21,7 +22,7 @@ func (r *Controller) Watchers() predicate.Funcs {
 }
 
 func (r *Controller) create(e event.CreateEvent) bool {
-	if !utils.IsManagedByThisController(e.Object, controllerKind) {
+	if !utils.IsManagedByThisController(e.Object, r.gvk) {
 		return false
 	}
 
@@ -39,7 +40,7 @@ func (r *Controller) create(e event.CreateEvent) bool {
 	)
 
 	// because the range annotator has state (uid), we need to save in the controller's store.
-	annotator := &utils.RangeAnnotation{}
+	annotator := &grafana.RangeAnnotation{}
 	annotator.Add(e.Object)
 
 	r.annotators.Set(e.Object.GetName(), annotator)
@@ -48,7 +49,7 @@ func (r *Controller) create(e event.CreateEvent) bool {
 }
 
 func (r *Controller) update(e event.UpdateEvent) bool {
-	if !utils.IsManagedByThisController(e.ObjectNew, controllerKind) {
+	if !utils.IsManagedByThisController(e.ObjectNew, r.gvk) {
 		return false
 	}
 
@@ -77,7 +78,7 @@ func (r *Controller) update(e event.UpdateEvent) bool {
 }
 
 func (r *Controller) delete(e event.DeleteEvent) bool {
-	if !utils.IsManagedByThisController(e.Object, controllerKind) {
+	if !utils.IsManagedByThisController(e.Object, r.gvk) {
 		return false
 	}
 
@@ -103,7 +104,7 @@ func (r *Controller) delete(e event.DeleteEvent) bool {
 		return false
 	}
 
-	annotator.(*utils.RangeAnnotation).Delete(e.Object)
+	annotator.(*grafana.RangeAnnotation).Delete(e.Object)
 
 	r.annotators.Remove(e.Object.GetName())
 

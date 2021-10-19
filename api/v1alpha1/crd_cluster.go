@@ -18,6 +18,8 @@
 package v1alpha1
 
 import (
+	"fmt"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -85,6 +87,14 @@ type ClusterSpec struct {
 type TolerateSpec struct {
 	// FailedServices indicate the number of services that may fail before the cluster fails itself.
 	FailedServices int `json:"failedServices"`
+}
+
+func (in TolerateSpec) String() string {
+	if in.FailedServices == 0 {
+		return "None"
+	}
+
+	return fmt.Sprintf("FailedServices:%d", in.FailedServices)
 }
 
 type ClusterStatus struct {

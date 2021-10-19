@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package utils
+package lifecycle
 
 import (
 	"sort"
@@ -26,7 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type LifecycleClassifier struct {
+type Classifier struct {
 	// activeJobs involve pending + running
 	activeJobs     map[string]client.Object
 	runningJobs    map[string]client.Object
@@ -34,14 +34,14 @@ type LifecycleClassifier struct {
 	failedJobs     map[string]client.Object
 }
 
-func (in *LifecycleClassifier) Reset() {
+func (in *Classifier) Reset() {
 	in.activeJobs = make(map[string]client.Object)
 	in.runningJobs = make(map[string]client.Object)
 	in.successfulJobs = make(map[string]client.Object)
 	in.failedJobs = make(map[string]client.Object)
 }
 
-func (in *LifecycleClassifier) Classify(name string, obj client.Object) {
+func (in *Classifier) Classify(name string, obj client.Object) {
 	if statusAware, getStatus := obj.(ReconcileStatusAware); getStatus {
 		status := statusAware.GetReconcileStatus()
 
@@ -67,47 +67,47 @@ func (in *LifecycleClassifier) Classify(name string, obj client.Object) {
 	}
 }
 
-func (in *LifecycleClassifier) IsActive(jobName string) bool {
+func (in *Classifier) IsActive(jobName string) bool {
 	_, ok := in.activeJobs[jobName]
 
 	return ok
 }
 
-func (in *LifecycleClassifier) IsRunning(name string) bool {
+func (in *Classifier) IsRunning(name string) bool {
 	_, ok := in.runningJobs[name]
 
 	return ok
 }
 
-func (in *LifecycleClassifier) IsSuccessful(name string) bool {
+func (in *Classifier) IsSuccessful(name string) bool {
 	_, ok := in.successfulJobs[name]
 
 	return ok
 }
 
-func (in *LifecycleClassifier) IsFailed(name string) bool {
+func (in *Classifier) IsFailed(name string) bool {
 	_, ok := in.failedJobs[name]
 
 	return ok
 }
 
-func (in *LifecycleClassifier) NumActiveJobs() int {
+func (in *Classifier) NumActiveJobs() int {
 	return len(in.activeJobs)
 }
 
-func (in *LifecycleClassifier) NumRunningJobs() int {
+func (in *Classifier) NumRunningJobs() int {
 	return len(in.runningJobs)
 }
 
-func (in *LifecycleClassifier) NumSuccessfulJobs() int {
+func (in *Classifier) NumSuccessfulJobs() int {
 	return len(in.successfulJobs)
 }
 
-func (in *LifecycleClassifier) NumFailedJobs() int {
+func (in *Classifier) NumFailedJobs() int {
 	return len(in.failedJobs)
 }
 
-func (in *LifecycleClassifier) ActiveList() []string {
+func (in *Classifier) ActiveList() []string {
 	list := make([]string, 0, len(in.activeJobs))
 
 	for jobName := range in.activeJobs {
@@ -119,7 +119,7 @@ func (in *LifecycleClassifier) ActiveList() []string {
 	return list
 }
 
-func (in *LifecycleClassifier) RunningList() []string {
+func (in *Classifier) RunningList() []string {
 	list := make([]string, 0, len(in.runningJobs))
 
 	for jobName := range in.runningJobs {
@@ -131,7 +131,7 @@ func (in *LifecycleClassifier) RunningList() []string {
 	return list
 }
 
-func (in *LifecycleClassifier) SuccessfulList() []string {
+func (in *Classifier) SuccessfulList() []string {
 	list := make([]string, 0, len(in.successfulJobs))
 
 	for jobName := range in.successfulJobs {
@@ -143,7 +143,7 @@ func (in *LifecycleClassifier) SuccessfulList() []string {
 	return list
 }
 
-func (in *LifecycleClassifier) FailedList() []string {
+func (in *Classifier) FailedList() []string {
 	list := make([]string, 0, len(in.failedJobs))
 
 	for jobName := range in.failedJobs {
@@ -155,7 +155,7 @@ func (in *LifecycleClassifier) FailedList() []string {
 	return list
 }
 
-func (in *LifecycleClassifier) ActiveJobs() []client.Object {
+func (in *Classifier) ActiveJobs() []client.Object {
 	list := make([]client.Object, 0, len(in.activeJobs))
 
 	for _, job := range in.activeJobs {
@@ -165,7 +165,7 @@ func (in *LifecycleClassifier) ActiveJobs() []client.Object {
 	return list
 }
 
-func (in *LifecycleClassifier) RunningJobs() []client.Object {
+func (in *Classifier) RunningJobs() []client.Object {
 	list := make([]client.Object, 0, len(in.runningJobs))
 
 	for _, job := range in.runningJobs {
@@ -175,7 +175,7 @@ func (in *LifecycleClassifier) RunningJobs() []client.Object {
 	return list
 }
 
-func (in *LifecycleClassifier) SuccessfulJobs() []client.Object {
+func (in *Classifier) SuccessfulJobs() []client.Object {
 	list := make([]client.Object, 0, len(in.successfulJobs))
 
 	for _, job := range in.successfulJobs {
@@ -185,7 +185,7 @@ func (in *LifecycleClassifier) SuccessfulJobs() []client.Object {
 	return list
 }
 
-func (in *LifecycleClassifier) FailedJobs() []client.Object {
+func (in *Classifier) FailedJobs() []client.Object {
 	list := make([]client.Object, 0, len(in.failedJobs))
 
 	for _, job := range in.failedJobs {

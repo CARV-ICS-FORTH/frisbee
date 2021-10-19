@@ -22,7 +22,7 @@ func (r *Controller) Watchers() predicate.Funcs {
 }
 
 func (r *Controller) create(e event.CreateEvent) bool {
-	if !utils.IsManagedByThisController(e.Object, controllerKind) {
+	if !utils.IsManagedByThisController(e.Object, r.gvk) {
 		return false
 	}
 
@@ -45,7 +45,7 @@ func (r *Controller) create(e event.CreateEvent) bool {
 }
 
 func (r *Controller) update(e event.UpdateEvent) bool {
-	if !utils.IsManagedByThisController(e.ObjectNew, controllerKind) {
+	if !utils.IsManagedByThisController(e.ObjectNew, r.gvk) {
 		return false
 	}
 
@@ -85,7 +85,7 @@ func (r *Controller) update(e event.UpdateEvent) bool {
 }
 
 func (r *Controller) delete(e event.DeleteEvent) bool {
-	if !utils.IsManagedByThisController(e.Object, controllerKind) {
+	if !utils.IsManagedByThisController(e.Object, r.gvk) {
 		return false
 	}
 

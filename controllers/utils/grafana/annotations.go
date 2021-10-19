@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package utils
+package grafana
 
 import (
 	"context"
@@ -62,7 +62,7 @@ func (a *PointAnnotation) Add(obj client.Object) {
 	}
 
 	if v := Annotate; v != nil {
-		v.Insert(ga)
+		_ = v.Insert(ga)
 	}
 }
 
@@ -75,7 +75,7 @@ func (a *PointAnnotation) Delete(obj client.Object) {
 	}
 
 	if v := Annotate; v != nil {
-		v.Insert(ga)
+		_ = v.Insert(ga)
 	}
 }
 
@@ -103,7 +103,6 @@ func (a *RangeAnnotation) Add(obj client.Object) {
 
 	if v := Annotate; v != nil {
 		a.reqID = v.Insert(ga)
-		v.Insert(ga)
 	}
 }
 

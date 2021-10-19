@@ -1,0 +1,58 @@
+apiVersion: frisbee.io/v1alpha1
+kind: Workflow
+metadata:
+  name: redis-mixed-workloads
+spec:
+  importMonitors: [ "sysmon/container", "redismon/server", "ycsbmon/client" ]
+  ingress:
+    #host: localhost
+    #useAmbassador: true
+    host: platform.science-hangar.eu
+
+  testOracle:
+    pass: >-
+      {{.IsSuccessful "runners"}} == true
+
+  actions:
+    # Create 3 Redis nodes
+    - action: Cluster
+      name: masters
+      cluster:
+        templateRef: rediscluster/master
+        instances: 3
+
+    # Run Redis-command to create a cluster from the given nodes
+    - action: Service
+      name: boot
+      depends: { running: [ masters ], after: 30s }
+      service:
+        fromTemplate:
+          templateRef: rediscluster/bootstrap
+          inputs:
+            { servers: .cluster.masters.all }
+
+    # Ingest keys in parallel, into different ranges
+    - action: Cluster
+      name: "loaders"
+      depends: { running: [ masters ], success: ["boot"] }
+      cluster:
+        templateRef: ycsb-redis/loader
+        inputs:
+          - { server: .cluster.masters.any, mode: "cluster", recordcount: "10000", offset: "0" }
+          - { server: .cluster.masters.any, mode: "cluster", recordcount: "10000", offset: "10000" }
+          - { server: .cluster.masters.any, mode: "cluster", recordcount: "10000", offset: "20000" }
+
+    # Wait for ingestion to complete, and start querying clients, with different workloads
+    - action: Cluster
+      name: "runners"
+      depends: { running: [ masters ], success: [ loaders ] }
+      cluster:
+        templateRef: ycsb-redis/runner
+        inputs:
+          - { server: .cluster.masters.any, mode: "cluster", workload: workloada, operationcount: "10000" }
+          - { server: .cluster.masters.any, mode: "cluster", workload: workloadb, operationcount: "10000" }
+          - { server: .cluster.masters.any, mode: "cluster", workload: workloadc, operationcount: "10000" }
+          - { server: .cluster.masters.any, mode: "cluster", workload: workloadd, operationcount: "10000" }
+          - { server: .cluster.masters.any, mode: "cluster", workload: workloada, operationcount: "10000" }
+        schedule:
+          cron: "@every 2m"

@@ -33,7 +33,7 @@ spec:
               name: grafana-config
 
         resources:
-          memory: 3Gi
+          memory: 4Gi
           cpu: 1
 
         container:
