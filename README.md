@@ -1,4 +1,4 @@
-<a href="https://www.vectorstock.com/royalty-free-vector/disc-golf-frisbee-eps-vector-25179185" target="_blank"><figure><img src="/docs/images/logo.jpg" width="400"></figure></a>
+<a href="https://www.vectorstock.com/royalty-free-vector/disc-golf-frisbee-eps-vector-25179185" target="_blank"><figure><img src="https://github.com/CARV-ICS-FORTH/frisbee/blob/main/docs/images/logo.jpg" width="400"></figure></a>
 
 
 # Why Frisbee ?
