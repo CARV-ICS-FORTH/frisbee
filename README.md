@@ -218,3 +218,5 @@ For more information, you can contact us via:
 Frisbee is licensed under the Apache License, Version 2.0. See [LICENSE](http://www.apache.org/licenses/LICENSE-2.0) for
 the full license text.
 
+## Acknowledgements
+This project has received funding from the European Union's Horizon 2020 research and innovation programme under grant agreement No. 894204 (Ether, H2020-MSCA-IF-2019).
