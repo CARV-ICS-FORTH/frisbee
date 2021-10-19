@@ -24,10 +24,12 @@ import (
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/utils"
+	"github.com/fnikolai/frisbee/controllers/utils/lifecycle"
 	"github.com/go-logr/logr"
 	cmap "github.com/orcaman/concurrent-map"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -46,6 +48,8 @@ import (
 type Controller struct {
 	ctrl.Manager
 	logr.Logger
+
+	gvk schema.GroupVersionKind
 
 	// annotator sends annotations to grafana
 	annotators cmap.ConcurrentMap
@@ -98,7 +102,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		key := client.ObjectKeyFromObject(&cr)
 
 		if err := r.GetClient().Get(ctx, key, fault); client.IgnoreNotFound(err) != nil {
-			return utils.Failed(ctx, r, &cr, errors.Wrapf(err, "retrieve chaos"))
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "retrieve chaos"))
 		}
 	}
 
@@ -162,7 +166,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	if err := handler.Inject(ctx, r); err != nil {
-		return utils.Failed(ctx, r, &cr, errors.Wrapf(err, "injection failed"))
+		return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "injection failed"))
 	}
 
 	/*
@@ -177,7 +181,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	*/
 	cr.Status.LastScheduleTime = &metav1.Time{Time: time.Now()}
 
-	return utils.Pending(ctx, r, &cr, "injecting fault")
+	return lifecycle.Pending(ctx, r, &cr, "injecting fault")
 }
 
 /*
@@ -207,12 +211,11 @@ func (r *Controller) Finalize(obj client.Object) error {
 	deleted, etc.
 */
 
-var controllerKind = v1alpha1.GroupVersion.WithKind("Chaos")
-
 func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 	r := &Controller{
 		Manager:    mgr,
 		Logger:     logger.WithName("chaos"),
+		gvk:        v1alpha1.GroupVersion.WithKind("Chaos"),
 		annotators: cmap.New(),
 	}
 

@@ -24,12 +24,14 @@ import (
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/utils"
+	"github.com/fnikolai/frisbee/controllers/utils/lifecycle"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -44,7 +46,9 @@ type Controller struct {
 	ctrl.Manager
 	logr.Logger
 
-	state utils.LifecycleClassifier
+	gvk schema.GroupVersionKind
+
+	state lifecycle.Classifier
 
 	prometheus chan *v1alpha1.Lifecycle
 	grafana    chan *v1alpha1.Lifecycle
@@ -100,19 +104,19 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	var serviceJobs v1alpha1.ServiceList
 
 	if err := r.GetClient().List(ctx, &serviceJobs, filters...); err != nil {
-		return utils.Failed(ctx, r, &cr, errors.Wrapf(err, "unable to list child serviceJobs"))
+		return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "unable to list child serviceJobs"))
 	}
 
 	var clusterJobs v1alpha1.ClusterList
 
 	if err := r.GetClient().List(ctx, &clusterJobs, filters...); err != nil {
-		return utils.Failed(ctx, r, &cr, errors.Wrapf(err, "unable to list child clusterJobs"))
+		return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "unable to list child clusterJobs"))
 	}
 
 	var chaosJobs v1alpha1.ChaosList
 
 	if err := r.GetClient().List(ctx, &chaosJobs, filters...); err != nil {
-		return utils.Failed(ctx, r, &cr, errors.Wrapf(err, "unable to list child chaosJobs"))
+		return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "unable to list child chaosJobs"))
 	}
 
 	/*
@@ -231,15 +235,15 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if cr.Status.Phase == v1alpha1.PhaseUninitialized {
 		// validate dependencies
 		if err := ValidateDAG(cr.Spec.Actions); err != nil {
-			return utils.Failed(ctx, r, &cr, errors.Wrapf(err, "invalid dependency DAG"))
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "invalid dependency DAG"))
 		}
 
 		if err := ValidateOracle(&cr, r.state); err != nil {
-			return utils.Failed(ctx, r, &cr, errors.Wrapf(err, "invalid TestOracle"))
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "invalid TestOracle"))
 		}
 
 		if err := r.newMonitoringStack(ctx, &cr); err != nil {
-			return utils.Failed(ctx, r, &cr, errors.Wrapf(err, "unable to create the observability stack"))
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "unable to create the observability stack"))
 		}
 
 		meta.SetStatusCondition(&cr.Status.Conditions, metav1.Condition{
@@ -249,7 +253,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			Message: "The observability stack has been installed",
 		})
 
-		return utils.Pending(ctx, r, &cr, "The Workflow is ready to start submitting jobs.")
+		return lifecycle.Pending(ctx, r, &cr, "The Workflow is ready to start submitting jobs.")
 	}
 
 	/*
@@ -279,7 +283,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	for _, action := range actionList {
 		if err := r.runJob(ctx, &cr, action); err != nil {
-			return utils.Failed(ctx, r, &cr, errors.Wrapf(err, "waiting failed"))
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "waiting failed"))
 		}
 	}
 
@@ -301,7 +305,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		cr.Status.Executed[action.Name] = metav1.Now()
 	}
 
-	return utils.Pending(ctx, r, &cr, "some jobs are still pending")
+	return lifecycle.Pending(ctx, r, &cr, "some jobs are still pending")
 }
 
 /*
@@ -331,12 +335,11 @@ func (r *Controller) Finalize(obj client.Object) error {
 	deleted, etc.
 */
 
-var controllerKind = v1alpha1.GroupVersion.WithKind("Workflow")
-
 func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 	r := &Controller{
 		Manager:    mgr,
 		Logger:     logger.WithName("workflow"),
+		gvk:        v1alpha1.GroupVersion.WithKind("Workflow"),
 		prometheus: make(chan *v1alpha1.Lifecycle),
 		grafana:    make(chan *v1alpha1.Lifecycle),
 	}

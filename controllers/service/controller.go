@@ -24,10 +24,13 @@ import (
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/utils"
+	"github.com/fnikolai/frisbee/controllers/utils/grafana"
+	"github.com/fnikolai/frisbee/controllers/utils/lifecycle"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -48,8 +51,10 @@ type Controller struct {
 	ctrl.Manager
 	logr.Logger
 
+	gvk schema.GroupVersionKind
+
 	// annotator sends annotations to grafana
-	annotator utils.Annotator
+	annotator grafana.Annotator
 }
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
@@ -95,7 +100,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		key := client.ObjectKeyFromObject(&cr)
 
 		if err := r.GetClient().Get(ctx, key, &pod); client.IgnoreNotFound(err) != nil {
-			return utils.Failed(ctx, r, &cr, errors.Wrapf(err, "retrieve pod"))
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "retrieve pod"))
 		}
 	}
 
@@ -155,7 +160,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	if err := r.runJob(ctx, &cr); err != nil {
-		return utils.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot create pod"))
+		return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot create pod"))
 	}
 
 	/*
@@ -172,7 +177,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// Add the just-started jobs to the status list.
 	cr.Status.LastScheduleTime = &metav1.Time{Time: time.Now()}
 
-	return utils.Pending(ctx, r, &cr, "create pod")
+	return lifecycle.Pending(ctx, r, &cr, "create pod")
 }
 
 /*
@@ -202,13 +207,12 @@ func (r *Controller) Finalize(obj client.Object) error {
 	deleted, etc.
 */
 
-var controllerKind = v1alpha1.GroupVersion.WithKind("Service")
-
 func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 	r := &Controller{
 		Manager:   mgr,
 		Logger:    logger.WithName("service"),
-		annotator: &utils.PointAnnotation{},
+		gvk:       v1alpha1.GroupVersion.WithKind("Service"),
+		annotator: &grafana.PointAnnotation{},
 	}
 
 	return ctrl.NewControllerManagedBy(mgr).

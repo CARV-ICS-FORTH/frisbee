@@ -24,10 +24,12 @@ import (
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/utils"
+	"github.com/fnikolai/frisbee/controllers/utils/lifecycle"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -50,7 +52,9 @@ type Controller struct {
 	ctrl.Manager
 	logr.Logger
 
-	state utils.LifecycleClassifier
+	gvk schema.GroupVersionKind
+
+	state lifecycle.Classifier
 }
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
@@ -105,7 +109,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	if err := r.GetClient().List(ctx, &childJobs, filters...); err != nil {
-		return utils.Failed(ctx, r, &cr, errors.Wrapf(err, "unable to list child services"))
+		return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "unable to list child services"))
 	}
 
 	/*
@@ -213,14 +217,14 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		*/
 		jobList, err := constructJobSpecList(ctx, r, &cr)
 		if err != nil {
-			return utils.Failed(ctx, r, &cr, errors.Wrapf(err, "unable to construct job list"))
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "unable to construct job list"))
 		}
 
 		cr.Status.Expected = jobList
 		cr.Status.LastScheduleJob = -1
 
-		if _, err := utils.Pending(ctx, r, &cr, "submitting job requests"); err != nil {
-			return utils.Failed(ctx, r, &cr, errors.Wrapf(err, "status update"))
+		if _, err := lifecycle.Pending(ctx, r, &cr, "submitting job requests"); err != nil {
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "status update"))
 		}
 
 		return utils.Stop()
@@ -288,7 +292,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		}
 
 		if tooLate {
-			return utils.Failed(ctx, r, &cr, errors.New("scheduling violation"))
+			return lifecycle.Failed(ctx, r, &cr, errors.New("scheduling violation"))
 		}
 	}
 
@@ -304,7 +308,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	nextJob := getJob(r, &cr, nextExpectedJob)
 
 	if err := utils.Create(ctx, r, nextJob); err != nil {
-		return utils.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot create job"))
+		return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot create job"))
 	}
 
 	r.Logger.Info("Create clustered job",
@@ -324,7 +328,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	*/
 	cr.Status.LastScheduleJob = nextExpectedJob
 
-	return utils.Pending(ctx, r, &cr, "some jobs are still pending")
+	return lifecycle.Pending(ctx, r, &cr, "some jobs are still pending")
 }
 
 /*
@@ -358,9 +362,13 @@ func (r *Controller) Finalize(obj client.Object) error {
 	deleted, etc.
 */
 
-var controllerKind = v1alpha1.GroupVersion.WithKind("Cluster")
-
 func NewController(mgr ctrl.Manager, logger logr.Logger) error {
+	r := &Controller{
+		Manager: mgr,
+		Logger:  logger.WithName("cluster"),
+		gvk:     v1alpha1.GroupVersion.WithKind("Cluster"),
+	}
+
 	// FieldIndexer knows how to index over a particular "field" such that it
 	// can later be used by a field selector.
 	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &v1alpha1.Service{}, jobOwnerKey,
@@ -368,7 +376,7 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 			// grab the job object, extract the owner...
 			job := rawObj.(*v1alpha1.Service)
 
-			if !utils.IsManagedByThisController(job, controllerKind) {
+			if !utils.IsManagedByThisController(job, r.gvk) {
 				return nil
 			}
 
@@ -378,11 +386,6 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 			return []string{owner.Name}
 		}); err != nil {
 		return err
-	}
-
-	r := &Controller{
-		Manager: mgr,
-		Logger:  logger.WithName("cluster"),
 	}
 
 	return ctrl.NewControllerManagedBy(mgr).

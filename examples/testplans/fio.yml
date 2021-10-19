@@ -1,0 +1,17 @@
+apiVersion: frisbee.io/v1alpha1
+kind: Workflow
+metadata:
+  name: validate-local
+spec:
+  importMonitors: [ "sysmon/container" ]
+  ingress:
+    host: platform.science-hangar.eu
+    #host: localhost
+    #useAmbassador: true
+
+  actions:
+    - action: Service
+      name: fio-benchmark
+      service:
+        fromTemplate:
+          templateRef: fio/benchmark

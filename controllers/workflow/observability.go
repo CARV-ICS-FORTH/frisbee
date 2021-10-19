@@ -28,6 +28,8 @@ import (
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/template/helpers"
 	"github.com/fnikolai/frisbee/controllers/utils"
+	"github.com/fnikolai/frisbee/controllers/utils/grafana"
+	"github.com/fnikolai/frisbee/controllers/utils/lifecycle"
 	"github.com/fnikolai/frisbee/pkg/netutils"
 	notifier "github.com/golanghelper/grafana-webhook"
 	"github.com/grafana-tools/sdk"
@@ -121,7 +123,7 @@ func (r *Controller) installPrometheus(ctx context.Context, w *v1alpha1.Workflow
 			return nil, errors.Wrapf(err, "creation failed")
 		default:
 			logrus.Warnf("Waiting for prometheus to become ready ...")
-			if err := utils.WaitUntil(r.prometheus, v1alpha1.PhaseRunning); err != nil {
+			if err := lifecycle.WaitUntil(r.prometheus, v1alpha1.PhaseRunning); err != nil {
 				return nil, errors.Wrapf(err, "prometheus is not running")
 			}
 			close(r.prometheus)
@@ -173,7 +175,7 @@ func (r *Controller) installGrafana(ctx context.Context, w *v1alpha1.Workflow) (
 		default:
 			logrus.Warnf("Waiting for grafana to become ready ...")
 
-			if err := utils.WaitUntil(r.grafana, v1alpha1.PhaseRunning); err != nil {
+			if err := lifecycle.WaitUntil(r.grafana, v1alpha1.PhaseRunning); err != nil {
 				return nil, errors.Wrapf(err, "grafana is not running")
 			}
 
@@ -329,7 +331,7 @@ func (r *Controller) initGrafana(ctx context.Context, apiURI string) error {
 		return errors.Wrapf(err, "grafana is unreachable")
 	}
 
-	url, err := runNotificationWebhook(ctx, "6666")
+	url, err := r.runNotificationWebhook(ctx, "6666")
 	if err != nil {
 		return errors.Wrapf(err, "cannot run a notification webhook")
 	}
@@ -352,12 +354,12 @@ func (r *Controller) initGrafana(ctx context.Context, apiURI string) error {
 		return errors.Wrapf(err, "cannot create feedback notification channel")
 	}
 
-	utils.SetAnnotator(ctx, grafanaClient)
+	grafana.SetAnnotator(ctx, grafanaClient)
 
 	return nil
 }
 
-func runNotificationWebhook(ctx context.Context, port string) (string, error) {
+func (r *Controller) runNotificationWebhook(ctx context.Context, port string) (string, error) {
 	// get local ip
 	ip, err := netutils.GetPublicIP()
 	if err != nil {
@@ -366,11 +368,8 @@ func runNotificationWebhook(ctx context.Context, port string) (string, error) {
 
 	handler := http.DefaultServeMux
 	handler.HandleFunc("/", notifier.HandleWebhook(func(w http.ResponseWriter, b *notifier.Body) {
-		logrus.Warn("SKATA ", b)
 
-		// msg := fmt.Sprintf("Grafana status: %s\n%s", b.Title, b.Message)
-		// sendMessage(msg)
-
+		r.Info("Grafana Alert", "title", b.Title, "message", b.Message)
 	}, 0))
 
 	addr := fmt.Sprintf("%s:%s", ip.String(), port)

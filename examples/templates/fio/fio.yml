@@ -1,0 +1,128 @@
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: scratch
+spec:
+  capacity:
+    storage: 10Gi
+  # There are three access modes:
+  #    RWO — ReadWriteOnce—Only a single node can mount the volume for reading and writing.
+  #    ROX — ReadOnlyMany—Multiple nodes can mount the volume for reading.
+  #    RWX — ReadWriteMany—Multiple nodes can mount the volume for both reading and writing.
+  accessModes:
+    - ReadWriteOnce
+  # volumeMode specifies whether you want a filesystem ("Filesystem") or raw storage ("Block")
+  volumeMode: Filesystem
+  # persistentVolumeReclaimPolicy determines what happens when a persistent volume claim is deleted
+  persistentVolumeReclaimPolicy: Delete
+  #storageClassName: local-storage
+  local:
+    path: /tmp
+  # nodeAffinity is how Kubernetes understands that this PersistentVolume
+  # is tied to a specific nod and schedule Pods to it.
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              # List of nodes in your cluster. To get a list of them use: kubectl get nodes
+              values:
+                - jedi6.cluster.ics.forth.gr
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: fio-benchmark-exporter-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  volumeMode: Filesystem # Alt: Block
+  volumeName: scratch
+  resources:
+    requests:
+      storage: 5Gi
+  # storageClassName: slow # Request a particular volume class
+  # selector: Further filter the set of selected volumes.
+
+---
+apiVersion: frisbee.io/v1alpha1
+kind: Template
+metadata:
+  name: fio
+spec:
+  entries:
+    "benchmark":
+      inputs:
+        parameters:
+          device: "/mnt/fio-benchmark-exporter"
+          size: "10G"
+          direct: "0"
+      spec: |
+        agents:
+          telemetry: [ sysmon/container ]
+        volumes:
+          - name: fio-benchmark-exporter-pv
+            persistentVolumeClaim:
+              claimName: fio-benchmark-exporter-pvc
+        container:
+          name: app
+          image: xridge/fio
+          volumeMounts:
+            - mountPath: /mnt/fio-benchmark-exporter
+              name: fio-benchmark-exporter-pv
+          command:
+            - /bin/sh # Run shell
+            - -c      # Read from string
+            - |       # Multi-line str
+              set -eum
+              trap "touch /dev/shm/stop" EXIT
+
+              DEVICE={{.Inputs.Parameters.device}}
+              SIZE={{.Inputs.Parameters.size}}
+              DIRECT={{.Inputs.Parameters.direct}}
+
+              echo "USING DEVICE: $DEVICE"
+
+              cat > fio.conf <<EOF
+              [global]
+              directory=$DEVICE
+              size=$SIZE
+              direct=$DIRECT
+              gtod_reduce=1
+              time_based=1
+              runtime=1m
+              group_reporting=1
+
+              [file1]
+              ioengine=libaio
+              EOF
+
+              for rw in randread randwrite; do
+                  for numjobs in 1 4 8 16; do
+                      for iodepth in 1 4 32 128; do
+                          cmd="fio --rw=$$rw --bs=4K --numjobs=$$numjobs --iodepth=$$iodepth fio.conf"
+                          echo $$cmd
+                          $$cmd >> /output
+
+                          echo
+                          echo
+                          echo
+                      done
+                  done
+              done
+              for rw in read write; do
+                  for numjobs in 1; do
+                      for iodepth in 1 4 32 128 256; do
+                          cmd="fio --rw=$$rw --bs=1M --numjobs=$$numjobs --iodepth=$$iodepth fio.conf"
+                          echo $$cmd
+                          $$cmd >> /output
+
+                          echo
+                          echo
+                          echo
+                      done
+                  done
+              done

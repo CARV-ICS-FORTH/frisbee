@@ -38,11 +38,13 @@ func GetPublicIP() (net.IP, error) {
 		return nil, errors.Wrap(err, "cannot contact public IP address API")
 	}
 
-	defer resp.Body.Close()
-
 	ipStr, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, "ip decoding error")
+	}
+
+	if err := resp.Body.Close(); err != nil {
+		return nil, errors.Wrapf(err, "cannot close body")
 	}
 
 	return net.ParseIP(string(ipStr)), nil

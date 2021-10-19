@@ -27,15 +27,18 @@ spec:
               trap "touch /dev/shm/stop" EXIT
 
               addr={{.Inputs.Parameters.server}}:{{.Inputs.Parameters.port}}
+              mode={{.Inputs.Parameters.mode}}
+              recordcount={{.Inputs.Parameters.recordcount}}
+              offset={{.Inputs.Parameters.offset}}
 
-              echo "Loader: $addr <- {{.Inputs.Parameters.recordcount}}:{{.Inputs.Parameters.offset}}"
+              echo "Loader: ${mode}://${addr} <- ${recordcount}:${offset}"
 
-              ./go-ycsb load redis                                                              \
-                  -p recordcount={{.Inputs.Parameters.recordcount}}                             \
-                  -p insertstart={{.Inputs.Parameters.offset}}                                  \
-                  -p threadcount=1                                                              \
-                  -p redis.mode={{.Inputs.Parameters.mode}}                                     \
-                  -p redis.addr="$addr"                                                         \
+              ./go-ycsb load redis                                \
+                  -p recordcount=${recordcount}                   \
+                  -p insertstart=${offset}                        \
+                  -p threadcount=1                                \
+                  -p redis.mode="${mode}"                         \
+                  -p redis.addr="${addr}"                         \
               >> /dev/shm/pipe
 
 
@@ -62,13 +65,16 @@ spec:
               trap "touch /dev/shm/stop" EXIT
 
               addr={{.Inputs.Parameters.server}}:{{.Inputs.Parameters.port}}
+              mode={{.Inputs.Parameters.mode}}
+              workload={{.Inputs.Parameters.workload}}
+              operationcount={{.Inputs.Parameters.operationcount}}
 
-              echo "Runner: $addr <- {{.Inputs.Parameters.workload}}:{{.Inputs.Parameters.operationcount}}"
+              echo "Runner: ${mode}://${addr} <- ${workload}:${operationcount}"
 
-              ./go-ycsb run redis                                                               \
-                    -P workloads/{{.Inputs.Parameters.workload}}                                \
-                    -p operationcount={{.Inputs.Parameters.operationcount}}                     \
-                    -p threadcount=1                                                            \
-                    -p redis.mode={{.Inputs.Parameters.mode}}                                   \
-                    -p redis.addr="$addr"                                                       \
+              ./go-ycsb run redis                                 \
+                    -P workloads/${workload}                      \
+                    -p operationcount=${operationcount}           \
+                    -p threadcount=1                              \
+                    -p redis.mode=${mode}                         \
+                    -p redis.addr="$addr"                         \
               >> /dev/shm/pipe

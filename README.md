@@ -10,10 +10,16 @@ We address the key pain points developers and QA engineers face when testing clo
 We make it possible to:
 
 * **Write tests:**  for stressing complex topologies and dynamic operating conditions.
-
 * **Run tests:**  provides seamless scaling from a single workstation to hundreds of machines.
-
 * **Debug tests:**  through extensive monitoring and comprehensive dashboards
+
+
+
+Our platform consists of a set of Kubernetes controller designed to run performance benchmarks and  and introduce failure conditions into a running system, monitor site-wide health metrics, and notify  systems with status updates during the testing procedure. 
+
+Frisbee provides a  flexible, YAML-based configuration syntax and is trivially extensible  with additional functionality. 
+
+
 
 # Frisbee in a nutshell
 

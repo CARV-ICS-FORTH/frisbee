@@ -52,4 +52,6 @@ spec:
               set -eum
               trap "touch /dev/shm/stop" EXIT
 
-              iperf3 -c {{.Inputs.Parameters.server}} -t 600 -f m > /dev/shm/pipe
+              server={{.Inputs.Parameters.server}}
+
+              iperf3 -c ${server} -t 600 -f m > /dev/shm/pipe

@@ -18,12 +18,14 @@
 package workflow
 
 import (
+	"strings"
 	"time"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
-	"github.com/fnikolai/frisbee/controllers/utils"
+	"github.com/fnikolai/frisbee/controllers/utils/lifecycle"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/validation"
 )
 
 // ValidateDAG returns true if all the dependencies point to a valid action.
@@ -31,6 +33,12 @@ func ValidateDAG(list v1alpha1.ActionList) error {
 	index := make(map[string]*v1alpha1.Action)
 
 	for i, action := range list {
+		if errs := validation.IsQualifiedName(action.Name); len(errs) != 0 {
+			err := errors.New(strings.Join(errs, "; "))
+
+			return errors.Wrapf(err, "invalid actioname %s", action.Name)
+		}
+
 		index[action.Name] = &list[i]
 	}
 
@@ -82,7 +90,7 @@ func ValidateDAG(list v1alpha1.ActionList) error {
 func GetNextLogicalJob(
 	obj metav1.Object,
 	all v1alpha1.ActionList,
-	gs utils.LifecycleClassifier,
+	gs lifecycle.Classifier,
 	scheduled map[string]metav1.Time,
 ) (v1alpha1.ActionList, time.Time) {
 	var candidates v1alpha1.ActionList

@@ -130,8 +130,8 @@ data:
       "fiscalYearStartMonth": 0,
       "gnetId": null,
       "graphTooltip": 1,
-      "id": 2,
-      "iteration": 1634310198288,
+      "id": 1,
+      "iteration": 1634555263719,
       "links": [],
       "liveNow": false,
       "panels": [
@@ -175,7 +175,7 @@ data:
                   "type": "linear"
                 },
                 "showPoints": "always",
-                "spanNulls": true,
+                "spanNulls": false,
                 "stacking": {
                   "group": "A",
                   "mode": "none"
@@ -316,6 +316,7 @@ data:
           "pluginVersion": "8.1.3",
           "targets": [
             {
+              "exemplar": true,
               "expr": "sum(ycsb_count{instance=~\"$instance\", host=~\"$host\"}) by (operation)",
               "hide": false,
               "instant": false,
@@ -325,6 +326,7 @@ data:
               "refId": "A"
             },
             {
+              "exemplar": true,
               "expr": "sum(ycsb_count{instance=~\"$instance\", host=~\"$host\"}) ",
               "hide": false,
               "interval": "",
@@ -337,6 +339,7 @@ data:
           "title": "Total Operations ",
           "transformations": [
             {
+              "disabled": true,
               "id": "reduce",
               "options": {
                 "includeTimeField": true,
@@ -542,7 +545,7 @@ data:
           "targets": [
             {
               "exemplar": true,
-              "expr": "sum(ycsb_count) by (host, instance)",
+              "expr": "max(ycsb_count) by (host, instance)",
               "format": "table",
               "hide": false,
               "instant": true,
@@ -659,7 +662,7 @@ data:
                   "type": "linear"
                 },
                 "showPoints": "always",
-                "spanNulls": true,
+                "spanNulls": false,
                 "stacking": {
                   "group": "A",
                   "mode": "none"
@@ -684,7 +687,27 @@ data:
               },
               "unit": "reqps"
             },
-            "overrides": []
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byFrameRefID",
+                  "options": "Average"
+                },
+                "properties": [
+                  {
+                    "id": "custom.spanNulls",
+                    "value": true
+                  },
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "orange",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              }
+            ]
           },
           "gridPos": {
             "h": 8,
@@ -887,7 +910,8 @@ data:
           "pluginVersion": "8.1.3",
           "targets": [
             {
-              "expr": "avg(ycsb_999th{instance=~\"$instance\", host=~\"$host\"}) by (operation)",
+              "exemplar": true,
+              "expr": "avg(ycsb_999th{instance=\"$instance\", host=\"$host\"}) by (operation)",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 2,
@@ -929,7 +953,7 @@ data:
                   "type": "linear"
                 },
                 "showPoints": "always",
-                "spanNulls": true,
+                "spanNulls": false,
                 "stacking": {
                   "group": "A",
                   "mode": "none"
@@ -959,15 +983,19 @@ data:
               {
                 "matcher": {
                   "id": "byName",
-                  "options": "samples/s"
+                  "options": "Average"
                 },
                 "properties": [
                   {
                     "id": "color",
                     "value": {
-                      "fixedColor": "#e5a8e2",
+                      "fixedColor": "orange",
                       "mode": "fixed"
                     }
+                  },
+                  {
+                    "id": "custom.spanNulls",
+                    "value": true
                   }
                 ]
               }
@@ -998,6 +1026,7 @@ data:
           "pluginVersion": "8.1.3",
           "targets": [
             {
+              "exemplar": true,
               "expr": "avg(ycsb_99th{instance=~\"$instance\", host=~\"$host\"}) by (operation)",
               "format": "time_series",
               "interval": "",
@@ -1047,7 +1076,7 @@ data:
                   "type": "linear"
                 },
                 "showPoints": "always",
-                "spanNulls": true,
+                "spanNulls": false,
                 "stacking": {
                   "group": "A",
                   "mode": "none"
@@ -1077,15 +1106,19 @@ data:
               {
                 "matcher": {
                   "id": "byName",
-                  "options": "samples/s"
+                  "options": "Average"
                 },
                 "properties": [
                   {
                     "id": "color",
                     "value": {
-                      "fixedColor": "#e5a8e2",
+                      "fixedColor": "orange",
                       "mode": "fixed"
                     }
+                  },
+                  {
+                    "id": "custom.spanNulls",
+                    "value": true
                   }
                 ]
               }
@@ -1165,7 +1198,7 @@ data:
                   "type": "linear"
                 },
                 "showPoints": "always",
-                "spanNulls": true,
+                "spanNulls": false,
                 "stacking": {
                   "group": "A",
                   "mode": "none"
@@ -1195,15 +1228,19 @@ data:
               {
                 "matcher": {
                   "id": "byName",
-                  "options": "samples/s"
+                  "options": "Average"
                 },
                 "properties": [
                   {
                     "id": "color",
                     "value": {
-                      "fixedColor": "#e5a8e2",
+                      "fixedColor": "orange",
                       "mode": "fixed"
                     }
+                  },
+                  {
+                    "id": "custom.spanNulls",
+                    "value": true
                   }
                 ]
               }
@@ -1298,7 +1335,7 @@ data:
                   "type": "linear"
                 },
                 "showPoints": "always",
-                "spanNulls": true,
+                "spanNulls": false,
                 "stacking": {
                   "group": "A",
                   "mode": "none"
@@ -1323,11 +1360,31 @@ data:
               },
               "unit": "reqps"
             },
-            "overrides": []
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Average"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "orange",
+                      "mode": "fixed"
+                    }
+                  },
+                  {
+                    "id": "custom.spanNulls",
+                    "value": true
+                  }
+                ]
+              }
+            ]
           },
           "gridPos": {
             "h": 8,
-            "w": 16,
+            "w": 24,
             "x": 0,
             "y": 32
           },
@@ -1395,162 +1452,6 @@ data:
                   "tooltip": false,
                   "viz": false
                 },
-                "lineInterpolation": "smooth",
-                "lineWidth": 2,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "always",
-                "spanNulls": true,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
-              },
-              "mappings": [],
-              "min": 0,
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
-                  }
-                ]
-              },
-              "unit": "µs"
-            },
-            "overrides": [
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "Chunks"
-                },
-                "properties": [
-                  {
-                    "id": "color",
-                    "value": {
-                      "fixedColor": "#1F78C1",
-                      "mode": "fixed"
-                    }
-                  }
-                ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "Chunks to persist"
-                },
-                "properties": [
-                  {
-                    "id": "color",
-                    "value": {
-                      "fixedColor": "#508642",
-                      "mode": "fixed"
-                    }
-                  }
-                ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "Max chunks"
-                },
-                "properties": [
-                  {
-                    "id": "color",
-                    "value": {
-                      "fixedColor": "#052B51",
-                      "mode": "fixed"
-                    }
-                  }
-                ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "Max to persist"
-                },
-                "properties": [
-                  {
-                    "id": "color",
-                    "value": {
-                      "fixedColor": "#3F6833",
-                      "mode": "fixed"
-                    }
-                  }
-                ]
-              }
-            ]
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 8,
-            "x": 16,
-            "y": 32
-          },
-          "id": 24,
-          "links": [],
-          "options": {
-            "legend": {
-              "calcs": [
-                "mean",
-                "max",
-                "min"
-              ],
-              "displayMode": "table",
-              "placement": "bottom"
-            },
-            "tooltip": {
-              "mode": "single"
-            }
-          },
-          "pluginVersion": "8.1.3",
-          "targets": [
-            {
-              "expr": "avg(ycsb_999th{instance=~\"$instance\", host=~\"$host\"}) by (instance)",
-              "format": "time_series",
-              "interval": "",
-              "intervalFactor": 2,
-              "legendFormat": "{{ instance }}",
-              "metric": "prometheus_local_storage_memory_series",
-              "refId": "A",
-              "step": 10
-            }
-          ],
-          "timeFrom": null,
-          "timeShift": null,
-          "title": "Average Latency",
-          "transparent": true,
-          "type": "timeseries"
-        },
-        {
-          "datasource": "Prometheus",
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 0,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
                 "lineInterpolation": "linear",
                 "lineWidth": 2,
                 "pointSize": 3,
@@ -1558,7 +1459,7 @@ data:
                   "type": "linear"
                 },
                 "showPoints": "always",
-                "spanNulls": true,
+                "spanNulls": false,
                 "stacking": {
                   "group": "A",
                   "mode": "none"
@@ -1588,15 +1489,19 @@ data:
               {
                 "matcher": {
                   "id": "byName",
-                  "options": "samples/s"
+                  "options": "Average"
                 },
                 "properties": [
                   {
                     "id": "color",
                     "value": {
-                      "fixedColor": "#e5a8e2",
+                      "fixedColor": "orange",
                       "mode": "fixed"
                     }
+                  },
+                  {
+                    "id": "custom.spanNulls",
+                    "value": true
                   }
                 ]
               }
@@ -1627,6 +1532,7 @@ data:
           "pluginVersion": "8.1.3",
           "targets": [
             {
+              "exemplar": true,
               "expr": "avg(ycsb_99th{instance=~\"$instance\", host=~\"$host\"}) by (instance)",
               "format": "time_series",
               "interval": "",
@@ -1637,7 +1543,8 @@ data:
               "step": 10
             },
             {
-              "expr": "avg(ycsb_99th) ",
+              "exemplar": true,
+              "expr": "avg(ycsb_avg{instance=~\"$instance\", host=~\"$host\"}) ",
               "hide": false,
               "interval": "",
               "legendFormat": "Average",
@@ -1676,7 +1583,7 @@ data:
                   "type": "linear"
                 },
                 "showPoints": "always",
-                "spanNulls": true,
+                "spanNulls": false,
                 "stacking": {
                   "group": "A",
                   "mode": "none"
@@ -1706,15 +1613,19 @@ data:
               {
                 "matcher": {
                   "id": "byName",
-                  "options": "samples/s"
+                  "options": "Average"
                 },
                 "properties": [
                   {
                     "id": "color",
                     "value": {
-                      "fixedColor": "#e5a8e2",
+                      "fixedColor": "orange",
                       "mode": "fixed"
                     }
+                  },
+                  {
+                    "id": "custom.spanNulls",
+                    "value": true
                   }
                 ]
               }
@@ -1726,7 +1637,7 @@ data:
             "x": 8,
             "y": 40
           },
-          "id": 76,
+          "id": 94,
           "links": [],
           "options": {
             "legend": {
@@ -1745,6 +1656,7 @@ data:
           "pluginVersion": "8.1.3",
           "targets": [
             {
+              "exemplar": true,
               "expr": "avg(ycsb_999th{instance=~\"$instance\", host=~\"$host\"}) by (instance)",
               "format": "time_series",
               "interval": "",
@@ -1755,7 +1667,8 @@ data:
               "step": 10
             },
             {
-              "expr": "avg(ycsb_999th) ",
+              "exemplar": true,
+              "expr": "avg(ycsb_avg{instance=~\"$instance\", host=~\"$host\"}) ",
               "hide": false,
               "interval": "",
               "legendFormat": "Average",
@@ -1781,23 +1694,20 @@ data:
                 "barAlignment": 0,
                 "drawStyle": "line",
                 "fillOpacity": 0,
-                "gradientMode": "opacity",
+                "gradientMode": "none",
                 "hideFrom": {
                   "legend": false,
                   "tooltip": false,
                   "viz": false
                 },
-                "lineInterpolation": "smooth",
-                "lineStyle": {
-                  "fill": "solid"
-                },
+                "lineInterpolation": "linear",
                 "lineWidth": 2,
-                "pointSize": 5,
+                "pointSize": 3,
                 "scaleDistribution": {
                   "type": "linear"
                 },
                 "showPoints": "always",
-                "spanNulls": true,
+                "spanNulls": false,
                 "stacking": {
                   "group": "A",
                   "mode": "none"
@@ -1827,15 +1737,19 @@ data:
               {
                 "matcher": {
                   "id": "byName",
-                  "options": "samples/s"
+                  "options": "Average"
                 },
                 "properties": [
                   {
                     "id": "color",
                     "value": {
-                      "fixedColor": "#e5a8e2",
+                      "fixedColor": "orange",
                       "mode": "fixed"
                     }
+                  },
+                  {
+                    "id": "custom.spanNulls",
+                    "value": true
                   }
                 ]
               }
@@ -1847,7 +1761,7 @@ data:
             "x": 16,
             "y": 40
           },
-          "id": 91,
+          "id": 95,
           "links": [],
           "options": {
             "legend": {
@@ -1866,6 +1780,7 @@ data:
           "pluginVersion": "8.1.3",
           "targets": [
             {
+              "exemplar": true,
               "expr": "avg(ycsb_9999th{instance=~\"$instance\", host=~\"$host\"}) by (instance)",
               "format": "time_series",
               "interval": "",
@@ -1876,7 +1791,8 @@ data:
               "step": 10
             },
             {
-              "expr": "avg(ycsb_9999th) ",
+              "exemplar": true,
+              "expr": "avg(ycsb_avg{instance=~\"$instance\", host=~\"$host\"}) ",
               "hide": false,
               "interval": "",
               "legendFormat": "Average",
@@ -1902,28 +1818,24 @@ data:
             "allValue": ".*",
             "current": {
               "selected": true,
-              "text": [
-                "All"
-              ],
-              "value": [
-                "$__all"
-              ]
+              "text": "All",
+              "value": "$__all"
             },
             "datasource": null,
-            "definition": "query_result(count (up{mon=~\"ycsb\"}) by (instance))",
+            "definition": "query_result(count (up{mon=\"ycsb\"}) by (instance))",
             "description": null,
             "error": null,
             "hide": 0,
             "includeAll": true,
             "label": null,
-            "multi": true,
+            "multi": false,
             "name": "instance",
             "options": [],
             "query": {
-              "query": "query_result(count (up{mon=~\"ycsb\"}) by (instance))",
+              "query": "query_result(count (up{mon=\"ycsb\"}) by (instance))",
               "refId": "StandardVariableQuery"
             },
-            "refresh": 2,
+            "refresh": 1,
             "regex": "/.*instance=\"(.*)\".*/",
             "skipUrlSync": false,
             "sort": 1,
@@ -1936,12 +1848,8 @@ data:
             "allValue": ".*",
             "current": {
               "selected": true,
-              "text": [
-                "All"
-              ],
-              "value": [
-                "$__all"
-              ]
+              "text": "All",
+              "value": "$__all"
             },
             "datasource": null,
             "definition": "query_result(count (up{mon=\"ycsb\"}) by (host))",
@@ -1950,14 +1858,14 @@ data:
             "hide": 0,
             "includeAll": true,
             "label": null,
-            "multi": true,
+            "multi": false,
             "name": "host",
             "options": [],
             "query": {
               "query": "query_result(count (up{mon=\"ycsb\"}) by (host))",
               "refId": "StandardVariableQuery"
             },
-            "refresh": 2,
+            "refresh": 1,
             "regex": "/.*host=\"(.*)\".*/",
             "skipUrlSync": false,
             "sort": 1,

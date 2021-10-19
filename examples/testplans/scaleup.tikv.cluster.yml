@@ -25,14 +25,14 @@ spec:
       name: workers
       cluster:
         templateRef: tikv/worker
-        instances: 10
+        instances: 3
         inputs:
           - { placementDriver: .service.master.any }
 
     # Ingest keys in parallel, into different ranges
     - action: Cluster
       name: "loaders"
-      depends: { running: [ workers ] }
+      depends: { running: [master, workers ] }
       cluster:
         templateRef: ycsb-tikv/loader
         inputs:
@@ -42,29 +42,12 @@ spec:
           - { server: .service.master.any, recordcount: "100000", offset: "300000" }
           - { server: .service.master.any, recordcount: "100000", offset: "400000" }
           - { server: .service.master.any, recordcount: "100000", offset: "500000" }
-          #- { server: .service.master.any, recordcount: "1000000", offset: "6000000" }
-          #- { server: .service.master.any, recordcount: "1000000", offset: "7000000" }
-          #- { server: .service.master.any, recordcount: "1000000", offset: "8000000" }
-          #- { server: .service.master.any, recordcount: "1000000", offset: "9000000" }
-          #- { server: .service.master.any, recordcount: "1000000", offset: "10000000" }
 
 
-    # Wait for ingestion to complete, and start querying clients, with different workloads
+    # Wait for ingestion to complete, and start querying clients, with different workloads, and scheduled execution.
     - action: Cluster
-      name: "runnersFix"
+      name: "runners-dyn"
       depends: { running: [ master ], success: [ loaders ] }
-      cluster:
-        instances: 5
-        templateRef: ycsb-tikv/runner
-        inputs:
-          - { server: .service.master.any, workload: workloada, operationcount: "1000000" }
-        schedule:
-          cron: "@every 30s"
-
-    # Wait for ingestion to complete, and start querying clients, with different workloads
-    - action: Cluster
-      name: "runnersDyn"
-      depends: { running: [ master, runnersFix ] }
       cluster:
         templateRef: ycsb-tikv/runner
         inputs:
@@ -75,5 +58,17 @@ spec:
           - { server: .service.master.any, workload: workloada, operationcount: "1000000" }
           - { server: .service.master.any, workload: workloada, operationcount: "1000000" }
           - { server: .service.master.any, workload: workloadb, operationcount: "1000000" }
+        schedule:
+          cron: "@every 30s"
+
+
+    - action: Cluster
+      depends: { running: [ master ], success: [ loaders ] }
+      name: "servers-dyn"
+      cluster:
+        templateRef: tikv/worker
+        instances: 5
+        inputs:
+          - { placementDriver: .service.master.any }
         schedule:
           cron: "@every 30s"

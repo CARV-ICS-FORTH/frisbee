@@ -21,7 +21,7 @@ import (
 	"fmt"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
-	"github.com/fnikolai/frisbee/controllers/utils"
+	"github.com/fnikolai/frisbee/controllers/utils/lifecycle"
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -34,7 +34,7 @@ type test struct {
 }
 
 // calculateLifecycle returns the update lifecycle of the cluster.
-func calculateLifecycle(cluster *v1alpha1.Cluster, gs utils.LifecycleClassifier) v1alpha1.ClusterStatus {
+func calculateLifecycle(cluster *v1alpha1.Cluster, gs lifecycle.Classifier) v1alpha1.ClusterStatus {
 	status := cluster.Status
 
 	// Skip any CR which are already completed, or uninitialized.
@@ -52,8 +52,8 @@ func calculateLifecycle(cluster *v1alpha1.Cluster, gs utils.LifecycleClassifier)
 			lifecycle: v1alpha1.Lifecycle{
 				Phase:  v1alpha1.PhaseFailed,
 				Reason: "TolerateFailuresExceeded",
-				Message: fmt.Sprintf("tolerate: %d. failed jobs: %s",
-					cluster.Spec.Tolerate.FailedServices, gs.FailedList()),
+				Message: fmt.Sprintf("tolerate: %s. failed jobs: %s",
+					cluster.Spec.Tolerate.String(), gs.FailedList()),
 			},
 			condition: metav1.Condition{
 				Type:    v1alpha1.ConditionJobFailed.String(),
