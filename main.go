@@ -77,6 +77,11 @@ func main() {
 
 	// ctrl.SetLogger(zap.useSelectors(zap.UseFlagOptions(&opts)))
 
+	// GetConfigOrDie creates a *rest.Config for talking to a Kubernetes apiserver.
+	// If --kubeconfig is set, will use the kubeconfig file at that location.
+	// Otherwise will assume running  in cluster and use the cluster provided kubeconfig.
+	//
+	// Will log an error and exit if there is an error creating the rest.Config.
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
 		MetricsBindAddress:     metricsAddr,

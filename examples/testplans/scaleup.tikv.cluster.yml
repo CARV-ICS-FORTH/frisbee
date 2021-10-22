@@ -19,56 +19,93 @@ spec:
         fromTemplate:
           templateRef: tikv/placementDriver
 
-    # Create a database cluster
+
+    # Create workers on region A
     - action: Cluster
       depends: { running: [ master ] }
-      name: workers
+      name: group-a
       cluster:
         templateRef: tikv/worker
-        instances: 3
+        instances: 100
         inputs:
           - { placementDriver: .service.master.any }
+
+    # Create workers on region B
+    - action: Cluster
+      depends: { running: [ master ] }
+      name: group-b
+      cluster:
+        templateRef: tikv/worker
+        instances: 100
+        inputs:
+          - { placementDriver: .service.master.any }
+
+
+    # Create workers on region C, one every 1 minute
+    - action: Cluster
+      depends: { running: [ master ] }
+      name: group-c
+      cluster:
+        templateRef: tikv/worker
+        instances: 100
+        inputs:
+          - { placementDriver: .service.master.any }
+        schedule:
+          cron: "@every 1m"
+
 
     # Ingest keys in parallel, into different ranges
     - action: Cluster
       name: "loaders"
-      depends: { running: [master, workers ] }
+      depends: { running: [ master, group-b ] }
       cluster:
         templateRef: ycsb-tikv/loader
         inputs:
           - { server: .service.master.any, recordcount: "100000", offset: "0" }
           - { server: .service.master.any, recordcount: "100000", offset: "100000" }
           - { server: .service.master.any, recordcount: "100000", offset: "200000" }
-          - { server: .service.master.any, recordcount: "100000", offset: "300000" }
-          - { server: .service.master.any, recordcount: "100000", offset: "400000" }
-          - { server: .service.master.any, recordcount: "100000", offset: "500000" }
-
 
     # Wait for ingestion to complete, and start querying clients, with different workloads, and scheduled execution.
     - action: Cluster
       name: "runners-dyn"
-      depends: { running: [ master ], success: [ loaders ] }
+      depends: { running: [ master ], success : [loaders] }
       cluster:
         templateRef: ycsb-tikv/runner
         inputs:
-          - { server: .service.master.any, workload: workloada, operationcount: "1000000" }
-          - { server: .service.master.any, workload: workloadb, operationcount: "1000000" }
-          - { server: .service.master.any, workload: workloadc, operationcount: "1000000" }
-          - { server: .service.master.any, workload: workloadd, operationcount: "1000000" }
-          - { server: .service.master.any, workload: workloada, operationcount: "1000000" }
-          - { server: .service.master.any, workload: workloada, operationcount: "1000000" }
-          - { server: .service.master.any, workload: workloadb, operationcount: "1000000" }
+          - { server: .service.master.any, workload: workloada, operationcount: "100000" }
+          - { server: .service.master.any, workload: workloadb, operationcount: "100000" }
+          - { server: .service.master.any, workload: workloadc, operationcount: "100000" }
+          - { server: .service.master.any, workload: workloadd, operationcount: "100000" }
+          - { server: .service.master.any, workload: workloada, operationcount: "100000" }
+          - { server: .service.master.any, workload: workloada, operationcount: "100000" }
+          - { server: .service.master.any, workload: workloadb, operationcount: "100000" }
+          - { server: .service.master.any, workload: workloada, operationcount: "100000" }
+          - { server: .service.master.any, workload: workloadb, operationcount: "100000" }
+          - { server: .service.master.any, workload: workloadc, operationcount: "100000" }
+          - { server: .service.master.any, workload: workloadd, operationcount: "100000" }
+          - { server: .service.master.any, workload: workloada, operationcount: "100000" }
+          - { server: .service.master.any, workload: workloada, operationcount: "100000" }
+          - { server: .service.master.any, workload: workloadb, operationcount: "100000" }
+          - { server: .service.master.any, workload: workloada, operationcount: "100000" }
+          - { server: .service.master.any, workload: workloadb, operationcount: "100000" }
+          - { server: .service.master.any, workload: workloadc, operationcount: "100000" }
+          - { server: .service.master.any, workload: workloadd, operationcount: "100000" }
+          - { server: .service.master.any, workload: workloada, operationcount: "100000" }
+          - { server: .service.master.any, workload: workloada, operationcount: "100000" }
+          - { server: .service.master.any, workload: workloadb, operationcount: "100000" }
+          - { server: .service.master.any, workload: workloada, operationcount: "100000" }
+          - { server: .service.master.any, workload: workloadb, operationcount: "100000" }
+          - { server: .service.master.any, workload: workloadc, operationcount: "100000" }
+          - { server: .service.master.any, workload: workloadd, operationcount: "100000" }
+          - { server: .service.master.any, workload: workloada, operationcount: "100000" }
+          - { server: .service.master.any, workload: workloada, operationcount: "100000" }
+          - { server: .service.master.any, workload: workloadb, operationcount: "100000" }
+          - { server: .service.master.any, workload: workloada, operationcount: "100000" }
+          - { server: .service.master.any, workload: workloadb, operationcount: "100000" }
+          - { server: .service.master.any, workload: workloadc, operationcount: "100000" }
+          - { server: .service.master.any, workload: workloadd, operationcount: "100000" }
+          - { server: .service.master.any, workload: workloada, operationcount: "100000" }
+          - { server: .service.master.any, workload: workloada, operationcount: "100000" }
+          - { server: .service.master.any, workload: workloadb, operationcount: "100000" }
         schedule:
-          cron: "@every 30s"
-
-
-    - action: Cluster
-      depends: { running: [ master ], success: [ loaders ] }
-      name: "servers-dyn"
-      cluster:
-        templateRef: tikv/worker
-        instances: 5
-        inputs:
-          - { placementDriver: .service.master.any }
-        schedule:
-          cron: "@every 30s"
+          cron: "@every 2m"

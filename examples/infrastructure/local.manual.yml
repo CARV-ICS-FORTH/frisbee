@@ -1,0 +1,33 @@
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: scratch
+spec:
+  capacity:
+    storage: 256Gi
+  volumeMode: Filesystem  # Alt: Block
+  accessModes:
+    - ReadWriteOnce                       # Only a single node can mount the volume for RW
+    - ReadOnlyMany                        # Multiple nodes can mount the volume for reading
+    - ReadWriteMany                       # Multiple nodes can mount the volume for both RW
+  persistentVolumeReclaimPolicy: Retain   # Determines what happens with a PV claim is deleted
+  storageClassName: shared-ssd-storage    # Use StorageClass to delay volume binding until Pod scheduling.
+  local:
+    path: /mnt/local
+  nodeAffinity:                           # Tie volume to specific noes and schedule Pods into it.
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:                     # List of nodes that can server this volume
+                - jedi5.cluster.ics.forth.gr
+                - jedi6.cluster.ics.forth.gr
+                - jedi7.cluster.ics.forth.gr
+                - jedi8.cluster.ics.forth.gr
+
+
+
+
+

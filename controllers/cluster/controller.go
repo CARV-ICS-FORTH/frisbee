@@ -170,6 +170,18 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	/*
+		If this object is suspended, we don't want to run any jobs, so we'll stop now.
+		This is useful if something's broken with the job we're running, and we want to
+		pause runs to investigate or putz with the cluster, without deleting the object.
+	*/
+	if cr.Spec.Suspend != nil && *cr.Spec.Suspend {
+		r.Logger.Info("Not starting job because the cluster is suspended",
+			"cluster", cr.GetName())
+
+		return utils.Stop()
+	}
+
+	/*
 		5: Clean up the controller from finished jobs
 		------------------------------------------------------------------
 
@@ -192,6 +204,24 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	if newStatus.Phase == v1alpha1.PhaseFailed {
 		r.Logger.Error(errors.New(newStatus.Reason), newStatus.Message)
+
+		// Remove the non-failed components. Leave the failed jobs and system jobs for postmortem analysis.
+		for _, job := range r.state.SuccessfulJobs() {
+			utils.Delete(ctx, r, job)
+		}
+
+		for _, job := range r.state.ActiveJobs() {
+			utils.Delete(ctx, r, job)
+		}
+
+		suspend := true
+		cr.Spec.Suspend = &suspend
+
+		if err := utils.Update(ctx, r, &cr); err != nil {
+			r.Error(err, "unable to suspend execution", "instance", cr.GetName())
+
+			return utils.RequeueAfter(time.Second)
+		}
 
 		return utils.Stop()
 	}
@@ -234,18 +264,6 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		If all actions are executed, just wait for them to complete.
 	*/
 	if newStatus.Phase == v1alpha1.PhaseRunning {
-		return utils.Stop()
-	}
-
-	/*
-		If this object is suspended, we don't want to run any jobs, so we'll stop now.
-		This is useful if something's broken with the job we're running, and we want to
-		pause runs to investigate or putz with the cluster, without deleting the object.
-	*/
-	if cr.Spec.Suspend != nil && *cr.Spec.Suspend {
-		r.Logger.Info("Not starting job because the cluster is suspended",
-			"cluster", cr.GetName())
-
 		return utils.Stop()
 	}
 

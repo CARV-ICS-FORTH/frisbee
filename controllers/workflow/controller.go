@@ -25,6 +25,7 @@ import (
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/utils"
 	"github.com/fnikolai/frisbee/controllers/utils/lifecycle"
+	"github.com/fnikolai/frisbee/pkg/structure"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -37,6 +38,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+var systemServices = []string{"prometheus", "grafana"}
 
 // +kubebuilder:rbac:groups=frisbee.io,resources=workflows,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=frisbee.io,resources=workflows/status,verbs=get;update;patch
@@ -168,6 +171,18 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	/*
+		If this object is suspended, we don't want to run any jobs, so we'll stop now.
+		This is useful if something's broken with the job we're running, and we want to
+		pause runs to investigate or putz with the cluster, without deleting the object.
+	*/
+	if cr.Spec.Suspend != nil && *cr.Spec.Suspend {
+		r.Logger.Info("Not starting job because the workflow is suspended",
+			"workflow", cr.GetName())
+
+		return utils.Stop()
+	}
+
+	/*
 		5: Clean up the controller from finished jobs
 		------------------------------------------------------------------
 
@@ -188,13 +203,27 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if newStatus.Phase == v1alpha1.PhaseFailed {
 		r.Logger.Error(errors.New(newStatus.Reason), newStatus.Message)
 
-		// Remove the non-failed components. Leave the failed to postmortem analysis
+		// Remove the non-failed components. Leave the failed jobs and system jobs for postmortem analysis.
 		for _, job := range r.state.SuccessfulJobs() {
 			utils.Delete(ctx, r, job)
 		}
 
 		for _, job := range r.state.ActiveJobs() {
+			// do not remove prometheus + grafana
+			if structure.ContainsStrings(systemServices, job.GetName()) {
+				continue
+			}
+
 			utils.Delete(ctx, r, job)
+		}
+
+		suspend := true
+		cr.Spec.Suspend = &suspend
+
+		if err := utils.Update(ctx, r, &cr); err != nil {
+			r.Error(err, "unable to suspend execution", "instance", cr.GetName())
+
+			return utils.RequeueAfter(time.Second)
 		}
 
 		return utils.Stop()
@@ -216,18 +245,6 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		We may delete the service, add a pod, or wait for existing pod to change its status.
 	*/
-
-	/*
-		If this object is suspended, we don't want to run any jobs, so we'll stop now.
-		This is useful if something's broken with the job we're running and we want to
-		pause runs to investigate or putz with the cluster, without deleting the object.
-	*/
-	if cr.Spec.Suspend != nil && *cr.Spec.Suspend {
-		r.Logger.Info("Not starting job because the workflow is suspended",
-			"workflow", cr.GetName())
-
-		return utils.Stop()
-	}
 
 	/*
 		If we are not suspended, initialize the CR.
@@ -326,6 +343,14 @@ func (r *Controller) Finalize(obj client.Object) error {
 	return nil
 }
 
+// isJobInScheduledList take a job and checks if activeJobs has a job with the same
+// name and namespace.
+func isJobInScheduledList(name string, scheduledJobs map[string]metav1.Time) bool {
+	_, ok := scheduledJobs[name]
+
+	return ok
+}
+
 /*
 ### Setup
 	Finally, we'll update our setup.
@@ -336,6 +361,15 @@ func (r *Controller) Finalize(obj client.Object) error {
 */
 
 func NewController(mgr ctrl.Manager, logger logr.Logger) error {
+	/*
+		// register the admission controller
+		mgr.GetWebhookServer().Register("/validate-workflow", &webhook.Admission{
+			Handler: &workflowValidator{Client: mgr.GetClient()},
+		})
+
+	*/
+
+	// register the reconcile controller
 	r := &Controller{
 		Manager:    mgr,
 		Logger:     logger.WithName("workflow"),
@@ -347,16 +381,8 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		Named("workflow").
 		For(&v1alpha1.Workflow{}).
-		Owns(&v1alpha1.Service{}, builder.WithPredicates(r.WatchServices())).
-		Owns(&v1alpha1.Cluster{}, builder.WithPredicates(r.WatchClusters())).
-		Owns(&v1alpha1.Chaos{}, builder.WithPredicates(r.WatchChaos())).
+		Owns(&v1alpha1.Service{}, builder.WithPredicates(r.WatchServices())). // Watch Services
+		Owns(&v1alpha1.Cluster{}, builder.WithPredicates(r.WatchClusters())). // Watch Cluster
+		Owns(&v1alpha1.Chaos{}, builder.WithPredicates(r.WatchChaos())).      // Watch Chaos
 		Complete(r)
-}
-
-// isJobInScheduledList take a job and checks if activeJobs has a job with the same
-// name and namespace.
-func isJobInScheduledList(name string, scheduledJobs map[string]metav1.Time) bool {
-	_, ok := scheduledJobs[name]
-
-	return ok
 }

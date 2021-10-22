@@ -190,6 +190,29 @@ func setPlacement(obj *v1alpha1.Service, pod *corev1.Pod) {
 	if len(spec.Domain) > 0 {
 		pod.Spec.NodeName = spec.Domain
 	}
+
+	/*
+	   affinity:
+	      podAffinity:
+	        requiredDuringSchedulingIgnoredDuringExecution:
+	        - labelSelector:
+	            matchExpressions:
+	            - key: app
+	              operator: In
+	              values:
+	              - local-test-affinity
+	          topologyKey: kubernetes.io/hostname
+
+	      podAntiAffinity:
+	        requiredDuringSchedulingIgnoredDuringExecution:
+	        - labelSelector:
+	            matchExpressions:
+	            - key: app
+	              operator: In
+	              values:
+	              - local-test-anti-affinity
+	          topologyKey: kubernetes.io/hostname
+	*/
 }
 
 func constructDiscoveryService(r *Controller, obj *v1alpha1.Service, pod *corev1.Pod) *corev1.Service {

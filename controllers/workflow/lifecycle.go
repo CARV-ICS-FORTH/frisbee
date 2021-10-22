@@ -32,8 +32,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var systemService = []string{"prometheus", "grafana"}
-
 type test struct {
 	expression bool
 	lifecycle  v1alpha1.Lifecycle
@@ -51,7 +49,7 @@ func calculateLifecycle(w *v1alpha1.Workflow, gs lifecycle.Classifier) v1alpha1.
 	}
 
 	// we are only interested in the number of jobs in each category.
-	expectedJobs := len(w.Spec.Actions) + len(systemService)
+	expectedJobs := len(w.Spec.Actions) + len(systemServices)
 
 	userTests := useOracle(w, gs)
 

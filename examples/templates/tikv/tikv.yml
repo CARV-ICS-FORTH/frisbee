@@ -1,4 +1,18 @@
 ---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: tikv-pvc
+spec:
+  storageClassName: shared-ssd-storage
+  resources:
+    requests:
+      storage: 200Gi
+  accessModes:
+    - ReadWriteMany
+
+
+---
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
@@ -8,13 +22,24 @@ spec:
     "placementDriver": # Placement Driver
       inputs:
         parameters:
-          port: "2379"
+          cpu: "4"
+          memory: "8Gi"
       spec: |
-        agents:
+        agents:                                 # Agents
           telemetry: [ sysmon/container ]
-        container:
+        volumes:                                # Volumes
+          - name: datastore
+            persistentVolumeClaim:
+              claimName: tikv-pvc
+        resources:                              # Resources
+          cpu: {{.Inputs.Parameters.cpu}}
+          memory: {{.Inputs.Parameters.memory}}
+        container:                              # Container
           name: app
           image: pingcap/pd:latest
+          volumeMounts:
+            - name: datastore
+              mountPath: /store
           ports:
             - name: to-clients
               containerPort: 2379
@@ -27,26 +52,39 @@ spec:
               set -eum
               trap "touch /dev/shm/stop" EXIT
 
-              # Start server in the foreground
+              rm -rf /store/$${HOSTNAME}
+
+              echo "Start PD server at $${HOSTNAME}}"
+
               /pd-server                                                  \
               --client-urls=http://0.0.0.0:2379                           \
-              --peer-urls=http://0.0.0.0:2380                             \
               --advertise-client-urls=http://$${HOSTNAME}:2379            \
+              --peer-urls=http://0.0.0.0:2380                             \
               --advertise-peer-urls=http://$${HOSTNAME}:2380              \
-              --data-dir=/data/pd/$${HOSTNAME}.bin
-
+              --data-dir=/store/$${HOSTNAME}/pd.bin
 
     "worker": # Service node
       inputs:
         parameters:
           placementDriver: "localhost"
+          cpu: "8"
+          memory: "32Gi"
       spec: |
-        agents:
+        agents:                                 # Agents
           telemetry: [ sysmon/container ]
-        resources:
-        container:
+        volumes:                                # Volumes
+          - name: datastore
+            persistentVolumeClaim:
+              claimName: tikv-pvc
+        resources:                              # Resources
+          cpu: {{.Inputs.Parameters.cpu}}
+          memory: {{.Inputs.Parameters.memory}}
+        container:                              # Container
           name: app
           image: pingcap/tikv:latest
+          volumeMounts:
+            - name: datastore
+              mountPath: /store
           ports:
             - name: worker-port
               containerPort: 20160
@@ -60,11 +98,13 @@ spec:
               # increase the maximum number of open file descriptors
               ulimit -n 82920
 
-              manager={{.Inputs.Parameters.placementDriver}}
+              pd={{.Inputs.Parameters.placementDriver}}
 
-              echo "Start TIKV Server and contact $manager"
+              rm -rf /store/$${HOSTNAME}
+
+              echo "Start TIKV Server and contact ${pd}"
               /tikv-server                                                \
                 --addr=0.0.0.0:20160                                      \
-                --pd=${manager}:2379                                      \
                 --advertise-addr=$${HOSTNAME}:20160                       \
-                --data-dir=/data/store/$${HOSTNAME}.bin
+                --pd=${pd}:2379                                           \
+                --data-dir=/store/$${HOSTNAME}/data.bin
