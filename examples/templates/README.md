@@ -4,7 +4,7 @@ Kubernetes users often find themselves copying YAML specifications and editing t
 it difficult to go back to the source material and incorporate any improvements made to it. The template allows users to
 create a library of frequently-used specifications and reuse them throughout the definition of the experiment.
 
-Templates are a list of services specifications that are allowed to reference and initialize. 
+Templates are a list of services specifications that are allowed to reference and initialize.
 
 Templates define minimally constraining skeletons, leaving a bunch of strategically predefined blanks where dynamic data
 will be injected to create multiple variants of the specification using different sets of parameters.

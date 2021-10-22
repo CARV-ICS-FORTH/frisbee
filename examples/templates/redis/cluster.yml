@@ -27,12 +27,12 @@ spec:
           memory: ""
           cpu: ""
       spec: |
-        agents:
+        agents:                                         # Agents
           telemetry: [ sysmon/container, redismon/server ]
-        resources:
+        resources:                                      # Resources
           memory: {{.Inputs.Parameters.memory}}
           cpu: {{.Inputs.Parameters.cpu}}
-        container:
+        container:                                      # Container
           name: app
           image: redis
           ports:
@@ -54,6 +54,7 @@ spec:
 
               echo "Start master node at {{.Inputs.Parameters.port}}"
 
+              echo "Create Redis configuration"
               cat > redis.conf <<EOF
                 port {{.Inputs.Parameters.port}}
                 appendonly yes
@@ -68,6 +69,19 @@ spec:
 
               redis-server redis.conf
 
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh   # Run shell
+                - -c        # Read from string
+                - |         # Multi-line str
+                  set -eum
+
+                  response=$(timeout -s QUIT 30 redis-cli -h localhost -p {{.Inputs.Parameters.port}} ping)
+                  if [ "$response" != "PONG" ]; then
+                      echo "$response"
+                      exit 1
+                  fi
 
 
     # Combine servers into a cluster
@@ -109,4 +123,6 @@ spec:
 
               echo "Create cluster from ${all[*]}"
 
+              # Sleep a bit to compensate for Kubernetes delays.
+              sleep 10
               redis-cli --cluster create --cluster-yes ${all[*]}

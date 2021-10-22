@@ -323,6 +323,12 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	*/
 
 	nextExpectedJob := cr.Status.LastScheduleJob + 1
+
+	// this may happen when all jobs are created, but some of them are still in the pending phase.
+	if nextExpectedJob >= len(cr.Status.Expected) {
+		return utils.Stop()
+	}
+
 	nextJob := getJob(r, &cr, nextExpectedJob)
 
 	if err := utils.Create(ctx, r, nextJob); err != nil {

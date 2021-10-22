@@ -28,7 +28,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation"
 )
 
-// ValidateDAG returns true if all the dependencies point to a valid action.
+// ValidateDAG validates the execution workflow.
+// 1. Ensures that action names are qualified (since they are used as generators to jobs)
+// 2. Ensures that there are no two actions with the same name.
+// 2. Ensure that dependencies point to a valid action.
 func ValidateDAG(list v1alpha1.ActionList) error {
 	index := make(map[string]*v1alpha1.Action)
 

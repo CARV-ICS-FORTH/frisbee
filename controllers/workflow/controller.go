@@ -28,7 +28,6 @@ import (
 	"github.com/fnikolai/frisbee/pkg/structure"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -289,8 +288,6 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		return utils.RequeueAfter(time.Until(nextRun))
 	}
-
-	logrus.Warn("Ready to start ", actionList.ToString())
 
 	// this label will be adopted by all children objects of this workflow.
 	// it is not persisted in order to avoid additional updates.

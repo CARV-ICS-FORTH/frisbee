@@ -83,7 +83,7 @@ func calculateLifecycle(w *v1alpha1.Workflow, gs lifecycle.Classifier) v1alpha1.
 			},
 		},
 		{ // All jobs are created, and at least one is still running
-			expression: gs.NumActiveJobs()+gs.NumSuccessfulJobs() == expectedJobs,
+			expression: gs.NumRunningJobs()+gs.NumSuccessfulJobs() == expectedJobs,
 			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseRunning,
 				Reason:  "JobIsRunning",

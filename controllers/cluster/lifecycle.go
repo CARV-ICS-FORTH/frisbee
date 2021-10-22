@@ -77,17 +77,17 @@ func calculateLifecycle(cluster *v1alpha1.Cluster, gs lifecycle.Classifier) v1al
 			},
 		},
 		{ // All jobs are created, and at least one is still running
-			expression: gs.NumActiveJobs()+gs.NumSuccessfulJobs() == expectedJobs,
+			expression: gs.NumRunningJobs()+gs.NumSuccessfulJobs() == expectedJobs,
 			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseRunning,
 				Reason:  "JobIsRunning",
-				Message: fmt.Sprintf("active jobs: %s", gs.ActiveList()),
+				Message: fmt.Sprintf("running jobs: %s", gs.RunningList()),
 			},
 			condition: metav1.Condition{
 				Type:    v1alpha1.ConditionAllJobs.String(),
 				Status:  metav1.ConditionTrue,
 				Reason:  "AllJobsRunning",
-				Message: fmt.Sprintf("active jobs: %s", gs.ActiveList()),
+				Message: fmt.Sprintf("running jobs: %s", gs.RunningList()),
 			},
 		},
 		{ // Not all Jobs are yet created

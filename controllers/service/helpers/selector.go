@@ -65,7 +65,7 @@ func parseMacro(namespace string, ss *v1alpha1.ServiceSelector) {
 }
 
 var RetryAfter = wait.Backoff{
-	Duration: 1 * time.Second,
+	Duration: 5 * time.Second,
 	Factor:   5,
 	Jitter:   0.1,
 	Steps:    4,

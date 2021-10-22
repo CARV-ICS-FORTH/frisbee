@@ -68,7 +68,7 @@ spec:
     # Wait for ingestion to complete, and start querying clients, with different workloads, and scheduled execution.
     - action: Cluster
       name: "runners-dyn"
-      depends: { running: [ master ], success : [loaders] }
+      depends: { running: [ master ], success: [ loaders ] }
       cluster:
         templateRef: ycsb-tikv/runner
         inputs:
