@@ -12,8 +12,11 @@ spec:
           port: "2379"
           offset: "0"
           recordcount: "10000000"
-          cpu: "8"
-          memory: "8Gi"
+          cpu: ""     # Example: 8
+          memory: ""  # Example: 8Gi
+          threads: "1"
+          workload: "workloada"
+          dropdata: "false"
       spec: |
         agents:                                       # Agents
           telemetry: [ sysmon/container, ycsbmon/client ]
@@ -34,12 +37,14 @@ spec:
 
               echo "Loader: $addr <- {{.Inputs.Parameters.recordcount}}:{{.Inputs.Parameters.offset}}"
 
-              ./go-ycsb load tikv                                                               \
-                  -p recordcount={{.Inputs.Parameters.recordcount}}                             \
-                  -p insertstart={{.Inputs.Parameters.offset}}                                  \
-                  -p threadcount=1                                                              \
-                  -p tikv.pd="$addr"                                                            \
-                  -p tikv.type="raw"                                                            \
+              ./go-ycsb load tikv                                      \
+                  -P workloads/{{.Inputs.Parameters.workload}}         \
+                  -p dropdata={{.Inputs.Parameters.dropdata}}          \
+                  -p recordcount={{.Inputs.Parameters.recordcount}}    \
+                  -p insertstart={{.Inputs.Parameters.offset}}         \
+                  -p threadcount={{.Inputs.Parameters.threads}}        \
+                  -p tikv.pd="${addr}"                                 \
+                  -p tikv.type="raw"                                   \
               >> /dev/shm/pipe
 
 
@@ -53,6 +58,7 @@ spec:
           operationcount: "30000000"
           cpu: "8"
           memory: "8Gi"
+          threads: "1"
       spec: |
         agents:                                       # Agents
           telemetry: [ sysmon/container, ycsbmon/client ]
@@ -76,7 +82,7 @@ spec:
               ./go-ycsb run tikv                                                                  \
                     -P workloads/{{.Inputs.Parameters.workload}}                                  \
                     -p operationcount={{.Inputs.Parameters.operationcount}}                       \
-                    -p threadcount=1                                                              \
+                    -p threadcount={{.Inputs.Parameters.threads}}                                 \
                     -p tikv.pd="$addr"                                                            \
                     -p tikv.type="raw"                                                            \
               >> /dev/shm/pipe

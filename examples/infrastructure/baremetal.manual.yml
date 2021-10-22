@@ -15,13 +15,13 @@ spec:
   storageClassName: shared-ssd-storage    # Use StorageClass to delay volume binding until Pod scheduling.
   local:
     path: /mnt/local
-  nodeAffinity:                           # Tie volume to specific noes and schedule Pods into it.
+  nodeAffinity: # Tie volume to specific noes and schedule Pods into it.
     required:
       nodeSelectorTerms:
         - matchExpressions:
             - key: kubernetes.io/hostname
               operator: In
-              values:                     # List of nodes that can server this volume
+              values: # List of nodes that can server this volume
                 - jedi5.cluster.ics.forth.gr
                 - jedi6.cluster.ics.forth.gr
                 - jedi7.cluster.ics.forth.gr
