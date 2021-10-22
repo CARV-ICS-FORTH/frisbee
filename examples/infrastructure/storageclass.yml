@@ -1,0 +1,49 @@
+#
+# -- volumeBindingMode --
+#
+# For storage backends that are topology-constrained and not globally accessible from all Nodes in the cluster,
+# PersistentVolumes will be bound or provisioned without knowledge of the Pod's scheduling requirements.
+# This may result in unschedulable Pods.
+# A cluster administrator can address this issue by specifying the WaitForFirstConsumer mode which will delay
+# the binding and provisioning of a PersistentVolume until a Pod using the PersistentVolumeClaim is created.
+# Delaying volume binding allows the scheduler to consider all of a Pod's scheduling constraints when choosing
+# an appropriate PersistentVolume for a PersistentVolumeClaim.
+#
+# -- allowVolumeExpansion --
+# when set to true, this feature allows the users to resize the volume by editing the corresponding PVC object.
+# You can only use the volume expansion feature to grow a Volume, not to shrink it.
+#
+# -- mountOptions --
+# PersistentVolumes that are dynamically created by a StorageClass will have these mount options.
+# If the volume plugin does not support mount options but mount options are specified, provisioning will fail.
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: "local-storage"
+provisioner: "kubernetes.io/no-provisioner"
+volumeBindingMode: "WaitForFirstConsumer"
+
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: "ssd-storage"
+provisioner: "kubernetes.io/no-provisioner"
+volumeBindingMode: "WaitForFirstConsumer"
+
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: "shared-ssd-storage"
+provisioner: "kubernetes.io/no-provisioner"
+volumeBindingMode: "WaitForFirstConsumer"
+
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: "backup-storage"
+provisioner: "kubernetes.io/no-provisioner"
+volumeBindingMode: "WaitForFirstConsumer"

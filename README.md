@@ -1,11 +1,11 @@
 <a href="https://www.vectorstock.com/royalty-free-vector/disc-golf-frisbee-eps-vector-25179185" target="_blank"><figure><img src="https://github.com/CARV-ICS-FORTH/frisbee/blob/main/docs/images/logo.jpg" width="400"></figure></a>
 
-
 # Why Frisbee ?
 
 Frisbee is a next generation platform designed to unify chaos testing and perfomance benchmarking.
 
-We address the key pain points developers and QA engineers face when testing cloud-native applications in the earlier stages of the software lifecycle.
+We address the key pain points developers and QA engineers face when testing cloud-native applications in the earlier
+stages of the software lifecycle.
 
 We make it possible to:
 
@@ -13,13 +13,11 @@ We make it possible to:
 * **Run tests:**  provides seamless scaling from a single workstation to hundreds of machines.
 * **Debug tests:**  through extensive monitoring and comprehensive dashboards
 
+Our platform consists of a set of Kubernetes controller designed to run performance benchmarks and and introduce failure
+conditions into a running system, monitor site-wide health metrics, and notify systems with status updates during the
+testing procedure.
 
-
-Our platform consists of a set of Kubernetes controller designed to run performance benchmarks and  and introduce failure conditions into a running system, monitor site-wide health metrics, and notify  systems with status updates during the testing procedure. 
-
-Frisbee provides a  flexible, YAML-based configuration syntax and is trivially extensible  with additional functionality. 
-
-
+Frisbee provides a flexible, YAML-based configuration syntax and is trivially extensible with additional functionality.
 
 # Frisbee in a nutshell
 
@@ -192,10 +190,8 @@ But why bother if you can access Grafana directly ?
 
 [Click Here](http://grafana.localhost/d/R5y4AE8Mz/kubernetes-cluster-monitoring-via-prometheus?orgId=1&amp;from=now-15m&amp;to=now)
 
-If everything went smoothly, you should see a similar dashboard.
-Through these dashboards humans and controllers can examine to check things like completion, health, and SLA compliance.
-
-
+If everything went smoothly, you should see a similar dashboard. Through these dashboards humans and controllers can
+examine to check things like completion, health, and SLA compliance.
 
 #### Client-View (YCSB-Dashboard)
 
@@ -225,4 +221,6 @@ Frisbee is licensed under the Apache License, Version 2.0. See [LICENSE](http://
 the full license text.
 
 ## Acknowledgements
-This project has received funding from the European Union's Horizon 2020 research and innovation programme under grant agreement No. 894204 (Ether, H2020-MSCA-IF-2019).
+
+This project has received funding from the European Union's Horizon 2020 research and innovation programme under grant
+agreement No. 894204 (Ether, H2020-MSCA-IF-2019).

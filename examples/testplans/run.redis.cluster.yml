@@ -34,7 +34,7 @@ spec:
     # Ingest keys in parallel, into different ranges
     - action: Cluster
       name: "loaders"
-      depends: { running: [ masters ], success: ["boot"] }
+      depends: { running: [ masters ], success: [ "boot" ] }
       cluster:
         templateRef: ycsb-redis/loader
         inputs:

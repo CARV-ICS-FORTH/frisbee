@@ -1,51 +1,15 @@
 ---
 apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: scratch
-spec:
-  capacity:
-    storage: 10Gi
-  # There are three access modes:
-  #    RWO — ReadWriteOnce—Only a single node can mount the volume for reading and writing.
-  #    ROX — ReadOnlyMany—Multiple nodes can mount the volume for reading.
-  #    RWX — ReadWriteMany—Multiple nodes can mount the volume for both reading and writing.
-  accessModes:
-    - ReadWriteOnce
-  # volumeMode specifies whether you want a filesystem ("Filesystem") or raw storage ("Block")
-  volumeMode: Filesystem
-  # persistentVolumeReclaimPolicy determines what happens when a persistent volume claim is deleted
-  persistentVolumeReclaimPolicy: Delete
-  #storageClassName: local-storage
-  local:
-    path: /tmp
-  # nodeAffinity is how Kubernetes understands that this PersistentVolume
-  # is tied to a specific nod and schedule Pods to it.
-  nodeAffinity:
-    required:
-      nodeSelectorTerms:
-        - matchExpressions:
-            - key: kubernetes.io/hostname
-              operator: In
-              # List of nodes in your cluster. To get a list of them use: kubectl get nodes
-              values:
-                - jedi6.cluster.ics.forth.gr
-
----
-apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: fio-benchmark-exporter-pvc
+  name: fio-pvc
 spec:
-  accessModes:
-    - ReadWriteOnce
-  volumeMode: Filesystem # Alt: Block
-  volumeName: scratch
+  storageClassName: ssd-storage
   resources:
     requests:
       storage: 5Gi
-  # storageClassName: slow # Request a particular volume class
-  # selector: Further filter the set of selected volumes.
+  accessModes:
+    - ReadWriteOnce
 
 ---
 apiVersion: frisbee.io/v1alpha1
@@ -66,13 +30,13 @@ spec:
         volumes:
           - name: fio-benchmark-exporter-pv
             persistentVolumeClaim:
-              claimName: fio-benchmark-exporter-pvc
+              claimName: fio-pvc
         container:
           name: app
           image: xridge/fio
           volumeMounts:
-            - mountPath: /mnt/fio-benchmark-exporter
-              name: fio-benchmark-exporter-pv
+            - name: fio-benchmark-exporter-pv
+              mountPath: /mnt/fio-benchmark-exporter
           command:
             - /bin/sh # Run shell
             - -c      # Read from string

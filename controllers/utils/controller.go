@@ -148,7 +148,7 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 		controllerutil.RemoveFinalizer(obj, r.Finalizer())
 
 		if err := Update(ctx, r, obj); err != nil {
-			r.Error(err, "unable to delete instance", "instance", obj.GetName())
+			r.Error(err, "resource deletion error")
 
 			return RequeueAfter(time.Second)
 		}
