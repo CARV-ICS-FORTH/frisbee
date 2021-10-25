@@ -2,3 +2,8 @@
 
 https://www.confluent.io/blog/measure-go-code-coverage-with-bincover/
 
+
+
+# Benchmark Evaluation
+
+https://plugins.jenkins.io/benchmark-evaluator/#documentation
