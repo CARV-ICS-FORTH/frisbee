@@ -18,3 +18,13 @@ https://www.confluent.io/blog/measure-go-code-coverage-with-bincover/
 https://plugins.jenkins.io/benchmark-evaluator/#documentation
 
 
+# Monitoring 
+
+https://www.replex.io/blog/kubernetes-in-production-the-ultimate-guide-to-monitoring-resource-metrics
+
+https://play.grafana.org/d/vmie2cmWz/bar-gauge?orgId=1
+
+
+# Multi-cluster Kubernetes deployments
+
+https://www.cockroachlabs.com/docs/stable/orchestrate-cockroachdb-with-kubernetes-multi-cluster.html
