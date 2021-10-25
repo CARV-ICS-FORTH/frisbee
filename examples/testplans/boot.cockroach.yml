@@ -18,9 +18,9 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Workflow
 metadata:
-  name: redis-ycsb-sequence
+  name: boot-cockroach
 spec:
-  importMonitors: [ "sysmon/container", "ycsbmon/client",  "redismon/server" ]
+  importMonitors: [ "sysmon/container", "ycsbmon/client" ]
   ingress:
     host: platform.science-hangar.eu
 
@@ -30,23 +30,24 @@ spec:
 
   actions:
     # Step 0: bootstrap.
-    # For Redis, we must first create the servers, and then combine them into a cluster.
+    # Cockroachdb requires knowing the names of the clustered nodes, before they are started !.
     - action: Cluster
       name: master
       cluster:
-        templateRef: rediscluster/master
+        templateRef: cockroachdb-cluster/master
         instances: 3
         inputs:
-          - { cpu: "8", memory: "32Gi" }
+          - { servers: "master-1:26257,master-2:26257,master-3:26257" }
 
+    # Run cockroach command to any of the created node.
     - action: Service
       name: boot
       depends: { running: [ master ] }
       service:
         fromTemplate:
-          templateRef: rediscluster/bootstrap
+          templateRef: cockroachdb-cluster/bootstrap
           inputs:
-            { servers: .cluster.master.all }
+            { server: .cluster.master.any }
 
 
     # Step 1: Load a new dataset, using the parameters of workload A.
@@ -56,9 +57,9 @@ spec:
       name: loader
       service:
         fromTemplate:
-          templateRef: ycsb-redis/loader
+          templateRef: ycsb-cockroach/loader
           inputs:
-            { mode: "cluster", server: .cluster.master.any, workload: workloada, recordcount: "1000000", threads: "400" }
+            { server: .cluster.master.any, workload: workloada, recordcount: "1000000", threads: "400" }
 
     # Step 2: Run workload A
     - action: Service
@@ -66,9 +67,9 @@ spec:
       name: workload-a
       service:
         fromTemplate:
-          templateRef: ycsb-redis/runner
+          templateRef: ycsb-cockroach/runner
           inputs:
-            { mode: "cluster", server: .cluster.master.any, workload: workloada, operationcount: "1000000",
+            { server: .cluster.master.any, workload: workloada, operationcount: "1000000",
               cpu: "8",  memory: "8Gi", threads: "40" }
 
     # Step 3: Run workload B
@@ -77,9 +78,9 @@ spec:
       name: workload-b
       service:
         fromTemplate:
-          templateRef: ycsb-redis/runner
+          templateRef: ycsb-cockroach/runner
           inputs:
-            { mode: "cluster", server: .cluster.master.any, workload: workloadb, operationcount: "1000000",
+            { server: .cluster.master.any, workload: workloadb, operationcount: "1000000",
               cpu: "8",  memory: "8Gi", threads: "40" }
 
     # Step 4: Run workload C
@@ -88,9 +89,9 @@ spec:
       name: workload-c
       service:
         fromTemplate:
-          templateRef: ycsb-redis/runner
+          templateRef: ycsb-cockroach/runner
           inputs:
-            { mode: "cluster", server: .cluster.master.any, workload: workloadc, operationcount: "1000000",
+            { server: .cluster.master.any, workload: workloadc, operationcount: "1000000",
               cpu: "8",  memory: "8Gi", threads: "40" }
 
 
@@ -100,9 +101,9 @@ spec:
       name: workload-f
       service:
         fromTemplate:
-          templateRef: ycsb-redis/runner
+          templateRef: ycsb-cockroach/runner
           inputs:
-            { mode: "cluster", server: .cluster.master.any, workload: workloadf, operationcount: "1000000",
+            { server: .cluster.master.any, workload: workloadf, operationcount: "1000000",
               cpu: "8",  memory: "8Gi", threads: "40" }
 
 
@@ -112,9 +113,9 @@ spec:
       name: workload-d
       service:
         fromTemplate:
-          templateRef: ycsb-redis/runner
+          templateRef: ycsb-cockroach/runner
           inputs:
-            { mode: "cluster", server: .cluster.master.any, workload: workloadd, operationcount: "1000000",
+            { server: .cluster.master.any, workload: workloadd, operationcount: "1000000",
               cpu: "8",  memory: "8Gi", threads: "40" }
 
 
@@ -125,9 +126,9 @@ spec:
       name: reloader
       service:
         fromTemplate:
-          templateRef: ycsb-redis/loader
+          templateRef: ycsb-cockroach/loader
           inputs:
-            { mode: "cluster", server: .cluster.master.any, workload: workloade, dropdata: "true", recordcount: "1000000",
+            { server: .cluster.master.any, workload: workloade, dropdata: "true", recordcount: "1000000",
               threads: "400" }
 
 
@@ -137,9 +138,9 @@ spec:
       name: workload-e
       service:
         fromTemplate:
-          templateRef: ycsb-redis/runner
+          templateRef: ycsb-cockroach/runner
           inputs:
-            { mode: "cluster", server: .cluster.master.any, workload: workloade, operationcount: "1000000",
+            { server: .cluster.master.any, workload: workloade, operationcount: "1000000",
               cpu: "8",  memory: "8Gi", threads: "40" }
 
 

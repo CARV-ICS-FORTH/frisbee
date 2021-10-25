@@ -40,6 +40,19 @@ spec:
 
               redis-server redis.conf
 
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh   # Run shell
+                - -c        # Read from string
+                - |         # Multi-line str
+                  set -eum
+
+                  response=$(timeout -s QUIT 30 redis-cli -h localhost -p 6379 ping)
+                  if [ "$response" != "PONG" ]; then
+                      echo "$response"
+                      exit 1
+                  fi
 
     # Replica of a master
     "slave":
@@ -74,6 +87,19 @@ spec:
 
               redis-server redis.conf
 
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh   # Run shell
+                - -c        # Read from string
+                - |         # Multi-line str
+                  set -eum
+
+                  response=$(timeout -s QUIT 30 redis-cli -h localhost -p 6379 ping)
+                  if [ "$response" != "PONG" ]; then
+                      echo "$response"
+                      exit 1
+                  fi
 
     # Failover agent
     "sentinel":

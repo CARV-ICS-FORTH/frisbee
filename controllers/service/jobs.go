@@ -33,7 +33,7 @@ import (
 func (r *Controller) runJob(ctx context.Context, obj *v1alpha1.Service) error {
 	if obj.Spec.ServiceFromTemplate != nil {
 		if err := r.populateSpecFromTemplate(ctx, obj); err != nil {
-			return errors.Wrapf(err, "cannot populate service from template")
+			return errors.Wrapf(err, "spec creation error")
 		}
 	}
 
@@ -67,12 +67,12 @@ func (r *Controller) populateSpecFromTemplate(ctx context.Context, obj *v1alpha1
 
 		genspec, err = thelpers.GetParameterizedSpec(ctx, r, ts, obj.GetNamespace(), inputs, lookupCache)
 		if err != nil {
-			return errors.Wrapf(err, "unable to expand inputs")
+			return errors.Wrapf(err, "parameterized spec")
 		}
 	} else {
 		genspec, err = thelpers.GetDefaultSpec(ctx, r, ts)
 		if err != nil {
-			return errors.Wrapf(err, "unable to expand inputs")
+			return errors.Wrapf(err, "default spec")
 		}
 	}
 

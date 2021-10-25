@@ -192,6 +192,11 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		r.GetEventRecorderFor("").Event(&cr, corev1.EventTypeNormal,
 			newStatus.Reason, "cluster succeeded")
 
+		r.Logger.Info("Cleaning up cluster jobs",
+			"cluster", cr.GetName(),
+			"successfulJobs", r.state.SuccessfulList(),
+		)
+
 		// Remove cr children once the cr is successfully complete.
 		// We should not remove the cr descriptor itself, as we need to maintain its
 		// status for higher-entities like the Workflow.
@@ -204,6 +209,12 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	if newStatus.Phase == v1alpha1.PhaseFailed {
 		r.Logger.Error(errors.New(newStatus.Reason), newStatus.Message)
+
+		r.Logger.Info("Cleaning up cluster jobs",
+			"cluster", cr.GetName(),
+			"successfulJobs", r.state.SuccessfulList(),
+			"activeJobs", r.state.ActiveList(),
+		)
 
 		// Remove the non-failed components. Leave the failed jobs and system jobs for postmortem analysis.
 		for _, job := range r.state.SuccessfulJobs() {

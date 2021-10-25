@@ -73,9 +73,7 @@ var RetryAfter = wait.Backoff{
 
 func Select(ctx context.Context, r utils.Reconciler, nm string, ss *v1alpha1.ServiceSelector) v1alpha1.SList {
 	if ss == nil {
-		logrus.Warn("empty service selector")
-
-		return nil
+		panic("empty service selector")
 	}
 
 	if ss.Macro != nil {
@@ -87,7 +85,7 @@ func Select(ctx context.Context, r utils.Reconciler, nm string, ss *v1alpha1.Ser
 	// get all running services that match the criteria.
 	// it is possible that some services exist, but they are not in the Running phase.
 	// In this case, we simply retry.
-	_ = retry.OnError(RetryAfter, func(error) bool { return true }, func() error {
+	err := retry.OnError(RetryAfter, func(error) bool { return true }, func() error {
 		services, err := selectRunningServices(ctx, r, &ss.Match)
 		if err != nil {
 			logrus.Warn(err)
@@ -96,8 +94,6 @@ func Select(ctx context.Context, r utils.Reconciler, nm string, ss *v1alpha1.Ser
 		}
 
 		if len(services) == 0 {
-			r.Info("no running services were found. retry")
-
 			return errors.New("no running services were found. retry")
 		}
 
@@ -106,10 +102,16 @@ func Select(ctx context.Context, r utils.Reconciler, nm string, ss *v1alpha1.Ser
 		return nil
 	})
 
+	if err != nil {
+		r.Error(err, "selector error")
+
+		return nil
+	}
+
 	// filter services based on the pods
 	filteredServices, err := filterByMode(runningServices, ss.Mode, ss.Value)
 	if err != nil {
-		logrus.Warn(err)
+		r.Error(err, "filter by mode")
 
 		return nil
 	}
@@ -158,7 +160,7 @@ func selectRunningServices(ctx context.Context, r utils.Reconciler, ss *v1alpha1
 			var cluster v1alpha1.Cluster
 
 			if err := r.GetClient().Get(ctx, key, &cluster); err != nil {
-				return nil, errors.Wrapf(err, "unable to find cluster %s", key)
+				return nil, errors.Wrapf(err, "cannot find cluster %s", key)
 			}
 
 			var slist v1alpha1.ServiceList
