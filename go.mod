@@ -11,9 +11,10 @@ require (
 	github.com/golanghelper/grafana-webhook v0.0.0-20180512191629-e0da26114467
 	github.com/grafana-tools/sdk v0.0.0-20210630212345-db1192e93802
 	github.com/huandu/xstrings v1.3.2 // indirect
-	github.com/iancoleman/strcase v0.2.0
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/mapstructure v1.1.2
+	github.com/onsi/ginkgo v1.16.4
+	github.com/onsi/gomega v1.13.0
 	github.com/orcaman/concurrent-map v0.0.0-20210501183033-44dafcb38ecc
 	github.com/pkg/errors v0.9.1
 	github.com/robfig/cron/v3 v3.0.1

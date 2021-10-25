@@ -79,7 +79,6 @@ spec:
 
                   response=$(timeout -s QUIT 30 redis-cli -h localhost -p {{.Inputs.Parameters.port}} ping)
                   if [ "$response" != "PONG" ]; then
-                      echo "$response"
                       exit 1
                   fi
 

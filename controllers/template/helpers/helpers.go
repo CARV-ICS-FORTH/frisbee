@@ -77,12 +77,12 @@ func GetParameterizedSpec(ctx context.Context, r utils.Reconciler, ts *v1alpha1.
 	}
 
 	if err := ExpandInputs(ctx, r, namespace, &scheme, inputs, cache); err != nil {
-		return "", errors.Wrapf(err, "unable to expand inputs")
+		return "", errors.Wrapf(err, "input error")
 	}
 
 	specStr, err := GenerateSpecFromScheme(&scheme)
 	if err != nil {
-		return "", errors.Wrapf(err, "unable tto create spec")
+		return "", errors.Wrapf(err, "spec creation error. Inputs: %v", scheme.Inputs.Parameters)
 	}
 
 	return specStr, nil

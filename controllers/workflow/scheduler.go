@@ -31,7 +31,8 @@ import (
 // ValidateDAG validates the execution workflow.
 // 1. Ensures that action names are qualified (since they are used as generators to jobs)
 // 2. Ensures that there are no two actions with the same name.
-// 2. Ensure that dependencies point to a valid action.
+// 3. Ensure that dependencies point to a valid action.
+// 4. Ensure that macros point to a valid action
 func ValidateDAG(list v1alpha1.ActionList) error {
 	index := make(map[string]*v1alpha1.Action)
 

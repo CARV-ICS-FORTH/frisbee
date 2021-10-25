@@ -1,7 +1,7 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
-  name: ycsb-cockroachdb
+  name: ycsb-cockroach
 spec:
   entries:
     # Loader injecting keys into a single server
@@ -11,11 +11,19 @@ spec:
           server: localhost
           port: "26257"
           offset: "0"
-          recordcount: "1000000"
+          recordcount: "10000000"
+          cpu: ""     # Example: 8
+          memory: ""  # Example: 8Gi
+          threads: "1"
+          workload: "workloada"
+          dropdata: "false"
       spec: |
-        agents:
+        agents:                                       # Agents
           telemetry: [ sysmon/container, ycsbmon/client ]
-        container:
+        resources:                                    # Resources
+          cpu: {{.Inputs.Parameters.cpu}}
+          memory: {{.Inputs.Parameters.memory}}
+        container:                                    # Container
           name: app
           image: aylei/go-ycsb:20201029
           command:
@@ -31,14 +39,17 @@ spec:
 
               # Cockroach implements the same interface as postgresql
 
-              ./go-ycsb load postgresql                                                         \
-                  -p recordcount={{.Inputs.Parameters.recordcount}}                             \
-                  -p insertstart={{.Inputs.Parameters.offset}}                                  \
-                  -p threadcount=1                                                              \
-                  -p pg.host={{.Inputs.Parameters.server}}                                      \
-                  -p pg.port={{.Inputs.Parameters.port}}                                        \
-                  -p pg.db="defaultdb"                                                          \
+              ./go-ycsb load postgresql                                \
+                  -P workloads/{{.Inputs.Parameters.workload}}         \
+                  -p dropdata={{.Inputs.Parameters.dropdata}}          \
+                  -p recordcount={{.Inputs.Parameters.recordcount}}    \
+                  -p insertstart={{.Inputs.Parameters.offset}}         \
+                  -p threadcount={{.Inputs.Parameters.threads}}        \
+                  -p pg.host={{.Inputs.Parameters.server}}             \
+                  -p pg.port={{.Inputs.Parameters.port}}               \
+                  -p pg.db="defaultdb"                                 \
               >> /dev/shm/pipe
+
 
 
     # Run queries against a single server
@@ -49,10 +60,16 @@ spec:
           port: "26257"
           workload: "workloada"
           operationcount: "5000000"
+          cpu: "8"
+          memory: "8Gi"
+          threads: "1"
       spec: |
-        agents:
+        agents:                                       # Agents
           telemetry: [ sysmon/container, ycsbmon/client ]
-        container:
+        resources:                                    # Resources
+          cpu: {{.Inputs.Parameters.cpu}}
+          memory: {{.Inputs.Parameters.memory}}
+        container:                                    # Container
           name: app
           image: aylei/go-ycsb:20201029
           command:
@@ -68,10 +85,10 @@ spec:
 
               # Cockroach implements the same interface as postgresql
 
-              ./go-ycsb run postgresql                                                           \
+              ./go-ycsb run postgresql                                                          \
                     -P workloads/{{.Inputs.Parameters.workload}}                                \
                     -p operationcount={{.Inputs.Parameters.operationcount}}                     \
-                    -p threadcount=1                                                            \
+                    -p threadcount={{.Inputs.Parameters.threads}}                               \
                     -p pg.host={{.Inputs.Parameters.server}}                                    \
                     -p pg.port={{.Inputs.Parameters.port}}                                      \
                     -p pg.db="defaultdb"                                                        \
