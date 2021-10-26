@@ -67,6 +67,20 @@ func (in *Classifier) Classify(name string, obj client.Object) {
 	}
 }
 
+// ClassifyAsFrisbeeService registers a system service.
+// Services classified by this function are not accounted, unless they have failed.
+func (in *Classifier) ClassifyAsFrisbeeService(name string, obj client.Object) {
+	if statusAware, getStatus := obj.(ReconcileStatusAware); getStatus {
+		status := statusAware.GetReconcileStatus()
+
+		if status.Phase.Is(v1alpha1.PhaseFailed) {
+			in.failedJobs[name] = obj
+		}
+	} else {
+		logrus.Warn("Not RecocileStatusAware, not setting status for obj:", obj.GetName())
+	}
+}
+
 func (in *Classifier) IsActive(jobName string) bool {
 	_, ok := in.activeJobs[jobName]
 
@@ -197,11 +211,11 @@ func (in *Classifier) FailedJobs() []client.Object {
 
 func WaitUntil(src <-chan *v1alpha1.Lifecycle, phase v1alpha1.Phase) error {
 	for lf := range src {
-		if lf.Phase.Equals(v1alpha1.PhaseRunning) {
+		if lf.Phase.Is(v1alpha1.PhaseRunning) {
 			break
 		}
 
-		if lf.Phase.IsValid(v1alpha1.PhaseRunning) {
+		if lf.Phase.Precedes(v1alpha1.PhaseRunning) {
 			continue
 		}
 

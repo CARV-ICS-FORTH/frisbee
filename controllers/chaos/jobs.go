@@ -24,7 +24,6 @@ import (
 	"github.com/fnikolai/frisbee/controllers/service/helpers"
 	"github.com/fnikolai/frisbee/controllers/utils"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -162,7 +161,7 @@ func (h killHandler) Inject(ctx context.Context, r *Controller) error {
 			},
 		})
 
-		logrus.Warn("KILL ", affectedPods.ToString())
+		r.Info("KILL", "pods", affectedPods.ToString())
 	}
 
 	AsKill(&fault)

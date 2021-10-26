@@ -12,6 +12,8 @@ spec:
     - ReadWriteMany
 
 
+# In some situations such as in the Docker or NAT network environment, if the other nodes (peers) cannot access
+# the PD node through the default peer URLs listened to by this PD node, you must manually set the advertise peer URLs.
 ---
 apiVersion: frisbee.io/v1alpha1
 kind: Template
@@ -22,8 +24,8 @@ spec:
     "placementDriver": # Placement Driver
       inputs:
         parameters:
-          cpu: "4"
-          memory: "8Gi"
+          cpu: ""
+          memory: ""
       spec: |
         agents:                                 # Agents
           telemetry: [ sysmon/container ]
@@ -36,7 +38,7 @@ spec:
           memory: {{.Inputs.Parameters.memory}}
         container:                              # Container
           name: app
-          image: pingcap/pd:latest
+          image: pingcap/pd:v5.1.2
           volumeMounts:
             - name: datastore
               mountPath: /store
@@ -53,6 +55,7 @@ spec:
               trap "touch /dev/shm/stop" EXIT
 
               rm -rf /store/$${HOSTNAME}
+              mkdir -p /store/$${HOSTNAME}/pd
 
               echo "Start PD server at $${HOSTNAME}}"
 
@@ -61,14 +64,14 @@ spec:
               --advertise-client-urls=http://$${HOSTNAME}:2379            \
               --peer-urls=http://0.0.0.0:2380                             \
               --advertise-peer-urls=http://$${HOSTNAME}:2380              \
-              --data-dir=/store/$${HOSTNAME}/pd.bin
+              --data-dir=/store/$${HOSTNAME}/pd
 
     "worker": # Service node
       inputs:
         parameters:
           placementDriver: "localhost"
-          cpu: "8"
-          memory: "32Gi"
+          cpu: ""
+          memory: ""
       spec: |
         agents:                                 # Agents
           telemetry: [ sysmon/container ]
@@ -81,7 +84,7 @@ spec:
           memory: {{.Inputs.Parameters.memory}}
         container:                              # Container
           name: app
-          image: pingcap/tikv:latest
+          image: pingcap/tikv:v5.1.2
           volumeMounts:
             - name: datastore
               mountPath: /store
@@ -100,11 +103,15 @@ spec:
 
               pd={{.Inputs.Parameters.placementDriver}}
 
-              rm -rf /store/$${HOSTNAME}
+              echo " HOST $${HOSTNAME}"
+              sleep 1200
 
-              echo "Start TIKV Server and contact ${pd}"
+              rm -rf /store/$${HOSTNAME}
+              mkdir -p /store/$${HOSTNAME}/data
+
+              echo "Contact: ${pd}:2379 and start TIVK at /store/$${HOSTNAME}/data"
               /tikv-server                                                \
                 --addr=0.0.0.0:20160                                      \
                 --advertise-addr=$${HOSTNAME}:20160                       \
                 --pd=${pd}:2379                                           \
-                --data-dir=/store/$${HOSTNAME}/data.bin
+                --data-dir=/store/$${HOSTNAME}/data

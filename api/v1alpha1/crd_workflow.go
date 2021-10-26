@@ -18,6 +18,8 @@
 package v1alpha1
 
 import (
+	"fmt"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -41,12 +43,18 @@ type Workflow struct {
 	Status WorkflowStatus `json:"status,omitempty"`
 }
 
+type DNSPrefix string
+
+func (a DNSPrefix) Convert(service string) string {
+	return fmt.Sprintf("%s.%s", service, a)
+}
+
 // Ingress is a collection of routing rules that govern how external users access services
 // running in a Kubernetes cluster.
 type Ingress struct {
-	// Host is the postfix from which the ingress will be available.
+	// DNSPrefix is the postfix from which the ingress will be available.
 	// Example: grafana.localhost, grafana.{MYIP}.nip.io, grafana.platform.science-hangar.eu
-	Host string `json:"host,omitempty"`
+	DNSPrefix DNSPrefix `json:"host,omitempty"`
 
 	// UseAmbassador if set annotates ingresses with 'kubernetes.io/ingress.class=ambassador'
 	// so to be managed by the Ambassador Ingress controller.
@@ -55,24 +63,19 @@ type Ingress struct {
 }
 
 type WorkflowSpec struct {
-	// ImportMonitors are references to monitoring packages that will be used in the monitoring stack.
-	// +optional
-	ImportMonitors []string `json:"importMonitors,omitempty"`
+	WithTelemetry *TelemetrySpec `json:"withTelemetry,omitempty"`
 
 	// Actions are the tasks that will be taken.
 	Actions ActionList `json:"actions"`
-
-	// Ingress defines how to get traffic into your Kubernetes cluster.
-	Ingress *Ingress `json:"ingress,omitempty"`
 
 	// Suspend flag tells the controller to suspend subsequent executions, it does
 	// not apply to already started executions.  Defaults to false.
 	// +optional
 	Suspend *bool `json:"suspend,omitempty"`
 
-	// Oracle defines the conditions under which the workflow will terminate with a "passed" or "failed" message
+	// WithTestOracle defines the conditions under which the workflow will terminate with a "passed" or "failed" message
 	// +optional
-	Oracle *TestOracle `json:"testOracle,omitempty"`
+	WithTestOracle *TestOracle `json:"withTestOracle,omitempty"`
 }
 
 // TestOracle is a source of information about whether the state of the workflow after a given time is correct or not.

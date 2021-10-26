@@ -5,6 +5,7 @@ resources:
   - bases/frisbee.io_chaos.yaml
   - bases/frisbee.io_clusters.yaml
   - bases/frisbee.io_services.yaml
+  - bases/frisbee.io_telemetries.yaml
   - bases/frisbee.io_templates.yaml
   - bases/frisbee.io_workflows.yaml
 #+kubebuilder:scaffold:crdkustomizeresource

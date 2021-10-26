@@ -38,8 +38,9 @@ type test struct {
 	condition  metav1.Condition
 }
 
-func calculateLifecycle(w *v1alpha1.Workflow, gs lifecycle.Classifier) v1alpha1.WorkflowStatus {
+func (r *Controller) calculateLifecycle(w *v1alpha1.Workflow) v1alpha1.WorkflowStatus {
 	status := w.Status
+	gs := r.state // global state
 
 	// Skip any CR which are already completed, or uninitialized.
 	if status.Phase == v1alpha1.PhaseUninitialized ||
@@ -49,9 +50,9 @@ func calculateLifecycle(w *v1alpha1.Workflow, gs lifecycle.Classifier) v1alpha1.
 	}
 
 	// we are only interested in the number of jobs in each category.
-	expectedJobs := len(w.Spec.Actions) + len(systemServices)
+	expectedJobs := len(w.Spec.Actions)
 
-	userTests := useOracle(w, gs)
+	userTests := r.useOracle(w, gs)
 
 	autotests := []test{
 		{ // A job has failed during execution.
@@ -87,13 +88,13 @@ func calculateLifecycle(w *v1alpha1.Workflow, gs lifecycle.Classifier) v1alpha1.
 			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseRunning,
 				Reason:  "JobIsRunning",
-				Message: fmt.Sprintf("active jobs: %s", gs.ActiveList()),
+				Message: fmt.Sprintf("running jobs: %s", gs.RunningList()),
 			},
 			condition: metav1.Condition{
 				Type:    v1alpha1.ConditionAllJobs.String(),
 				Status:  metav1.ConditionTrue,
 				Reason:  "AllJobsRunning",
-				Message: fmt.Sprintf("active jobs: %s", gs.ActiveList()),
+				Message: fmt.Sprintf("running jobs: %s", gs.RunningList()),
 			},
 		},
 		{ // Not all Jobs are yet created
@@ -134,8 +135,8 @@ func calculateLifecycle(w *v1alpha1.Workflow, gs lifecycle.Classifier) v1alpha1.
 
 // useOracle enforces user-driven decisions as to when the test has passed or has fail.
 // the return arguments are: lifecycle, apply, error.
-func useOracle(w *v1alpha1.Workflow, gs lifecycle.Classifier) []test {
-	oracle := w.Spec.Oracle
+func (r *Controller) useOracle(w *v1alpha1.Workflow, gs lifecycle.Classifier) []test {
+	oracle := w.Spec.WithTestOracle
 
 	if oracle == nil {
 		return nil
@@ -146,9 +147,7 @@ func useOracle(w *v1alpha1.Workflow, gs lifecycle.Classifier) []test {
 	if exp := oracle.Pass; exp != nil {
 		expanded, err := dereference(*exp, gs)
 		if err != nil {
-			logrus.Warn(errors.Wrapf(err, "dereference error"))
-
-			return nil
+			panic(errors.Wrapf(err, "dereference error"))
 		}
 
 		ok, _ := shouldExecute(expanded)
@@ -173,9 +172,7 @@ func useOracle(w *v1alpha1.Workflow, gs lifecycle.Classifier) []test {
 	if exp := oracle.Fail; exp != nil {
 		expanded, err := dereference(*exp, gs)
 		if err != nil {
-			logrus.Warn(errors.Wrapf(err, "dereference error"))
-
-			return nil
+			panic(errors.Wrapf(err, "dereference error"))
 		}
 
 		ok, _ := shouldExecute(expanded)
@@ -201,7 +198,7 @@ func useOracle(w *v1alpha1.Workflow, gs lifecycle.Classifier) []test {
 }
 
 func ValidateOracle(w *v1alpha1.Workflow, gs lifecycle.Classifier) error {
-	oracle := w.Spec.Oracle
+	oracle := w.Spec.WithTestOracle
 
 	if oracle == nil {
 		return nil

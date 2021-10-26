@@ -56,8 +56,8 @@ spec:
           port: "2379"
           workload: "workloada"
           operationcount: "30000000"
-          cpu: "8"
-          memory: "8Gi"
+          cpu: ""
+          memory: ""
           threads: "1"
       spec: |
         agents:                                       # Agents

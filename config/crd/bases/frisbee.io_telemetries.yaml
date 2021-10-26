@@ -1,0 +1,95 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.4.1
+  creationTimestamp: null
+  name: telemetries.frisbee.io
+spec:
+  group: frisbee.io
+  names:
+    kind: Telemetry
+    listKind: TelemetryList
+    plural: telemetries
+    singular: telemetry
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: MonitorSpec defines the Telemetry of services
+            properties:
+              importMonitors:
+                description: ImportMonitors are references to monitoring packages
+                  that will be used in the monitoring stack.
+                items:
+                  type: string
+                type: array
+              ingress:
+                description: Ingress defines how to get traffic into your Kubernetes
+                  cluster.
+                properties:
+                  host:
+                    description: 'DNSPrefix is the postfix from which the ingress
+                      will be available. Example: grafana.localhost, grafana.{MYIP}.nip.io,
+                      grafana.platform.science-hangar.eu'
+                    type: string
+                  useAmbassador:
+                    description: UseAmbassador if set annotates ingresses with 'kubernetes.io/ingress.class=ambassador'
+                      so to be managed by the Ambassador Ingress controller.
+                    type: boolean
+                type: object
+            type: object
+          status:
+            description: Most recently observed status of the object
+            properties:
+              grafanaURI:
+                type: string
+              message:
+                description: Message provides more details for understanding the Reason.
+                type: string
+              phase:
+                description: Phase is a simple, high-level summary of where the Object
+                  is in its lifecycle. The conditions array, the reason and message
+                  fields, and the individual container status arrays contain more
+                  detail about the pod's status.
+                type: string
+              prometheusURI:
+                type: string
+              reason:
+                description: Reason is A brief CamelCase message indicating details
+                  about why the service is in this Phase. e.g. 'Evicted'
+                type: string
+            required:
+            - grafanaURI
+            - prometheusURI
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

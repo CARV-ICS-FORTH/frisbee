@@ -70,12 +70,12 @@ func (p Phase) toInt() int {
 	}
 }
 
-// IsValid return true if the given phase precedes the reference phase.
-func (p Phase) IsValid(ref Phase) bool {
+// Precedes return true if the given phase precedes the reference phase.
+func (p Phase) Precedes(ref Phase) bool {
 	return p.toInt() < ref.toInt()
 }
 
-func (p Phase) Equals(ref Phase) bool {
+func (p Phase) Is(ref Phase) bool {
 	return p == ref
 }
 

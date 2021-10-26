@@ -67,7 +67,7 @@ func Select(ctx context.Context, r utils.Reconciler, ts *v1alpha1.TemplateSelect
 		return r.GetClient().Get(ctx, templateKey, &template)
 	})
 	if err != nil {
-		return v1alpha1.Scheme{}, errors.Wrapf(err, "unable to find template %s", templateKey.String())
+		return v1alpha1.Scheme{}, errors.Wrapf(err, "cannot find template %s", templateKey.String())
 	}
 
 	// TODO: Change Get to List

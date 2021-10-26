@@ -3,11 +3,12 @@ kind: Workflow
 metadata:
   name: run-tikv-cluster
 spec:
-  importMonitors: [ "sysmon/container", "ycsbmon/client" ]
-  ingress:
-    host: platform.science-hangar.eu
+  withTelemetry:
+    importMonitors: [ "sysmon/container", "ycsbmon/client" ]
+    ingress:
+      host: platform.science-hangar.eu
 
-  testOracle:
+  withTestOracle:
     pass: >-
       {{.IsSuccessful "runners"}} == true
 
@@ -20,92 +21,90 @@ spec:
           templateRef: tikv/placementDriver
 
 
-    # Create workers on region A
+    # Slow start creating workers.
     - action: Cluster
       depends: { running: [ master ] }
       name: group-a
       cluster:
         templateRef: tikv/worker
-        instances: 100
+        instances: 10
         inputs:
           - { placementDriver: .service.master.any }
+        schedule:
+          cron: "@every 10s"
 
-    # Create workers on region B
+
+    # Add a bunch of nodes
     - action: Cluster
-      depends: { running: [ master ] }
+      depends: { running: [ master, group-a ] }
       name: group-b
       cluster:
         templateRef: tikv/worker
+        instances: 50
+        inputs:
+          - { placementDriver: .service.master.any }
+
+
+    # Add yet another bunch
+    - action: Cluster
+      depends: { running: [ master, group-b ] }
+      name: group-c
+      cluster:
+        templateRef: tikv/worker
+        instances: 50
+        inputs:
+          - { placementDriver: .service.master.any }
+
+
+    # Add yet another bigger bunch
+    - action: Cluster
+      depends: { running: [ master, group-c ] }
+      name: group-d
+      cluster:
+        templateRef: tikv/worker
         instances: 100
         inputs:
           - { placementDriver: .service.master.any }
 
 
-    # Create workers on region C, one every 1 minute
+    # Create a similarly large bunch, but slowly.
     - action: Cluster
-      depends: { running: [ master ] }
-      name: group-c
+      depends: { running: [ master, group-d ] }
+      name: group-e
       cluster:
         templateRef: tikv/worker
         instances: 100
         inputs:
           - { placementDriver: .service.master.any }
         schedule:
-          cron: "@every 1m"
+          cron: "@every 10s"
 
 
     # Ingest keys in parallel, into different ranges
-    - action: Cluster
-      name: "loaders"
-      depends: { running: [ master, group-b ] }
-      cluster:
-        templateRef: ycsb-tikv/loader
-        inputs:
-          - { server: .service.master.any, recordcount: "100000", offset: "0" }
-          - { server: .service.master.any, recordcount: "100000", offset: "100000" }
-          - { server: .service.master.any, recordcount: "100000", offset: "200000" }
-
-    # Wait for ingestion to complete, and start querying clients, with different workloads, and scheduled execution.
-    - action: Cluster
-      name: "runners-dyn"
-      depends: { running: [ master ], success: [ loaders ] }
-      cluster:
-        templateRef: ycsb-tikv/runner
-        inputs:
-          - { server: .service.master.any, workload: workloada, operationcount: "100000" }
-          - { server: .service.master.any, workload: workloadb, operationcount: "100000" }
-          - { server: .service.master.any, workload: workloadc, operationcount: "100000" }
-          - { server: .service.master.any, workload: workloadd, operationcount: "100000" }
-          - { server: .service.master.any, workload: workloada, operationcount: "100000" }
-          - { server: .service.master.any, workload: workloada, operationcount: "100000" }
-          - { server: .service.master.any, workload: workloadb, operationcount: "100000" }
-          - { server: .service.master.any, workload: workloada, operationcount: "100000" }
-          - { server: .service.master.any, workload: workloadb, operationcount: "100000" }
-          - { server: .service.master.any, workload: workloadc, operationcount: "100000" }
-          - { server: .service.master.any, workload: workloadd, operationcount: "100000" }
-          - { server: .service.master.any, workload: workloada, operationcount: "100000" }
-          - { server: .service.master.any, workload: workloada, operationcount: "100000" }
-          - { server: .service.master.any, workload: workloadb, operationcount: "100000" }
-          - { server: .service.master.any, workload: workloada, operationcount: "100000" }
-          - { server: .service.master.any, workload: workloadb, operationcount: "100000" }
-          - { server: .service.master.any, workload: workloadc, operationcount: "100000" }
-          - { server: .service.master.any, workload: workloadd, operationcount: "100000" }
-          - { server: .service.master.any, workload: workloada, operationcount: "100000" }
-          - { server: .service.master.any, workload: workloada, operationcount: "100000" }
-          - { server: .service.master.any, workload: workloadb, operationcount: "100000" }
-          - { server: .service.master.any, workload: workloada, operationcount: "100000" }
-          - { server: .service.master.any, workload: workloadb, operationcount: "100000" }
-          - { server: .service.master.any, workload: workloadc, operationcount: "100000" }
-          - { server: .service.master.any, workload: workloadd, operationcount: "100000" }
-          - { server: .service.master.any, workload: workloada, operationcount: "100000" }
-          - { server: .service.master.any, workload: workloada, operationcount: "100000" }
-          - { server: .service.master.any, workload: workloadb, operationcount: "100000" }
-          - { server: .service.master.any, workload: workloada, operationcount: "100000" }
-          - { server: .service.master.any, workload: workloadb, operationcount: "100000" }
-          - { server: .service.master.any, workload: workloadc, operationcount: "100000" }
-          - { server: .service.master.any, workload: workloadd, operationcount: "100000" }
-          - { server: .service.master.any, workload: workloada, operationcount: "100000" }
-          - { server: .service.master.any, workload: workloada, operationcount: "100000" }
-          - { server: .service.master.any, workload: workloadb, operationcount: "100000" }
-        schedule:
-          cron: "@every 2m"
+#    - action: Cluster
+#      name: "loaders"
+#      depends: { running: [ master, group-b ] }
+#      cluster:
+#        templateRef: ycsb-tikv/loader
+#        inputs:
+#          - { server: .service.master.any, recordcount: "100000", offset: "0" }
+#          - { server: .service.master.any, recordcount: "100000", offset: "100000", threads: "4" }
+#          - { server: .service.master.any, recordcount: "100000", offset: "200000", threads: "4" }
+#          - { server: .service.master.any, recordcount: "100000", offset: "300000", threads: "4" }
+#          - { server: .service.master.any, recordcount: "100000", offset: "400000", threads: "4" }
+#          - { server: .service.master.any, recordcount: "100000", offset: "500000", threads: "4" }
+#          - { server: .service.master.any, recordcount: "100000", offset: "600000", threads: "4" }
+#          - { server: .service.master.any, recordcount: "100000", offset: "700000", threads: "4" }
+#          - { server: .service.master.any, recordcount: "100000", offset: "800000", threads: "4" }
+#          - { server: .service.master.any, recordcount: "100000", offset: "900000", threads: "4" }
+#          - { server: .service.master.any, recordcount: "100000", offset: "100000", threads: "4" }
+#          - { server: .service.master.any, recordcount: "100000", offset: "1100000", threads: "4" }
+#          - { server: .service.master.any, recordcount: "100000", offset: "1200000", threads: "4" }
+#          - { server: .service.master.any, recordcount: "100000", offset: "1300000", threads: "4" }
+#          - { server: .service.master.any, recordcount: "100000", offset: "1400000", threads: "4" }
+#          - { server: .service.master.any, recordcount: "100000", offset: "1500000", threads: "4" }
+#          - { server: .service.master.any, recordcount: "100000", offset: "1600000", threads: "4" }
+#          - { server: .service.master.any, recordcount: "100000", offset: "1700000", threads: "4" }
+#          - { server: .service.master.any, recordcount: "100000", offset: "1800000", threads: "4" }
+#          - { server: .service.master.any, recordcount: "100000", offset: "190000", threads: "4" }
+#          - { server: .service.master.any, recordcount: "100000", offset: "200000", threads: "4" }

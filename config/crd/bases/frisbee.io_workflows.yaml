@@ -3133,34 +3133,38 @@ spec:
                   - name
                   type: object
                 type: array
-              importMonitors:
-                description: ImportMonitors are references to monitoring packages
-                  that will be used in the monitoring stack.
-                items:
-                  type: string
-                type: array
-              ingress:
-                description: Ingress defines how to get traffic into your Kubernetes
-                  cluster.
-                properties:
-                  host:
-                    description: 'Host is the postfix from which the ingress will
-                      be available. Example: grafana.localhost, grafana.{MYIP}.nip.io,
-                      grafana.platform.science-hangar.eu'
-                    type: string
-                  useAmbassador:
-                    description: UseAmbassador if set annotates ingresses with 'kubernetes.io/ingress.class=ambassador'
-                      so to be managed by the Ambassador Ingress controller.
-                    type: boolean
-                type: object
               suspend:
                 description: Suspend flag tells the controller to suspend subsequent
                   executions, it does not apply to already started executions.  Defaults
                   to false.
                 type: boolean
-              testOracle:
-                description: Oracle defines the conditions under which the workflow
-                  will terminate with a "passed" or "failed" message
+              withTelemetry:
+                properties:
+                  importMonitors:
+                    description: ImportMonitors are references to monitoring packages
+                      that will be used in the monitoring stack.
+                    items:
+                      type: string
+                    type: array
+                  ingress:
+                    description: Ingress defines how to get traffic into your Kubernetes
+                      cluster.
+                    properties:
+                      host:
+                        description: 'DNSPrefix is the postfix from which the ingress
+                          will be available. Example: grafana.localhost, grafana.{MYIP}.nip.io,
+                          grafana.platform.science-hangar.eu'
+                        type: string
+                      useAmbassador:
+                        description: UseAmbassador if set annotates ingresses with
+                          'kubernetes.io/ingress.class=ambassador' so to be managed
+                          by the Ambassador Ingress controller.
+                        type: boolean
+                    type: object
+                type: object
+              withTestOracle:
+                description: WithTestOracle defines the conditions under which the
+                  workflow will terminate with a "passed" or "failed" message
                 properties:
                   fail:
                     type: string

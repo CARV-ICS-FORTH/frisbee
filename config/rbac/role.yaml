@@ -153,6 +153,32 @@ rules:
 - apiGroups:
   - frisbee.io
   resources:
+  - telemetries
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - frisbee.io
+  resources:
+  - telemetries/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - frisbee.io
+  resources:
+  - telemetries/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - frisbee.io
+  resources:
   - workflows
   verbs:
   - create

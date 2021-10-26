@@ -26,6 +26,7 @@ import (
 	"github.com/fnikolai/frisbee/controllers/chaos"
 	"github.com/fnikolai/frisbee/controllers/cluster"
 	"github.com/fnikolai/frisbee/controllers/service"
+	"github.com/fnikolai/frisbee/controllers/telemetry"
 	"github.com/fnikolai/frisbee/controllers/template"
 	"github.com/fnikolai/frisbee/controllers/workflow"
 	"github.com/pkg/errors"
@@ -110,6 +111,12 @@ func main() {
 
 	if err := cluster.NewController(mgr, setupLog); err != nil {
 		runtimeutil.HandleError(errors.Wrapf(err, "unable to create Cluster controller"))
+
+		os.Exit(1)
+	}
+
+	if err := telemetry.NewController(mgr, setupLog); err != nil {
+		runtimeutil.HandleError(errors.Wrapf(err, "unable to create Telemetry controller"))
 
 		os.Exit(1)
 	}
