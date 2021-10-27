@@ -3,11 +3,10 @@ kind: Workflow
 metadata:
   name: fio
 spec:
-  importMonitors: [ "sysmon/container" ]
-  ingress:
-    host: platform.science-hangar.eu
-    #host: localhost
-    #useAmbassador: true
+  withTelemetry:
+    importMonitors: [ "sysmon/container" ]
+    ingress:
+      host: platform.science-hangar.eu
 
   actions:
     - action: Service

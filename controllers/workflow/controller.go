@@ -1,19 +1,18 @@
-// Licensed to FORTH/ICS under one or more contributor
-// license agreements. See the NOTICE file distributed with
-// this work for additional information regarding copyright
-// ownership. FORTH/ICS licenses this file to you under
-// the Apache License, Version 2.0 (the "License"); you may
-// not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing,
-// software distributed under the License is distributed on an
-// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the
-// specific language governing permissions and limitations
-// under the License.
+/*
+Copyright 2021 ICS-FORTH.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
 
 package workflow
 
@@ -24,8 +23,8 @@ import (
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/utils"
+	"github.com/fnikolai/frisbee/controllers/utils/grafana"
 	"github.com/fnikolai/frisbee/controllers/utils/lifecycle"
-	"github.com/fnikolai/frisbee/pkg/structure"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -38,8 +37,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var systemServices = []string{"prometheus", "grafana"}
-
 // +kubebuilder:rbac:groups=frisbee.io,resources=workflows,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=frisbee.io,resources=workflows/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=frisbee.io,resources=workflows/finalizers,verbs=update
@@ -51,9 +48,6 @@ type Controller struct {
 	gvk schema.GroupVersionKind
 
 	state lifecycle.Classifier
-
-	prometheus chan *v1alpha1.Lifecycle
-	grafana    chan *v1alpha1.Lifecycle
 }
 
 func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -103,6 +97,18 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		//	client.MatchingFields{jobOwnerKey: req.Name},
 	}
 
+	var telemetryJob v1alpha1.Telemetry
+	{
+		key := client.ObjectKey{
+			Namespace: req.Namespace,
+			Name:      "telemetry",
+		}
+
+		if err := r.GetClient().Get(ctx, key, &telemetryJob); client.IgnoreNotFound(err) != nil {
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot get telemetryJob"))
+		}
+	}
+
 	var serviceJobs v1alpha1.ServiceList
 
 	if err := r.GetClient().List(ctx, &serviceJobs, filters...); err != nil {
@@ -136,6 +142,8 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	*/
 	r.state.Reset()
 
+	r.state.ClassifyAsFrisbeeService(telemetryJob.GetName(), telemetryJob.DeepCopy())
+
 	for _, job := range serviceJobs.Items {
 		r.state.Classify(job.GetName(), job.DeepCopy())
 	}
@@ -160,7 +168,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		be in conflict. We fix this issue by re-queueing the request.
 		We also suppress verbose error reporting as to avoid polluting the output.
 	*/
-	newStatus := calculateLifecycle(&cr, r.state)
+	newStatus := r.calculateLifecycle(&cr)
 	cr.Status = newStatus
 
 	if err := utils.UpdateStatus(ctx, r, &cr); err != nil {
@@ -188,7 +196,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		First, we'll try to clean up old jobs, so that we don't leave too many lying
 		around.
 	*/
-	if newStatus.Phase == v1alpha1.PhaseSuccess {
+	if newStatus.Phase.Is(v1alpha1.PhaseSuccess) {
 		// Remove the testing components once the experiment is successfully complete.
 		// We maintain testbed components (e.g, prometheus and grafana) for getting back the test results.
 		// These components are removed by deleting the Workflow.
@@ -199,7 +207,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return utils.Stop()
 	}
 
-	if newStatus.Phase == v1alpha1.PhaseFailed {
+	if newStatus.Phase.Is(v1alpha1.PhaseFailed) {
 		r.Logger.Error(errors.New(newStatus.Reason), newStatus.Message)
 
 		// Remove the non-failed components. Leave the failed jobs and system jobs for postmortem analysis.
@@ -208,11 +216,6 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		}
 
 		for _, job := range r.state.ActiveJobs() {
-			// do not remove prometheus + grafana
-			if structure.ContainsStrings(systemServices, job.GetName()) {
-				continue
-			}
-
 			utils.Delete(ctx, r, job)
 		}
 
@@ -229,13 +232,6 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	/*
-		All jobs are running. Nothing more to do. Just wait for events.
-	*/
-	if newStatus.Phase == v1alpha1.PhaseRunning {
-		return utils.Stop()
-	}
-
-	/*
 		6: Make the world matching what we want in our spec
 		------------------------------------------------------------------
 
@@ -245,11 +241,16 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		We may delete the service, add a pod, or wait for existing pod to change its status.
 	*/
 
+	// This label will be adopted by all children objects of this workflow.
+	// It is not persisted in order to avoid additional updates.
+	cr.SetLabels(labels.Merge(cr.GetLabels(), map[string]string{
+		v1alpha1.BelongsToWorkflow: cr.GetName(),
+	}))
+
 	/*
-		If we are not suspended, initialize the CR.
+		initialize the CR.
 	*/
-	if cr.Status.Phase == v1alpha1.PhaseUninitialized {
-		// validate dependencies
+	if newStatus.Phase.Is(v1alpha1.PhaseUninitialized) {
 		if err := ValidateDAG(cr.Spec.Actions); err != nil {
 			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "invalid dependency DAG"))
 		}
@@ -258,24 +259,53 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "invalid TestOracle"))
 		}
 
-		if err := r.newMonitoringStack(ctx, &cr); err != nil {
-			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "unable to create the observability stack"))
+		if cr.Spec.WithTelemetry != nil {
+			utils.SetOwner(r, &cr, &telemetryJob)
+			telemetryJob.SetName("telemetry")
+
+			cr.Spec.WithTelemetry.DeepCopyInto(&telemetryJob.Spec)
+
+			if err := r.GetClient().Create(ctx, &telemetryJob); err != nil {
+				return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot create the telemetry stack"))
+			}
 		}
 
 		meta.SetStatusCondition(&cr.Status.Conditions, metav1.Condition{
 			Type:    v1alpha1.ConditionCRInitialized.String(),
 			Status:  metav1.ConditionTrue,
 			Reason:  "WorkflowInitialized",
-			Message: "The observability stack has been installed",
+			Message: "The workflow has been initialized. Start running actions",
 		})
 
 		return lifecycle.Pending(ctx, r, &cr, "The Workflow is ready to start submitting jobs.")
+	}
+
+	if cr.Spec.WithTelemetry != nil {
+		// Stop until the telemetry stack becomes ready.
+		if telemetryJob.Status.Phase.Is(v1alpha1.PhaseUninitialized) || telemetryJob.Status.Phase.Is(v1alpha1.PhasePending) {
+			return utils.Stop()
+		}
+
+		if telemetryJob.Status.Phase.Is(v1alpha1.PhaseSuccess) {
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "the telemetry stack has terminated"))
+		}
+
+		// this should normally happen when the telemetry is running
+		if grafana.Annotate == nil {
+			if err := r.initGrafana(ctx, telemetryJob.Status.GrafanaURI); err != nil {
+				return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot communicate with the telemetry stack"))
+			}
+		}
 	}
 
 	/*
 		7: Get the next logical run
 		------------------------------------------------------------------
 	*/
+	if newStatus.Phase.Is(v1alpha1.PhaseRunning) {
+		return utils.Stop()
+	}
+
 	actionList, nextRun := GetNextLogicalJob(&cr, cr.Spec.Actions, r.state, cr.Status.Executed)
 
 	if len(actionList) == 0 {
@@ -288,12 +318,6 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		return utils.RequeueAfter(time.Until(nextRun))
 	}
-
-	// this label will be adopted by all children objects of this workflow.
-	// it is not persisted in order to avoid additional updates.
-	cr.SetLabels(labels.Merge(cr.GetLabels(), map[string]string{
-		v1alpha1.BelongsToWorkflow: cr.GetName(),
-	}))
 
 	for _, action := range actionList {
 		if err := r.runJob(ctx, &cr, action); err != nil {
@@ -358,28 +382,19 @@ func isJobInScheduledList(name string, scheduledJobs map[string]metav1.Time) boo
 */
 
 func NewController(mgr ctrl.Manager, logger logr.Logger) error {
-	/*
-		// register the admission controller
-		mgr.GetWebhookServer().Register("/validate-workflow", &webhook.Admission{
-			Handler: &workflowValidator{Client: mgr.GetClient()},
-		})
-
-	*/
-
-	// register the reconcile controller
+	// instantiate the controller
 	r := &Controller{
-		Manager:    mgr,
-		Logger:     logger.WithName("workflow"),
-		gvk:        v1alpha1.GroupVersion.WithKind("Workflow"),
-		prometheus: make(chan *v1alpha1.Lifecycle),
-		grafana:    make(chan *v1alpha1.Lifecycle),
+		Manager: mgr,
+		Logger:  logger.WithName("workflow"),
+		gvk:     v1alpha1.GroupVersion.WithKind("Workflow"),
 	}
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named("workflow").
 		For(&v1alpha1.Workflow{}).
-		Owns(&v1alpha1.Service{}, builder.WithPredicates(r.WatchServices())). // Watch Services
-		Owns(&v1alpha1.Cluster{}, builder.WithPredicates(r.WatchClusters())). // Watch Cluster
-		Owns(&v1alpha1.Chaos{}, builder.WithPredicates(r.WatchChaos())).      // Watch Chaos
+		Owns(&v1alpha1.Service{}, builder.WithPredicates(r.WatchServices())).    // Watch Services
+		Owns(&v1alpha1.Cluster{}, builder.WithPredicates(r.WatchClusters())).    // Watch Cluster
+		Owns(&v1alpha1.Chaos{}, builder.WithPredicates(r.WatchChaos())).         // Watch Chaos
+		Owns(&v1alpha1.Telemetry{}, builder.WithPredicates(r.WatchTelemetry())). // Watch Telemetry
 		Complete(r)
 }

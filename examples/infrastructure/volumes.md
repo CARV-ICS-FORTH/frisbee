@@ -1,7 +1,13 @@
 # Persistent Volumes
 
-A PersistentVolume (PV) is a storage resource in the cluster that can be statically provisioned by an administrator or
-dynamically provisioned using Storage Classes.
+A PersistentVolume (PV) is a piece of networked storage in the cluster that has been provisioned by an administrator. It
+is a resource in the cluster just like a node is a cluster resource. PVs are volume plugins like Volumes, but have a
+lifecycle independent of any individual pod that uses the PV.
+
+This API object captures the details of the implementation of the storage, be that NFS, iSCSI, or a
+cloud-provider-specific storage system.
+
+A PV can be statically provisioned by an administrator or dynamically provisioned using Storage Classes.
 
 ## Static Provisioning
 
@@ -49,8 +55,9 @@ provisioning.
 
 #### Create Persistent Volume Claim
 
-A persistent volume claim (PVC) is a request for storage by a user from a PV. Claims can request specific size and
-access modes (e.g: they can be mounted once read/write or many times read-only).
+A PersistentVolumeClaim (PVC) is a request for storage by a user. It is similar to a pod. Pods consume node resources
+and PVCs consume PV resources. Pods can request specific levels of resources (CPU and Memory). Claims can request
+specific size and access modes (e.g., can be mounted once read/write or many times read-only).
 
 **Binding:**
 
@@ -152,3 +159,5 @@ https://github.com/kubernetes-sigs/sig-storage-local-static-provisioner/blob/mas
 https://docs.pingcap.com/tidb-in-kubernetes/dev/configure-storage-class
 
 https://medium.com/avmconsulting-blog/persistent-volumes-pv-and-claims-pvc-in-kubernetes-bd76923a61f6
+
+https://unofficial-kubernetes.readthedocs.io/en/latest/concepts/storage/persistent-volumes/

@@ -1,0 +1,20 @@
+# permissions for end users to view telemetries.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: telemetry-viewer-role
+rules:
+  - apiGroups:
+      - frisbee.io
+    resources:
+      - telemetries
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - frisbee.io
+    resources:
+      - telemetries/status
+    verbs:
+      - get

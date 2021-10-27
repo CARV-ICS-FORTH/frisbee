@@ -3,11 +3,12 @@ kind: Workflow
 metadata:
   name: validate-remote
 spec:
-  importMonitors: [ "sysmon/container" ]
-  ingress:
-    host: platform.science-hangar.eu
+  withTelemetry:
+    importMonitors: [ "sysmon/container" ]
+    ingress:
+      host: platform.science-hangar.eu
 
-  testOracle:
+  withTestOracle:
     pass: >-
       {{.IsSuccessful "partition1"}} == true
 

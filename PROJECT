@@ -1,9 +1,87 @@
 domain: frisbee.io
-layout: go.kubebuilder.io/v3
+layout:
+- go.kubebuilder.io/v3
 plugins:
   manifests.sdk.operatorframework.io/v2: {}
   scorecard.sdk.operatorframework.io/v2: {}
-projectName: frisbee
 repo: github.com/fnikolai/frisbee
 resources:
-
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: frisbee.io
+  group: frisbee
+  kind: Workflow
+  path: github.com/fnikolai/frisbee/api/v1alpha1
+  version: v1alpha1
+  webhooks:
+    defaulting: true
+    validation: true
+    webhookVersion: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: frisbee.io
+  group: frisbee
+  kind: Service
+  path: github.com/fnikolai/frisbee/api/v1alpha1
+  version: v1alpha1
+  webhooks:
+    defaulting: true
+    validation: true
+    webhookVersion: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: frisbee.io
+  group: frisbee
+  kind: Cluster
+  path: github.com/fnikolai/frisbee/api/v1alpha1
+  version: v1alpha1
+  webhooks:
+    defaulting: true
+    validation: true
+    webhookVersion: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: frisbee.io
+  group: frisbee
+  kind: Chaos
+  path: github.com/fnikolai/frisbee/api/v1alpha1
+  version: v1alpha1
+  webhooks:
+    defaulting: true
+    validation: true
+    webhookVersion: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: frisbee.io
+  group: frisbee
+  kind: Telemetry
+  path: github.com/fnikolai/frisbee/api/v1alpha1
+  version: v1alpha1
+  webhooks:
+    defaulting: true
+    validation: true
+    webhookVersion: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: frisbee.io
+  group: frisbee
+  kind: Template
+  path: github.com/fnikolai/frisbee/api/v1alpha1
+  version: v1alpha1
+  webhooks:
+    defaulting: true
+    validation: true
+    webhookVersion: v1
+version: "3"

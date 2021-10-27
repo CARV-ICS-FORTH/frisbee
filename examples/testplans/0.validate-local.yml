@@ -3,12 +3,13 @@ kind: Workflow
 metadata:
   name: validate-local
 spec:
-  importMonitors: [ "sysmon/container", "iperfmon/client" ]
-  ingress:
-    host: localhost
-    useAmbassador: true
+  withTelemetry:
+    importMonitors: [ "sysmon/container", "iperfmon/client" ]
+    ingress:
+      host: localhost
+      useAmbassador: true
 
-  testOracle:
+  withTestOracle:
     pass: >-
       {{.IsSuccessful "partition1"}} == true
 

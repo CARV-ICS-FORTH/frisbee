@@ -20,11 +20,12 @@ kind: Workflow
 metadata:
   name: boot-cockroach
 spec:
-  importMonitors: [ "sysmon/container", "ycsbmon/client" ]
-  ingress:
-    host: platform.science-hangar.eu
+  withTelemetry:
+    importMonitors: [ "sysmon/container", "ycsbmon/client", "ycsbmon/client" ]
+    ingress:
+      host: platform.science-hangar.eu
 
-  testOracle:
+  withTestOracle:
     pass: >-
       {{.IsSuccessful "workload-e"}} == true
 

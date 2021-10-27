@@ -1,19 +1,18 @@
-// Licensed to FORTH/ICS under one or more contributor
-// license agreements. See the NOTICE file distributed with
-// this work for additional information regarding copyright
-// ownership. FORTH/ICS licenses this file to you under
-// the Apache License, Version 2.0 (the "License"); you may
-// not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing,
-// software distributed under the License is distributed on an
-// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the
-// specific language governing permissions and limitations
-// under the License.
+/*
+Copyright 2021 ICS-FORTH.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
 
 package lifecycle
 
@@ -61,6 +60,20 @@ func (in *Classifier) Classify(name string, obj client.Object) {
 
 		default:
 			panic("unhandled lifecycle condition")
+		}
+	} else {
+		logrus.Warn("Not RecocileStatusAware, not setting status for obj:", obj.GetName())
+	}
+}
+
+// ClassifyAsFrisbeeService registers a system service.
+// Services classified by this function are not accounted, unless they have failed.
+func (in *Classifier) ClassifyAsFrisbeeService(name string, obj client.Object) {
+	if statusAware, getStatus := obj.(ReconcileStatusAware); getStatus {
+		status := statusAware.GetReconcileStatus()
+
+		if status.Phase.Is(v1alpha1.PhaseFailed) {
+			in.failedJobs[name] = obj
 		}
 	} else {
 		logrus.Warn("Not RecocileStatusAware, not setting status for obj:", obj.GetName())
@@ -197,11 +210,11 @@ func (in *Classifier) FailedJobs() []client.Object {
 
 func WaitUntil(src <-chan *v1alpha1.Lifecycle, phase v1alpha1.Phase) error {
 	for lf := range src {
-		if lf.Phase.Equals(v1alpha1.PhaseRunning) {
+		if lf.Phase.Is(v1alpha1.PhaseRunning) {
 			break
 		}
 
-		if lf.Phase.IsValid(v1alpha1.PhaseRunning) {
+		if lf.Phase.Precedes(v1alpha1.PhaseRunning) {
 			continue
 		}
 

@@ -1,19 +1,18 @@
-// Licensed to FORTH/ICS under one or more contributor
-// license agreements. See the NOTICE file distributed with
-// this work for additional information regarding copyright
-// ownership. FORTH/ICS licenses this file to you under
-// the Apache License, Version 2.0 (the "License"); you may
-// not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing,
-// software distributed under the License is distributed on an
-// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the
-// specific language governing permissions and limitations
-// under the License.
+/*
+Copyright 2021 ICS-FORTH.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
 
 package v1alpha1
 
@@ -21,39 +20,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func init() {
-	SchemeBuilder.Register(&Chaos{}, &ChaosList{})
-}
-
 type FaultType string
 
 const (
 	FaultPartition = FaultType("partition")
 	FaultKill      = FaultType("kill")
 )
-
-// +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
-
-type Chaos struct {
-	metav1.TypeMeta `json:",inline"`
-
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	// Spec defines the behavior of the object
-	Spec ChaosSpec `json:"spec"`
-
-	// Most recently observed status of the object
-	Status ChaosStatus `json:"status,omitempty"`
-}
-
-type ChaosSpec struct {
-	// Type indicate the type of the injected fault
-	// +kubebuilder:validation:Enum=partition;kill;
-	Type FaultType `json:"type"`
-
-	*EmbedFaultType `json:",inline"`
-}
 
 type EmbedFaultType struct {
 	// +optional
@@ -80,6 +52,16 @@ type KillSpec struct {
 	Selector ServiceSelector `json:"selector,omitempty"`
 }
 
+// ChaosSpec defines the desired state of Chaos
+type ChaosSpec struct {
+	// Type indicate the type of the injected fault
+	// +kubebuilder:validation:Enum=partition;kill;
+	Type FaultType `json:"type"`
+
+	*EmbedFaultType `json:",inline"`
+}
+
+// ChaosStatus defines the observed state of Chaos
 type ChaosStatus struct {
 	Lifecycle `json:",inline"`
 
@@ -95,10 +77,27 @@ func (in *Chaos) SetReconcileStatus(lifecycle Lifecycle) {
 	in.Status.Lifecycle = lifecycle
 }
 
-// ChaosList returns a list of Chaos objects
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+
+// Chaos is the Schema for the chaos API
+type Chaos struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec   ChaosSpec   `json:"spec,omitempty"`
+	Status ChaosStatus `json:"status,omitempty"`
+}
+
+// +kubebuilder:object:root=true
+
+// ChaosList contains a list of Chaos
 type ChaosList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Chaos `json:"items"`
+}
+
+func init() {
+	SchemeBuilder.Register(&Chaos{}, &ChaosList{})
 }
