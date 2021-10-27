@@ -145,9 +145,12 @@ In this walk-through, we assume you have followed the instructions for the singl
 
 In one terminal, run the Frisbee controller.
 
-If you want to run the webhooks locally, you’ll have to generate certificates for serving the webhooks, and place them in the right directory (/tmp/k8s-webhook-server/serving-certs/tls.{crt,key}, by default).
+If you want to run the webhooks locally, you’ll have to generate certificates for serving the webhooks, and place them
+in the right directory (/tmp/k8s-webhook-server/serving-certs/tls.{crt,key}, by default).
 
-_If you’re not running a local API server, you’ll also need to figure out how to proxy traffic from the remote cluster to your local webhook server. For this reason, we generally recommend disabling webhooks when doing your local code-run-test cycle, as we do below._
+_If you’re not running a local API server, you’ll also need to figure out how to proxy traffic from the remote cluster
+to your local webhook server. For this reason, we generally recommend disabling webhooks when doing your local
+code-run-test cycle, as we do below._
 
 ```bash
 # Run the Frisbee controller

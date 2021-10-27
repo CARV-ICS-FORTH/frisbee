@@ -1,19 +1,18 @@
-// Licensed to FORTH/ICS under one or more contributor
-// license agreements. See the NOTICE file distributed with
-// this work for additional information regarding copyright
-// ownership. FORTH/ICS licenses this file to you under
-// the Apache License, Version 2.0 (the "License"); you may
-// not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing,
-// software distributed under the License is distributed on an
-// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the
-// specific language governing permissions and limitations
-// under the License.
+/*
+Copyright 2021 ICS-FORTH.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
 
 package v1alpha1
 
@@ -23,26 +22,23 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func init() {
-	SchemeBuilder.Register(&Cluster{}, &ClusterList{})
+// TolerateSpec specifies the system's ability to continue operating despite failures or malfunctions.
+// If tolerate is enable, a cluster will be "alive" even if some of the services have failed.
+// Such failures are likely to happen as part of a Chaos experiment.
+type TolerateSpec struct {
+	// FailedServices indicate the number of services that may fail before the cluster fails itself.
+	FailedServices int `json:"failedServices"`
 }
 
-// +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
+func (in TolerateSpec) String() string {
+	if in.FailedServices == 0 {
+		return "None"
+	}
 
-type Cluster struct {
-	metav1.TypeMeta `json:",inline"`
-
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	// Spec defines the behavior of the object
-	Spec ClusterSpec `json:"spec"`
-
-	// Most recently observed status of the object
-	// +optional
-	Status ClusterStatus `json:"status,omitempty"`
+	return fmt.Sprintf("FailedServices:%d", in.FailedServices)
 }
 
+// ClusterSpec defines the desired state of Cluster
 type ClusterSpec struct {
 	// TemplateRef refers to a service template. It conflicts with Service.
 	TemplateRef string `json:"templateRef"`
@@ -81,22 +77,7 @@ type ClusterSpec struct {
 	Suspend *bool `json:"suspend,omitempty"`
 }
 
-// TolerateSpec specifies the system's ability to continue operating despite failures or malfunctions.
-// If tolerate is enable, a cluster will be "alive" even if some of the services have failed.
-// Such failures are likely to happen as part of a Chaos experiment.
-type TolerateSpec struct {
-	// FailedServices indicate the number of services that may fail before the cluster fails itself.
-	FailedServices int `json:"failedServices"`
-}
-
-func (in TolerateSpec) String() string {
-	if in.FailedServices == 0 {
-		return "None"
-	}
-
-	return fmt.Sprintf("FailedServices:%d", in.FailedServices)
-}
-
+// ClusterStatus defines the observed state of Cluster
 type ClusterStatus struct {
 	Lifecycle `json:",inline"`
 
@@ -122,10 +103,27 @@ func (in *Cluster) SetReconcileStatus(lifecycle Lifecycle) {
 	in.Status.Lifecycle = lifecycle
 }
 
-// ClusterList returns a list of Cluster objects
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+
+// Cluster is the Schema for the clusters API
+type Cluster struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec   ClusterSpec   `json:"spec,omitempty"`
+	Status ClusterStatus `json:"status,omitempty"`
+}
+
+// +kubebuilder:object:root=true
+
+// ClusterList contains a list of Cluster
 type ClusterList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Cluster `json:"items"`
+}
+
+func init() {
+	SchemeBuilder.Register(&Cluster{}, &ClusterList{})
 }

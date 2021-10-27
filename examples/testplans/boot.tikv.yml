@@ -57,7 +57,7 @@ spec:
     # Step 1: Load a new dataset, using the parameters of workload A.
     # We use no throttling to maximize this step and complete it soon.
     - action: Service
-      depends: { running: [ workers22 ] }
+      depends: { running: [ workers ] }
       name: loader
       service:
         fromTemplate:

@@ -4,7 +4,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.4.1
+    controller-gen.kubebuilder.io/version: v0.6.1
   creationTimestamp: null
   name: telemetries.frisbee.io
 spec:
@@ -19,6 +19,7 @@ spec:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
+        description: Telemetry is the Schema for the telemetries API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -33,7 +34,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: MonitorSpec defines the Telemetry of services
+            description: TelemetrySpec defines the desired state of Telemetry
             properties:
               importMonitors:
                 description: ImportMonitors are references to monitoring packages
@@ -57,9 +58,9 @@ spec:
                 type: object
             type: object
           status:
-            description: Most recently observed status of the object
+            description: TelemetryStatus defines the observed state of Telemetry
             properties:
-              grafanaURI:
+              grafanaUri:
                 type: string
               message:
                 description: Message provides more details for understanding the Reason.
@@ -70,18 +71,16 @@ spec:
                   fields, and the individual container status arrays contain more
                   detail about the pod's status.
                 type: string
-              prometheusURI:
+              prometheusUri:
                 type: string
               reason:
                 description: Reason is A brief CamelCase message indicating details
                   about why the service is in this Phase. e.g. 'Evicted'
                 type: string
             required:
-            - grafanaURI
-            - prometheusURI
+            - grafanaUri
+            - prometheusUri
             type: object
-        required:
-        - spec
         type: object
     served: true
     storage: true

@@ -4,7 +4,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.4.1
+    controller-gen.kubebuilder.io/version: v0.6.1
   creationTimestamp: null
   name: templates.frisbee.io
 spec:
@@ -19,6 +19,7 @@ spec:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
+        description: Template is the Schema for the templates API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -33,7 +34,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: MonitorSpec defines the template of services
+            description: TemplateSpec defines the desired state of Template
             properties:
               entries:
                 additionalProperties:
@@ -60,7 +61,7 @@ spec:
                 type: object
             type: object
           status:
-            description: Most recently observed status of the object
+            description: TemplateStatus defines the observed state of Template
             properties:
               message:
                 description: Message provides more details for understanding the Reason.
@@ -76,8 +77,6 @@ spec:
                   about why the service is in this Phase. e.g. 'Evicted'
                 type: string
             type: object
-        required:
-        - spec
         type: object
     served: true
     storage: true

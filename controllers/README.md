@@ -63,8 +63,6 @@ Next, we present the family of controllers that each available controller belong
 * Although we can remove a service when is complete, we recommend not to id as it will break the cluster manager -- it
   needs to track the total number of created services.
 
-
-
 ## Best Practises
 
 https://cloud.redhat.com/blog/kubernetes-operators-best-practices
