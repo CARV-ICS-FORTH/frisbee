@@ -38,6 +38,10 @@ deployment.apps "hello-node" deleted
 >> git clone git@github.com:CARV-ICS-FORTH/frisbee.git
 >> cd frisbee
 
+
+# Since the webhook requires a TLS certificate that the apiserver is configured to trust, install the cert-manager with the following command:
+>> kubectl apply -f https://github.com/jetstack/cert-manager/releases/latest/download/cert-manager.yaml
+
 # Install Frisbee CRDs
 >> make install KUBECONFIG="--kubeconfig /home/fnikol/.kube/config.remote"
 customresourcedefinition.apiextensions.k8s.io/chaos.frisbee.io configured

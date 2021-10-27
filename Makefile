@@ -24,16 +24,25 @@ BUNDLE_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
 endif
 BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
-# BUNDLE_IMG defines the image:tag used for the bundle. 
+# IMAGE_TAG_BASE defines the docker.io namespace and part of the image name for remote images.
+# This variable is used to construct full image tags for bundle and catalog images.
+#
+# For example, running 'make bundle-build bundle-push catalog-build catalog-push' will build and push both
+# frisbee.io/controller-bundle:$VERSION and frisbee.io/controller-catalog:$VERSION.
+IMAGE_TAG_BASE ?= frisbee.io/controller
+
+# BUNDLE_IMG defines the image:tag used for the bundle.
 # You can use it as an arg. (E.g make bundle-build BUNDLE_IMG=<some-registry>/<project-name-bundle>:<tag>)
-BUNDLE_IMG ?= controller-bundle:$(VERSION)
+BUNDLE_IMG ?= $(IMAGE_TAG_BASE)-bundle:v$(VERSION)
 
 # Image URL to use all building/pushing image targets
-# IMG ?= controller:latest
-IMG ?= $(IMAGE_TAG_BASE):$(VERSION)
+IMG ?= controller:latest
 
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
+
+# ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
+ENVTEST_K8S_VERSION = 1.21
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -41,6 +50,13 @@ GOBIN=$(shell go env GOPATH)/bin
 else
 GOBIN=$(shell go env GOBIN)
 endif
+
+# Setting SHELL to bash allows bash commands to be executed by recipes.
+# This is a requirement for 'setup-envtest.sh' in the test target.
+# Options are set to exit when a recipe line exits non-zero or a piped command fails.
+SHELL = /usr/bin/env bash -o pipefail
+.SHELLFLAGS = -ec
+
 
 all: build
 
@@ -75,11 +91,8 @@ fmt: ## Run go fmt against code.
 vet: ## Run go vet against code.
 	go vet ./...
 
-ENVTEST_ASSETS_DIR=$(shell pwd)/testbin
-test: manifests generate fmt vet ## Run tests.
-	mkdir -p ${ENVTEST_ASSETS_DIR}
-	test -f ${ENVTEST_ASSETS_DIR}/setup-envtest.sh || curl -sSLo ${ENVTEST_ASSETS_DIR}/setup-envtest.sh https://raw.githubusercontent.com/kubernetes-sigs/controller-runtime/v0.7.2/hack/setup-envtest.sh
-	source ${ENVTEST_ASSETS_DIR}/setup-envtest.sh; fetch_envtest_tools $(ENVTEST_ASSETS_DIR); setup_envtest_env $(ENVTEST_ASSETS_DIR); go test ./... -coverprofile cover.out
+test: manifests generate fmt vet envtest ## Run tests.
+        KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
 
 ##@ Build
 
@@ -87,6 +100,9 @@ build: generate fmt vet ## Build manager binary.
 	go build -o bin/manager main.go
 
 run: manifests generate fmt vet ## Run a controller from your host.
+	# mkdir -p /tmp/k8s-webhook-server/serving-certs/
+	# openssl req -new -newkey rsa:4096 -x509 -sha256 -days 365 -nodes -out tls.crt -keyout tls.key
+
 	go run -race ./main.go
 
 docker-build: test ## Build docker image with the manager.
@@ -119,6 +135,12 @@ KUSTOMIZE = $(shell pwd)/bin/kustomize
 kustomize: ## Download kustomize locally if necessary.
 	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v3@v3.8.7)
 
+
+ENVTEST = $(shell pwd)/bin/setup-envtest
+envtest: ## Download envtest-setup locally if necessary.
+        $(call go-get-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest@latest)
+
+
 # go-get-tool will 'go get' any package $2 and install it to $1.
 PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
 define go-get-tool
@@ -132,6 +154,22 @@ GOBIN=$(PROJECT_DIR)/bin go get $(2) ;\
 rm -rf $$TMP_DIR ;\
 }
 endef
+
+
+# go-get-tool will 'go get' any package $2 and install it to $1.
+PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
+define go-get-tool
+@[ -f $(1) ] || { \
+set -e ;\
+TMP_DIR=$$(mktemp -d) ;\
+cd $$TMP_DIR ;\
+go mod init tmp ;\
+echo "Downloading $(2)" ;\
+GOBIN=$(PROJECT_DIR)/bin go get $(2) ;\
+rm -rf $$TMP_DIR ;\
+}
+endef
+
 
 .PHONY: bundle ## Generate bundle manifests and metadata, then validate generated files.
 bundle: manifests kustomize

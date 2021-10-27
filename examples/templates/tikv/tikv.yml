@@ -101,17 +101,22 @@ spec:
               # increase the maximum number of open file descriptors
               ulimit -n 82920
 
-              pd={{.Inputs.Parameters.placementDriver}}
-
-              echo " HOST $${HOSTNAME}"
-              sleep 1200
-
               rm -rf /store/$${HOSTNAME}
               mkdir -p /store/$${HOSTNAME}/data
 
-              echo "Contact: ${pd}:2379 and start TIVK at /store/$${HOSTNAME}/data"
-              /tikv-server                                                \
-                --addr=0.0.0.0:20160                                      \
-                --advertise-addr=$${HOSTNAME}:20160                       \
-                --pd=${pd}:2379                                           \
-                --data-dir=/store/$${HOSTNAME}/data
+              # see https://github.com/tikv/tikv/blob/master/etc/config-template.toml
+              # reserve-space = 0 is used for testing
+              cat > config.toml <<EOF
+              [server]
+                addr="0.0.0.0:20160"
+                advertise-addr="$${HOSTNAME}:20160"
+
+              [pd]
+                endpoints = ["{{.Inputs.Parameters.placementDriver}}:2379"]
+
+              [storage]
+                reserve-space = "0"
+                data-dir = "/store/$${HOSTNAME}/data"
+              EOF
+
+              /tikv-server --config=config.toml

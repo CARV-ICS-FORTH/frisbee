@@ -19,7 +19,6 @@ package main
 
 import (
 	"flag"
-	"net/http"
 	_ "net/http/pprof"
 	"os"
 
@@ -133,7 +132,19 @@ func main() {
 		os.Exit(1)
 	}
 
-	// +kubebuilder:scaffold:builder
+	// +kubebuilder:docs-gen:collapse=existing setup
+
+	/*
+		Our existing call to SetupWebhookWithManager registers our conversion webhooks with the manager, too.
+	*/
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		if err = (&v1alpha1.Workflow{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Workflow")
+			os.Exit(1)
+		}
+	}
+
+	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		runtimeutil.HandleError(errors.Wrapf(err, "unable to set up health check"))
@@ -145,15 +156,20 @@ func main() {
 		os.Exit(1)
 	}
 
-	// init webserver to get the pprof webserver
-	go func() {
-		err := http.ListenAndServe("localhost:6060", nil)
-		if err != nil {
-			runtimeutil.HandleError(errors.Wrapf(err, "unable to start profiling server"))
-		}
+	/*
+		// init webserver to get the pprof webserver
+		go func() {
+			err := http.ListenAndServe("localhost:6060", nil)
+			if err != nil {
+				runtimeutil.HandleError(errors.Wrapf(err, "unable to start profiling server"))
+			}
 
-		setupLog.Info("Profiler started", "addr", "localhost:6060")
-	}()
+			setupLog.Info("Profiler started", "addr", "localhost:6060")
+		}()
+
+	*/
+
+	setupLog.Info("starting manager")
 
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		runtimeutil.HandleError(errors.Wrapf(err, "problem running manager"))

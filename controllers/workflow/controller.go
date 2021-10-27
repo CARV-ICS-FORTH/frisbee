@@ -383,14 +383,7 @@ func isJobInScheduledList(name string, scheduledJobs map[string]metav1.Time) boo
 */
 
 func NewController(mgr ctrl.Manager, logger logr.Logger) error {
-	/*
-		// register the admission controller
-		mgr.GetWebhookServer().Register("/validate-workflow", &webhook.Admission{
-			Handler: &workflowValidator{Client: mgr.GetClient()},
-		})
-	*/
-
-	// register the reconcile controller
+	// instantiate the controller
 	r := &Controller{
 		Manager: mgr,
 		Logger:  logger.WithName("workflow"),

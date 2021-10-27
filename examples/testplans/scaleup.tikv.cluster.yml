@@ -77,7 +77,7 @@ spec:
         inputs:
           - { placementDriver: .service.master.any }
         schedule:
-          cron: "@every 10s"
+          cron: "@every 30s"
 
 
     # Ingest keys in parallel, into different ranges
