@@ -143,6 +143,10 @@ func (r *Controller) importDashboards(ctx context.Context, obj *v1alpha1.Telemet
 			})
 
 			for file := range configMap.Data {
+				r.Logger.Info("Import",
+					"configMap", configMap.GetName(),
+					"file", file)
+
 				spec.Container.VolumeMounts = append(spec.Container.VolumeMounts, corev1.VolumeMount{
 					Name:      configMap.GetName(), // Name of a Volume.
 					ReadOnly:  true,

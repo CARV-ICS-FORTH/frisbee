@@ -84,7 +84,10 @@ data:
     # Here it's Prometheus itself.
     scrape_configs:
       # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
-      - job_name: 'prometheus'
+      - job_name: 'agent'
+
+        honor_labels: true
+        honor_timestamps: true
 
         scheme: http
 
@@ -103,10 +106,10 @@ data:
             action: keep
 
           # Extract hints for the dashboard
-          - source_labels: [ __meta_kubernetes_pod_container_port_name ]
+          - source_labels: [ __meta_kubernetes_pod_container_name ]
             separator: ;
-            regex: mon-(.*)
-            target_label: mon
+            regex: (.*)
+            target_label: agent
             replacement: ${1}
             action: replace
 
@@ -122,7 +125,7 @@ data:
           - source_labels: [ __meta_kubernetes_endpoint_node_name ]
             separator: ;
             regex: (.*)
-            target_label: host
+            target_label: node
             replacement: ${1}
             action: replace
 

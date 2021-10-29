@@ -21,7 +21,7 @@ metadata:
   name: boot-cockroach
 spec:
   withTelemetry:
-    importMonitors: [ "sysmon/container", "ycsbmon/client", "ycsbmon/client" ]
+    importMonitors: [ "sysmon/container", "ycsbmon/client", "cockroachmon/server" ]
     ingress:
       host: platform.science-hangar.eu
 

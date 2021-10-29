@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: redis-dashboard
+  name: grafana-redis-dashboard
   labels:
     dashboard: redis
 data:

@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: sysmon-dashboard
+  name: grafana-system-container
   labels:
     dashboard: sysmon
 
@@ -14,12 +14,16 @@ data:
           {
             "builtIn": 1,
             "datasource": "-- Grafana --",
-            "enable": false,
+            "enable": true,
             "hide": true,
             "iconColor": "rgba(0, 211, 255, 1)",
-            "limit": 100,
             "name": "Annotations & Alerts",
-            "showIn": 0,
+            "target": {
+              "limit": 100,
+              "matchAny": false,
+              "tags": [],
+              "type": "dashboard"
+            },
             "type": "dashboard"
           },
           {
@@ -92,8 +96,8 @@ data:
       "fiscalYearStartMonth": 0,
       "gnetId": 315,
       "graphTooltip": 0,
-      "id": 1,
-      "iteration": 1634842105480,
+      "id": 3,
+      "iteration": 1635527414292,
       "links": [],
       "liveNow": false,
       "panels": [
@@ -175,7 +179,7 @@ data:
           "targets": [
             {
               "exemplar": true,
-              "expr": "count(max(up) by (host))",
+              "expr": "count(max(up) by (node))",
               "instant": false,
               "interval": "",
               "intervalFactor": 1,
@@ -254,7 +258,7 @@ data:
           "targets": [
             {
               "exemplar": true,
-              "expr": "sum(max (machine_memory_bytes) by (host))",
+              "expr": "sum(max (machine_memory_bytes) by (node))",
               "instant": true,
               "interval": "",
               "intervalFactor": 1,
@@ -332,7 +336,7 @@ data:
           "targets": [
             {
               "exemplar": true,
-              "expr": "sum(max (container_fs_limit_bytes{device=~\"^/dev/[sv]d[a-z][1-9]$\",id=\"/\"}) by (host))",
+              "expr": "sum(max (container_fs_limit_bytes{device=~\"^/dev/[sv]d[a-z][1-9]$\",id=\"/\"}) by (node))",
               "format": "time_series",
               "instant": true,
               "interval": "",
@@ -396,12 +400,12 @@ data:
           "targets": [
             {
               "exemplar": true,
-              "expr": "count(up) by (host)",
+              "expr": "count(up) by (node)",
               "format": "time_series",
               "instant": true,
               "interval": "",
               "intervalFactor": 1,
-              "legendFormat": "{{host}}",
+              "legendFormat": "{{node}}",
               "refId": "A"
             }
           ],
@@ -555,7 +559,7 @@ data:
           "targets": [
             {
               "exemplar": true,
-              "expr": "sum(max(machine_cpu_cores) by (host))",
+              "expr": "sum(max(machine_cpu_cores) by (node))",
               "format": "table",
               "instant": true,
               "interval": "",
@@ -636,7 +640,7 @@ data:
           "targets": [
             {
               "exemplar": true,
-              "expr": "sum(max (container_fs_usage_bytes{device=~\"^/dev/[sv]d[a-z][1-9]$\",id=\"/\"}) by (host))",
+              "expr": "sum(max (container_fs_usage_bytes{device=~\"^/dev/[sv]d[a-z][1-9]$\",id=\"/\"}) by (node))",
               "instant": true,
               "interval": "",
               "intervalFactor": 1,
@@ -679,7 +683,7 @@ data:
           "targets": [
             {
               "exemplar": false,
-              "expr": "container_memory_usage_bytes{host=\"$host\"}",
+              "expr": "container_memory_usage_bytes{node=\"$node\"}",
               "format": "table",
               "hide": false,
               "instant": true,
@@ -690,7 +694,7 @@ data:
             },
             {
               "exemplar": true,
-              "expr": "sum(container_spec_memory_limit_bytes{host=\"$host\"} - container_memory_usage_bytes{host=\"$host\"}) by (instance) ",
+              "expr": "sum(container_spec_memory_limit_bytes{node=\"$node\"} - container_memory_usage_bytes{node=\"$node\"}) by (instance) ",
               "format": "table",
               "hide": false,
               "instant": true,
@@ -713,7 +717,7 @@ data:
               "options": {
                 "include": {
                   "names": [
-                    "host",
+                    "node",
                     "instance",
                     "Value #Used",
                     "Value #Remaining"
@@ -728,8 +732,8 @@ data:
                 "indexByName": {
                   "Value #Remaining": 3,
                   "Value #Used": 2,
-                  "host": 1,
-                  "instance": 0
+                  "instance": 0,
+                  "node": 1
                 },
                 "renameByName": {
                   "Value #Remaining": "Remaining Memory",
@@ -792,7 +796,7 @@ data:
           "targets": [
             {
               "exemplar": false,
-              "expr": "max(up) by (host, instance)",
+              "expr": "max(up) by (node, instance)",
               "format": "table",
               "hide": false,
               "instant": true,
@@ -816,8 +820,8 @@ data:
                 "indexByName": {},
                 "renameByName": {
                   "Value": "",
-                  "host": "Host",
-                  "instance": "Instance"
+                  "instance": "Instance",
+                  "node": "Node"
                 }
               }
             }
@@ -881,13 +885,13 @@ data:
           "targets": [
             {
               "exemplar": false,
-              "expr": "max(container_memory_usage_bytes) by (host)",
+              "expr": "max(container_memory_usage_bytes) by (node)",
               "format": "time_series",
               "hide": false,
               "instant": true,
               "interval": "",
               "intervalFactor": 1,
-              "legendFormat": "{{host}}",
+              "legendFormat": "{{node}}",
               "refId": "Used"
             }
           ],
@@ -954,13 +958,13 @@ data:
           "targets": [
             {
               "exemplar": false,
-              "expr": "max (rate (container_cpu_usage_seconds_total[1m])) by (host)",
+              "expr": "max (rate (container_cpu_usage_seconds_total[1m])) by (node)",
               "format": "time_series",
               "hide": false,
               "instant": true,
               "interval": "",
               "intervalFactor": 1,
-              "legendFormat": "{{host}}",
+              "legendFormat": "{{node}}",
               "refId": "Used"
             }
           ],
@@ -981,7 +985,7 @@ data:
           },
           "id": 56,
           "panels": [],
-          "title": "Host Overview ($host)",
+          "title": "Node Overview ($node)",
           "type": "row"
         },
         {
@@ -1062,7 +1066,7 @@ data:
           "targets": [
             {
               "exemplar": true,
-              "expr": "max(container_memory_usage_bytes{host=\"$host\"}) by (instance)",
+              "expr": "max(container_memory_usage_bytes{node=\"$node\"}) by (instance)",
               "format": "time_series",
               "hide": false,
               "instant": false,
@@ -1269,7 +1273,6 @@ data:
                 "mode": "palette-classic"
               },
               "custom": {
-                "axisLabel": "",
                 "axisPlacement": "auto",
                 "barAlignment": 0,
                 "drawStyle": "line",
@@ -1310,9 +1313,34 @@ data:
                   }
                 ]
               },
-              "unit": "short"
+              "unit": "percentunit"
             },
-            "overrides": []
+            "overrides": [
+              {
+                "__systemRef": "hideSeriesFrom",
+                "matcher": {
+                  "id": "byNames",
+                  "options": {
+                    "mode": "exclude",
+                    "names": [
+                      "jedi5.cluster.ics.forth.gr"
+                    ],
+                    "prefix": "All except:",
+                    "readOnly": true
+                  }
+                },
+                "properties": [
+                  {
+                    "id": "custom.hideFrom",
+                    "value": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": true
+                    }
+                  }
+                ]
+              }
+            ]
           },
           "gridPos": {
             "h": 8,
@@ -1323,8 +1351,11 @@ data:
           "id": 59,
           "options": {
             "legend": {
-              "calcs": [],
-              "displayMode": "list",
+              "calcs": [
+                "lastNotNull",
+                "max"
+              ],
+              "displayMode": "table",
               "placement": "right"
             },
             "tooltip": {
@@ -1335,11 +1366,21 @@ data:
           "targets": [
             {
               "exemplar": true,
-              "expr": "max(irate(container_cpu_usage_seconds_total{host=\"$host\"}[1m])) by (instance) * 100",
+              "expr": "max(irate(container_cpu_usage_seconds_total{node=\"$node\"}[1m])) by (node) * 100",
+              "hide": false,
               "interval": "",
               "intervalFactor": 1,
               "legendFormat": "{{instance}}",
               "refId": "A"
+            },
+            {
+              "exemplar": true,
+              "expr": "sum(rate(container_cpu_usage_seconds_total{node=~\"$node\"}[1m])) by (instance)",
+              "hide": true,
+              "interval": "",
+              "intervalFactor": 2,
+              "legendFormat": "",
+              "refId": "B"
             }
           ],
           "timeFrom": null,
@@ -1424,7 +1465,7 @@ data:
           "targets": [
             {
               "exemplar": true,
-              "expr": "sum  by (device) (irate(container_fs_writes_total{device=~\"^/dev/[sv]d[a-z][1-9]$\",id=\"/\",host=\"$host\"}[1m]))",
+              "expr": "sum  by (device) (irate(container_fs_writes_total{device=~\"^/dev/[sv]d[a-z][1-9]$\",id=\"/\",node=\"$node\"}[1m]))",
               "hide": false,
               "instant": false,
               "interval": "",
@@ -1436,7 +1477,7 @@ data:
             },
             {
               "exemplar": true,
-              "expr": "sum  by (device) (irate(container_fs_reads_total{device=~\"^/dev/[sv]d[a-z][1-9]$\",id=\"/\",host=\"$host\"}[1m]))",
+              "expr": "sum  by (device) (irate(container_fs_reads_total{device=~\"^/dev/[sv]d[a-z][1-9]$\",id=\"/\",node=\"$node\"}[1m]))",
               "hide": false,
               "instant": false,
               "interval": "",
@@ -1530,7 +1571,7 @@ data:
           "targets": [
             {
               "exemplar": true,
-              "expr": "sum by (interface) (irate(container_network_transmit_bytes_total{host=\"$host\"}[1m]))",
+              "expr": "sum by (interface) (irate(container_network_transmit_bytes_total{node=\"$node\"}[1m]))",
               "hide": false,
               "instant": false,
               "interval": "",
@@ -1542,7 +1583,7 @@ data:
             },
             {
               "exemplar": true,
-              "expr": "- sum by (interface) (irate(container_network_receive_bytes_total{host=\"$host\"}[1m])) ",
+              "expr": "- sum by (interface) (irate(container_network_receive_bytes_total{node=\"$node\"}[1m])) ",
               "hide": false,
               "instant": false,
               "interval": "",
@@ -1558,34 +1599,6 @@ data:
           "timeShift": null,
           "title": "Network I/O pressure",
           "type": "timeseries"
-        },
-        {
-          "collapsed": false,
-          "datasource": null,
-          "gridPos": {
-            "h": 1,
-            "w": 24,
-            "x": 0,
-            "y": 54
-          },
-          "id": 33,
-          "panels": [],
-          "title": "Container Overview",
-          "type": "row"
-        },
-        {
-          "collapsed": false,
-          "datasource": null,
-          "gridPos": {
-            "h": 1,
-            "w": 24,
-            "x": 0,
-            "y": 55
-          },
-          "id": 34,
-          "panels": [],
-          "title": "Total usage",
-          "type": "row"
         },
         {
           "cacheTimeout": null,
@@ -1645,7 +1658,7 @@ data:
             "h": 5,
             "w": 8,
             "x": 0,
-            "y": 56
+            "y": 54
           },
           "id": 7,
           "interval": null,
@@ -1665,10 +1678,10 @@ data:
           "targets": [
             {
               "exemplar": true,
-              "expr": "sum (container_fs_usage_bytes{device=~\"^/dev/[sv]d[a-z][1-9]$\",id=\"/\",host=\"$host\"}) / sum (container_fs_limit_bytes{device=~\"^/dev/[sv]d[a-z][1-9]$\",id=\"/\",host=\"$host\"}) * 100",
+              "expr": "sum (container_fs_usage_bytes{device=~\"^/dev/[sv]d[a-z][1-9]$\",id=\"/\",node=\"$node\"}) / sum (container_fs_limit_bytes{device=~\"^/dev/[sv]d[a-z][1-9]$\",id=\"/\",node=\"$node\"}) * 100",
               "interval": "10s",
               "intervalFactor": 1,
-              "legendFormat": "",
+              "legendFormat": "FS Usage",
               "metric": "",
               "refId": "A",
               "step": 10
@@ -1686,213 +1699,12 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 61
-          },
-          "id": 38,
-          "panels": [],
-          "title": "CPU usage for $host",
-          "type": "row"
-        },
-        {
-          "datasource": "Prometheus",
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisLabel": "cores",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 0,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "lineInterpolation": "stepAfter",
-                "lineWidth": 2,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "never",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
-                  }
-                ]
-              },
-              "unit": "none"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 14,
-            "w": 24,
-            "x": 0,
-            "y": 62
-          },
-          "id": 20,
-          "links": [],
-          "options": {
-            "legend": {
-              "calcs": [
-                "mean",
-                "lastNotNull",
-                "max"
-              ],
-              "displayMode": "table",
-              "placement": "right"
-            },
-            "tooltip": {
-              "mode": "single"
-            }
-          },
-          "pluginVersion": "8.2.1",
-          "targets": [
-            {
-              "exemplar": true,
-              "expr": "max (rate (container_cpu_usage_seconds_total{host=\"$host\"}[1m])) by (instance)",
-              "hide": false,
-              "interval": "10s",
-              "intervalFactor": 1,
-              "legendFormat": "{{ instance }}",
-              "metric": "container_cpu",
-              "refId": "A",
-              "step": 10
-            }
-          ],
-          "timeFrom": null,
-          "timeShift": null,
-          "title": "CPU usage per Pod (1m avg)",
-          "type": "timeseries"
-        },
-        {
-          "collapsed": false,
-          "datasource": null,
-          "gridPos": {
-            "h": 1,
-            "w": 24,
-            "x": 0,
-            "y": 76
+            "y": 59
           },
           "id": 39,
           "panels": [],
           "title": "Pods memory usage",
           "type": "row"
-        },
-        {
-          "datasource": "Prometheus",
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 0,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "lineInterpolation": "stepAfter",
-                "lineWidth": 2,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "never",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
-                  }
-                ]
-              },
-              "unit": "bytes"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 7,
-            "w": 24,
-            "x": 0,
-            "y": 77
-          },
-          "id": 25,
-          "links": [],
-          "options": {
-            "legend": {
-              "calcs": [
-                "mean",
-                "lastNotNull",
-                "max"
-              ],
-              "displayMode": "table",
-              "placement": "right"
-            },
-            "tooltip": {
-              "mode": "single"
-            }
-          },
-          "pluginVersion": "8.2.1",
-          "targets": [
-            {
-              "exemplar": true,
-              "expr": "max (rate (container_memory_working_set_bytes{host=\"$host\"}[1m])) by (instance)\n",
-              "interval": "10s",
-              "intervalFactor": 1,
-              "legendFormat": "{{instance}}",
-              "metric": "container_memory_usage:sort_desc",
-              "refId": "A",
-              "step": 10
-            }
-          ],
-          "timeFrom": null,
-          "timeShift": null,
-          "title": "Memory usage per Pod (1m avg)",
-          "type": "timeseries"
         }
       ],
       "refresh": "10s",
@@ -1906,22 +1718,22 @@ data:
           {
             "allValue": ".*",
             "current": {
-              "selected": true,
+              "selected": false,
               "text": "jedi5.cluster.ics.forth.gr",
               "value": "jedi5.cluster.ics.forth.gr"
             },
             "datasource": null,
-            "definition": "label_values(up, host)",
+            "definition": "label_values(up, node)",
             "description": null,
             "error": null,
             "hide": 0,
             "includeAll": false,
             "label": null,
             "multi": false,
-            "name": "host",
+            "name": "node",
             "options": [],
             "query": {
-              "query": "label_values(up, host)",
+              "query": "label_values(up, node)",
               "refId": "StandardVariableQuery"
             },
             "refresh": 1,

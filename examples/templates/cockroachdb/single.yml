@@ -8,7 +8,7 @@ spec:
     "master":
       spec: |
         agents:
-          telemetry: [ sysmon/container ]
+          telemetry: [ sysmon/container, cockroachmon/server ]
         container:
           name: app
           image: cockroachdb/cockroach:latest

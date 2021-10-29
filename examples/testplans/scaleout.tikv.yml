@@ -10,10 +10,6 @@ spec:
     ingress:
       host: platform.science-hangar.eu
 
-  withTestOracle:
-    pass: >-
-      {{.IsSuccessful "runners"}} == true
-
   actions:
     # Step 0: bootstrap.
     # For TiKV, we must first create a placementDriver and then add the workers.
@@ -29,7 +25,7 @@ spec:
       name: workers
       cluster:
         templateRef: tikv/worker
-        instances: 16
+        instances: 4
         inputs:
           - { placementDriver: .service.master.any }
 

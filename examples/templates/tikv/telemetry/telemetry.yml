@@ -9,10 +9,10 @@ spec:
       spec: |
         agent:
           container:
-            name: telegraf
+            name: tikv-pd
             image: telegraf:1.20.3
             ports:
-              - name: mon-tikv-pd
+              - name: mon-pd
                 containerPort: 9443
             command:
               - /bin/sh # Run shell
@@ -23,23 +23,23 @@ spec:
                 # Read metrics from one or many prometheus clients.
                 # See https://github.com/influxdata/telegraf/blob/master/plugins/inputs/prometheus/README.md
 
-                cat > /tmp/pd.conf <<EOF
+                cat > /tmp/prometheus.conf <<EOF
                 [[inputs.prometheus]]
                    ## An array of urls to scrape metrics from.
                    urls = [
                       "http://localhost:2379/metrics"
                    ]
 
-                  ## Data format to consume.
-                  data_format = "prometheus"
+                  metric_version = 2
 
                 [[outputs.prometheus_client]]
                    listen = ":9443"
                    metric_version = 2
+                   export_timestamp = true
                    collectors_exclude = ["gocollector","process"]
                 EOF
 
-                telegraf --config /tmp/pd.conf &
+                telegraf --config /tmp/prometheus.conf &
 
                 # When the stop file is added by the container, the process stop
                 while [ ! -f "/dev/shm/stop" ];
@@ -57,7 +57,7 @@ spec:
       spec: |
         agent:
           container:
-            name: telegraf
+            name: tikv-worker
             image: telegraf:1.20.3
             ports:
               - name: mon-tikv
@@ -71,23 +71,23 @@ spec:
                 # Read metrics from one or many prometheus clients.
                 # See https://github.com/influxdata/telegraf/blob/master/plugins/inputs/prometheus/README.md
 
-                cat > /tmp/tikv.conf <<EOF
+                cat > /tmp/prometheus.conf <<EOF
                 [[inputs.prometheus]]
                    ## An array of urls to scrape metrics from.
                    urls = [
-                      "http://localhost:20160/metrics"
+                      "http://localhost:20180/metrics"
                    ]
 
-                  ## Data format to consume.
-                  data_format = "prometheus"
+                  metric_version = 2
 
                 [[outputs.prometheus_client]]
                    listen = ":9443"
                    metric_version = 2
+                   export_timestamp = true
                    collectors_exclude = ["gocollector","process"]
                 EOF
 
-                telegraf --config /tmp/tikv.conf &
+                telegraf --config /tmp/prometheus.conf &
 
                 # When the stop file is added by the container, the process stop
                 while [ ! -f "/dev/shm/stop" ];

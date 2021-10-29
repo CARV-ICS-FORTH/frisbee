@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: tikv-raw
+  name: grafana-tikv-raw
   labels:
     dashboard: tikv
     specificTo: worker
