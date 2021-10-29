@@ -21,13 +21,13 @@ import (
 	"fmt"
 	"path/filepath"
 
-	pet "github.com/dustinkirkland/golang-petname"
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/template/helpers"
 	"github.com/fnikolai/frisbee/controllers/utils"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	netv1 "k8s.io/api/networking/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -96,6 +96,8 @@ func (r *Controller) installGrafana(ctx context.Context, w *v1alpha1.Telemetry, 
 }
 
 func (r *Controller) importDashboards(ctx context.Context, obj *v1alpha1.Telemetry, spec *v1alpha1.ServiceSpec) error {
+	imported := make(map[string]struct{})
+
 	// iterate monitoring services
 	for _, monRef := range obj.Spec.ImportMonitors {
 		ts := thelpers.ParseRef(obj.GetNamespace(), monRef)
@@ -110,41 +112,45 @@ func (r *Controller) importDashboards(ctx context.Context, obj *v1alpha1.Telemet
 			return errors.Wrapf(err, "spec error for %s", monRef)
 		}
 
-		// get the configmap which contains our desired dashboard
-		configMapKey := client.ObjectKey{Namespace: obj.GetNamespace(), Name: monSpec.Dashboard.FromConfigMap}
-		configMap := corev1.ConfigMap{}
+		var configMaps corev1.ConfigMapList
 
-		if err := r.GetClient().Get(ctx, configMapKey, &configMap); err != nil {
-			return errors.Wrapf(err, "cannot get configmap %s", configMapKey)
+		selector, err := metav1.LabelSelectorAsSelector(&monSpec.Dashboards)
+		if err != nil {
+			return errors.Wrapf(err, "invalid dashboard definition")
 		}
 
-		// create volume from the configmap
-		volume := corev1.Volume{}
-		volume.Name = pet.Name() // generate random name
-
-		volume.VolumeSource = corev1.VolumeSource{
-			ConfigMap: &corev1.ConfigMapVolumeSource{
-				LocalObjectReference: corev1.LocalObjectReference{Name: configMap.GetName()},
-			},
+		if err := r.GetClient().List(ctx, &configMaps, &client.ListOptions{LabelSelector: selector}); err != nil {
+			return errors.Wrapf(err, "cannot find dashboards")
 		}
 
-		// Create mountpoints
-		mounts := make([]corev1.VolumeMount, 0, len(configMap.Data))
+		for _, configMap := range configMaps.Items {
+			// avoid duplicates that may be caused when multiple agents share the same dashboard
+			_, exists := imported[configMap.GetName()]
+			if exists {
+				continue
+			}
 
-		for file := range configMap.Data {
-			if file == monSpec.Dashboard.File {
-				mounts = append(mounts, corev1.VolumeMount{
-					Name:      volume.Name, // Name of a Volume.
+			imported[configMap.GetName()] = struct{}{}
+
+			// associate volume to grafana
+			spec.Volumes = append(spec.Volumes, corev1.Volume{
+				Name: configMap.GetName(),
+				VolumeSource: corev1.VolumeSource{
+					ConfigMap: &corev1.ConfigMapVolumeSource{
+						LocalObjectReference: corev1.LocalObjectReference{Name: configMap.GetName()},
+					},
+				},
+			})
+
+			for file := range configMap.Data {
+				spec.Container.VolumeMounts = append(spec.Container.VolumeMounts, corev1.VolumeMount{
+					Name:      configMap.GetName(), // Name of a Volume.
 					ReadOnly:  true,
 					MountPath: filepath.Join(grafanaDashboards, file), // Path within the container
 					SubPath:   file,                                   //  Path within the volume
 				})
 			}
 		}
-
-		// associate mounts to grafana container
-		spec.Volumes = append(spec.Volumes, volume)
-		spec.Container.VolumeMounts = append(spec.Container.VolumeMounts, mounts...)
 	}
 
 	return nil

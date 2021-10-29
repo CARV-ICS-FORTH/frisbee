@@ -40,13 +40,7 @@ type MonitorSpec struct {
 	Agent ServiceSpec `json:"agent,omitempty"`
 
 	// Dashboard is dashboard payload that will be installed in Grafana.
-	Dashboard DashboardSpec `json:"dashboard,omitempty"`
-}
-
-type DashboardSpec struct {
-	FromConfigMap string `json:"fromConfigMap"`
-
-	File string `json:"file"`
+	Dashboards metav1.LabelSelector `json:"dashboards,omitempty"`
 }
 
 // TemplateSpec defines the desired state of Template

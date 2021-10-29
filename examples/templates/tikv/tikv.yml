@@ -28,7 +28,7 @@ spec:
           memory: ""
       spec: |
         agents:                                 # Agents
-          telemetry: [ sysmon/container ]
+          telemetry: [ sysmon/container, tikvmon/pd ]
         volumes:                                # Volumes
           - name: datastore
             persistentVolumeClaim:
@@ -74,7 +74,7 @@ spec:
           memory: ""
       spec: |
         agents:                                 # Agents
-          telemetry: [ sysmon/container ]
+          telemetry: [ sysmon/container, tikvmon/worker ]
         volumes:                                # Volumes
           - name: datastore
             persistentVolumeClaim:

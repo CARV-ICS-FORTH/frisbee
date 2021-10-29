@@ -27,7 +27,7 @@ spec:
       name: group-a
       cluster:
         templateRef: tikv/worker
-        instances: 10
+        instances: 1
         inputs:
           - { placementDriver: .service.master.any }
         schedule:
@@ -35,49 +35,49 @@ spec:
 
 
     # Add a bunch of nodes
-    - action: Cluster
-      depends: { running: [ master, group-a ] }
-      name: group-b
-      cluster:
-        templateRef: tikv/worker
-        instances: 50
-        inputs:
-          - { placementDriver: .service.master.any }
+    #- action: Cluster
+    #  depends: { running: [ master, group-a ] }
+    #  name: group-b
+    #  cluster:
+    #    templateRef: tikv/worker
+    #    instances: 50
+    #    inputs:
+    #      - { placementDriver: .service.master.any }
 
 
     # Add yet another bunch
-    - action: Cluster
-      depends: { running: [ master, group-b ] }
-      name: group-c
-      cluster:
-        templateRef: tikv/worker
-        instances: 50
-        inputs:
-          - { placementDriver: .service.master.any }
+    #- action: Cluster
+    #  depends: { running: [ master, group-b ] }
+    #  name: group-c
+    #  cluster:
+    #    templateRef: tikv/worker
+    #    instances: 50
+    #    inputs:
+    #      - { placementDriver: .service.master.any }
 
 
     # Add yet another bigger bunch
-    - action: Cluster
-      depends: { running: [ master, group-c ] }
-      name: group-d
-      cluster:
-        templateRef: tikv/worker
-        instances: 100
-        inputs:
-          - { placementDriver: .service.master.any }
+    #- action: Cluster
+    #  depends: { running: [ master, group-c ] }
+    #  name: group-d
+    #  cluster:
+    #    templateRef: tikv/worker
+    #    instances: 100
+    #    inputs:
+    #      - { placementDriver: .service.master.any }
 
 
     # Create a similarly large bunch, but slowly.
-    - action: Cluster
-      depends: { running: [ master, group-d ] }
-      name: group-e
-      cluster:
-        templateRef: tikv/worker
-        instances: 100
-        inputs:
-          - { placementDriver: .service.master.any }
-        schedule:
-          cron: "@every 30s"
+    #- action: Cluster
+    #  depends: { running: [ master, group-d ] }
+    #  name: group-e
+    #  cluster:
+    #    templateRef: tikv/worker
+    #    instances: 100
+    #    inputs:
+    #      - { placementDriver: .service.master.any }
+    #    schedule:
+    #      cron: "@every 30s"
 
 
     # Ingest keys in parallel, into different ranges

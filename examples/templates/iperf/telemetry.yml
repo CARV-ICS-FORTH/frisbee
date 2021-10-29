@@ -10,7 +10,7 @@ spec:
         agent:
           container:
             name: telegraf
-            image: telegraf
+            image: telegraf:1.20.3
             ports:
               - name: mon-iperf
                 containerPort: 9444
@@ -20,7 +20,7 @@ spec:
               - |  # Multi-line str
                 set -eum
 
-                cat > iperf.conf <<EOF
+                cat > /tmp/iperf.conf <<EOF
                 [[inputs.tail]]
                   files = ["/dev/shm/pipe"]
                   from_beginning = true
@@ -38,22 +38,25 @@ spec:
                   collectors_exclude = ["gocollector","process"]
                 EOF
 
-                telegraf --config iperf.conf &
+                telegraf --config /tmp/iperf.conf &
 
                 # When the stop file is added by the container, the process stop
                 while [ ! -f "/dev/shm/stop" ];
                 do
                   sleep 10
                 done
-        dashboard:
-          fromConfigMap: iperf-dashboard
-          file: iperf.json
+
+        dashboards:
+          matchlabels:
+            dashboard: iperf
 
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: iperf-dashboard
+  labels:
+    dashboard: iperf
 data:
   iperf.json: |
     {
