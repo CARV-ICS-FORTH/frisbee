@@ -11,4 +11,6 @@ https://book.kubebuilder.io/cronjob-tutorial/running.html
 https://vincenthou.medium.com/how-to-create-conversion-webhook-for-my-operator-with-operator-sdk-36f5ee0170de
 https://banzaicloud.com/blog/k8s-admission-webhooks/
 
-== Grafana
+== Observability
+
+https://cloud.google.com/architecture/devops/devops-measurement-monitoring-and-observability
