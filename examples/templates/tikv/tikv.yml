@@ -57,7 +57,9 @@ spec:
               rm -rf /store/$${HOSTNAME}
               mkdir -p /store/$${HOSTNAME}/pd
 
-              echo "Start PD server at $${HOSTNAME}}"
+              # see https://github.com/tikv/pd/blob/master/conf/config.toml
+
+              echo "Start PD server at $${HOSTNAME}"
 
               /pd-server                                                  \
               --client-urls=http://0.0.0.0:2379                           \
@@ -89,7 +91,7 @@ spec:
             - name: datastore
               mountPath: /store
           ports:
-            - name: worker-port
+            - name: clusterbus
               containerPort: 20160
           command:
             - /bin/sh   # Run shell
@@ -105,11 +107,13 @@ spec:
               mkdir -p /store/$${HOSTNAME}/data
 
               # see https://github.com/tikv/tikv/blob/master/etc/config-template.toml
-              # reserve-space = 0 is used for testing
               cat > config.toml <<EOF
               [server]
                 addr="0.0.0.0:20160"
                 advertise-addr="$${HOSTNAME}:20160"
+
+                # used by the prometheus agent
+                status-addr = "127.0.0.1:20180"
 
               [pd]
                 endpoints = ["{{.Inputs.Parameters.placementDriver}}:2379"]

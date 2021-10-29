@@ -2,17 +2,17 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
-  name: redismon
+  name: cockroachmon
 spec:
   entries:
     "server":
       spec: |
         agent:
           container:
-            name: telegraf
+            name: cockroachdb
             image: telegraf:1.20.3
             ports:
-              - name: mon-redis
+              - name: mon-cockroach
                 containerPort: 9443
             command:
               - /bin/sh # Run shell
@@ -20,9 +20,17 @@ spec:
               - |  # Multi-line str
                 set -eum
 
+                # Read metrics from one or many prometheus clients.
+                # See https://www.cockroachlabs.com/docs/stable/monitor-cockroachdb-with-prometheus.html
+
                 cat > /tmp/prometheus.conf <<EOF
-                [[inputs.redis]]
-                   servers = ["tcp://localhost:6379"]
+                [[inputs.prometheus]]
+                   ## An array of urls to scrape metrics from.
+                   urls = [
+                      "http://$${HOSTNAME}:8080/_status/vars"
+                   ]
+
+                  metric_version = 2
 
                 [[outputs.prometheus_client]]
                    listen = ":9443"
@@ -41,4 +49,4 @@ spec:
 
         dashboards:
           matchlabels:
-            dashboard: redis
+            dashboard: cockroach

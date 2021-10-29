@@ -12,7 +12,7 @@ spec:
             name: cadvisor
             image: gcr.io/cadvisor/cadvisor
             ports:
-              - name: mon-container
+              - name: mon-system
                 containerPort: 9442
             command:
               - /bin/sh # Run shell

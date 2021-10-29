@@ -2,17 +2,17 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
-  name: redismon
+  name: ycsbmon
 spec:
   entries:
-    "server":
+    "client":
       spec: |
         agent:
           container:
             name: telegraf
             image: telegraf:1.20.3
             ports:
-              - name: mon-redis
+              - name: mon-ycsb
                 containerPort: 9443
             command:
               - /bin/sh # Run shell
@@ -21,8 +21,15 @@ spec:
                 set -eum
 
                 cat > /tmp/prometheus.conf <<EOF
-                [[inputs.redis]]
-                   servers = ["tcp://localhost:6379"]
+                [[inputs.tail]]
+                   files = ["/dev/shm/pipe"]
+                   from_beginning = true
+                   name_override = "ycsb"
+                   data_format = "grok"
+
+                   # Example Line
+                   # INSERT - Takes(s): 60.0, Count: 732548, OPS: 12209.4, Avg(us): 62, Min(us): 23, Max(us): 11668, 99th(us): 1000, 99.9th(us): 1000, 99.99th(us): 3000
+                   grok_patterns = [ "^%{WORD:operation} %{SPACE}- Take.*: %{NUMBER:timestamp}, Count: %{NUMBER:count:int}, OPS: %{NUMBER:ops:float}, Avg.*: %{NUMBER:avg:float}, Min.*: %{NUMBER:min:float}, Max.*: %{NUMBER:max:float}, 99th.*: %{NUMBER:99th:float}, 99.9th.*: %{NUMBER:999th:float}, 99.99th.*: %{NUMBER:9999th:float}$" ]
 
                 [[outputs.prometheus_client]]
                    listen = ":9443"
@@ -33,7 +40,6 @@ spec:
 
                 telegraf --config /tmp/prometheus.conf &
 
-                # When the stop file is added by the container, the process stop
                 while [ ! -f "/dev/shm/stop" ];
                 do
                   sleep 10
@@ -41,4 +47,4 @@ spec:
 
         dashboards:
           matchlabels:
-            dashboard: redis
+            dashboard: ycsb

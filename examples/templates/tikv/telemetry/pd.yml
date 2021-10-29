@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: tikv-pd
+  name: grafana-tikv-pd
   labels:
     dashboard: tikv
     specificTo: pd
