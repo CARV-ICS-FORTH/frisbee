@@ -43,7 +43,7 @@ spec:
                   -p recordcount={{.Inputs.Parameters.recordcount}}    \
                   -p insertstart={{.Inputs.Parameters.offset}}         \
                   -p threadcount={{.Inputs.Parameters.threads}}        \
-                  -p tikv.pd="${addr}"                                 \
+                  -p tikv.pd=${addr}                                   \
                   -p tikv.type="raw"                                   \
               >> /dev/shm/pipe
 
@@ -83,6 +83,6 @@ spec:
                     -P workloads/{{.Inputs.Parameters.workload}}                                  \
                     -p operationcount={{.Inputs.Parameters.operationcount}}                       \
                     -p threadcount={{.Inputs.Parameters.threads}}                                 \
-                    -p tikv.pd="$addr"                                                            \
+                    -p tikv.pd=${addr}                                                            \
                     -p tikv.type="raw"                                                            \
               >> /dev/shm/pipe

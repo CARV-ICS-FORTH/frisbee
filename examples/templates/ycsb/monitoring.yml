@@ -10,7 +10,7 @@ spec:
         agent:
           container:
             name: telegraf
-            image: telegraf
+            image: telegraf:1.20.3
             ports:
               - name: mon-ycsb
                 containerPort: 9443
@@ -20,7 +20,7 @@ spec:
               - |  # Multi-line str
                 set -eum
 
-                cat > ycsb.conf <<EOF
+                cat > /dev/shm/ycsb.conf <<EOF
                 [[inputs.tail]]
                    files = ["/dev/shm/pipe"]
                    from_beginning = true
@@ -37,22 +37,24 @@ spec:
                    collectors_exclude = ["gocollector","process"]
                 EOF
 
-                telegraf --config ycsb.conf &
+                telegraf --config /dev/shm/ycsb.conf &
 
                 while [ ! -f "/dev/shm/stop" ];
                 do
                   sleep 10
                 done
 
-        dashboard:
-          fromConfigMap: ycsb-dashboard
-          file: ycsb.json
+        dashboards:
+          matchlabels:
+            dashboard: ycsb
 
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: ycsb-dashboard
+  labels:
+    dashboard: ycsb
 data:
   ycsb.json: |
     {

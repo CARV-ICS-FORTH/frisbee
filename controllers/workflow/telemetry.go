@@ -93,7 +93,6 @@ func (r *Controller) runNotificationWebhook(ctx context.Context, port string) (s
 
 	handler := http.DefaultServeMux
 	handler.HandleFunc("/", notifier.HandleWebhook(func(w http.ResponseWriter, b *notifier.Body) {
-
 		r.Info("Grafana Alert",
 			"title", b.Title,
 			"message", b.Message,

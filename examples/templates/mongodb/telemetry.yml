@@ -30,16 +30,16 @@ spec:
                   sleep 10
                 done
 
-        dashboard:
-          fromConfigMap: mongodb-dashboard
-          file: mongodb.json
+        dashboards:
+          matchlabels:
+            dashboard: mongo-exporter
 
     "telegraf":
       spec: |
         agent:
           container:
             name: telegraf
-            image: telegraf
+            image: telegraf:1.20.3
             ports:
               - name: mon-mongo
                 containerPort: 9443
@@ -49,7 +49,7 @@ spec:
               - |  # Multi-line str
                 set -eum
 
-                cat > mongodb.conf <<EOF
+                cat > /tmp/mongodb.conf <<EOF
                 [[inputs.mongodb]]
                   servers = ["mongodb://localhost:27017"]
 
@@ -69,22 +69,25 @@ spec:
                   collectors_exclude = ["gocollector","process"]
                 EOF
 
-                telegraf --config mongodb.conf &
+                telegraf --config /tmp/mongodb.conf &
 
                 # When the stop file is added by the container, the process stop
                 while [ ! -f "/dev/shm/stop" ];
                 do
                   sleep 10
                 done
-        dashboard:
-          fromConfigMap: mongodb-dashboard
-          file: mongodb.json
+
+        dashboards:
+          matchlabels:
+            dashboard: mongo-telegraf
 
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: mongodb-dashboard
+  labels:
+    dashboard: mongo-telegraf
 data:
   mongodb.json: |
     {

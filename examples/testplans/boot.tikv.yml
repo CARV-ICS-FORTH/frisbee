@@ -63,7 +63,7 @@ spec:
         fromTemplate:
           templateRef: ycsb-tikv/loader
           inputs:
-            { server: .service.master.any, workload: workloada, recordcount: "1000000", threads: "400" }
+            { server: .service.master.any, workload: workloada, recordcount: "10000000", threads: "400" }
 
     # Step 2: Run workload A
     - action: Service
