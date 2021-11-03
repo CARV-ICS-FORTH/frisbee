@@ -128,8 +128,8 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	var mostRecentTime *time.Time // find the last run so we can update the status
 
-	for _, job := range childJobs.Items {
-		r.state.Classify(job.GetName(), job.DeepCopy())
+	for i, job := range childJobs.Items {
+		r.state.Classify(job.GetName(), &childJobs.Items[i])
 
 		scheduledTimeForJob := &job.CreationTimestamp.Time
 
@@ -193,6 +193,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		r.Logger.Info("Cleaning up cluster jobs",
 			"cluster", cr.GetName(),
+			"activeJobs", r.state.ActiveList(),
 			"successfulJobs", r.state.SuccessfulList(),
 		)
 
@@ -380,6 +381,7 @@ func (r *Controller) Finalize(obj client.Object) error {
 		"name", obj.GetName(),
 		"version", obj.GetResourceVersion(),
 	)
+
 	return nil
 }
 

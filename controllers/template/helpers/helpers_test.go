@@ -14,12 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package thelpers
+package thelpers_test
 
 import (
 	"testing"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
+	thelpers "github.com/fnikolai/frisbee/controllers/template/helpers"
 )
 
 func TestGenerateSpecFromScheme(t *testing.T) {
@@ -31,7 +32,7 @@ func TestGenerateSpecFromScheme(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    GenericSpec
+		want    thelpers.GenericSpec
 		wantErr bool
 	}{
 		{
@@ -40,7 +41,7 @@ func TestGenerateSpecFromScheme(t *testing.T) {
 				Inputs: &v1alpha1.Inputs{Parameters: map[string]string{"slaves": "slave0"}},
 				Spec:   `{{.Inputs.Parameters.slaves}}`,
 			}},
-			want:    GenericSpec("slave0"),
+			want:    thelpers.GenericSpec("slave0"),
 			wantErr: false,
 		},
 		{
@@ -55,7 +56,7 @@ cat > test.yml <<EOF
 EOF
 `,
 			}},
-			want: GenericSpec(
+			want: thelpers.GenericSpec(
 				`
 cat > test.yml <<EOF
 	rs.Add( slave0 )
@@ -71,18 +72,20 @@ EOF
 				Inputs: &v1alpha1.Inputs{Parameters: map[string]string{"slaves": "slave0,slave1,slave2"}},
 				Spec:   `{{range splitList "," .Inputs.Parameters.slaves -}}{{.}}{{- end -}}`,
 			}},
-			want:    GenericSpec("slave0slave1slave2"),
+			want:    thelpers.GenericSpec("slave0slave1slave2"),
 			wantErr: false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := GenerateSpecFromScheme(tt.args.tspec)
+			got, err := thelpers.GenerateSpecFromScheme(tt.args.tspec)
+
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GenerateSpecFromScheme() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+
 			if got != tt.want {
 				t.Errorf("GenerateSpecFromScheme() got = %v, want %v", got, tt.want)
 			}

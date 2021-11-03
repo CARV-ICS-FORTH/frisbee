@@ -15,7 +15,7 @@ and so on. Given that, if the application seems fine, it is perhaps one of the s
 
 ##
 
-**Q:  I changed some templates, but the changes does not seems to affect the workflow.**
+**Q:  I changed some templates, but the changes does not seem to affect the workflow.**
 
 **A:** The changes are local and must be posted to the Kubernetes API. To update all templates use:
 
@@ -29,6 +29,6 @@ and so on. Given that, if the application seems fine, it is perhaps one of the s
 for each run. And if there are incompatibilities between version, these incompatibilities will be reflected to your
 experiment.
 
-###            
+###                   
 
 ##

@@ -39,7 +39,7 @@ const (
 	// data rewiring, and placement of Pods.
 	PhasePending = Phase("Pending")
 
-	// PhaseRunning means that all of the child jobs of a CR have been created, and at least one job
+	// PhaseRunning means that all the child jobs of a CR have been created, and at least one job
 	// is still running.
 	PhaseRunning = Phase("Running")
 

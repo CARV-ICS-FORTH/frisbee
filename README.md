@@ -13,7 +13,7 @@ We make it possible to:
 * **Run tests:**  provides seamless scaling from a single workstation to hundreds of machines.
 * **Debug tests:**  through extensive monitoring and comprehensive dashboards
 
-Our platform consists of a set of Kubernetes controller designed to run performance benchmarks and and introduce failure
+Our platform consists of a set of Kubernetes controller designed to run performance benchmarks and introduce failure
 conditions into a running system, monitor site-wide health metrics, and notify systems with status updates during the
 testing procedure.
 
@@ -21,7 +21,7 @@ Frisbee provides a flexible, YAML-based configuration syntax and is trivially ex
 
 # Frisbee in a nutshell
 
-The easiest way to begin with is by have a look at the examples folder. It consists of two sub-directories:
+The easiest way to begin with is by have a look at the examples. It consists of two sub-directories:
 
 * **Templates:** are libraries of frequently-used specifications that are reusable throughout the testing plan.
 * **Testplans:** are lists of actions that define what will happen throughout the test.

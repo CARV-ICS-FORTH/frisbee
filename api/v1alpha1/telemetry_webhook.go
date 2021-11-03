@@ -34,7 +34,7 @@ func (r *Telemetry) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
-// +kubebuilder:webhook:path=/mutate-frisbee.io-v1alpha1-telemetry,mutating=true,failurePolicy=fail,sideEffects=None,groups=frisbee.io,resources=telemetries,verbs=create;update,versions=v1alpha1,name=mtelemetry.kb.io,admissionReviewVersions={v1,v1beta1}
+// +kubebuilder:webhook:path=/mutate-frisbee.io-v1alpha1-telemetry,mutating=true,failurePolicy=fail,sideEffects=None,groups=frisbee.io,resources=telemetries,verbs=create;update,versions=v1alpha1,name=mtelemetry.kb.io,admissionReviewVersions={v1alpha1,v1beta1}
 
 var _ webhook.Defaulter = &Telemetry{}
 
@@ -46,7 +46,7 @@ func (r *Telemetry) Default() {
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// +kubebuilder:webhook:path=/validate-frisbee.io-v1alpha1-telemetry,mutating=false,failurePolicy=fail,sideEffects=None,groups=frisbee.io,resources=telemetries,verbs=create;update,versions=v1alpha1,name=vtelemetry.kb.io,admissionReviewVersions={v1,v1beta1}
+// +kubebuilder:webhook:path=/validate-frisbee.io-v1alpha1-telemetry,mutating=false,failurePolicy=fail,sideEffects=None,groups=frisbee.io,resources=telemetries,verbs=create;update,versions=v1alpha1,name=vtelemetry.kb.io,admissionReviewVersions={v1alpha1,v1beta1}
 
 var _ webhook.Validator = &Telemetry{}
 

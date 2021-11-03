@@ -24,6 +24,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	k8errors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
@@ -148,8 +149,6 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 
 		if err := Update(ctx, r, obj); err != nil {
 			r.Error(err, "resource deletion error")
-
-			return RequeueAfter(time.Second)
 		}
 
 		// Stop reconciliation as the item is being deleted
@@ -216,8 +215,12 @@ func Create(ctx context.Context, r Reconciler, obj client.Object) error {
 // Delete removes a Kubernetes object, ignoring the NotFound error. If any error exists,
 // it is recorded in the reconciler's logger.
 func Delete(ctx context.Context, r Reconciler, obj client.Object) {
-	err := r.GetClient().Delete(ctx, obj)
-	if err != nil && !k8errors.IsNotFound(err) {
+	foreground := metav1.DeletePropagationForeground
+	options := client.DeleteOptions{
+		PropagationPolicy: &foreground,
+	}
+
+	if err := r.GetClient().Delete(ctx, obj, &options); client.IgnoreNotFound(err) != nil {
 		r.Error(err, "unable to delete", "obj", obj.GetName())
 
 		return

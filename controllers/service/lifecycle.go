@@ -32,15 +32,15 @@ func calculateLifecycle(cr *v1alpha1.Service, pod *corev1.Pod) v1alpha1.Lifecycl
 		return status.Lifecycle
 	}
 
-	if !pod.CreationTimestamp.IsZero() {
-		return convertLifecycle(pod)
+	if pod.CreationTimestamp.IsZero() {
+		return v1alpha1.Lifecycle{
+			Phase:   v1alpha1.PhaseFailed,
+			Reason:  "PodDeletion",
+			Message: "The Pod is empty but scheduled.",
+		}
 	}
 
-	return v1alpha1.Lifecycle{
-		Phase:   v1alpha1.PhaseFailed,
-		Reason:  "PodDeletion",
-		Message: "The Pod is empty but scheduled.",
-	}
+	return convertLifecycle(pod)
 }
 
 // convertLifecycle translates the Pod's Lifecycle to Frisbee Lifecycle.

@@ -33,7 +33,9 @@ func (r *Workflow) SetupWebhookWithManager(mgr ctrl.Manager) error {
 		Complete()
 }
 
-// +kubebuilder:webhook:path=/mutate-frisbee.io-v1alpha1-workflow,mutating=true,failurePolicy=fail,sideEffects=None,groups=frisbee.io,resources=workflows,verbs=create;update,versions=v1alpha1,name=mworkflow.kb.io,admissionReviewVersions={v1,v1beta1}
+// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
+
+// +kubebuilder:webhook:path=/mutate-frisbee-frisbee-io-v1alpha1-workflow,mutating=true,failurePolicy=fail,sideEffects=None,groups=frisbee.frisbee.io,resources=workflows,verbs=create;update,versions=v1alpha1,name=mworkflow.kb.io,admissionReviewVersions={v1alpha1,v1beta1}
 
 var _ webhook.Defaulter = &Workflow{}
 
@@ -45,13 +47,13 @@ func (r *Workflow) Default() {
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// +kubebuilder:webhook:path=/validate-frisbee.io-v1alpha1-workflow,mutating=false,failurePolicy=fail,sideEffects=None,groups=frisbee.io,resources=workflows,verbs=create;update,versions=v1alpha1,name=vworkflow.kb.io,admissionReviewVersions={v1,v1beta1}
+// +kubebuilder:webhook:path=/validate-frisbee-frisbee-io-v1alpha1-workflow,mutating=false,failurePolicy=fail,sideEffects=None,groups=frisbee.frisbee.io,resources=workflows,verbs=create;update,versions=v1alpha1,name=vworkflow.kb.io,admissionReviewVersions={v1alpha1,v1beta1}
 
 var _ webhook.Validator = &Workflow{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (r *Workflow) ValidateCreate() error {
-	logrus.Warn("SKATOPOUTSES")
+	logrus.Warn("SKAAAAAATAAAAAAAA")
 
 	workflowlog.Info("validate create", "name", r.Name)
 
@@ -61,8 +63,6 @@ func (r *Workflow) ValidateCreate() error {
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
 func (r *Workflow) ValidateUpdate(old runtime.Object) error {
-	logrus.Warn("SKATOPOUTSES 2222")
-
 	workflowlog.Info("validate update", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object update.

@@ -18,10 +18,10 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Workflow
 metadata:
-  name: boot-redis-cluster
+  name: baseline-mongo-replicated
 spec:
   withTelemetry:
-    importMonitors: [ "sysmon/container", "ycsbmon/client",  "redismon/server" ]
+    importMonitors: [ "sysmon/container", "ycsbmon/client",  "mongomon/exporter" ]
     ingress:
       host: platform.science-hangar.eu
 
@@ -30,37 +30,34 @@ spec:
       {{.IsSuccessful "workload-e"}} == true
 
   actions:
-    # Step 0: bootstrap.
-    # For Redis, we must first create the servers, and then combine them into a cluster.
+    # Step 0: bootstrap a replicated cluster.
     - action: Cluster
-      name: master
+      name: slaves
       cluster:
-        templateRef: rediscluster/master
-        instances: 3
+        templateRef: mongodb/slave
+        instances: 2
         inputs:
           - { cpu: "8", memory: "32Gi" }
 
     - action: Service
-      name: boot
-      depends: { running: [ master ] }
+      name: master
+      depends: { running: [ slaves ] }
       service:
         fromTemplate:
-          templateRef: rediscluster/bootstrap
+          templateRef: mongodb/master
           inputs:
-            { servers: .cluster.master.all }
-
+            { slaves: .cluster.slaves.all, cpu: "8", memory: "32Gi" }
 
     # Step 1: Load a new dataset, using the parameters of workload A.
     # We use no throttling to maximize this step and complete it soon.
     - action: Service
-      depends: { success: [ boot ] }
+      depends: { running: [ master ] }
       name: loader
       service:
         fromTemplate:
-          templateRef: ycsb-redis/loader
+          templateRef: ycsb-mongo/loader
           inputs:
-            { server: .cluster.master.any, workload: workloada, recordcount: "1000000", threads: "400",
-              mode: "cluster" }
+            { server: .service.master.any, workload: workloada, recordcount: "1000000", threads: "400" }
 
     # Step 2: Run workload A
     - action: Service
@@ -68,10 +65,10 @@ spec:
       name: workload-a
       service:
         fromTemplate:
-          templateRef: ycsb-redis/runner
+          templateRef: ycsb-mongo/runner
           inputs:
-            { server: .cluster.master.any, workload: workloada, operationcount: "1000000",
-              cpu: "8",  memory: "8Gi", threads: "40", mode: "cluster", }
+            { server: .service.master.any, workload: workloada, operationcount: "1000000",
+              cpu: "8",  memory: "8Gi", threads: "40" }
 
     # Step 3: Run workload B
     - action: Service
@@ -79,9 +76,9 @@ spec:
       name: workload-b
       service:
         fromTemplate:
-          templateRef: ycsb-redis/runner
+          templateRef: ycsb-mongo/runner
           inputs:
-            { mode: "cluster", server: .cluster.master.any, workload: workloadb, operationcount: "1000000",
+            { server: .service.master.any, workload: workloadb, operationcount: "1000000",
               cpu: "8",  memory: "8Gi", threads: "40" }
 
     # Step 4: Run workload C
@@ -90,10 +87,10 @@ spec:
       name: workload-c
       service:
         fromTemplate:
-          templateRef: ycsb-redis/runner
+          templateRef: ycsb-mongo/runner
           inputs:
-            { server: .cluster.master.any, workload: workloadc, operationcount: "1000000",
-              cpu: "8",  memory: "8Gi", threads: "40", mode: "cluster" }
+            { server: .service.master.any, workload: workloadc, operationcount: "1000000",
+              cpu: "8",  memory: "8Gi", threads: "40" }
 
 
     # Step 5: Run workload F
@@ -102,10 +99,10 @@ spec:
       name: workload-f
       service:
         fromTemplate:
-          templateRef: ycsb-redis/runner
+          templateRef: ycsb-mongo/runner
           inputs:
-            { server: .cluster.master.any, workload: workloadf, operationcount: "1000000",
-              cpu: "8",  memory: "8Gi", threads: "40", mode: "cluster" }
+            { server: .service.master.any, workload: workloadf, operationcount: "1000000",
+              cpu: "8",  memory: "8Gi", threads: "40" }
 
 
     # Step 6: Run workload D.
@@ -114,10 +111,10 @@ spec:
       name: workload-d
       service:
         fromTemplate:
-          templateRef: ycsb-redis/runner
+          templateRef: ycsb-mongo/runner
           inputs:
-            { server: .cluster.master.any, workload: workloadd, operationcount: "1000000",
-              cpu: "8",  memory: "8Gi", threads: "40", mode: "cluster" }
+            { server: .service.master.any, workload: workloadd, operationcount: "1000000",
+              cpu: "8",  memory: "8Gi", threads: "40" }
 
 
     # Step 7,8: Reload the data with parameters of workload E.
@@ -127,9 +124,9 @@ spec:
       name: reloader
       service:
         fromTemplate:
-          templateRef: ycsb-redis/loader
+          templateRef: ycsb-mongo/loader
           inputs:
-            { mode: "cluster", server: .cluster.master.any, workload: workloade, dropdata: "true", recordcount: "1000000",
+            { server: .service.master.any, workload: workloade, dropdata: "true", recordcount: "1000000",
               threads: "400" }
 
 
@@ -139,9 +136,9 @@ spec:
       name: workload-e
       service:
         fromTemplate:
-          templateRef: ycsb-redis/runner
+          templateRef: ycsb-mongo/runner
           inputs:
-            { server: .cluster.master.any, workload: workloade, operationcount: "1000000",
-              cpu: "8",  memory: "8Gi", threads: "40", mode: "cluster" }
+            { server: .service.master.any, workload: workloade, operationcount: "1000000",
+              cpu: "8",  memory: "8Gi", threads: "40" }
 
 

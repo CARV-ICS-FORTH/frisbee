@@ -16,9 +16,68 @@ data:
             "datasource": "Prometheus",
             "enable": true,
             "hide": true,
-            "iconColor": "rgba(0, 211, 255, 1)",
+            "iconColor": "#96D98D",
+            "limit": 100,
             "name": "Annotations & Alerts",
-            "type": "dashboard"
+            "showIn": 0,
+            "tags": [],
+            "type": "tags"
+          },
+          {
+            "datasource": "-- Grafana --",
+            "enable": true,
+            "hide": false,
+            "iconColor": "#5794F2",
+            "limit": 100,
+            "name": "run",
+            "showIn": 0,
+            "tags": [
+              "run"
+            ],
+            "target": {
+              "limit": 100,
+              "matchAny": false,
+              "tags": [
+                "run"
+              ],
+              "type": "tags"
+            },
+            "type": "tags"
+          },
+          {
+            "datasource": "-- Grafana --",
+            "enable": false,
+            "hide": false,
+            "iconColor": "#FF9830",
+            "limit": 100,
+            "name": "exit",
+            "showIn": 0,
+            "tags": [
+              "exit"
+            ],
+            "type": "tags"
+          },
+          {
+            "datasource": "-- Grafana --",
+            "enable": true,
+            "hide": false,
+            "iconColor": "rgba(255, 96, 96, 1)",
+            "limit": 100,
+            "name": "failure",
+            "showIn": 0,
+            "tags": [
+              "failure"
+            ],
+            "target": {
+              "limit": 100,
+              "matchAny": false,
+              "tags": [
+                "failure"
+              ],
+              "type": "tags"
+            },
+            "type": "tags",
+            "useValueForTime": false
           }
         ]
       },

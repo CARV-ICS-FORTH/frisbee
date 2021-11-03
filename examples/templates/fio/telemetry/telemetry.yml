@@ -2,17 +2,17 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
-  name: iperfmon
+  name: fiomon
 spec:
   entries:
-    "client":
+    "server":
       spec: |
         agent:
           container:
             name: telegraf
             image: telegraf:1.20.3
             ports:
-              - name: mon-iperf
+              - name: mon-fio
                 containerPort: 9443
             command:
               - /bin/sh # Run shell
@@ -20,11 +20,11 @@ spec:
               - |  # Multi-line str
                 set -eum
 
-                cat > /tmp/prometheus.conf <<EOF
+                cat > /tmp/fio.conf <<EOF
                 [[inputs.tail]]
                   files = ["/dev/shm/pipe"]
                   from_beginning = true
-                  name_override = "iperf"
+                  name_override = "fio"
                   data_format = "grok"
 
                   # Example line
@@ -38,7 +38,7 @@ spec:
                    collectors_exclude = ["gocollector","process"]
                 EOF
 
-                telegraf --config /tmp/prometheus.conf &
+                telegraf --config /tmp/fio.conf &
 
                 # When the stop file is added by the container, the process stop
                 while [ ! -f "/dev/shm/stop" ];
@@ -48,4 +48,4 @@ spec:
 
         dashboards:
           matchlabels:
-            dashboard: iperf
+            dashboard: fio

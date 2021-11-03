@@ -111,7 +111,7 @@ spec:
                           properties:
                             duration:
                               description: Duration is the time after which Frisbee
-                                will rollback the injected fault.
+                                will roll back the injected fault.
                               type: string
                             selector:
                               properties:

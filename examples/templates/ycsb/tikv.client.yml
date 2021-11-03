@@ -14,7 +14,7 @@ spec:
           recordcount: "10000000"
           cpu: ""     # Example: 8
           memory: ""  # Example: 8Gi
-          threads: "1"
+          threads: ""
           workload: "workloada"
           dropdata: "false"
       spec: |
@@ -58,7 +58,7 @@ spec:
           operationcount: "30000000"
           cpu: ""
           memory: ""
-          threads: "1"
+          threads: ""
       spec: |
         agents:                                       # Agents
           telemetry: [ sysmon/container, ycsbmon/client ]

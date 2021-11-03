@@ -8,7 +8,7 @@ spec:
   storageClassName: ssd-storage
   resources:
     requests:
-      storage: 5Gi
+      storage: 30Gi
   accessModes:
     - ReadWriteOnce
 
@@ -25,14 +25,21 @@ spec:
           device: "/mnt/fio-benchmark-exporter"
           size: "10G"
           direct: "0"
+          node: ""
+          cpu: ""
+          memory: ""
       spec: |
-        agents:
-          telemetry: [ sysmon/container ]
-        volumes:
+        domain: {{.Inputs.Parameters.node}}     # Placement
+        agents:                                 # Agents
+          telemetry: [ sysmon/container, fiomon/server ]
+        volumes:                                # Volumes
           - name: fio-benchmark-exporter-pv
             persistentVolumeClaim:
               claimName: fio-pvc
-        container:
+        resources:                              # Resources
+          cpu: {{.Inputs.Parameters.cpu}}
+          memory: {{.Inputs.Parameters.memory}}
+        container:                              # Container
           name: app
           image: xridge/fio
           volumeMounts:
@@ -70,7 +77,7 @@ spec:
                       for iodepth in 1 4 32 128; do
                           cmd="fio --rw=$$rw --bs=4K --numjobs=$$numjobs --iodepth=$$iodepth fio.conf"
                           echo $$cmd
-                          $$cmd >> /output
+                          $$cmd >> /dev/shm/pipe
 
                           echo
                           echo
@@ -83,7 +90,7 @@ spec:
                       for iodepth in 1 4 32 128 256; do
                           cmd="fio --rw=$$rw --bs=1M --numjobs=$$numjobs --iodepth=$$iodepth fio.conf"
                           echo $$cmd
-                          $$cmd >> /output
+                          $$cmd >> /dev/shm/pipe
 
                           echo
                           echo

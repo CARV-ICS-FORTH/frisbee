@@ -21,15 +21,18 @@ import (
 	"path"
 	"path/filepath"
 	"runtime"
+
+	"github.com/sirupsen/logrus"
 )
 
 func GetCallerInfo(skip int) (fileName, funcName string, line int) {
 	pc, file, line, ok := runtime.Caller(skip)
 	if !ok {
-		fmt.Print("get info failed")
+		logrus.Warn("get info failed")
 
 		return
 	}
+
 	fileName = path.Base(file)
 	funcName = runtime.FuncForPC(pc).Name()
 

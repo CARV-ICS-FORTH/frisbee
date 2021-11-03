@@ -41,7 +41,7 @@ type EmbedFaultType struct {
 type PartitionSpec struct {
 	Selector ServiceSelector `json:"selector"`
 
-	// Duration is the time after which Frisbee will rollback the injected fault.
+	// Duration is the time after which Frisbee will roll back the injected fault.
 	// +optional
 	Duration *metav1.Duration `json:"duration,omitempty"`
 }

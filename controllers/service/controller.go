@@ -95,6 +95,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		The component is a pod with the same name as the cr.
 	*/
 	var pod corev1.Pod
+
 	{
 		key := client.ObjectKeyFromObject(&cr)
 
@@ -132,9 +133,10 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		around.
 	*/
 	if newStatus.Phase == v1alpha1.PhaseSuccess {
-		// r.GetEventRecorderFor("").Event(&cr, corev1.EventTypeNormal,
-		//	newStatus.Reason, "service succeeded")
-		// TODO: delete pod and service, but leave the service descriptor.
+		utils.Delete(ctx, r, &pod)
+
+		// TODO: delete discovery
+
 		return utils.Stop()
 	}
 

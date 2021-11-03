@@ -106,9 +106,9 @@ func (r *Controller) calculateLifecycle(w *v1alpha1.Workflow) v1alpha1.WorkflowS
 		},
 	}
 
-	allTests := append(userTests, autotests...)
+	userTests = append(userTests, autotests...)
 
-	for _, testcase := range allTests {
+	for _, testcase := range userTests {
 		if testcase.expression {
 			status.Lifecycle = testcase.lifecycle
 
@@ -251,7 +251,7 @@ func dereference(oracle string, gs lifecycle.Classifier) (string, error) {
 }
 
 // Taken from Argo-Workflow.
-// shouldExecute evaluates a already substituted when expression to decide whether or not a step should execute
+// shouldExecute evaluates an already substituted expression to decide whether a step should execute
 func shouldExecute(when string) (bool, error) {
 	if when == "" {
 		return true, nil

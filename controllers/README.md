@@ -25,6 +25,7 @@ As we can see from the diagram the main steps are:
    logic for this particular instance. This will be very controller specific.
 
 source: https://cloud.redhat.com/blog/kubernetes-operators-best-practices
+https://book.kubebuilder.io/cronjob-tutorial/controller-overview.html
 
 ## Available Controllers
 

@@ -144,16 +144,16 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	r.state.ClassifyAsFrisbeeService(telemetryJob.GetName(), telemetryJob.DeepCopy())
 
-	for _, job := range serviceJobs.Items {
-		r.state.Classify(job.GetName(), job.DeepCopy())
+	for i, job := range serviceJobs.Items {
+		r.state.Classify(job.GetName(), &serviceJobs.Items[i])
 	}
 
-	for _, job := range clusterJobs.Items {
-		r.state.Classify(job.GetName(), job.DeepCopy())
+	for i, job := range clusterJobs.Items {
+		r.state.Classify(job.GetName(), &clusterJobs.Items[i])
 	}
 
-	for _, job := range chaosJobs.Items {
-		r.state.Classify(job.GetName(), job.DeepCopy())
+	for i, job := range chaosJobs.Items {
+		r.state.Classify(job.GetName(), &chaosJobs.Items[i])
 	}
 
 	/*

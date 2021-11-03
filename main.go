@@ -80,12 +80,13 @@ func main() {
 
 	// GetConfigOrDie creates a *rest.Config for talking to a Kubernetes apiserver.
 	// If --kubeconfig is set, will use the kubeconfig file at that location.
-	// Otherwise will assume running  in cluster and use the cluster provided kubeconfig.
+	// Otherwise, will assume running  in cluster and use the cluster provided kubeconfig.
 	//
 	// Will log an error and exit if there is an error creating the rest.Config.
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
 		MetricsBindAddress:     metricsAddr,
+		Host:                   "0.0.0.0",
 		Port:                   9443,
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
@@ -164,6 +165,10 @@ func main() {
 		}
 	}
 
+	if err = (&frisbeev1alpha1.Workflow{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "Workflow")
+		os.Exit(1)
+	}
 	// +kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

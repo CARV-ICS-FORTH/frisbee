@@ -30,9 +30,9 @@ import (
 )
 
 func (r *Controller) runJob(ctx context.Context, obj *v1alpha1.Service) error {
-	if obj.Spec.ServiceFromTemplate != nil {
+	if obj.Spec.FromTemplate != nil {
 		if err := r.populateSpecFromTemplate(ctx, obj); err != nil {
-			return errors.Wrapf(err, "spec creation error")
+			return errors.Wrapf(err, "spec generation")
 		}
 	}
 
