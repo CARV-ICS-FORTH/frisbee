@@ -6,11 +6,12 @@ metadata:
   name: fio-pvc
 spec:
   storageClassName: ssd-storage
+  accessModes:
+    - ReadWriteOnce
   resources:
     requests:
-      storage: 256Gi
-  accessModes:
-    - ReadWriteMany
+      storage: 15Gi
+
 
 ---
 apiVersion: frisbee.io/v1alpha1
@@ -23,12 +24,11 @@ spec:
       inputs:
         parameters:
           device: "/mnt/fio-benchmark-exporter"
-          size: "10G"
+          size: "10M"
           direct: "0"
           node: ""
           cpu: ""
           memory: ""
-          preserve: "true"
       spec: |
         domain: {{.Inputs.Parameters.node}}     # Placement
         agents:                                 # Agents
@@ -37,15 +37,14 @@ spec:
           cpu: {{.Inputs.Parameters.cpu}}
           memory: {{.Inputs.Parameters.memory}}
         volumes:                                # Volumes
-          - name: fio-benchmark-exporter-pv
+          - name: local-storage
             persistentVolumeClaim:
               claimName: fio-pvc
-        preserveOnSuccess: {{.Inputs.Parameters.preserve}}
         container:                              # Container
           name: app
           image: xridge/fio
           volumeMounts:
-            - name: fio-benchmark-exporter-pv
+            - name: local-storage
               mountPath: {{.Inputs.Parameters.device}}
           command:
             - /bin/sh # Run shell
@@ -100,3 +99,5 @@ spec:
                       done
                   done
               done
+
+              sleep 3600

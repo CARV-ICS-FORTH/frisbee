@@ -1383,11 +1383,6 @@ spec:
                       required:
                       - templateRef
                       type: object
-                    preserveOnSuccess:
-                      description: 'Preserve indicate whether the created jobs will
-                        be garbage collected when the Service is successfully terminated.
-                        Default: False'
-                      type: boolean
                     resources:
                       description: Resources specifies limitations as to how the container
                         will access host resources.
@@ -2938,8 +2933,6 @@ spec:
                         - name
                         type: object
                       type: array
-                  required:
-                  - preserveOnSuccess
                   type: object
                 type: array
               lastScheduleJob:

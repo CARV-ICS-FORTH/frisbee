@@ -84,10 +84,6 @@ type ServiceSpec struct {
 	// for the moment simply match domain to a specific node. this will change in the future
 	// +optional
 	Domain string `json:"domain,omitempty"`
-
-	// Preserve indicate whether the created jobs will be garbage collected when
-	// the Service is successfully terminated. Default: False
-	PreserveOnSuccess bool `json:"preserveOnSuccess"`
 }
 
 // ServiceStatus defines the observed state of Service.

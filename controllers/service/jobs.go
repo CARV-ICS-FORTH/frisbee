@@ -34,6 +34,13 @@ func (r *Controller) runJob(ctx context.Context, obj *v1alpha1.Service) error {
 		if err := r.populateSpecFromTemplate(ctx, obj); err != nil {
 			return errors.Wrapf(err, "spec generation")
 		}
+
+		// from now on, we will use the populated fields, not the template.
+		obj.Spec.FromTemplate = nil
+
+		if err := utils.Update(ctx, r, obj); err != nil {
+			return errors.Wrapf(err, "cannot update populated fields")
+		}
 	}
 
 	pod, err := constructPod(ctx, r, obj)
@@ -84,7 +91,7 @@ func (r *Controller) populateSpecFromTemplate(ctx context.Context, obj *v1alpha1
 		return errors.Wrapf(err, "invalid spec")
 	}
 
-	obj.Spec = spec
+	spec.DeepCopyInto(&obj.Spec)
 
 	return nil
 }
