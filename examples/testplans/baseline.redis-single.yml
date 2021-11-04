@@ -37,7 +37,7 @@ spec:
         fromTemplate:
           templateRef: redis/master
           inputs:
-            { cpu: "8", memory: "32Gi" }
+            - { cpu: "8", memory: "32Gi" }
 
 
     # Step 1: Load a new dataset, using the parameters of workload A.
@@ -49,7 +49,7 @@ spec:
         fromTemplate:
           templateRef: ycsb-redis/loader
           inputs:
-            { server: .service.master.any, workload: workloada, recordcount: "1000000", threads: "400", mode: "single" }
+            - { server: .service.master.any, workload: workloada, recordcount: "1000000", threads: "400", mode: "single" }
 
     # Step 2: Run workload A
     - action: Service
@@ -59,8 +59,8 @@ spec:
         fromTemplate:
           templateRef: ycsb-redis/runner
           inputs:
-            { server: .service.master.any, workload: workloada, operationcount: "1000000",
-              cpu: "8",  memory: "8Gi", threads: "40" , mode: "single" }
+            - { server: .service.master.any, workload: workloada, operationcount: "1000000",
+                cpu: "8",  memory: "8Gi", threads: "40" , mode: "single" }
 
     # Step 3: Run workload B
     - action: Service
@@ -70,8 +70,8 @@ spec:
         fromTemplate:
           templateRef: ycsb-redis/runner
           inputs:
-            { server: .service.master.any, workload: workloadb, operationcount: "1000000",
-              cpu: "8",  memory: "8Gi", threads: "40", mode: "single" }
+            - { server: .service.master.any, workload: workloadb, operationcount: "1000000",
+                cpu: "8",  memory: "8Gi", threads: "40", mode: "single" }
 
     # Step 4: Run workload C
     - action: Service
@@ -81,8 +81,8 @@ spec:
         fromTemplate:
           templateRef: ycsb-redis/runner
           inputs:
-            { server: .service.master.any, workload: workloadc, operationcount: "1000000",
-              cpu: "8",  memory: "8Gi", threads: "40", mode: "single" }
+            - { server: .service.master.any, workload: workloadc, operationcount: "1000000",
+                cpu: "8",  memory: "8Gi", threads: "40", mode: "single" }
 
 
     # Step 5: Run workload F
@@ -93,8 +93,8 @@ spec:
         fromTemplate:
           templateRef: ycsb-redis/runner
           inputs:
-            { server: .service.master.any, workload: workloadf, operationcount: "1000000",
-              cpu: "8",  memory: "8Gi", threads: "40", mode: "single" }
+            - { server: .service.master.any, workload: workloadf, operationcount: "1000000",
+                cpu: "8",  memory: "8Gi", threads: "40", mode: "single" }
 
 
     # Step 6: Run workload D.
@@ -105,8 +105,8 @@ spec:
         fromTemplate:
           templateRef: ycsb-redis/runner
           inputs:
-            { server: .service.master.any, workload: workloadd, operationcount: "1000000",
-              cpu: "8",  memory: "8Gi", threads: "40", mode: "single" }
+            - { server: .service.master.any, workload: workloadd, operationcount: "1000000",
+                cpu: "8",  memory: "8Gi", threads: "40", mode: "single" }
 
 
     # Step 7,8: Reload the data with parameters of workload E.
@@ -118,8 +118,8 @@ spec:
         fromTemplate:
           templateRef: ycsb-redis/loader
           inputs:
-            { server: .service.master.any, workload: workloade, dropdata: "true", recordcount: "1000000",
-              threads: "400", mode: "single" }
+            - { server: .service.master.any, workload: workloade, dropdata: "true", recordcount: "1000000",
+                threads: "400", mode: "single" }
 
 
     # Step 9:Run workload E
@@ -130,7 +130,7 @@ spec:
         fromTemplate:
           templateRef: ycsb-redis/runner
           inputs:
-            { server: .service.master.any, workload: workloade, operationcount: "1000000",
-              cpu: "8",  memory: "8Gi", threads: "40", mode: "single" }
+            - { server: .service.master.any, workload: workloade, operationcount: "1000000",
+                cpu: "8",  memory: "8Gi", threads: "40", mode: "single" }
 
 

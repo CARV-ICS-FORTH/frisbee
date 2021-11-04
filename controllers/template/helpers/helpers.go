@@ -96,11 +96,14 @@ func GenerateSpecFromScheme(tspec *v1alpha1.Scheme) (GenericSpec, error) {
 	}
 
 	// replaced templated expression with actual values
-	t := template.Must(
-		template.New("").
-			Funcs(sprigFuncMap).
-			Option("missingkey=error").
-			Parse(tspec.Spec))
+	t, err := template.New("").
+		Funcs(sprigFuncMap).
+		Option("missingkey=error").
+		Parse(tspec.Spec)
+
+	if err != nil {
+		return GenericSpec(""), errors.Wrapf(err, "parsing error")
+	}
 
 	var out strings.Builder
 

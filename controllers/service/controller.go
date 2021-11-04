@@ -133,9 +133,11 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		around.
 	*/
 	if newStatus.Phase == v1alpha1.PhaseSuccess {
-		utils.Delete(ctx, r, &pod)
+		if !cr.Spec.PreserveOnSuccess {
+			utils.Delete(ctx, r, &pod)
 
-		// TODO: delete discovery
+			// TODO: delete discovery
+		}
 
 		return utils.Stop()
 	}

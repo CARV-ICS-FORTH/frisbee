@@ -31,7 +31,7 @@ spec:
         fromTemplate:
           templateRef: cockroachdb-cluster/bootstrap
           inputs:
-            { server: .cluster.master.any }
+            - { server: .cluster.master.any }
 
 
     # Step 1: Load a new dataset, using the parameters of workload A.
@@ -43,7 +43,7 @@ spec:
         fromTemplate:
           templateRef: ycsb-cockroach/loader
           inputs:
-            { server: .cluster.master.any, workload: workloada, recordcount: "1000000", threads: "400" }
+            - { server: .cluster.master.any, workload: workloada, recordcount: "1000000", threads: "400" }
 
     # Step 2: Run workload A
     - action: Service
@@ -53,8 +53,8 @@ spec:
         fromTemplate:
           templateRef: ycsb-cockroach/runner
           inputs:
-            { server: .cluster.master.any, workload: workloada, operationcount: "1000000",
-              cpu: "8",  memory: "8Gi", threads: "40" }
+            - { server: .cluster.master.any, workload: workloada, operationcount: "1000000",
+                cpu: "8",  memory: "8Gi", threads: "40" }
 
     # Step 3: Run workload B
     - action: Service
@@ -64,8 +64,8 @@ spec:
         fromTemplate:
           templateRef: ycsb-cockroach/runner
           inputs:
-            { server: .cluster.master.any, workload: workloadb, operationcount: "1000000",
-              cpu: "8",  memory: "8Gi", threads: "40" }
+            - { server: .cluster.master.any, workload: workloadb, operationcount: "1000000",
+                cpu: "8",  memory: "8Gi", threads: "40" }
 
     # Step 4: Run workload C
     - action: Service
@@ -75,8 +75,8 @@ spec:
         fromTemplate:
           templateRef: ycsb-cockroach/runner
           inputs:
-            { server: .cluster.master.any, workload: workloadc, operationcount: "1000000",
-              cpu: "8",  memory: "8Gi", threads: "40" }
+            - { server: .cluster.master.any, workload: workloadc, operationcount: "1000000",
+                cpu: "8",  memory: "8Gi", threads: "40" }
 
 
     # Step 5: Run workload F
@@ -87,8 +87,8 @@ spec:
         fromTemplate:
           templateRef: ycsb-cockroach/runner
           inputs:
-            { server: .cluster.master.any, workload: workloadf, operationcount: "1000000",
-              cpu: "8",  memory: "8Gi", threads: "40" }
+            - { server: .cluster.master.any, workload: workloadf, operationcount: "1000000",
+                cpu: "8",  memory: "8Gi", threads: "40" }
 
 
     # Step 6: Run workload D.
@@ -99,8 +99,8 @@ spec:
         fromTemplate:
           templateRef: ycsb-cockroach/runner
           inputs:
-            { server: .cluster.master.any, workload: workloadd, operationcount: "1000000",
-              cpu: "8",  memory: "8Gi", threads: "40" }
+            - { server: .cluster.master.any, workload: workloadd, operationcount: "1000000",
+                cpu: "8",  memory: "8Gi", threads: "40" }
 
 
     # Step 7,8: Reload the data with parameters of workload E.
@@ -112,8 +112,8 @@ spec:
         fromTemplate:
           templateRef: ycsb-cockroach/loader
           inputs:
-            { server: .cluster.master.any, workload: workloade, dropdata: "true", recordcount: "1000000",
-              threads: "400" }
+            - { server: .cluster.master.any, workload: workloade, dropdata: "true", recordcount: "1000000",
+                threads: "400" }
 
 
     # Step 9:Run workload E
@@ -124,7 +124,7 @@ spec:
         fromTemplate:
           templateRef: ycsb-cockroach/runner
           inputs:
-            { server: .cluster.master.any, workload: workloade, operationcount: "1000000",
-              cpu: "8",  memory: "8Gi", threads: "40" }
+            - { server: .cluster.master.any, workload: workloade, operationcount: "1000000",
+                cpu: "8",  memory: "8Gi", threads: "40" }
 
 

@@ -77,7 +77,7 @@ spec:
         fromTemplate:
           templateRef: redis/slave
           inputs:
-            { master: .service.master.any }
+            - { master: .service.master.any }
 
     # The sentinel is Redis failover manager. Notice that we can have multiple dependencies.
     - action: Service
@@ -87,7 +87,7 @@ spec:
         fromTemplate:
           templateRef: redis/sentinel
           inputs:
-            { master: .service.master.any }
+            - { master: .service.master.any }
 
     # Cluster creates a list of services that run a shared context. 
     # In this case, we create a cluster of YCSB loaders to populate the master with keys. 

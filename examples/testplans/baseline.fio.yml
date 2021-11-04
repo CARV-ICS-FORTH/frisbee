@@ -15,28 +15,28 @@ spec:
         fromTemplate:
           templateRef: fio/benchmark
           inputs:
-            { node: "jedi5.cluster.ics.forth.gr", "direct": "0" }
+            - { "direct": "0" }
 
-    - action: Service
-      name: fio-jedi6
-      service:
-        fromTemplate:
-          templateRef: fio/benchmark
-          inputs:
-            { node: "jedi6.cluster.ics.forth.gr", "direct": "0" }
+ #   - action: Service
+ #     name: fio-jedi6
+ #     service:
+#        fromTemplate:
+#          templateRef: fio/benchmark
+#          inputs:
+#            - { node: "jedi6.cluster.ics.forth.gr", "direct": "1" }
 
-    - action: Service
-      name: fio-jedi7
-      service:
-        fromTemplate:
-          templateRef: fio/benchmark
-          inputs:
-            { node: "jedi7.cluster.ics.forth.gr", "direct": "0" }
+#    - action: Service
+#      name: fio-jedi7
+#      service:
+#        fromTemplate:
+#          templateRef: fio/benchmark
+#          inputs:
+#            - { node: "jedi7.cluster.ics.forth.gr", "direct": "0" }
 
-    - action: Service
-      name: fio-jedi8
-      service:
-        fromTemplate:
-          templateRef: fio/benchmark
-          inputs:
-            { node: "jedi8.cluster.ics.forth.gr", "direct": "0" }
+#    - action: Service
+#      name: fio-jedi8
+#      service:
+#        fromTemplate:
+#          templateRef: fio/benchmark
+#          inputs:
+#            - { node: "jedi8.cluster.ics.forth.gr", "direct": "0" }

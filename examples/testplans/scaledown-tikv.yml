@@ -22,7 +22,7 @@ spec:
         fromTemplate:
           templateRef: tikv/placementDriver
           inputs:
-            { cpu: "4", memory: "8Gi" }
+            - { cpu: "4", memory: "8Gi" }
 
     # add a cluster of 5 TiKV instances. We use the "tolerate" directive in order to have the cluster
     # running despite the continuous fault -- kills are expected as part of the experiment.

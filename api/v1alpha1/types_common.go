@@ -204,13 +204,3 @@ func (in ActionList) GetNames() []string {
 
 	return names
 }
-
-// FromTemplate generates a spec by parameterizing the templateRef with the given inputs.
-type FromTemplate struct {
-	// TemplateRef refers to a service template. It conflicts with Service.
-	TemplateRef string `json:"templateRef"`
-
-	// Inputs is a list of inputs passed to the objects.
-	// +optional
-	Inputs map[string]string `json:"inputs,omitempty"`
-}

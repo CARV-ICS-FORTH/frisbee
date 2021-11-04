@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -86,4 +87,69 @@ type TemplateList struct {
 
 func init() {
 	SchemeBuilder.Register(&Template{}, &TemplateList{})
+}
+
+// FromTemplate generates a spec by parameterizing the templateRef with the given inputs.
+type FromTemplate struct {
+	// TemplateRef refers to a  template
+	TemplateRef string `json:"templateRef"`
+
+	// Instances dictate the number of objects to be created for the service. If Env is specified, the values
+	// with be identical across the spawned instances. For instances with different parameters, use Inputs.
+	// +optional
+	Instances int `json:"instances"`
+
+	// Inputs are list of inputs passed to the objects. When used in conjunction with Instances, there can be
+	// only one input and all the instances will run with identical parameters. If Instances is defined and there are
+	// more than one inputs, the request will be rejected.
+	// +optional
+	Inputs []map[string]string `json:"inputs,omitempty"`
+}
+
+func (t *FromTemplate) Validate(allowMultipleInputs bool) error {
+	switch {
+	case t.TemplateRef == "":
+		return errors.New("empty templateRef")
+
+	case len(t.Inputs) == 0 && t.Instances == 0: // use the default
+		t.Instances = 1
+
+		return nil
+
+	case !allowMultipleInputs && len(t.Inputs) > 1: // object violation
+		return errors.Errorf("Allowed inputs [%t] but got [%d]", allowMultipleInputs, len(t.Inputs))
+
+	case len(t.Inputs) >= t.Instances: // every instance has its own parameters.
+		t.Instances = len(t.Inputs)
+
+		return nil
+
+	case t.Instances > len(t.Inputs) && len(t.Inputs) > 1:
+		return errors.New("Max one input when multiple instances are defined")
+
+	case len(t.Inputs) == 1 && t.Instances > 0: // all instances have the same parameters.
+		return nil
+
+	default:
+		panic("unhandled case")
+	}
+}
+
+func (t *FromTemplate) GetInput(i int) map[string]string {
+	switch len(t.Inputs) {
+	case 0:
+		// no inputs
+		return nil
+	case 1:
+		copied := make(map[string]string)
+
+		for key, elem := range t.Inputs[0] {
+			copied[key] = elem
+		}
+
+		return copied
+
+	default:
+		return t.Inputs[i]
+	}
 }

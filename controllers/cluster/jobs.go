@@ -45,13 +45,8 @@ func getJob(r *Controller, cluster *v1alpha1.Cluster, i int) *v1alpha1.Service {
 func constructJobSpecList(ctx context.Context, r *Controller, cluster *v1alpha1.Cluster) ([]v1alpha1.ServiceSpec, error) {
 	var specs []v1alpha1.ServiceSpec
 
-	// all inputs are explicitly defined. no instances were given
-	if cluster.Spec.Instances == 0 {
-		if len(cluster.Spec.Inputs) == 0 {
-			return nil, errors.New("at least one of instances || inputs must be defined")
-		}
-
-		cluster.Spec.Instances = len(cluster.Spec.Inputs)
+	if err := cluster.Spec.FromTemplate.Validate(true); err != nil {
+		return nil, errors.Wrapf(err, "template validation")
 	}
 
 	ts := thelpers.ParseRef(cluster.GetNamespace(), cluster.Spec.TemplateRef)
@@ -67,20 +62,8 @@ func constructJobSpecList(ctx context.Context, r *Controller, cluster *v1alpha1.
 	lookupCache := make(map[string]v1alpha1.SList)
 
 	for i := 0; i < cluster.Spec.Instances; i++ {
-		switch len(cluster.Spec.Inputs) {
-		case 0:
-			// no inputs
-		case 1:
-			// use a common set of inputs for all instances
-			if err := thelpers.ExpandInputs(ctx, r, cluster.GetNamespace(), &scheme, cluster.Spec.Inputs[0], lookupCache); err != nil {
-				return nil, errors.Wrapf(err, "macro expansion failed")
-			}
-
-		default:
-			// use a different set of inputs for every instance
-			if err := thelpers.ExpandInputs(ctx, r, cluster.GetNamespace(), &scheme, cluster.Spec.Inputs[i], lookupCache); err != nil {
-				return nil, errors.Wrapf(err, "macro expansion failed")
-			}
+		if err := thelpers.ExpandInputs(ctx, r, cluster.GetNamespace(), &scheme, cluster.Spec.GetInput(i), lookupCache); err != nil {
+			return nil, errors.Wrapf(err, "macro expansion failed")
 		}
 
 		genSpec, err := thelpers.GenerateSpecFromScheme(&scheme)

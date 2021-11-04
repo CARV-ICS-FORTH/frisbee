@@ -21,7 +21,7 @@ spec:
         fromTemplate:
           templateRef: iperf/server
           inputs:
-            { "cpu": "2", memory: "4Gi" }
+            - { "cpu": "2", memory: "4Gi" }
 
     # Create an iperf client
     - action: Service
@@ -31,7 +31,7 @@ spec:
         fromTemplate:
           templateRef: iperf/client
           inputs:
-            { server: .service.server.any }
+            - { server: .service.server.any }
 
     # Cause two partition failures with different duration
     - action: Chaos

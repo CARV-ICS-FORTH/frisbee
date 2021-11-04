@@ -28,7 +28,7 @@ spec:
         fromTemplate:
           templateRef: redis/slave
           inputs:
-            { master: .service.master.any }
+            - { master: .service.master.any }
 
 
     # Create a failover manager
@@ -39,7 +39,7 @@ spec:
         fromTemplate:
           templateRef: redis/sentinel
           inputs:
-            { master: .service.master.any }
+            - { master: .service.master.any }
 
 
     # Ingest keys in parallel, into different ranges

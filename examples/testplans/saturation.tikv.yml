@@ -23,7 +23,7 @@ spec:
         fromTemplate:
           templateRef: tikv/placementDriver
           inputs:
-            { cpu: "4", memory: "8Gi" }
+            - { cpu: "4", memory: "8Gi" }
 
 
     - action: Cluster

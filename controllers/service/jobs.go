@@ -55,16 +55,20 @@ func (r *Controller) runJob(ctx context.Context, obj *v1alpha1.Service) error {
 }
 
 func (r *Controller) populateSpecFromTemplate(ctx context.Context, obj *v1alpha1.Service) error {
+	if err := obj.Spec.FromTemplate.Validate(false); err != nil {
+		return errors.Wrapf(err, "template validation")
+	}
+
 	var genspec thelpers.GenericSpec
 
 	var err error
 
-	ts := thelpers.ParseRef(obj.GetNamespace(), obj.Spec.TemplateRef)
+	ts := thelpers.ParseRef(obj.GetNamespace(), obj.Spec.FromTemplate.TemplateRef)
 
-	if inputs := obj.Spec.Inputs; inputs != nil {
+	if inputs := obj.Spec.FromTemplate.Inputs; inputs != nil {
 		lookupCache := make(map[string]v1alpha1.SList)
 
-		genspec, err = thelpers.GetParameterizedSpec(ctx, r, ts, obj.GetNamespace(), inputs, lookupCache)
+		genspec, err = thelpers.GetParameterizedSpec(ctx, r, ts, obj.GetNamespace(), inputs[0], lookupCache)
 		if err != nil {
 			return errors.Wrapf(err, "parameterized spec")
 		}

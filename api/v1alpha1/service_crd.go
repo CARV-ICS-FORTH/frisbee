@@ -57,12 +57,12 @@ type Resources struct {
 	Disk   *Disk  `json:"disk,omitempty"`
 }
 
-// ServiceSpec defines the desired state of Service
+// ServiceSpec defines the desired state of Service.
 type ServiceSpec struct {
 	// FromTemplate populates the service fields from a template. This is used for backward compatibility
 	// with Cluster with just one instance. This field cannot be used in conjunction with other fields.
 	// +optional
-	*FromTemplate `json:"fromTemplate,omitempty"`
+	FromTemplate *FromTemplate `json:"fromTemplate,omitempty"`
 
 	// List of sidecar agents
 	// +optional
@@ -84,9 +84,13 @@ type ServiceSpec struct {
 	// for the moment simply match domain to a specific node. this will change in the future
 	// +optional
 	Domain string `json:"domain,omitempty"`
+
+	// Preserve indicate whether the created jobs will be garbage collected when
+	// the Service is successfully terminated. Default: False
+	PreserveOnSuccess bool `json:"preserveOnSuccess"`
 }
 
-// ServiceStatus defines the observed state of Service
+// ServiceStatus defines the observed state of Service.
 type ServiceStatus struct {
 	Lifecycle `json:",inline"`
 
@@ -105,7 +109,7 @@ func (in *Service) SetReconcileStatus(lifecycle Lifecycle) {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-// Service is the Schema for the services API
+// Service is the Schema for the services API.
 type Service struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -116,7 +120,7 @@ type Service struct {
 
 // +kubebuilder:object:root=true
 
-// ServiceList contains a list of Service
+// ServiceList contains a list of Service.
 type ServiceList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

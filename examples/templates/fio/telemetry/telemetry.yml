@@ -29,7 +29,11 @@ spec:
 
                   # Example line
                   #[  5]   0.00-1.00   sec  3.79 GBytes  32.5 Gbits/sec  304   2.75 MBytes
-                  grok_patterns = [ ".*-%{NUMBER:timestamp:float}.* %{NUMBER:transfer:float} %{WORD:transfer_units}.* %{NUMBER:bitrate:float} %{WORD:bitrate_unit}/sec.* %{NUMBER:retries:int}.* %{NUMBER:cwnd:float} %{WORD:cwnd_units}"]
+                  grok_patterns = [
+                    '  write: IOPS=%{NUMBER:val1}%{GREEDYDATA:thsd}, %{GREEDYDATA}',
+                    '  write: IOPS=%{GREEDYDATA}, BW=%{NUMBER:val2}%{GREEDYDATA:kibs} %{GREEDYDATA}'
+                    '     lat (%{GREEDYDATA:nsec}): min=%{GREEDYDATA}, max=%{GREEDYDATA}, avg=%{NUMBER:val3}, stdev=%{GREEDYDATA}'
+                  ]
 
                 [[outputs.prometheus_client]]
                    listen = ":9443"
