@@ -81,7 +81,7 @@ func GetParameterizedSpec(ctx context.Context, r utils.Reconciler, ts *v1alpha1.
 
 	specStr, err := GenerateSpecFromScheme(&scheme)
 	if err != nil {
-		return "", errors.Wrapf(err, "spec creation error. Inputs: %v", scheme.Inputs.Parameters)
+		return "", errors.Wrapf(err, "generation error. Inputs: %v", scheme.Inputs.Parameters)
 	}
 
 	return specStr, nil
@@ -96,16 +96,19 @@ func GenerateSpecFromScheme(tspec *v1alpha1.Scheme) (GenericSpec, error) {
 	}
 
 	// replaced templated expression with actual values
-	t := template.Must(
-		template.New("").
-			Funcs(sprigFuncMap).
-			Option("missingkey=error").
-			Parse(tspec.Spec))
+	t, err := template.New("").
+		Funcs(sprigFuncMap).
+		Option("missingkey=error").
+		Parse(tspec.Spec)
+
+	if err != nil {
+		return GenericSpec(""), errors.Wrapf(err, "parsing error")
+	}
 
 	var out strings.Builder
 
 	if err := t.Execute(&out, tspec); err != nil {
-		return "", errors.Wrapf(err, "execution error")
+		return "", errors.Wrapf(err, "template execution error")
 	}
 
 	return GenericSpec(out.String()), nil
@@ -117,7 +120,6 @@ func ExpandInputs(ctx context.Context,
 	scheme *v1alpha1.Scheme,
 	userInputs map[string]string,
 	cache map[string]v1alpha1.SList) error {
-
 	if scheme.Inputs == nil {
 		return errors.New("scheme does not support inputs")
 	}

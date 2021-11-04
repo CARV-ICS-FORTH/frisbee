@@ -2,17 +2,17 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
-  name: iperfmon
+  name: fiomon
 spec:
   entries:
-    "client":
+    "server":
       spec: |
         agent:
           container:
             name: telegraf
             image: telegraf:1.20.3
             ports:
-              - name: mon-iperf
+              - name: mon-fio
                 containerPort: 9443
             command:
               - /bin/sh # Run shell
@@ -20,16 +20,20 @@ spec:
               - |  # Multi-line str
                 set -eum
 
-                cat > /tmp/prometheus.conf <<EOF
+                cat > /tmp/fio.conf <<EOF
                 [[inputs.tail]]
                   files = ["/dev/shm/pipe"]
                   from_beginning = true
-                  name_override = "iperf"
+                  name_override = "fio"
                   data_format = "grok"
 
                   # Example line
                   #[  5]   0.00-1.00   sec  3.79 GBytes  32.5 Gbits/sec  304   2.75 MBytes
-                  grok_patterns = [ ".*-%{NUMBER:timestamp:float}.* %{NUMBER:transfer:float} %{WORD:transfer_units}.* %{NUMBER:bitrate:float} %{WORD:bitrate_unit}/sec.* %{NUMBER:retries:int}.* %{NUMBER:cwnd:float} %{WORD:cwnd_units}"]
+                  grok_patterns = [
+                    '  write: IOPS=%{NUMBER:val1}%{GREEDYDATA:thsd}, %{GREEDYDATA}',
+                    '  write: IOPS=%{GREEDYDATA}, BW=%{NUMBER:val2}%{GREEDYDATA:kibs} %{GREEDYDATA}'
+                    '     lat (%{GREEDYDATA:nsec}): min=%{GREEDYDATA}, max=%{GREEDYDATA}, avg=%{NUMBER:val3}, stdev=%{GREEDYDATA}'
+                  ]
 
                 [[outputs.prometheus_client]]
                    listen = ":9443"
@@ -38,7 +42,7 @@ spec:
                    collectors_exclude = ["gocollector","process"]
                 EOF
 
-                telegraf --config /tmp/prometheus.conf &
+                telegraf --config /tmp/fio.conf &
 
                 # When the stop file is added by the container, the process stop
                 while [ ! -f "/dev/shm/stop" ];
@@ -48,4 +52,4 @@ spec:
 
         dashboards:
           matchlabels:
-            dashboard: iperf
+            dashboard: fio

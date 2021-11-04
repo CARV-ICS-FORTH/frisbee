@@ -23,7 +23,7 @@ import (
 )
 
 // TolerateSpec specifies the system's ability to continue operating despite failures or malfunctions.
-// If tolerate is enable, a cluster will be "alive" even if some of the services have failed.
+// If tolerate is enable, a cluster will be "alive" even if some services have failed.
 // Such failures are likely to happen as part of a Chaos experiment.
 type TolerateSpec struct {
 	// FailedServices indicate the number of services that may fail before the cluster fails itself.
@@ -40,19 +40,7 @@ func (in TolerateSpec) String() string {
 
 // ClusterSpec defines the desired state of Cluster
 type ClusterSpec struct {
-	// TemplateRef refers to a service template. It conflicts with Service.
-	TemplateRef string `json:"templateRef"`
-
-	// Instances dictate the number of objects to be created for the service. If Env is specified, the values
-	// with be identical across the spawned instances. For instances with different parameters, use Inputs.
-	// +optional
-	Instances int `json:"instances"`
-
-	// Inputs are list of inputs passed to the objects. When used in conjunction with Instances, there can be
-	// only one input and all the instances will run with identical parameters. If Instances is defined and there are
-	// more than one inputs, the request will be rejected.
-	// +optional
-	Inputs []map[string]string `json:"inputs,omitempty"`
+	FromTemplate `json:",inline"`
 
 	// Schedule defines the interval between the creation of services within the group. Executed creation is not
 	// supported in collocated mode. Since Pods are intended to be disposable and replaceable, we cannot add a

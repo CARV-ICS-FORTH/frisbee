@@ -95,8 +95,8 @@ spec:
                   goes into Failed phase.
                 properties:
                   duration:
-                    description: Duration is the time after which Frisbee will rollback
-                      the injected fault.
+                    description: Duration is the time after which Frisbee will roll
+                      back the injected fault.
                     type: string
                   selector:
                     properties:

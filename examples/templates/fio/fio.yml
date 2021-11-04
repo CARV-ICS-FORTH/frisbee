@@ -8,9 +8,9 @@ spec:
   storageClassName: ssd-storage
   resources:
     requests:
-      storage: 5Gi
+      storage: 256Gi
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
 
 ---
 apiVersion: frisbee.io/v1alpha1
@@ -25,19 +25,28 @@ spec:
           device: "/mnt/fio-benchmark-exporter"
           size: "10G"
           direct: "0"
+          node: ""
+          cpu: ""
+          memory: ""
+          preserve: "true"
       spec: |
-        agents:
-          telemetry: [ sysmon/container ]
-        volumes:
+        domain: {{.Inputs.Parameters.node}}     # Placement
+        agents:                                 # Agents
+          telemetry: [ sysmon/container, fiomon/server ]
+        resources:                              # Resources
+          cpu: {{.Inputs.Parameters.cpu}}
+          memory: {{.Inputs.Parameters.memory}}
+        volumes:                                # Volumes
           - name: fio-benchmark-exporter-pv
             persistentVolumeClaim:
               claimName: fio-pvc
-        container:
+        preserveOnSuccess: {{.Inputs.Parameters.preserve}}
+        container:                              # Container
           name: app
           image: xridge/fio
           volumeMounts:
             - name: fio-benchmark-exporter-pv
-              mountPath: /mnt/fio-benchmark-exporter
+              mountPath: {{.Inputs.Parameters.device}}
           command:
             - /bin/sh # Run shell
             - -c      # Read from string
@@ -70,7 +79,7 @@ spec:
                       for iodepth in 1 4 32 128; do
                           cmd="fio --rw=$$rw --bs=4K --numjobs=$$numjobs --iodepth=$$iodepth fio.conf"
                           echo $$cmd
-                          $$cmd >> /output
+                          $$cmd >> /dev/shm/pipe
 
                           echo
                           echo
@@ -83,7 +92,7 @@ spec:
                       for iodepth in 1 4 32 128 256; do
                           cmd="fio --rw=$$rw --bs=1M --numjobs=$$numjobs --iodepth=$$iodepth fio.conf"
                           echo $$cmd
-                          $$cmd >> /output
+                          $$cmd >> /dev/shm/pipe
 
                           echo
                           echo

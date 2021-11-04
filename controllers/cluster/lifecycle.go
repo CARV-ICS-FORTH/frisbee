@@ -118,5 +118,4 @@ func calculateLifecycle(cluster *v1alpha1.Cluster, gs lifecycle.Classifier) v1al
 		successfulJobs: %s,
 		failedJobs: %s
 	`, status, expectedJobs, gs.ActiveList(), gs.SuccessfulList(), gs.FailedList()))
-
 }

@@ -31,7 +31,7 @@ import (
 // of the CronJob if we can't find a last run. This gets the time of next schedule
 // after last scheduled and before now.
 //
-// If there are too many missed runs and we don't have any deadlines set, we'll
+// If there are too many missed runs, and we don't have any deadlines set, we'll
 // bail so that we don't cause issues on controller restarts or wedges.
 // Otherwise, we'll just return the missed runs (of which we'll just use the latest),
 // and the next run, so that we can know when it's time to reconcile again.

@@ -63,7 +63,7 @@ spec:
               echo "Create Mongo daemon"
               mongod --config /tmp/mongod.conf
 
-          readinessProbe:
+          startupProbe:
             exec:
               initialDelaySeconds: 10
               command:
@@ -123,7 +123,7 @@ spec:
 
               mongod --config /tmp/mongod.conf
 
-        readinessProbe:
+        startupProbe:
           exec:
             command:
               - /bin/sh   # Run shell

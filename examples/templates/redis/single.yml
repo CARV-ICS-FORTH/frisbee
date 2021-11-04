@@ -40,7 +40,7 @@ spec:
 
               redis-server redis.conf
 
-          readinessProbe:
+          startupProbe:
             exec:
               command:
                 - /bin/sh   # Run shell
@@ -87,7 +87,7 @@ spec:
 
               redis-server redis.conf
 
-          readinessProbe:
+          startupProbe:
             exec:
               command:
                 - /bin/sh   # Run shell

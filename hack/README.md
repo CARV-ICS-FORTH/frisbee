@@ -1,0 +1,1 @@
+Contains utility files, e.g. the file used to scaffold the license header for your project files.

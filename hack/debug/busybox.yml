@@ -1,0 +1,38 @@
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: daemonset-example
+  labels:
+    app: daemonset-example
+spec:
+  selector:
+    matchLabels:
+      app: daemonset-example
+  template:
+    metadata:
+      labels:
+        app: daemonset-example
+    spec:
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule
+      volumes:
+        - name: dokimi
+          hostPath:
+            path: /mnt/local
+      containers:
+        - name: busybox
+          image: busybox
+          volumeMounts:
+            - mountPath: /mnt/dokimi
+              name: dokimi
+          command:
+            - /bin/sh # Run shell
+            - -c      # Read from string
+            - |       # Multi-line str
+              set -eum
+
+              rm -rf /mnt/dokimi/*
+
+              sleep 3600

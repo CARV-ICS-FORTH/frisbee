@@ -12,10 +12,10 @@ spec:
     - ReadOnlyMany                        # Multiple nodes can mount the volume for reading
     - ReadWriteMany                       # Multiple nodes can mount the volume for both RW
   persistentVolumeReclaimPolicy: Retain   # Determines what happens with a PV claim is deleted
-  storageClassName: shared-ssd-storage    # Use StorageClass to delay volume binding until Pod scheduling.
+  storageClassName: ssd-storage           # Use StorageClass to delay volume binding until Pod scheduling.
   local:
     path: /mnt/local
-  nodeAffinity: # Tie volume to specific noes and schedule Pods into it.
+  nodeAffinity: # Tie volume to specific nodes and schedule Pods into it.
     required:
       nodeSelectorTerms:
         - matchExpressions:

@@ -20,7 +20,7 @@
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: "local-storage"
+  name: nvme-storage
 provisioner: "kubernetes.io/no-provisioner"
 volumeBindingMode: "WaitForFirstConsumer"
 
@@ -28,7 +28,7 @@ volumeBindingMode: "WaitForFirstConsumer"
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: "ssd-storage"
+  name: ssd-storage
 provisioner: "kubernetes.io/no-provisioner"
 volumeBindingMode: "WaitForFirstConsumer"
 
@@ -36,7 +36,7 @@ volumeBindingMode: "WaitForFirstConsumer"
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: "shared-ssd-storage"
+  name: shared-ssd-storage
 provisioner: "kubernetes.io/no-provisioner"
 volumeBindingMode: "WaitForFirstConsumer"
 
@@ -44,6 +44,6 @@ volumeBindingMode: "WaitForFirstConsumer"
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: "backup-storage"
+  name: backup-storage
 provisioner: "kubernetes.io/no-provisioner"
 volumeBindingMode: "WaitForFirstConsumer"

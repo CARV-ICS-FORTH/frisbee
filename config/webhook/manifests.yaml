@@ -7,7 +7,7 @@ metadata:
   name: mutating-webhook-configuration
 webhooks:
 - admissionReviewVersions:
-  - v1
+  - v1alpha1
   - v1beta1
   clientConfig:
     service:
@@ -28,7 +28,7 @@ webhooks:
     - chaos
   sideEffects: None
 - admissionReviewVersions:
-  - v1
+  - v1alpha1
   - v1beta1
   clientConfig:
     service:
@@ -49,7 +49,7 @@ webhooks:
     - clusters
   sideEffects: None
 - admissionReviewVersions:
-  - v1
+  - v1alpha1
   - v1beta1
   clientConfig:
     service:
@@ -70,7 +70,7 @@ webhooks:
     - services
   sideEffects: None
 - admissionReviewVersions:
-  - v1
+  - v1alpha1
   - v1beta1
   clientConfig:
     service:
@@ -91,7 +91,7 @@ webhooks:
     - telemetries
   sideEffects: None
 - admissionReviewVersions:
-  - v1
+  - v1alpha1
   - v1beta1
   clientConfig:
     service:
@@ -112,18 +112,18 @@ webhooks:
     - templates
   sideEffects: None
 - admissionReviewVersions:
-  - v1
+  - v1alpha1
   - v1beta1
   clientConfig:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-frisbee.io-v1alpha1-workflow
+      path: /mutate-frisbee-frisbee-io-v1alpha1-workflow
   failurePolicy: Fail
   name: mworkflow.kb.io
   rules:
   - apiGroups:
-    - frisbee.io
+    - frisbee.frisbee.io
     apiVersions:
     - v1alpha1
     operations:
@@ -141,7 +141,7 @@ metadata:
   name: validating-webhook-configuration
 webhooks:
 - admissionReviewVersions:
-  - v1
+  - v1alpha1
   - v1beta1
   clientConfig:
     service:
@@ -162,7 +162,7 @@ webhooks:
     - chaos
   sideEffects: None
 - admissionReviewVersions:
-  - v1
+  - v1alpha1
   - v1beta1
   clientConfig:
     service:
@@ -183,7 +183,7 @@ webhooks:
     - clusters
   sideEffects: None
 - admissionReviewVersions:
-  - v1
+  - v1alpha1
   - v1beta1
   clientConfig:
     service:
@@ -204,7 +204,7 @@ webhooks:
     - services
   sideEffects: None
 - admissionReviewVersions:
-  - v1
+  - v1alpha1
   - v1beta1
   clientConfig:
     service:
@@ -225,7 +225,7 @@ webhooks:
     - telemetries
   sideEffects: None
 - admissionReviewVersions:
-  - v1
+  - v1alpha1
   - v1beta1
   clientConfig:
     service:
@@ -246,18 +246,18 @@ webhooks:
     - templates
   sideEffects: None
 - admissionReviewVersions:
-  - v1
+  - v1alpha1
   - v1beta1
   clientConfig:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-frisbee.io-v1alpha1-workflow
+      path: /validate-frisbee-frisbee-io-v1alpha1-workflow
   failurePolicy: Fail
   name: vworkflow.kb.io
   rules:
   - apiGroups:
-    - frisbee.io
+    - frisbee.frisbee.io
     apiVersions:
     - v1alpha1
     operations:

@@ -111,7 +111,7 @@ spec:
                           properties:
                             duration:
                               description: Duration is the time after which Frisbee
-                                will rollback the injected fault.
+                                will roll back the injected fault.
                               type: string
                             selector:
                               properties:
@@ -230,8 +230,7 @@ spec:
                             executions.  Defaults to false.
                           type: boolean
                         templateRef:
-                          description: TemplateRef refers to a service template. It
-                            conflicts with Service.
+                          description: TemplateRef refers to a  template
                           type: string
                         tolerate:
                           description: Tolerate specifies the conditions under which
@@ -271,7 +270,7 @@ spec:
                       description: Name is a unique identifier of the action
                       type: string
                     service:
-                      description: ServiceSpec defines the desired state of Service
+                      description: ServiceSpec defines the desired state of Service.
                       properties:
                         agents:
                           description: List of sidecar agents
@@ -1486,24 +1485,40 @@ spec:
                             this will change in the future
                           type: string
                         fromTemplate:
-                          description: ServiceFromTemplate populates the service fields
-                            from a template. This is used for backward compatibility
-                            with Cluster with just one instance. This field cannot
-                            be used in conjunction with other fields.
+                          description: FromTemplate populates the service fields from
+                            a template. This is used for backward compatibility with
+                            Cluster with just one instance. This field cannot be used
+                            in conjunction with other fields.
                           properties:
                             inputs:
-                              additionalProperties:
-                                type: string
-                              description: Inputs is a list of inputs passed to the
-                                objects.
-                              type: object
+                              description: Inputs are list of inputs passed to the
+                                objects. When used in conjunction with Instances,
+                                there can be only one input and all the instances
+                                will run with identical parameters. If Instances is
+                                defined and there are more than one inputs, the request
+                                will be rejected.
+                              items:
+                                additionalProperties:
+                                  type: string
+                                type: object
+                              type: array
+                            instances:
+                              description: Instances dictate the number of objects
+                                to be created for the service. If Env is specified,
+                                the values with be identical across the spawned instances.
+                                For instances with different parameters, use Inputs.
+                              type: integer
                             templateRef:
-                              description: TemplateRef refers to a service template.
-                                It conflicts with Service.
+                              description: TemplateRef refers to a  template
                               type: string
                           required:
                           - templateRef
                           type: object
+                        preserveOnSuccess:
+                          description: 'Preserve indicate whether the created jobs
+                            will be garbage collected when the Service is successfully
+                            terminated. Default: False'
+                          type: boolean
                         resources:
                           description: Resources specifies limitations as to how the
                             container will access host resources.
@@ -3129,6 +3144,8 @@ spec:
                             - name
                             type: object
                           type: array
+                      required:
+                      - preserveOnSuccess
                       type: object
                   required:
                   - action

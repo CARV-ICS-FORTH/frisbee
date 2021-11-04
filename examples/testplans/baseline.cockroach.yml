@@ -1,0 +1,130 @@
+apiVersion: frisbee.io/v1alpha1
+kind: Workflow
+metadata:
+  name: baseline-cockroach
+spec:
+  withTelemetry:
+    importMonitors: [ "sysmon/container", "ycsbmon/client", "cockroachmon/server" ]
+    ingress:
+      host: platform.science-hangar.eu
+
+  withTestOracle:
+    pass: >-
+      {{.IsSuccessful "workload-e"}} == true
+
+  actions:
+    # Step 0: bootstrap.
+    # Cockroachdb requires knowing the names of the clustered nodes, before they are started !.
+    - action: Cluster
+      name: master
+      cluster:
+        templateRef: cockroachdb-cluster/master
+        instances: 3
+        inputs:
+          - { servers: "master-1:26257,master-2:26257,master-3:26257" }
+
+    # Run cockroach command to any of the created node.
+    - action: Service
+      name: boot
+      depends: { running: [ master ] }
+      service:
+        fromTemplate:
+          templateRef: cockroachdb-cluster/bootstrap
+          inputs:
+            - { server: .cluster.master.any }
+
+
+    # Step 1: Load a new dataset, using the parameters of workload A.
+    # We use no throttling to maximize this step and complete it soon.
+    - action: Service
+      depends: { success: [ boot ] }
+      name: loader
+      service:
+        fromTemplate:
+          templateRef: ycsb-cockroach/loader
+          inputs:
+            - { server: .cluster.master.any, workload: workloada, recordcount: "1000000", threads: "400" }
+
+    # Step 2: Run workload A
+    - action: Service
+      depends: { success: [ loader ] }
+      name: workload-a
+      service:
+        fromTemplate:
+          templateRef: ycsb-cockroach/runner
+          inputs:
+            - { server: .cluster.master.any, workload: workloada, operationcount: "1000000",
+                cpu: "8",  memory: "8Gi", threads: "40" }
+
+    # Step 3: Run workload B
+    - action: Service
+      depends: { success: [ workload-a ] }
+      name: workload-b
+      service:
+        fromTemplate:
+          templateRef: ycsb-cockroach/runner
+          inputs:
+            - { server: .cluster.master.any, workload: workloadb, operationcount: "1000000",
+                cpu: "8",  memory: "8Gi", threads: "40" }
+
+    # Step 4: Run workload C
+    - action: Service
+      depends: { success: [ workload-b ] }
+      name: workload-c
+      service:
+        fromTemplate:
+          templateRef: ycsb-cockroach/runner
+          inputs:
+            - { server: .cluster.master.any, workload: workloadc, operationcount: "1000000",
+                cpu: "8",  memory: "8Gi", threads: "40" }
+
+
+    # Step 5: Run workload F
+    - action: Service
+      depends: { success: [ workload-c ] }
+      name: workload-f
+      service:
+        fromTemplate:
+          templateRef: ycsb-cockroach/runner
+          inputs:
+            - { server: .cluster.master.any, workload: workloadf, operationcount: "1000000",
+                cpu: "8",  memory: "8Gi", threads: "40" }
+
+
+    # Step 6: Run workload D.
+    - action: Service
+      depends: { success: [ workload-f ] }
+      name: workload-d
+      service:
+        fromTemplate:
+          templateRef: ycsb-cockroach/runner
+          inputs:
+            - { server: .cluster.master.any, workload: workloadd, operationcount: "1000000",
+                cpu: "8",  memory: "8Gi", threads: "40" }
+
+
+    # Step 7,8: Reload the data with parameters of workload E.
+    # We use the dropdata field to remove all data before test.
+    - action: Service
+      depends: { success: [ workload-d ] }
+      name: reloader
+      service:
+        fromTemplate:
+          templateRef: ycsb-cockroach/loader
+          inputs:
+            - { server: .cluster.master.any, workload: workloade, dropdata: "true", recordcount: "1000000",
+                threads: "400" }
+
+
+    # Step 9:Run workload E
+    - action: Service
+      depends: { success: [ reloader ] }
+      name: workload-e
+      service:
+        fromTemplate:
+          templateRef: ycsb-cockroach/runner
+          inputs:
+            - { server: .cluster.master.any, workload: workloade, operationcount: "1000000",
+                cpu: "8",  memory: "8Gi", threads: "40" }
+
+

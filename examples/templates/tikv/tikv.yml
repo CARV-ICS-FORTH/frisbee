@@ -4,7 +4,7 @@ kind: PersistentVolumeClaim
 metadata:
   name: tikv-pvc
 spec:
-  storageClassName: shared-ssd-storage
+  storageClassName: nvme-storage
   resources:
     requests:
       storage: 200Gi

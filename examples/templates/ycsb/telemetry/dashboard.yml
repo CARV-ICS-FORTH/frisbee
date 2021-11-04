@@ -12,13 +12,19 @@ data:
         "list": [
           {
             "builtIn": 1,
-            "datasource": "-- Grafana --",
+            "datasource": "Prometheus",
             "enable": false,
             "hide": true,
             "iconColor": "rgba(0, 211, 255, 1)",
             "limit": 100,
             "name": "Annotations & Alerts",
             "showIn": 0,
+            "target": {
+              "limit": 100,
+              "matchAny": false,
+              "tags": [],
+              "type": "dashboard"
+            },
             "type": "dashboard"
           },
           {
@@ -90,7 +96,7 @@ data:
       "fiscalYearStartMonth": 0,
       "gnetId": null,
       "graphTooltip": 1,
-      "id": 2,
+      "id": 4,
       "links": [],
       "liveNow": false,
       "panels": [
@@ -105,7 +111,7 @@ data:
           },
           "id": 82,
           "panels": [],
-          "title": "Real-time Overview",
+          "title": "Cluster Overview",
           "type": "row"
         },
         {
@@ -143,8 +149,8 @@ data:
             "overrides": []
           },
           "gridPos": {
-            "h": 7,
-            "w": 20,
+            "h": 8,
+            "w": 16,
             "x": 0,
             "y": 1
           },
@@ -177,7 +183,7 @@ data:
           ],
           "timeFrom": null,
           "timeShift": null,
-          "title": "Total Operations ",
+          "title": "Real-time Clients (Total Ops)",
           "transformations": [
             {
               "disabled": true,
@@ -291,7 +297,7 @@ data:
           "gridPos": {
             "h": 7,
             "w": 4,
-            "x": 20,
+            "x": 16,
             "y": 1
           },
           "id": 93,
@@ -331,9 +337,498 @@ data:
           ],
           "timeFrom": null,
           "timeShift": null,
-          "title": "Top Operations",
+          "title": "Real-Time Operations",
           "transformations": [],
           "type": "piechart"
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                }
+              },
+              "mappings": [],
+              "min": 0,
+              "unit": "short"
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Chunks"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "#1F78C1",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Chunks to persist"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "#508642",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Max chunks"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "#052B51",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Max to persist"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "#3F6833",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "To persist"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "#9AC48A",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 4,
+            "x": 20,
+            "y": 1
+          },
+          "id": 103,
+          "links": [],
+          "options": {
+            "displayLabels": [
+              "name",
+              "percent"
+            ],
+            "legend": {
+              "displayMode": "hidden",
+              "placement": "right"
+            },
+            "pieType": "pie",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "tooltip": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "8.1.3",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "sum(ycsb_count) by (operation)",
+              "hide": false,
+              "instant": false,
+              "interval": "",
+              "legendFormat": "{{operation}}",
+              "refId": "A"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Historical Operations",
+          "transformations": [],
+          "type": "piechart"
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 0,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "always",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "blue",
+                    "value": null
+                  },
+                  {
+                    "color": "green",
+                    "value": 30
+                  },
+                  {
+                    "color": "#EAB839",
+                    "value": 60
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 24,
+            "x": 0,
+            "y": 9
+          },
+          "id": 102,
+          "links": [],
+          "options": {
+            "legend": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "displayMode": "table",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "8.2.2",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "max(ycsb_count) by (instance)",
+              "hide": false,
+              "instant": false,
+              "interval": "",
+              "intervalFactor": 4,
+              "legendFormat": "{{instance}}",
+              "refId": "C"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Total Operations (by Client)",
+          "transformations": [
+            {
+              "disabled": true,
+              "id": "reduce",
+              "options": {
+                "includeTimeField": true,
+                "mode": "reduceFields",
+                "reducers": []
+              }
+            }
+          ],
+          "transparent": true,
+          "type": "timeseries"
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 0,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "smooth",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "always",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "reqps"
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Average"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "orange",
+                      "mode": "fixed"
+                    }
+                  },
+                  {
+                    "id": "custom.spanNulls",
+                    "value": true
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 24,
+            "x": 0,
+            "y": 16
+          },
+          "id": 86,
+          "links": [],
+          "options": {
+            "legend": {
+              "calcs": [
+                "mean",
+                "max",
+                "min"
+              ],
+              "displayMode": "table",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "8.1.3",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "sum(max(ycsb_ops) by (instance))",
+              "hide": false,
+              "instant": false,
+              "interval": "",
+              "intervalFactor": 4,
+              "legendFormat": "Average",
+              "refId": "Average"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Total Throughput",
+          "transformations": [],
+          "transparent": true,
+          "type": "timeseries"
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 0,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "µs"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 24,
+            "x": 0,
+            "y": 23
+          },
+          "id": 96,
+          "links": [],
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "8.2.2",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "max(max(ycsb_avg) by (instance))",
+              "format": "time_series",
+              "hide": false,
+              "interval": "",
+              "intervalFactor": 4,
+              "legendFormat": "Average",
+              "metric": "prometheus_local_storage_memory_series",
+              "refId": "A",
+              "step": 10
+            },
+            {
+              "exemplar": true,
+              "expr": "max(max(ycsb_99th) by (instance))",
+              "hide": false,
+              "interval": "",
+              "intervalFactor": 4,
+              "legendFormat": "99th ",
+              "refId": "B"
+            },
+            {
+              "exemplar": true,
+              "expr": "max(max(ycsb_999th) by (instance))",
+              "hide": false,
+              "interval": "",
+              "intervalFactor": 4,
+              "legendFormat": "99.9th ",
+              "refId": "C"
+            },
+            {
+              "exemplar": true,
+              "expr": "max(max(ycsb_9999th) by (instance))",
+              "hide": false,
+              "interval": "",
+              "intervalFactor": 4,
+              "legendFormat": "99.99th ",
+              "refId": "D"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Max Latency",
+          "transparent": true,
+          "type": "timeseries"
         },
         {
           "collapsed": false,
@@ -342,7 +837,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 8
+            "y": 30
           },
           "id": 78,
           "panels": [],
@@ -426,9 +921,9 @@ data:
             "h": 8,
             "w": 16,
             "x": 0,
-            "y": 9
+            "y": 31
           },
-          "id": 86,
+          "id": 97,
           "links": [],
           "options": {
             "legend": {
@@ -457,16 +952,6 @@ data:
               "legendFormat": "{{ instance }}",
               "refId": "QPS",
               "step": 10
-            },
-            {
-              "exemplar": true,
-              "expr": "avg(ycsb_ops) ",
-              "hide": false,
-              "instant": false,
-              "interval": "",
-              "intervalFactor": 4,
-              "legendFormat": "Average",
-              "refId": "Average"
             }
           ],
           "timeFrom": null,
@@ -595,9 +1080,9 @@ data:
             "h": 8,
             "w": 8,
             "x": 16,
-            "y": 9
+            "y": 31
           },
-          "id": 96,
+          "id": 98,
           "links": [],
           "options": {
             "legend": {
@@ -711,7 +1196,7 @@ data:
             "h": 7,
             "w": 8,
             "x": 0,
-            "y": 17
+            "y": 39
           },
           "id": 26,
           "links": [],
@@ -741,15 +1226,6 @@ data:
               "metric": "prometheus_local_storage_ingested_samples_total",
               "refId": "99Latency",
               "step": 10
-            },
-            {
-              "exemplar": true,
-              "expr": "avg(ycsb_avg) ",
-              "hide": false,
-              "interval": "",
-              "intervalFactor": 4,
-              "legendFormat": "Average",
-              "refId": "Average Read"
             }
           ],
           "timeFrom": null,
@@ -836,7 +1312,7 @@ data:
             "h": 7,
             "w": 8,
             "x": 8,
-            "y": 17
+            "y": 39
           },
           "id": 94,
           "links": [],
@@ -867,15 +1343,6 @@ data:
               "metric": "prometheus_local_storage_ingested_samples_total",
               "refId": "99Latency",
               "step": 10
-            },
-            {
-              "exemplar": true,
-              "expr": "avg(ycsb_avg) ",
-              "hide": false,
-              "interval": "",
-              "intervalFactor": 4,
-              "legendFormat": "Average",
-              "refId": "Average Read"
             }
           ],
           "timeFrom": null,
@@ -962,7 +1429,7 @@ data:
             "h": 7,
             "w": 8,
             "x": 16,
-            "y": 17
+            "y": 39
           },
           "id": 95,
           "links": [],
@@ -993,16 +1460,6 @@ data:
               "metric": "prometheus_local_storage_ingested_samples_total",
               "refId": "99Latency",
               "step": 10
-            },
-            {
-              "exemplar": true,
-              "expr": "avg(ycsb_avg) ",
-              "hide": false,
-              "instant": false,
-              "interval": "",
-              "intervalFactor": 4,
-              "legendFormat": "Average",
-              "refId": "Average Read"
             }
           ],
           "timeFrom": null,
@@ -1018,7 +1475,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 24
+            "y": 46
           },
           "id": 80,
           "panels": [],
@@ -1026,41 +1483,6 @@ data:
           "type": "row"
         },
         {
-          "alert": {
-            "alertRuleTags": {},
-            "conditions": [
-              {
-                "evaluator": {
-                  "params": [
-                    10
-                  ],
-                  "type": "gt"
-                },
-                "operator": {
-                  "type": "and"
-                },
-                "query": {
-                  "params": [
-                    "Average",
-                    "5m",
-                    "now"
-                  ]
-                },
-                "reducer": {
-                  "params": [],
-                  "type": "percent_diff"
-                },
-                "type": "query"
-              }
-            ],
-            "executionErrorState": "alerting",
-            "for": "30m",
-            "frequency": "1m",
-            "handler": 1,
-            "name": "Average Throughput alert",
-            "noDataState": "alerting",
-            "notifications": []
-          },
           "datasource": "Prometheus",
           "fieldConfig": {
             "defaults": {
@@ -1137,7 +1559,7 @@ data:
             "h": 8,
             "w": 15,
             "x": 0,
-            "y": 25
+            "y": 47
           },
           "id": 74,
           "links": [],
@@ -1164,19 +1586,10 @@ data:
               "hide": false,
               "instant": false,
               "interval": "",
-              "intervalFactor": 1,
+              "intervalFactor": 4,
               "legendFormat": "{{ operation }}",
               "refId": "QPS",
               "step": 10
-            },
-            {
-              "exemplar": true,
-              "expr": "avg(ycsb_ops) ",
-              "hide": false,
-              "instant": false,
-              "interval": "",
-              "legendFormat": "Average",
-              "refId": "Average"
             }
           ],
           "thresholds": [
@@ -1313,7 +1726,7 @@ data:
             "h": 8,
             "w": 9,
             "x": 15,
-            "y": 25
+            "y": 47
           },
           "id": 87,
           "links": [],
@@ -1429,7 +1842,7 @@ data:
             "h": 7,
             "w": 8,
             "x": 0,
-            "y": 33
+            "y": 55
           },
           "id": 88,
           "links": [],
@@ -1459,15 +1872,6 @@ data:
               "metric": "prometheus_local_storage_ingested_samples_total",
               "refId": "99Latency",
               "step": 10
-            },
-            {
-              "exemplar": true,
-              "expr": "avg(ycsb_avg) ",
-              "hide": false,
-              "interval": "",
-              "intervalFactor": 4,
-              "legendFormat": "Average",
-              "refId": "Average Read"
             }
           ],
           "timeFrom": null,
@@ -1554,7 +1958,7 @@ data:
             "h": 7,
             "w": 8,
             "x": 8,
-            "y": 33
+            "y": 55
           },
           "id": 89,
           "links": [],
@@ -1584,15 +1988,6 @@ data:
               "metric": "prometheus_local_storage_ingested_samples_total",
               "refId": "99Latency",
               "step": 10
-            },
-            {
-              "exemplar": true,
-              "expr": "avg(ycsb_avg) ",
-              "hide": false,
-              "interval": "",
-              "intervalFactor": 4,
-              "legendFormat": "Average",
-              "refId": "Average Read"
             }
           ],
           "timeFrom": null,
@@ -1679,7 +2074,7 @@ data:
             "h": 7,
             "w": 8,
             "x": 16,
-            "y": 33
+            "y": 55
           },
           "id": 92,
           "links": [],
@@ -1709,15 +2104,6 @@ data:
               "metric": "prometheus_local_storage_ingested_samples_total",
               "refId": "99Latency",
               "step": 10
-            },
-            {
-              "exemplar": true,
-              "expr": "avg(ycsb_avg) ",
-              "hide": false,
-              "interval": "",
-              "intervalFactor": 4,
-              "legendFormat": "Average",
-              "refId": "Average Read"
             }
           ],
           "timeFrom": null,
@@ -1737,7 +2123,7 @@ data:
         "list": []
       },
       "time": {
-        "from": "now-15m",
+        "from": "now-1h",
         "to": "now"
       },
       "timepicker": {

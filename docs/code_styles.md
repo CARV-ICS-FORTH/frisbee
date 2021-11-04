@@ -56,7 +56,7 @@ Rather than:
 // ContainerManager is the default implement of interface ContainerMgr.
 type ContainerManager struct {
 // Store stores containers in Backend store.
-// Element operated in store must has a type of *ContainerMeta.
+// Element operated in store must have a type of *ContainerMeta.
 // By default, Store will use local filesystem with json format to store containers.
 Store *meta.Store
 // Client is used to interact with containerd.
@@ -141,7 +141,7 @@ failed to do something" and the specific err instance to construct a new error:
 fmt.Errorf("failed to do something: %v", err)
 ```
 
-When an err could be thrown out, please remember to add it in the error construction.
+When an error could be thrown out, please remember to add it in the error construction.
 
 ### RULE006 - Return fast to indent less
 
@@ -194,7 +194,7 @@ When occurring nesting errors, we recommend first considering using package `git
 
 Every comment must begin with `//` plus a whitespace no matter for a variable, struct, function, code block and anything
 else. Please don't forget the whitespace, and end up all the sentence with a `.`. In addition, it is encouraged to use
-third person singular to polish the majority of function's comments. For example, the following way
+third-person singular to polish the majority of function's comments. For example, the following way
 
 ```golang
 // wrong example

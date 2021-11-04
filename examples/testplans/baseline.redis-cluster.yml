@@ -18,7 +18,7 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Workflow
 metadata:
-  name: boot-redis-cluster
+  name: baseline-redis-cluster
 spec:
   withTelemetry:
     importMonitors: [ "sysmon/container", "ycsbmon/client",  "redismon/server" ]
@@ -47,7 +47,7 @@ spec:
         fromTemplate:
           templateRef: rediscluster/bootstrap
           inputs:
-            { servers: .cluster.master.all }
+            - { servers: .cluster.master.all }
 
 
     # Step 1: Load a new dataset, using the parameters of workload A.
@@ -59,8 +59,8 @@ spec:
         fromTemplate:
           templateRef: ycsb-redis/loader
           inputs:
-            { server: .cluster.master.any, workload: workloada, recordcount: "1000000", threads: "400",
-              mode: "cluster" }
+            - { server: .cluster.master.any, workload: workloada, recordcount: "1000000", threads: "400",
+                mode: "cluster" }
 
     # Step 2: Run workload A
     - action: Service
@@ -70,8 +70,8 @@ spec:
         fromTemplate:
           templateRef: ycsb-redis/runner
           inputs:
-            { server: .cluster.master.any, workload: workloada, operationcount: "1000000",
-              cpu: "8",  memory: "8Gi", threads: "40", mode: "cluster", }
+            - { server: .cluster.master.any, workload: workloada, operationcount: "1000000",
+                cpu: "8",  memory: "8Gi", threads: "40", mode: "cluster", }
 
     # Step 3: Run workload B
     - action: Service
@@ -81,8 +81,8 @@ spec:
         fromTemplate:
           templateRef: ycsb-redis/runner
           inputs:
-            { mode: "cluster", server: .cluster.master.any, workload: workloadb, operationcount: "1000000",
-              cpu: "8",  memory: "8Gi", threads: "40" }
+            - { mode: "cluster", server: .cluster.master.any, workload: workloadb, operationcount: "1000000",
+                cpu: "8",  memory: "8Gi", threads: "40" }
 
     # Step 4: Run workload C
     - action: Service
@@ -92,8 +92,8 @@ spec:
         fromTemplate:
           templateRef: ycsb-redis/runner
           inputs:
-            { server: .cluster.master.any, workload: workloadc, operationcount: "1000000",
-              cpu: "8",  memory: "8Gi", threads: "40", mode: "cluster" }
+            - { server: .cluster.master.any, workload: workloadc, operationcount: "1000000",
+                cpu: "8",  memory: "8Gi", threads: "40", mode: "cluster" }
 
 
     # Step 5: Run workload F
@@ -104,8 +104,8 @@ spec:
         fromTemplate:
           templateRef: ycsb-redis/runner
           inputs:
-            { server: .cluster.master.any, workload: workloadf, operationcount: "1000000",
-              cpu: "8",  memory: "8Gi", threads: "40", mode: "cluster" }
+            - { server: .cluster.master.any, workload: workloadf, operationcount: "1000000",
+                cpu: "8",  memory: "8Gi", threads: "40", mode: "cluster" }
 
 
     # Step 6: Run workload D.
@@ -116,8 +116,8 @@ spec:
         fromTemplate:
           templateRef: ycsb-redis/runner
           inputs:
-            { server: .cluster.master.any, workload: workloadd, operationcount: "1000000",
-              cpu: "8",  memory: "8Gi", threads: "40", mode: "cluster" }
+            - { server: .cluster.master.any, workload: workloadd, operationcount: "1000000",
+                cpu: "8",  memory: "8Gi", threads: "40", mode: "cluster" }
 
 
     # Step 7,8: Reload the data with parameters of workload E.
@@ -129,8 +129,8 @@ spec:
         fromTemplate:
           templateRef: ycsb-redis/loader
           inputs:
-            { mode: "cluster", server: .cluster.master.any, workload: workloade, dropdata: "true", recordcount: "1000000",
-              threads: "400" }
+            - { mode: "cluster", server: .cluster.master.any, workload: workloade, dropdata: "true", recordcount: "1000000",
+                threads: "400" }
 
 
     # Step 9:Run workload E
@@ -141,7 +141,7 @@ spec:
         fromTemplate:
           templateRef: ycsb-redis/runner
           inputs:
-            { server: .cluster.master.any, workload: workloade, operationcount: "1000000",
-              cpu: "8",  memory: "8Gi", threads: "40", mode: "cluster" }
+            - { server: .cluster.master.any, workload: workloade, operationcount: "1000000",
+                cpu: "8",  memory: "8Gi", threads: "40", mode: "cluster" }
 
 

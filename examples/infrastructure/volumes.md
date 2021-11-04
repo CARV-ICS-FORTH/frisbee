@@ -95,8 +95,8 @@ spec:
     - name: myfrontend
       image: nginx
       volumeMounts:
-      - mountPath: "/var/www/html"
-        name: mypd
+        - mountPath: "/var/www/html"
+          name: mypd
   volumes:
     - name: mypd
       persistentVolumeClaim:
@@ -124,10 +124,10 @@ you which uses the standard persistent disk type.
 #### StorageClass Configuration
 
 ```yaml
---- 
+---
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
-metadata: 
+metadata:
   name: standard
 provisioner: kubernetes.io/aws-ebs
 reclaimPolicy: Retain
@@ -143,7 +143,7 @@ Fields:
 | volumeBindingMode | controls when volume binding and dynamic provisioning should occur. the default is *
 Immediate*. Alternatively it can be *WaitForFirstCustomer* . |
 
-* The classes.yml defines the top-level classes that are commonly used by frisbee.
+* The classes.yml defines the top-level classes that are commonly used by Frisbee.
 * The other files implement it for every different infrastructure.
 
 #### Topology Awareness
