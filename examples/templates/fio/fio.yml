@@ -30,7 +30,8 @@ spec:
           cpu: ""
           memory: ""
       spec: |
-        domain: {{.Inputs.Parameters.node}}     # Placement
+        domain:
+          - {{.Inputs.Parameters.node}}         # Placement
         agents:                                 # Agents
           telemetry: [ sysmon/container, fiomon/server ]
         resources:                              # Resources

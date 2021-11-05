@@ -1,13 +1,17 @@
-chaos:
+chaos-mesh:
   enabled: false
+
 
 # OpenEBS - Provision dynamic volumes
 openebs:
   enabled: true
   ndm:
-    enabled : false
+    enabled: false
   ndmOperator:
     enabled: false
+  defaultStorageConfig:
+    enabled: false
+
 
 # Provision the infrastructure mannually
 manual:

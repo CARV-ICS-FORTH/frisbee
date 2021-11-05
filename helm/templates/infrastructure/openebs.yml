@@ -4,12 +4,13 @@ kind: StorageClass
 metadata:
   name: ssd-storage
   annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
     openebs.io/cas-type: local
     cas.openebs.io/config: |
       - name: StorageType
         value: hostpath
       - name: BasePath
-        value: /mnt/local
+        value: "/mnt/local"
 provisioner: openebs.io/local
 reclaimPolicy: Delete
 volumeBindingMode: WaitForFirstConsumer

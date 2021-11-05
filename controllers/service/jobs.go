@@ -198,7 +198,23 @@ func setPlacement(obj *v1alpha1.Service, pod *corev1.Pod) {
 
 	// for the moment simply match domain to a specific node. this will change in the future
 	if len(spec.Domain) > 0 {
-		pod.Spec.NodeName = spec.Domain
+		pod.Spec.Affinity = &corev1.Affinity{
+			NodeAffinity: &corev1.NodeAffinity{ // Match pods to a node
+				RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+					NodeSelectorTerms: []corev1.NodeSelectorTerm{
+						{
+							MatchExpressions: []corev1.NodeSelectorRequirement{
+								{
+									Key:      "kubernetes.io/hostname",
+									Operator: corev1.NodeSelectorOpIn,
+									Values:   spec.Domain,
+								},
+							},
+						},
+					},
+				},
+			},
+		}
 	}
 
 	/*

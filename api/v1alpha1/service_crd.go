@@ -83,7 +83,7 @@ type ServiceSpec struct {
 	// the nodes included in the domain must have the label domain:{{domain-name}}.
 	// for the moment simply match domain to a specific node. this will change in the future
 	// +optional
-	Domain string `json:"domain,omitempty"`
+	Domain []string `json:"domain,omitempty"`
 }
 
 // ServiceStatus defines the observed state of Service.
