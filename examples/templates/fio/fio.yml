@@ -1,19 +1,5 @@
 # Add monitoring # https://github.com/fritchie/fio_benchmark_exporter
 ---
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: fio-pvc
-spec:
-  storageClassName: ssd-storage
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 15Gi
-
-
----
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
@@ -30,6 +16,16 @@ spec:
           cpu: ""
           memory: ""
       spec: |
+        requirements:
+          frisbee.io/pvc: fio-pvc
+          pvc.frisbee.io/spec: |
+            storageClassName: ssd-storage
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: 15Gi
+
         domain:
           - {{.Inputs.Parameters.node}}         # Placement
         agents:                                 # Agents

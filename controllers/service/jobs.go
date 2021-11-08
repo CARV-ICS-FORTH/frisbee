@@ -24,9 +24,12 @@ import (
 	"github.com/fnikolai/frisbee/controllers/template/helpers"
 	"github.com/fnikolai/frisbee/controllers/utils"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
 func (r *Controller) runJob(ctx context.Context, obj *v1alpha1.Service) error {
@@ -41,6 +44,10 @@ func (r *Controller) runJob(ctx context.Context, obj *v1alpha1.Service) error {
 		if err := utils.Update(ctx, r, obj); err != nil {
 			return errors.Wrapf(err, "cannot update populated fields")
 		}
+	}
+
+	if err := prepareRequirements(ctx, r, obj); err != nil {
+		return errors.Wrapf(err, "requirements error")
 	}
 
 	pod, err := constructPod(ctx, r, obj)
@@ -92,6 +99,50 @@ func (r *Controller) populateSpecFromTemplate(ctx context.Context, obj *v1alpha1
 	}
 
 	spec.DeepCopyInto(&obj.Spec)
+
+	return nil
+}
+
+const (
+	RequirePersistentVolumeClaim = "frisbee.io/pvc"
+	PersistentVolumeClaimSpec    = "pvc.frisbee.io/spec"
+)
+
+func prepareRequirements(ctx context.Context, r *Controller, obj *v1alpha1.Service) error {
+	requirements := obj.Spec.Requirements
+	if requirements == nil {
+		return nil
+	}
+
+	// handle persistent volume claims
+	if _, ok := requirements[RequirePersistentVolumeClaim]; ok {
+		config, ok := requirements[PersistentVolumeClaimSpec]
+		if !ok {
+			return errors.New("no PVC config")
+		}
+
+		var content map[string]interface{}
+
+		if err := yaml.Unmarshal([]byte(config), &content); err != nil {
+			return errors.Wrapf(err, "cannot unmarshal pvc content")
+		}
+
+		var pvc unstructured.Unstructured
+
+		pvc.SetUnstructuredContent(map[string]interface{}{
+			"spec": content,
+		})
+		pvc.SetAPIVersion("v1")
+		pvc.SetKind("PersistentVolumeClaim")
+		utils.SetOwner(r, obj, &pvc)
+		pvc.SetName(obj.GetName())
+
+		logrus.Warn("PVC ", pvc)
+
+		if err := r.GetClient().Create(ctx, &pvc); err != nil {
+			return errors.Wrapf(err, "cannot create pvc")
+		}
+	}
 
 	return nil
 }

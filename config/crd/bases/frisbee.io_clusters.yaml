@@ -1385,6 +1385,13 @@ spec:
                       required:
                       - templateRef
                       type: object
+                    requirements:
+                      additionalProperties:
+                        type: string
+                      description: Requirements points to Kinds and their respective
+                        configurations required for the Service operation. For example,
+                        this field can be used to create PVCs dedicated to this service.
+                      type: object
                     resources:
                       description: Resources specifies limitations as to how the container
                         will access host resources.

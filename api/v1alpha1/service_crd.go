@@ -59,6 +59,11 @@ type Resources struct {
 
 // ServiceSpec defines the desired state of Service.
 type ServiceSpec struct {
+	// Requirements points to Kinds and their respective configurations required for the Service operation.
+	// For example, this field can be used to create PVCs dedicated to this service.
+	// +optional
+	Requirements map[string]string `json:"requirements,omitempty"`
+
 	// FromTemplate populates the service fields from a template. This is used for backward compatibility
 	// with Cluster with just one instance. This field cannot be used in conjunction with other fields.
 	// +optional
