@@ -1,0 +1,11 @@
+cff-version: 1.1.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Nikolaidis"
+  given-names: "Fotis"
+  orcid: "https://orcid.org/0000-0002-9379-6233"
+title: "frisbee: a Kubernetes-native platform for exploring, testing, and benchmarking distributed applications"
+version: 1.0.0
+doi: 10.5281/zenodo.5566624
+date-released: 2021-11-08
+url: "https://github.com/CARV-ICS-FORTH/frisbee"
