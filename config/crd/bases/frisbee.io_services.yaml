@@ -1159,7 +1159,9 @@ spec:
                   For this to work, the nodes included in the domain must have the
                   label domain:{{domain-name}}. for the moment simply match domain
                   to a specific node. this will change in the future
-                type: string
+                items:
+                  type: string
+                type: array
               fromTemplate:
                 description: FromTemplate populates the service fields from a template.
                   This is used for backward compatibility with Cluster with just one
@@ -1188,11 +1190,13 @@ spec:
                 required:
                 - templateRef
                 type: object
-              preserveOnSuccess:
-                description: 'Preserve indicate whether the created jobs will be garbage
-                  collected when the Service is successfully terminated. Default:
-                  False'
-                type: boolean
+              requirements:
+                additionalProperties:
+                  type: string
+                description: Requirements points to Kinds and their respective configurations
+                  required for the Service operation. For example, this field can
+                  be used to create PVCs dedicated to this service.
+                type: object
               resources:
                 description: Resources specifies limitations as to how the container
                   will access host resources.
@@ -2658,8 +2662,6 @@ spec:
                   - name
                   type: object
                 type: array
-            required:
-            - preserveOnSuccess
             type: object
           status:
             description: ServiceStatus defines the observed state of Service.

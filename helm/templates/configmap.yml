@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: {{.Release.Namespace}}
+  name: {{.Release.Name}}-configmap
+data:
+  myvalue: "Hello World"
+  test: {{.Values.randomValue}}
+  drink: {{quote  .Values.favorite.drink }}
+  food: {{ .Values.favorite.food | default "MydefaultValue" | quote }}

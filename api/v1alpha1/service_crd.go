@@ -59,6 +59,11 @@ type Resources struct {
 
 // ServiceSpec defines the desired state of Service.
 type ServiceSpec struct {
+	// Requirements points to Kinds and their respective configurations required for the Service operation.
+	// For example, this field can be used to create PVCs dedicated to this service.
+	// +optional
+	Requirements map[string]string `json:"requirements,omitempty"`
+
 	// FromTemplate populates the service fields from a template. This is used for backward compatibility
 	// with Cluster with just one instance. This field cannot be used in conjunction with other fields.
 	// +optional
@@ -83,11 +88,7 @@ type ServiceSpec struct {
 	// the nodes included in the domain must have the label domain:{{domain-name}}.
 	// for the moment simply match domain to a specific node. this will change in the future
 	// +optional
-	Domain string `json:"domain,omitempty"`
-
-	// Preserve indicate whether the created jobs will be garbage collected when
-	// the Service is successfully terminated. Default: False
-	PreserveOnSuccess bool `json:"preserveOnSuccess"`
+	Domain []string `json:"domain,omitempty"`
 }
 
 // ServiceStatus defines the observed state of Service.

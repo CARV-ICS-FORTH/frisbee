@@ -215,9 +215,10 @@ func Create(ctx context.Context, r Reconciler, obj client.Object) error {
 // Delete removes a Kubernetes object, ignoring the NotFound error. If any error exists,
 // it is recorded in the reconciler's logger.
 func Delete(ctx context.Context, r Reconciler, obj client.Object) {
-	foreground := metav1.DeletePropagationForeground
+	// propagation := metav1.DeletePropagationForeground
+	propagation := metav1.DeletePropagationBackground
 	options := client.DeleteOptions{
-		PropagationPolicy: &foreground,
+		PropagationPolicy: &propagation,
 	}
 
 	if err := r.GetClient().Delete(ctx, obj, &options); client.IgnoreNotFound(err) != nil {

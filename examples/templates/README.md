@@ -10,5 +10,9 @@ Templates define minimally constraining skeletons, leaving a bunch of strategica
 will be injected to create multiple variants of the specification using different sets of parameters.
 
 In contrast to other templating engines that are evaluated at deployment time (e.g., Helm), Frisbee templates are
-evaluated in runtime to be usable by calling objects, such as Workflows. 
+evaluated in runtime to be usable by calling objects, such as Workflows.
 
+    A template directive is enclosed in {{ and }} blocks.
+
+The template directive {{ .Release.Name }} injects the release name into the template. The values that are passed into a
+template can be thought of as namespaced objects, where a dot (.) separates each namespaced element.

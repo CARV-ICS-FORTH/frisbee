@@ -1,18 +1,5 @@
 # Add monitoring # https://github.com/fritchie/fio_benchmark_exporter
 ---
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: fio-pvc
-spec:
-  storageClassName: ssd-storage
-  resources:
-    requests:
-      storage: 256Gi
-  accessModes:
-    - ReadWriteMany
-
----
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
@@ -23,29 +10,38 @@ spec:
       inputs:
         parameters:
           device: "/mnt/fio-benchmark-exporter"
-          size: "10G"
+          size: "10M"
           direct: "0"
           node: ""
           cpu: ""
           memory: ""
-          preserve: "true"
       spec: |
-        domain: {{.Inputs.Parameters.node}}     # Placement
+        requirements:
+          frisbee.io/pvc: fio-pvc
+          pvc.frisbee.io/spec: |
+            storageClassName: ssd-storage
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: 15Gi
+
+        domain:
+          - {{.Inputs.Parameters.node}}         # Placement
         agents:                                 # Agents
           telemetry: [ sysmon/container, fiomon/server ]
         resources:                              # Resources
           cpu: {{.Inputs.Parameters.cpu}}
           memory: {{.Inputs.Parameters.memory}}
         volumes:                                # Volumes
-          - name: fio-benchmark-exporter-pv
+          - name: local-storage
             persistentVolumeClaim:
               claimName: fio-pvc
-        preserveOnSuccess: {{.Inputs.Parameters.preserve}}
         container:                              # Container
           name: app
           image: xridge/fio
           volumeMounts:
-            - name: fio-benchmark-exporter-pv
+            - name: local-storage
               mountPath: {{.Inputs.Parameters.device}}
           command:
             - /bin/sh # Run shell
@@ -100,3 +96,5 @@ spec:
                       done
                   done
               done
+
+              sleep 3600
