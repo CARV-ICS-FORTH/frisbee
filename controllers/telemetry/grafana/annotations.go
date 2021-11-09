@@ -29,16 +29,76 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// ///////////////////////////////////////////
+//		Grafana Annotator
+// ///////////////////////////////////////////
+
+var AnnotationTimeout = 30 * time.Second
+
+const (
+	statusAnnotationAdded = "Annotation added"
+
+	statusAnnotationPatched = "Annotation patched"
+)
+
+// Insert inserts a new annotation to Grafana.
+func (c *Client) Insert(ga sdk.CreateAnnotationRequest) (reqID uint) {
+	ctx, cancel := context.WithTimeout(c.ctx, AnnotationTimeout)
+	defer cancel()
+
+	// submit
+	gaResp, err := c.Conn.CreateAnnotation(ctx, ga)
+	if err != nil {
+		runtime.HandleError(errors.Wrapf(err, "annotation failed"))
+
+		return
+	}
+
+	if gaResp.Message == nil {
+		runtime.HandleError(errors.Wrapf(err, "empty annotation response"))
+	} else if *gaResp.Message != statusAnnotationAdded {
+		runtime.HandleError(errors.Wrapf(err, "expected message '%s', but got '%s'",
+			statusAnnotationAdded, *gaResp.Message))
+	}
+
+	return *gaResp.ID
+}
+
+// Patch updates an existing annotation to Grafana.
+func (c *Client) Patch(reqID uint, ga sdk.PatchAnnotationRequest) {
+	ctx, cancel := context.WithTimeout(c.ctx, AnnotationTimeout)
+	defer cancel()
+
+	// submit
+	gaResp, err := c.Conn.PatchAnnotation(ctx, reqID, ga)
+	if err != nil {
+		runtime.HandleError(errors.Wrapf(err, "annotation failed"))
+
+		return
+	}
+
+	if gaResp.Message == nil {
+		runtime.HandleError(errors.Wrapf(err, "empty annotation response"))
+	} else if *gaResp.Message != statusAnnotationPatched {
+		runtime.HandleError(errors.Wrapf(err, "expected message '%s', but got '%s'",
+			statusAnnotationPatched, *gaResp.Message))
+	}
+}
+
+// ///////////////////////////////////////////
+//		Grafana Annotations
+// ///////////////////////////////////////////
+
 const (
 	AnnotationRun     = "run"
 	AnnotationExit    = "exit"
 	AnnotationFailure = "failure"
 )
 
-// Annotator provides a way to mark points on the graph with rich events.
+// Annotation provides a way to mark points on the graph with rich events.
 // // When you hover over an annotation you can get event description and event tags.
 // // The text field can include links to other systems with more detail.
-type Annotator interface {
+type Annotation interface {
 	// Add  pushes an annotation to grafana indicating that a new component has joined the experiment.
 	Add(obj client.Object)
 
@@ -60,7 +120,7 @@ func (a *PointAnnotation) Add(obj client.Object) {
 		Text:    fmt.Sprintf("Job added. Kind:%s Name:%s", reflect.TypeOf(obj), obj.GetName()),
 	}
 
-	if v := Annotate; v != nil {
+	if v := DefaultClient; v != nil {
 		_ = v.Insert(ga)
 	}
 }
@@ -73,7 +133,7 @@ func (a *PointAnnotation) Delete(obj client.Object) {
 		Text:    fmt.Sprintf("Job Deleted. Kind:%s Name:%s", reflect.TypeOf(obj), obj.GetName()),
 	}
 
-	if v := Annotate; v != nil {
+	if v := DefaultClient; v != nil {
 		_ = v.Insert(ga)
 	}
 }
@@ -100,7 +160,7 @@ func (a *RangeAnnotation) Add(obj client.Object) {
 		Text:    fmt.Sprintf("Job Added. Kind:%s Name:%s", reflect.TypeOf(obj), obj.GetName()),
 	}
 
-	if v := Annotate; v != nil {
+	if v := DefaultClient; v != nil {
 		a.reqID = v.Insert(ga)
 	}
 }
@@ -122,78 +182,7 @@ func (a *RangeAnnotation) Delete(obj client.Object) {
 		Text:    fmt.Sprintf("Job Deleted. Kind:%s Name:%s", reflect.TypeOf(obj), obj.GetName()),
 	}
 
-	if v := Annotate; v != nil {
+	if v := DefaultClient; v != nil {
 		v.Patch(a.reqID, ga)
-	}
-}
-
-// ///////////////////////////////////////////
-//		Grafana Annotator
-// ///////////////////////////////////////////
-
-var AnnotationTimeout = 30 * time.Second
-
-const (
-	statusAnnotationAdded = "Annotation added"
-
-	statusAnnotationPatched = "Annotation patched"
-)
-
-var Annotate *GrafanaAnnotator
-
-type GrafanaAnnotator struct {
-	ctx context.Context
-
-	*sdk.Client
-}
-
-func SetAnnotator(ctx context.Context, client *sdk.Client) {
-	Annotate = &GrafanaAnnotator{
-		ctx:    ctx,
-		Client: client,
-	}
-}
-
-// Insert inserts a new annotation to Grafana.
-func (c *GrafanaAnnotator) Insert(ga sdk.CreateAnnotationRequest) (reqID uint) {
-	ctx, cancel := context.WithTimeout(c.ctx, AnnotationTimeout)
-	defer cancel()
-
-	// submit
-	gaResp, err := c.Client.CreateAnnotation(ctx, ga)
-	if err != nil {
-		runtime.HandleError(errors.Wrapf(err, "annotation failed"))
-
-		return
-	}
-
-	if gaResp.Message == nil {
-		runtime.HandleError(errors.Wrapf(err, "empty annotation response"))
-	} else if *gaResp.Message != statusAnnotationAdded {
-		runtime.HandleError(errors.Wrapf(err, "expected message '%s', but got '%s'",
-			statusAnnotationAdded, *gaResp.Message))
-	}
-
-	return *gaResp.ID
-}
-
-// Patch updates an existing annotation to Grafana.
-func (c *GrafanaAnnotator) Patch(reqID uint, ga sdk.PatchAnnotationRequest) {
-	ctx, cancel := context.WithTimeout(c.ctx, AnnotationTimeout)
-	defer cancel()
-
-	// submit
-	gaResp, err := c.Client.PatchAnnotation(ctx, reqID, ga)
-	if err != nil {
-		runtime.HandleError(errors.Wrapf(err, "annotation failed"))
-
-		return
-	}
-
-	if gaResp.Message == nil {
-		runtime.HandleError(errors.Wrapf(err, "empty annotation response"))
-	} else if *gaResp.Message != statusAnnotationPatched {
-		runtime.HandleError(errors.Wrapf(err, "expected message '%s', but got '%s'",
-			statusAnnotationPatched, *gaResp.Message))
 	}
 }

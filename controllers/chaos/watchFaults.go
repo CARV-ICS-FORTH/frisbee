@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/fnikolai/frisbee/controllers/telemetry/grafana"
 	"github.com/fnikolai/frisbee/controllers/utils"
-	"github.com/fnikolai/frisbee/controllers/utils/grafana"
 	"github.com/pkg/errors"
 	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/event"

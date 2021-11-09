@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package v1alpha1_test
 
 import (
 	"context"
@@ -25,6 +25,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/fnikolai/frisbee/api/v1alpha1"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -80,7 +81,7 @@ var _ = BeforeSuite(func() {
 	Expect(cfg).NotTo(BeNil())
 
 	scheme := runtime.NewScheme()
-	err = AddToScheme(scheme)
+	err = v1alpha1.AddToScheme(scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	err = admissionv1beta1.AddToScheme(scheme)
@@ -122,25 +123,25 @@ var _ = BeforeSuite(func() {
 	})
 	Expect(err).NotTo(HaveOccurred())
 
-	err = (&Workflow{}).SetupWebhookWithManager(mgr)
+	err = (&v1alpha1.Workflow{}).SetupWebhookWithManager(mgr)
 	Expect(err).NotTo(HaveOccurred())
 
-	err = (&Service{}).SetupWebhookWithManager(mgr)
+	err = (&v1alpha1.Service{}).SetupWebhookWithManager(mgr)
 	Expect(err).NotTo(HaveOccurred())
 
-	err = (&Cluster{}).SetupWebhookWithManager(mgr)
+	err = (&v1alpha1.Cluster{}).SetupWebhookWithManager(mgr)
 	Expect(err).NotTo(HaveOccurred())
 
-	err = (&Chaos{}).SetupWebhookWithManager(mgr)
+	err = (&v1alpha1.Chaos{}).SetupWebhookWithManager(mgr)
 	Expect(err).NotTo(HaveOccurred())
 
-	err = (&Template{}).SetupWebhookWithManager(mgr)
+	err = (&v1alpha1.Template{}).SetupWebhookWithManager(mgr)
 	Expect(err).NotTo(HaveOccurred())
 
-	err = (&Telemetry{}).SetupWebhookWithManager(mgr)
+	err = (&v1alpha1.Telemetry{}).SetupWebhookWithManager(mgr)
 	Expect(err).NotTo(HaveOccurred())
 
-	err = (&Workflow{}).SetupWebhookWithManager(mgr)
+	err = (&v1alpha1.Workflow{}).SetupWebhookWithManager(mgr)
 	Expect(err).NotTo(HaveOccurred())
 
 	// +kubebuilder:scaffold:webhook

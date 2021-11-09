@@ -1,0 +1,34 @@
+apiVersion: frisbee.io/v1alpha1
+kind: Workflow
+metadata:
+  name: validate-network
+spec:
+  withTelemetry:
+    importMonitors: [ "sysmon/container", "iperfmon/client" ]
+    ingress:
+      host: platform.science-hangar.eu
+      #host: localhost
+      #useAmbassador: true
+
+  actions:
+    # Create an iperf server
+    - action: Service
+      name: server
+      service:
+        fromTemplate:
+          templateRef: iperf/server
+          inputs:
+            - { "cpu": "2", memory: "4Gi" }
+
+    # Create an iperf client
+    - action: Service
+      name: client
+      depends: { running: [ server ] }
+      assert:
+        before: '{{.Runtime.IsRunning "server"}} == true'
+        after: '{{.Runtime.IsSuccessful "client"}} == true'
+      service:
+        fromTemplate:
+          templateRef: iperf/client
+          inputs:
+            - { server: .service.server.any, seconds: "600" }

@@ -87,7 +87,10 @@ func (h partitionHandler) Inject(ctx context.Context, r *Controller) error {
 
 	var fault Fault
 
-	affectedPods := helpers.Select(ctx, r, h.cr.GetNamespace(), &spec.Selector)
+	affectedPods, err := helpers.Select(ctx, r, h.cr.GetNamespace(), &spec.Selector)
+	if err != nil {
+		return errors.Wrapf(err, "service selection error")
+	}
 
 	{ // spec
 		fault.SetUnstructuredContent(map[string]interface{}{
@@ -147,7 +150,10 @@ func (h killHandler) Inject(ctx context.Context, r *Controller) error {
 
 	var fault Fault
 
-	affectedPods := helpers.Select(ctx, r, h.cr.GetNamespace(), &spec.Selector)
+	affectedPods, err := helpers.Select(ctx, r, h.cr.GetNamespace(), &spec.Selector)
+	if err != nil {
+		return errors.Wrapf(err, "service selection error")
+	}
 
 	{ // spec
 		fault.SetUnstructuredContent(map[string]interface{}{

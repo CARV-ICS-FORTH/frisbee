@@ -170,7 +170,7 @@ func Update(ctx context.Context, r Reconciler, obj client.Object) error {
 	r.Info("OO UpdtMeta",
 		"kind", reflect.TypeOf(obj),
 		"name", obj.GetName(),
-		"line", GetCallerLine(),
+		"caller", GetCallerLine(),
 		"version", obj.GetResourceVersion(),
 	)
 
@@ -186,7 +186,7 @@ func UpdateStatus(ctx context.Context, r Reconciler, obj client.Object) error {
 	r.Info("OO UpdtStatus",
 		"kind", reflect.TypeOf(obj),
 		"name", obj.GetName(),
-		"line", GetCallerLine(),
+		"caller", GetCallerLine(),
 		"version", obj.GetResourceVersion(),
 	)
 
@@ -197,24 +197,29 @@ func UpdateStatus(ctx context.Context, r Reconciler, obj client.Object) error {
 // if the next reconciliation cycle happens faster than the API update, it is possible to
 // reschedule the creation of a Job. To avoid that, get if the Job is already submitted.
 func Create(ctx context.Context, r Reconciler, obj client.Object) error {
-	err := r.GetClient().Create(ctx, obj)
-	if err != nil {
-		return errors.Wrapf(err, "creation failed")
-	}
-
 	r.Info("++ Create",
 		"kind", reflect.TypeOf(obj),
 		"name", obj.GetName(),
-		"line", GetCallerLine(),
+		"caller", GetCallerLine(),
 		"version", obj.GetResourceVersion(),
 	)
 
-	return nil
+	err := r.GetClient().Create(ctx, obj)
+
+	// If err is nil, Wrapf returns nil.
+	return errors.Wrapf(err, "creation failed")
 }
 
 // Delete removes a Kubernetes object, ignoring the NotFound error. If any error exists,
 // it is recorded in the reconciler's logger.
 func Delete(ctx context.Context, r Reconciler, obj client.Object) {
+	r.Info("-- Delete",
+		"kind", reflect.TypeOf(obj),
+		"name", obj.GetName(),
+		"caller", GetCallerLine(),
+		"version", obj.GetResourceVersion(),
+	)
+
 	// propagation := metav1.DeletePropagationForeground
 	propagation := metav1.DeletePropagationBackground
 	options := client.DeleteOptions{
@@ -222,15 +227,6 @@ func Delete(ctx context.Context, r Reconciler, obj client.Object) {
 	}
 
 	if err := r.GetClient().Delete(ctx, obj, &options); client.IgnoreNotFound(err) != nil {
-		r.Error(err, "unable to delete", "obj", obj.GetName())
-
-		return
+		r.Error(err, "unable to delete", "obj", obj)
 	}
-
-	r.Info("-- Delete",
-		"kind", reflect.TypeOf(obj),
-		"name", obj.GetName(),
-		"line", GetCallerLine(),
-		"version", obj.GetResourceVersion(),
-	)
 }

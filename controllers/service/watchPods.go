@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/fnikolai/frisbee/controllers/telemetry/grafana"
 	"github.com/fnikolai/frisbee/controllers/utils"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -55,7 +56,8 @@ func (r *Controller) create(e event.CreateEvent) bool {
 		"version", e.Object.GetResourceVersion(),
 	)
 
-	r.annotator.Add(e.Object)
+	annotation := &grafana.PointAnnotation{}
+	annotation.Add(e.Object)
 
 	return false
 }
@@ -121,7 +123,8 @@ func (r *Controller) delete(e event.DeleteEvent) bool {
 		"version", e.Object.GetResourceVersion(),
 	)
 
-	r.annotator.Delete(e.Object)
+	annotation := &grafana.PointAnnotation{}
+	annotation.Delete(e.Object)
 
 	return true
 }

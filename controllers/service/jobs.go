@@ -24,7 +24,6 @@ import (
 	"github.com/fnikolai/frisbee/controllers/template/helpers"
 	"github.com/fnikolai/frisbee/controllers/utils"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -137,9 +136,7 @@ func prepareRequirements(ctx context.Context, r *Controller, obj *v1alpha1.Servi
 		utils.SetOwner(r, obj, &pvc)
 		pvc.SetName(obj.GetName())
 
-		logrus.Warn("PVC ", pvc)
-
-		if err := r.GetClient().Create(ctx, &pvc); err != nil {
+		if err := utils.Create(ctx, r, &pvc); err != nil {
 			return errors.Wrapf(err, "cannot create pvc")
 		}
 	}

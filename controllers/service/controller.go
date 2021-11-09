@@ -23,7 +23,6 @@ import (
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/utils"
-	"github.com/fnikolai/frisbee/controllers/utils/grafana"
 	"github.com/fnikolai/frisbee/controllers/utils/lifecycle"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -51,9 +50,6 @@ type Controller struct {
 	logr.Logger
 
 	gvk schema.GroupVersionKind
-
-	// annotator sends annotations to grafana
-	annotator grafana.Annotator
 }
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
@@ -116,8 +112,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		be in conflict. We fix this issue by re-queueing the request.
 		We also suppress verbose error reporting as to avoid polluting the output.
 	*/
-	newStatus := calculateLifecycle(&cr, &pod)
-	cr.Status.Lifecycle = newStatus
+	updateLifecycle(&cr, &pod)
 
 	if err := utils.UpdateStatus(ctx, r, &cr); err != nil {
 		runtime.HandleError(err)
@@ -132,14 +127,17 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		First, we'll try to clean up old jobs, so that we don't leave too many lying
 		around.
 	*/
-	if newStatus.Phase == v1alpha1.PhaseSuccess {
-		utils.Delete(ctx, r, &pod)
+	if cr.Status.Phase == v1alpha1.PhaseSuccess {
+		// FIXME: dummy workaround that could be avoided by using the classified (see workflow).
+		if !pod.CreationTimestamp.IsZero() {
+			utils.Delete(ctx, r, &pod)
+		}
 
 		return utils.Stop()
 	}
 
-	if newStatus.Phase == v1alpha1.PhaseFailed {
-		r.Logger.Error(errors.New(newStatus.Reason), newStatus.Message)
+	if cr.Status.Phase == v1alpha1.PhaseFailed {
+		r.Logger.Error(errors.New(cr.Status.Reason), cr.Status.Message)
 
 		return utils.Stop()
 	}
@@ -208,10 +206,9 @@ func (r *Controller) Finalize(obj client.Object) error {
 
 func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 	r := &Controller{
-		Manager:   mgr,
-		Logger:    logger.WithName("service"),
-		gvk:       v1alpha1.GroupVersion.WithKind("Service"),
-		annotator: &grafana.PointAnnotation{},
+		Manager: mgr,
+		Logger:  logger.WithName("service"),
+		gvk:     v1alpha1.GroupVersion.WithKind("Service"),
 	}
 
 	return ctrl.NewControllerManagedBy(mgr).

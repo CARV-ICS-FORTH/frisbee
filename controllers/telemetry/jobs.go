@@ -62,7 +62,7 @@ func (r *Controller) installPrometheus(ctx context.Context, w *v1alpha1.Telemetr
 		spec.DeepCopyInto(&prom.Spec)
 	}
 
-	return r.GetClient().Create(ctx, prom)
+	return utils.Create(ctx, r, prom)
 }
 
 func (r *Controller) installGrafana(ctx context.Context, w *v1alpha1.Telemetry, grafana *v1alpha1.Service) error {
@@ -92,7 +92,7 @@ func (r *Controller) installGrafana(ctx context.Context, w *v1alpha1.Telemetry, 
 		spec.DeepCopyInto(&grafana.Spec)
 	}
 
-	return r.GetClient().Create(ctx, grafana)
+	return utils.Create(ctx, r, grafana)
 }
 
 func (r *Controller) importDashboards(ctx context.Context, obj *v1alpha1.Telemetry, spec *v1alpha1.ServiceSpec) error {

@@ -139,18 +139,26 @@ func ExpandInputs(ctx context.Context,
 		if !shelpers.IsMacro(value) {
 			scheme.Inputs.Parameters[key] = value
 		} else { // expand macro
-			services, ok := cache[value]
-			if !ok {
-				services = shelpers.Select(ctx, r, nm, &v1alpha1.ServiceSelector{Macro: &value})
+			if services, ok := cache[value]; ok {
+				scheme.Inputs.Parameters[key] = services.ToString()
 
-				if len(services) == 0 {
-					return errors.Errorf("macro %s yields no services", value)
-				}
+				continue
+			}
 
-				cache[value] = services
+			services, err := shelpers.Select(ctx, r, nm, &v1alpha1.ServiceSelector{Macro: &value})
+			if err != nil {
+				return errors.Wrapf(err, "service selection error")
+			}
+
+			if len(services) == 0 {
+				// it is possible that some services exist, but they are not in the Running phase.
+				// In this case, we should retry getting the services.
+				return errors.Errorf("macro %s yields no services", value)
 			}
 
 			scheme.Inputs.Parameters[key] = services.ToString()
+
+			cache[value] = services
 		}
 	}
 

@@ -22,11 +22,12 @@ import (
 	"time"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
+	"github.com/fnikolai/frisbee/controllers/telemetry/grafana"
 	"github.com/fnikolai/frisbee/controllers/utils"
-	"github.com/fnikolai/frisbee/controllers/utils/grafana"
 	"github.com/fnikolai/frisbee/controllers/utils/lifecycle"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -168,8 +169,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		be in conflict. We fix this issue by re-queueing the request.
 		We also suppress verbose error reporting as to avoid polluting the output.
 	*/
-	newStatus := r.calculateLifecycle(&cr)
-	cr.Status = newStatus
+	r.updateLifecycle(&cr)
 
 	if err := utils.UpdateStatus(ctx, r, &cr); err != nil {
 		runtime.HandleError(err)
@@ -196,7 +196,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		First, we'll try to clean up old jobs, so that we don't leave too many lying
 		around.
 	*/
-	if newStatus.Phase.Is(v1alpha1.PhaseSuccess) {
+	if cr.Status.Phase.Is(v1alpha1.PhaseSuccess) {
 		// Remove the testing components once the experiment is successfully complete.
 		// We maintain testbed components (e.g, prometheus and grafana) for getting back the test results.
 		// These components are removed by deleting the Workflow.
@@ -207,8 +207,8 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return utils.Stop()
 	}
 
-	if newStatus.Phase.Is(v1alpha1.PhaseFailed) {
-		r.Logger.Error(errors.New(newStatus.Reason), newStatus.Message)
+	if cr.Status.Phase.Is(v1alpha1.PhaseFailed) {
+		r.Logger.Error(errors.New(cr.Status.Reason), cr.Status.Message)
 
 		// Remove the non-failed components. Leave the failed jobs and system jobs for postmortem analysis.
 		for _, job := range r.state.SuccessfulJobs() {
@@ -250,13 +250,9 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	/*
 		initialize the CR.
 	*/
-	if newStatus.Phase.Is(v1alpha1.PhaseUninitialized) {
+	if cr.Status.Phase.Is(v1alpha1.PhaseUninitialized) {
 		if err := ValidateDAG(cr.Spec.Actions); err != nil {
 			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "invalid dependency DAG"))
-		}
-
-		if err := ValidateOracle(&cr, r.state); err != nil {
-			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "invalid TestOracle"))
 		}
 
 		if cr.Spec.WithTelemetry != nil {
@@ -265,7 +261,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 			cr.Spec.WithTelemetry.DeepCopyInto(&telemetryJob.Spec)
 
-			if err := r.GetClient().Create(ctx, &telemetryJob); err != nil {
+			if err := utils.Create(ctx, r, &telemetryJob); err != nil {
 				return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot create the telemetry stack"))
 			}
 		}
@@ -291,8 +287,8 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		}
 
 		// this should normally happen when the telemetry is running
-		if grafana.Annotate == nil {
-			if err := r.initGrafana(ctx, telemetryJob.Status.GrafanaURI); err != nil {
+		if grafana.DefaultClient == nil {
+			if err := grafana.NewGrafanaClient(ctx, r, telemetryJob.Status.GrafanaURI); err != nil {
 				return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot communicate with the telemetry stack"))
 			}
 		}
@@ -302,7 +298,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		7: Get the next logical run
 		------------------------------------------------------------------
 	*/
-	if newStatus.Phase.Is(v1alpha1.PhaseRunning) {
+	if cr.Status.Phase.Is(v1alpha1.PhaseRunning) {
 		return utils.Stop()
 	}
 
@@ -319,7 +315,20 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return utils.RequeueAfter(time.Until(nextRun))
 	}
 
+	logrus.Warn("RUN ACTION")
 	for _, action := range actionList {
+		if action.Assert != nil {
+			if !assert(action.Assert.Before, &cr, &r.state) {
+				if err := utils.UpdateStatus(ctx, r, &cr); err != nil {
+					runtime.HandleError(err)
+
+					return utils.RequeueAfter(time.Second)
+				}
+
+				return utils.Stop()
+			}
+		}
+
 		if err := r.runJob(ctx, &cr, action); err != nil {
 			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "waiting failed"))
 		}

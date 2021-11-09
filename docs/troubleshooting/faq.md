@@ -35,10 +35,8 @@ See
 https://github.com/openebs/openebs/issues/2915
 https://github.com/kubernetes/kubernetes/issues/89953
 
-
-
 Note: this is supposedly fixed by changing the domain abstraction from NodeName to NodeSelector
 
-###                        
+###                                 
 
 ##

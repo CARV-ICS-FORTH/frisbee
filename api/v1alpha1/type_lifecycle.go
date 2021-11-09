@@ -125,6 +125,6 @@ const (
 	// ConditionAllJobsDone indicates whether all actions in the workflow have been completed.
 	ConditionAllJobsDone = ConditionType("complete")
 
-	// WorkflowOracle indicates the user-defined conditions are met.
-	WorkflowOracle = ConditionType("oracle")
+	// WorkflowAssertion indicates the user-defined conditions are met.
+	WorkflowAssertion = ConditionType("assertion")
 )
