@@ -8,7 +8,7 @@ import (
 	"github.com/fnikolai/frisbee/controllers/workflow"
 )
 
-func Test_evaluate(t *testing.T) {
+func TestAssertState(t *testing.T) {
 	state := &lifecycle.Classifier{}
 	state.Reset()
 
@@ -36,87 +36,71 @@ func Test_evaluate(t *testing.T) {
 		state.Classify(job.GetName(), &job)
 	}
 
-	builtin := workflow.BuiltinObjects{
-		Workflow: &v1alpha1.Workflow{},
-		Runtime:  state,
-	}
-
 	type args struct {
-		expr    string
-		objects workflow.BuiltinObjects
+		expr  string
+		state *lifecycle.Classifier
 	}
-
 	tests := []struct {
 		name    string
 		args    args
-		want    bool
 		wantErr bool
 	}{
 		{
 			name: "empty expression",
 			args: args{
-				expr:    "",
-				objects: builtin,
+				expr:  "",
+				state: nil,
 			},
-			want:    true,
 			wantErr: false,
 		},
+
 		{
 			name: "invalid objects",
 			args: args{
-				expr:    `{{.Runtime.IsSuccessful "service0"}} == true`,
-				objects: workflow.BuiltinObjects{},
+				expr:  `{{.Runtime.IsSuccessful "service0"}} == true`,
+				state: nil,
 			},
-			want:    false,
 			wantErr: true,
 		},
 		{
 			name: "invalid expression",
 			args: args{
-				expr:    `{{.Runtime.IsSomethingWrong "service0"}} == true`,
-				objects: builtin,
+				expr:  `{{.Runtime.IsSomethingWrong "service0"}} == true`,
+				state: state,
 			},
-			want:    false,
 			wantErr: true,
 		},
 		{
 			name: "test should pass",
 			args: args{
-				expr:    `{{.Runtime.IsSuccessful "service0"}} == true`,
-				objects: builtin,
+				expr:  `{{.Runtime.IsSuccessful "service0"}} == true`,
+				state: state,
 			},
-			want:    true,
 			wantErr: false,
 		},
 		{
 			name: "test should fail",
 			args: args{
-				expr:    `{{.Runtime.IsFailed "service0"}} == true`,
-				objects: builtin,
+				expr:  `{{.Runtime.IsFailed "service0"}} == true`,
+				state: state,
 			},
-			want:    false,
-			wantErr: false,
+			wantErr: true,
 		},
+
 		{
 			name: "valid synthetic expression",
 			args: args{
-				expr:    `{{.Runtime.IsSuccessful "service0"}} == true && {{.Runtime.IsFailed "service1"}} == true`,
-				objects: builtin,
+				expr:  `{{.Runtime.IsSuccessful "service0"}} == true && {{.Runtime.IsFailed "service1"}} == true`,
+				state: state,
 			},
-			want:    true,
 			wantErr: false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := workflow.Evaluate(tt.args.expr, tt.args.objects)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Evaluate() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if got != tt.want {
-				t.Errorf("Evaluate() got = %v, want %v", got, tt.want)
+			if err := workflow.AssertState(tt.args.expr, &workflow.BuiltinState{Runtime: tt.args.state}); (err != nil) != tt.wantErr {
+				t.Errorf("AssertState() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

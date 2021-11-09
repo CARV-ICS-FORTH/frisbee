@@ -20,12 +20,12 @@ import (
 	"context"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
-	"github.com/fnikolai/frisbee/controllers/utils"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (r *Controller) runJob(ctx context.Context, w *v1alpha1.Workflow, action v1alpha1.Action) error {
+func (r *Controller) getJob(ctx context.Context, w *v1alpha1.Workflow, action v1alpha1.Action) (client.Object, error) {
 	logrus.Warn("Handle job ", action.Name)
 
 	switch action.ActionType {
@@ -39,57 +39,42 @@ func (r *Controller) runJob(ctx context.Context, w *v1alpha1.Workflow, action v1
 		return r.chaos(ctx, w, action)
 
 	default:
-		return errors.Errorf("unknown action %s", action.ActionType)
+		return nil, errors.Errorf("unknown action %s", action.ActionType)
 	}
 }
 
-func (r *Controller) service(ctx context.Context, w *v1alpha1.Workflow, action v1alpha1.Action) error {
+func (r *Controller) service(ctx context.Context, w *v1alpha1.Workflow, action v1alpha1.Action) (client.Object, error) {
 	var service v1alpha1.Service
 
-	utils.SetOwner(r, w, &service)
 	service.SetName(action.Name)
 
 	action.Service.DeepCopyInto(&service.Spec)
 
-	if err := utils.Create(ctx, r, &service); err != nil {
-		return errors.Wrapf(err, "action %s execution failed", action.Name)
-	}
-
-	return nil
+	return &service, nil
 }
 
-func (r *Controller) cluster(ctx context.Context, w *v1alpha1.Workflow, action v1alpha1.Action) error {
+func (r *Controller) cluster(ctx context.Context, w *v1alpha1.Workflow, action v1alpha1.Action) (client.Object, error) {
 	var cluster v1alpha1.Cluster
 
-	utils.SetOwner(r, w, &cluster)
 	cluster.SetName(action.Name)
 
 	action.Cluster.DeepCopyInto(&cluster.Spec)
 
-	if err := utils.Create(ctx, r, &cluster); err != nil {
-		return errors.Wrapf(err, "action %s execution failed", action.Name)
-	}
-
-	return nil
+	return &cluster, nil
 }
 
-func (r *Controller) chaos(ctx context.Context, w *v1alpha1.Workflow, action v1alpha1.Action) error {
+func (r *Controller) chaos(ctx context.Context, w *v1alpha1.Workflow, action v1alpha1.Action) (client.Object, error) {
 	var chaos v1alpha1.Chaos
 
 	if chaos.Spec.Type == v1alpha1.FaultKill {
 		if action.DependsOn.Success != nil {
-			return errors.Errorf("kill is a inject-only chaos. it does not have success. only running")
+			return nil, errors.Errorf("kill is a inject-only chaos. it does not have success. only running")
 		}
 	}
 
-	utils.SetOwner(r, w, &chaos)
 	chaos.SetName(action.Name)
 
 	action.Chaos.DeepCopyInto(&chaos.Spec)
 
-	if err := utils.Create(ctx, r, &chaos); err != nil {
-		return errors.Wrapf(err, "action %s execution failed", action.Name)
-	}
-
-	return nil
+	return &chaos, nil
 }

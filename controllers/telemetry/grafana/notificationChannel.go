@@ -26,29 +26,23 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (c *Client) SetNotificationChannel(webhookPort string) error {
-
-	// get local ip
+func (c *Client) SetNotificationChannel(webhookPort string, cb func(b *notifier.Body)) error {
 	ip, err := netutils.GetPublicIP()
 	if err != nil {
 		return errors.Wrapf(err, "cannot get controller's public ip")
 	}
 
-	handler := http.DefaultServeMux
-	handler.HandleFunc("/", notifier.HandleWebhook(func(w http.ResponseWriter, b *notifier.Body) {
-		c.logger.Info("Grafana Alert",
-			"title", b.Title,
-			"message", b.Message,
-			"matches", b.EvalMatches,
-			"state", b.State,
-		)
-	}, 0))
-
 	addr := fmt.Sprintf("%s:%s", ip.String(), webhookPort)
+	url := fmt.Sprintf("http://%s", addr)
 
 	errCh := make(chan error, 1)
 
 	go func() {
+		handler := http.DefaultServeMux
+		handler.HandleFunc("/", notifier.HandleWebhook(func(w http.ResponseWriter, b *notifier.Body) {
+			cb(b)
+		}, 0))
+
 		errCh <- http.ListenAndServe(addr, handler)
 	}()
 
@@ -59,11 +53,8 @@ func (c *Client) SetNotificationChannel(webhookPort string) error {
 		}
 	case <-c.ctx.Done():
 		return errors.Wrapf(c.ctx.Err(), "webhook server failed")
-	default:
-		// continue
+	default: // continue
 	}
-
-	url := fmt.Sprintf("http://%s", addr)
 
 	c.logger.Info("Grafana webhook is listening on", "url", url)
 
@@ -79,9 +70,7 @@ func (c *Client) SetNotificationChannel(webhookPort string) error {
 		},
 	}
 
-	if _, err := c.Conn.CreateAlertNotification(c.ctx, feedback); err != nil {
-		return errors.Wrapf(err, "cannot create feedback notification channel")
-	}
+	_, err = c.Conn.CreateAlertNotification(c.ctx, feedback)
 
-	return nil
+	return errors.Wrapf(err, "cannot create feedback notification channel")
 }

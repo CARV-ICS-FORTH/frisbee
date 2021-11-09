@@ -25,8 +25,8 @@ spec:
       name: client
       depends: { running: [ server ] }
       assert:
-        before: '{{.Runtime.IsRunning "server"}} == true'
-        after: '{{.Runtime.IsSuccessful "client"}} == true'
+        state: '{{.Runtime.IsSuccessful "client"}} == true'
+        sla: 'avg() OF query(wpFnYRwGk/2/bitrate, 5m, now) IS BELOW(1000)'
       service:
         fromTemplate:
           templateRef: iperf/client

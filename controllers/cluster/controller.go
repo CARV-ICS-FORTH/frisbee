@@ -342,7 +342,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	nextJob := getJob(r, &cr, nextExpectedJob)
 
-	if err := utils.Create(ctx, r, nextJob); err != nil {
+	if err := utils.Create(ctx, r, &cr, nextJob); err != nil {
 		return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot create job"))
 	}
 

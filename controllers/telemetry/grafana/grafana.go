@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	notifier "github.com/golanghelper/grafana-webhook"
 	"github.com/grafana-tools/sdk"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -35,21 +36,22 @@ var healthCheckTimeout = wait.Backoff{
 }
 
 type Options struct {
-	WebhookPort string
+	NotifyOnAlert func(b *notifier.Body)
 }
 
 type Option func(*Options)
 
-func WithNotificationChannel(addr string) Option {
+// WithNotifyOnAlert will update the object's annotations if a Grafana alert is triggered
+func WithNotifyOnAlert(cb func(b *notifier.Body)) Option {
 	return func(args *Options) {
-		args.WebhookPort = addr
+		args.NotifyOnAlert = cb
 	}
 }
 
 func NewGrafanaClient(ctx context.Context, r logr.Logger, apiURI string, setters ...Option) error {
 	// Default Options
 	args := &Options{
-		WebhookPort: "6666",
+		NotifyOnAlert: nil,
 	}
 
 	for _, setter := range setters {
@@ -84,13 +86,8 @@ func NewGrafanaClient(ctx context.Context, r logr.Logger, apiURI string, setters
 	DefaultClient = client
 
 	// Set webhook for getting back grafana alerts
-	if err := client.SetNotificationChannel(args.WebhookPort); err != nil {
+	if err := client.SetNotificationChannel("6666", args.NotifyOnAlert); err != nil {
 		return errors.Wrapf(err, "cannot run a notification webhook")
-	}
-
-	// deploy an alert
-	if err := client.SetAlert(); err != nil {
-		return errors.Wrapf(err, "cannot set user alerts")
 	}
 
 	return nil

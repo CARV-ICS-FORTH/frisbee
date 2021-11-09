@@ -24,75 +24,66 @@ import (
 	"github.com/Knetic/govaluate"
 	"github.com/Masterminds/sprig/v3"
 	"github.com/fnikolai/frisbee/api/v1alpha1"
+	"github.com/fnikolai/frisbee/controllers/telemetry/grafana"
+	"github.com/fnikolai/frisbee/controllers/utils"
 	"github.com/fnikolai/frisbee/controllers/utils/lifecycle"
 	"github.com/pkg/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// assert enforces user-driven decisions as to when the test has passed or has fail.
-// if it has failed, it updates the workflow status and returns true to indicate that the status has been modified.
-func assert(exp string, w *v1alpha1.Workflow, gs *lifecycle.Classifier) bool {
-	accessor := BuiltinObjects{
-		Workflow: w,
-		Runtime:  gs,
+const (
+	JobHasSLA       = "frisbee.io/sla-assertion"
+	JobSLAViolation = "frisbee.io/sla-violation"
+)
+
+func HasSLAViolation(obj metav1.Object) (string, bool) {
+	annotations := obj.GetAnnotations()
+	info, exists := annotations[JobSLAViolation]
+
+	return info, exists
+}
+
+func AssertSLA(action v1alpha1.Action, job metav1.Object) error {
+	if action.Assert == nil || action.Assert.SLA == "" {
+		return nil
 	}
 
-	// when condition is fulfilled, and we must Evaluate the assertion
-	pass, err := Evaluate(exp, accessor)
-
+	// create an alert
+	alert, err := grafana.NewAlert(action.Assert.SLA)
 	if err != nil {
-		w.Status.Lifecycle = v1alpha1.Lifecycle{
-			Phase:   v1alpha1.PhaseFailed,
-			Reason:  "AssertionError",
-			Message: errors.Wrapf(err, "assertion dereference error").Error(),
-		}
-
-		meta.SetStatusCondition(&w.Status.Conditions, metav1.Condition{
-			Type:    v1alpha1.WorkflowAssertion.String(),
-			Status:  metav1.ConditionTrue,
-			Reason:  "AssertionError",
-			Message: errors.Wrapf(err, "assertion dereference error").Error(),
-		})
-
-		return false
+		return errors.Wrapf(err, "invalid SLA")
 	}
 
-	if !pass {
-		w.Status.Lifecycle = v1alpha1.Lifecycle{
-			Phase:   v1alpha1.PhaseFailed,
-			Reason:  "AssertionFailed",
-			Message: fmt.Sprintf("Assertion has failed. [%s]", exp),
-		}
+	alert.Name = action.Name
+	alert.Message = fmt.Sprintf("The SLA of action [%s] has failed", action.Name)
 
-		meta.SetStatusCondition(&w.Status.Conditions, metav1.Condition{
-			Type:    v1alpha1.WorkflowAssertion.String(),
-			Status:  metav1.ConditionTrue,
-			Reason:  "AssertionFailed",
-			Message: fmt.Sprintf("Assertion has failed. [%s]", exp),
-		})
-
-		return false
+	// push the alert to grafana
+	if err := grafana.DefaultClient.SetAlert(alert); err != nil {
+		return errors.Wrapf(err, "SLA injection error")
 	}
 
-	return true
+	// use annotations to know which jobs have alert in Grafana.
+	// we use this information to remove alerts when the jobs are complete.
+	utils.MergeAnnotation(job, map[string]string{JobHasSLA: "skata"})
+
+	return nil
 }
 
 var sprigFuncMap = sprig.TxtFuncMap() // a singleton for better performance
 
-// BuiltinObjects are passed into a template from the template engine.
-type BuiltinObjects struct {
-	Workflow *v1alpha1.Workflow
-	Runtime  *lifecycle.Classifier
+type BuiltinState struct {
+	Runtime *lifecycle.Classifier
 }
 
-func Evaluate(expr string, objects BuiltinObjects) (bool, error) {
+// AssertState enforces user-driven decisions as to when the test has passed or has fail.
+// if it has failed, it updates the workflow status and returns true to indicate that the status has been modified.
+func AssertState(expr string, state *BuiltinState) error {
 	if expr == "" {
-		return true, nil
+		return nil
 	}
 
-	if objects == (BuiltinObjects{}) {
-		return false, errors.New("invalid state objects")
+	if state == nil || state.Runtime == nil {
+		return errors.New("invalid state state")
 	}
 
 	// dereference expands the templated expression
@@ -105,15 +96,24 @@ func Evaluate(expr string, objects BuiltinObjects) (bool, error) {
 
 	var out strings.Builder
 
-	if err := t.Execute(&out, objects); err != nil {
-		return false, errors.Wrapf(err, "execution error")
+	if err := t.Execute(&out, state); err != nil {
+		return errors.Wrapf(err, "execution error")
 	}
 
-	return shouldExecute(out.String())
+	pass, err := shouldExecute(out.String())
+	if err != nil {
+		return errors.Wrapf(err, "assertion dereference error")
+	}
+
+	if !pass {
+		return errors.Errorf("Assert has failed. [%s]", expr)
+	}
+
+	return nil
 }
 
 // Taken from Argo-Workflow.
-// shouldExecute evaluates an already substituted expression to decide whether a step should execute
+// shouldExecute evaluates an already substituted expression to decide whether a step should execute.
 func shouldExecute(expr string) (bool, error) {
 	if expr == "" {
 		return true, nil
@@ -150,7 +150,7 @@ func shouldExecute(expr string) (bool, error) {
 
 	result, err := expression.Evaluate(nil)
 	if err != nil {
-		return false, errors.Wrapf(err, "Failed to Evaluate 'expr' expresion '%s': %v", expr, err)
+		return false, errors.Wrapf(err, "Failed to AssertState 'expr' expresion '%s': %v", expr, err)
 	}
 
 	boolRes, ok := result.(bool)

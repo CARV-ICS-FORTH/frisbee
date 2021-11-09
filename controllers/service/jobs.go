@@ -31,36 +31,36 @@ import (
 	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
-func (r *Controller) runJob(ctx context.Context, obj *v1alpha1.Service) error {
-	if obj.Spec.FromTemplate != nil {
-		if err := r.populateSpecFromTemplate(ctx, obj); err != nil {
+func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Service) error {
+	if cr.Spec.FromTemplate != nil {
+		if err := r.populateSpecFromTemplate(ctx, cr); err != nil {
 			return errors.Wrapf(err, "spec generation")
 		}
 
 		// from now on, we will use the populated fields, not the template.
-		obj.Spec.FromTemplate = nil
+		cr.Spec.FromTemplate = nil
 
-		if err := utils.Update(ctx, r, obj); err != nil {
+		if err := utils.Update(ctx, r, cr); err != nil {
 			return errors.Wrapf(err, "cannot update populated fields")
 		}
 	}
 
-	if err := prepareRequirements(ctx, r, obj); err != nil {
+	if err := prepareRequirements(ctx, r, cr); err != nil {
 		return errors.Wrapf(err, "requirements error")
 	}
 
-	pod, err := constructPod(ctx, r, obj)
+	pod, err := constructPod(ctx, r, cr)
 	if err != nil {
 		return err
 	}
 
-	discovery := constructDiscoveryService(r, obj, pod)
+	discovery := constructDiscoveryService(r, cr, pod)
 
-	if err := utils.Create(ctx, r, discovery); err != nil {
+	if err := utils.Create(ctx, r, cr, discovery); err != nil {
 		return errors.Wrapf(err, "cannot create discovery service")
 	}
 
-	if err := utils.Create(ctx, r, pod); err != nil {
+	if err := utils.Create(ctx, r, cr, pod); err != nil {
 		return errors.Wrapf(err, "cannot create pod")
 	}
 
@@ -107,8 +107,8 @@ const (
 	PersistentVolumeClaimSpec    = "pvc.frisbee.io/spec"
 )
 
-func prepareRequirements(ctx context.Context, r *Controller, obj *v1alpha1.Service) error {
-	requirements := obj.Spec.Requirements
+func prepareRequirements(ctx context.Context, r *Controller, cr *v1alpha1.Service) error {
+	requirements := cr.Spec.Requirements
 	if requirements == nil {
 		return nil
 	}
@@ -133,10 +133,9 @@ func prepareRequirements(ctx context.Context, r *Controller, obj *v1alpha1.Servi
 		})
 		pvc.SetAPIVersion("v1")
 		pvc.SetKind("PersistentVolumeClaim")
-		utils.SetOwner(r, obj, &pvc)
-		pvc.SetName(obj.GetName())
+		pvc.SetName(cr.GetName())
 
-		if err := utils.Create(ctx, r, &pvc); err != nil {
+		if err := utils.Create(ctx, r, cr, &pvc); err != nil {
 			return errors.Wrapf(err, "cannot create pvc")
 		}
 	}
@@ -148,7 +147,6 @@ func constructPod(ctx context.Context, r *Controller, obj *v1alpha1.Service) (*c
 	var pod corev1.Pod
 
 	{ // metadata
-		utils.SetOwner(r, obj, &pod)
 		pod.SetName(obj.GetName())
 
 		pod.SetLabels(obj.GetLabels())
@@ -319,7 +317,6 @@ func constructDiscoveryService(r *Controller, obj *v1alpha1.Service, pod *corev1
 
 	kubeService := corev1.Service{}
 
-	utils.SetOwner(r, obj, &kubeService)
 	kubeService.SetName(pod.GetName())
 
 	kubeService.Spec.Ports = allPorts

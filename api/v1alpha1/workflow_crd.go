@@ -41,14 +41,15 @@ type Ingress struct {
 	UseAmbassador bool `json:"useAmbassador"`
 }
 
-// Assertion is a source of information about whether the state of the workflow after a given time is correct or not.
+// Assert is a source of information about whether the state of the workflow after a given time is correct or not.
 // This is needed because some workflows may run in infinite-horizons.
-type Assertion struct {
-	// Before describe the condition that should be met before running the action
-	Before string `json:"before"`
+type Assert struct {
+	// SLA is a Grafana alert that will be triggered if the SLA condition is met.
+	// SLA assertion is applicable throughout the execution of an action.
+	SLA string `json:"sla"`
 
-	// After describe the condition that should be met after the action has been executed
-	After string `json:"after"`
+	// State describe the runtime condition that should be met after the action has been executed
+	State string `json:"state"`
 }
 
 // Action delegates arguments to the proper action handler.
@@ -64,7 +65,7 @@ type Action struct {
 
 	// Assert defines the conditions under which the workflow will terminate with a "passed" or "failed" message
 	// +optional
-	Assert *Assertion `json:"assert,omitempty"`
+	Assert *Assert `json:"assert,omitempty"`
 
 	*EmbedActions `json:",inline"`
 }

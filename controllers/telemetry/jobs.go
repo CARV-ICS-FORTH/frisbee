@@ -42,7 +42,6 @@ const (
 
 func (r *Controller) installPrometheus(ctx context.Context, w *v1alpha1.Telemetry, prom *v1alpha1.Service) error {
 	{ // metadata
-		utils.SetOwner(r, w, prom)
 		prom.SetName("prometheus")
 	}
 
@@ -62,12 +61,11 @@ func (r *Controller) installPrometheus(ctx context.Context, w *v1alpha1.Telemetr
 		spec.DeepCopyInto(&prom.Spec)
 	}
 
-	return utils.Create(ctx, r, prom)
+	return utils.Create(ctx, r, w, prom)
 }
 
 func (r *Controller) installGrafana(ctx context.Context, w *v1alpha1.Telemetry, grafana *v1alpha1.Service) error {
 	{ // metadata
-		utils.SetOwner(r, w, grafana)
 		grafana.SetName("grafana")
 	}
 
@@ -92,7 +90,7 @@ func (r *Controller) installGrafana(ctx context.Context, w *v1alpha1.Telemetry, 
 		spec.DeepCopyInto(&grafana.Spec)
 	}
 
-	return utils.Create(ctx, r, grafana)
+	return utils.Create(ctx, r, w, grafana)
 }
 
 func (r *Controller) importDashboards(ctx context.Context, obj *v1alpha1.Telemetry, spec *v1alpha1.ServiceSpec) error {
@@ -160,14 +158,13 @@ func (r *Controller) importDashboards(ctx context.Context, obj *v1alpha1.Telemet
 	return nil
 }
 
-func (r *Controller) installIngress(ctx context.Context, obj *v1alpha1.Telemetry, prometheus, grafana *v1alpha1.Service) error {
+func (r *Controller) installIngress(ctx context.Context, cr *v1alpha1.Telemetry, prometheus, grafana *v1alpha1.Service) error {
 	ingress := netv1.Ingress{}
 
 	{ // metadata
-		utils.SetOwner(r, obj, &ingress)
 		ingress.SetName("frisbee")
 
-		if obj.Spec.Ingress.UseAmbassador {
+		if cr.Spec.Ingress.UseAmbassador {
 			ingress.SetAnnotations(map[string]string{
 				"kubernetes.io/ingress.class": "ambassador",
 			})
@@ -181,7 +178,7 @@ func (r *Controller) installIngress(ctx context.Context, obj *v1alpha1.Telemetry
 
 		// prometheus
 		ingress.Spec.Rules[0] = netv1.IngressRule{
-			Host: obj.Spec.Ingress.DNSPrefix.Convert(prometheus.GetName()),
+			Host: cr.Spec.Ingress.DNSPrefix.Convert(prometheus.GetName()),
 			IngressRuleValue: netv1.IngressRuleValue{
 				HTTP: &netv1.HTTPIngressRuleValue{
 					Paths: []netv1.HTTPIngressPath{
@@ -202,7 +199,7 @@ func (r *Controller) installIngress(ctx context.Context, obj *v1alpha1.Telemetry
 
 		// grafana
 		ingress.Spec.Rules[1] = netv1.IngressRule{
-			Host: obj.Spec.Ingress.DNSPrefix.Convert(grafana.GetName()),
+			Host: cr.Spec.Ingress.DNSPrefix.Convert(grafana.GetName()),
 			IngressRuleValue: netv1.IngressRuleValue{
 				HTTP: &netv1.HTTPIngressRuleValue{
 					Paths: []netv1.HTTPIngressPath{
@@ -223,14 +220,14 @@ func (r *Controller) installIngress(ctx context.Context, obj *v1alpha1.Telemetry
 	}
 
 	{ // deployment
-		if err := utils.Create(ctx, r, &ingress); err != nil {
+		if err := utils.Create(ctx, r, cr, &ingress); err != nil {
 			return errors.Wrapf(err, "unable to create ingress")
 		}
 	}
 
-	obj.Status.PrometheusURI = fmt.Sprintf("http://%s", obj.Spec.Ingress.DNSPrefix.Convert(prometheus.GetName()))
+	cr.Status.PrometheusURI = fmt.Sprintf("http://%s", cr.Spec.Ingress.DNSPrefix.Convert(prometheus.GetName()))
 
-	obj.Status.GrafanaURI = fmt.Sprintf("http://%s", obj.Spec.Ingress.DNSPrefix.Convert(grafana.GetName()))
+	cr.Status.GrafanaURI = fmt.Sprintf("http://%s", cr.Spec.Ingress.DNSPrefix.Convert(grafana.GetName()))
 
 	return nil
 }

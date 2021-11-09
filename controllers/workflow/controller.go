@@ -26,8 +26,8 @@ import (
 	"github.com/fnikolai/frisbee/controllers/utils"
 	"github.com/fnikolai/frisbee/controllers/utils/lifecycle"
 	"github.com/go-logr/logr"
+	notifier "github.com/golanghelper/grafana-webhook"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -201,6 +201,11 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		// We maintain testbed components (e.g, prometheus and grafana) for getting back the test results.
 		// These components are removed by deleting the Workflow.
 		for _, job := range r.state.SuccessfulJobs() {
+			alertID, exists := job.GetAnnotations()[JobHasSLA]
+			if exists {
+				grafana.DefaultClient.UnsetAlert(alertID)
+			}
+
 			utils.Delete(ctx, r, job)
 		}
 
@@ -256,12 +261,11 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		}
 
 		if cr.Spec.WithTelemetry != nil {
-			utils.SetOwner(r, &cr, &telemetryJob)
 			telemetryJob.SetName("telemetry")
 
 			cr.Spec.WithTelemetry.DeepCopyInto(&telemetryJob.Spec)
 
-			if err := utils.Create(ctx, r, &telemetryJob); err != nil {
+			if err := utils.Create(ctx, r, &cr, &telemetryJob); err != nil {
 				return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot create the telemetry stack"))
 			}
 		}
@@ -276,6 +280,9 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return lifecycle.Pending(ctx, r, &cr, "The Workflow is ready to start submitting jobs.")
 	}
 
+	/*
+		ensure that telemetry is running
+	*/
 	if cr.Spec.WithTelemetry != nil {
 		// Stop until the telemetry stack becomes ready.
 		if telemetryJob.Status.Phase.Is(v1alpha1.PhaseUninitialized) || telemetryJob.Status.Phase.Is(v1alpha1.PhasePending) {
@@ -288,7 +295,22 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		// this should normally happen when the telemetry is running
 		if grafana.DefaultClient == nil {
-			if err := grafana.NewGrafanaClient(ctx, r, telemetryJob.Status.GrafanaURI); err != nil {
+			if err := grafana.NewGrafanaClient(ctx, r, telemetryJob.Status.GrafanaURI,
+				// Set a callback that will be triggered when there is Grafana alert.
+				// Through this channel we can get informed for SLA violations.
+				grafana.WithNotifyOnAlert(func(b *notifier.Body) {
+					r.Logger.Info("Grafana Alert",
+						"title", b.Title,
+						"message", b.Message,
+						"matches", b.EvalMatches,
+						"state", b.State,
+					)
+
+					if err := utils.PatchAnnotation(ctx, r, &cr, map[string]string{JobSLAViolation: "ARKOUDEIDES"}); err != nil {
+						r.Logger.Error(err, "unable to inform CR for SLA violation", "cr", cr.GetName())
+					}
+				}),
+			); err != nil {
 				return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot communicate with the telemetry stack"))
 			}
 		}
@@ -315,22 +337,18 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return utils.RequeueAfter(time.Until(nextRun))
 	}
 
-	logrus.Warn("RUN ACTION")
 	for _, action := range actionList {
-		if action.Assert != nil {
-			if !assert(action.Assert.Before, &cr, &r.state) {
-				if err := utils.UpdateStatus(ctx, r, &cr); err != nil {
-					runtime.HandleError(err)
-
-					return utils.RequeueAfter(time.Second)
-				}
-
-				return utils.Stop()
-			}
+		job, err := r.getJob(ctx, &cr, action)
+		if err != nil {
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "invalid action %s spec", action.Name))
 		}
 
-		if err := r.runJob(ctx, &cr, action); err != nil {
-			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "waiting failed"))
+		if err := AssertSLA(action, job); err != nil {
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "assertion error"))
+		}
+
+		if err := utils.Create(ctx, r, &cr, job); err != nil {
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "action %s execution failed", action.Name))
 		}
 	}
 
@@ -371,14 +389,6 @@ func (r *Controller) Finalize(obj client.Object) error {
 	)
 
 	return nil
-}
-
-// isJobInScheduledList take a job and checks if activeJobs has a job with the same
-// name and namespace.
-func isJobInScheduledList(name string, scheduledJobs map[string]metav1.Time) bool {
-	_, ok := scheduledJobs[name]
-
-	return ok
 }
 
 /*

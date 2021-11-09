@@ -39,16 +39,44 @@ func (r *Controller) updateLifecycle(w *v1alpha1.Workflow) {
 		return
 	}
 
+	if info, exists := HasSLAViolation(w); exists {
+		w.Status.Lifecycle = v1alpha1.Lifecycle{
+			Phase:   v1alpha1.PhaseFailed,
+			Reason:  "AssertionError",
+			Message: info,
+		}
+
+		meta.SetStatusCondition(&w.Status.Conditions, metav1.Condition{
+			Type:    v1alpha1.WorkflowAssertion.String(),
+			Status:  metav1.ConditionTrue,
+			Reason:  "AssertionError",
+			Message: info,
+		})
+
+		return
+	}
+
 	// handle assertions for successfully completed operations
 	for _, job := range r.state.SuccessfulJobs() {
 		for _, action := range w.Spec.Actions {
 			if job.GetName() == action.Name {
-				if action.Assert != nil {
-					if !assert(action.Assert.After, w, &r.state) {
-						r.Logger.Info("Skip selftests because the assertion has failed.")
+				if action.Assert == nil {
+					continue
+				}
 
-						return
+				if err := AssertState(action.Assert.State, &BuiltinState{Runtime: &r.state}); err != nil {
+					w.Status.Lifecycle = v1alpha1.Lifecycle{
+						Phase:   v1alpha1.PhaseFailed,
+						Reason:  "AssertionError",
+						Message: err.Error(),
 					}
+
+					meta.SetStatusCondition(&w.Status.Conditions, metav1.Condition{
+						Type:    v1alpha1.WorkflowAssertion.String(),
+						Status:  metav1.ConditionTrue,
+						Reason:  "AssertionError",
+						Message: err.Error(),
+					})
 				}
 			}
 		}
