@@ -29,26 +29,26 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// ///////////////////////////////////////////
+//		Grafana Annotations
+// ///////////////////////////////////////////
+
 const (
 	AnnotationRun     = "run"
 	AnnotationExit    = "exit"
 	AnnotationFailure = "failure"
 )
 
-// Annotator provides a way to mark points on the graph with rich events.
+// Annotation provides a way to mark points on the graph with rich events.
 // // When you hover over an annotation you can get event description and event tags.
 // // The text field can include links to other systems with more detail.
-type Annotator interface {
+type Annotation interface {
 	// Add  pushes an annotation to grafana indicating that a new component has joined the experiment.
 	Add(obj client.Object)
 
 	// Delete pushes an annotation to grafana indicating that a new component has left the experiment.
 	Delete(obj client.Object)
 }
-
-// ///////////////////////////////////////////
-//		Point Annotator
-// ///////////////////////////////////////////
 
 type PointAnnotation struct{}
 
@@ -60,8 +60,8 @@ func (a *PointAnnotation) Add(obj client.Object) {
 		Text:    fmt.Sprintf("Job added. Kind:%s Name:%s", reflect.TypeOf(obj), obj.GetName()),
 	}
 
-	if v := Annotate; v != nil {
-		_ = v.Insert(ga)
+	if v := DefaultClient; v != nil {
+		_ = v.SetAnnotation(ga)
 	}
 }
 
@@ -73,14 +73,10 @@ func (a *PointAnnotation) Delete(obj client.Object) {
 		Text:    fmt.Sprintf("Job Deleted. Kind:%s Name:%s", reflect.TypeOf(obj), obj.GetName()),
 	}
 
-	if v := Annotate; v != nil {
-		_ = v.Insert(ga)
+	if v := DefaultClient; v != nil {
+		_ = v.SetAnnotation(ga)
 	}
 }
-
-// ///////////////////////////////////////////
-//		Range Annotator
-// ///////////////////////////////////////////
 
 // RangeAnnotation uses range annotations to indicate the duration of a Chaos.
 // It consists of two parts. In the first part, a failure annotation is created
@@ -100,8 +96,8 @@ func (a *RangeAnnotation) Add(obj client.Object) {
 		Text:    fmt.Sprintf("Job Added. Kind:%s Name:%s", reflect.TypeOf(obj), obj.GetName()),
 	}
 
-	if v := Annotate; v != nil {
-		a.reqID = v.Insert(ga)
+	if v := DefaultClient; v != nil {
+		a.reqID = v.SetAnnotation(ga)
 	}
 }
 
@@ -122,8 +118,8 @@ func (a *RangeAnnotation) Delete(obj client.Object) {
 		Text:    fmt.Sprintf("Job Deleted. Kind:%s Name:%s", reflect.TypeOf(obj), obj.GetName()),
 	}
 
-	if v := Annotate; v != nil {
-		v.Patch(a.reqID, ga)
+	if v := DefaultClient; v != nil {
+		v.PatchAnnotation(a.reqID, ga)
 	}
 }
 
@@ -139,28 +135,13 @@ const (
 	statusAnnotationPatched = "Annotation patched"
 )
 
-var Annotate *GrafanaAnnotator
-
-type GrafanaAnnotator struct {
-	ctx context.Context
-
-	*sdk.Client
-}
-
-func SetAnnotator(ctx context.Context, client *sdk.Client) {
-	Annotate = &GrafanaAnnotator{
-		ctx:    ctx,
-		Client: client,
-	}
-}
-
-// Insert inserts a new annotation to Grafana.
-func (c *GrafanaAnnotator) Insert(ga sdk.CreateAnnotationRequest) (reqID uint) {
+// SetAnnotation inserts a new annotation to Grafana.
+func (c *Client) SetAnnotation(ga sdk.CreateAnnotationRequest) (reqID uint) {
 	ctx, cancel := context.WithTimeout(c.ctx, AnnotationTimeout)
 	defer cancel()
 
 	// submit
-	gaResp, err := c.Client.CreateAnnotation(ctx, ga)
+	gaResp, err := c.Conn.CreateAnnotation(ctx, ga)
 	if err != nil {
 		runtime.HandleError(errors.Wrapf(err, "annotation failed"))
 
@@ -177,13 +158,13 @@ func (c *GrafanaAnnotator) Insert(ga sdk.CreateAnnotationRequest) (reqID uint) {
 	return *gaResp.ID
 }
 
-// Patch updates an existing annotation to Grafana.
-func (c *GrafanaAnnotator) Patch(reqID uint, ga sdk.PatchAnnotationRequest) {
+// PatchAnnotation updates an existing annotation to Grafana.
+func (c *Client) PatchAnnotation(reqID uint, ga sdk.PatchAnnotationRequest) {
 	ctx, cancel := context.WithTimeout(c.ctx, AnnotationTimeout)
 	defer cancel()
 
 	// submit
-	gaResp, err := c.Client.PatchAnnotation(ctx, reqID, ga)
+	gaResp, err := c.Conn.PatchAnnotation(ctx, reqID, ga)
 	if err != nil {
 		runtime.HandleError(errors.Wrapf(err, "annotation failed"))
 

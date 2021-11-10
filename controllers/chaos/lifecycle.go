@@ -128,7 +128,7 @@ In Chaos Mesh, the life cycle of a chaos experiment is divided into four steps, 
 	* Injecting: Chaos experiment is in the process of fault injection. Normally, this step lasts for a short time.
 	If the "Injecting" step lasts a long time, it may be due to some exceptions in the chaos experiment.
 
-	* Running: After the faults have been successfully injected into all target pods, the chaos experiment starts running.
+	* Running: State the faults have been successfully injected into all target pods, the chaos experiment starts running.
 
 	* Paused: when executing a paused process for a running chaos experiment, Chaos Mesh restores the injected
 	faults from all target pods, which indicates the experiment is paused.

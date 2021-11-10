@@ -43,6 +43,23 @@ spec:
                   properties:
                     action:
                       type: string
+                    assert:
+                      description: Assert defines the conditions under which the workflow
+                        will terminate with a "passed" or "failed" message
+                      properties:
+                        sla:
+                          description: SLA is a Grafana alert that will be triggered
+                            if the SLA condition is met. SLA assertion is applicable
+                            throughout the execution of an action.
+                          type: string
+                        state:
+                          description: State describe the runtime condition that should
+                            be met after the action has been executed
+                          type: string
+                      required:
+                      - sla
+                      - state
+                      type: object
                     chaos:
                       description: ChaosSpec defines the desired state of Chaos
                       properties:
@@ -3184,15 +3201,6 @@ spec:
                           by the Ambassador Ingress controller.
                         type: boolean
                     type: object
-                type: object
-              withTestOracle:
-                description: WithTestOracle defines the conditions under which the
-                  workflow will terminate with a "passed" or "failed" message
-                properties:
-                  fail:
-                    type: string
-                  pass:
-                    type: string
                 type: object
             required:
             - actions

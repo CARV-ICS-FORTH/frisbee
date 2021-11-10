@@ -22,46 +22,46 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-// calculateLifecycle returns the update lifecycle of the cluster.
-func calculateLifecycle(cr *v1alpha1.Service, pod *corev1.Pod) v1alpha1.Lifecycle {
-	status := cr.Status
-
-	if status.Phase == v1alpha1.PhaseUninitialized ||
-		status.Phase == v1alpha1.PhaseSuccess ||
-		status.Phase == v1alpha1.PhaseFailed {
-		return status.Lifecycle
+// updateLifecycle returns the update lifecycle of the cluster.
+func updateLifecycle(cr *v1alpha1.Service, pod *corev1.Pod) {
+	if cr.Status.Phase == v1alpha1.PhaseUninitialized ||
+		cr.Status.Phase == v1alpha1.PhaseSuccess ||
+		cr.Status.Phase == v1alpha1.PhaseFailed {
+		return
 	}
 
 	if pod.CreationTimestamp.IsZero() {
-		return v1alpha1.Lifecycle{
+		cr.Status.Lifecycle = v1alpha1.Lifecycle{
 			Phase:   v1alpha1.PhaseFailed,
 			Reason:  "PodDeletion",
 			Message: "The Pod is empty but scheduled.",
 		}
+
+		return
 	}
 
-	return convertLifecycle(pod)
+	convertLifecycle(cr, pod)
 }
 
 // convertLifecycle translates the Pod's Lifecycle to Frisbee Lifecycle.
-func convertLifecycle(pod *corev1.Pod) v1alpha1.Lifecycle {
+func convertLifecycle(w *v1alpha1.Service, pod *corev1.Pod) {
 	switch pod.Status.Phase {
 	case corev1.PodPending:
-		return v1alpha1.Lifecycle{
+		w.Status.Lifecycle = v1alpha1.Lifecycle{
 			Phase:   v1alpha1.PhasePending,
 			Reason:  pod.Status.Reason,
 			Message: pod.Status.Message,
 		}
 
 	case corev1.PodRunning:
-		return v1alpha1.Lifecycle{
+		w.Status.Lifecycle = v1alpha1.Lifecycle{
 			Phase:   v1alpha1.PhaseRunning,
 			Reason:  pod.Status.Reason,
 			Message: pod.Status.Message,
 		}
 
 	case corev1.PodSucceeded:
-		return v1alpha1.Lifecycle{
+		w.Status.Lifecycle = v1alpha1.Lifecycle{
 			Phase:   v1alpha1.PhaseSuccess,
 			Reason:  pod.Status.Reason,
 			Message: pod.Status.Message,
@@ -80,14 +80,14 @@ func convertLifecycle(pod *corev1.Pod) v1alpha1.Lifecycle {
 			message = "Check the container logs"
 		}
 
-		return v1alpha1.Lifecycle{
+		w.Status.Lifecycle = v1alpha1.Lifecycle{
 			Phase:   v1alpha1.PhaseFailed,
 			Reason:  reason,
 			Message: message,
 		}
 
 	case corev1.PodUnknown:
-		return v1alpha1.Lifecycle{
+		w.Status.Lifecycle = v1alpha1.Lifecycle{
 			Phase:   v1alpha1.PhaseFailed,
 			Reason:  "unknown state",
 			Message: pod.Status.Message,

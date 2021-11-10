@@ -22,10 +22,11 @@ import (
 	"time"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
+	"github.com/fnikolai/frisbee/controllers/telemetry/grafana"
 	"github.com/fnikolai/frisbee/controllers/utils"
-	"github.com/fnikolai/frisbee/controllers/utils/grafana"
 	"github.com/fnikolai/frisbee/controllers/utils/lifecycle"
 	"github.com/go-logr/logr"
+	notifier "github.com/golanghelper/grafana-webhook"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -168,8 +169,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		be in conflict. We fix this issue by re-queueing the request.
 		We also suppress verbose error reporting as to avoid polluting the output.
 	*/
-	newStatus := r.calculateLifecycle(&cr)
-	cr.Status = newStatus
+	r.updateLifecycle(&cr)
 
 	if err := utils.UpdateStatus(ctx, r, &cr); err != nil {
 		runtime.HandleError(err)
@@ -196,19 +196,24 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		First, we'll try to clean up old jobs, so that we don't leave too many lying
 		around.
 	*/
-	if newStatus.Phase.Is(v1alpha1.PhaseSuccess) {
+	if cr.Status.Phase.Is(v1alpha1.PhaseSuccess) {
 		// Remove the testing components once the experiment is successfully complete.
 		// We maintain testbed components (e.g, prometheus and grafana) for getting back the test results.
 		// These components are removed by deleting the Workflow.
 		for _, job := range r.state.SuccessfulJobs() {
+			alertID, exists := job.GetAnnotations()[JobHasSLA]
+			if exists {
+				grafana.DefaultClient.UnsetAlert(alertID)
+			}
+
 			utils.Delete(ctx, r, job)
 		}
 
 		return utils.Stop()
 	}
 
-	if newStatus.Phase.Is(v1alpha1.PhaseFailed) {
-		r.Logger.Error(errors.New(newStatus.Reason), newStatus.Message)
+	if cr.Status.Phase.Is(v1alpha1.PhaseFailed) {
+		r.Logger.Error(errors.New(cr.Status.Reason), cr.Status.Message)
 
 		// Remove the non-failed components. Leave the failed jobs and system jobs for postmortem analysis.
 		for _, job := range r.state.SuccessfulJobs() {
@@ -250,22 +255,17 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	/*
 		initialize the CR.
 	*/
-	if newStatus.Phase.Is(v1alpha1.PhaseUninitialized) {
+	if cr.Status.Phase.Is(v1alpha1.PhaseUninitialized) {
 		if err := ValidateDAG(cr.Spec.Actions); err != nil {
 			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "invalid dependency DAG"))
 		}
 
-		if err := ValidateOracle(&cr, r.state); err != nil {
-			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "invalid TestOracle"))
-		}
-
 		if cr.Spec.WithTelemetry != nil {
-			utils.SetOwner(r, &cr, &telemetryJob)
 			telemetryJob.SetName("telemetry")
 
 			cr.Spec.WithTelemetry.DeepCopyInto(&telemetryJob.Spec)
 
-			if err := r.GetClient().Create(ctx, &telemetryJob); err != nil {
+			if err := utils.Create(ctx, r, &cr, &telemetryJob); err != nil {
 				return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot create the telemetry stack"))
 			}
 		}
@@ -280,6 +280,9 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return lifecycle.Pending(ctx, r, &cr, "The Workflow is ready to start submitting jobs.")
 	}
 
+	/*
+		ensure that telemetry is running
+	*/
 	if cr.Spec.WithTelemetry != nil {
 		// Stop until the telemetry stack becomes ready.
 		if telemetryJob.Status.Phase.Is(v1alpha1.PhaseUninitialized) || telemetryJob.Status.Phase.Is(v1alpha1.PhasePending) {
@@ -291,8 +294,23 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		}
 
 		// this should normally happen when the telemetry is running
-		if grafana.Annotate == nil {
-			if err := r.initGrafana(ctx, telemetryJob.Status.GrafanaURI); err != nil {
+		if grafana.DefaultClient == nil {
+			if err := grafana.NewGrafanaClient(ctx, r, telemetryJob.Status.GrafanaURI,
+				// Set a callback that will be triggered when there is Grafana alert.
+				// Through this channel we can get informed for SLA violations.
+				grafana.WithNotifyOnAlert(func(b *notifier.Body) {
+					r.Logger.Info("Grafana Alert",
+						"title", b.Title,
+						"message", b.Message,
+						"matches", b.EvalMatches,
+						"state", b.State,
+					)
+
+					if err := utils.PatchAnnotation(ctx, r, &cr, map[string]string{JobSLAViolation: "ARKOUDEIDES"}); err != nil {
+						r.Logger.Error(err, "unable to inform CR for SLA violation", "cr", cr.GetName())
+					}
+				}),
+			); err != nil {
 				return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot communicate with the telemetry stack"))
 			}
 		}
@@ -302,7 +320,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		7: Get the next logical run
 		------------------------------------------------------------------
 	*/
-	if newStatus.Phase.Is(v1alpha1.PhaseRunning) {
+	if cr.Status.Phase.Is(v1alpha1.PhaseRunning) {
 		return utils.Stop()
 	}
 
@@ -320,8 +338,17 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	for _, action := range actionList {
-		if err := r.runJob(ctx, &cr, action); err != nil {
-			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "waiting failed"))
+		job, err := r.getJob(ctx, &cr, action)
+		if err != nil {
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "invalid action %s spec", action.Name))
+		}
+
+		if err := AssertSLA(action, job); err != nil {
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "assertion error"))
+		}
+
+		if err := utils.Create(ctx, r, &cr, job); err != nil {
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "action %s execution failed", action.Name))
 		}
 	}
 
@@ -362,14 +389,6 @@ func (r *Controller) Finalize(obj client.Object) error {
 	)
 
 	return nil
-}
-
-// isJobInScheduledList take a job and checks if activeJobs has a job with the same
-// name and namespace.
-func isJobInScheduledList(name string, scheduledJobs map[string]metav1.Time) bool {
-	_, ok := scheduledJobs[name]
-
-	return ok
 }
 
 /*

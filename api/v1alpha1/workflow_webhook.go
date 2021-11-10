@@ -17,7 +17,6 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -53,8 +52,6 @@ var _ webhook.Validator = &Workflow{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (r *Workflow) ValidateCreate() error {
-	logrus.Warn("SKAAAAAATAAAAAAAA")
-
 	workflowlog.Info("validate create", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object creation.

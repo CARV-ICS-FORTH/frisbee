@@ -23,21 +23,15 @@ import (
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	thelpers "github.com/fnikolai/frisbee/controllers/template/helpers"
 
-	"github.com/fnikolai/frisbee/controllers/utils"
 	"github.com/pkg/errors"
 )
 
 func getJob(r *Controller, cluster *v1alpha1.Cluster, i int) *v1alpha1.Service {
 	var instance v1alpha1.Service
 
-	{ // metadata
-		utils.SetOwner(r, cluster, &instance)
-		instance.SetName(generateName(cluster, i))
-	}
+	instance.SetName(generateName(cluster, i))
 
-	{ // spec
-		cluster.Status.Expected[i].DeepCopyInto(&instance.Spec)
-	}
+	cluster.Status.Expected[i].DeepCopyInto(&instance.Spec)
 
 	return &instance
 }

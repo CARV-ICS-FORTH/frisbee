@@ -76,7 +76,6 @@ func (h partitionHandler) GetFault(r *Controller) *Fault {
 
 	AsPartition(&fault)
 
-	utils.SetOwner(r, h.cr, &fault)
 	fault.SetName(h.cr.GetName())
 
 	return &fault
@@ -87,7 +86,10 @@ func (h partitionHandler) Inject(ctx context.Context, r *Controller) error {
 
 	var fault Fault
 
-	affectedPods := helpers.Select(ctx, r, h.cr.GetNamespace(), &spec.Selector)
+	affectedPods, err := helpers.Select(ctx, r, h.cr.GetNamespace(), &spec.Selector)
+	if err != nil {
+		return errors.Wrapf(err, "service selection error")
+	}
 
 	{ // spec
 		fault.SetUnstructuredContent(map[string]interface{}{
@@ -113,10 +115,9 @@ func (h partitionHandler) Inject(ctx context.Context, r *Controller) error {
 
 	AsPartition(&fault)
 
-	utils.SetOwner(r, h.cr, &fault)
 	fault.SetName(h.cr.GetName())
 
-	if err := utils.Create(ctx, r, &fault); err != nil {
+	if err := utils.Create(ctx, r, h.cr, &fault); err != nil {
 		return errors.Wrapf(err, "cannot inject fault")
 	}
 
@@ -136,7 +137,6 @@ func (h *killHandler) GetFault(r *Controller) *Fault {
 
 	AsKill(&fault)
 
-	utils.SetOwner(r, h.cr, &fault)
 	fault.SetName(h.cr.GetName())
 
 	return &fault
@@ -147,7 +147,10 @@ func (h killHandler) Inject(ctx context.Context, r *Controller) error {
 
 	var fault Fault
 
-	affectedPods := helpers.Select(ctx, r, h.cr.GetNamespace(), &spec.Selector)
+	affectedPods, err := helpers.Select(ctx, r, h.cr.GetNamespace(), &spec.Selector)
+	if err != nil {
+		return errors.Wrapf(err, "service selection error")
+	}
 
 	{ // spec
 		fault.SetUnstructuredContent(map[string]interface{}{
@@ -165,10 +168,9 @@ func (h killHandler) Inject(ctx context.Context, r *Controller) error {
 
 	AsKill(&fault)
 
-	utils.SetOwner(r, h.cr, &fault)
 	fault.SetName(h.cr.GetName())
 
-	if err := utils.Create(ctx, r, &fault); err != nil {
+	if err := utils.Create(ctx, r, h.cr, &fault); err != nil {
 		return errors.Wrapf(err, "cannot inject fault")
 	}
 

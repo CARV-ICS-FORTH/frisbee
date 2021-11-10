@@ -17,9 +17,9 @@ spec:
           inputs:
             - { node: "jedi7.cluster.ics.forth.gr", "direct": "0" }
 
-   # - action: Service
+    # - action: Service
   #    name: fio-jedi6
- #     service:
+  #     service:
 #        fromTemplate:
 #          templateRef: fio/benchmark
 #          inputs:

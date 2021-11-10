@@ -47,7 +47,7 @@ func Requeue() (ctrl.Result, error) {
 }
 
 // RequeueWithError will place the request in a queue, and will be immediately dequeued.
-// After dequeuing the request, the controller will report the error.
+// State dequeuing the request, the controller will report the error.
 func RequeueWithError(err error) (ctrl.Result, error) {
 	return ctrl.Result{}, err
 }
@@ -170,7 +170,7 @@ func Update(ctx context.Context, r Reconciler, obj client.Object) error {
 	r.Info("OO UpdtMeta",
 		"kind", reflect.TypeOf(obj),
 		"name", obj.GetName(),
-		"line", GetCallerLine(),
+		"caller", GetCallerLine(),
 		"version", obj.GetResourceVersion(),
 	)
 
@@ -186,7 +186,7 @@ func UpdateStatus(ctx context.Context, r Reconciler, obj client.Object) error {
 	r.Info("OO UpdtStatus",
 		"kind", reflect.TypeOf(obj),
 		"name", obj.GetName(),
-		"line", GetCallerLine(),
+		"caller", GetCallerLine(),
 		"version", obj.GetResourceVersion(),
 	)
 
@@ -196,25 +196,32 @@ func UpdateStatus(ctx context.Context, r Reconciler, obj client.Object) error {
 // Create ignores existing objects.
 // if the next reconciliation cycle happens faster than the API update, it is possible to
 // reschedule the creation of a Job. To avoid that, get if the Job is already submitted.
-func Create(ctx context.Context, r Reconciler, obj client.Object) error {
-	err := r.GetClient().Create(ctx, obj)
-	if err != nil {
-		return errors.Wrapf(err, "creation failed")
-	}
+func Create(ctx context.Context, r Reconciler, parent, child client.Object) error {
+	SetOwner(r, parent, child)
 
 	r.Info("++ Create",
-		"kind", reflect.TypeOf(obj),
-		"name", obj.GetName(),
-		"line", GetCallerLine(),
-		"version", obj.GetResourceVersion(),
+		"kind", reflect.TypeOf(child),
+		"name", child.GetName(),
+		"caller", GetCallerLine(),
+		"version", child.GetResourceVersion(),
 	)
 
-	return nil
+	err := r.GetClient().Create(ctx, child)
+
+	// If err is nil, Wrapf returns nil.
+	return errors.Wrapf(err, "creation failed")
 }
 
 // Delete removes a Kubernetes object, ignoring the NotFound error. If any error exists,
 // it is recorded in the reconciler's logger.
 func Delete(ctx context.Context, r Reconciler, obj client.Object) {
+	r.Info("-- Delete",
+		"kind", reflect.TypeOf(obj),
+		"name", obj.GetName(),
+		"caller", GetCallerLine(),
+		"version", obj.GetResourceVersion(),
+	)
+
 	// propagation := metav1.DeletePropagationForeground
 	propagation := metav1.DeletePropagationBackground
 	options := client.DeleteOptions{
@@ -222,15 +229,6 @@ func Delete(ctx context.Context, r Reconciler, obj client.Object) {
 	}
 
 	if err := r.GetClient().Delete(ctx, obj, &options); client.IgnoreNotFound(err) != nil {
-		r.Error(err, "unable to delete", "obj", obj.GetName())
-
-		return
+		r.Error(err, "unable to delete", "obj", obj)
 	}
-
-	r.Info("-- Delete",
-		"kind", reflect.TypeOf(obj),
-		"name", obj.GetName(),
-		"line", GetCallerLine(),
-		"version", obj.GetResourceVersion(),
-	)
 }

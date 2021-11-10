@@ -33,6 +33,7 @@ spec:
           server: localhost
           memory: ""
           cpu: ""
+          seconds: "60"
       spec: |
         agents:
           telemetry: [ sysmon/container, iperfmon/client ]
@@ -54,4 +55,4 @@ spec:
 
               server={{.Inputs.Parameters.server}}
 
-              iperf3 -c ${server} -t 600 -f m > /dev/shm/pipe
+              iperf3 -c ${server} -t {{.Inputs.Parameters.seconds}} -f m > /dev/shm/pipe

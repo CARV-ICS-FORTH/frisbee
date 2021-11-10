@@ -41,12 +41,15 @@ type Ingress struct {
 	UseAmbassador bool `json:"useAmbassador"`
 }
 
-// TestOracle is a source of information about whether the state of the workflow after a given time is correct or not.
+// Assert is a source of information about whether the state of the workflow after a given time is correct or not.
 // This is needed because some workflows may run in infinite-horizons.
-type TestOracle struct {
-	Pass *string `json:"pass,omitempty"`
+type Assert struct {
+	// SLA is a Grafana alert that will be triggered if the SLA condition is met.
+	// SLA assertion is applicable throughout the execution of an action.
+	SLA string `json:"sla"`
 
-	Fail *string `json:"fail,omitempty"`
+	// State describe the runtime condition that should be met after the action has been executed
+	State string `json:"state"`
 }
 
 // Action delegates arguments to the proper action handler.
@@ -59,6 +62,10 @@ type Action struct {
 	// DependsOn defines the conditions for the execution of this action
 	// +optional
 	DependsOn *WaitSpec `json:"depends,omitempty"`
+
+	// Assert defines the conditions under which the workflow will terminate with a "passed" or "failed" message
+	// +optional
+	Assert *Assert `json:"assert,omitempty"`
 
 	*EmbedActions `json:",inline"`
 }
@@ -99,10 +106,6 @@ type WorkflowSpec struct {
 	// not apply to already started executions.  Defaults to false.
 	// +optional
 	Suspend *bool `json:"suspend,omitempty"`
-
-	// WithTestOracle defines the conditions under which the workflow will terminate with a "passed" or "failed" message
-	// +optional
-	WithTestOracle *TestOracle `json:"withTestOracle,omitempty"`
 }
 
 // WorkflowStatus defines the observed state of Workflow

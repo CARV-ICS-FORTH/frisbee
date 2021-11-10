@@ -82,6 +82,14 @@ func ValidateDAG(list v1alpha1.ActionList) error {
 	return nil
 }
 
+// isJobInScheduledList take a job and checks if activeJobs has a job with the same
+// name and namespace.
+func isJobInScheduledList(name string, scheduledJobs map[string]metav1.Time) bool {
+	_, ok := scheduledJobs[name]
+
+	return ok
+}
+
 // GetNextLogicalJob returns a list of jobs that meet the logical and time constraints.
 // That is, either the job has no dependencies, or the dependencies are met.
 //

@@ -96,8 +96,8 @@ data:
       "fiscalYearStartMonth": 0,
       "gnetId": 315,
       "graphTooltip": 0,
-      "id": 3,
-      "iteration": 1635527414292,
+      "id": 2,
+      "iteration": 1636387814566,
       "links": [],
       "liveNow": false,
       "panels": [
@@ -175,7 +175,7 @@ data:
             "text": {},
             "textMode": "auto"
           },
-          "pluginVersion": "8.2.2",
+          "pluginVersion": "8.2.3",
           "targets": [
             {
               "exemplar": true,
@@ -254,7 +254,7 @@ data:
             "text": {},
             "textMode": "auto"
           },
-          "pluginVersion": "8.2.2",
+          "pluginVersion": "8.2.3",
           "targets": [
             {
               "exemplar": true,
@@ -332,7 +332,7 @@ data:
             "text": {},
             "textMode": "auto"
           },
-          "pluginVersion": "8.2.2",
+          "pluginVersion": "8.2.3",
           "targets": [
             {
               "exemplar": true,
@@ -475,7 +475,7 @@ data:
             "text": {},
             "textMode": "auto"
           },
-          "pluginVersion": "8.2.2",
+          "pluginVersion": "8.2.3",
           "targets": [
             {
               "exemplar": true,
@@ -555,7 +555,7 @@ data:
             "text": {},
             "textMode": "auto"
           },
-          "pluginVersion": "8.2.2",
+          "pluginVersion": "8.2.3",
           "targets": [
             {
               "exemplar": true,
@@ -636,7 +636,7 @@ data:
             "text": {},
             "textMode": "auto"
           },
-          "pluginVersion": "8.2.2",
+          "pluginVersion": "8.2.3",
           "targets": [
             {
               "exemplar": true,
@@ -665,9 +665,8 @@ data:
             "alertName": "",
             "dashboardAlerts": false,
             "dashboardTitle": "",
-            "folderId": null,
             "maxItems": 10,
-            "showOptions": "changes",
+            "showOptions": "current",
             "sortOrder": 1,
             "stateFilter": {
               "alerting": false,
@@ -679,7 +678,7 @@ data:
             },
             "tags": []
           },
-          "pluginVersion": "8.2.2",
+          "pluginVersion": "8.2.3",
           "targets": [
             {
               "exemplar": false,
@@ -792,7 +791,7 @@ data:
             "showHeader": true,
             "sortBy": []
           },
-          "pluginVersion": "8.2.2",
+          "pluginVersion": "8.2.3",
           "targets": [
             {
               "exemplar": false,
@@ -881,7 +880,7 @@ data:
             "showUnfilled": true,
             "text": {}
           },
-          "pluginVersion": "8.2.2",
+          "pluginVersion": "8.2.3",
           "targets": [
             {
               "exemplar": false,
@@ -954,7 +953,7 @@ data:
             "showUnfilled": true,
             "text": {}
           },
-          "pluginVersion": "8.2.2",
+          "pluginVersion": "8.2.3",
           "targets": [
             {
               "exemplar": false,
@@ -1273,6 +1272,7 @@ data:
                 "mode": "palette-classic"
               },
               "custom": {
+                "axisLabel": "",
                 "axisPlacement": "auto",
                 "barAlignment": 0,
                 "drawStyle": "line",
@@ -1707,7 +1707,7 @@ data:
           "type": "row"
         }
       ],
-      "refresh": "10s",
+      "refresh": "",
       "schemaVersion": 31,
       "style": "dark",
       "tags": [
@@ -1779,5 +1779,5 @@ data:
       "timezone": "browser",
       "title": "Kubernetes cluster monitoring (via Prometheus)",
       "uid": "R5y4AE8Mz",
-      "version": 1
+      "version": 2
     }

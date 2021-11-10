@@ -28,9 +28,7 @@ import (
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/fnikolai/frisbee/controllers/utils"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -70,52 +68,27 @@ var RetryAfter = wait.Backoff{
 	Steps:    4,
 }
 
-func Select(ctx context.Context, r utils.Reconciler, nm string, ss *v1alpha1.ServiceSelector) v1alpha1.SList {
+func Select(ctx context.Context, r utils.Reconciler, nm string, ss *v1alpha1.ServiceSelector) (v1alpha1.SList, error) {
 	if ss == nil {
-		panic("empty service selector")
+		return nil, errors.New("empty service selector")
 	}
 
 	if ss.Macro != nil {
 		parseMacro(nm, ss)
 	}
 
-	var runningServices v1alpha1.SList
-
-	// get all running services that match the criteria.
-	// it is possible that some services exist, but they are not in the Running phase.
-	// In this case, we simply retry.
-	err := retry.OnError(RetryAfter, func(error) bool { return true }, func() error {
-		services, err := selectRunningServices(ctx, r, &ss.Match)
-		if err != nil {
-			logrus.Warn(err)
-
-			return nil
-		}
-
-		if len(services) == 0 {
-			return errors.New("no running services were found. retry")
-		}
-
-		runningServices = services
-
-		return nil
-	})
-
+	runningServices, err := selectRunningServices(ctx, r, &ss.Match)
 	if err != nil {
-		r.Error(err, "selector error")
-
-		return nil
+		return nil, errors.Wrapf(err, "service selection error")
 	}
 
 	// filter services based on the pods
 	filteredServices, err := filterByMode(runningServices, ss.Mode, ss.Value)
 	if err != nil {
-		r.Error(err, "filter by mode")
-
-		return nil
+		return nil, errors.Wrapf(err, "filter by mode")
 	}
 
-	return filteredServices
+	return filteredServices, nil
 }
 
 func selectRunningServices(ctx context.Context, r utils.Reconciler, ss *v1alpha1.MatchService) (v1alpha1.SList, error) {

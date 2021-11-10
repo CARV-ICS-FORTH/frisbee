@@ -38,7 +38,7 @@ spec:
 
         container:
           name: grafana
-          image: "grafana/grafana:latest"
+          image: "grafana/grafana-oss:8.2.3"
           ports:
             - name: http
               containerPort: 3000
