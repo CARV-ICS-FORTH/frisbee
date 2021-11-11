@@ -8,9 +8,6 @@ spec:
     ingress:
       host: platform.science-hangar.eu
 
-  withTestOracle:
-    pass: >-
-      {{.IsSuccessful "partition1"}} == true
 
   actions:
     # Create a single Master node

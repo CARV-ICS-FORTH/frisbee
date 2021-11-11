@@ -180,16 +180,16 @@ func NewAlert(query string) (*Alert, error) {
 // ///////////////////////////////////////////
 
 // SetAlert adds a new alert to Grafana.
-func (c *Client) SetAlert(alert *Alert) error {
+func (c *Client) SetAlert(alert *Alert) (uint, error) {
 	board, _, err := c.Conn.GetDashboardByUID(context.Background(), alert.DashboardUID)
 	if err != nil {
-		return errors.Wrapf(err, "cannot retrieve dashboard %s", alert.DashboardUID)
+		return 0, errors.Wrapf(err, "cannot retrieve dashboard %s", alert.DashboardUID)
 	}
 
 	for _, panel := range board.Panels {
 		if panel.ID == alert.PanelID {
 			if panel.Alert != nil {
-				return errors.Errorf("An alert has already been set for this panel")
+				return 0, errors.Errorf("An alert has already been set for this panel")
 			}
 
 			panel.Alert = &sdk.Alert{
@@ -235,16 +235,16 @@ func (c *Client) SetAlert(alert *Alert) error {
 
 	res, err := c.Conn.SetDashboard(context.Background(), board, params)
 	if err != nil {
-		return errors.Wrap(err, "set dashboard")
+		return 0, errors.Wrap(err, "set dashboard")
 	}
 
 	logrus.Warn("STATUS ", res)
 
 	if *res.Status == "success" {
-		return nil
+		return 0, nil
 	}
 
-	return errors.Errorf("unable to set alert [%v]", res)
+	return *res.ID, errors.Errorf("unable to set alert [%v]", res)
 }
 
 // UnsetAlert removes an alert from Grafana.

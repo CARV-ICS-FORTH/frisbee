@@ -3,7 +3,7 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Workflow
 metadata:
-  name: scaleout-tikv
+  name: tikv-scaleout
 spec:
   withTelemetry:
     importMonitors: [ "sysmon/container", "ycsbmon/client", "tikvmon/pd", "tikvmon/worker" ]

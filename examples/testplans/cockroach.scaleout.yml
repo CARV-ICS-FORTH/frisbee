@@ -3,7 +3,7 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Workflow
 metadata:
-  name: scaleout-tikv
+  name: cockroach-scaleout
 spec:
   withTelemetry:
     importMonitors: [ "sysmon/container", "ycsbmon/client", "cockroachmon/server" ]

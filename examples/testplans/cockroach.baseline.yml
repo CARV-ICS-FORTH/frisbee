@@ -1,16 +1,12 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Workflow
 metadata:
-  name: baseline-cockroach
+  name: cockroach-baseline
 spec:
   withTelemetry:
     importMonitors: [ "sysmon/container", "ycsbmon/client", "cockroachmon/server" ]
     ingress:
       host: platform.science-hangar.eu
-
-  withTestOracle:
-    pass: >-
-      {{.IsSuccessful "workload-e"}} == true
 
   actions:
     # Step 0: bootstrap.

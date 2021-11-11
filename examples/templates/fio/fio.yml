@@ -16,8 +16,8 @@ spec:
           cpu: ""
           memory: ""
       spec: |
-        requirements:
-          frisbee.io/pvc: fio-pvc
+        requirements:                         # Requirements
+          frisbee.io/pvc: local-storage
           pvc.frisbee.io/spec: |
             storageClassName: ssd-storage
             accessModes:
@@ -25,7 +25,6 @@ spec:
             resources:
               requests:
                 storage: 15Gi
-
         domain:
           - {{.Inputs.Parameters.node}}         # Placement
         agents:                                 # Agents
@@ -33,10 +32,6 @@ spec:
         resources:                              # Resources
           cpu: {{.Inputs.Parameters.cpu}}
           memory: {{.Inputs.Parameters.memory}}
-        volumes:                                # Volumes
-          - name: local-storage
-            persistentVolumeClaim:
-              claimName: fio-pvc
         container:                              # Container
           name: app
           image: xridge/fio

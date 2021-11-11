@@ -1,7 +1,7 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Workflow
 metadata:
-  name: baseline-fio
+  name: fio-baseline
 spec:
   withTelemetry:
     importMonitors: [ "sysmon/container", "fiomon/server" ]

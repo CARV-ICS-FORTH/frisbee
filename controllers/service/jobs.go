@@ -114,31 +114,46 @@ func prepareRequirements(ctx context.Context, r *Controller, cr *v1alpha1.Servic
 	}
 
 	// handle persistent volume claims
-	if _, ok := requirements[RequirePersistentVolumeClaim]; ok {
-		config, ok := requirements[PersistentVolumeClaimSpec]
-		if !ok {
-			return errors.New("no PVC config")
-		}
-
-		var content map[string]interface{}
-
-		if err := yaml.Unmarshal([]byte(config), &content); err != nil {
-			return errors.Wrapf(err, "cannot unmarshal pvc content")
-		}
-
-		var pvc unstructured.Unstructured
-
-		pvc.SetUnstructuredContent(map[string]interface{}{
-			"spec": content,
-		})
-		pvc.SetAPIVersion("v1")
-		pvc.SetKind("PersistentVolumeClaim")
-		pvc.SetName(cr.GetName())
-
-		if err := utils.Create(ctx, r, cr, &pvc); err != nil {
-			return errors.Wrapf(err, "cannot create pvc")
-		}
+	volumeName, exists := requirements[RequirePersistentVolumeClaim]
+	if !exists {
+		return nil
 	}
+
+	config, ok := requirements[PersistentVolumeClaimSpec]
+	if !ok {
+		return errors.New("no PVC config")
+	}
+
+	var content map[string]interface{}
+
+	if err := yaml.Unmarshal([]byte(config), &content); err != nil {
+		return errors.Wrapf(err, "cannot unmarshal pvc content")
+	}
+
+	var pvc unstructured.Unstructured
+
+	pvc.SetUnstructuredContent(map[string]interface{}{
+		"spec": content,
+	})
+	pvc.SetAPIVersion("v1")
+	pvc.SetKind("PersistentVolumeClaim")
+	pvc.SetName(cr.GetName())
+
+	if err := utils.Create(ctx, r, cr, &pvc); err != nil {
+		return errors.Wrapf(err, "cannot create pvc")
+	}
+
+	volume := corev1.Volume{
+		Name: volumeName,
+		VolumeSource: corev1.VolumeSource{
+			PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+				ClaimName: pvc.GetName(),
+				ReadOnly:  false,
+			},
+		},
+	}
+
+	cr.Spec.Volumes = append(cr.Spec.Volumes, volume)
 
 	return nil
 }

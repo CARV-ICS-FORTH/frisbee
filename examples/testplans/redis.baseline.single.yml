@@ -18,48 +18,35 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Workflow
 metadata:
-  name: baseline-tikv
+  name: redis-baseline-single
 spec:
   withTelemetry:
-    importMonitors: [ "sysmon/container", "ycsbmon/client", "tikvmon/pd", "tikvmon/worker" ]
+    importMonitors: [ "sysmon/container", "ycsbmon/client",  "redismon/server" ]
     ingress:
       host: platform.science-hangar.eu
 
-  withTestOracle:
-    pass: >-
-      {{.IsSuccessful "workload-e"}} == true
 
   actions:
     # Step 0: bootstrap.
-    # For TiKV, we must first create a placementDriver and then add the workers.
     - action: Service
       name: master
       service:
         fromTemplate:
-          templateRef: tikv/placementDriver
+          templateRef: redis/master
           inputs:
-            - { cpu: "4", memory: "8Gi" }
-
-    - action: Cluster
-      depends: { running: [ master ] }
-      name: workers
-      cluster:
-        templateRef: tikv/worker
-        instances: 3
-        inputs:
-          - { placementDriver: .service.master.any,  cpu: "8", memory: "32Gi" }
+            - { cpu: "8", memory: "32Gi" }
 
 
     # Step 1: Load a new dataset, using the parameters of workload A.
     # We use no throttling to maximize this step and complete it soon.
     - action: Service
-      depends: { running: [ workers ] }
+      depends: { running: [ master ] }
       name: loader
       service:
         fromTemplate:
-          templateRef: ycsb-tikv/loader
+          templateRef: ycsb-redis/loader
           inputs:
-            - { server: .service.master.any, workload: workloada, recordcount: "10000000", threads: "400" }
+            - { server: .service.master.any, workload: workloada, recordcount: "1000000", threads: "400", mode: "single" }
 
     # Step 2: Run workload A
     - action: Service
@@ -67,10 +54,10 @@ spec:
       name: workload-a
       service:
         fromTemplate:
-          templateRef: ycsb-tikv/runner
+          templateRef: ycsb-redis/runner
           inputs:
             - { server: .service.master.any, workload: workloada, operationcount: "1000000",
-                cpu: "8",  memory: "8Gi", threads: "40" }
+                cpu: "8",  memory: "8Gi", threads: "40" , mode: "single" }
 
     # Step 3: Run workload B
     - action: Service
@@ -78,10 +65,10 @@ spec:
       name: workload-b
       service:
         fromTemplate:
-          templateRef: ycsb-tikv/runner
+          templateRef: ycsb-redis/runner
           inputs:
             - { server: .service.master.any, workload: workloadb, operationcount: "1000000",
-                cpu: "8",  memory: "8Gi", threads: "40" }
+                cpu: "8",  memory: "8Gi", threads: "40", mode: "single" }
 
     # Step 4: Run workload C
     - action: Service
@@ -89,10 +76,10 @@ spec:
       name: workload-c
       service:
         fromTemplate:
-          templateRef: ycsb-tikv/runner
+          templateRef: ycsb-redis/runner
           inputs:
             - { server: .service.master.any, workload: workloadc, operationcount: "1000000",
-                cpu: "8",  memory: "8Gi", threads: "40" }
+                cpu: "8",  memory: "8Gi", threads: "40", mode: "single" }
 
 
     # Step 5: Run workload F
@@ -101,10 +88,10 @@ spec:
       name: workload-f
       service:
         fromTemplate:
-          templateRef: ycsb-tikv/runner
+          templateRef: ycsb-redis/runner
           inputs:
             - { server: .service.master.any, workload: workloadf, operationcount: "1000000",
-                cpu: "8",  memory: "8Gi", threads: "40" }
+                cpu: "8",  memory: "8Gi", threads: "40", mode: "single" }
 
 
     # Step 6: Run workload D.
@@ -113,10 +100,10 @@ spec:
       name: workload-d
       service:
         fromTemplate:
-          templateRef: ycsb-tikv/runner
+          templateRef: ycsb-redis/runner
           inputs:
             - { server: .service.master.any, workload: workloadd, operationcount: "1000000",
-                cpu: "8",  memory: "8Gi", threads: "40" }
+                cpu: "8",  memory: "8Gi", threads: "40", mode: "single" }
 
 
     # Step 7,8: Reload the data with parameters of workload E.
@@ -126,10 +113,10 @@ spec:
       name: reloader
       service:
         fromTemplate:
-          templateRef: ycsb-tikv/loader
+          templateRef: ycsb-redis/loader
           inputs:
             - { server: .service.master.any, workload: workloade, dropdata: "true", recordcount: "1000000",
-                threads: "400" }
+                threads: "400", mode: "single" }
 
 
     # Step 9:Run workload E
@@ -138,9 +125,9 @@ spec:
       name: workload-e
       service:
         fromTemplate:
-          templateRef: ycsb-tikv/runner
+          templateRef: ycsb-redis/runner
           inputs:
             - { server: .service.master.any, workload: workloade, operationcount: "1000000",
-                cpu: "8",  memory: "8Gi", threads: "40" }
+                cpu: "8",  memory: "8Gi", threads: "40", mode: "single" }
 
 

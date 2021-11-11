@@ -1,7 +1,7 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Workflow
 metadata:
-  name: redis-failover
+  name: redis-availability-single
 spec:
   importMonitors: [ "sysmon/container", "redismon/server", "ycsbmon/client" ]
   ingress:

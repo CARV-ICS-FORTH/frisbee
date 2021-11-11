@@ -9,10 +9,6 @@ spec:
       host: localhost
       useAmbassador: true
 
-  withTestOracle:
-    pass: >-
-      {{.IsSuccessful "partition1"}} == true
-
   actions:
     # Create an iperf server
     - action: Service
