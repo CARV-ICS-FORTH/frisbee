@@ -1,0 +1,41 @@
+# This experiment runs a given load for various numbers of TikV instance.
+# This goal is to find the maximum number of TikV servers after which the overall performance does not increase further.
+apiVersion: frisbee.io/v1alpha1
+kind: Workflow
+metadata:
+  name: tikv-scaleout
+spec:
+  withTelemetry:
+    importMonitors: [ "sysmon/container", "ycsbmon/client", "tikvmon/pd", "tikvmon/worker" ]
+    ingress:
+      host: platform.science-hangar.eu
+
+  actions:
+    # Step 0: bootstrap.
+    # For TiKV, we must first create a placementDriver and then add the workers.
+    - action: Service
+      name: master
+      service:
+        fromTemplate:
+          templateRef: tikv/placementDriver
+
+
+    - action: Cluster
+      depends: { running: [ master ] }
+      name: workers
+      cluster:
+        templateRef: tikv/worker
+        instances: 256
+        inputs:
+          - { placementDriver: .service.master.any }
+
+
+    # Step 1: Load a new dataset, using the parameters of workload A.
+    # We use no throttling to maximize this step and complete it soon.
+    - action: Cluster
+      name: loaders
+      depends: { running: [ master, workers ] }
+      cluster:
+        templateRef: ycsb-tikv/loader
+        inputs:
+          - { server: .service.master.any, recordcount: "100000000000", offset: "0", threads: "32" }

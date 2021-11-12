@@ -14,7 +14,7 @@ spec:
           memory: ""
       spec: |
         requirements:                           # Requirements
-          frisbee.io/pvc: datastore
+          frisbee.io/pvc: datastore             # Will create a PVC and mount the volume
           pvc.frisbee.io/spec: |
             storageClassName: ssd-storage
             accessModes:
@@ -22,11 +22,15 @@ spec:
             resources:
               requests:
                 storage: 15Gi
+        volumes:                                # Manual volumes
+          - name: in-memory
+            emptyDir:
+              medium: Memory
         agents:                                 # Agents
           telemetry: [ sysmon/container, tikvmon/pd ]
         resources:                              # Resources
-          cpu: {{.Inputs.Parameters.cpu}}
-          memory: {{.Inputs.Parameters.memory}}
+          cpu: {{`.Inputs.Parameters.cpu`}}
+          memory: {{`.Inputs.Parameters.memory`}}
         container:                              # Container
           name: app
           image: pingcap/pd:v5.1.2
@@ -67,7 +71,7 @@ spec:
           memory: ""
       spec: |
         requirements:                           # Requirements
-          frisbee.io/pvc: datastore
+          frisbee.io/pvc: datastore             # Will create a PVC and mount the volume
           pvc.frisbee.io/spec: |
             storageClassName: ssd-storage
             accessModes:
@@ -75,16 +79,20 @@ spec:
             resources:
               requests:
                 storage: 15Gi
+        volumes:                                # Manual volumes
+          - name: in-memory
+            emptyDir:
+              medium: Memory
         agents:                                 # Agents
           telemetry: [ sysmon/container, tikvmon/worker ]
         resources:                              # Resources
-          cpu: {{.Inputs.Parameters.cpu}}
-          memory: {{.Inputs.Parameters.memory}}
+          cpu: {{".Inputs.Parameters.cpu"}}
+          memory: {{".Inputs.Parameters.memory"}}
         container:                              # Container
           name: app
           image: pingcap/tikv:v5.1.2
           volumeMounts:
-            - name: datastore
+            - name: in-memory
               mountPath: /store
           ports:
             - name: clusterbus
@@ -112,7 +120,7 @@ spec:
                 status-addr = "127.0.0.1:20180"
 
               [pd]
-                endpoints = ["{{.Inputs.Parameters.placementDriver}}:2379"]
+                endpoints = ["{{".Inputs.Parameters.placementDriver"}}:2379"]
 
               [storage]
                 reserve-space = "0"

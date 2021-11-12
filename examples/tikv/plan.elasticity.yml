@@ -39,7 +39,7 @@ spec:
       cluster:
         templateRef: ycsb-tikv/loader
         inputs:
-          - { server: .service.master.any, recordcount: "10000000", offset: "0", threads: "400" }
+          - { server: .service.master.any, recordcount: "1000000", offset: "0", threads: "400" }
 
 
 

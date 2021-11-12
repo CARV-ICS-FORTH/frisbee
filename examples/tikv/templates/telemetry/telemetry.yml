@@ -1,0 +1,101 @@
+---
+apiVersion: frisbee.io/v1alpha1
+kind: Template
+metadata:
+  name: tikvmon
+spec:
+  entries:
+    "pd":
+      spec: |
+        agent:
+          container:
+            name: tikv-pd
+            image: telegraf:1.20.3
+            ports:
+              - name: mon-pd
+                containerPort: 9443
+            command:
+              - /bin/sh # Run shell
+              - -c # Read from string
+              - |  # Multi-line str
+                set -eum
+
+                # Read metrics from one or many prometheus clients.
+                # See https://github.com/influxdata/telegraf/blob/master/plugins/inputs/prometheus/README.md
+
+                cat > /tmp/prometheus.conf <<EOF
+                [[inputs.prometheus]]
+                   ## An array of urls to scrape metrics from.
+                   urls = [
+                      "http://localhost:2379/metrics"
+                   ]
+
+                  metric_version = 2
+
+                [[outputs.prometheus_client]]
+                   listen = ":9443"
+                   metric_version = 2
+                   export_timestamp = true
+                   collectors_exclude = ["gocollector","process"]
+                EOF
+
+                telegraf --config /tmp/prometheus.conf &
+
+                # When the stop file is added by the container, the process stop
+                while [ ! -f "/dev/shm/stop" ];
+                do
+                  sleep 10
+                done
+
+        dashboards:
+          matchlabels:
+            dashboard: tikv
+            specificTo: pd
+
+
+    "worker":
+      spec: |
+        agent:
+          container:
+            name: tikv-worker
+            image: telegraf:1.20.3
+            ports:
+              - name: mon-tikv
+                containerPort: 9443
+            command:
+              - /bin/sh # Run shell
+              - -c # Read from string
+              - |  # Multi-line str
+                set -eum
+
+                # Read metrics from one or many prometheus clients.
+                # See https://github.com/influxdata/telegraf/blob/master/plugins/inputs/prometheus/README.md
+
+                cat > /tmp/prometheus.conf <<EOF
+                [[inputs.prometheus]]
+                   ## An array of urls to scrape metrics from.
+                   urls = [
+                      "http://localhost:20180/metrics"
+                   ]
+
+                  metric_version = 2
+
+                [[outputs.prometheus_client]]
+                   listen = ":9443"
+                   metric_version = 2
+                   export_timestamp = true
+                   collectors_exclude = ["gocollector","process"]
+                EOF
+
+                telegraf --config /tmp/prometheus.conf &
+
+                # When the stop file is added by the container, the process stop
+                while [ ! -f "/dev/shm/stop" ];
+                do
+                  sleep 10
+                done
+
+        dashboards:
+          matchlabels:
+            dashboard: tikv
+            specificTo: worker

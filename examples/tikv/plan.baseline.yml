@@ -66,7 +66,7 @@ spec:
           templateRef: ycsb-tikv/runner
           inputs:
             - { server: .service.master.any, workload: workloada, operationcount: "1000000",
-                cpu: "8",  memory: "8Gi", threads: "40" }
+                cpu: "8",  memory: "8Gi", threads: "400" }
 
     # Step 3: Run workload B
     - action: Service
@@ -77,7 +77,7 @@ spec:
           templateRef: ycsb-tikv/runner
           inputs:
             - { server: .service.master.any, workload: workloadb, operationcount: "1000000",
-                cpu: "8",  memory: "8Gi", threads: "40" }
+                cpu: "8",  memory: "8Gi", threads: "400" }
 
     # Step 4: Run workload C
     - action: Service
@@ -88,7 +88,7 @@ spec:
           templateRef: ycsb-tikv/runner
           inputs:
             - { server: .service.master.any, workload: workloadc, operationcount: "1000000",
-                cpu: "8",  memory: "8Gi", threads: "40" }
+                cpu: "8",  memory: "8Gi", threads: "400" }
 
 
     # Step 5: Run workload F
@@ -100,7 +100,7 @@ spec:
           templateRef: ycsb-tikv/runner
           inputs:
             - { server: .service.master.any, workload: workloadf, operationcount: "1000000",
-                cpu: "8",  memory: "8Gi", threads: "40" }
+                cpu: "8",  memory: "8Gi", threads: "400" }
 
 
     # Step 6: Run workload D.
@@ -112,7 +112,7 @@ spec:
           templateRef: ycsb-tikv/runner
           inputs:
             - { server: .service.master.any, workload: workloadd, operationcount: "1000000",
-                cpu: "8",  memory: "8Gi", threads: "40" }
+                cpu: "8",  memory: "8Gi", threads: "400" }
 
 
     # Step 7,8: Reload the data with parameters of workload E.
@@ -137,6 +137,6 @@ spec:
           templateRef: ycsb-tikv/runner
           inputs:
             - { server: .service.master.any, workload: workloade, operationcount: "1000000",
-                cpu: "8",  memory: "8Gi", threads: "40" }
+                cpu: "8",  memory: "8Gi", threads: "400" }
 
 

@@ -120,7 +120,7 @@ const (
 	ConditionJobFailed = ConditionType("hasFailedJobs")
 
 	// ConditionAllJobs indicates whether all actions in the workflow have been executed.
-	ConditionAllJobs = ConditionType("allActions")
+	ConditionAllJobs = ConditionType("AllJobsAreRunning")
 
 	// ConditionAllJobsDone indicates whether all actions in the workflow have been completed.
 	ConditionAllJobsDone = ConditionType("complete")

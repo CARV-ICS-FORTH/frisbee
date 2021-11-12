@@ -32,3 +32,15 @@ spec:
         dashboards:
           matchlabels:
             dashboard: sysmon
+
+
+---
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-system-container
+  labels:
+    dashboard: sysmon
+data:
+ {{ (.Files.Glob "dashboards/syscontainer.json").AsConfig | indent 2 }}
