@@ -3,7 +3,7 @@ entries:
   cockroachdb:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2021-11-12T21:44:51.630808398+02:00"
+    created: "2021-11-12T21:55:12.568261368+02:00"
     dependencies:
     - name: observability
       repository: https://carv-ics-forth.github.io/frisbee/charts
@@ -13,12 +13,12 @@ entries:
     name: cockroachdb
     type: application
     urls:
-    - https://carv-ics-forth.github.io/frisbee/charts/charts/cockroachdb-0.1.0.tgz
+    - https://carv-ics-forth.github.io/frisbee/charts/cockroachdb-0.1.0.tgz
     version: 0.1.0
   fio:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2021-11-12T21:44:51.631772513+02:00"
+    created: "2021-11-12T21:55:12.569281205+02:00"
     dependencies:
     - name: observability
       repository: https://carv-ics-forth.github.io/frisbee/charts
@@ -28,12 +28,12 @@ entries:
     name: fio
     type: application
     urls:
-    - https://carv-ics-forth.github.io/frisbee/charts/charts/fio-0.1.0.tgz
+    - https://carv-ics-forth.github.io/frisbee/charts/fio-0.1.0.tgz
     version: 0.1.0
   frisbee:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2021-11-12T21:44:51.656347179+02:00"
+    created: "2021-11-12T21:55:12.594187925+02:00"
     dependencies:
     - condition: chaos-mesh.enabled
       name: chaos-mesh
@@ -48,12 +48,12 @@ entries:
     name: frisbee
     type: application
     urls:
-    - https://carv-ics-forth.github.io/frisbee/charts/charts/frisbee-0.1.0.tgz
+    - https://carv-ics-forth.github.io/frisbee/charts/frisbee-0.1.0.tgz
     version: 0.1.0
   iperf:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2021-11-12T21:44:51.657212233+02:00"
+    created: "2021-11-12T21:55:12.595079105+02:00"
     dependencies:
     - name: observability
       repository: https://carv-ics-forth.github.io/frisbee/charts
@@ -63,25 +63,25 @@ entries:
     name: iperf
     type: application
     urls:
-    - https://carv-ics-forth.github.io/frisbee/charts/charts/iperf-0.1.0.tgz
+    - https://carv-ics-forth.github.io/frisbee/charts/iperf-0.1.0.tgz
     version: 0.1.0
   mongodb:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2021-11-12T21:44:51.65789982+02:00"
+    created: "2021-11-12T21:55:12.595751008+02:00"
     description: A Helm chart for Kubernetes
     digest: f1822e65baff8e47c0fff0b855c52535f281f1125380967946b3bfc58ee20a33
     name: mongodb
     type: application
     urls:
-    - https://carv-ics-forth.github.io/frisbee/charts/charts/mongodb-0.1.0.tgz
+    - https://carv-ics-forth.github.io/frisbee/charts/mongodb-0.1.0.tgz
     version: 0.1.0
   observability:
   - annotations:
       category: Infrastructure
     apiVersion: v2
     appVersion: 1.10.0
-    created: "2021-11-12T21:44:51.658320773+02:00"
+    created: "2021-11-12T21:55:12.596195141+02:00"
     description: The Observability stack of Frisbee. Installs Prometheus + Grafana
     digest: 3bd4ff0f70fde5f8082f2a96feb0a7b88c3626ef9599b9875209894aec62f51a
     home: https://github.com/bitnami/charts/tree/master/bitnami/common
@@ -89,25 +89,25 @@ entries:
     name: observability
     type: application
     urls:
-    - https://carv-ics-forth.github.io/frisbee/charts/charts/observability-0.1.0.tgz
+    - https://carv-ics-forth.github.io/frisbee/charts/observability-0.1.0.tgz
     version: 0.1.0
   redis:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2021-11-12T21:44:51.65913267+02:00"
+    created: "2021-11-12T21:55:12.596993534+02:00"
     description: A Helm chart for Kubernetes
     digest: 055aaca2269a64a0812a3561973f2a6458e6c053d09a94aa48c0cef3b7979290
     name: redis
     type: application
     urls:
-    - https://carv-ics-forth.github.io/frisbee/charts/charts/redis-0.1.0.tgz
+    - https://carv-ics-forth.github.io/frisbee/charts/redis-0.1.0.tgz
     version: 0.1.0
   sysmon:
   - annotations:
       category: Infrastructure
     apiVersion: v2
     appVersion: 1.10.0
-    created: "2021-11-12T21:44:51.659973144+02:00"
+    created: "2021-11-12T21:55:12.597838648+02:00"
     dependencies:
     - name: observability
       repository: https://carv-ics-forth.github.io/frisbee/charts
@@ -119,12 +119,12 @@ entries:
     name: sysmon
     type: application
     urls:
-    - https://carv-ics-forth.github.io/frisbee/charts/charts/sysmon-0.1.0.tgz
+    - https://carv-ics-forth.github.io/frisbee/charts/sysmon-0.1.0.tgz
     version: 0.1.0
   tikv:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2021-11-12T21:44:51.663450563+02:00"
+    created: "2021-11-12T21:55:12.601454997+02:00"
     dependencies:
     - name: sysmon
       repository: https://carv-ics-forth.github.io/frisbee/charts
@@ -138,12 +138,12 @@ entries:
     name: tikv
     type: application
     urls:
-    - https://carv-ics-forth.github.io/frisbee/charts/charts/tikv-0.1.0.tgz
+    - https://carv-ics-forth.github.io/frisbee/charts/tikv-0.1.0.tgz
     version: 0.1.0
   ycsbmon:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2021-11-12T21:44:51.66522948+02:00"
+    created: "2021-11-12T21:55:12.603088829+02:00"
     dependencies:
     - name: observability
       repository: https://carv-ics-forth.github.io/frisbee/charts
@@ -153,6 +153,6 @@ entries:
     name: ycsbmon
     type: application
     urls:
-    - https://carv-ics-forth.github.io/frisbee/charts/charts/ycsbmon-0.1.0.tgz
+    - https://carv-ics-forth.github.io/frisbee/charts/ycsbmon-0.1.0.tgz
     version: 0.1.0
-generated: "2021-11-12T21:44:51.629696411+02:00"
+generated: "2021-11-12T21:55:12.567090767+02:00"
