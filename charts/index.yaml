@@ -3,7 +3,7 @@ entries:
   fio:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2021-11-13T00:14:58.92536324+02:00"
+    created: "2021-11-13T00:22:05.63682903+02:00"
     dependencies:
     - name: sysmon
       repository: https://carv-ics-forth.github.io/frisbee/charts
@@ -18,7 +18,7 @@ entries:
   frisbee:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2021-11-13T00:14:58.947211821+02:00"
+    created: "2021-11-13T00:22:05.665717001+02:00"
     dependencies:
     - condition: chaos-mesh.enabled
       name: chaos-mesh
@@ -38,7 +38,7 @@ entries:
   iperf:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2021-11-13T00:14:58.947852556+02:00"
+    created: "2021-11-13T00:22:05.666579401+02:00"
     dependencies:
     - name: sysmon
       repository: https://carv-ics-forth.github.io/frisbee/charts
@@ -53,7 +53,7 @@ entries:
   mongodb:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2021-11-13T00:14:58.949040023+02:00"
+    created: "2021-11-13T00:22:05.668101005+02:00"
     dependencies:
     - name: sysmon
       repository: https://carv-ics-forth.github.io/frisbee/charts
@@ -73,7 +73,7 @@ entries:
       category: Infrastructure
     apiVersion: v2
     appVersion: 1.10.0
-    created: "2021-11-13T00:14:58.971325417+02:00"
+    created: "2021-11-13T00:22:05.696989459+02:00"
     dependencies:
     - name: frisbee
       repository: https://carv-ics-forth.github.io/frisbee/charts
@@ -90,7 +90,7 @@ entries:
   redis:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2021-11-13T00:14:58.972600015+02:00"
+    created: "2021-11-13T00:22:05.69861939+02:00"
     dependencies:
     - name: sysmon
       repository: https://carv-ics-forth.github.io/frisbee/charts
@@ -110,7 +110,7 @@ entries:
       category: Infrastructure
     apiVersion: v2
     appVersion: 1.10.0
-    created: "2021-11-13T00:14:58.972901936+02:00"
+    created: "2021-11-13T00:22:05.699004119+02:00"
     description: A Library Helm Chart for grouping common logic between bitnami charts. This chart is not deployable by itself.
     digest: bc0c7e18802e58d2dda0ae12d71be64ee0bab9e22510687a951e520079103a98
     home: https://github.com/bitnami/charts/tree/master/bitnami/common
@@ -123,7 +123,7 @@ entries:
   tikv:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2021-11-13T00:14:58.974887255+02:00"
+    created: "2021-11-13T00:22:05.701625951+02:00"
     dependencies:
     - name: sysmon
       repository: https://carv-ics-forth.github.io/frisbee/charts
@@ -142,7 +142,7 @@ entries:
   ycsbmon:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2021-11-13T00:14:58.97532968+02:00"
+    created: "2021-11-13T00:22:05.702188315+02:00"
     description: A Helm chart for Kubernetes
     digest: fb30b24d43bd8f456eb68fc8132362b01300a451751704fdc9476ee758c9ca77
     name: ycsbmon
@@ -150,4 +150,4 @@ entries:
     urls:
     - https://carv-ics-forth.github.io/frisbee/charts/ycsbmon-0.1.1.tgz
     version: 0.1.1
-generated: "2021-11-13T00:14:58.924484162+02:00"
+generated: "2021-11-13T00:22:05.635684488+02:00"
