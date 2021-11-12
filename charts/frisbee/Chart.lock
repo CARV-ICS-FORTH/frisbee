@@ -1,0 +1,9 @@
+dependencies:
+- name: chaos-mesh
+  repository: https://charts.chaos-mesh.org
+  version: 2.0.3
+- name: openebs
+  repository: https://openebs.github.io/charts
+  version: 3.0.0
+digest: sha256:516a040e70a3b7d64cacbbad639a0b486df08792d5ca5bb9ea74418e2c31ed8e
+generated: "2021-11-13T01:22:12.703568747+02:00"
