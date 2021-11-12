@@ -14,8 +14,8 @@ spec:
         agents:
           telemetry: [ sysmon/container, redismon/server ]
         resources:
-          memory: {{".Inputs.Parameters.memory"}}
-          cpu: {{".Inputs.Parameters.cpu"}}
+          memory: {{"{{.Inputs.Parameters.memory}}"}}
+          cpu: {{"{{.Inputs.Parameters.cpu}}"}}
         container:
           name: app
           image: redis
@@ -82,7 +82,7 @@ spec:
               cat > redis.conf <<EOF
                 port 6379
                 appendonly yes
-                slaveof {{".Inputs.Parameters.master"}} 6379
+                slaveof {{"{{.Inputs.Parameters.master}}"}} 6379
               EOF
 
               redis-server redis.conf
@@ -120,11 +120,11 @@ spec:
               set -eum
               trap "touch /dev/shm/stop" EXIT
 
-              echo "Watch {{".Inputs.Parameters.master"}}:6379"
+              echo "Watch {{"{{.Inputs.Parameters.master}}"}}:6379"
 
               cat > sentinel.conf <<EOF
                 sentinel resolve-hostnames yes
-                sentinel monitor mymaster {{".Inputs.Parameters.master"}} 6379 1
+                sentinel monitor mymaster {{"{{.Inputs.Parameters.master}}"}} 6379 1
                 sentinel down-after-milliseconds mymaster 5000
                 sentinel failover-timeout mymaster 10000
                 sentinel parallel-syncs mymaster 1

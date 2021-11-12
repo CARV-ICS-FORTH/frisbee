@@ -27,14 +27,14 @@ spec:
               set -eum
               trap "touch /dev/shm/stop" EXIT
 
-              echo "Start Cockroachdb in cluster: " {{".Inputs.Parameters.servers"}}
+              echo "Start Cockroachdb in cluster: " {{"{{.Inputs.Parameters.servers}}"}}
 
               cockroach start                               \
                   --insecure                                \
                   --store=$${HOSTNAME}                      \
                   --listen-addr=$${HOSTNAME}:26257          \
                   --http-addr=$${HOSTNAME}:8080             \
-                  --join={{".Inputs.Parameters.servers"}}     \
+                  --join={{"{{.Inputs.Parameters.servers}}"}}     \
 
 
     "bootstrap":
@@ -52,7 +52,7 @@ spec:
             - |         # Multi-line str
               set -eum
 
-              addr={{".Inputs.Parameters.server"}}:{{".Inputs.Parameters.port"}}
+              addr={{"{{.Inputs.Parameters.server}}"}}:{{"{{.Inputs.Parameters.port}}"}}
 
               echo "Initiate cluster using $addr"
 

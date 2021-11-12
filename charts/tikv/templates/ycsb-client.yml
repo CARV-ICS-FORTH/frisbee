@@ -21,8 +21,8 @@ spec:
         agents:                                       # Agents
           telemetry: [ sysmon/container, ycsbmon/client ]
         resources:                                    # Resources
-          cpu: {{".Inputs.Parameters.cpu"}}
-          memory: {{".Inputs.Parameters.memory"}}
+          cpu: {{"{{.Inputs.Parameters.cpu}}"}}
+          memory: {{"{{.Inputs.Parameters.memory}}"}}
         container:                                    # Container
           name: app
           image: aylei/go-ycsb:20201029
@@ -33,16 +33,16 @@ spec:
               set -eum
               trap "touch /dev/shm/stop" EXIT
 
-              addr={{".Inputs.Parameters.server"}}:{{".Inputs.Parameters.port"}}
+              addr={{"{{.Inputs.Parameters.server}}"}}:{{"{{.Inputs.Parameters.port}}"}}
 
-              echo "Loader: $addr <- {{".Inputs.Parameters.recordcount"}}:{{".Inputs.Parameters.offset"}}"
+              echo "Loader: $addr <- {{"{{.Inputs.Parameters.recordcount}}"}}:{{"{{.Inputs.Parameters.offset}}"}}"
 
               ./go-ycsb load tikv                                      \
-                  -P workloads/{{".Inputs.Parameters.workload"}}         \
-                  -p dropdata={{".Inputs.Parameters.dropdata"}}          \
-                  -p recordcount={{".Inputs.Parameters.recordcount"}}    \
-                  -p insertstart={{".Inputs.Parameters.offset"}}         \
-                  -p threadcount={{".Inputs.Parameters.threads"}}        \
+                  -P workloads/{{"{{.Inputs.Parameters.workload}}"}}         \
+                  -p dropdata={{"{{.Inputs.Parameters.dropdata}}"}}          \
+                  -p recordcount={{"{{.Inputs.Parameters.recordcount}}"}}    \
+                  -p insertstart={{"{{.Inputs.Parameters.offset}}"}}         \
+                  -p threadcount={{"{{.Inputs.Parameters.threads}}"}}        \
                   -p tikv.pd=${addr}                                   \
                   -p tikv.type="raw"                                   \
               >> /dev/shm/pipe
@@ -63,8 +63,8 @@ spec:
         agents:                                       # Agents
           telemetry: [ sysmon/container, ycsbmon/client ]
         resources:                                    # Resources
-          cpu: {{".Inputs.Parameters.cpu"}}
-          memory: {{".Inputs.Parameters.memory"}}
+          cpu: {{"{{.Inputs.Parameters.cpu}}"}}
+          memory: {{"{{.Inputs.Parameters.memory}}"}}
         container:                                    # Container
           name: app
           image: aylei/go-ycsb:20201029
@@ -75,14 +75,14 @@ spec:
               set -eum
               trap "touch /dev/shm/stop" EXIT
 
-              addr={{".Inputs.Parameters.server"}}:{{".Inputs.Parameters.port"}}
+              addr={{"{{.Inputs.Parameters.server}}"}}:{{"{{.Inputs.Parameters.port}}"}}
 
-              echo "Runner: $addr <- {{".Inputs.Parameters.workload"}}:{{".Inputs.Parameters.operationcount"}}"
+              echo "Runner: $addr <- {{"{{.Inputs.Parameters.workload}}"}}:{{"{{.Inputs.Parameters.operationcount}}"}}"
 
               ./go-ycsb run tikv                                                                  \
-                    -P workloads/{{".Inputs.Parameters.workload"}}                                  \
-                    -p operationcount={{".Inputs.Parameters.operationcount"}}                       \
-                    -p threadcount={{".Inputs.Parameters.threads"}}                                 \
+                    -P workloads/{{"{{.Inputs.Parameters.workload}}"}}                                  \
+                    -p operationcount={{"{{.Inputs.Parameters.operationcount}}"}}                       \
+                    -p threadcount={{"{{.Inputs.Parameters.threads}}"}}                                 \
                     -p tikv.pd=${addr}                                                            \
                     -p tikv.type="raw"                                                            \
               >> /dev/shm/pipe

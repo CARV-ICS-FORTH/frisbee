@@ -14,8 +14,8 @@ spec:
         agents:
           telemetry: [ sysmon/container ]
         resources:
-          memory: {{".Inputs.Parameters.memory"}}
-          cpu: {{".Inputs.Parameters.cpu"}}
+          memory: {{"{{.Inputs.Parameters.memory}}"}}
+          cpu: {{"{{.Inputs.Parameters.cpu}}"}}
         ports:
           - port: 5201
             name: tcp
@@ -38,8 +38,8 @@ spec:
         agents:
           telemetry: [ sysmon/container, iperfmon/client ]
         resources:
-          memory: {{".Inputs.Parameters.memory"}}
-          cpu: {{".Inputs.Parameters.cpu"}}
+          memory: {{"{{.Inputs.Parameters.memory}}"}}
+          cpu: {{"{{.Inputs.Parameters.cpu}}"}}
         container:
           name: app
           image: "networkstatic/iperf3"
@@ -53,6 +53,6 @@ spec:
               set -eum
               trap "touch /dev/shm/stop" EXIT
 
-              server={{".Inputs.Parameters.server"}}
+              server={{"{{.Inputs.Parameters.server}}"}}
 
-              iperf3 -c ${server} -t {{".Inputs.Parameters.seconds"}} -f m > /dev/shm/pipe
+              iperf3 -c ${server} -t {{"{{.Inputs.Parameters.seconds}}"}} -f m > /dev/shm/pipe
