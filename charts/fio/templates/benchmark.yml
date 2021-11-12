@@ -26,18 +26,18 @@ spec:
               requests:
                 storage: 15Gi
         domain:
-          - {{".Inputs.Parameters.node"}}         # Placement
+          - {{"{{.Inputs.Parameters.node}}"}}         # Placement
         agents:                                 # Agents
           telemetry: [ sysmon/container, fiomon/server ]
         resources:                              # Resources
-          cpu: {{".Inputs.Parameters.cpu"}}
-          memory: {{".Inputs.Parameters.memory"}}
+          cpu: {{"{{.Inputs.Parameters.cpu}}"}}
+          memory: {{"{{.Inputs.Parameters.memory}}"}}
         container:                              # Container
           name: app
           image: xridge/fio
           volumeMounts:
             - name: local-storage
-              mountPath: {{".Inputs.Parameters.device"}}
+              mountPath: {{"{{.Inputs.Parameters.device}}"}}
           command:
             - /bin/sh # Run shell
             - -c      # Read from string
@@ -45,9 +45,9 @@ spec:
               set -eum
               trap "touch /dev/shm/stop" EXIT
 
-              DEVICE={{".Inputs.Parameters.device"}}
-              SIZE={{".Inputs.Parameters.size"}}
-              DIRECT={{".Inputs.Parameters.direct"}}
+              DEVICE={{"{{.Inputs.Parameters.device}}"}}
+              SIZE={{"{{.Inputs.Parameters.size}}"}}
+              DIRECT={{"{{.Inputs.Parameters.direct}}"}}
 
               echo "USING DEVICE: $DEVICE"
 

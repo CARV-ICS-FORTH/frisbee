@@ -30,16 +30,16 @@ spec:
         agents:                                         # Agents
           telemetry: [ sysmon/container, redismon/server ]
         resources:                                      # Resources
-          memory: {{".Inputs.Parameters.memory"}}
-          cpu: {{".Inputs.Parameters.cpu"}}
+          memory: {{"{{.Inputs.Parameters.memory}}"}}
+          cpu: {{"{{.Inputs.Parameters.cpu}}"}}
         container:                                      # Container
           name: app
           image: redis
           ports:
             - name: to-clients
-              containerPort: {{".Inputs.Parameters.port"}}
+              containerPort: {{"{{.Inputs.Parameters.port}}"}}
             - name: to-cluster
-              containerPort: {{" $toClusterbus := add .Inputs.Parameters.port 10000"}}{{"$toClusterbus"}}
+              containerPort: {{"{{ $toClusterbus := add .Inputs.Parameters.port 10000}}"}}{{"{{$toClusterbus}}"}}
           env:
             - name: podIP
               valueFrom:
@@ -52,19 +52,19 @@ spec:
               set -eum
               trap "touch /dev/shm/stop" EXIT
 
-              echo "Start master node at {{".Inputs.Parameters.port"}}"
+              echo "Start master node at {{"{{.Inputs.Parameters.port}}"}}"
 
               echo "Create Redis configuration"
               cat > redis.conf <<EOF
-                port {{".Inputs.Parameters.port"}}
+                port {{"{{.Inputs.Parameters.port}}"}}
                 appendonly yes
                 cluster-enabled yes
                 cluster-config-file nodes.conf
                 cluster-node-timeout 5000
 
                 cluster-announce-ip $podIP
-                cluster-announce-port {{".Inputs.Parameters.port"}}
-                cluster-announce-bus-port {{"$toClusterbus"}}
+                cluster-announce-port {{"{{.Inputs.Parameters.port}}"}}
+                cluster-announce-bus-port {{"{{$toClusterbus}}"}}
               EOF
 
               redis-server redis.conf
@@ -77,7 +77,7 @@ spec:
                 - |         # Multi-line str
                   set -eum
 
-                  response=$(timeout -s QUIT 30 redis-cli -h localhost -p {{".Inputs.Parameters.port"}} ping)
+                  response=$(timeout -s QUIT 30 redis-cli -h localhost -p {{"{{.Inputs.Parameters.port}}"}} ping)
                   if [ "$response" != "PONG" ]; then
                       exit 1
                   fi
@@ -101,8 +101,8 @@ spec:
             - |         # Multi-line str
               set -eum
 
-              servers=( {{".Inputs.Parameters.servers"}} )
-              ports=( {{".Inputs.Parameters.ports"}} )
+              servers=( {{"{{.Inputs.Parameters.servers}}"}} )
+              ports=( {{"{{.Inputs.Parameters.ports}}"}} )
 
               echo "Create cluster from ${servers[*]}"
 

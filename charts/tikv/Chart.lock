@@ -1,0 +1,9 @@
+dependencies:
+- name: sysmon
+  repository: https://carv-ics-forth.github.io/frisbee/charts
+  version: 0.1.1
+- name: ycsbmon
+  repository: https://carv-ics-forth.github.io/frisbee/charts
+  version: 0.1.1
+digest: sha256:1b00f1833bda2483d0aa1408df91e379497f4ae7e890d3f400cd6a688cf569aa
+generated: "2021-11-13T00:23:40.795901818+02:00"

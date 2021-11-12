@@ -29,8 +29,8 @@ spec:
         agents:                                 # Agents
           telemetry: [ sysmon/container, tikvmon/pd ]
         resources:                              # Resources
-          cpu: {{`.Inputs.Parameters.cpu`}}
-          memory: {{`.Inputs.Parameters.memory`}}
+          cpu: {{"{{.Inputs.Parameters.cpu}}"}}
+          memory: {{"{{.Inputs.Parameters.memory}}"}}
         container:                              # Container
           name: app
           image: pingcap/pd:v5.1.2
@@ -86,8 +86,8 @@ spec:
         agents:                                 # Agents
           telemetry: [ sysmon/container, tikvmon/worker ]
         resources:                              # Resources
-          cpu: {{".Inputs.Parameters.cpu"}}
-          memory: {{".Inputs.Parameters.memory"}}
+          cpu: {{"{{.Inputs.Parameters.cpu}}"}}
+          memory: {{"{{.Inputs.Parameters.memory}}"}}
         container:                              # Container
           name: app
           image: pingcap/tikv:v5.1.2
@@ -120,7 +120,7 @@ spec:
                 status-addr = "127.0.0.1:20180"
 
               [pd]
-                endpoints = ["{{".Inputs.Parameters.placementDriver"}}:2379"]
+                endpoints = ["{{"{{.Inputs.Parameters.placementDriver}}"}}:2379"]
 
               [storage]
                 reserve-space = "0"

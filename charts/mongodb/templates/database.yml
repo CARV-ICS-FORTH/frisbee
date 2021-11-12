@@ -16,14 +16,14 @@ spec:
         agents:                                 # Agents
           telemetry: [ sysmon/container, mongomon/telegraf ]
         resources:                              # Resources
-          cpu: {{".Inputs.Parameters.cpu"}}
-          memory: {{".Inputs.Parameters.memory"}}
+          cpu: {{"{{.Inputs.Parameters.cpu}}"}}
+          memory: {{"{{.Inputs.Parameters.memory}}"}}
         container:                              # Container
           name: app
           image: bitnami/mongodb
           ports:
             - name: to-clients
-              containerPort: {{".Inputs.Parameters.port"}}
+              containerPort: {{"{{.Inputs.Parameters.port}}"}}
           command:
             - /bin/sh   # Run shell
             - -c        # Read from string
@@ -35,7 +35,7 @@ spec:
               cat > /tmp/mongod.conf <<EOF
                 # network interfaces
                 net:
-                  port: {{".Inputs.Parameters.port"}}
+                  port: {{"{{.Inputs.Parameters.port}}"}}
                   bindIp: 0.0.0.0
 
                 # Where and how to store data.
@@ -49,12 +49,12 @@ spec:
                   replSetName: app1r0
               EOF
 
-              echo "Create Replicaset with {{".Inputs.Parameters.slaves"}}"
+              echo "Create Replicaset with {{"{{.Inputs.Parameters.slaves}}"}}"
               cat > /tmp/rs-init.js <<EOF
                 rs.initiate()
-        {{`- range splitList " " .Inputs.Parameters.slaves}}
+        {{`{{- range splitList " " .Inputs.Parameters.slaves}}
                 rs.add("{{.}}")
-        {{- end`}}
+        {{- end}}`}}
               EOF
 
               echo "Schedule replicate set creation"
@@ -72,7 +72,7 @@ spec:
                 - |         # Multi-line str
                   set -eum
 
-                  response=$(timeout -s QUIT 30 mongo --eval 'rs.status().ok' localhost:{{".Inputs.Parameters.port"}} --quiet)
+                  response=$(timeout -s QUIT 30 mongo --eval 'rs.status().ok' localhost:{{"{{.Inputs.Parameters.port}}"}} --quiet)
                   if [ "$response" != "1" ]; then
                       exit 1
                   fi
@@ -88,14 +88,14 @@ spec:
         agents:                                 # Agents
           telemetry: [ sysmon/container, mongomon/telegraf ]
         resources:                              # Resources
-          cpu: {{".Inputs.Parameters.cpu"}}
-          memory: {{".Inputs.Parameters.memory"}}
+          cpu: {{"{{.Inputs.Parameters.cpu}}"}}
+          memory: {{"{{.Inputs.Parameters.memory}}"}}
         container:                              # Container
           name: app
           image: bitnami/mongodb
           ports:
             - name: to-clients
-              containerPort: {{".Inputs.Parameters.port"}}
+              containerPort: {{"{{.Inputs.Parameters.port}}"}}
           command:
             - /bin/sh   # Run shell
             - -c        # Read from string
@@ -107,7 +107,7 @@ spec:
               cat > /tmp/mongod.conf <<EOF
                 # network interfaces
                 net:
-                  port: {{".Inputs.Parameters.port"}}
+                  port: {{"{{.Inputs.Parameters.port}}"}}
                   bindIp: 0.0.0.0
 
                 # Where and how to store data.
@@ -131,7 +131,7 @@ spec:
               - |         # Multi-line str
                 set -eum
 
-                response=$(timeout -s QUIT 30 mongo --eval 'db.runCommand("ping").ok' localhost:{{".Inputs.Parameters.port"}}/test --quiet)
+                response=$(timeout -s QUIT 30 mongo --eval 'db.runCommand("ping").ok' localhost:{{"{{.Inputs.Parameters.port}}"}}/test --quiet)
                 if [ "$response" != "1" ]; then
                     exit 1
                 fi
