@@ -1,9 +1,12 @@
 dependencies:
+- name: observability
+  repository: https://carv-ics-forth.github.io/frisbee/charts
+  version: 0.1.1
 - name: sysmon
   repository: https://carv-ics-forth.github.io/frisbee/charts
   version: 0.1.1
 - name: ycsbmon
   repository: https://carv-ics-forth.github.io/frisbee/charts
   version: 0.1.1
-digest: sha256:1b00f1833bda2483d0aa1408df91e379497f4ae7e890d3f400cd6a688cf569aa
-generated: "2021-11-13T00:23:40.795901818+02:00"
+digest: sha256:e85d61fa0aa25fe98be79dfaaaaf46ac17b2560302af79c6eeec8cb869402fab
+generated: "2021-11-13T01:49:05.258056877+02:00"
