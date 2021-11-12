@@ -1,9 +1,24 @@
 apiVersion: v1
 entries:
+  observability:
+  - annotations:
+      category: Infrastructure
+    apiVersion: v2
+    appVersion: 1.10.0
+    created: "2021-11-12T19:19:05.422898747+02:00"
+    description: The Observability stack of Frisbee. Installs Prometheus + Grafana
+    digest: 8c9e3c3837cf7e36ef736a72deec80db07d3877e6e29c01f7f77b94a8e91fe11
+    home: https://github.com/bitnami/charts/tree/master/bitnami/common
+    icon: http://new.sevenhillstechnology.com/wp-content/uploads/2021/01/undraw_programming_2svr.png
+    name: observability
+    type: application
+    urls:
+    - https://carv-ics-forth.github.io/frisbee/charts/observability-0.1.0.tgz
+    version: 0.1.0
   sysmon:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2021-11-12T13:21:38.034680417+02:00"
+    created: "2021-11-12T19:19:05.423234744+02:00"
     description: A Helm chart for Kubernetes
     digest: 8b2bb8e888122972fde600d1aa15530bddc98f8df8c5fcc42ac29e7e33447d95
     icon: http://new.sevenhillstechnology.com/wp-content/uploads/2021/01/undraw_programming_2svr.png
@@ -12,4 +27,4 @@ entries:
     urls:
     - https://carv-ics-forth.github.io/frisbee/charts/sysmon-0.1.0.tgz
     version: 0.1.0
-generated: "2021-11-12T13:21:38.034171629+02:00"
+generated: "2021-11-12T19:19:05.422386014+02:00"
