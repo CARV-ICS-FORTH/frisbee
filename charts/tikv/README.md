@@ -9,8 +9,8 @@ TiKV is a highly scalable, low latency, and easy to use key-value database.
 ## TL;DR
 
 ```console
->> helm repo add frisbee https://carv-ics-forth.github.io/frisbee/charts
-> helm install my-release bitnami/influxdb
+>> helm repo add frisbee https://carv-ics-forth.github.io/frisbee
+>> helm install my-release bitnami/influxdb
 ```
 
 ## Introduction

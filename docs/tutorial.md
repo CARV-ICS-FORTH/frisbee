@@ -150,10 +150,12 @@ If anything fails, you will it see it from there.
 
 
 
-
-
 helm install --dry-run --debug --dependency-update ./ ../observability/
 
 https://github.com/helm/chartmuseum
 
 https://medium.com/@maanadev/how-set-up-a-helm-chart-repository-using-apache-web-server-670ffe0e63c7
+
+
+Deploy as helm chart
+helm repo index ./  --url https://carv-ics-forth.github.io/frisbee

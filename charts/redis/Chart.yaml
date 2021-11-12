@@ -22,3 +22,13 @@ version: 0.1.0
 # follow Semantic Versioning. They should reflect the version the application is using.
 # It is recommended to use it with quotes.
 appVersion: "1.16.0"
+
+
+
+dependencies:
+  - name: sysmon
+    version: 0.1.0
+    repository: https://carv-ics-forth.github.io/frisbee/charts
+  - name: ycsbmon
+    version: 0.1.0
+    repository: https://carv-ics-forth.github.io/frisbee/charts

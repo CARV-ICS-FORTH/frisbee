@@ -25,6 +25,6 @@ appVersion: "1.16.0"
 
 
 dependencies:
-  - name: observability
+  - name: sysmon
     version: 0.1.0
-    repository: "https://carv-ics-forth.github.io/frisbee/charts"
+    repository: https://carv-ics-forth.github.io/frisbee/charts
