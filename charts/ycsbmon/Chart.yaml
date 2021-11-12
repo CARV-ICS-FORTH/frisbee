@@ -24,9 +24,3 @@ version: 0.1.0
 appVersion: "1.16.0"
 
 
-dependencies:
-  - name: observability
-    version: 0.1.0
-    repository: "https://carv-ics-forth.github.io/frisbee/charts"
-    tags:
-      - withObservability
