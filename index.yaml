@@ -1,0 +1,138 @@
+apiVersion: v1
+entries:
+  cockroachdb:
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2021-11-12T17:36:39.967757572Z"
+    dependencies:
+    - name: observability
+      repository: https://carv-ics-forth.github.io/frisbee/charts
+      version: 0.1.0
+    description: A Helm chart for Kubernetes
+    digest: 5660fb22d57d8258d209c4169c4690af052a0f0867e5ccbf16a0e556ccc89c7a
+    name: cockroachdb
+    type: application
+    urls:
+    - https://github.com/CARV-ICS-FORTH/frisbee/releases/download/cockroachdb-0.1.0/cockroachdb-0.1.0.tgz
+    version: 0.1.0
+  fio:
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2021-11-12T17:36:40.172954582Z"
+    dependencies:
+    - name: observability
+      repository: https://carv-ics-forth.github.io/frisbee/charts
+      version: 0.1.0
+    description: A Helm chart for Kubernetes
+    digest: 27b1be84174c851482c4990ff9ad843f3460f0f58e3c8fbff15ec1df831831eb
+    name: fio
+    type: application
+    urls:
+    - https://github.com/CARV-ICS-FORTH/frisbee/releases/download/fio-0.1.0/fio-0.1.0.tgz
+    version: 0.1.0
+  iperf:
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2021-11-12T17:36:40.380866696Z"
+    dependencies:
+    - name: observability
+      repository: https://carv-ics-forth.github.io/frisbee/charts
+      version: 0.1.0
+    description: A Helm chart for Kubernetes
+    digest: 664607bf060c0ae2efa9c08b1853773e5fa42de5c61e9172b589ddd025691d93
+    name: iperf
+    type: application
+    urls:
+    - https://github.com/CARV-ICS-FORTH/frisbee/releases/download/iperf-0.1.0/iperf-0.1.0.tgz
+    version: 0.1.0
+  mongodb:
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2021-11-12T17:36:40.570781517Z"
+    description: A Helm chart for Kubernetes
+    digest: a721836e9dd22bdb7f996e49472894f859d72b18f47f0c620017946459622332
+    name: mongodb
+    type: application
+    urls:
+    - https://github.com/CARV-ICS-FORTH/frisbee/releases/download/mongodb-0.1.0/mongodb-0.1.0.tgz
+    version: 0.1.0
+  observability:
+  - annotations:
+      category: Infrastructure
+    apiVersion: v2
+    appVersion: 1.10.0
+    created: "2021-11-12T17:36:40.785655287Z"
+    description: The Observability stack of Frisbee. Installs Prometheus + Grafana
+    digest: c6858c5c17182eb2aa16f36eb0d60d0b775f233450780b1ca0aa16de03c0e4e6
+    home: https://github.com/bitnami/charts/tree/master/bitnami/common
+    icon: http://new.sevenhillstechnology.com/wp-content/uploads/2021/01/undraw_programming_2svr.png
+    name: observability
+    type: application
+    urls:
+    - https://github.com/CARV-ICS-FORTH/frisbee/releases/download/observability-0.1.0/observability-0.1.0.tgz
+    version: 0.1.0
+  redis:
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2021-11-12T17:36:40.989746382Z"
+    description: A Helm chart for Kubernetes
+    digest: 69f09e81bc3e9ec82845eb50c3829cceb4b4ecfb764aafd0a2cc8ebd1c0faecc
+    name: redis
+    type: application
+    urls:
+    - https://github.com/CARV-ICS-FORTH/frisbee/releases/download/redis-0.1.0/redis-0.1.0.tgz
+    version: 0.1.0
+  sysmon:
+  - annotations:
+      category: Infrastructure
+    apiVersion: v2
+    appVersion: 1.10.0
+    created: "2021-11-12T17:36:41.197555134Z"
+    dependencies:
+    - name: observability
+      repository: https://carv-ics-forth.github.io/frisbee/charts
+      version: 0.1.0
+    description: A Library Helm Chart for grouping common logic between bitnami charts. This chart is not deployable by itself.
+    digest: 624f074251b7923c54812af006f7b8db351bcd9682b2c61fe47ff3ebf24fec36
+    home: https://github.com/bitnami/charts/tree/master/bitnami/common
+    icon: http://new.sevenhillstechnology.com/wp-content/uploads/2021/01/undraw_programming_2svr.png
+    name: sysmon
+    type: application
+    urls:
+    - https://github.com/CARV-ICS-FORTH/frisbee/releases/download/sysmon-0.1.0/sysmon-0.1.0.tgz
+    version: 0.1.0
+  tikv:
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2021-11-12T17:36:41.422953768Z"
+    dependencies:
+    - name: sysmon
+      repository: https://carv-ics-forth.github.io/frisbee/charts
+      version: 0.1.0
+    - name: ycsbmon
+      repository: https://carv-ics-forth.github.io/frisbee/charts
+      version: 0.1.0
+    description: A Helm chart for Kubernetes
+    digest: db57556e2436e9922d0a6af3f672b1c6e4c1ee821f10f13aa01fac1a4680ed19
+    icon: https://tikv.org/img/logos/horizontal/color/tikv-horizontal-color.png
+    name: tikv
+    type: application
+    urls:
+    - https://github.com/CARV-ICS-FORTH/frisbee/releases/download/tikv-0.1.0/tikv-0.1.0.tgz
+    version: 0.1.0
+  ycsbmon:
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2021-11-12T17:36:41.638919504Z"
+    dependencies:
+    - name: observability
+      repository: https://carv-ics-forth.github.io/frisbee/charts
+      version: 0.1.0
+    description: A Helm chart for Kubernetes
+    digest: c31be47b0e4c7d8afbf986a8bc4c3d7d3b90132eac6ae785aff28a214010a975
+    name: ycsbmon
+    type: application
+    urls:
+    - https://github.com/CARV-ICS-FORTH/frisbee/releases/download/ycsbmon-0.1.0/ycsbmon-0.1.0.tgz
+    version: 0.1.0
+generated: "2021-11-12T17:36:39.728549461Z"
