@@ -12,7 +12,7 @@ Briefly,
 
 > node grafana_pdf.js "http://grafana.localhost/d/A2EjFbsMk/ycsb-services?viewPanel=74" "":"" output.pdf
 
-######                                                                                                    
+######                                                                                                       
 
 ###### Permissions
 
