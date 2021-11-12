@@ -1,9 +1,0 @@
-## Append samples you want in your CSV to this file as resources ##
-resources:
-  - frisbee_v1alpha1_workflow.yaml
-  - frisbee_v1alpha1_service.yaml
-  - frisbee_v1alpha1_cluster.yaml
-  - frisbee_v1alpha1_chaos.yaml
-  - frisbee_v1alpha1_telemetry.yaml
-  - frisbee_v1alpha1_templates.yaml
-#+kubebuilder:scaffold:manifestskustomizesamples

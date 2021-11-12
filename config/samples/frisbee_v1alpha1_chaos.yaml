@@ -1,7 +1,0 @@
-apiVersion: frisbee.io/v1alpha1
-kind: Chaos
-metadata:
-  name: chaos-sample
-spec:
-  # Add fields here
-  foo: bar
