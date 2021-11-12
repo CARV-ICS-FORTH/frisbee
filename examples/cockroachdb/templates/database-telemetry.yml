@@ -1,0 +1,85 @@
+---
+apiVersion: frisbee.io/v1alpha1
+kind: Template
+metadata:
+  name: cockroachmon
+spec:
+  entries:
+    "server":
+      spec: |
+        agent:
+          container:
+            name: cockroachdb
+            image: telegraf:1.20.3
+            ports:
+              - name: mon-cockroach
+                containerPort: 9443
+            command:
+              - /bin/sh # Run shell
+              - -c # Read from string
+              - |  # Multi-line str
+                set -eum
+
+                # Read metrics from one or many prometheus clients.
+                # See https://www.cockroachlabs.com/docs/stable/monitor-cockroachdb-with-prometheus.html
+
+                cat > /tmp/prometheus.conf <<EOF
+                [[inputs.prometheus]]
+                   ## An array of urls to scrape metrics from.
+                   urls = [
+                      "http://$${HOSTNAME}:8080/_status/vars"
+                   ]
+
+                  metric_version = 2
+
+                [[outputs.prometheus_client]]
+                   listen = ":9443"
+                   metric_version = 2
+                   export_timestamp = true
+                   collectors_exclude = ["gocollector","process"]
+                EOF
+
+                telegraf --config /tmp/prometheus.conf &
+
+                # When the stop file is added by the container, the process stop
+                while [ ! -f "/dev/shm/stop" ];
+                do
+                  sleep 10
+                done
+
+        dashboards:
+          matchlabels:
+            dashboard: cockroach
+
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-cockroach-runtime
+  labels:
+    dashboard: cockroach
+data:
+  {{ (.Files.Glob "dashboards/cockroach_runtime.json").AsConfig | indent 2 }}
+
+---
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-cockroach-overview
+  labels:
+    dashboard: cockroach
+data:
+  {{ (.Files.Glob "dashboards/cockroach_overview.json").AsConfig | indent 2 }}
+
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-cockroach-storage
+  labels:
+    dashboard: cockroach
+data:
+  {{ (.Files.Glob "dashboards/cockroach_storage.json").AsConfig | indent 2 }}
