@@ -1,0 +1,88 @@
+apiVersion: frisbee.io/v1alpha1
+kind: Template
+metadata:
+  name: ycsb-tikv
+spec:
+  entries:
+    # Loader injecting keys into a single server
+    "loader":
+      inputs:
+        parameters:
+          server: localhost
+          port: "2379"
+          offset: "0"
+          recordcount: "10000000"
+          cpu: ""     # Example: 8
+          memory: ""  # Example: 8Gi
+          threads: ""
+          workload: "workloada"
+          dropdata: "false"
+      spec: |
+        agents:                                       # Agents
+          telemetry: [ sysmon/container, ycsbmon/client ]
+        resources:                                    # Resources
+          cpu: {{".Inputs.Parameters.cpu"}}
+          memory: {{".Inputs.Parameters.memory"}}
+        container:                                    # Container
+          name: app
+          image: aylei/go-ycsb:20201029
+          command:
+            - /bin/sh   # Run shell
+            - -c        # Read from string
+            - |         # Multi-line str
+              set -eum
+              trap "touch /dev/shm/stop" EXIT
+
+              addr={{".Inputs.Parameters.server"}}:{{".Inputs.Parameters.port"}}
+
+              echo "Loader: $addr <- {{".Inputs.Parameters.recordcount"}}:{{".Inputs.Parameters.offset"}}"
+
+              ./go-ycsb load tikv                                      \
+                  -P workloads/{{".Inputs.Parameters.workload"}}         \
+                  -p dropdata={{".Inputs.Parameters.dropdata"}}          \
+                  -p recordcount={{".Inputs.Parameters.recordcount"}}    \
+                  -p insertstart={{".Inputs.Parameters.offset"}}         \
+                  -p threadcount={{".Inputs.Parameters.threads"}}        \
+                  -p tikv.pd=${addr}                                   \
+                  -p tikv.type="raw"                                   \
+              >> /dev/shm/pipe
+
+
+    # Run queries against a single server
+    "runner":
+      inputs:
+        parameters:
+          server: localhost
+          port: "2379"
+          workload: "workloada"
+          operationcount: "30000000"
+          cpu: ""
+          memory: ""
+          threads: ""
+      spec: |
+        agents:                                       # Agents
+          telemetry: [ sysmon/container, ycsbmon/client ]
+        resources:                                    # Resources
+          cpu: {{".Inputs.Parameters.cpu"}}
+          memory: {{".Inputs.Parameters.memory"}}
+        container:                                    # Container
+          name: app
+          image: aylei/go-ycsb:20201029
+          command:
+            - /bin/sh   # Run shell
+            - -c        # Read from string
+            - |         # Multi-line str
+              set -eum
+              trap "touch /dev/shm/stop" EXIT
+
+              addr={{".Inputs.Parameters.server"}}:{{".Inputs.Parameters.port"}}
+
+              echo "Runner: $addr <- {{".Inputs.Parameters.workload"}}:{{".Inputs.Parameters.operationcount"}}"
+
+              ./go-ycsb run tikv                                                                  \
+                    -P workloads/{{".Inputs.Parameters.workload"}}                                  \
+                    -p operationcount={{".Inputs.Parameters.operationcount"}}                       \
+                    -p threadcount={{".Inputs.Parameters.threads"}}                                 \
+                    -p tikv.pd=${addr}                                                            \
+                    -p tikv.type="raw"                                                            \
+              >> /dev/shm/pipe

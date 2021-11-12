@@ -13,15 +13,12 @@ openebs:
     enabled: false
 
 
-# Provision the infrastructure mannually
+# Provision the infrastructure manually
 manual:
   enabled: false
 
-randomValue: aaa
-favorite:
-  drink: coffee
-  food: pizza
-
+# Observability
+observability:
 
 
 # Global values are values that can be accessed from any chart or subchart by exactly the same name. 

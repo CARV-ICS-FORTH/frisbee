@@ -28,22 +28,25 @@ import (
 	"github.com/fnikolai/frisbee/controllers/utils"
 	"github.com/fnikolai/frisbee/controllers/utils/lifecycle"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
-	JobHasSLA       = "frisbee.io/sla-assertion"
-	JobSLAViolation = "frisbee.io/sla-violation"
+	// JobHasSLA indicate that a job has SLA assertion. Used to deregister the alert once the job has finished.
+	// Used as [JobHasSLA]: [alertID]
+	JobHasSLA = "frisbee.io/sla"
+
+	// SLAViolationFired indicate that a Grafana alert has been fired.
+	// Used as [SLAViolationFired]: [alertID]
+	SLAViolationFired = "sla.frisbee.io/fire"
+
+	// SLAViolationInfo include information about the fired Grafana Alert.
+	// Used as [SlaViolationINfo]: [string]
+	SLAViolationInfo = "sla.frisbee.io/info"
 )
 
-func HasSLAViolation(obj metav1.Object) (string, bool) {
-	annotations := obj.GetAnnotations()
-	info, exists := annotations[JobSLAViolation]
-
-	return info, exists
-}
-
-func AssertSLA(action v1alpha1.Action, job metav1.Object) error {
+func InsertSLAAlert(action v1alpha1.Action, w *v1alpha1.Workflow, job metav1.Object) error {
 	if action.Assert == nil || action.Assert.SLA == "" {
 		return nil
 	}
@@ -58,15 +61,48 @@ func AssertSLA(action v1alpha1.Action, job metav1.Object) error {
 	alert.Message = fmt.Sprintf("The SLA of action [%s] has failed", action.Name)
 
 	// push the alert to grafana
-	if err := grafana.DefaultClient.SetAlert(alert); err != nil {
+	alertID, err := grafana.DefaultClient.SetAlert(alert)
+	if err != nil {
 		return errors.Wrapf(err, "SLA injection error")
 	}
 
 	// use annotations to know which jobs have alert in Grafana.
 	// we use this information to remove alerts when the jobs are complete.
-	utils.MergeAnnotation(job, map[string]string{JobHasSLA: "skata"})
+	utils.MergeAnnotation(job, map[string]string{JobHasSLA: fmt.Sprint(alertID)})
+
+	if w.Status.ExpectedAlerts == nil {
+		w.Status.ExpectedAlerts = make(map[string]bool)
+	}
+
+	w.Status.ExpectedAlerts[fmt.Sprint(alertID)] = true
 
 	return nil
+}
+
+func AssertSLA(w *v1alpha1.Workflow) (string, bool) {
+	annotations := w.GetAnnotations()
+
+	alertID, exists := annotations[SLAViolationFired]
+	if !exists {
+		return "", false
+	}
+
+	info := annotations[SLAViolationInfo]
+
+	enabled, ok := w.Status.ExpectedAlerts[alertID]
+	if !ok {
+		// logrus.Warn("Unhandled alert has been fired", info)
+
+		return "", false
+	}
+
+	if !enabled {
+		logrus.Warn("A disabled alert has been fired", info)
+
+		return "", false
+	}
+
+	return info, true
 }
 
 var sprigFuncMap = sprig.TxtFuncMap() // a singleton for better performance

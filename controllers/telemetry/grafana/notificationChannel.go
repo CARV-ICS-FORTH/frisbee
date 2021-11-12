@@ -63,7 +63,7 @@ func (c *Client) SetNotificationChannel(webhookPort string, cb func(b *notifier.
 		Name:                  "to-frisbee-controller",
 		Type:                  "webhook",
 		IsDefault:             true,
-		DisableResolveMessage: true,
+		DisableResolveMessage: false,
 		SendReminder:          false,
 		Settings: map[string]string{
 			"url": url,

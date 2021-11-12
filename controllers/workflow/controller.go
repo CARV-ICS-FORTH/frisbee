@@ -32,6 +32,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -299,14 +300,16 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 				// Set a callback that will be triggered when there is Grafana alert.
 				// Through this channel we can get informed for SLA violations.
 				grafana.WithNotifyOnAlert(func(b *notifier.Body) {
-					r.Logger.Info("Grafana Alert",
-						"title", b.Title,
-						"message", b.Message,
-						"matches", b.EvalMatches,
-						"state", b.State,
-					)
+					r.Logger.Info("Grafana Alert", "body", b)
 
-					if err := utils.PatchAnnotation(ctx, r, &cr, map[string]string{JobSLAViolation: "ARKOUDEIDES"}); err != nil {
+					alertJSON, _ := json.Marshal(b)
+
+					assertionInfo := map[string]string{
+						SLAViolationFired: b.RuleName,
+						SLAViolationInfo:  string(alertJSON),
+					}
+
+					if err := utils.PatchAnnotation(ctx, r, &cr, assertionInfo); err != nil {
 						r.Logger.Error(err, "unable to inform CR for SLA violation", "cr", cr.GetName())
 					}
 				}),
@@ -343,7 +346,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "invalid action %s spec", action.Name))
 		}
 
-		if err := AssertSLA(action, job); err != nil {
+		if err := InsertSLAAlert(action, &cr, job); err != nil {
 			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "assertion error"))
 		}
 

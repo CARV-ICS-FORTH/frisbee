@@ -1,0 +1,43 @@
+# This experiment runs a given load for various numbers of TikV instance.
+# This goal is to find the maximum number of TikV servers after which the overall performance does not increase further.
+apiVersion: frisbee.io/v1alpha1
+kind: Workflow
+metadata:
+  name: cockroach-scaleout
+spec:
+  withTelemetry:
+    importMonitors: [ "sysmon/container", "ycsbmon/client", "cockroachmon/server" ]
+    ingress:
+      host: platform.science-hangar.eu
+
+  actions:
+    # Step 0: bootstrap.
+    # Cockroachdb requires knowing the names of the clustered nodes, before they are started !.
+    - action: Cluster
+      name: master
+      cluster:
+        templateRef: cockroachdb-cluster/master
+        instances: 3
+        inputs:
+          - { servers: "master-1:26257,master-2:26257,master-3:26257" }
+
+
+    - action: Cluster
+      depends: { running: [ master ] }
+      name: workers
+      cluster:
+        templateRef: tikv/worker
+        instances: 256
+        inputs:
+          - { placementDriver: .service.master.any }
+
+
+    # Step 1: Load a new dataset, using the parameters of workload A.
+    # We use no throttling to maximize this step and complete it soon.
+    - action: Cluster
+      name: loaders
+      depends: { running: [ master, workers ] }
+      cluster:
+        templateRef: ycsb-tikv/loader
+        inputs:
+          - { server: .service.master.any, recordcount: "100000000000", offset: "0", threads: "32" }

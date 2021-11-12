@@ -39,7 +39,7 @@ func (r *Controller) updateLifecycle(w *v1alpha1.Workflow) {
 		return
 	}
 
-	if info, exists := HasSLAViolation(w); exists {
+	if info, exists := AssertSLA(w); exists {
 		w.Status.Lifecycle = v1alpha1.Lifecycle{
 			Phase:   v1alpha1.PhaseFailed,
 			Reason:  "AssertionError",

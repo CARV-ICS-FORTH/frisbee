@@ -118,6 +118,9 @@ type WorkflowStatus struct {
 	// Executed is a list of executed actions.
 	// +optional
 	Executed map[string]metav1.Time `json:"scheduled,omitempty"`
+
+	// ExpectedAlerts is a list of alerts should drive to SLA violations
+	ExpectedAlerts map[string]bool `json:"expectedAlerts,omitempty"`
 }
 
 func (in *Workflow) GetReconcileStatus() Lifecycle {

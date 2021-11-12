@@ -3277,6 +3277,12 @@ spec:
                   - type
                   type: object
                 type: array
+              expectedAlerts:
+                additionalProperties:
+                  type: boolean
+                description: ExpectedAlerts is a list of alerts should drive to SLA
+                  violations
+                type: object
               message:
                 description: Message provides more details for understanding the Reason.
                 type: string

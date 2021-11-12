@@ -20,7 +20,6 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/json"
@@ -62,8 +61,6 @@ func PatchAnnotation(ctx context.Context, r Reconciler, cr client.Object, toAdd 
 	patch := client.RawPatch(types.MergePatchType, patchJSON)
 
 	err = r.GetClient().Patch(ctx, cr, patch)
-
-	logrus.Warn("ADDDED PATCH ", string(patchJSON), " err ", err)
 
 	return errors.Wrapf(err, "patching %s has failed", cr.GetName())
 }
