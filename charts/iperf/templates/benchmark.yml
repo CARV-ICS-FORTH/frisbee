@@ -1,0 +1,58 @@
+---
+apiVersion: frisbee.io/v1alpha1
+kind: Template
+metadata:
+  name: iperf
+spec:
+  entries:
+    "server":
+      inputs:
+        parameters:
+          memory: ""
+          cpu: ""
+      spec: |
+        agents:
+          telemetry: [ sysmon/container ]
+        resources:
+          memory: {{".Inputs.Parameters.memory"}}
+          cpu: {{".Inputs.Parameters.cpu"}}
+        ports:
+          - port: 5201
+            name: tcp
+        container:
+          name: app
+          image: "networkstatic/iperf3"
+          ports:
+            - name: tcp
+              containerPort: 5201
+          args: [ "-s", "-f", "m" ]
+
+    "client":
+      inputs:
+        parameters:
+          server: localhost
+          memory: ""
+          cpu: ""
+          seconds: "60"
+      spec: |
+        agents:
+          telemetry: [ sysmon/container, iperfmon/client ]
+        resources:
+          memory: {{".Inputs.Parameters.memory"}}
+          cpu: {{".Inputs.Parameters.cpu"}}
+        container:
+          name: app
+          image: "networkstatic/iperf3"
+          ports:
+            - name: tcp
+              containerPort: 5201
+          command:
+            - /bin/sh # Run shell
+            - -c # Read from string
+            - |  # Multi-line str
+              set -eum
+              trap "touch /dev/shm/stop" EXIT
+
+              server={{".Inputs.Parameters.server"}}
+
+              iperf3 -c ${server} -t {{".Inputs.Parameters.seconds"}} -f m > /dev/shm/pipe
