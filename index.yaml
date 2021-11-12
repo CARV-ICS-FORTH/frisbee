@@ -3,7 +3,7 @@ entries:
   cockroachdb:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2021-11-12T23:07:39.908855731+02:00"
+    created: "2021-11-12T23:55:24.127758028+02:00"
     dependencies:
     - name: sysmon
       repository: https://carv-ics-forth.github.io/frisbee/charts
@@ -21,7 +21,21 @@ entries:
   fio:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2021-11-12T23:07:39.90979121+02:00"
+    created: "2021-11-12T23:55:24.130085278+02:00"
+    dependencies:
+    - name: sysmon
+      repository: https://carv-ics-forth.github.io/frisbee/charts
+      version: 0.1.1
+    description: A Helm chart for Kubernetes
+    digest: 1084004a08a0dd734eae13f2aaaad8bcfb80949c384e549f9e795700bec0a0c9
+    name: fio
+    type: application
+    urls:
+    - https://carv-ics-forth.github.io/frisbee/charts/fio-0.1.1.tgz
+    version: 0.1.1
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2021-11-12T23:55:24.129159095+02:00"
     dependencies:
     - name: sysmon
       repository: https://carv-ics-forth.github.io/frisbee/charts
@@ -36,7 +50,26 @@ entries:
   frisbee:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2021-11-12T23:07:39.92648237+02:00"
+    created: "2021-11-12T23:55:24.178356041+02:00"
+    dependencies:
+    - condition: chaos-mesh.enabled
+      name: chaos-mesh
+      repository: https://charts.chaos-mesh.org
+      version: 2.0.3
+    - condition: openebs.enabled
+      name: openebs
+      repository: https://openebs.github.io/charts
+      version: 3.0.0
+    description: Frisbee is a Kubernetes platform for exploring, testing, and benchmarking distributed applications.
+    digest: 9e2e206c87834639cb8d2158e682f8f3da707515db1056a49c5fa166acc6d901
+    name: frisbee
+    type: application
+    urls:
+    - https://carv-ics-forth.github.io/frisbee/charts/frisbee-0.1.1.tgz
+    version: 0.1.1
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2021-11-12T23:55:24.154548812+02:00"
     dependencies:
     - condition: chaos-mesh.enabled
       name: chaos-mesh
@@ -56,7 +89,21 @@ entries:
   iperf:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2021-11-12T23:07:39.927345593+02:00"
+    created: "2021-11-12T23:55:24.180288814+02:00"
+    dependencies:
+    - name: sysmon
+      repository: https://carv-ics-forth.github.io/frisbee/charts
+      version: 0.1.1
+    description: A Helm chart for Kubernetes
+    digest: 79c101fcea16bef85e7671604521b76321fc4b898badb8eba16b071f5380bc6e
+    name: iperf
+    type: application
+    urls:
+    - https://carv-ics-forth.github.io/frisbee/charts/iperf-0.1.1.tgz
+    version: 0.1.1
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2021-11-12T23:55:24.179541619+02:00"
     dependencies:
     - name: sysmon
       repository: https://carv-ics-forth.github.io/frisbee/charts
@@ -71,7 +118,24 @@ entries:
   mongodb:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2021-11-12T23:07:39.928902381+02:00"
+    created: "2021-11-12T23:55:24.183716203+02:00"
+    dependencies:
+    - name: sysmon
+      repository: https://carv-ics-forth.github.io/frisbee/charts
+      version: 0.1.1
+    - name: ycsbmon
+      repository: https://carv-ics-forth.github.io/frisbee/charts
+      version: 0.1.1
+    description: A Helm chart for Kubernetes
+    digest: 2dfc60469c6a4f6a15aeeda50c8223e3dfcd3cad11a0941f3ea64fa7330a9331
+    name: mongodb
+    type: application
+    urls:
+    - https://carv-ics-forth.github.io/frisbee/charts/mongodb-0.1.1.tgz
+    version: 0.1.1
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2021-11-12T23:55:24.182458112+02:00"
     dependencies:
     - name: sysmon
       repository: https://carv-ics-forth.github.io/frisbee/charts
@@ -91,7 +155,25 @@ entries:
       category: Infrastructure
     apiVersion: v2
     appVersion: 1.10.0
-    created: "2021-11-12T23:07:39.946208434+02:00"
+    created: "2021-11-12T23:55:24.231412672+02:00"
+    dependencies:
+    - name: frisbee
+      repository: https://carv-ics-forth.github.io/frisbee/charts
+      version: 0.1.1
+    description: The Observability stack of Frisbee. Installs Prometheus + Grafana
+    digest: 5025ed26806917c8484a4131612390b1dceb0feb8f6957ccf4c00adccd800513
+    home: https://github.com/bitnami/charts/tree/master/bitnami/common
+    icon: http://new.sevenhillstechnology.com/wp-content/uploads/2021/01/undraw_programming_2svr.png
+    name: observability
+    type: application
+    urls:
+    - https://carv-ics-forth.github.io/frisbee/charts/observability-0.1.1.tgz
+    version: 0.1.1
+  - annotations:
+      category: Infrastructure
+    apiVersion: v2
+    appVersion: 1.10.0
+    created: "2021-11-12T23:55:24.20849474+02:00"
     dependencies:
     - name: frisbee
       repository: https://carv-ics-forth.github.io/frisbee/charts
@@ -108,7 +190,24 @@ entries:
   redis:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2021-11-12T23:07:39.948125926+02:00"
+    created: "2021-11-12T23:55:24.234382248+02:00"
+    dependencies:
+    - name: sysmon
+      repository: https://carv-ics-forth.github.io/frisbee/charts
+      version: 0.1.1
+    - name: ycsbmon
+      repository: https://carv-ics-forth.github.io/frisbee/charts
+      version: 0.1.1
+    description: A Helm chart for Kubernetes
+    digest: 16fd75560ba9647eea057afe179b77105f00871231894091328d69d028f00697
+    name: redis
+    type: application
+    urls:
+    - https://carv-ics-forth.github.io/frisbee/charts/redis-0.1.1.tgz
+    version: 0.1.1
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2021-11-12T23:55:24.233299375+02:00"
     dependencies:
     - name: sysmon
       repository: https://carv-ics-forth.github.io/frisbee/charts
@@ -128,7 +227,21 @@ entries:
       category: Infrastructure
     apiVersion: v2
     appVersion: 1.10.0
-    created: "2021-11-12T23:07:39.948615968+02:00"
+    created: "2021-11-12T23:55:24.235247267+02:00"
+    description: A Library Helm Chart for grouping common logic between bitnami charts. This chart is not deployable by itself.
+    digest: bc0c7e18802e58d2dda0ae12d71be64ee0bab9e22510687a951e520079103a98
+    home: https://github.com/bitnami/charts/tree/master/bitnami/common
+    icon: http://new.sevenhillstechnology.com/wp-content/uploads/2021/01/undraw_programming_2svr.png
+    name: sysmon
+    type: application
+    urls:
+    - https://carv-ics-forth.github.io/frisbee/charts/sysmon-0.1.1.tgz
+    version: 0.1.1
+  - annotations:
+      category: Infrastructure
+    apiVersion: v2
+    appVersion: 1.10.0
+    created: "2021-11-12T23:55:24.234971801+02:00"
     description: A Library Helm Chart for grouping common logic between bitnami charts. This chart is not deployable by itself.
     digest: 6c3d1ecc72eb41b88fd38d21aa158a88085b2e4f252f21319a7f2e576497cc02
     home: https://github.com/bitnami/charts/tree/master/bitnami/common
@@ -141,7 +254,25 @@ entries:
   tikv:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2021-11-12T23:07:39.950648727+02:00"
+    created: "2021-11-12T23:55:24.239449701+02:00"
+    dependencies:
+    - name: sysmon
+      repository: https://carv-ics-forth.github.io/frisbee/charts
+      version: 0.1.1
+    - name: ycsbmon
+      repository: https://carv-ics-forth.github.io/frisbee/charts
+      version: 0.1.1
+    description: A Helm chart for Kubernetes
+    digest: 2d9bb0adc1ce676a622da85bae587c2e983dda62f0a307e4dc7279344facd098
+    icon: https://tikv.org/img/logos/horizontal/color/tikv-horizontal-color.png
+    name: tikv
+    type: application
+    urls:
+    - https://carv-ics-forth.github.io/frisbee/charts/tikv-0.1.1.tgz
+    version: 0.1.1
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2021-11-12T23:55:24.237890536+02:00"
     dependencies:
     - name: sysmon
       repository: https://carv-ics-forth.github.io/frisbee/charts
@@ -160,7 +291,17 @@ entries:
   ycsbmon:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2021-11-12T23:07:39.951209583+02:00"
+    created: "2021-11-12T23:55:24.240389139+02:00"
+    description: A Helm chart for Kubernetes
+    digest: fb30b24d43bd8f456eb68fc8132362b01300a451751704fdc9476ee758c9ca77
+    name: ycsbmon
+    type: application
+    urls:
+    - https://carv-ics-forth.github.io/frisbee/charts/ycsbmon-0.1.1.tgz
+    version: 0.1.1
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2021-11-12T23:55:24.24005848+02:00"
     description: A Helm chart for Kubernetes
     digest: f0d15b2823b326c232d6a511c45afb4bbdab43443fe00b205e7628cdb957353e
     name: ycsbmon
@@ -168,4 +309,4 @@ entries:
     urls:
     - https://carv-ics-forth.github.io/frisbee/charts/ycsbmon-0.1.0.tgz
     version: 0.1.0
-generated: "2021-11-12T23:07:39.907367983+02:00"
+generated: "2021-11-12T23:55:24.125423259+02:00"
