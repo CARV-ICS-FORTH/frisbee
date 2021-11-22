@@ -6,7 +6,7 @@ TiKV is a highly scalable, low latency, and easy to use key-value database.
 
 ```console
 >> helm repo add frisbee https://carv-ics-forth.github.io/frisbee/charts
->> helm install my-frisbee frisbee/p
+>> helm install my-frisbee frisbee/platform
 >> helm install my-test frisbee/tikv
 >> make run
 >> kubectl apply -f plans/plan.baseline.yml 
