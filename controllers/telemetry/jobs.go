@@ -22,7 +22,6 @@ import (
 	"path/filepath"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
-	"github.com/fnikolai/frisbee/controllers/template/helpers"
 	"github.com/fnikolai/frisbee/controllers/utils"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -43,22 +42,19 @@ const (
 func (r *Controller) installPrometheus(ctx context.Context, w *v1alpha1.Telemetry, prom *v1alpha1.Service) error {
 	{ // metadata
 		prom.SetName("prometheus")
+		prom.SetNamespace(w.GetNamespace())
 	}
 
 	{ // spec
-		ts := thelpers.ParseRef(w.GetNamespace(), prometheusTemplate)
-
-		genSpec, err := thelpers.GetDefaultSpec(ctx, r, ts)
-		if err != nil {
-			return errors.Wrapf(err, "scheme retrieval")
+		prom.Spec.FromTemplate = &v1alpha1.FromTemplate{
+			TemplateRef: prometheusTemplate,
+			Instances:   0,
+			Inputs:      nil,
 		}
 
-		spec, err := genSpec.ToServiceSpec()
-		if err != nil {
-			return errors.Wrapf(err, "scheme decoding")
+		if err := r.serviceControl.LoadSpecFromTemplate(ctx, prom); err != nil {
+			return errors.Wrapf(err, "cannot get prometheus spec")
 		}
-
-		spec.DeepCopyInto(&prom.Spec)
 	}
 
 	return utils.Create(ctx, r, w, prom)
@@ -67,27 +63,23 @@ func (r *Controller) installPrometheus(ctx context.Context, w *v1alpha1.Telemetr
 func (r *Controller) installGrafana(ctx context.Context, w *v1alpha1.Telemetry, grafana *v1alpha1.Service) error {
 	{ // metadata
 		grafana.SetName("grafana")
+		grafana.SetNamespace(w.GetNamespace())
 	}
 
 	{ // spec
-		// to perform the necessary automations, we load the spec locally and push the modified version for creation.
-		ts := thelpers.ParseRef(w.GetNamespace(), grafanaTemplate)
-
-		genSpec, err := thelpers.GetDefaultSpec(ctx, r, ts)
-		if err != nil {
-			return errors.Wrapf(err, "cannot get scheme")
+		grafana.Spec.FromTemplate = &v1alpha1.FromTemplate{
+			TemplateRef: grafanaTemplate,
+			Instances:   0,
+			Inputs:      nil,
 		}
 
-		spec, err := genSpec.ToServiceSpec()
-		if err != nil {
-			return errors.Wrapf(err, "spec failed")
+		if err := r.serviceControl.LoadSpecFromTemplate(ctx, grafana); err != nil {
+			return errors.Wrapf(err, "cannot get prometheus spec")
 		}
 
-		if err := r.importDashboards(ctx, w, &spec); err != nil {
+		if err := r.importDashboards(ctx, w, &grafana.Spec); err != nil {
 			return errors.Wrapf(err, "import dashboards")
 		}
-
-		spec.DeepCopyInto(&grafana.Spec)
 	}
 
 	return utils.Create(ctx, r, w, grafana)
@@ -98,16 +90,9 @@ func (r *Controller) importDashboards(ctx context.Context, obj *v1alpha1.Telemet
 
 	// iterate monitoring services
 	for _, monRef := range obj.Spec.ImportMonitors {
-		ts := thelpers.ParseRef(obj.GetNamespace(), monRef)
-
-		genSpec, err := thelpers.GetDefaultSpec(ctx, r, ts)
+		monSpec, err := r.serviceControl.GetMonitorSpec(ctx, obj.GetNamespace(), v1alpha1.FromTemplate{TemplateRef: monRef})
 		if err != nil {
-			return errors.Wrapf(err, "cannot get scheme for %s", monRef)
-		}
-
-		monSpec, err := genSpec.ToMonitorSpec()
-		if err != nil {
-			return errors.Wrapf(err, "spec error for %s", monRef)
+			return errors.Wrapf(err, "cannot get spec for %s", monRef)
 		}
 
 		var configMaps corev1.ConfigMapList

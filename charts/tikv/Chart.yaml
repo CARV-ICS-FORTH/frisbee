@@ -1,6 +1,6 @@
 apiVersion: v2
 name: tikv
-description: A Helm chart for Kubernetes
+description: TiKV is a highly scalable, low latency, and easy to use key-value database.
 
 # A chart can be either an 'application' or a 'library' chart.
 #
@@ -23,6 +23,7 @@ version: 0.1.2
 # It is recommended to use it with quotes.
 appVersion: "1.16.0"
 
+icon: https://tikv.org/img/logos/horizontal/color/tikv-horizontal-color.png
 
 dependencies:
   - name: observability
@@ -36,5 +37,5 @@ dependencies:
     repository: https://carv-ics-forth.github.io/frisbee/charts
 
 
-icon: https://tikv.org/img/logos/horizontal/color/tikv-horizontal-color.png
+
 

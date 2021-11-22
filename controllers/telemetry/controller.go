@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
+	serviceutils "github.com/fnikolai/frisbee/controllers/service/utils"
 	"github.com/fnikolai/frisbee/controllers/utils"
 	"github.com/fnikolai/frisbee/controllers/utils/lifecycle"
 	"github.com/go-logr/logr"
@@ -44,6 +45,8 @@ type Controller struct {
 	gvk schema.GroupVersionKind
 
 	state lifecycle.Classifier
+
+	serviceControl serviceutils.ServiceControlInterface
 }
 
 func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -228,6 +231,8 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 		Logger:  logger.WithName("Telemetry"),
 		gvk:     v1alpha1.GroupVersion.WithKind("Telemetry"),
 	}
+
+	r.serviceControl = serviceutils.NewServiceControl(r)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named("Telemetry").

@@ -17,33 +17,31 @@ limitations under the License.
 package workflow
 
 import (
-	"context"
-
 	"github.com/fnikolai/frisbee/api/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (r *Controller) getJob(ctx context.Context, w *v1alpha1.Workflow, action v1alpha1.Action) (client.Object, error) {
+func (r *Controller) getJob(action v1alpha1.Action) (client.Object, error) {
 	logrus.Warn("Handle job ", action.Name)
 
 	switch action.ActionType {
 	case "Service":
-		return r.service(ctx, w, action)
+		return r.service(action)
 
 	case "Cluster":
-		return r.cluster(ctx, w, action)
+		return r.cluster(action)
 
 	case "Chaos":
-		return r.chaos(ctx, w, action)
+		return r.chaos(action)
 
 	default:
 		return nil, errors.Errorf("unknown action %s", action.ActionType)
 	}
 }
 
-func (r *Controller) service(ctx context.Context, w *v1alpha1.Workflow, action v1alpha1.Action) (client.Object, error) {
+func (r *Controller) service(action v1alpha1.Action) (client.Object, error) {
 	var service v1alpha1.Service
 
 	service.SetName(action.Name)
@@ -53,7 +51,7 @@ func (r *Controller) service(ctx context.Context, w *v1alpha1.Workflow, action v
 	return &service, nil
 }
 
-func (r *Controller) cluster(ctx context.Context, w *v1alpha1.Workflow, action v1alpha1.Action) (client.Object, error) {
+func (r *Controller) cluster(action v1alpha1.Action) (client.Object, error) {
 	var cluster v1alpha1.Cluster
 
 	cluster.SetName(action.Name)
@@ -63,7 +61,7 @@ func (r *Controller) cluster(ctx context.Context, w *v1alpha1.Workflow, action v
 	return &cluster, nil
 }
 
-func (r *Controller) chaos(ctx context.Context, w *v1alpha1.Workflow, action v1alpha1.Action) (client.Object, error) {
+func (r *Controller) chaos(action v1alpha1.Action) (client.Object, error) {
 	var chaos v1alpha1.Chaos
 
 	if chaos.Spec.Type == v1alpha1.FaultKill {

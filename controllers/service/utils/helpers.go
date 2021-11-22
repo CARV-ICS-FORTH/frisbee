@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package helpers
+package utils
 
 import (
 	"context"
@@ -26,15 +26,13 @@ import (
 	"time"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
+	templateutils "github.com/fnikolai/frisbee/controllers/template/utils"
 	"github.com/fnikolai/frisbee/controllers/utils"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/apimachinery/pkg/util/yaml"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-func IsMacro(macro string) bool {
-	return strings.HasPrefix(macro, ".")
-}
 
 func parseMacro(namespace string, ss *v1alpha1.ServiceSelector) {
 	fields := strings.Split(*ss.Macro, ".")
@@ -68,30 +66,7 @@ var RetryAfter = wait.Backoff{
 	Steps:    4,
 }
 
-func Select(ctx context.Context, r utils.Reconciler, nm string, ss *v1alpha1.ServiceSelector) (v1alpha1.SList, error) {
-	if ss == nil {
-		return nil, errors.New("empty service selector")
-	}
-
-	if ss.Macro != nil {
-		parseMacro(nm, ss)
-	}
-
-	runningServices, err := selectRunningServices(ctx, r, &ss.Match)
-	if err != nil {
-		return nil, errors.Wrapf(err, "service selection error")
-	}
-
-	// filter services based on the pods
-	filteredServices, err := filterByMode(runningServices, ss.Mode, ss.Value)
-	if err != nil {
-		return nil, errors.Wrapf(err, "filter by mode")
-	}
-
-	return filteredServices, nil
-}
-
-func selectRunningServices(ctx context.Context, r utils.Reconciler, ss *v1alpha1.MatchService) (v1alpha1.SList, error) {
+func selectServices(ctx context.Context, r utils.Reconciler, ss *v1alpha1.MatchBy) (v1alpha1.SList, error) {
 	if ss == nil {
 		return nil, nil
 	}
@@ -314,4 +289,81 @@ func RandomFixedIndexes(start, end, count uint) []uint {
 	}
 
 	return indexes
+}
+
+func (s *ServiceControl) generateSpecFromScheme(ctx context.Context, namespace string, scheme *v1alpha1.Scheme, userInputs map[string]string,
+	cache map[string]v1alpha1.SList) (v1alpha1.ServiceSpec, error) {
+	// custom parameters
+	if userInputs != nil {
+		if scheme.Inputs == nil {
+			return v1alpha1.ServiceSpec{}, errors.New("template is not parameterizable")
+		}
+
+		if err := s.expandInputs(ctx, namespace, scheme, userInputs, cache); err != nil {
+			return v1alpha1.ServiceSpec{}, errors.Wrapf(err, "macro expansion failed")
+		}
+	}
+
+	genericSpec, err := templateutils.Evaluate(scheme)
+	if err != nil {
+		return v1alpha1.ServiceSpec{}, errors.Wrapf(err, "cannot convert scheme to spec")
+	}
+
+	var spec v1alpha1.ServiceSpec
+
+	if err := yaml.Unmarshal([]byte(genericSpec), &spec); err != nil {
+		return v1alpha1.ServiceSpec{}, errors.Wrapf(err, "decoding error")
+	}
+
+	return spec, nil
+}
+
+func isMacro(macro string) bool {
+	return strings.HasPrefix(macro, ".")
+}
+
+func (s *ServiceControl) expandInputs(ctx context.Context, nm string, scheme *v1alpha1.Scheme, userInputs map[string]string, cache map[string]v1alpha1.SList) error {
+	if scheme.Inputs == nil {
+		return errors.New("scheme does not support inputs")
+	}
+
+	if scheme.Inputs.Parameters == nil {
+		return errors.New("scheme does not support parameters")
+	}
+
+	for key := range scheme.Inputs.Parameters {
+		// if there is no user-given value, use the default.
+		value, ok := userInputs[key]
+		if !ok {
+			continue
+		}
+
+		// if the value is not a macro, write it directly to the inputs
+		if !isMacro(value) {
+			scheme.Inputs.Parameters[key] = value
+		} else { // expand macro
+			if services, ok := cache[value]; ok {
+				scheme.Inputs.Parameters[key] = services.ToString()
+
+				continue
+			}
+
+			services, err := s.Select(ctx, nm, &v1alpha1.ServiceSelector{Macro: &value})
+			if err != nil {
+				return errors.Wrapf(err, "service selection error")
+			}
+
+			if len(services) == 0 {
+				// it is possible that some services exist, but they are not in the Running phase.
+				// In this case, we should retry getting the services.
+				return errors.Errorf("macro %s yields no services", value)
+			}
+
+			scheme.Inputs.Parameters[key] = services.ToString()
+
+			cache[value] = services
+		}
+	}
+
+	return nil
 }

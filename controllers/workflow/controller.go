@@ -341,7 +341,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	for _, action := range actionList {
-		job, err := r.getJob(ctx, &cr, action)
+		job, err := r.getJob(action)
 		if err != nil {
 			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "invalid action %s spec", action.Name))
 		}

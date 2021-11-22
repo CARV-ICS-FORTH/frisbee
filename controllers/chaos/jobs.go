@@ -20,7 +20,6 @@ import (
 	"context"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
-	"github.com/fnikolai/frisbee/controllers/service/helpers"
 	"github.com/fnikolai/frisbee/controllers/utils"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -86,7 +85,7 @@ func (h partitionHandler) Inject(ctx context.Context, r *Controller) error {
 
 	var fault Fault
 
-	affectedPods, err := helpers.Select(ctx, r, h.cr.GetNamespace(), &spec.Selector)
+	affectedPods, err := r.serviceControl.Select(ctx, h.cr.GetNamespace(), &spec.Selector)
 	if err != nil {
 		return errors.Wrapf(err, "service selection error")
 	}
@@ -147,7 +146,7 @@ func (h killHandler) Inject(ctx context.Context, r *Controller) error {
 
 	var fault Fault
 
-	affectedPods, err := helpers.Select(ctx, r, h.cr.GetNamespace(), &spec.Selector)
+	affectedPods, err := r.serviceControl.Select(ctx, h.cr.GetNamespace(), &spec.Selector)
 	if err != nil {
 		return errors.Wrapf(err, "service selection error")
 	}
