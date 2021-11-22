@@ -21,7 +21,6 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/fnikolai/frisbee/api/v1alpha1"
-	"github.com/fnikolai/frisbee/controllers/template/helpers"
 	"github.com/fnikolai/frisbee/controllers/utils"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -33,8 +32,8 @@ import (
 
 func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Service) error {
 	if cr.Spec.FromTemplate != nil {
-		if err := r.populateSpecFromTemplate(ctx, cr); err != nil {
-			return errors.Wrapf(err, "spec generation")
+		if err := r.serviceControl.LoadSpecFromTemplate(ctx, cr); err != nil {
+			return errors.Wrapf(err, "cannot get spec")
 		}
 
 		// from now on, we will use the populated fields, not the template.
@@ -54,7 +53,7 @@ func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Service) error {
 		return err
 	}
 
-	discovery := constructDiscoveryService(r, cr, pod)
+	discovery := constructDiscoveryService(cr, pod)
 
 	if err := utils.Create(ctx, r, cr, discovery); err != nil {
 		return errors.Wrapf(err, "cannot create discovery service")
@@ -63,41 +62,6 @@ func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Service) error {
 	if err := utils.Create(ctx, r, cr, pod); err != nil {
 		return errors.Wrapf(err, "cannot create pod")
 	}
-
-	return nil
-}
-
-func (r *Controller) populateSpecFromTemplate(ctx context.Context, obj *v1alpha1.Service) error {
-	if err := obj.Spec.FromTemplate.Validate(false); err != nil {
-		return errors.Wrapf(err, "template validation")
-	}
-
-	var genspec thelpers.GenericSpec
-
-	var err error
-
-	ts := thelpers.ParseRef(obj.GetNamespace(), obj.Spec.FromTemplate.TemplateRef)
-
-	if inputs := obj.Spec.FromTemplate.Inputs; inputs != nil {
-		lookupCache := make(map[string]v1alpha1.SList)
-
-		genspec, err = thelpers.GetParameterizedSpec(ctx, r, ts, obj.GetNamespace(), inputs[0], lookupCache)
-		if err != nil {
-			return errors.Wrapf(err, "parameterized spec")
-		}
-	} else {
-		genspec, err = thelpers.GetDefaultSpec(ctx, r, ts)
-		if err != nil {
-			return errors.Wrapf(err, "default spec")
-		}
-	}
-
-	spec, err := genspec.ToServiceSpec()
-	if err != nil {
-		return errors.Wrapf(err, "invalid spec")
-	}
-
-	spec.DeepCopyInto(&obj.Spec)
 
 	return nil
 }
@@ -234,21 +198,14 @@ func setAgents(ctx context.Context, r *Controller, obj *v1alpha1.Service, pod *c
 	}
 
 	// import monitoring agents to the service
-	for _, ref := range spec.Agents.Telemetry {
-		ts := thelpers.ParseRef(obj.GetNamespace(), ref)
-
-		genSpec, err := thelpers.GetDefaultSpec(ctx, r, ts)
+	for _, monRef := range spec.Agents.Telemetry {
+		monSpec, err := r.serviceControl.GetMonitorSpec(ctx, obj.GetNamespace(), v1alpha1.FromTemplate{TemplateRef: monRef})
 		if err != nil {
 			return errors.Wrapf(err, "cannot get monitor")
 		}
 
-		mon, err := genSpec.ToMonitorSpec()
-		if err != nil {
-			return errors.Wrapf(err, "cannot get monitor")
-		}
-
-		pod.Spec.Volumes = append(pod.Spec.Volumes, mon.Agent.Volumes...)
-		pod.Spec.Containers = append(pod.Spec.Containers, mon.Agent.Container)
+		pod.Spec.Volumes = append(pod.Spec.Volumes, monSpec.Agent.Volumes...)
+		pod.Spec.Containers = append(pod.Spec.Containers, monSpec.Agent.Container)
 	}
 
 	return nil
@@ -302,7 +259,7 @@ func setPlacement(obj *v1alpha1.Service, pod *corev1.Pod) {
 	*/
 }
 
-func constructDiscoveryService(r *Controller, obj *v1alpha1.Service, pod *corev1.Pod) *corev1.Service {
+func constructDiscoveryService(obj *v1alpha1.Service, pod *corev1.Pod) *corev1.Service {
 	spec := obj.Spec
 
 	// register ports from containers and sidecars

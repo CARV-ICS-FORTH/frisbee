@@ -14,13 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package thelpers_test
+package utils_test
 
 import (
 	"testing"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
-	thelpers "github.com/fnikolai/frisbee/controllers/template/helpers"
+	thelpers "github.com/fnikolai/frisbee/controllers/template/utils"
 )
 
 func TestGenerateSpecFromScheme(t *testing.T) {
@@ -79,15 +79,15 @@ EOF
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := thelpers.GenerateSpecFromScheme(tt.args.tspec)
+			got, err := thelpers.Evaluate(tt.args.tspec)
 
 			if (err != nil) != tt.wantErr {
-				t.Errorf("GenerateSpecFromScheme() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Evaluate() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 
 			if got != tt.want {
-				t.Errorf("GenerateSpecFromScheme() got = %v, want %v", got, tt.want)
+				t.Errorf("Evaluate() got = %v, want %v", got, tt.want)
 			}
 		})
 	}

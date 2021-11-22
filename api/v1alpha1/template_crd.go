@@ -17,6 +17,8 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"strings"
+
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -89,6 +91,20 @@ func init() {
 	SchemeBuilder.Register(&Template{}, &TemplateList{})
 }
 
+type TemplateRef struct {
+	Template string
+	Ref      string
+}
+
+const (
+	Separator = "/"
+)
+
+// String returns the general purpose string representation
+func (n TemplateRef) String() string {
+	return n.Template + string(Separator) + n.Ref
+}
+
 // FromTemplate generates a spec by parameterizing the templateRef with the given inputs.
 type FromTemplate struct {
 	// TemplateRef refers to a  template
@@ -104,6 +120,15 @@ type FromTemplate struct {
 	// more than one inputs, the request will be rejected.
 	// +optional
 	Inputs []map[string]string `json:"inputs,omitempty"`
+}
+
+func (t *FromTemplate) GetTemplateRef() TemplateRef {
+	parsed := strings.Split(t.TemplateRef, Separator)
+
+	return TemplateRef{
+		Template: parsed[0],
+		Ref:      parsed[1],
+	}
 }
 
 func (t *FromTemplate) Validate(allowMultipleInputs bool) error {
@@ -152,4 +177,14 @@ func (t *FromTemplate) GetInput(i int) map[string]string {
 	default:
 		return t.Inputs[i]
 	}
+}
+
+func (t *FromTemplate) Iterate(cb func(in map[string]string) error) error {
+	for i := 0; i < t.Instances; i++ {
+		if err := cb(t.GetInput(i)); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

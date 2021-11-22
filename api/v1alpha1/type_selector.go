@@ -53,27 +53,9 @@ func Convert(mode string) Mode {
 
 // +kubebuilder:validation:Enum=one;all;fixed;fixed-percent;random-max-percent
 
-// TemplateSelectorSpec defines some selectors for chosing a template
-type TemplateSelectorSpec struct {
-	// Reference selects the service template with the specified value.
-	// +optional
-	Reference string `json:"entry,omitempty"`
-}
-
-type TemplateSelector struct {
-	Namespace string `json:"namespace"`
-
-	// Family defines the target family of templates
-	// +optional
-	Family string `json:"family,omitempty"`
-
-	// Selector contains the rules to select templates (services, failures) within the target family
-	Selector TemplateSelectorSpec `json:"selector"`
-}
-
-// MatchService defines the selectors for services.
+// MatchBy defines the selectors for services.
 // If the all selectors are empty, all services will be selected.
-type MatchService struct {
+type MatchBy struct {
 	// ByName is a map of string keys and a set values that used to select services.
 	// The key defines the namespace which services belong, and the values is a set of service names.
 	// +optional
@@ -96,7 +78,7 @@ type MatchService struct {
 type ServiceSelector struct {
 	// Match contains the rules to select target
 	// +optional
-	Match MatchService `json:"match,omitempty"`
+	Match MatchBy `json:"match,omitempty"`
 
 	// Mode defines which of the selected services to use. If undefined, all() is used
 	// Supported mode: one / all / fixed / fixed-percent / random-max-percent

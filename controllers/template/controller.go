@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
-	thelpers "github.com/fnikolai/frisbee/controllers/template/helpers"
+	thelpers "github.com/fnikolai/frisbee/controllers/template/utils"
 	"github.com/fnikolai/frisbee/controllers/utils"
 	"github.com/fnikolai/frisbee/controllers/utils/lifecycle"
 	"github.com/go-logr/logr"
@@ -83,7 +83,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if cr.Status.Lifecycle.Phase == v1alpha1.PhaseUninitialized {
 		// validate services
 		for name, scheme := range cr.Spec.Entries {
-			specStr, err := thelpers.GenerateSpecFromScheme(scheme.DeepCopy())
+			specStr, err := thelpers.Evaluate(scheme.DeepCopy())
 			if err != nil {
 				return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "template %s error", name))
 			}

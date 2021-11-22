@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
+	serviceutils "github.com/fnikolai/frisbee/controllers/service/utils"
 	"github.com/fnikolai/frisbee/controllers/utils"
 	"github.com/fnikolai/frisbee/controllers/utils/lifecycle"
 	"github.com/go-logr/logr"
@@ -54,6 +55,8 @@ type Controller struct {
 	gvk schema.GroupVersionKind
 
 	state lifecycle.Classifier
+
+	serviceControl serviceutils.ServiceControlInterface
 }
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
@@ -256,7 +259,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			method. The status subresource ignores changes to spec, so it's less likely to conflict
 			with any other updates, and can have separate permissions.
 		*/
-		jobList, err := constructJobSpecList(ctx, r, &cr)
+		jobList, err := r.constructJobSpecList(ctx, &cr)
 		if err != nil {
 			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "unable to construct job list"))
 		}
@@ -340,7 +343,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return utils.Stop()
 	}
 
-	nextJob := getJob(r, &cr, nextExpectedJob)
+	nextJob := getJob(&cr, nextExpectedJob)
 
 	if err := utils.Create(ctx, r, &cr, nextJob); err != nil {
 		return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot create job"))
@@ -404,6 +407,8 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 		Logger:  logger.WithName("cluster"),
 		gvk:     v1alpha1.GroupVersion.WithKind("Cluster"),
 	}
+
+	r.serviceControl = serviceutils.NewServiceControl(r)
 
 	// FieldIndexer knows how to index over a particular "field" such that it
 	// can later be used by a field selector.

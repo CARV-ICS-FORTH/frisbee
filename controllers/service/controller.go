@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/fnikolai/frisbee/api/v1alpha1"
+	serviceutils "github.com/fnikolai/frisbee/controllers/service/utils"
 	"github.com/fnikolai/frisbee/controllers/utils"
 	"github.com/fnikolai/frisbee/controllers/utils/lifecycle"
 	"github.com/go-logr/logr"
@@ -50,6 +51,8 @@ type Controller struct {
 	logr.Logger
 
 	gvk schema.GroupVersionKind
+
+	serviceControl serviceutils.ServiceControlInterface
 }
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
@@ -210,6 +213,8 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 		Logger:  logger.WithName("service"),
 		gvk:     v1alpha1.GroupVersion.WithKind("Service"),
 	}
+
+	r.serviceControl = serviceutils.NewServiceControl(r)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named("service").

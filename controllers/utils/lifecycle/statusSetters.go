@@ -45,7 +45,7 @@ func Pending(ctx context.Context, r utils.Reconciler, obj client.Object, reason 
 
 	status := v1alpha1.Lifecycle{
 		Phase:   v1alpha1.PhasePending,
-		Reason:  fmt.Sprintf("%s%s", obj.GetName(), "Running"),
+		Reason:  fmt.Sprintf("%s%s", obj.GetName(), "Pending"),
 		Message: reason,
 	}
 
