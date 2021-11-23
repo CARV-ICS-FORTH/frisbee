@@ -48,6 +48,9 @@ jobs:
           
       - name: Publish chart to GitHub Pages
         if: ${{ !contains(env.VERSION, 'b') && !contains(env.VERSION, 'rc') }}
-        uses: helm/chart-releaser-action@v1.1.0
-        env:
-          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+        uses: stefanprodan/helm-gh-pages@master
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          charts_dir: chart
+          target_dir: chart
+          chart_version: ${{ env.VERSION }}      
