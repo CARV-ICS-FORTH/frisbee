@@ -111,7 +111,7 @@ docker-push: ## Push docker image with the manager.
 
 
 release: ## Release a new version of Frisbee.
-	if [[ -z "$${VERSION}" ]]; then echo "VERSION is not set"; exit 1; fi
+	if [[ -z "${VERSION}" ]]; then echo "VERSION is not set"; exit 1; fi
 	echo "${VERSION}" > VERSION
 	git add VERSION
 	git commit -m "Bump version"
