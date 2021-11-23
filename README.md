@@ -38,11 +38,12 @@ Frisbee installation and reference documents are available at:
 
 👉 **[Test Plans](charts)**
 
-👉 **[FAQ](docs/faq.md)**
 
 ## 🙋‍♂️ Getting Help
 
 We are here to help!
+
+👉 If you face troubles, check the [Frequently Asked Questions](docs/faq.md).
 
 👉 For feature requests and bugs, file an [issue](https://github.com/carv-ics-forth/frisbee/issues).
 
