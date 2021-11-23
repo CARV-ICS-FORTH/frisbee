@@ -21,10 +21,10 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/fnikolai/frisbee/api/v1alpha1"
-	thelpers "github.com/fnikolai/frisbee/controllers/template/utils"
-	"github.com/fnikolai/frisbee/controllers/utils"
-	"github.com/fnikolai/frisbee/controllers/utils/lifecycle"
+	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
+	templateutils "github.com/carv-ics-forth/frisbee/controllers/template/utils"
+	"github.com/carv-ics-forth/frisbee/controllers/utils"
+	"github.com/carv-ics-forth/frisbee/controllers/utils/lifecycle"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/runtime"
@@ -33,7 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// Controller reconciles a Templates object
+// Controller reconciles a Templates object.
 type Controller struct {
 	ctrl.Manager
 	logr.Logger
@@ -83,7 +83,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if cr.Status.Lifecycle.Phase == v1alpha1.PhaseUninitialized {
 		// validate services
 		for name, scheme := range cr.Spec.Entries {
-			specStr, err := thelpers.Evaluate(scheme.DeepCopy())
+			specStr, err := templateutils.Evaluate(scheme.DeepCopy())
 			if err != nil {
 				return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "template %s error", name))
 			}

@@ -19,9 +19,9 @@ package utils
 import (
 	"context"
 
-	"github.com/fnikolai/frisbee/api/v1alpha1"
-	templateutils "github.com/fnikolai/frisbee/controllers/template/utils"
-	"github.com/fnikolai/frisbee/controllers/utils"
+	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
+	templateutils "github.com/carv-ics-forth/frisbee/controllers/template/utils"
+	"github.com/carv-ics-forth/frisbee/controllers/utils"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"sigs.k8s.io/controller-runtime/pkg/client"

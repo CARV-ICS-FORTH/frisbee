@@ -17,7 +17,7 @@ limitations under the License.
 package chaos
 
 import (
-	"github.com/fnikolai/frisbee/api/v1alpha1"
+	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"

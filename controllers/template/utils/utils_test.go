@@ -19,8 +19,8 @@ package utils_test
 import (
 	"testing"
 
-	"github.com/fnikolai/frisbee/api/v1alpha1"
-	thelpers "github.com/fnikolai/frisbee/controllers/template/utils"
+	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
+	templateutils "github.com/carv-ics-forth/frisbee/controllers/template/utils"
 )
 
 func TestGenerateSpecFromScheme(t *testing.T) {
@@ -32,7 +32,7 @@ func TestGenerateSpecFromScheme(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    thelpers.GenericSpec
+		want    templateutils.GenericSpec
 		wantErr bool
 	}{
 		{
@@ -41,7 +41,7 @@ func TestGenerateSpecFromScheme(t *testing.T) {
 				Inputs: &v1alpha1.Inputs{Parameters: map[string]string{"slaves": "slave0"}},
 				Spec:   `{{.Inputs.Parameters.slaves}}`,
 			}},
-			want:    thelpers.GenericSpec("slave0"),
+			want:    templateutils.GenericSpec("slave0"),
 			wantErr: false,
 		},
 		{
@@ -56,7 +56,7 @@ cat > test.yml <<EOF
 EOF
 `,
 			}},
-			want: thelpers.GenericSpec(
+			want: templateutils.GenericSpec(
 				`
 cat > test.yml <<EOF
 	rs.Add( slave0 )
@@ -72,14 +72,14 @@ EOF
 				Inputs: &v1alpha1.Inputs{Parameters: map[string]string{"slaves": "slave0,slave1,slave2"}},
 				Spec:   `{{range splitList "," .Inputs.Parameters.slaves -}}{{.}}{{- end -}}`,
 			}},
-			want:    thelpers.GenericSpec("slave0slave1slave2"),
+			want:    templateutils.GenericSpec("slave0slave1slave2"),
 			wantErr: false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := thelpers.Evaluate(tt.args.tspec)
+			got, err := templateutils.Evaluate(tt.args.tspec)
 
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Evaluate() error = %v, wantErr %v", err, tt.wantErr)

@@ -19,7 +19,7 @@ package workflow
 import (
 	"fmt"
 
-	"github.com/fnikolai/frisbee/api/v1alpha1"
+	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

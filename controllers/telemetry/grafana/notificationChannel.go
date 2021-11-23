@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/fnikolai/frisbee/pkg/netutils"
+	"github.com/carv-ics-forth/frisbee/pkg/netutils"
 	notifier "github.com/golanghelper/grafana-webhook"
 	"github.com/grafana-tools/sdk"
 	"github.com/pkg/errors"
