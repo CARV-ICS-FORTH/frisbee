@@ -1,8 +1,6 @@
 <a href="https://www.vectorstock.com/royalty-free-vector/disc-golf-frisbee-eps-vector-25179185"><figure><img src="docs/images/logo.jpg" width="400"></figure></a>
 
-![releaser](https://github.com/carv-ics-forth/frisbee/actions/workflows/release/badge.svg)
-![releaser](https://github.com/carv-ics-forth/frisbee/workflows/release/badge.svg)
-
+![releaser](https://github.com/carv-ics-forth/frisbee/workflows/helm-release/badge.svg)
 [![Go Report Card](https://goreportcard.com/badge/github.com/carv-ics-forth/frisbee)](https://goreportcard.com/report/github.com/carv-ics-forth/frisbee)
 ![License: Apache-2.0](https://img.shields.io/github/license/carv-ics-forth/frisbee?color=blue)
 [![GitHub Repo stars](https://img.shields.io/github/stars/carv-ics-forth/frisbee)](https://github.com/carv-ics-forth/frisbee/stargazers)
