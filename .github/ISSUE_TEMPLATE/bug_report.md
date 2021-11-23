@@ -1,10 +1,10 @@
 ---
 name: "\U0001F41B Bug Report"
-about: Something isn't working as expected title: ''
-labels: ''
-assignees: ''
+about: Something isn't working as expected
 
 ---
+
+## Bug Report
 
 **Describe the bug**
 A clear and concise description of what the bug is.
