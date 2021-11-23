@@ -32,9 +32,9 @@ Frisbee provides a flexible, YAML-based configuration syntax and is trivially ex
 
 Frisbee installation and reference documents are available at:
 
-👉 **[Quick Start](docs/introduction/#quick-start)**
+👉 **[Quick Start](docs/introduction.md)**
 
-👉 **[Installation](docs/installation)**
+👉 **[Installation](docs/installation.md)**
 
 👉 **[Test Plans](charts)**
 
