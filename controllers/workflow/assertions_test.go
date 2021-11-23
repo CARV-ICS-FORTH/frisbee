@@ -3,9 +3,9 @@ package workflow_test
 import (
 	"testing"
 
-	"github.com/fnikolai/frisbee/api/v1alpha1"
-	"github.com/fnikolai/frisbee/controllers/utils/lifecycle"
-	"github.com/fnikolai/frisbee/controllers/workflow"
+	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
+	"github.com/carv-ics-forth/frisbee/controllers/utils/lifecycle"
+	"github.com/carv-ics-forth/frisbee/controllers/workflow"
 )
 
 func TestAssertState(t *testing.T) {

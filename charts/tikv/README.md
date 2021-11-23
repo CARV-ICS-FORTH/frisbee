@@ -4,11 +4,19 @@ TiKV is a highly scalable, low latency, and easy to use key-value database.
 
 ## TL;DR
 
-```console
+```bash
+# Add repo
 >> helm repo add frisbee https://carv-ics-forth.github.io/frisbee/charts
+# Install dependencies
 >> helm install my-frisbee frisbee/platform
->> helm install my-test frisbee/tikv
+>> helm install my-observability frisbee/observability
+>> helm install my-sysmon frisbee/sysmon
+>> helm install my-ycsbmon frisbee/ycsbmon
+# Install TiKV
+>> helm install my-tikv frisbee/tikv
+# Run Frisbee controller
 >> make run
+# Deploy the testing plan
 >> kubectl apply -f plans/plan.baseline.yml 
 ```
 
@@ -19,9 +27,9 @@ the [Helm](https://helm.sh) package manager.
 
 ## Prerequisites
 
-- Kubernetes 1.12+
+- Kubernetes 1.19+
 
-- Helm 3.1.0
+- Helm 3.5.0
 
 ## Installing the Chart
 
@@ -39,10 +47,10 @@ section lists the parameters that can be configured during installation.
 
 ## Uninstalling the Chart
 
-To uninstall/delete the `my-release` statefulset:
+To uninstall/delete the `my-tikv` release:
 
-```console
-$ helm delete my-release
+```bash
+>> helm delete my-tikv
 ```
 
 The command removes all the Kubernetes components associated with the chart and deletes the release. Use the

@@ -19,7 +19,7 @@ package lifecycle
 import (
 	"sort"
 
-	"github.com/fnikolai/frisbee/api/v1alpha1"
+	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"sigs.k8s.io/controller-runtime/pkg/client"

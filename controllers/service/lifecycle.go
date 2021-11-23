@@ -17,7 +17,7 @@ limitations under the License.
 package service
 
 import (
-	"github.com/fnikolai/frisbee/api/v1alpha1"
+	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 )

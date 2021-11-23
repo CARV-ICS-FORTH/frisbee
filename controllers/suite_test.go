@@ -30,7 +30,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	frisbeev1alpha1 "github.com/fnikolai/frisbee/api/v1alpha1"
+	frisbeev1alpha1 "github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	// +kubebuilder:scaffold:imports
 )
 

@@ -25,7 +25,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fnikolai/frisbee/api/v1alpha1"
+	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 

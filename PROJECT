@@ -4,7 +4,7 @@ layout:
 plugins:
   manifests.sdk.operatorframework.io/v2: {}
   scorecard.sdk.operatorframework.io/v2: {}
-repo: github.com/fnikolai/frisbee
+repo: github.com/carv-ics-forth/frisbee
 resources:
 - api:
     crdVersion: v1
@@ -13,7 +13,7 @@ resources:
   domain: frisbee.io
   group: frisbee
   kind: Workflow
-  path: github.com/fnikolai/frisbee/api/v1alpha1
+  path: github.com/carv-ics-forth/frisbee/api/v1alpha1
   version: v1alpha1
   webhooks:
     defaulting: true
@@ -26,7 +26,7 @@ resources:
   domain: frisbee.io
   group: frisbee
   kind: Service
-  path: github.com/fnikolai/frisbee/api/v1alpha1
+  path: github.com/carv-ics-forth/frisbee/api/v1alpha1
   version: v1alpha1
   webhooks:
     defaulting: true
@@ -39,7 +39,7 @@ resources:
   domain: frisbee.io
   group: frisbee
   kind: Cluster
-  path: github.com/fnikolai/frisbee/api/v1alpha1
+  path: github.com/carv-ics-forth/frisbee/api/v1alpha1
   version: v1alpha1
   webhooks:
     defaulting: true
@@ -52,7 +52,7 @@ resources:
   domain: frisbee.io
   group: frisbee
   kind: Chaos
-  path: github.com/fnikolai/frisbee/api/v1alpha1
+  path: github.com/carv-ics-forth/frisbee/api/v1alpha1
   version: v1alpha1
   webhooks:
     defaulting: true
@@ -65,7 +65,7 @@ resources:
   domain: frisbee.io
   group: frisbee
   kind: Telemetry
-  path: github.com/fnikolai/frisbee/api/v1alpha1
+  path: github.com/carv-ics-forth/frisbee/api/v1alpha1
   version: v1alpha1
   webhooks:
     defaulting: true
@@ -78,7 +78,7 @@ resources:
   domain: frisbee.io
   group: frisbee
   kind: Template
-  path: github.com/fnikolai/frisbee/api/v1alpha1
+  path: github.com/carv-ics-forth/frisbee/api/v1alpha1
   version: v1alpha1
   webhooks:
     defaulting: true
