@@ -1,11 +1,9 @@
-name: Release Charts
-
+name: helm-release
 on:
   workflow_dispatch:
   push:
     tags:
       - 'v*'
-
 
 jobs:
   helm-tests:
