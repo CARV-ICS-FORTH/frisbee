@@ -1,13 +1,6 @@
-annotations:
-  category: Infrastructure
 apiVersion: v2
-appVersion: 1.10.0
-description: A Library Helm Chart for grouping common logic between bitnami charts. This chart is not deployable by itself.
-home: https://github.com/bitnami/charts/tree/master/bitnami/common
-icon: http://new.sevenhillstechnology.com/wp-content/uploads/2021/01/undraw_programming_2svr.png
-
-
 name: sysmon
+description: sysmon provides container users an understanding of the resource usage and performance characteristics of their running containers.
 
 # A chart can be either an 'application' or a 'library' chart.
 #
@@ -19,8 +12,21 @@ name: sysmon
 # pipeline. Library charts do not define any templates and therefore cannot be deployed.
 type: application
 
-
 # This is the chart version. This version number should be incremented each time you make changes
 # to the chart and its templates, including the app version.
 # Versions are expected to follow Semantic Versioning (https://semver.org/)
-version: 0.1.1
+version: 0.0.0
+
+# This is the version number of the application being deployed. This version number should be
+# incremented each time you make changes to the application. Versions are not expected to
+# follow Semantic Versioning. They should reflect the version the application is using.
+# It is recommended to use it with quotes.
+appVersion: "1.16.0"
+
+
+home: https://github.com/CARV-ICS-FORTH/frisbee/tree/main/charts/sysmon
+
+icon: http://new.sevenhillstechnology.com/wp-content/uploads/2021/01/undraw_programming_2svr.png
+
+annotations:
+  category: Infrastructure
