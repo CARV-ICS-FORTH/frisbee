@@ -68,14 +68,40 @@ We welcome also every contribution, even if it is just punctuation. Here are som
 
 ✔ Contact us [directly](fnikol@ics.forth.gr)for other ways to get involved.
 
-
 ## TL;DR
 
+Make sure that [Microk8s](https://microk8s.io/docs) and  [Helm](https://helm.sh/docs/intro/install/) are installed on your system, then install the Frisbee dependencies:
 
-[Click Here](http://grafana.localhost/d/R5y4AE8Mz/kubernetes-cluster-monitoring-via-prometheus?orgId=1&amp;from=now-15m&amp;to=now)
+```bash
+# Add repo
+>> helm repo add frisbee https://carv-ics-forth.github.io/frisbee/charts
+# Install dependencies
+>> helm install my-frisbee frisbee/platform
+>> helm install my-observability frisbee/observability
+>> helm install my-sysmon frisbee/sysmon
+>> helm install my-ycsbmon frisbee/ycsbmon
+# Install TiKV
+>> helm install my-tikv frisbee/tikv
+# Clone Frisbee repository
+>> git clone https://github.com/CARV-ICS-FORTH/frisbee.git
+```
 
-If everything went smoothly, you should see a similar dashboard. Through these dashboards humans and controllers can
-examine to check things like completion, health, and SLA compliance.
+
+Then run:
+
+```bash
+# Run Frisbee controller
+>> make run
+
+# Deploy the testing plan
+>> kubectl apply -f charts/tikv/plans/plan.localhost.yml 
+```
+
+
+
+If everything went smoothly, you should see a similar [Grafana Dashboard](http://grafana.localhost/d/R5y4AE8Mz/kubernetes-cluster-monitoring-via-prometheus?orgId=1&amp;from=now-15m&amp;to=now). 
+
+Through these dashboards humans and controllers can examine to check things like completion, health, and SLA compliance.
 
 #### Client-View (YCSB-Dashboard)
 
