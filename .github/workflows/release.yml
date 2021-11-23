@@ -52,5 +52,5 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           charts_dir: chart
-          target_dir: chart
+          target_dir: charts
           chart_version: ${{ env.VERSION }}      
