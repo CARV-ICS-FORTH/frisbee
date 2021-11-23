@@ -38,6 +38,7 @@ Frisbee installation and reference documents are available at:
 
 👉 **[Test Plans](charts)**
 
+👉 **[FAQ](docs/faq.md)**
 
 ## 🙋‍♂️ Getting Help
 
