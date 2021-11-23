@@ -47,7 +47,7 @@ We are here to help!
 
 👉 For feature requests and bugs, file an [issue](https://github.com/carv-ics-forth/frisbee/issues).
 
-👉 For great new ideas, browse through the [GitHub discussions](https://github.com/carv-ics-forth/frisbee/discussions/landing).
+👉 For great new ideas, browse through the [GitHub discussions](https://github.com/carv-ics-forth/frisbee/discussions).
 
 👉 To get updates ⭐️ [star this repository](https://github.com/carv-ics-forth/frisbee/stargazers).
 
@@ -64,7 +64,7 @@ We welcome also every contribution, even if it is just punctuation. Here are som
 
 ✔ Read Frisbee design and development details on the [GitHub Wiki](https://github.com/carv-ics-forth/frisbee/wiki).
 
-✔ Contact us [directly](fnikol@ics.forth.gr)for other ways to get involved.
+✔ Contact us [directly](fnikol@ics.forth.gr) for other ways to get involved.
 
 ## TL;DR
 
