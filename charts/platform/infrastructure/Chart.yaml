@@ -1,9 +1,7 @@
----
 apiVersion: v2
-name: platform
-description: Frisbee is a Kubernetes platform for exploring, testing, and benchmarking distributed applications.
+name: infrastructure
+description: This sub-chart containers the Frisbee dependencies
 
-# A chart can be either an 'application' or a 'library' chart.
 #
 # Application charts are a collection of templates that can be packaged into versioned archives
 # to be deployed.
@@ -18,6 +16,18 @@ type: application
 # follow Semantic Versioning. They should reflect the version the application is using.
 # It is recommended to use it with quotes.
 appVersion: "1.16.0"
+
+# The dependency commands operate on that file, making it easy to synchronize between
+# the desired dependencies and the actual dependencies stored in the 'charts/' directory.
+dependencies:
+  - condition: chaos-mesh.enabled
+    name: chaos-mesh
+    version: "2.0.3"
+    repository: https://charts.chaos-mesh.org
+  - condition: openebs.enabled
+    name: openebs
+    version: "3.0.0"
+    repository: https://openebs.github.io/charts
 
 maintainers:
   - name: Fotis Nikolaidis

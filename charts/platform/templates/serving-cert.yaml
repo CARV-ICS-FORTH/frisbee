@@ -1,0 +1,14 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ include "platform.fullname" . }}-serving-cert
+  labels:
+  {{- include "platform.labels" . | nindent 4 }}
+spec:
+  dnsNames:
+  - frisbee-webhook-service.{{ .Release.Namespace }}.svc
+  - frisbee-webhook-service.{{ .Release.Namespace }}.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: '{{ include "platform.fullname" . }}-selfsigned-issuer'
+  secretName: webhook-server-cert
