@@ -1,7 +1,7 @@
 # Frisbee
 **Kubernetes Native Testbed**
 
-![releaser](https://github.com/carv-ics-forth/frisbee/workflows/helm-release/badge.svg)
+![releaser](https://github.com/carv-ics-forth/frisbee/actions/workflows/release.yml/badge.svg)
 [![Go Report Card](https://goreportcard.com/badge/github.com/carv-ics-forth/frisbee)](https://goreportcard.com/report/github.com/carv-ics-forth/frisbee)
 ![License: Apache-2.0](https://img.shields.io/github/license/carv-ics-forth/frisbee?color=blue)
 [![GitHub Repo stars](https://img.shields.io/github/stars/carv-ics-forth/frisbee)](https://github.com/carv-ics-forth/frisbee/stargazers)
