@@ -43,6 +43,10 @@ import (
 // +kubebuilder:rbac:groups=frisbee.io,resources=workflows/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=frisbee.io,resources=workflows/finalizers,verbs=update
 
+const (
+	GrafanaEndpoint = "http://grafana.localhost"
+)
+
 type Controller struct {
 	ctrl.Manager
 	logr.Logger
@@ -296,7 +300,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		// this should normally happen when the telemetry is running
 		if grafana.DefaultClient == nil {
-			if err := grafana.NewGrafanaClient(ctx, r, telemetryJob.Status.GrafanaURI,
+			if err := grafana.NewGrafanaClient(ctx, r, GrafanaEndpoint,
 				// Set a callback that will be triggered when there is Grafana alert.
 				// Through this channel we can get informed for SLA violations.
 				grafana.WithNotifyOnAlert(func(b *notifier.Body) {

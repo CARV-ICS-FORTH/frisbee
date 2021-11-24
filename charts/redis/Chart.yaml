@@ -31,6 +31,10 @@ appVersion: "1.16.0"
 #    version: 0.1.1
 #    repository: https://carv-ics-forth.github.io/frisbee/charts
 
+maintainers:
+  - name: Fotis Nikolaidis
+    email: nikolaidis.fotis@gmail.com
+
 # This is the chart version. This version number should be incremented each time you make changes
 # to the chart and its templates, including the app version.
 # Versions are expected to follow Semantic Versioning (https://semver.org/)

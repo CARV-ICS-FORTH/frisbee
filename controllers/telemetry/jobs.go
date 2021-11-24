@@ -18,14 +18,12 @@ package telemetry
 
 import (
 	"context"
-	"fmt"
 	"path/filepath"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/utils"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
-	netv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -39,7 +37,9 @@ const (
 	grafanaTemplate    = "telemetry/grafana"
 )
 
-func (r *Controller) installPrometheus(ctx context.Context, w *v1alpha1.Telemetry, prom *v1alpha1.Service) error {
+func (r *Controller) installPrometheus(ctx context.Context, w *v1alpha1.Telemetry) error {
+	var prom v1alpha1.Service
+
 	{ // metadata
 		prom.SetName("prometheus")
 		prom.SetNamespace(w.GetNamespace())
@@ -52,15 +52,17 @@ func (r *Controller) installPrometheus(ctx context.Context, w *v1alpha1.Telemetr
 			Inputs:      nil,
 		}
 
-		if err := r.serviceControl.LoadSpecFromTemplate(ctx, prom); err != nil {
+		if err := r.serviceControl.LoadSpecFromTemplate(ctx, &prom); err != nil {
 			return errors.Wrapf(err, "cannot get prometheus spec")
 		}
 	}
 
-	return utils.Create(ctx, r, w, prom)
+	return utils.Create(ctx, r, w, &prom)
 }
 
-func (r *Controller) installGrafana(ctx context.Context, w *v1alpha1.Telemetry, grafana *v1alpha1.Service) error {
+func (r *Controller) installGrafana(ctx context.Context, w *v1alpha1.Telemetry) error {
+	var grafana v1alpha1.Service
+
 	{ // metadata
 		grafana.SetName("grafana")
 		grafana.SetNamespace(w.GetNamespace())
@@ -73,7 +75,7 @@ func (r *Controller) installGrafana(ctx context.Context, w *v1alpha1.Telemetry, 
 			Inputs:      nil,
 		}
 
-		if err := r.serviceControl.LoadSpecFromTemplate(ctx, grafana); err != nil {
+		if err := r.serviceControl.LoadSpecFromTemplate(ctx, &grafana); err != nil {
 			return errors.Wrapf(err, "cannot get prometheus spec")
 		}
 
@@ -82,7 +84,7 @@ func (r *Controller) installGrafana(ctx context.Context, w *v1alpha1.Telemetry, 
 		}
 	}
 
-	return utils.Create(ctx, r, w, grafana)
+	return utils.Create(ctx, r, w, &grafana)
 }
 
 func (r *Controller) importDashboards(ctx context.Context, obj *v1alpha1.Telemetry, spec *v1alpha1.ServiceSpec) error {
@@ -143,6 +145,7 @@ func (r *Controller) importDashboards(ctx context.Context, obj *v1alpha1.Telemet
 	return nil
 }
 
+/*
 func (r *Controller) installIngress(ctx context.Context, cr *v1alpha1.Telemetry, prometheus, grafana *v1alpha1.Service) error {
 	ingress := netv1.Ingress{}
 
@@ -216,3 +219,5 @@ func (r *Controller) installIngress(ctx context.Context, cr *v1alpha1.Telemetry,
 
 	return nil
 }
+
+*/

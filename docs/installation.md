@@ -1,6 +1,6 @@
 # Installation
 
-This tutorial describes how to deploy and run a test using Frisbee.
+This tutorial describes how to deploy Frisbee and start running tests. 
 
 # Requirements
 

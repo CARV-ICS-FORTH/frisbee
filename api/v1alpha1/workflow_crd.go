@@ -17,29 +17,8 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"fmt"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
-
-type DNSPrefix string
-
-func (a DNSPrefix) Convert(service string) string {
-	return fmt.Sprintf("%s.%s", service, a)
-}
-
-// Ingress is a collection of routing rules that govern how external users access services
-// running in a Kubernetes cluster.
-type Ingress struct {
-	// DNSPrefix is the postfix from which the ingress will be available.
-	// Example: grafana.localhost, grafana.{MYIP}.nip.io, grafana.platform.science-hangar.eu
-	DNSPrefix DNSPrefix `json:"host,omitempty"`
-
-	// UseAmbassador if set annotates ingresses with 'kubernetes.io/ingress.class=ambassador'
-	// so to be managed by the Ambassador Ingress controller.
-	// +optional
-	UseAmbassador bool `json:"useAmbassador"`
-}
 
 // Assert is a source of information about whether the state of the workflow after a given time is correct or not.
 // This is needed because some workflows may run in infinite-horizons.

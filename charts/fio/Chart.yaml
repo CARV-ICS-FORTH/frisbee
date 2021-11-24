@@ -21,6 +21,10 @@ type: application
 # it with quotes.
 appVersion: "1.16.0"
 
+maintainers:
+  - name: Fotis Nikolaidis
+    email: nikolaidis.fotis@gmail.com
+
 # dependencies:
 #  - name: observability
 #    version: 0.1.1
