@@ -171,16 +171,12 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		We may delete the service, add a pod, or wait for existing pod to change its status.
 	*/
 	if newStatus.Phase.Is(v1alpha1.PhaseUninitialized) {
-		if err := r.installPrometheus(ctx, &cr, &prometheus); err != nil {
+		if err := r.installPrometheus(ctx, &cr); err != nil {
 			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "prometheus error"))
 		}
 
-		if err := r.installGrafana(ctx, &cr, &grafana); err != nil {
+		if err := r.installGrafana(ctx, &cr); err != nil {
 			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "grafana error"))
-		}
-
-		if err := r.installIngress(ctx, &cr, &prometheus, &grafana); err != nil {
-			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "ingress error"))
 		}
 
 		return lifecycle.Pending(ctx, r, &cr, "some jobs are still pending")

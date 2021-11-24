@@ -22,9 +22,6 @@ import (
 
 // TelemetrySpec defines the desired state of Telemetry
 type TelemetrySpec struct {
-	// Ingress defines how to get traffic into your Kubernetes cluster.
-	Ingress *Ingress `json:"ingress,omitempty"`
-
 	// ImportMonitors are references to monitoring packages that will be used in the monitoring stack.
 	// +optional
 	ImportMonitors []string `json:"importMonitors,omitempty"`
@@ -33,9 +30,6 @@ type TelemetrySpec struct {
 // TelemetryStatus defines the observed state of Telemetry
 type TelemetryStatus struct {
 	Lifecycle `json:",inline"`
-
-	PrometheusURI string `json:"prometheusUri"`
-	GrafanaURI    string `json:"grafanaUri"`
 }
 
 func (in *Telemetry) GetReconcileStatus() Lifecycle {

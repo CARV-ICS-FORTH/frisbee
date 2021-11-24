@@ -27,6 +27,9 @@ icon: http://new.sevenhillstechnology.com/wp-content/uploads/2021/01/undraw_prog
 annotations:
   category: Infrastructure
 
+maintainers:
+  - name: Fotis Nikolaidis
+    email: nikolaidis.fotis@gmail.com
 
 # This is the chart version. This version number should be incremented each time you make changes
 # to the chart and its templates, including the app version.

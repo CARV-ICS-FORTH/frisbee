@@ -31,6 +31,9 @@ dependencies:
     version: "3.0.0"
     repository: https://openebs.github.io/charts
 
+maintainers:
+  - name: Fotis Nikolaidis
+    email: nikolaidis.fotis@gmail.com
 
 # This is the chart version. This version number should be incremented each time you make changes
 # to the chart and its templates, including the app version.

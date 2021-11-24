@@ -17,6 +17,10 @@ name: observability
 # pipeline. Library charts do not define any templates and therefore cannot be deployed.
 type: application
 
+maintainers:
+  - name: Fotis Nikolaidis
+    email: nikolaidis.fotis@gmail.com
+
 annotations:
   category: Infrastructure
 

@@ -21,6 +21,10 @@ appVersion: "1.16.0"
 
 icon: https://tikv.org/img/logos/horizontal/color/tikv-horizontal-color.png
 
+maintainers:
+  - name: Fotis Nikolaidis
+    email: nikolaidis.fotis@gmail.com
+
 # dependencies:
 #  - name: observability
 #    version: 0.1.1
