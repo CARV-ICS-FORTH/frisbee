@@ -116,7 +116,7 @@ release: ## Release a new version of Frisbee.
 	git add VERSION
 	git commit -m "Bump version"
 	git tag ${VERSION}
- 	# git push --set-upstream origin $(shell git branch --show-current) && git push --tags
+	# git push --set-upstream origin $(git branch --show-current) && git push --tags
 
 
 ##@ Deployment

@@ -1,9 +1,10 @@
+---
 apiVersion: frisbee.io/v1alpha1
 kind: Workflow
 metadata:
   name: redis-availability-single
 spec:
-  importMonitors: [ "sysmon/container", "redismon/server", "ycsbmon/client" ]
+  importMonitors: ["sysmon/container", "redismon/server", "ycsbmon/client"]
   ingress:
     host: localhost
     useAmbassador: true
@@ -23,38 +24,38 @@ spec:
     # Create a Slave node
     - action: Service
       name: slave
-      depends: { running: [ master ] }
+      depends: {running: [master]}
       service:
         fromTemplate:
           templateRef: redis/slave
           inputs:
-            - { master: .service.master.any }
+            - {master: .service.master.any}
 
 
     # Create a failover manager
     - action: Service
       name: sentinel
-      depends: { running: [ master, slave ] }
+      depends: {running: [master, slave]}
       service:
         fromTemplate:
           templateRef: redis/sentinel
           inputs:
-            - { master: .service.master.any }
+            - {master: .service.master.any}
 
 
     # Ingest keys in parallel, into different ranges
     - action: Cluster
       name: "loaders"
-      depends: { running: [ master ] }
+      depends: {running: [master]}
       cluster:
         templateRef: ycsb-redis/loader
         inputs:
-          - { server: .service.master.any, recordcount: "100000000", offset: "0" }
+          - {server: .service.master.any, recordcount: "100000000", offset: "0"}
 
     # Cause two partition failures with different duration
     - action: Chaos
       name: partition0
-      depends: { running: [ master, slave ], after: "3m" }
+      depends: {running: [master, slave], after: "3m"}
       chaos:
         type: partition
         partition:
@@ -64,9 +65,9 @@ spec:
 
     - action: Chaos
       name: partition1
-      depends: { running: [ master, slave ], success: [ partition0 ], after: "6m" }
+      depends: {running: [master, slave], success: [partition0], after: "6m"}
       chaos:
         type: partition
         partition:
-          selector: { macro: .service.master.any }
+          selector: {macro: .service.master.any}
           duration: "1m"

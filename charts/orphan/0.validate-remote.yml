@@ -1,13 +1,13 @@
+---
 apiVersion: frisbee.io/v1alpha1
 kind: Workflow
 metadata:
   name: validate-remote
 spec:
   withTelemetry:
-    importMonitors: [ "sysmon/container" ]
+    importMonitors: ["sysmon/container"]
     ingress:
       host: platform.science-hangar.eu
-
 
   actions:
     # Create a single Master node
@@ -20,7 +20,7 @@ spec:
     # Cause two partition failures with different duration
     - action: Chaos
       name: partition0
-      depends: { running: [ master ] }
+      depends: {running: [master]}
       chaos:
         type: partition
         partition:
@@ -31,7 +31,7 @@ spec:
     # Cause two partition failures with different duration
     - action: Chaos
       name: partition1
-      depends: { running: [ master ],  success: [ partition0 ], after: "1m" }
+      depends: {running: [master], success: [partition0], after: "1m"}
       chaos:
         type: partition
         partition:

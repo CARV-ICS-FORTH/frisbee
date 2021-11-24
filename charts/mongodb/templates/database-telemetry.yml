@@ -4,7 +4,7 @@ kind: Template
 metadata:
   name: mongomon
   labels:
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 spec:
   entries:
     "exporter":
@@ -90,6 +90,6 @@ kind: ConfigMap
 metadata:
   name: grafana-mongodb-dashboard
   labels:
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
     dashboard: mongo-telegraf
-data:   {{ (.Files.Glob "dashboards/mongodb.json").AsConfig | nindent 2 }}
+data: {{(.Files.Glob "dashboards/mongodb.json").AsConfig | nindent 2}}

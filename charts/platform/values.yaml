@@ -1,6 +1,6 @@
+---
 chaos-mesh:
   enabled: false
-
 
 # OpenEBS - Provision dynamic volumes
 openebs:
@@ -12,7 +12,6 @@ openebs:
   defaultStorageConfig:
     enabled: false
 
-
 # Provision the infrastructure manually
 manual:
   enabled: false
@@ -20,8 +19,8 @@ manual:
 # Observability
 observability:
 
-
-# Global values are values that can be accessed from any chart or subchart by exactly the same name. 
-# They should be accessed explicitly via {{.Values.global.salad}}
+# Global values are values that can be accessed from any chart or subchart by
+# exactly the same name. They should be accessed explicitly
+# via {{.Values.global.salad}}
 global:
   salad: caesar

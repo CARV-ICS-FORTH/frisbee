@@ -1,6 +1,8 @@
+---
 apiVersion: v2
 name: sysmon
-description: sysmon provides container users an understanding of the resource usage and performance characteristics of their running containers.
+description: "sysmon provides container users an understanding of the resource usage
+and performance characteristics of their running containers."
 
 # A chart can be either an 'application' or a 'library' chart.
 #
@@ -12,17 +14,11 @@ description: sysmon provides container users an understanding of the resource us
 # pipeline. Library charts do not define any templates and therefore cannot be deployed.
 type: application
 
-# This is the chart version. This version number should be incremented each time you make changes
-# to the chart and its templates, including the app version.
-# Versions are expected to follow Semantic Versioning (https://semver.org/)
-version: 0.0.0
-
 # This is the version number of the application being deployed. This version number should be
 # incremented each time you make changes to the application. Versions are not expected to
 # follow Semantic Versioning. They should reflect the version the application is using.
 # It is recommended to use it with quotes.
 appVersion: "1.16.0"
-
 
 home: https://github.com/CARV-ICS-FORTH/frisbee/tree/main/charts/sysmon
 
@@ -30,3 +26,9 @@ icon: http://new.sevenhillstechnology.com/wp-content/uploads/2021/01/undraw_prog
 
 annotations:
   category: Infrastructure
+
+
+# This is the chart version. This version number should be incremented each time you make changes
+# to the chart and its templates, including the app version.
+# Versions are expected to follow Semantic Versioning (https://semver.org/)
+version: 0.0.0

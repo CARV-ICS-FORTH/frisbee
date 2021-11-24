@@ -4,7 +4,7 @@ kind: Template
 metadata:
   name: sysmon
   labels:
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 spec:
   entries:
     "container":
@@ -42,6 +42,6 @@ kind: ConfigMap
 metadata:
   name: grafana-system-container
   labels:
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
     dashboard: sysmon
-data: {{ (.Files.Glob "dashboards/syscontainer.json").AsConfig | nindent 2 }}
+data: {{(.Files.Glob "dashboards/syscontainer.json").AsConfig | nindent 2}}

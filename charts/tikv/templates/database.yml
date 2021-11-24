@@ -1,15 +1,16 @@
 # In some situations such as in the Docker or NAT network environment, if the other nodes (peers) cannot access
-  # the PD node through the default peer URLs listened to by this PD node, you must manually set the advertise peer URLs.
+# the PD node through the default peer URLs listened to by this PD node, you must manually set the advertise peer URLs.
 ---
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: tikv
   labels:
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 spec:
   entries:
-    "placementDriver": # Placement Driver
+    # Placement Driver
+    "placementDriver":
       inputs:
         parameters:
           cpu: ""
@@ -29,7 +30,7 @@ spec:
             emptyDir:
               medium: Memory
         agents:                                 # Agents
-          telemetry: [ sysmon/container, tikvmon/pd ]
+          telemetry: [sysmon/container, tikvmon/pd]
         resources:                              # Resources
           cpu: {{"{{.Inputs.Parameters.cpu}}"}}
           memory: {{"{{.Inputs.Parameters.memory}}"}}
@@ -65,7 +66,8 @@ spec:
               --advertise-peer-urls=http://$${HOSTNAME}:2380              \
               --data-dir=/store/$${HOSTNAME}/pd
 
-    "worker": # Service node
+    # Service node
+    "worker":
       inputs:
         parameters:
           placementDriver: "localhost"
@@ -86,7 +88,7 @@ spec:
             emptyDir:
               medium: Memory
         agents:                                 # Agents
-          telemetry: [ sysmon/container, tikvmon/worker ]
+          telemetry: [sysmon/container, tikvmon/worker]
         resources:                              # Resources
           cpu: {{"{{.Inputs.Parameters.cpu}}"}}
           memory: {{"{{.Inputs.Parameters.memory}}"}}

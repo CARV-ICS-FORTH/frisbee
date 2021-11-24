@@ -4,7 +4,7 @@ kind: Template
 metadata:
   name: iperfmon
   labels:
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 spec:
   entries:
     "client":
@@ -59,6 +59,6 @@ kind: ConfigMap
 metadata:
   name: grafana-iperf-dashboard
   labels:
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
     dashboard: iperf
-data:   {{ (.Files.Glob "dashboards/iperf.json").AsConfig | nindent 2 }}
+data: {{(.Files.Glob "dashboards/iperf.json").AsConfig | nindent 2}}

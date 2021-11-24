@@ -4,7 +4,7 @@ kind: Template
 metadata:
   name: cockroachdb-cluster
   labels:
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 spec:
   entries:
     "master":
@@ -29,7 +29,7 @@ spec:
               set -eum
               trap "touch /dev/shm/stop" EXIT
 
-              echo "Start Cockroachdb in cluster: " {{"{{.Inputs.Parameters.servers}}"}}
+              echo "Start Cockroachdb: " {{"{{.Inputs.Parameters.servers}}"}}
 
               cockroach start                               \
                   --insecure                                \

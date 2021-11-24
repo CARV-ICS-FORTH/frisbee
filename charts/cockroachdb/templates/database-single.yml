@@ -4,7 +4,7 @@ kind: Template
 metadata:
   name: cockroachdb
   labels:
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 spec:
   entries:
     "master":
@@ -31,4 +31,4 @@ spec:
                   --insecure                                \
                   --store=$${HOSTNAME}                      \
                   --listen-addr=$${HOSTNAME}:26257          \
-                  --http-addr=$${HOSTNAME}:8080             \
+                  --http-addr=$${HOSTNAME}:8080

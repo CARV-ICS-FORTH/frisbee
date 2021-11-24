@@ -4,7 +4,7 @@ kind: Template
 metadata:
   name: iperf
   labels:
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 spec:
   entries:
     "server":

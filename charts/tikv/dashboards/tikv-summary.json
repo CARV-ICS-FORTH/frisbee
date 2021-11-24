@@ -12,7 +12,7 @@
         "showIn": 0,
         "tags": [],
         "type": "tags"
-      },
+    },
       {
         "datasource": "-- Grafana --",
         "enable": true,
@@ -23,17 +23,17 @@
         "showIn": 0,
         "tags": [
           "run"
-        ],
+       ],
         "target": {
           "limit": 100,
           "matchAny": false,
           "tags": [
             "run"
-          ],
+         ],
           "type": "tags"
-        },
-        "type": "tags"
       },
+        "type": "tags"
+    },
       {
         "datasource": "-- Grafana --",
         "enable": false,
@@ -44,9 +44,9 @@
         "showIn": 0,
         "tags": [
           "exit"
-        ],
+       ],
         "type": "tags"
-      },
+    },
       {
         "datasource": "-- Grafana --",
         "enable": true,
@@ -57,20 +57,20 @@
         "showIn": 0,
         "tags": [
           "failure"
-        ],
+       ],
         "target": {
           "limit": 100,
           "matchAny": false,
           "tags": [
             "failure"
-          ],
+         ],
           "type": "tags"
-        },
+      },
         "type": "tags",
         "useValueForTime": false
-      }
-    ]
-  },
+    }
+   ]
+},
   "editable": true,
   "fiscalYearStartMonth": 0,
   "gnetId": null,
@@ -86,19 +86,19 @@
       "fieldConfig": {
         "defaults": {},
         "overrides": []
-      },
+    },
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
         "y": 0
-      },
+    },
       "id": 2742,
       "panels": [],
       "repeat": null,
       "title": "Cluster",
       "type": "row"
-    },
+  },
     {
       "datasource": "Prometheus",
       "description": "The storage size per TiKV instance",
@@ -106,7 +106,7 @@
         "defaults": {
           "color": {
             "mode": "palette-classic"
-          },
+        },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -118,23 +118,23 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-            },
+          },
             "lineInterpolation": "linear",
             "lineWidth": 0,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-            },
+          },
             "showPoints": "never",
             "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "normal"
-            },
+          },
             "thresholdsStyle": {
               "mode": "off"
-            }
-          },
+          }
+        },
           "mappings": [],
           "min": 0,
           "thresholds": {
@@ -143,37 +143,37 @@
               {
                 "color": "green",
                 "value": null
-              },
+            },
               {
                 "color": "red",
                 "value": 80
-              }
-            ]
-          },
-          "unit": "decbytes"
+            }
+           ]
         },
-        "overrides": []
+          "unit": "decbytes"
       },
+        "overrides": []
+    },
       "gridPos": {
         "h": 8,
         "w": 8,
         "x": 0,
         "y": 1
-      },
+    },
       "id": 56,
       "links": [],
       "options": {
         "legend": {
           "calcs": [
             "lastNotNull"
-          ],
+         ],
           "displayMode": "table",
           "placement": "right"
-        },
+      },
         "tooltip": {
           "mode": "single"
-        }
-      },
+      }
+    },
       "pluginVersion": "8.2.2",
       "targets": [
         {
@@ -185,13 +185,13 @@
           "legendFormat": "{{instance}}",
           "refId": "A",
           "step": 10
-        }
-      ],
+      }
+     ],
       "timeFrom": null,
       "timeShift": null,
       "title": "Store size",
       "type": "timeseries"
-    },
+  },
     {
       "datasource": "Prometheus",
       "description": "The available capacity size of each TiKV instance",
@@ -199,7 +199,7 @@
         "defaults": {
           "color": {
             "mode": "palette-classic"
-          },
+        },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -211,23 +211,23 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-            },
+          },
             "lineInterpolation": "linear",
             "lineWidth": 0,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-            },
+          },
             "showPoints": "never",
             "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "normal"
-            },
+          },
             "thresholdsStyle": {
               "mode": "off"
-            }
-          },
+          }
+        },
           "mappings": [],
           "min": 0,
           "thresholds": {
@@ -236,37 +236,37 @@
               {
                 "color": "green",
                 "value": null
-              },
+            },
               {
                 "color": "red",
                 "value": 80
-              }
-            ]
-          },
-          "unit": "decbytes"
+            }
+           ]
         },
-        "overrides": []
+          "unit": "decbytes"
       },
+        "overrides": []
+    },
       "gridPos": {
         "h": 8,
         "w": 8,
         "x": 8,
         "y": 1
-      },
+    },
       "id": 1706,
       "links": [],
       "options": {
         "legend": {
           "calcs": [
             "lastNotNull"
-          ],
+         ],
           "displayMode": "table",
           "placement": "right"
-        },
+      },
         "tooltip": {
           "mode": "single"
-        }
-      },
+      }
+    },
       "pluginVersion": "8.2.2",
       "targets": [
         {
@@ -278,13 +278,13 @@
           "legendFormat": "{{instance}}",
           "refId": "A",
           "step": 10
-        }
-      ],
+      }
+     ],
       "timeFrom": null,
       "timeShift": null,
       "title": "Available size",
       "type": "timeseries"
-    },
+  },
     {
       "datasource": "Prometheus",
       "description": "The capacity size per TiKV instance",
@@ -292,7 +292,7 @@
         "defaults": {
           "color": {
             "mode": "palette-classic"
-          },
+        },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -304,23 +304,23 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-            },
+          },
             "lineInterpolation": "linear",
             "lineWidth": 0,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-            },
+          },
             "showPoints": "never",
             "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "normal"
-            },
+          },
             "thresholdsStyle": {
               "mode": "off"
-            }
-          },
+          }
+        },
           "mappings": [],
           "min": 0,
           "thresholds": {
@@ -329,37 +329,37 @@
               {
                 "color": "green",
                 "value": null
-              },
+            },
               {
                 "color": "red",
                 "value": 80
-              }
-            ]
-          },
-          "unit": "decbytes"
+            }
+           ]
         },
-        "overrides": []
+          "unit": "decbytes"
       },
+        "overrides": []
+    },
       "gridPos": {
         "h": 8,
         "w": 8,
         "x": 16,
         "y": 1
-      },
+    },
       "id": 1707,
       "links": [],
       "options": {
         "legend": {
           "calcs": [
             "lastNotNull"
-          ],
+         ],
           "displayMode": "table",
           "placement": "right"
-        },
+      },
         "tooltip": {
           "mode": "single"
-        }
-      },
+      }
+    },
       "pluginVersion": "8.2.2",
       "targets": [
         {
@@ -371,13 +371,13 @@
           "legendFormat": "{{instance}}",
           "refId": "A",
           "step": 10
-        }
-      ],
+      }
+     ],
       "timeFrom": null,
       "timeShift": null,
       "title": "Capacity size",
       "type": "timeseries"
-    },
+  },
     {
       "datasource": "Prometheus",
       "description": " \tThe CPU usage of each TiKV instance",
@@ -385,7 +385,7 @@
         "defaults": {
           "color": {
             "mode": "palette-classic"
-          },
+        },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -397,23 +397,23 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-            },
+          },
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-            },
+          },
             "showPoints": "never",
             "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
-            },
+          },
             "thresholdsStyle": {
               "mode": "off"
-            }
-          },
+          }
+        },
           "mappings": [],
           "min": 0,
           "thresholds": {
@@ -422,23 +422,23 @@
               {
                 "color": "green",
                 "value": null
-              },
+            },
               {
                 "color": "red",
                 "value": 80
-              }
-            ]
-          },
-          "unit": "percentunit"
+            }
+           ]
         },
-        "overrides": []
+          "unit": "percentunit"
       },
+        "overrides": []
+    },
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 0,
         "y": 9
-      },
+    },
       "id": 1708,
       "links": [],
       "options": {
@@ -446,14 +446,14 @@
           "calcs": [
             "lastNotNull",
             "max"
-          ],
+         ],
           "displayMode": "table",
           "placement": "right"
-        },
+      },
         "tooltip": {
           "mode": "single"
-        }
-      },
+      }
+    },
       "pluginVersion": "8.2.2",
       "targets": [
         {
@@ -465,13 +465,13 @@
           "legendFormat": "{{instance}}",
           "refId": "A",
           "step": 10
-        }
-      ],
+      }
+     ],
       "timeFrom": null,
       "timeShift": null,
       "title": "CPU",
       "type": "timeseries"
-    },
+  },
     {
       "datasource": "Prometheus",
       "description": " \tThe memory usage of each TiKV instance",
@@ -479,7 +479,7 @@
         "defaults": {
           "color": {
             "mode": "palette-classic"
-          },
+        },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -491,23 +491,23 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-            },
+          },
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-            },
+          },
             "showPoints": "never",
             "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
-            },
+          },
             "thresholdsStyle": {
               "mode": "off"
-            }
-          },
+          }
+        },
           "mappings": [],
           "min": 0,
           "thresholds": {
@@ -516,23 +516,23 @@
               {
                 "color": "green",
                 "value": null
-              },
+            },
               {
                 "color": "red",
                 "value": 80
-              }
-            ]
-          },
-          "unit": "bytes"
+            }
+           ]
         },
-        "overrides": []
+          "unit": "bytes"
       },
+        "overrides": []
+    },
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 12,
         "y": 9
-      },
+    },
       "id": 1709,
       "links": [],
       "options": {
@@ -540,14 +540,14 @@
           "calcs": [
             "lastNotNull",
             "max"
-          ],
+         ],
           "displayMode": "table",
           "placement": "right"
-        },
+      },
         "tooltip": {
           "mode": "single"
-        }
-      },
+      }
+    },
       "pluginVersion": "8.2.2",
       "targets": [
         {
@@ -559,13 +559,13 @@
           "legendFormat": "{{instance}}",
           "refId": "A",
           "step": 10
-        }
-      ],
+      }
+     ],
       "timeFrom": null,
       "timeShift": null,
       "title": "Memory",
       "type": "timeseries"
-    },
+  },
     {
       "datasource": "Prometheus",
       "description": " \tThe I/O utilization per TiKV instance",
@@ -573,7 +573,7 @@
         "defaults": {
           "color": {
             "mode": "palette-classic"
-          },
+        },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -585,23 +585,23 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-            },
+          },
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-            },
+          },
             "showPoints": "never",
             "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
-            },
+          },
             "thresholdsStyle": {
               "mode": "off"
-            }
-          },
+          }
+        },
           "mappings": [],
           "min": 0,
           "thresholds": {
@@ -610,23 +610,23 @@
               {
                 "color": "green",
                 "value": null
-              },
+            },
               {
                 "color": "red",
                 "value": 80
-              }
-            ]
-          },
-          "unit": "percentunit"
+            }
+           ]
         },
-        "overrides": []
+          "unit": "percentunit"
       },
+        "overrides": []
+    },
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 0,
         "y": 17
-      },
+    },
       "id": 1710,
       "links": [],
       "options": {
@@ -634,14 +634,14 @@
           "calcs": [
             "lastNotNull",
             "max"
-          ],
+         ],
           "displayMode": "table",
           "placement": "right"
-        },
+      },
         "tooltip": {
           "mode": "single"
-        }
-      },
+      }
+    },
       "pluginVersion": "8.2.2",
       "targets": [
         {
@@ -653,13 +653,13 @@
           "legendFormat": "{{instance}} - {{device}}",
           "refId": "A",
           "step": 10
-        }
-      ],
+      }
+     ],
       "timeFrom": null,
       "timeShift": null,
       "title": "IO utilization",
       "type": "timeseries"
-    },
+  },
     {
       "datasource": "Prometheus",
       "description": "The total bytes of read and write in each TiKV instance",
@@ -667,7 +667,7 @@
         "defaults": {
           "color": {
             "mode": "palette-classic"
-          },
+        },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -679,23 +679,23 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-            },
+          },
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-            },
+          },
             "showPoints": "never",
             "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
-            },
+          },
             "thresholdsStyle": {
               "mode": "off"
-            }
-          },
+          }
+        },
           "mappings": [],
           "min": 0,
           "thresholds": {
@@ -704,23 +704,23 @@
               {
                 "color": "green",
                 "value": null
-              },
+            },
               {
                 "color": "red",
                 "value": 80
-              }
-            ]
-          },
-          "unit": "Bps"
+            }
+           ]
         },
-        "overrides": []
+          "unit": "Bps"
       },
+        "overrides": []
+    },
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 12,
         "y": 17
-      },
+    },
       "id": 1711,
       "links": [],
       "options": {
@@ -728,14 +728,14 @@
           "calcs": [
             "lastNotNull",
             "max"
-          ],
+         ],
           "displayMode": "table",
           "placement": "right"
-        },
+      },
         "tooltip": {
           "mode": "single"
-        }
-      },
+      }
+    },
       "pluginVersion": "8.2.2",
       "targets": [
         {
@@ -748,7 +748,7 @@
           "legendFormat": "{{instance}}-write",
           "refId": "A",
           "step": 10
-        },
+      },
         {
           "exemplar": true,
           "expr": "sum(rate(tikv_engine_flow_bytes{instance=~\"$instance\", db=\"kv\", type=~\"bytes_read|iter_bytes_read\"}[1m])) by (instance)",
@@ -758,13 +758,13 @@
           "intervalFactor": 2,
           "legendFormat": "{{instance}}-read",
           "refId": "B"
-        }
-      ],
+      }
+     ],
       "timeFrom": null,
       "timeShift": null,
       "title": "MBps",
       "type": "timeseries"
-    },
+  },
     {
       "datasource": "Prometheus",
       "description": "The QPS of different kinds of commands in each TiKV instance",
@@ -772,7 +772,7 @@
         "defaults": {
           "color": {
             "mode": "palette-classic"
-          },
+        },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -784,23 +784,23 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-            },
+          },
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-            },
+          },
             "showPoints": "never",
             "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
-            },
+          },
             "thresholdsStyle": {
               "mode": "off"
-            }
-          },
+          }
+        },
           "mappings": [],
           "min": 0,
           "thresholds": {
@@ -809,23 +809,23 @@
               {
                 "color": "green",
                 "value": null
-              },
+            },
               {
                 "color": "red",
                 "value": 80
-              }
-            ]
-          },
-          "unit": "ops"
+            }
+           ]
         },
-        "overrides": []
+          "unit": "ops"
       },
+        "overrides": []
+    },
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 0,
         "y": 25
-      },
+    },
       "id": 1713,
       "links": [],
       "options": {
@@ -833,14 +833,14 @@
           "calcs": [
             "lastNotNull",
             "max"
-          ],
+         ],
           "displayMode": "table",
           "placement": "right"
-        },
+      },
         "tooltip": {
           "mode": "single"
-        }
-      },
+      }
+    },
       "pluginVersion": "8.2.2",
       "targets": [
         {
@@ -853,13 +853,13 @@
           "legendFormat": "{{instance}} - {{type}}",
           "refId": "A",
           "step": 10
-        }
-      ],
+      }
+     ],
       "timeFrom": null,
       "timeShift": null,
       "title": "QPS",
       "type": "timeseries"
-    },
+  },
     {
       "datasource": "Prometheus",
       "description": "The total number of the gRPC message failures",
@@ -867,7 +867,7 @@
         "defaults": {
           "color": {
             "mode": "palette-classic"
-          },
+        },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -879,23 +879,23 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-            },
+          },
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-            },
+          },
             "showPoints": "never",
             "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
-            },
+          },
             "thresholdsStyle": {
               "mode": "off"
-            }
-          },
+          }
+        },
           "mappings": [],
           "min": 0,
           "thresholds": {
@@ -904,23 +904,23 @@
               {
                 "color": "green",
                 "value": null
-              },
+            },
               {
                 "color": "red",
                 "value": 80
-              }
-            ]
-          },
-          "unit": "ops"
+            }
+           ]
         },
-        "overrides": []
+          "unit": "ops"
       },
+        "overrides": []
+    },
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 12,
         "y": 25
-      },
+    },
       "id": 1712,
       "links": [],
       "options": {
@@ -928,14 +928,14 @@
           "calcs": [
             "lastNotNull",
             "max"
-          ],
+         ],
           "displayMode": "table",
           "placement": "right"
-        },
+      },
         "tooltip": {
           "mode": "single"
-        }
-      },
+      }
+    },
       "pluginVersion": "8.2.2",
       "targets": [
         {
@@ -948,7 +948,7 @@
           "legendFormat": "{{instance}}-grpc-msg-fail",
           "refId": "A",
           "step": 10
-        },
+      },
         {
           "exemplar": true,
           "expr": "sum(delta(tikv_pd_heartbeat_message_total{instance=~\"$instance\", type=\"noop\"}[1m])) by (instance) < 1",
@@ -957,7 +957,7 @@
           "intervalFactor": 2,
           "legendFormat": "{{instance}}-pd-heartbeat",
           "refId": "B"
-        },
+      },
         {
           "exemplar": true,
           "expr": "sum(rate(tikv_critical_error_total{instance=~\"$instance\"}[1m])) by (instance, type)",
@@ -966,13 +966,13 @@
           "intervalFactor": 2,
           "legendFormat": "{{instance}}-{{type}}",
           "refId": "C"
-        }
-      ],
+      }
+     ],
       "timeFrom": null,
       "timeShift": null,
       "title": "Errps",
       "type": "timeseries"
-    },
+  },
     {
       "datasource": "Prometheus",
       "description": "The number of leaders per TiKV instance",
@@ -980,7 +980,7 @@
         "defaults": {
           "color": {
             "mode": "palette-classic"
-          },
+        },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -992,23 +992,23 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-            },
+          },
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-            },
+          },
             "showPoints": "never",
             "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
-            },
+          },
             "thresholdsStyle": {
               "mode": "off"
-            }
-          },
+          }
+        },
           "mappings": [],
           "min": 0,
           "thresholds": {
@@ -1017,36 +1017,36 @@
               {
                 "color": "green",
                 "value": null
-              },
+            },
               {
                 "color": "red",
                 "value": 80
-              }
-            ]
-          },
-          "unit": "short"
+            }
+           ]
         },
+          "unit": "short"
+      },
         "overrides": [
           {
             "matcher": {
               "id": "byName",
               "options": "total"
-            },
+          },
             "properties": [
               {
                 "id": "custom.lineWidth",
                 "value": 0
-              }
-            ]
-          }
-        ]
-      },
+            }
+           ]
+        }
+       ]
+    },
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 0,
         "y": 33
-      },
+    },
       "id": 1715,
       "links": [],
       "options": {
@@ -1054,14 +1054,14 @@
           "calcs": [
             "lastNotNull",
             "max"
-          ],
+         ],
           "displayMode": "table",
           "placement": "right"
-        },
+      },
         "tooltip": {
           "mode": "single"
-        }
-      },
+      }
+    },
       "pluginVersion": "8.2.2",
       "targets": [
         {
@@ -1074,7 +1074,7 @@
           "legendFormat": "{{instance}}",
           "refId": "A",
           "step": 10
-        },
+      },
         {
           "exemplar": true,
           "expr": "delta(tikv_raftstore_region_count{instance=~\"$instance\", type=\"leader\"}[30s]) < -10",
@@ -1084,13 +1084,13 @@
           "intervalFactor": 2,
           "legendFormat": "",
           "refId": "B"
-        }
-      ],
+      }
+     ],
       "timeFrom": null,
       "timeShift": null,
       "title": "Leader",
       "type": "timeseries"
-    },
+  },
     {
       "datasource": "Prometheus",
       "description": " \tThe number of Regions on each TiKV instance",
@@ -1098,7 +1098,7 @@
         "defaults": {
           "color": {
             "mode": "palette-classic"
-          },
+        },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -1110,23 +1110,23 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-            },
+          },
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-            },
+          },
             "showPoints": "never",
             "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
-            },
+          },
             "thresholdsStyle": {
               "mode": "off"
-            }
-          },
+          }
+        },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -1134,23 +1134,23 @@
               {
                 "color": "green",
                 "value": null
-              },
+            },
               {
                 "color": "red",
                 "value": 80
-              }
-            ]
-          },
-          "unit": "short"
+            }
+           ]
         },
-        "overrides": []
+          "unit": "short"
       },
+        "overrides": []
+    },
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 12,
         "y": 33
-      },
+    },
       "id": 1714,
       "links": [],
       "options": {
@@ -1158,14 +1158,14 @@
           "calcs": [
             "lastNotNull",
             "max"
-          ],
+         ],
           "displayMode": "table",
           "placement": "right"
-        },
+      },
         "tooltip": {
           "mode": "single"
-        }
-      },
+      }
+    },
       "pluginVersion": "8.2.2",
       "targets": [
         {
@@ -1177,32 +1177,32 @@
           "legendFormat": "{{instance}}",
           "refId": "A",
           "step": 10
-        }
-      ],
+      }
+     ],
       "timeFrom": null,
       "timeShift": null,
       "title": "Region",
       "type": "timeseries"
-    },
+  },
     {
       "collapsed": false,
       "datasource": null,
       "fieldConfig": {
         "defaults": {},
         "overrides": []
-      },
+    },
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
         "y": 41
-      },
+    },
       "id": 2743,
       "panels": [],
       "repeat": null,
       "title": "Errors",
       "type": "row"
-    },
+  },
     {
       "alert": {
         "conditions": [
@@ -1210,39 +1210,39 @@
             "evaluator": {
               "params": [
                 0
-              ],
+             ],
               "type": "gt"
-            },
+          },
             "operator": {
               "type": "and"
-            },
+          },
             "query": {
               "params": [
                 "A",
                 "5m",
                 "now"
-              ]
-            },
+             ]
+          },
             "reducer": {
               "params": [],
               "type": "avg"
-            },
+          },
             "type": "query"
-          }
-        ],
+        }
+       ],
         "executionErrorState": "alerting",
         "frequency": "60s",
         "handler": 1,
         "name": "Critical error alert",
         "noDataState": "no_data",
         "notifications": []
-      },
+    },
       "datasource": "Prometheus",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
-          },
+        },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -1254,23 +1254,23 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-            },
+          },
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-            },
+          },
             "showPoints": "never",
             "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
-            },
+          },
             "thresholdsStyle": {
               "mode": "line+area"
-            }
-          },
+          }
+        },
           "mappings": [],
           "min": 0,
           "thresholds": {
@@ -1279,23 +1279,23 @@
               {
                 "color": "transparent",
                 "value": null
-              },
+            },
               {
                 "color": "red",
                 "value": 0
-              }
-            ]
-          },
-          "unit": "short"
+            }
+           ]
         },
-        "overrides": []
+          "unit": "short"
       },
+        "overrides": []
+    },
       "gridPos": {
         "h": 7,
         "w": 24,
         "x": 0,
         "y": 42
-      },
+    },
       "id": 2741,
       "links": [],
       "options": {
@@ -1303,11 +1303,11 @@
           "calcs": [],
           "displayMode": "list",
           "placement": "bottom"
-        },
+      },
         "tooltip": {
           "mode": "single"
-        }
-      },
+      }
+    },
       "pluginVersion": "8.2.2",
       "targets": [
         {
@@ -1318,13 +1318,13 @@
           "intervalFactor": 2,
           "legendFormat": "{{instance}}-{{type}}",
           "refId": "A"
-        }
-      ],
+      }
+     ],
       "timeFrom": null,
       "timeShift": null,
       "title": "Critical error",
       "type": "timeseries"
-    },
+  },
     {
       "datasource": "Prometheus",
       "description": "It contains some kinds of events such as write stall, channel full, scheduler busy, and coprocessor full, which will make the TiKV instance unavailable temporarily.",
@@ -1332,7 +1332,7 @@
         "defaults": {
           "color": {
             "mode": "palette-classic"
-          },
+        },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -1344,23 +1344,23 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-            },
+          },
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-            },
+          },
             "showPoints": "never",
             "spanNulls": false,
             "stacking": {
               "group": "A",
               "mode": "none"
-            },
+          },
             "thresholdsStyle": {
               "mode": "off"
-            }
-          },
+          }
+        },
           "mappings": [],
           "min": 0,
           "thresholds": {
@@ -1369,23 +1369,23 @@
               {
                 "color": "green",
                 "value": null
-              },
+            },
               {
                 "color": "red",
                 "value": 80
-              }
-            ]
-          },
-          "unit": "none"
+            }
+           ]
         },
-        "overrides": []
+          "unit": "none"
       },
+        "overrides": []
+    },
       "gridPos": {
         "h": 7,
         "w": 12,
         "x": 0,
         "y": 49
-      },
+    },
       "id": 1584,
       "links": [],
       "options": {
@@ -1393,14 +1393,14 @@
           "calcs": [
             "lastNotNull",
             "max"
-          ],
+         ],
           "displayMode": "table",
           "placement": "right"
-        },
+      },
         "tooltip": {
           "mode": "single"
-        }
-      },
+      }
+    },
       "pluginVersion": "8.2.2",
       "targets": [
         {
@@ -1413,7 +1413,7 @@
           "metric": "",
           "refId": "A",
           "step": 4
-        },
+      },
         {
           "expr": "sum(rate(tikv_channel_full_total{instance=~\"$instance\"}[1m])) by (instance, type)",
           "format": "time_series",
@@ -1422,7 +1422,7 @@
           "metric": "",
           "refId": "B",
           "step": 4
-        },
+      },
         {
           "expr": "sum(rate(tikv_coprocessor_request_error{instance=~\"$instance\", type='full'}[1m])) by (instance)",
           "format": "time_series",
@@ -1431,20 +1431,20 @@
           "metric": "",
           "refId": "C",
           "step": 4
-        },
+      },
         {
           "expr": "avg(tikv_engine_write_stall{instance=~\"$instance\", type=\"write_stall_percentile99\"}) by (instance)",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "stall-{{instance}}",
           "refId": "D"
-        }
-      ],
+      }
+     ],
       "timeFrom": null,
       "timeShift": null,
       "title": "Server is busy",
       "type": "timeseries"
-    },
+  },
     {
       "alert": {
         "conditions": [
@@ -1452,26 +1452,26 @@
             "evaluator": {
               "params": [
                 0
-              ],
+             ],
               "type": "gt"
-            },
+          },
             "operator": {
               "type": "and"
-            },
+          },
             "query": {
               "params": [
                 "A",
                 "10s",
                 "now"
-              ]
-            },
+             ]
+          },
             "reducer": {
               "params": [],
               "type": "max"
-            },
+          },
             "type": "query"
-          }
-        ],
+        }
+       ],
         "executionErrorState": "alerting",
         "frequency": "10s",
         "handler": 1,
@@ -1479,14 +1479,14 @@
         "name": "server report failures alert",
         "noDataState": "ok",
         "notifications": []
-      },
+    },
       "datasource": "Prometheus",
       "description": "The total number of reporting failure messages",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
-          },
+        },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -1498,23 +1498,23 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-            },
+          },
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-            },
+          },
             "showPoints": "never",
             "spanNulls": false,
             "stacking": {
               "group": "A",
               "mode": "none"
-            },
+          },
             "thresholdsStyle": {
               "mode": "line+area"
-            }
-          },
+          }
+        },
           "mappings": [],
           "min": 0,
           "thresholds": {
@@ -1523,23 +1523,23 @@
               {
                 "color": "transparent",
                 "value": null
-              },
+            },
               {
                 "color": "red",
                 "value": 0
-              }
-            ]
-          },
-          "unit": "short"
+            }
+           ]
         },
-        "overrides": []
+          "unit": "short"
       },
+        "overrides": []
+    },
       "gridPos": {
         "h": 7,
         "w": 12,
         "x": 12,
         "y": 49
-      },
+    },
       "id": 18,
       "links": [],
       "options": {
@@ -1547,14 +1547,14 @@
           "calcs": [
             "lastNotNull",
             "max"
-          ],
+         ],
           "displayMode": "table",
           "placement": "right"
-        },
+      },
         "tooltip": {
           "mode": "single"
-        }
-      },
+      }
+    },
       "pluginVersion": "8.2.2",
       "targets": [
         {
@@ -1567,13 +1567,13 @@
           "metric": "tikv_server_raft_store_msg_total",
           "refId": "A",
           "step": 10
-        }
-      ],
+      }
+     ],
       "timeFrom": null,
       "timeShift": null,
       "title": "Server report failures",
       "type": "timeseries"
-    },
+  },
     {
       "datasource": "Prometheus",
       "description": "The number of Raftstore errors per type on each TiKV instance",
@@ -1581,7 +1581,7 @@
         "defaults": {
           "color": {
             "mode": "palette-classic"
-          },
+        },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -1593,23 +1593,23 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-            },
+          },
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-            },
+          },
             "showPoints": "never",
             "spanNulls": false,
             "stacking": {
               "group": "A",
               "mode": "none"
-            },
+          },
             "thresholdsStyle": {
               "mode": "off"
-            }
-          },
+          }
+        },
           "mappings": [],
           "min": 0,
           "thresholds": {
@@ -1618,23 +1618,23 @@
               {
                 "color": "green",
                 "value": null
-              },
+            },
               {
                 "color": "red",
                 "value": 80
-              }
-            ]
-          },
-          "unit": "none"
+            }
+           ]
         },
-        "overrides": []
+          "unit": "none"
       },
+        "overrides": []
+    },
       "gridPos": {
         "h": 7,
         "w": 12,
         "x": 0,
         "y": 56
-      },
+    },
       "id": 1718,
       "links": [],
       "options": {
@@ -1642,14 +1642,14 @@
           "calcs": [
             "lastNotNull",
             "max"
-          ],
+         ],
           "displayMode": "table",
           "placement": "right"
-        },
+      },
         "tooltip": {
           "mode": "single"
-        }
-      },
+      }
+    },
       "pluginVersion": "8.2.2",
       "targets": [
         {
@@ -1662,13 +1662,13 @@
           "metric": "",
           "refId": "A",
           "step": 4
-        }
-      ],
+      }
+     ],
       "timeFrom": null,
       "timeShift": null,
       "title": "Raftstore error",
       "type": "timeseries"
-    },
+  },
     {
       "datasource": "Prometheus",
       "description": "The number of different scheduler errors on each TiKV instance",
@@ -1676,7 +1676,7 @@
         "defaults": {
           "color": {
             "mode": "palette-classic"
-          },
+        },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -1688,23 +1688,23 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-            },
+          },
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-            },
+          },
             "showPoints": "never",
             "spanNulls": false,
             "stacking": {
               "group": "A",
               "mode": "none"
-            },
+          },
             "thresholdsStyle": {
               "mode": "off"
-            }
-          },
+          }
+        },
           "mappings": [],
           "min": 0,
           "thresholds": {
@@ -1713,23 +1713,23 @@
               {
                 "color": "green",
                 "value": null
-              },
+            },
               {
                 "color": "red",
                 "value": 80
-              }
-            ]
-          },
-          "unit": "none"
+            }
+           ]
         },
-        "overrides": []
+          "unit": "none"
       },
+        "overrides": []
+    },
       "gridPos": {
         "h": 7,
         "w": 12,
         "x": 12,
         "y": 56
-      },
+    },
       "id": 1719,
       "links": [],
       "options": {
@@ -1737,14 +1737,14 @@
           "calcs": [
             "lastNotNull",
             "max"
-          ],
+         ],
           "displayMode": "table",
           "placement": "right"
-        },
+      },
         "tooltip": {
           "mode": "single"
-        }
-      },
+      }
+    },
       "pluginVersion": "8.2.2",
       "targets": [
         {
@@ -1757,13 +1757,13 @@
           "metric": "",
           "refId": "A",
           "step": 4
-        }
-      ],
+      }
+     ],
       "timeFrom": null,
       "timeShift": null,
       "title": "Scheduler error",
       "type": "timeseries"
-    },
+  },
     {
       "datasource": "Prometheus",
       "description": "The number of different coprocessor errors on each TiKV instance",
@@ -1771,7 +1771,7 @@
         "defaults": {
           "color": {
             "mode": "palette-classic"
-          },
+        },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -1783,23 +1783,23 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-            },
+          },
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-            },
+          },
             "showPoints": "never",
             "spanNulls": false,
             "stacking": {
               "group": "A",
               "mode": "none"
-            },
+          },
             "thresholdsStyle": {
               "mode": "off"
-            }
-          },
+          }
+        },
           "mappings": [],
           "min": 0,
           "thresholds": {
@@ -1808,23 +1808,23 @@
               {
                 "color": "green",
                 "value": null
-              },
+            },
               {
                 "color": "red",
                 "value": 80
-              }
-            ]
-          },
-          "unit": "none"
+            }
+           ]
         },
-        "overrides": []
+          "unit": "none"
       },
+        "overrides": []
+    },
       "gridPos": {
         "h": 7,
         "w": 12,
         "x": 0,
         "y": 63
-      },
+    },
       "id": 1720,
       "links": [],
       "options": {
@@ -1832,14 +1832,14 @@
           "calcs": [
             "lastNotNull",
             "max"
-          ],
+         ],
           "displayMode": "table",
           "placement": "right"
-        },
+      },
         "tooltip": {
           "mode": "single"
-        }
-      },
+      }
+    },
       "pluginVersion": "8.2.2",
       "targets": [
         {
@@ -1852,13 +1852,13 @@
           "metric": "",
           "refId": "A",
           "step": 4
-        }
-      ],
+      }
+     ],
       "timeFrom": null,
       "timeShift": null,
       "title": "Coprocessor error",
       "type": "timeseries"
-    },
+  },
     {
       "datasource": "Prometheus",
       "description": "The number of different gRPC message errors on each TiKV instance",
@@ -1866,7 +1866,7 @@
         "defaults": {
           "color": {
             "mode": "palette-classic"
-          },
+        },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -1878,23 +1878,23 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-            },
+          },
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-            },
+          },
             "showPoints": "never",
             "spanNulls": false,
             "stacking": {
               "group": "A",
               "mode": "none"
-            },
+          },
             "thresholdsStyle": {
               "mode": "off"
-            }
-          },
+          }
+         },
           "mappings": [],
           "min": 0,
           "thresholds": {
@@ -1903,23 +1903,23 @@
               {
                 "color": "green",
                 "value": null
-              },
+             },
               {
                 "color": "red",
                 "value": 80
-              }
-            ]
-          },
+             }
+           ]
+         },
           "unit": "none"
-        },
+       },
         "overrides": []
-      },
+     },
       "gridPos": {
         "h": 7,
         "w": 12,
         "x": 12,
         "y": 63
-      },
+     },
       "id": 1721,
       "links": [],
       "options": {
@@ -1927,14 +1927,14 @@
           "calcs": [
             "lastNotNull",
             "max"
-          ],
+         ],
           "displayMode": "table",
           "placement": "right"
-        },
+       },
         "tooltip": {
           "mode": "single"
-        }
-      },
+       }
+     },
       "pluginVersion": "8.2.2",
       "targets": [
         {
@@ -1947,13 +1947,13 @@
           "metric": "",
           "refId": "A",
           "step": 4
-        }
-      ],
+       }
+     ],
       "timeFrom": null,
       "timeShift": null,
       "title": "gRPC message error",
       "type": "timeseries"
-    },
+   },
     {
       "datasource": "Prometheus",
       "description": "The count of dropped leader in each TiKV instance",
@@ -1961,7 +1961,7 @@
         "defaults": {
           "color": {
             "mode": "palette-classic"
-          },
+         },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -1973,23 +1973,23 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-            },
+           },
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-            },
+           },
             "showPoints": "never",
             "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
-            },
+           },
             "thresholdsStyle": {
               "mode": "off"
-            }
-          },
+           }
+         },
           "mappings": [],
           "min": 0,
           "thresholds": {
@@ -1998,36 +1998,36 @@
               {
                 "color": "green",
                 "value": null
-              },
+             },
               {
                 "color": "red",
                 "value": 80
-              }
-            ]
-          },
+             }
+           ]
+         },
           "unit": "short"
-        },
+       },
         "overrides": [
           {
             "matcher": {
               "id": "byName",
               "options": "total"
-            },
+           },
             "properties": [
               {
                 "id": "custom.lineWidth",
                 "value": 0
-              }
-            ]
-          }
-        ]
-      },
+             }
+           ]
+         }
+       ]
+     },
       "gridPos": {
         "h": 7,
         "w": 12,
         "x": 0,
         "y": 70
-      },
+     },
       "id": 1722,
       "links": [],
       "options": {
@@ -2035,14 +2035,14 @@
           "calcs": [
             "lastNotNull",
             "max"
-          ],
+         ],
           "displayMode": "table",
           "placement": "right"
-        },
+       },
         "tooltip": {
           "mode": "single"
-        }
-      },
+       }
+     },
       "pluginVersion": "8.2.2",
       "targets": [
         {
@@ -2054,13 +2054,13 @@
           "intervalFactor": 2,
           "legendFormat": "{{instance}}",
           "refId": "B"
-        }
-      ],
+       }
+     ],
       "timeFrom": null,
       "timeShift": null,
       "title": "Leader drop",
       "type": "timeseries"
-    },
+   },
     {
       "datasource": "Prometheus",
       "description": "The count of missing leaders per TiKV instance",
@@ -2068,7 +2068,7 @@
         "defaults": {
           "color": {
             "mode": "palette-classic"
-          },
+         },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -2080,23 +2080,23 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-            },
+           },
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-            },
+           },
             "showPoints": "never",
             "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
-            },
+           },
             "thresholdsStyle": {
               "mode": "off"
-            }
-          },
+           }
+         },
           "mappings": [],
           "min": 0,
           "thresholds": {
@@ -2105,36 +2105,36 @@
               {
                 "color": "green",
                 "value": null
-              },
+             },
               {
                 "color": "red",
                 "value": 80
-              }
-            ]
-          },
+             }
+           ]
+         },
           "unit": "short"
-        },
+       },
         "overrides": [
           {
             "matcher": {
               "id": "byName",
               "options": "total"
-            },
+           },
             "properties": [
               {
                 "id": "custom.lineWidth",
                 "value": 0
-              }
-            ]
-          }
-        ]
-      },
+             }
+           ]
+         }
+       ]
+     },
       "gridPos": {
         "h": 7,
         "w": 12,
         "x": 12,
         "y": 70
-      },
+     },
       "id": 1723,
       "links": [],
       "options": {
@@ -2142,14 +2142,14 @@
           "calcs": [
             "lastNotNull",
             "max"
-          ],
+         ],
           "displayMode": "table",
           "placement": "right"
-        },
+       },
         "tooltip": {
           "mode": "single"
-        }
-      },
+       }
+     },
       "pluginVersion": "8.2.2",
       "targets": [
         {
@@ -2161,32 +2161,32 @@
           "intervalFactor": 2,
           "legendFormat": "{{instance}}",
           "refId": "B"
-        }
-      ],
+       }
+     ],
       "timeFrom": null,
       "timeShift": null,
       "title": "Leader missing",
       "type": "timeseries"
-    },
+   },
     {
       "collapsed": false,
       "datasource": null,
       "fieldConfig": {
         "defaults": {},
         "overrides": []
-      },
+     },
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
         "y": 77
-      },
+     },
       "id": 2744,
       "panels": [],
       "repeat": null,
       "title": "Server",
       "type": "row"
-    },
+   },
     {
       "datasource": "Prometheus",
       "description": " \tThe total size of each column family",
@@ -2194,7 +2194,7 @@
         "defaults": {
           "color": {
             "mode": "palette-classic"
-          },
+         },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -2206,23 +2206,23 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-            },
+           },
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-            },
+           },
             "showPoints": "never",
             "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "normal"
-            },
+           },
             "thresholdsStyle": {
               "mode": "off"
-            }
-          },
+           }
+         },
           "mappings": [],
           "min": 0,
           "thresholds": {
@@ -2231,23 +2231,23 @@
               {
                 "color": "green",
                 "value": null
-              },
+             },
               {
                 "color": "red",
                 "value": 80
-              }
-            ]
-          },
+             }
+           ]
+         },
           "unit": "decbytes"
-        },
+       },
         "overrides": []
-      },
+     },
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 0,
         "y": 78
-      },
+     },
       "id": 33,
       "links": [],
       "options": {
@@ -2255,14 +2255,14 @@
           "calcs": [
             "lastNotNull",
             "max"
-          ],
+         ],
           "displayMode": "table",
           "placement": "right"
-        },
+       },
         "tooltip": {
           "mode": "single"
-        }
-      },
+       }
+     },
       "pluginVersion": "8.2.2",
       "targets": [
         {
@@ -2274,13 +2274,13 @@
           "legendFormat": "{{type}}",
           "refId": "A",
           "step": 10
-        }
-      ],
+       }
+     ],
       "timeFrom": null,
       "timeShift": null,
       "title": "CF size",
       "type": "timeseries"
-    },
+   },
     {
       "datasource": "Prometheus",
       "description": "The storage size per TiKV instance",
@@ -2288,7 +2288,7 @@
         "defaults": {
           "color": {
             "mode": "palette-classic"
-          },
+         },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -2300,23 +2300,23 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-            },
+           },
             "lineInterpolation": "linear",
             "lineWidth": 0,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-            },
+           },
             "showPoints": "never",
             "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "normal"
-            },
+           },
             "thresholdsStyle": {
               "mode": "off"
-            }
-          },
+           }
+         },
           "mappings": [],
           "min": 0,
           "thresholds": {
@@ -2325,23 +2325,23 @@
               {
                 "color": "green",
                 "value": null
-              },
+             },
               {
                 "color": "red",
                 "value": 80
-              }
-            ]
-          },
+             }
+           ]
+         },
           "unit": "decbytes"
-        },
+       },
         "overrides": []
-      },
+     },
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 12,
         "y": 78
-      },
+     },
       "id": 1705,
       "links": [],
       "options": {
@@ -2349,14 +2349,14 @@
           "calcs": [
             "lastNotNull",
             "max"
-          ],
+         ],
           "displayMode": "table",
           "placement": "right"
-        },
+       },
         "tooltip": {
           "mode": "single"
-        }
-      },
+       }
+     },
       "pluginVersion": "8.2.2",
       "targets": [
         {
@@ -2368,13 +2368,13 @@
           "legendFormat": "{{instance}}",
           "refId": "A",
           "step": 10
-        }
-      ],
+       }
+     ],
       "timeFrom": null,
       "timeShift": null,
       "title": "Store size",
       "type": "timeseries"
-    },
+   },
     {
       "alert": {
         "conditions": [
@@ -2382,12 +2382,12 @@
             "evaluator": {
               "params": [
                 0
-              ],
+             ],
               "type": "gt"
-            },
+           },
             "operator": {
               "type": "and"
-            },
+           },
             "query": {
               "datasourceId": 1,
               "model": {
@@ -2397,20 +2397,20 @@
                 "metric": "",
                 "refId": "A",
                 "step": 10
-              },
+             },
               "params": [
                 "A",
                 "10s",
                 "now"
-              ]
-            },
+             ]
+           },
             "reducer": {
               "params": [],
               "type": "avg"
-            },
+           },
             "type": "query"
-          }
-        ],
+         }
+       ],
         "executionErrorState": "alerting",
         "frequency": "10s",
         "handler": 1,
@@ -2418,14 +2418,14 @@
         "name": "TiKV channel full alert",
         "noDataState": "ok",
         "notifications": []
-      },
+     },
       "datasource": "Prometheus",
       "description": "The total number of channel full errors on each TiKV instance",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
-          },
+         },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -2437,23 +2437,23 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-            },
+           },
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-            },
+           },
             "showPoints": "never",
             "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
-            },
+           },
             "thresholdsStyle": {
               "mode": "line+area"
-            }
-          },
+           }
+         },
           "mappings": [],
           "min": 0,
           "thresholds": {
@@ -2462,23 +2462,23 @@
               {
                 "color": "transparent",
                 "value": null
-              },
+             },
               {
                 "color": "red",
                 "value": 0
-              }
-            ]
-          },
+             }
+           ]
+         },
           "unit": "short"
-        },
+       },
         "overrides": []
-      },
+     },
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 0,
         "y": 86
-      },
+     },
       "id": 22,
       "links": [],
       "options": {
@@ -2486,14 +2486,14 @@
           "calcs": [
             "lastNotNull",
             "max"
-          ],
+         ],
           "displayMode": "table",
           "placement": "right"
-        },
+       },
         "tooltip": {
           "mode": "single"
-        }
-      },
+       }
+     },
       "pluginVersion": "8.2.2",
       "targets": [
         {
@@ -2506,13 +2506,13 @@
           "metric": "",
           "refId": "A",
           "step": 10
-        }
-      ],
+       }
+     ],
       "timeFrom": null,
       "timeShift": null,
       "title": "Channel full",
       "type": "timeseries"
-    },
+   },
     {
       "alert": {
         "conditions": [
@@ -2520,40 +2520,40 @@
             "evaluator": {
               "params": [
                 1073741824
-              ],
+             ],
               "type": "gt"
-            },
+           },
             "operator": {
               "type": "and"
-            },
+           },
             "query": {
               "params": [
                 "B",
                 "1m",
                 "now"
-              ]
-            },
+             ]
+           },
             "reducer": {
               "params": [],
               "type": "avg"
-            },
+           },
             "type": "query"
-          }
-        ],
+         }
+       ],
         "executionErrorState": "alerting",
         "frequency": "60s",
         "handler": 1,
         "name": "approximate region size alert",
         "noDataState": "no_data",
         "notifications": []
-      },
+     },
       "datasource": "Prometheus",
       "description": "The approximate Region size",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
-          },
+         },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -2565,23 +2565,23 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-            },
+           },
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-            },
+           },
             "showPoints": "never",
             "spanNulls": false,
             "stacking": {
               "group": "A",
               "mode": "none"
-            },
+           },
             "thresholdsStyle": {
               "mode": "line+area"
-            }
-          },
+           }
+         },
           "mappings": [],
           "min": 0,
           "thresholds": {
@@ -2590,23 +2590,23 @@
               {
                 "color": "transparent",
                 "value": null
-              },
+             },
               {
                 "color": "red",
                 "value": 1073741824
-              }
-            ]
-          },
+             }
+           ]
+         },
           "unit": "bytes"
-        },
+       },
         "overrides": []
-      },
+     },
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 12,
         "y": 86
-      },
+     },
       "id": 1481,
       "links": [],
       "options": {
@@ -2614,14 +2614,14 @@
           "calcs": [
             "lastNotNull",
             "max"
-          ],
+         ],
           "displayMode": "table",
           "placement": "right"
-        },
+       },
         "tooltip": {
           "mode": "single"
-        }
-      },
+       }
+     },
       "pluginVersion": "8.2.2",
       "targets": [
         {
@@ -2634,7 +2634,7 @@
           "metric": "",
           "refId": "B",
           "step": 10
-        },
+       },
         {
           "exemplar": true,
           "expr": "histogram_quantile(0.95, sum(rate(tikv_raftstore_region_size_bucket{instance=~\"$instance\"}[1m])) by (le))",
@@ -2645,7 +2645,7 @@
           "metric": "",
           "refId": "C",
           "step": 10
-        },
+       },
         {
           "exemplar": true,
           "expr": "sum(rate(tikv_raftstore_region_size_sum{instance=~\"$instance\"}[1m])) / sum(rate(tikv_raftstore_region_size_count{instance=~\"$instance\"}[1m])) ",
@@ -2656,32 +2656,32 @@
           "metric": "",
           "refId": "D",
           "step": 10
-        }
-      ],
+       }
+     ],
       "timeFrom": null,
       "timeShift": null,
       "title": "Approximate Region size",
       "type": "timeseries"
-    },
+   },
     {
       "collapsed": false,
       "datasource": null,
       "fieldConfig": {
         "defaults": {},
         "overrides": []
-      },
+     },
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
         "y": 94
-      },
+     },
       "id": 2745,
       "panels": [],
       "repeat": null,
       "title": "gRPC",
       "type": "row"
-    },
+   },
     {
       "datasource": "Prometheus",
       "description": "The count of different kinds of gRPC message",
@@ -2689,7 +2689,7 @@
         "defaults": {
           "color": {
             "mode": "palette-classic"
-          },
+         },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -2701,23 +2701,23 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-            },
+           },
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-            },
+           },
             "showPoints": "never",
             "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
-            },
+           },
             "thresholdsStyle": {
               "mode": "off"
-            }
-          },
+           }
+         },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -2725,23 +2725,23 @@
               {
                 "color": "green",
                 "value": null
-              },
+             },
               {
                 "color": "red",
                 "value": 80
-              }
-            ]
-          },
+             }
+           ]
+         },
           "unit": "ops"
-        },
+       },
         "overrides": []
-      },
+     },
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 0,
         "y": 95
-      },
+     },
       "id": 95,
       "links": [],
       "options": {
@@ -2749,14 +2749,14 @@
           "calcs": [
             "lastNotNull",
             "max"
-          ],
+         ],
           "displayMode": "table",
           "placement": "right"
-        },
+       },
         "tooltip": {
           "mode": "single"
-        }
-      },
+       }
+     },
       "pluginVersion": "8.2.2",
       "targets": [
         {
@@ -2769,13 +2769,13 @@
           "metric": "tikv_grpc_msg_duration_seconds_bucket",
           "refId": "A",
           "step": 10
-        }
-      ],
+       }
+     ],
       "timeFrom": null,
       "timeShift": null,
       "title": "gRPC message count",
       "type": "timeseries"
-    },
+   },
     {
       "datasource": "Prometheus",
       "description": "The count of different kinds of gRPC message which is failed",
@@ -2783,7 +2783,7 @@
         "defaults": {
           "color": {
             "mode": "palette-classic"
-          },
+         },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -2795,23 +2795,23 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-            },
+           },
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-            },
+           },
             "showPoints": "never",
             "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
-            },
+           },
             "thresholdsStyle": {
               "mode": "off"
-            }
-          },
+           }
+         },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -2819,23 +2819,23 @@
               {
                 "color": "green",
                 "value": null
-              },
+             },
               {
                 "color": "red",
                 "value": 80
-              }
-            ]
-          },
+             }
+           ]
+         },
           "unit": "ops"
-        },
+       },
         "overrides": []
-      },
+     },
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 12,
         "y": 95
-      },
+     },
       "id": 107,
       "links": [],
       "options": {
@@ -2843,14 +2843,14 @@
           "calcs": [
             "lastNotNull",
             "max"
-          ],
+         ],
           "displayMode": "table",
           "placement": "right"
-        },
+       },
         "tooltip": {
           "mode": "single"
-        }
-      },
+       }
+     },
       "pluginVersion": "8.2.2",
       "targets": [
         {
@@ -2861,13 +2861,13 @@
           "metric": "tikv_grpc_msg_fail_total",
           "refId": "A",
           "step": 10
-        }
-      ],
+       }
+     ],
       "timeFrom": null,
       "timeShift": null,
       "title": "gRPC message failed",
       "type": "timeseries"
-    },
+   },
     {
       "datasource": "Prometheus",
       "description": "The gRPC message duration per message type (P99)",
@@ -2875,7 +2875,7 @@
         "defaults": {
           "color": {
             "mode": "palette-classic"
-          },
+         },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -2887,24 +2887,24 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-            },
+           },
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "log": 10,
               "type": "log"
-            },
+           },
             "showPoints": "never",
             "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
-            },
+           },
             "thresholdsStyle": {
               "mode": "off"
-            }
-          },
+           }
+         },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -2912,23 +2912,23 @@
               {
                 "color": "green",
                 "value": null
-              },
+             },
               {
                 "color": "red",
                 "value": 80
-              }
-            ]
-          },
+             }
+           ]
+         },
           "unit": "s"
-        },
+       },
         "overrides": []
-      },
+     },
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 0,
         "y": 103
-      },
+     },
       "id": 98,
       "links": [],
       "options": {
@@ -2936,14 +2936,14 @@
           "calcs": [
             "lastNotNull",
             "max"
-          ],
+         ],
           "displayMode": "table",
           "placement": "right"
-        },
+       },
         "tooltip": {
           "mode": "single"
-        }
-      },
+       }
+     },
       "pluginVersion": "8.2.2",
       "targets": [
         {
@@ -2954,20 +2954,20 @@
           "legendFormat": "{{type}}",
           "refId": "A",
           "step": 10
-        }
-      ],
+       }
+     ],
       "timeFrom": null,
       "timeShift": null,
       "title": "99% gRPC messge duration",
       "type": "timeseries"
-    },
+   },
     {
       "datasource": "Prometheus",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
-          },
+         },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -2979,24 +2979,24 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-            },
+           },
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "log": 2,
               "type": "log"
-            },
+           },
             "showPoints": "never",
             "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
-            },
+           },
             "thresholdsStyle": {
               "mode": "off"
-            }
-          },
+           }
+         },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -3004,23 +3004,23 @@
               {
                 "color": "green",
                 "value": null
-              },
+             },
               {
                 "color": "red",
                 "value": 80
-              }
-            ]
-          },
+             }
+           ]
+         },
           "unit": "s"
-        },
+       },
         "overrides": []
-      },
+     },
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 12,
         "y": 103
-      },
+     },
       "id": 2532,
       "links": [],
       "options": {
@@ -3028,14 +3028,14 @@
           "calcs": [
             "lastNotNull",
             "max"
-          ],
+         ],
           "displayMode": "table",
           "placement": "right"
-        },
+       },
         "tooltip": {
           "mode": "single"
-        }
-      },
+       }
+     },
       "pluginVersion": "8.2.2",
       "targets": [
         {
@@ -3046,32 +3046,32 @@
           "legendFormat": "{{type}}",
           "refId": "A",
           "step": 10
-        }
-      ],
+       }
+     ],
       "timeFrom": null,
       "timeShift": null,
       "title": "Average gRPC messge duration",
       "type": "timeseries"
-    },
+   },
     {
       "collapsed": false,
       "datasource": null,
       "fieldConfig": {
         "defaults": {},
         "overrides": []
-      },
+     },
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
         "y": 111
-      },
+     },
       "id": 2746,
       "panels": [],
       "repeat": null,
       "title": "Thread CPU",
       "type": "row"
-    },
+   },
     {
       "alert": {
         "conditions": [
@@ -3079,12 +3079,12 @@
             "evaluator": {
               "params": [
                 1.7
-              ],
+             ],
               "type": "gt"
-            },
+           },
             "operator": {
               "type": "and"
-            },
+           },
             "query": {
               "datasourceId": 1,
               "model": {
@@ -3094,20 +3094,20 @@
                 "metric": "tikv_thread_cpu_seconds_total",
                 "refId": "A",
                 "step": 20
-              },
+             },
               "params": [
                 "A",
                 "1m",
                 "now"
-              ]
-            },
+             ]
+           },
             "reducer": {
               "params": [],
               "type": "max"
-            },
+           },
             "type": "query"
-          }
-        ],
+         }
+       ],
         "executionErrorState": "alerting",
         "for": "0m",
         "frequency": "60s",
@@ -3116,14 +3116,14 @@
         "name": "TiKV raft store CPU alert",
         "noDataState": "ok",
         "notifications": []
-      },
+     },
       "datasource": "Prometheus",
       "description": "The CPU utilization of raftstore thread",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
-          },
+         },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -3135,23 +3135,23 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-            },
+           },
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-            },
+           },
             "showPoints": "never",
             "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
-            },
+           },
             "thresholdsStyle": {
               "mode": "line+area"
-            }
-          },
+           }
+         },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -3159,23 +3159,23 @@
               {
                 "color": "transparent",
                 "value": null
-              },
+             },
               {
                 "color": "red",
                 "value": 1.7
-              }
-            ]
-          },
+             }
+           ]
+         },
           "unit": "percentunit"
-        },
+       },
         "overrides": []
-      },
+     },
       "gridPos": {
         "h": 7,
         "w": 12,
         "x": 0,
         "y": 112
-      },
+     },
       "id": 61,
       "links": [],
       "options": {
@@ -3183,14 +3183,14 @@
           "calcs": [
             "lastNotNull",
             "max"
-          ],
+         ],
           "displayMode": "table",
           "placement": "right"
-        },
+       },
         "tooltip": {
           "mode": "single"
-        }
-      },
+       }
+     },
       "pluginVersion": "8.2.2",
       "targets": [
         {
@@ -3203,13 +3203,13 @@
           "metric": "tikv_thread_cpu_seconds_total",
           "refId": "A",
           "step": 4
-        }
-      ],
+       }
+     ],
       "timeFrom": null,
       "timeShift": null,
       "title": "Raft store CPU",
       "type": "timeseries"
-    },
+   },
     {
       "alert": {
         "conditions": [
@@ -3217,26 +3217,26 @@
             "evaluator": {
               "params": [
                 1.8
-              ],
+             ],
               "type": "gt"
-            },
+           },
             "operator": {
               "type": "and"
-            },
+           },
             "query": {
               "params": [
                 "A",
                 "1m",
                 "now"
-              ]
-            },
+             ]
+           },
             "reducer": {
               "params": [],
               "type": "max"
-            },
+           },
             "type": "query"
-          }
-        ],
+         }
+       ],
         "executionErrorState": "alerting",
         "for": "0m",
         "frequency": "1m",
@@ -3245,14 +3245,14 @@
         "name": "TiKV async apply CPU alert",
         "noDataState": "ok",
         "notifications": []
-      },
+     },
       "datasource": "Prometheus",
       "description": "The CPU utilization of async apply",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
-          },
+         },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -3264,23 +3264,23 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-            },
+           },
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-            },
+           },
             "showPoints": "never",
             "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
-            },
+           },
             "thresholdsStyle": {
               "mode": "line+area"
-            }
-          },
+           }
+         },
           "mappings": [],
           "min": 0,
           "thresholds": {
@@ -3289,23 +3289,23 @@
               {
                 "color": "transparent",
                 "value": null
-              },
+             },
               {
                 "color": "red",
                 "value": 1.8
-              }
-            ]
-          },
+             }
+           ]
+         },
           "unit": "percentunit"
-        },
+       },
         "overrides": []
-      },
+     },
       "gridPos": {
         "h": 7,
         "w": 12,
         "x": 12,
         "y": 112
-      },
+     },
       "id": 79,
       "links": [],
       "options": {
@@ -3313,14 +3313,14 @@
           "calcs": [
             "lastNotNull",
             "max"
-          ],
+         ],
           "displayMode": "table",
           "placement": "right"
-        },
+       },
         "tooltip": {
           "mode": "single"
-        }
-      },
+       }
+     },
       "pluginVersion": "8.2.2",
       "targets": [
         {
@@ -3333,13 +3333,13 @@
           "metric": "tikv_thread_cpu_seconds_total",
           "refId": "A",
           "step": 4
-        }
-      ],
+       }
+     ],
       "timeFrom": null,
       "timeShift": null,
       "title": "Async apply CPU",
       "type": "timeseries"
-    },
+   },
     {
       "alert": {
         "conditions": [
@@ -3347,26 +3347,26 @@
             "evaluator": {
               "params": [
                 3.6
-              ],
+             ],
               "type": "gt"
-            },
+           },
             "operator": {
               "type": "and"
-            },
+           },
             "query": {
               "params": [
                 "A",
                 "1m",
                 "now"
-              ]
-            },
+             ]
+           },
             "reducer": {
               "params": [],
               "type": "max"
-            },
+           },
             "type": "query"
-          }
-        ],
+         }
+       ],
         "executionErrorState": "alerting",
         "for": "0m",
         "frequency": "1m",
@@ -3375,14 +3375,14 @@
         "name": "TiKV scheduler worker CPU alert",
         "noDataState": "ok",
         "notifications": []
-      },
+     },
       "datasource": "Prometheus",
       "description": "The CPU utilization of scheduler worker",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
-          },
+         },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -3394,23 +3394,23 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-            },
+           },
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-            },
+           },
             "showPoints": "never",
             "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
-            },
+           },
             "thresholdsStyle": {
               "mode": "line+area"
-            }
-          },
+           }
+         },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -3418,23 +3418,23 @@
               {
                 "color": "transparent",
                 "value": null
-              },
+             },
               {
                 "color": "red",
                 "value": 3.6
-              }
-            ]
-          },
+             }
+           ]
+         },
           "unit": "percentunit"
-        },
+       },
         "overrides": []
-      },
+     },
       "gridPos": {
         "h": 7,
         "w": 12,
         "x": 0,
         "y": 119
-      },
+     },
       "id": 64,
       "links": [],
       "options": {
@@ -3442,14 +3442,14 @@
           "calcs": [
             "lastNotNull",
             "max"
-          ],
+         ],
           "displayMode": "table",
           "placement": "right"
-        },
+       },
         "tooltip": {
           "mode": "single"
-        }
-      },
+       }
+     },
       "pluginVersion": "8.2.2",
       "targets": [
         {
@@ -3462,13 +3462,13 @@
           "metric": "tikv_thread_cpu_seconds_total",
           "refId": "A",
           "step": 4
-        }
-      ],
+       }
+     ],
       "timeFrom": null,
       "timeShift": null,
       "title": "Scheduler worker CPU",
       "type": "timeseries"
-    },
+   },
     {
       "alert": {
         "conditions": [
@@ -3476,26 +3476,26 @@
             "evaluator": {
               "params": [
                 3.6
-              ],
+             ],
               "type": "gt"
-            },
+           },
             "operator": {
               "type": "and"
-            },
+           },
             "query": {
               "params": [
                 "A",
                 "1m",
                 "now"
-              ]
-            },
+             ]
+           },
             "reducer": {
               "params": [],
               "type": "max"
-            },
+           },
             "type": "query"
-          }
-        ],
+         }
+       ],
         "executionErrorState": "alerting",
         "for": "0m",
         "frequency": "1m",
@@ -3504,14 +3504,14 @@
         "name": "TiKV gRPC poll CPU alert",
         "noDataState": "ok",
         "notifications": []
-      },
+     },
       "datasource": "Prometheus",
       "description": "The CPU utilization of gRPC",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
-          },
+         },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -3523,23 +3523,23 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-            },
+           },
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-            },
+           },
             "showPoints": "never",
             "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
-            },
+           },
             "thresholdsStyle": {
               "mode": "line+area"
-            }
-          },
+           }
+         },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -3547,23 +3547,23 @@
               {
                 "color": "transparent",
                 "value": null
-              },
+             },
               {
                 "color": "red",
                 "value": 3.6
-              }
-            ]
-          },
+             }
+           ]
+         },
           "unit": "percentunit"
-        },
+       },
         "overrides": []
-      },
+     },
       "gridPos": {
         "h": 7,
         "w": 12,
         "x": 12,
         "y": 119
-      },
+     },
       "id": 105,
       "links": [],
       "options": {
@@ -3571,14 +3571,14 @@
           "calcs": [
             "lastNotNull",
             "max"
-          ],
+         ],
           "displayMode": "table",
           "placement": "right"
-        },
+       },
         "tooltip": {
           "mode": "single"
-        }
-      },
+       }
+     },
       "pluginVersion": "8.2.2",
       "targets": [
         {
@@ -3590,13 +3590,13 @@
           "legendFormat": "{{instance}}",
           "refId": "A",
           "step": 4
-        }
-      ],
+       }
+     ],
       "timeFrom": null,
       "timeShift": null,
       "title": "gRPC poll CPU",
       "type": "timeseries"
-    },
+   },
     {
       "alert": {
         "conditions": [
@@ -3604,26 +3604,26 @@
             "evaluator": {
               "params": [
                 7.2
-              ],
+             ],
               "type": "gt"
-            },
+           },
             "operator": {
               "type": "and"
-            },
+           },
             "query": {
               "params": [
                 "A",
                 "1m",
                 "now"
-              ]
-            },
+             ]
+           },
             "reducer": {
               "params": [],
               "type": "max"
-            },
+           },
             "type": "query"
-          }
-        ],
+         }
+       ],
         "executionErrorState": "alerting",
         "for": "",
         "frequency": "1m",
@@ -3632,14 +3632,14 @@
         "name": "TiKV Coprocessor CPU alert",
         "noDataState": "ok",
         "notifications": []
-      },
+     },
       "datasource": "Prometheus",
       "description": "The CPU utilization of coprocessor",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
-          },
+         },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -3651,23 +3651,23 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-            },
+           },
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-            },
+           },
             "showPoints": "never",
             "spanNulls": false,
             "stacking": {
               "group": "A",
               "mode": "none"
-            },
+           },
             "thresholdsStyle": {
               "mode": "line+area"
-            }
-          },
+           }
+         },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -3675,23 +3675,23 @@
               {
                 "color": "transparent",
                 "value": null
-              },
+             },
               {
                 "color": "red",
                 "value": 7.2
-              }
-            ]
-          },
+             }
+           ]
+         },
           "unit": "percentunit"
-        },
+       },
         "overrides": []
-      },
+     },
       "gridPos": {
         "h": 7,
         "w": 12,
         "x": 0,
         "y": 126
-      },
+     },
       "id": 78,
       "links": [],
       "options": {
@@ -3699,14 +3699,14 @@
           "calcs": [
             "lastNotNull",
             "max"
-          ],
+         ],
           "displayMode": "table",
           "placement": "right"
-        },
+       },
         "tooltip": {
           "mode": "single"
-        }
-      },
+       }
+     },
       "pluginVersion": "8.2.2",
       "targets": [
         {
@@ -3718,7 +3718,7 @@
           "legendFormat": "{{instance}} - normal",
           "refId": "A",
           "step": 4
-        },
+       },
         {
           "exemplar": true,
           "expr": "sum(rate(tikv_thread_cpu_seconds_total{instance=~\"$instance\", name=~\"cop_high.*\"}[1m])) by (instance)",
@@ -3728,7 +3728,7 @@
           "legendFormat": "{{instance}} - high",
           "refId": "B",
           "step": 4
-        },
+       },
         {
           "exemplar": true,
           "expr": "sum(rate(tikv_thread_cpu_seconds_total{instance=~\"$instance\", name=~\"cop_low.*\"}[1m])) by (instance)",
@@ -3738,13 +3738,13 @@
           "legendFormat": "{{instance}} - low",
           "refId": "C",
           "step": 4
-        }
-      ],
+       }
+     ],
       "timeFrom": null,
       "timeShift": null,
       "title": "Coprocessor CPU",
       "type": "timeseries"
-    },
+   },
     {
       "alert": {
         "conditions": [
@@ -3752,26 +3752,26 @@
             "evaluator": {
               "params": [
                 3.6
-              ],
+             ],
               "type": "gt"
-            },
+           },
             "operator": {
               "type": "and"
-            },
+           },
             "query": {
               "params": [
                 "A",
                 "1m",
                 "now"
-              ]
-            },
+             ]
+           },
             "reducer": {
               "params": [],
               "type": "max"
-            },
+           },
             "type": "query"
-          }
-        ],
+         }
+       ],
         "executionErrorState": "alerting",
         "for": "",
         "frequency": "1m",
@@ -3780,14 +3780,14 @@
         "name": "TiKV Storage ReadPool CPU alert",
         "noDataState": "ok",
         "notifications": []
-      },
+     },
       "datasource": "Prometheus",
       "description": "The CPU utilization of readpool",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
-          },
+         },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -3799,23 +3799,23 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-            },
+           },
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-            },
+           },
             "showPoints": "never",
             "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
-            },
+           },
             "thresholdsStyle": {
               "mode": "line+area"
-            }
-          },
+           }
+         },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -3823,23 +3823,23 @@
               {
                 "color": "transparent",
                 "value": null
-              },
+             },
               {
                 "color": "red",
                 "value": 3.6
-              }
-            ]
-          },
+             }
+           ]
+         },
           "unit": "percentunit"
-        },
+       },
         "overrides": []
-      },
+     },
       "gridPos": {
         "h": 7,
         "w": 12,
         "x": 12,
         "y": 126
-      },
+     },
       "id": 1908,
       "links": [],
       "options": {
@@ -3847,14 +3847,14 @@
           "calcs": [
             "lastNotNull",
             "max"
-          ],
+         ],
           "displayMode": "table",
           "placement": "right"
-        },
+       },
         "tooltip": {
           "mode": "single"
-        }
-      },
+       }
+     },
       "pluginVersion": "8.2.2",
       "targets": [
         {
@@ -3867,7 +3867,7 @@
           "metric": "tikv_thread_cpu_seconds_total",
           "refId": "A",
           "step": 4
-        },
+       },
         {
           "exemplar": true,
           "expr": "sum(rate(tikv_thread_cpu_seconds_total{instance=~\"$instance\", name=~\"store_read_high.*\"}[1m])) by (instance)",
@@ -3878,7 +3878,7 @@
           "metric": "tikv_thread_cpu_seconds_total",
           "refId": "B",
           "step": 4
-        },
+       },
         {
           "exemplar": true,
           "expr": "sum(rate(tikv_thread_cpu_seconds_total{instance=~\"$instance\", name=~\"store_read_low.*\"}[1m])) by (instance)",
@@ -3889,13 +3889,13 @@
           "metric": "tikv_thread_cpu_seconds_total",
           "refId": "C",
           "step": 4
-        }
-      ],
+       }
+     ],
       "timeFrom": null,
       "timeShift": null,
       "title": "Storage ReadPool CPU",
       "type": "timeseries"
-    },
+   },
     {
       "datasource": "Prometheus",
       "description": " \tThe CPU utilization of split check",
@@ -3903,7 +3903,7 @@
         "defaults": {
           "color": {
             "mode": "palette-classic"
-          },
+         },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -3915,23 +3915,23 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-            },
+           },
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-            },
+           },
             "showPoints": "never",
             "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
-            },
+           },
             "thresholdsStyle": {
               "mode": "off"
-            }
-          },
+           }
+         },
           "mappings": [],
           "min": 0,
           "thresholds": {
@@ -3940,23 +3940,23 @@
               {
                 "color": "green",
                 "value": null
-              },
+             },
               {
                 "color": "red",
                 "value": 80
-              }
-            ]
-          },
+             }
+           ]
+         },
           "unit": "percentunit"
-        },
+       },
         "overrides": []
-      },
+     },
       "gridPos": {
         "h": 7,
         "w": 12,
         "x": 0,
         "y": 133
-      },
+     },
       "id": 68,
       "links": [],
       "options": {
@@ -3964,14 +3964,14 @@
           "calcs": [
             "lastNotNull",
             "max"
-          ],
+         ],
           "displayMode": "table",
           "placement": "right"
-        },
+       },
         "tooltip": {
           "mode": "single"
-        }
-      },
+       }
+     },
       "pluginVersion": "8.2.2",
       "targets": [
         {
@@ -3984,13 +3984,13 @@
           "metric": "tikv_thread_cpu_seconds_total",
           "refId": "A",
           "step": 4
-        }
-      ],
+       }
+     ],
       "timeFrom": null,
       "timeShift": null,
       "title": "Split check CPU",
       "type": "timeseries"
-    },
+   },
     {
       "datasource": "Prometheus",
       "description": "The CPU utilization of RocksDB",
@@ -3998,7 +3998,7 @@
         "defaults": {
           "color": {
             "mode": "palette-classic"
-          },
+         },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -4010,23 +4010,23 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-            },
+           },
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-            },
+           },
             "showPoints": "never",
             "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
-            },
+           },
             "thresholdsStyle": {
               "mode": "line+area"
-            }
-          },
+           }
+         },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -4034,27 +4034,27 @@
               {
                 "color": "transparent",
                 "value": null
-              },
+             },
               {
                 "color": "orange",
                 "value": 1
-              },
+             },
               {
                 "color": "red",
                 "value": 4
-              }
-            ]
-          },
+             }
+           ]
+         },
           "unit": "percentunit"
-        },
+       },
         "overrides": []
-      },
+     },
       "gridPos": {
         "h": 7,
         "w": 12,
         "x": 12,
         "y": 133
-      },
+     },
       "id": 69,
       "links": [],
       "options": {
@@ -4062,14 +4062,14 @@
           "calcs": [
             "lastNotNull",
             "max"
-          ],
+         ],
           "displayMode": "table",
           "placement": "right"
-        },
+       },
         "tooltip": {
           "mode": "single"
-        }
-      },
+       }
+     },
       "pluginVersion": "8.2.2",
       "targets": [
         {
@@ -4082,20 +4082,20 @@
           "metric": "tikv_thread_cpu_seconds_total",
           "refId": "A",
           "step": 4
-        }
-      ],
+       }
+     ],
       "timeFrom": null,
       "timeShift": null,
       "title": "RocksDB CPU",
       "type": "timeseries"
-    },
+   },
     {
       "datasource": "Prometheus",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
-          },
+         },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -4107,23 +4107,23 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-            },
+           },
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-            },
+           },
             "showPoints": "never",
             "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
-            },
+           },
             "thresholdsStyle": {
               "mode": "off"
-            }
-          },
+           }
+         },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -4131,23 +4131,23 @@
               {
                 "color": "green",
                 "value": null
-              },
+             },
               {
                 "color": "red",
                 "value": 80
-              }
-            ]
-          },
+             }
+           ]
+         },
           "unit": "percentunit"
-        },
+       },
         "overrides": []
-      },
+     },
       "gridPos": {
         "h": 7,
         "w": 12,
         "x": 0,
         "y": 140
-      },
+     },
       "id": 2531,
       "links": [],
       "options": {
@@ -4155,14 +4155,14 @@
           "calcs": [
             "lastNotNull",
             "max"
-          ],
+         ],
           "displayMode": "table",
           "placement": "right"
-        },
+       },
         "tooltip": {
           "mode": "single"
-        }
-      },
+       }
+     },
       "pluginVersion": "8.2.2",
       "targets": [
         {
@@ -4174,13 +4174,13 @@
           "legendFormat": "{{instance}}",
           "refId": "A",
           "step": 4
-        }
-      ],
+       }
+     ],
       "timeFrom": null,
       "timeShift": null,
       "title": "GC worker CPU",
       "type": "timeseries"
-    },
+   },
     {
       "datasource": "Prometheus",
       "description": "The CPU utilization of snapshot worker",
@@ -4188,7 +4188,7 @@
         "defaults": {
           "color": {
             "mode": "palette-classic"
-          },
+         },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -4200,23 +4200,23 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-            },
+           },
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-            },
+           },
             "showPoints": "never",
             "spanNulls": false,
             "stacking": {
               "group": "A",
               "mode": "none"
-            },
+           },
             "thresholdsStyle": {
               "mode": "off"
-            }
-          },
+           }
+         },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -4224,23 +4224,23 @@
               {
                 "color": "green",
                 "value": null
-              },
+             },
               {
                 "color": "red",
                 "value": 80
-              }
-            ]
-          },
+             }
+           ]
+         },
           "unit": "percentunit"
-        },
+       },
         "overrides": []
-      },
+     },
       "gridPos": {
         "h": 7,
         "w": 12,
         "x": 12,
         "y": 140
-      },
+     },
       "id": 67,
       "links": [],
       "options": {
@@ -4248,14 +4248,14 @@
           "calcs": [
             "lastNotNull",
             "max"
-          ],
+         ],
           "displayMode": "table",
           "placement": "right"
-        },
+       },
         "tooltip": {
           "mode": "single"
-        }
-      },
+       }
+     },
       "pluginVersion": "8.2.2",
       "targets": [
         {
@@ -4268,32 +4268,32 @@
           "metric": "tikv_thread_cpu_seconds_total",
           "refId": "A",
           "step": 4
-        }
-      ],
+       }
+     ],
       "timeFrom": null,
       "timeShift": null,
       "title": "Snapshot worker CPU",
       "type": "timeseries"
-    },
+   },
     {
       "collapsed": false,
       "datasource": null,
       "fieldConfig": {
         "defaults": {},
         "overrides": []
-      },
+     },
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
         "y": 147
-      },
+     },
       "id": 2747,
       "panels": [],
       "repeat": null,
       "title": "PD",
       "type": "row"
-    },
+   },
     {
       "datasource": "Prometheus",
       "description": " \tThe count of requests that TiKV sends to PD",
@@ -4301,7 +4301,7 @@
         "defaults": {
           "color": {
             "mode": "palette-classic"
-          },
+         },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -4313,23 +4313,23 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-            },
+           },
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-            },
+           },
             "showPoints": "never",
             "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
-            },
+           },
             "thresholdsStyle": {
               "mode": "off"
-            }
-          },
+           }
+         },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -4337,23 +4337,23 @@
               {
                 "color": "green",
                 "value": null
-              },
+             },
               {
                 "color": "red",
                 "value": 80
-              }
-            ]
-          },
+             }
+           ]
+         },
           "unit": "short"
-        },
+       },
         "overrides": []
-      },
+     },
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 0,
         "y": 148
-      },
+     },
       "id": 1069,
       "links": [],
       "options": {
@@ -4361,14 +4361,14 @@
           "calcs": [
             "lastNotNull",
             "max"
-          ],
+         ],
           "displayMode": "table",
           "placement": "right"
-        },
+       },
         "tooltip": {
           "mode": "single"
-        }
-      },
+       }
+     },
       "pluginVersion": "8.2.2",
       "targets": [
         {
@@ -4377,16 +4377,16 @@
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "{{ type }}",
+          "legendFormat": "{{type}}",
           "refId": "A",
           "step": 4
-        }
-      ],
+       }
+     ],
       "timeFrom": null,
       "timeShift": null,
       "title": "PD requests",
       "type": "timeseries"
-    },
+   },
     {
       "datasource": "Prometheus",
       "description": "The time consumed by requests that TiKV sends to PD",
@@ -4394,7 +4394,7 @@
         "defaults": {
           "color": {
             "mode": "palette-classic"
-          },
+         },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -4406,23 +4406,23 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-            },
+           },
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-            },
+           },
             "showPoints": "never",
             "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
-            },
+           },
             "thresholdsStyle": {
               "mode": "off"
-            }
-          },
+           }
+         },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -4430,23 +4430,23 @@
               {
                 "color": "green",
                 "value": null
-              },
+             },
               {
                 "color": "red",
                 "value": 80
-              }
-            ]
-          },
+             }
+           ]
+         },
           "unit": "s"
-        },
+       },
         "overrides": []
-      },
+     },
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 12,
         "y": 148
-      },
+     },
       "id": 1070,
       "links": [],
       "options": {
@@ -4454,14 +4454,14 @@
           "calcs": [
             "lastNotNull",
             "max"
-          ],
+         ],
           "displayMode": "table",
           "placement": "right"
-        },
+       },
         "tooltip": {
           "mode": "single"
-        }
-      },
+       }
+     },
       "pluginVersion": "8.2.2",
       "targets": [
         {
@@ -4470,16 +4470,16 @@
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "{{ type }}",
+          "legendFormat": "{{type}}",
           "refId": "A",
           "step": 4
-        }
-      ],
+       }
+     ],
       "timeFrom": null,
       "timeShift": null,
       "title": "PD request duration (average)",
       "type": "timeseries"
-    },
+   },
     {
       "datasource": "Prometheus",
       "description": "The total number of PD heartbeat messages",
@@ -4487,7 +4487,7 @@
         "defaults": {
           "color": {
             "mode": "palette-classic"
-          },
+         },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -4499,23 +4499,23 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-            },
+           },
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-            },
+           },
             "showPoints": "never",
             "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
-            },
+           },
             "thresholdsStyle": {
               "mode": "off"
-            }
-          },
+           }
+         },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -4523,23 +4523,23 @@
               {
                 "color": "green",
                 "value": null
-              },
+             },
               {
                 "color": "red",
                 "value": 80
-              }
-            ]
-          },
+             }
+           ]
+         },
           "unit": "ops"
-        },
+       },
         "overrides": []
-      },
+     },
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 0,
         "y": 156
-      },
+     },
       "id": 1215,
       "links": [],
       "options": {
@@ -4547,14 +4547,14 @@
           "calcs": [
             "lastNotNull",
             "max"
-          ],
+         ],
           "displayMode": "table",
           "placement": "right"
-        },
+       },
         "tooltip": {
           "mode": "single"
-        }
-      },
+       }
+     },
       "pluginVersion": "8.2.2",
       "targets": [
         {
@@ -4563,16 +4563,16 @@
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "{{ type }}",
+          "legendFormat": "{{type}}",
           "refId": "A",
           "step": 4
-        }
-      ],
+       }
+     ],
       "timeFrom": null,
       "timeShift": null,
       "title": "PD heartbeats",
       "type": "timeseries"
-    },
+   },
     {
       "datasource": "Prometheus",
       "description": "The total number of peers validated by the PD worker",
@@ -4580,7 +4580,7 @@
         "defaults": {
           "color": {
             "mode": "palette-classic"
-          },
+         },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -4592,23 +4592,23 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-            },
+           },
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-            },
+           },
             "showPoints": "never",
             "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
-            },
+           },
             "thresholdsStyle": {
               "mode": "off"
-            }
-          },
+           }
+         },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -4616,23 +4616,23 @@
               {
                 "color": "green",
                 "value": null
-              },
+             },
               {
                 "color": "red",
                 "value": 80
-              }
-            ]
-          },
+             }
+           ]
+         },
           "unit": "ops"
-        },
+       },
         "overrides": []
-      },
+     },
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 12,
         "y": 156
-      },
+     },
       "id": 1396,
       "links": [],
       "options": {
@@ -4640,14 +4640,14 @@
           "calcs": [
             "lastNotNull",
             "max"
-          ],
+         ],
           "displayMode": "table",
           "placement": "right"
-        },
+       },
         "tooltip": {
           "mode": "single"
-        }
-      },
+       }
+     },
       "pluginVersion": "8.2.2",
       "targets": [
         {
@@ -4656,18 +4656,18 @@
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "{{ type }}",
+          "legendFormat": "{{type}}",
           "metric": "",
           "refId": "A",
           "step": 4
-        }
-      ],
+       }
+     ],
       "timeFrom": null,
       "timeShift": null,
       "title": "PD validate peers",
       "type": "timeseries"
-    }
-  ],
+   }
+ ],
   "refresh": "1m",
   "schemaVersion": 31,
   "style": "dark",
@@ -4681,12 +4681,12 @@
           "text": [
             "kv",
             "raft"
-          ],
+         ],
           "value": [
             "kv",
             "raft"
-          ]
-        },
+         ]
+       },
         "datasource": "Prometheus",
         "definition": "label_values(tikv_engine_block_cache_size_bytes, db)",
         "description": null,
@@ -4700,7 +4700,7 @@
         "query": {
           "query": "label_values(tikv_engine_block_cache_size_bytes, db)",
           "refId": "StandardVariableQuery"
-        },
+       },
         "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
@@ -4709,18 +4709,18 @@
         "tagsQuery": "",
         "type": "query",
         "useTags": false
-      },
+     },
       {
         "allValue": null,
         "current": {
           "selected": true,
           "text": [
             "raw_get_key_ttl"
-          ],
+         ],
           "value": [
             "raw_get_key_ttl"
-          ]
-        },
+         ]
+       },
         "datasource": "Prometheus",
         "definition": "label_values(tikv_storage_command_total, type)",
         "description": null,
@@ -4734,7 +4734,7 @@
         "query": {
           "query": "label_values(tikv_storage_command_total, type)",
           "refId": "StandardVariableQuery"
-        },
+       },
         "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
@@ -4743,14 +4743,14 @@
         "tagsQuery": "",
         "type": "query",
         "useTags": false
-      },
+     },
       {
         "allValue": ".*",
         "current": {
           "selected": true,
           "text": "All",
           "value": "$__all"
-        },
+       },
         "datasource": "Prometheus",
         "definition": "label_values(tikv_engine_size_bytes, instance)",
         "description": null,
@@ -4764,7 +4764,7 @@
         "query": {
           "query": "label_values(tikv_engine_size_bytes, instance)",
           "refId": "StandardVariableQuery"
-        },
+       },
         "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
@@ -4773,13 +4773,13 @@
         "tagsQuery": "",
         "type": "query",
         "useTags": false
-      }
-    ]
-  },
+     }
+   ]
+ },
   "time": {
     "from": "now-5m",
     "to": "now"
-  },
+ },
   "timepicker": {
     "refresh_intervals": [
       "5s",
@@ -4792,7 +4792,7 @@
       "1h",
       "2h",
       "1d"
-    ],
+   ],
     "time_options": [
       "5m",
       "15m",
@@ -4803,8 +4803,8 @@
       "2d",
       "7d",
       "30d"
-    ]
-  },
+   ]
+ },
   "timezone": "browser",
   "title": "TiKV-Summary",
   "uid": "X7VQmEzZk2",

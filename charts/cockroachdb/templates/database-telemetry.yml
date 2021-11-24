@@ -4,7 +4,7 @@ kind: Template
 metadata:
   name: cockroachmon
   labels:
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 spec:
   entries:
     "server":
@@ -61,9 +61,8 @@ metadata:
   name: grafana-cockroach-runtime
   labels:
     dashboard: cockroach
-data:   {{ (.Files.Glob "dashboards/cockroach_runtime.json").AsConfig | nindent 2 }}
+data: {{(.Files.Glob "dashboards/cockroach_runtime.json").AsConfig | nindent 2}}
 
----
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -71,7 +70,7 @@ metadata:
   name: grafana-cockroach-overview
   labels:
     dashboard: cockroach
-data:   {{ (.Files.Glob "dashboards/cockroach_overview.json").AsConfig | nindent 2 }}
+data: {{(.Files.Glob "dashboards/cockroach_overview.json").AsConfig | nindent 2}}
 
 
 ---
@@ -81,4 +80,4 @@ metadata:
   name: grafana-cockroach-storage
   labels:
     dashboard: cockroach
-data:   {{ (.Files.Glob "dashboards/cockroach_storage.json").AsConfig | nindent 2 }}
+data: {{(.Files.Glob "dashboards/cockroach_storage.json").AsConfig | nindent 2}}

@@ -5,7 +5,7 @@ kind: Template
 metadata:
   name: fio
   labels:
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 spec:
   entries:
     "benchmark":

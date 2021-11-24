@@ -1,3 +1,4 @@
+---
 apiVersion: v2
 name: platform
 description: Frisbee is a Kubernetes platform for exploring, testing, and benchmarking distributed applications.
@@ -12,20 +13,14 @@ description: Frisbee is a Kubernetes platform for exploring, testing, and benchm
 # pipeline. Library charts do not define any templates and therefore cannot be deployed.
 type: application
 
-# This is the chart version. This version number should be incremented each time you make changes
-# to the chart and its templates, including the app version.
-# Versions are expected to follow Semantic Versioning (https://semver.org/)
-version: 0.0.0
-
 # This is the version number of the application being deployed. This version number should be
 # incremented each time you make changes to the application. Versions are not expected to
 # follow Semantic Versioning. They should reflect the version the application is using.
 # It is recommended to use it with quotes.
 appVersion: "1.16.0"
 
-
-# The dependency commands operate on that file, making it easy to synchronize between the desired dependencies 
-# and the actual dependencies stored in the 'charts/' directory.
+# The dependency commands operate on that file, making it easy to synchronize between
+# the desired dependencies and the actual dependencies stored in the 'charts/' directory.
 dependencies:
   - condition: chaos-mesh.enabled
     name: chaos-mesh
@@ -35,3 +30,9 @@ dependencies:
     name: openebs
     version: "3.0.0"
     repository: https://openebs.github.io/charts
+
+
+# This is the chart version. This version number should be incremented each time you make changes
+# to the chart and its templates, including the app version.
+# Versions are expected to follow Semantic Versioning (https://semver.org/)
+version: 0.0.0

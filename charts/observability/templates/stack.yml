@@ -4,7 +4,7 @@ kind: Template
 metadata:
   name: telemetry
   labels:
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 spec:
   entries:
     prometheus:
@@ -68,7 +68,7 @@ kind: ConfigMap
 metadata:
   name: prometheus-config
   labels:
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 data:
   prometheus.yml: |
     # For all the confusing Prometheus configuration and
@@ -141,15 +141,13 @@ data:
           #   regex: __meta_kubernetes_service_label_(.+)
 
 
-
-
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: grafana-config
   labels:
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 data:
   dashboard.yml: |
     apiVersion: 1

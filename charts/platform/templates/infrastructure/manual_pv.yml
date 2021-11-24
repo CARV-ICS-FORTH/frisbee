@@ -1,11 +1,11 @@
-{{- if .Values.manual.enabled }}
 ---
+{{- if .Values.manual.enabled}}
 apiVersion: v1
 kind: PersistentVolume
 metadata:
   name: scratch
   labels:
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 spec:
   capacity:
     storage: 256Gi
@@ -18,22 +18,19 @@ spec:
   storageClassName: ssd-storage           # Use StorageClass to delay volume binding until Pod scheduling.
   local:
     path: /mnt/local
-  nodeAffinity: # Tie volume to specific nodes and schedule Pods into it.
+  # Tie volume to specific nodes and schedule Pods into it.
+  nodeAffinity:
     required:
       nodeSelectorTerms:
         - matchExpressions:
+            # List of nodes that can server this volume
             - key: kubernetes.io/hostname
               operator: In
-              values: # List of nodes that can server this volume
+              values:
                 - jedi5.cluster.ics.forth.gr
                 - jedi6.cluster.ics.forth.gr
                 - jedi7.cluster.ics.forth.gr
                 - jedi8.cluster.ics.forth.gr
-
-
-
-
-
 
 
 #
@@ -60,7 +57,7 @@ kind: StorageClass
 metadata:
   name: nvme-storage
   labels:
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 provisioner: "kubernetes.io/no-provisioner"
 volumeBindingMode: "WaitForFirstConsumer"
 
@@ -70,7 +67,7 @@ kind: StorageClass
 metadata:
   name: ssd-storage
   labels:
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 provisioner: "kubernetes.io/no-provisioner"
 volumeBindingMode: "WaitForFirstConsumer"
 
@@ -80,7 +77,7 @@ kind: StorageClass
 metadata:
   name: shared-ssd-storage
   labels:
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 provisioner: "kubernetes.io/no-provisioner"
 volumeBindingMode: "WaitForFirstConsumer"
 
@@ -90,11 +87,8 @@ kind: StorageClass
 metadata:
   name: backup-storage
   labels:
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 provisioner: "kubernetes.io/no-provisioner"
 volumeBindingMode: "WaitForFirstConsumer"
 
-
-
-
-  {{- end }}
+{{- end}}
