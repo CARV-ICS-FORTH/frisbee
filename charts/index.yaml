@@ -3,6 +3,17 @@ entries:
   cockroachdb:
   - apiVersion: v2
     appVersion: 1.16.0
+    created: "2021-11-24T12:57:19.74773239Z"
+    description: CockroachDB is a distributed database with standard SQL for cloud
+      applications.
+    digest: f5c66a5cd520cd2aeaf1d64f5ed1303420c2c809b34c0f0b3685969763c0d861
+    name: cockroachdb
+    type: application
+    urls:
+    - https://CARV-ICS-FORTH.github.io/frisbee/charts/cockroachdb-1.0.7.tgz
+    version: 1.0.7
+  - apiVersion: v2
+    appVersion: 1.16.0
     created: "2021-11-23T18:19:21.703403999Z"
     description: CockroachDB is a distributed database with standard SQL for cloud
       applications.
@@ -26,6 +37,16 @@ entries:
   fio:
   - apiVersion: v2
     appVersion: 1.16.0
+    created: "2021-11-24T12:57:19.748503825Z"
+    description: fio is a benchmark to test I/O performance.
+    digest: fb58fddb44ecfac69bac20b5b77356a6f2b180e50e4e7b712dcc368e74d8cd18
+    name: fio
+    type: application
+    urls:
+    - https://CARV-ICS-FORTH.github.io/frisbee/charts/fio-1.0.7.tgz
+    version: 1.0.7
+  - apiVersion: v2
+    appVersion: 1.16.0
     created: "2021-11-23T18:19:21.703969306Z"
     description: fio is a benchmark to test I/O performance.
     digest: 2d74a4fb2b837468b284284da25eea5fcc69c0966060859e36981f8ba1d326f1
@@ -45,6 +66,17 @@ entries:
     - https://CARV-ICS-FORTH.github.io/frisbee/charts/fio-1.0.5.tgz
     version: 1.0.5
   iperf:
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2021-11-24T12:57:19.749017949Z"
+    description: iPerf is a tool for active measurements of the maximum achievable
+      bandwidth on IP networks
+    digest: 94740fa3c73e375d67288e9efae0594fd44dd869f488b128f642ec5e13eb67f4
+    name: iperf
+    type: application
+    urls:
+    - https://CARV-ICS-FORTH.github.io/frisbee/charts/iperf-1.0.7.tgz
+    version: 1.0.7
   - apiVersion: v2
     appVersion: 1.16.0
     created: "2021-11-23T18:19:21.704458112Z"
@@ -70,6 +102,17 @@ entries:
   mongodb:
   - apiVersion: v2
     appVersion: 1.16.0
+    created: "2021-11-24T12:57:19.74968618Z"
+    description: MongoDB is a source-available cross-platform document-oriented database
+      program.
+    digest: a72ef2faab0a834d3c59a0dbccd3a29c65065474fc689fd536c306a981b7e832
+    name: mongodb
+    type: application
+    urls:
+    - https://CARV-ICS-FORTH.github.io/frisbee/charts/mongodb-1.0.7.tgz
+    version: 1.0.7
+  - apiVersion: v2
+    appVersion: 1.16.0
     created: "2021-11-23T18:19:21.705659127Z"
     description: MongoDB is a source-available cross-platform document-oriented database
       program.
@@ -91,6 +134,20 @@ entries:
     - https://CARV-ICS-FORTH.github.io/frisbee/charts/mongodb-1.0.5.tgz
     version: 1.0.5
   observability:
+  - annotations:
+      category: Infrastructure
+    apiVersion: v2
+    appVersion: 1.10.0
+    created: "2021-11-24T12:57:19.7501239Z"
+    description: The Observability stack of Frisbee. Installs Prometheus + Grafana
+    digest: 5c87000ca56da7d5311a56c760b659f6de502ffb07c5e84bfdfacac5b29f49a0
+    home: https://github.com/bitnami/charts/tree/master/bitnami/common
+    icon: http://new.sevenhillstechnology.com/wp-content/uploads/2021/01/undraw_programming_2svr.png
+    name: observability
+    type: application
+    urls:
+    - https://CARV-ICS-FORTH.github.io/frisbee/charts/observability-1.0.7.tgz
+    version: 1.0.7
   - annotations:
       category: Infrastructure
     apiVersion: v2
@@ -120,6 +177,26 @@ entries:
     - https://CARV-ICS-FORTH.github.io/frisbee/charts/observability-1.0.5.tgz
     version: 1.0.5
   platform:
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2021-11-24T12:57:19.781901169Z"
+    dependencies:
+    - condition: chaos-mesh.enabled
+      name: chaos-mesh
+      repository: https://charts.chaos-mesh.org
+      version: 2.0.3
+    - condition: openebs.enabled
+      name: openebs
+      repository: https://openebs.github.io/charts
+      version: 3.0.0
+    description: Frisbee is a Kubernetes platform for exploring, testing, and benchmarking
+      distributed applications.
+    digest: dea00ac9e21a51d54152f3cb14ac320ec518ef197bd67ddf0c2b4400e1c6004d
+    name: platform
+    type: application
+    urls:
+    - https://CARV-ICS-FORTH.github.io/frisbee/charts/platform-1.0.7.tgz
+    version: 1.0.7
   - apiVersion: v2
     appVersion: 1.16.0
     created: "2021-11-23T18:19:21.734162683Z"
@@ -163,6 +240,17 @@ entries:
   redis:
   - apiVersion: v2
     appVersion: 1.16.0
+    created: "2021-11-24T12:57:19.782722207Z"
+    description: Redis is an in-memory data structure store, used as a distributed,
+      in-memory key–value database, cache and message broker, with optional durability.
+    digest: 552e49659727f2a5e381347b4d37bb6fd629da64e4285616be305a5642d7ca0e
+    name: redis
+    type: application
+    urls:
+    - https://CARV-ICS-FORTH.github.io/frisbee/charts/redis-1.0.7.tgz
+    version: 1.0.7
+  - apiVersion: v2
+    appVersion: 1.16.0
     created: "2021-11-23T18:19:21.735002394Z"
     description: Redis is an in-memory data structure store, used as a distributed,
       in-memory key–value database, cache and message broker, with optional durability.
@@ -184,6 +272,21 @@ entries:
     - https://CARV-ICS-FORTH.github.io/frisbee/charts/redis-1.0.5.tgz
     version: 1.0.5
   sysmon:
+  - annotations:
+      category: Infrastructure
+    apiVersion: v2
+    appVersion: 1.16.0
+    created: "2021-11-24T12:57:19.783123126Z"
+    description: sysmon provides container users an understanding of the resource
+      usage and performance characteristics of their running containers.
+    digest: c6500bcdd99223ec5d3580bc9a11ec79e11a21dc7cb47da5140d95dfc8652eb1
+    home: https://github.com/CARV-ICS-FORTH/frisbee/tree/main/charts/sysmon
+    icon: http://new.sevenhillstechnology.com/wp-content/uploads/2021/01/undraw_programming_2svr.png
+    name: sysmon
+    type: application
+    urls:
+    - https://CARV-ICS-FORTH.github.io/frisbee/charts/sysmon-1.0.7.tgz
+    version: 1.0.7
   - annotations:
       category: Infrastructure
     apiVersion: v2
@@ -217,6 +320,18 @@ entries:
   tikv:
   - apiVersion: v2
     appVersion: 1.16.0
+    created: "2021-11-24T12:57:19.784816404Z"
+    description: TiKV is a highly scalable, low latency, and easy to use key-value
+      database.
+    digest: d25300e4561beeb668d6335f2e718bac204c2d3e41332336292fe63417ed252f
+    icon: https://tikv.org/img/logos/horizontal/color/tikv-horizontal-color.png
+    name: tikv
+    type: application
+    urls:
+    - https://CARV-ICS-FORTH.github.io/frisbee/charts/tikv-1.0.7.tgz
+    version: 1.0.7
+  - apiVersion: v2
+    appVersion: 1.16.0
     created: "2021-11-23T18:19:21.737004219Z"
     description: TiKV is a highly scalable, low latency, and easy to use key-value
       database.
@@ -242,6 +357,17 @@ entries:
   ycsbmon:
   - apiVersion: v2
     appVersion: 1.16.0
+    created: "2021-11-24T12:57:19.785890954Z"
+    description: ycsbmon parses ycsb output and integrates into the observability
+      stack of Frisbee.
+    digest: ba5a59793bc685cde0b1513f7331ba0b7ad89dc3a7827ad7a78e872426e24afd
+    name: ycsbmon
+    type: application
+    urls:
+    - https://CARV-ICS-FORTH.github.io/frisbee/charts/ycsbmon-1.0.7.tgz
+    version: 1.0.7
+  - apiVersion: v2
+    appVersion: 1.16.0
     created: "2021-11-23T18:19:21.737509225Z"
     description: ycsbmon parses ycsb output and integrates into the observability
       stack of Frisbee.
@@ -262,4 +388,4 @@ entries:
     urls:
     - https://CARV-ICS-FORTH.github.io/frisbee/charts/ycsbmon-1.0.5.tgz
     version: 1.0.5
-generated: "2021-11-23T18:19:21.70273849Z"
+generated: "2021-11-24T12:57:19.74645193Z"
