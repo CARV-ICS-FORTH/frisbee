@@ -6,8 +6,9 @@
 ![License: Apache-2.0](https://img.shields.io/github/license/carv-ics-forth/frisbee?color=blue)
 [![GitHub Repo stars](https://img.shields.io/github/stars/carv-ics-forth/frisbee)](https://github.com/carv-ics-forth/frisbee/stargazers)
 
-<a href="https://www.vectorstock.com/royalty-free-vector/disc-golf-frisbee-eps-vector-25179185"><figure><img src="docs/images/logo.jpg" width="400"></figure></a>
-
+<a href="https://www.vectorstock.com/royalty-free-vector/disc-golf-frisbee-eps-vector-25179185">
+  <img src="docs/images/logo.jpg" width="400">
+</a>
 
 Frisbee is a next generation platform designed to unify chaos testing and perfomance benchmarking.
 
