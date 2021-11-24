@@ -1,3 +1,4 @@
+---
 apiVersion: v2
 name: tikv
 description: TiKV is a highly scalable, low latency, and easy to use key-value database.
@@ -12,11 +13,6 @@ description: TiKV is a highly scalable, low latency, and easy to use key-value d
 # pipeline. Library charts do not define any templates and therefore cannot be deployed.
 type: application
 
-# This is the chart version. This version number should be incremented each time you make changes
-# to the chart and its templates, including the app version.
-# Versions are expected to follow Semantic Versioning (https://semver.org/)
-version: 0.0.0
-
 # This is the version number of the application being deployed. This version number should be
 # incremented each time you make changes to the application. Versions are not expected to
 # follow Semantic Versioning. They should reflect the version the application is using.
@@ -25,7 +21,7 @@ appVersion: "1.16.0"
 
 icon: https://tikv.org/img/logos/horizontal/color/tikv-horizontal-color.png
 
-#dependencies:
+# dependencies:
 #  - name: observability
 #    version: 0.1.1
 #    repository: https://carv-ics-forth.github.io/frisbee/charts
@@ -37,5 +33,7 @@ icon: https://tikv.org/img/logos/horizontal/color/tikv-horizontal-color.png
 #    repository: https://carv-ics-forth.github.io/frisbee/charts
 
 
-
-
+# This is the chart version. This version number should be incremented each time you make changes
+# to the chart and its templates, including the app version.
+# Versions are expected to follow Semantic Versioning (https://semver.org/)
+version: 0.0.0

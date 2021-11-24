@@ -1,7 +1,10 @@
+---
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: redis
+  labels:
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 spec:
   entries:
     # Master node servicing requests
@@ -12,7 +15,7 @@ spec:
           cpu: ""
       spec: |
         agents:
-          telemetry: [ sysmon/container, redismon/server ]
+          telemetry: [sysmon/container, redismon/server]
         resources:
           memory: {{"{{.Inputs.Parameters.memory}}"}}
           cpu: {{"{{.Inputs.Parameters.cpu}}"}}
@@ -49,7 +52,7 @@ spec:
                   set -eum
 
                   response=$(timeout -s QUIT 30 redis-cli -h localhost -p 6379 ping)
-                  if [ "$response" != "PONG" ]; then
+                  if ["$response" != "PONG"]; then
                       echo "$response"
                       exit 1
                   fi
@@ -61,7 +64,7 @@ spec:
           master: localhost
       spec: |
         agents:
-          telemetry: [ sysmon/container, redismon/server ]
+          telemetry: [sysmon/container, redismon/server]
         container:
           name: app
           image: redis
@@ -96,7 +99,7 @@ spec:
                   set -eum
 
                   response=$(timeout -s QUIT 30 redis-cli -h localhost -p 6379 ping)
-                  if [ "$response" != "PONG" ]; then
+                  if ["$response" != "PONG"]; then
                       echo "$response"
                       exit 1
                   fi

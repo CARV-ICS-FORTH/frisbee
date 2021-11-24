@@ -3,6 +3,8 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: mongodb
+  labels:
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 spec:
   entries:
     "master":
@@ -14,7 +16,7 @@ spec:
           cpu: ""
       spec: |
         agents:                                 # Agents
-          telemetry: [ sysmon/container, mongomon/telegraf ]
+          telemetry: [sysmon/container, mongomon/telegraf]
         resources:                              # Resources
           cpu: {{"{{.Inputs.Parameters.cpu}}"}}
           memory: {{"{{.Inputs.Parameters.memory}}"}}
@@ -73,7 +75,7 @@ spec:
                   set -eum
 
                   response=$(timeout -s QUIT 30 mongo --eval 'rs.status().ok' localhost:{{"{{.Inputs.Parameters.port}}"}} --quiet)
-                  if [ "$response" != "1" ]; then
+                  if ["$response" != "1"]; then
                       exit 1
                   fi
 
@@ -86,7 +88,7 @@ spec:
           cpu: ""
       spec: |
         agents:                                 # Agents
-          telemetry: [ sysmon/container, mongomon/telegraf ]
+          telemetry: [sysmon/container, mongomon/telegraf]
         resources:                              # Resources
           cpu: {{"{{.Inputs.Parameters.cpu}}"}}
           memory: {{"{{.Inputs.Parameters.memory}}"}}
@@ -132,6 +134,6 @@ spec:
                 set -eum
 
                 response=$(timeout -s QUIT 30 mongo --eval 'db.runCommand("ping").ok' localhost:{{"{{.Inputs.Parameters.port}}"}}/test --quiet)
-                if [ "$response" != "1" ]; then
+                if ["$response" != "1"]; then
                     exit 1
                 fi

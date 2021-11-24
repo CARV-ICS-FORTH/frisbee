@@ -3,6 +3,8 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: fiomon
+  labels:
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 spec:
   entries:
     "server":
@@ -61,5 +63,6 @@ kind: ConfigMap
 metadata:
   name: grafana-fio-dashboard
   labels:
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
     dashboard: fio
-data:   {{ (.Files.Glob "dashboards/fio.json").AsConfig | nindent 2 }}
+data: {{(.Files.Glob "dashboards/fio.json").AsConfig | nindent 2}}

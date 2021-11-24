@@ -1,7 +1,10 @@
+---
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: ycsb-mongo
+  labels:
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 spec:
   entries:
     # Loader injecting keys into a single server
@@ -19,7 +22,7 @@ spec:
           dropdata: "false"
       spec: |
         agents:                                       # Agents
-          telemetry: [ sysmon/container, ycsbmon/client ]
+          telemetry: [sysmon/container, ycsbmon/client]
         resources:                                    # Resources
           cpu: {{"{{.Inputs.Parameters.cpu}}"}}
           memory: {{"{{.Inputs.Parameters.memory}}"}}
@@ -46,8 +49,6 @@ spec:
                   -p mongodb.uri="mongodb://$addr"                     \
               >> /dev/shm/pipe
 
-
-
     # Run queries against a single server
     "runner":
       inputs:
@@ -61,7 +62,7 @@ spec:
           threads: "1"
       spec: |
         agents:
-          telemetry: [ sysmon/container, ycsbmon/client ]
+          telemetry: [sysmon/container, ycsbmon/client]
         container:
           name: app
           image: aylei/go-ycsb:20201029

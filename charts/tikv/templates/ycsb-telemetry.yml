@@ -2,10 +2,12 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
+  labels:
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
   name: tikvmon
 spec:
   entries:
-    "pd":
+    pd:
       spec: |
         agent:
           container:
@@ -28,7 +30,7 @@ spec:
                    ## An array of urls to scrape metrics from.
                    urls = [
                       "http://localhost:2379/metrics"
-                   ]
+                  ]
 
                   metric_version = 2
 
@@ -42,7 +44,7 @@ spec:
                 telegraf --config /tmp/prometheus.conf &
 
                 # When the stop file is added by the container, the process stop
-                while [ ! -f "/dev/shm/stop" ];
+                while [! -f "/dev/shm/stop"];
                 do
                   sleep 10
                 done
@@ -51,10 +53,8 @@ spec:
           matchlabels:
             dashboard: tikv
             specificTo: pd
-
-
-    "worker":
-      spec: |
+    worker:
+      spec: |-
         agent:
           container:
             name: tikv-worker
@@ -76,7 +76,7 @@ spec:
                    ## An array of urls to scrape metrics from.
                    urls = [
                       "http://localhost:20180/metrics"
-                   ]
+                  ]
 
                   metric_version = 2
 
@@ -90,7 +90,7 @@ spec:
                 telegraf --config /tmp/prometheus.conf &
 
                 # When the stop file is added by the container, the process stop
-                while [ ! -f "/dev/shm/stop" ];
+                while [! -f "/dev/shm/stop"];
                 do
                   sleep 10
                 done

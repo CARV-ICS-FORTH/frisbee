@@ -16,7 +16,7 @@ By codifying the test plan in a YAML-based syntax, Frisbee carriers three main b
 2. Test Plan **guides** our thinking. It is like a rule book, which needs to be followed.
 
 3. Important aspects like test estimation, test
-   scope,[ Test Strategy ](https://www.guru99.com/how-to-create-test-strategy-document.html)are **documented** in Test
+   scope,[Test Strategy](https://www.guru99.com/how-to-create-test-strategy-document.html)are **documented** in Test
    Plan, so it can be reviewed by Management Team and re-used for other projects.
 
 A test plan may include a strategy for one or more of the following:

@@ -7,40 +7,40 @@
       "type": "datasource",
       "pluginId": "prometheus",
       "pluginName": "Prometheus"
-    }
-  ],
+  }
+ ],
   "__requires": [
     {
       "type": "grafana",
       "id": "grafana",
       "name": "Grafana",
       "version": "6.1.6"
-    },
+  },
     {
       "type": "panel",
       "id": "graph",
       "name": "Graph",
       "version": ""
-    },
+  },
     {
       "type": "datasource",
       "id": "prometheus",
       "name": "Prometheus",
       "version": "1.0.0"
-    },
+  },
     {
       "type": "panel",
       "id": "singlestat",
       "name": "Singlestat",
       "version": ""
-    },
+  },
     {
       "type": "panel",
       "id": "table",
       "name": "Table",
       "version": ""
-    }
-  ],
+  }
+ ],
   "annotations": {
     "list": [
       {
@@ -51,9 +51,9 @@
         "iconColor": "rgba(0, 211, 255, 1)",
         "name": "Annotations & Alerts",
         "type": "dashboard"
-      }
-    ]
-  },
+    }
+   ]
+},
   "editable": true,
   "gnetId": null,
   "graphTooltip": 1,
@@ -68,7 +68,7 @@
         "w": 24,
         "x": 0,
         "y": 0
-      },
+    },
       "id": 118,
       "panels": [
         {
@@ -79,7 +79,7 @@
             "rgba(245, 54, 54, 0.9)",
             "rgba(237, 129, 40, 0.89)",
             "rgba(50, 172, 45, 0.97)"
-          ],
+         ],
           "datasource": "${DS_TEST-CLUSTER}",
           "description": "It indicates whether the current PD is the leader or a follower.",
           "format": "none",
@@ -89,13 +89,13 @@
             "show": false,
             "thresholdLabels": false,
             "thresholdMarkers": true
-          },
+        },
           "gridPos": {
             "h": 6,
             "w": 4,
             "x": 0,
             "y": 1
-          },
+        },
           "id": 55,
           "interval": null,
           "links": [],
@@ -104,12 +104,12 @@
             {
               "name": "value to text",
               "value": 1
-            },
+          },
             {
               "name": "range to text",
               "value": 2
-            }
-          ],
+          }
+         ],
           "maxDataPoints": 100,
           "nullPointMode": "connected",
           "nullText": null,
@@ -122,19 +122,19 @@
               "from": "1",
               "text": "Leader",
               "to": "100000"
-            },
+          },
             {
               "from": "0",
               "text": "Follower",
               "to": "1"
-            }
-          ],
+          }
+         ],
           "sparkline": {
             "fillColor": "rgba(31, 118, 189, 0.18)",
             "full": false,
             "lineColor": "rgb(31, 120, 193)",
             "show": false
-          },
+        },
           "tableColumn": "",
           "targets": [
             {
@@ -145,8 +145,8 @@
               "metric": "pd_server_tso",
               "refId": "A",
               "step": 40
-            }
-          ],
+          }
+         ],
           "thresholds": "",
           "title": "PD role",
           "type": "singlestat",
@@ -156,15 +156,15 @@
               "op": "=",
               "text": "Follower",
               "value": "null"
-            },
+          },
             {
               "op": "=",
               "text": "Leader",
               "value": "1"
-            }
-          ],
+          }
+         ],
           "valueName": "current"
-        },
+      },
         {
           "cacheTimeout": null,
           "colorBackground": false,
@@ -173,7 +173,7 @@
             "rgba(245, 54, 54, 0.9)",
             "rgba(237, 129, 40, 0.89)",
             "rgba(50, 172, 45, 0.97)"
-          ],
+         ],
           "datasource": "${DS_TEST-CLUSTER}",
           "decimals": null,
           "description": "The total capacity size of the cluster",
@@ -186,13 +186,13 @@
             "show": false,
             "thresholdLabels": false,
             "thresholdMarkers": false
-          },
+        },
           "gridPos": {
             "h": 6,
             "w": 4,
             "x": 4,
             "y": 1
-          },
+        },
           "id": 10,
           "interval": null,
           "links": [],
@@ -201,12 +201,12 @@
             {
               "name": "value to text",
               "value": 1
-            },
+          },
             {
               "name": "range to text",
               "value": 2
-            }
-          ],
+          }
+         ],
           "maxDataPoints": 100,
           "nullPointMode": "null",
           "nullText": null,
@@ -219,14 +219,14 @@
               "from": "null",
               "text": "N/A",
               "to": "null"
-            }
-          ],
+          }
+         ],
           "sparkline": {
             "fillColor": "rgba(77, 135, 25, 0.18)",
             "full": true,
             "lineColor": "rgb(21, 179, 65)",
             "show": false
-          },
+        },
           "tableColumn": "",
           "targets": [
             {
@@ -235,8 +235,8 @@
               "intervalFactor": 2,
               "refId": "A",
               "step": 40
-            }
-          ],
+          }
+         ],
           "thresholds": "",
           "title": "Storage capacity",
           "type": "singlestat",
@@ -246,10 +246,10 @@
               "op": "=",
               "text": "N/A",
               "value": "null"
-            }
-          ],
+          }
+         ],
           "valueName": "current"
-        },
+      },
         {
           "cacheTimeout": null,
           "colorBackground": false,
@@ -258,7 +258,7 @@
             "rgba(245, 54, 54, 0.9)",
             "rgba(237, 129, 40, 0.89)",
             "rgba(50, 172, 45, 0.97)"
-          ],
+         ],
           "datasource": "${DS_TEST-CLUSTER}",
           "decimals": 1,
           "description": "The current storage size of the cluster",
@@ -271,13 +271,13 @@
             "show": false,
             "thresholdLabels": false,
             "thresholdMarkers": true
-          },
+        },
           "gridPos": {
             "h": 6,
             "w": 4,
             "x": 8,
             "y": 1
-          },
+        },
           "hideTimeOverride": false,
           "id": 38,
           "interval": null,
@@ -287,12 +287,12 @@
             {
               "name": "value to text",
               "value": 1
-            },
+          },
             {
               "name": "range to text",
               "value": 2
-            }
-          ],
+          }
+         ],
           "maxDataPoints": 100,
           "nullPointMode": "null",
           "nullText": null,
@@ -305,14 +305,14 @@
               "from": "null",
               "text": "N/A",
               "to": "null"
-            }
-          ],
+          }
+         ],
           "sparkline": {
             "fillColor": "rgba(31, 118, 189, 0.18)",
             "full": true,
             "lineColor": "rgb(31, 120, 193)",
             "show": false
-          },
+        },
           "tableColumn": "",
           "targets": [
             {
@@ -321,8 +321,8 @@
               "intervalFactor": 2,
               "refId": "A",
               "step": 40
-            }
-          ],
+          }
+         ],
           "thresholds": "",
           "title": "Current storage size",
           "type": "singlestat",
@@ -332,10 +332,10 @@
               "op": "=",
               "text": "N/A",
               "value": "null"
-            }
-          ],
+          }
+         ],
           "valueName": "current"
-        },
+      },
         {
           "cacheTimeout": null,
           "colorBackground": false,
@@ -344,7 +344,7 @@
             "rgba(50, 172, 45, 0.97)",
             "rgba(237, 129, 40, 0.89)",
             "rgba(245, 54, 54, 0.9)"
-          ],
+         ],
           "datasource": "${DS_TEST-CLUSTER}",
           "description": "The current storage size and used ratio of the cluster",
           "editable": true,
@@ -356,13 +356,13 @@
             "show": true,
             "thresholdLabels": false,
             "thresholdMarkers": true
-          },
+        },
           "gridPos": {
             "h": 6,
             "w": 4,
             "x": 12,
             "y": 1
-          },
+        },
           "hideTimeOverride": false,
           "id": 37,
           "interval": null,
@@ -372,12 +372,12 @@
             {
               "name": "value to text",
               "value": 1
-            },
+          },
             {
               "name": "range to text",
               "value": 2
-            }
-          ],
+          }
+         ],
           "maxDataPoints": 100,
           "nullPointMode": "null",
           "nullText": null,
@@ -390,14 +390,14 @@
               "from": "null",
               "text": "N/A",
               "to": "null"
-            }
-          ],
+          }
+         ],
           "sparkline": {
             "fillColor": "rgba(31, 118, 189, 0.18)",
             "full": true,
             "lineColor": "rgb(31, 120, 193)",
             "show": false
-          },
+        },
           "tableColumn": "",
           "targets": [
             {
@@ -406,8 +406,8 @@
               "intervalFactor": 2,
               "refId": "A",
               "step": 40
-            }
-          ],
+          }
+         ],
           "thresholds": "0.01,0.5",
           "title": "Current storage used",
           "type": "singlestat",
@@ -417,10 +417,10 @@
               "op": "=",
               "text": "N/A",
               "value": "null"
-            }
-          ],
+          }
+         ],
           "valueName": "current"
-        },
+      },
         {
           "cacheTimeout": null,
           "colorBackground": false,
@@ -429,7 +429,7 @@
             "#d44a3a",
             "rgba(237, 129, 40, 0.89)",
             "#299c46"
-          ],
+         ],
           "datasource": "${DS_TEST-CLUSTER}",
           "description": "The count of healthy stores",
           "format": "none",
@@ -439,13 +439,13 @@
             "show": false,
             "thresholdLabels": false,
             "thresholdMarkers": true
-          },
+        },
           "gridPos": {
             "h": 6,
             "w": 4,
             "x": 16,
             "y": 1
-          },
+        },
           "id": 97,
           "interval": null,
           "links": [],
@@ -454,12 +454,12 @@
             {
               "name": "value to text",
               "value": 1
-            },
+          },
             {
               "name": "range to text",
               "value": 2
-            }
-          ],
+          }
+         ],
           "maxDataPoints": 100,
           "nullPointMode": "connected",
           "nullText": null,
@@ -472,14 +472,14 @@
               "from": "null",
               "text": "N/A",
               "to": "null"
-            }
-          ],
+          }
+         ],
           "sparkline": {
             "fillColor": "rgba(31, 118, 189, 0.18)",
             "full": false,
             "lineColor": "rgb(31, 120, 193)",
             "show": false
-          },
+        },
           "tableColumn": "",
           "targets": [
             {
@@ -487,8 +487,8 @@
               "format": "time_series",
               "intervalFactor": 2,
               "refId": "A"
-            }
-          ],
+          }
+         ],
           "thresholds": "0,1",
           "title": "Normal stores",
           "type": "singlestat",
@@ -498,10 +498,10 @@
               "op": "=",
               "text": "N/A",
               "value": "null"
-            }
-          ],
+          }
+         ],
           "valueName": "current"
-        },
+      },
         {
           "cacheTimeout": null,
           "colorBackground": false,
@@ -510,7 +510,7 @@
             "rgba(245, 54, 54, 0.9)",
             "rgba(237, 129, 40, 0.89)",
             "rgba(50, 172, 45, 0.97)"
-          ],
+         ],
           "datasource": "${DS_TEST-CLUSTER}",
           "description": "The total number of Regions without replicas",
           "editable": true,
@@ -522,13 +522,13 @@
             "show": false,
             "thresholdLabels": false,
             "thresholdMarkers": false
-          },
+        },
           "gridPos": {
             "h": 6,
             "w": 4,
             "x": 20,
             "y": 1
-          },
+        },
           "id": 20,
           "interval": null,
           "links": [],
@@ -537,12 +537,12 @@
             {
               "name": "value to text",
               "value": 1
-            },
+          },
             {
               "name": "range to text",
               "value": 2
-            }
-          ],
+          }
+         ],
           "maxDataPoints": 100,
           "nullPointMode": "null",
           "nullText": null,
@@ -555,14 +555,14 @@
               "from": "null",
               "text": "N/A",
               "to": "null"
-            }
-          ],
+          }
+         ],
           "sparkline": {
             "fillColor": "rgba(31, 118, 189, 0.18)",
             "full": true,
             "lineColor": "rgb(31, 120, 193)",
             "show": true
-          },
+        },
           "tableColumn": "",
           "targets": [
             {
@@ -571,8 +571,8 @@
               "intervalFactor": 2,
               "refId": "A",
               "step": 40
-            }
-          ],
+          }
+         ],
           "thresholds": "",
           "title": "Number of Regions",
           "type": "singlestat",
@@ -582,17 +582,17 @@
               "op": "=",
               "text": "N/A",
               "value": "null"
-            }
-          ],
+          }
+         ],
           "valueName": "current"
-        },
+      },
         {
           "columns": [
             {
               "text": "Current",
               "value": "current"
-            }
-          ],
+          }
+         ],
           "datasource": "${DS_TEST-CLUSTER}",
           "fontSize": "90%",
           "gridPos": {
@@ -600,7 +600,7 @@
             "w": 6,
             "x": 0,
             "y": 7
-          },
+        },
           "hideTimeOverride": true,
           "id": 116,
           "links": [],
@@ -610,7 +610,7 @@
           "sort": {
             "col": 1,
             "desc": true
-          },
+        },
           "styles": [
             {
               "alias": "Option",
@@ -618,7 +618,7 @@
               "pattern": "Metric",
               "preserveFormat": false,
               "type": "string"
-            },
+          },
             {
               "alias": "",
               "colorMode": null,
@@ -626,14 +626,14 @@
                 "rgba(245, 54, 54, 0.9)",
                 "rgba(237, 129, 40, 0.89)",
                 "rgba(50, 172, 45, 0.97)"
-              ],
+             ],
               "decimals": 2,
               "pattern": "/.*/",
               "thresholds": [],
               "type": "number",
               "unit": "short"
-            }
-          ],
+          }
+         ],
           "targets": [
             {
               "expr": "pd_config_status",
@@ -641,20 +641,20 @@
               "intervalFactor": 2,
               "legendFormat": "{{type}}",
               "refId": "A"
-            }
-          ],
+          }
+         ],
           "timeFrom": "1s",
           "title": "PD scheduler config",
           "transform": "timeseries_aggregations",
           "type": "table"
-        },
+      },
         {
           "columns": [
             {
               "text": "Current",
               "value": "current"
-            }
-          ],
+          }
+         ],
           "datasource": "${DS_TEST-CLUSTER}",
           "fontSize": "100%",
           "gridPos": {
@@ -662,7 +662,7 @@
             "w": 5,
             "x": 6,
             "y": 7
-          },
+        },
           "hideTimeOverride": true,
           "id": 103,
           "links": [],
@@ -672,14 +672,14 @@
           "sort": {
             "col": 0,
             "desc": false
-          },
+        },
           "styles": [
             {
               "alias": "Type",
               "dateFormat": "YYYY-MM-DD HH:mm:ss",
               "pattern": "type",
               "type": "date"
-            },
+          },
             {
               "alias": "Numbers",
               "colorMode": null,
@@ -687,14 +687,14 @@
                 "rgba(245, 54, 54, 0.9)",
                 "rgba(237, 129, 40, 0.89)",
                 "rgba(50, 172, 45, 0.97)"
-              ],
+             ],
               "dateFormat": "YYYY-MM-DD HH:mm:ss",
               "decimals": 2,
               "pattern": "Current",
               "thresholds": [],
               "type": "number",
               "unit": "short"
-            },
+          },
             {
               "alias": "",
               "colorMode": null,
@@ -702,14 +702,14 @@
                 "rgba(245, 54, 54, 0.9)",
                 "rgba(237, 129, 40, 0.89)",
                 "rgba(50, 172, 45, 0.97)"
-              ],
+             ],
               "decimals": 2,
               "pattern": "/.*/",
               "thresholds": [],
               "type": "number",
               "unit": "short"
-            }
-          ],
+          }
+         ],
           "targets": [
             {
               "expr": "pd_regions_label_level{instance=\"$instance\"}",
@@ -717,21 +717,21 @@
               "intervalFactor": 2,
               "legendFormat": "{{type}}",
               "refId": "A"
-            }
-          ],
+          }
+         ],
           "timeFrom": "1s",
           "timeShift": null,
           "title": "Region label isolation level",
           "transform": "timeseries_aggregations",
           "type": "table"
-        },
+      },
         {
           "columns": [
             {
               "text": "Current",
               "value": "current"
-            }
-          ],
+          }
+         ],
           "datasource": "${DS_TEST-CLUSTER}",
           "fontSize": "100%",
           "gridPos": {
@@ -739,7 +739,7 @@
             "w": 6,
             "x": 11,
             "y": 7
-          },
+        },
           "hideTimeOverride": true,
           "id": 117,
           "links": [],
@@ -749,7 +749,7 @@
           "sort": {
             "col": 0,
             "desc": true
-          },
+        },
           "styles": [
             {
               "alias": "Label : address",
@@ -759,9 +759,9 @@
               "pattern": "Metric",
               "thresholds": [
                 "un"
-              ],
+             ],
               "type": "string"
-            },
+          },
             {
               "alias": "count number",
               "colorMode": null,
@@ -769,16 +769,16 @@
                 "#bf1b00",
                 "rgba(237, 129, 40, 0.89)",
                 "rgba(50, 172, 45, 0.97)"
-              ],
+             ],
               "dateFormat": "YYYY-MM-DD HH:mm:ss",
               "decimals": 0,
               "pattern": "Current",
               "thresholds": [
                 "0"
-              ],
+             ],
               "type": "number",
               "unit": "short"
-            },
+          },
             {
               "alias": "",
               "colorMode": null,
@@ -786,14 +786,14 @@
                 "rgba(245, 54, 54, 0.9)",
                 "rgba(237, 129, 40, 0.89)",
                 "rgba(50, 172, 45, 0.97)"
-              ],
+             ],
               "decimals": 2,
               "pattern": "/.*/",
               "thresholds": [],
               "type": "number",
               "unit": "short"
-            }
-          ],
+          }
+         ],
           "targets": [
             {
               "expr": "pd_cluster_placement_status",
@@ -802,20 +802,20 @@
               "intervalFactor": 2,
               "legendFormat": "{{name}}",
               "refId": "A"
-            }
-          ],
+          }
+         ],
           "timeFrom": "1s",
           "title": "Label distribution",
           "transform": "timeseries_aggregations",
           "type": "table"
-        },
+      },
         {
           "columns": [
             {
               "text": "Current",
               "value": "current"
-            }
-          ],
+          }
+         ],
           "datasource": "${DS_TEST-CLUSTER}",
           "editable": true,
           "error": false,
@@ -825,7 +825,7 @@
             "w": 7,
             "x": 17,
             "y": 7
-          },
+        },
           "hideTimeOverride": true,
           "id": 96,
           "links": [],
@@ -835,31 +835,31 @@
           "sort": {
             "col": null,
             "desc": false
-          },
+        },
           "styles": [
             {
               "dateFormat": "YYYY-MM-DD HH:mm:ss",
               "pattern": "Metric",
               "sanitize": false,
               "type": "string"
-            },
+          },
             {
               "colorMode": "cell",
               "colors": [
                 "rgba(50, 172, 45, 0.97)",
                 "rgba(237, 129, 40, 0.89)",
                 "rgba(245, 54, 54, 0.9)"
-              ],
+             ],
               "decimals": 0,
               "pattern": "Current",
               "thresholds": [
                 "1",
                 "2"
-              ],
+             ],
               "type": "number",
               "unit": "short"
-            }
-          ],
+          }
+         ],
           "targets": [
             {
               "expr": "sum(pd_cluster_status{instance=\"$instance\", type=\"store_disconnected_count\"})",
@@ -868,7 +868,7 @@
               "legendFormat": "Disconnect Stores",
               "refId": "B",
               "step": 20
-            },
+          },
             {
               "expr": "sum(pd_cluster_status{instance=\"$instance\", type=\"store_unhealth_count\"})",
               "format": "time_series",
@@ -876,7 +876,7 @@
               "legendFormat": "Unhealth Stores",
               "refId": "C",
               "step": 20
-            },
+          },
             {
               "expr": "sum(pd_cluster_status{instance=\"$instance\", type=\"store_low_space_count\"})",
               "format": "time_series",
@@ -884,7 +884,7 @@
               "legendFormat": "LowSpace Stores",
               "refId": "D",
               "step": 20
-            },
+          },
             {
               "expr": "sum(pd_cluster_status{instance=\"$instance\", type=\"store_down_count\"})",
               "format": "time_series",
@@ -892,7 +892,7 @@
               "legendFormat": "Down Stores",
               "refId": "E",
               "step": 20
-            },
+          },
             {
               "expr": "sum(pd_cluster_status{instance=\"$instance\", type=\"store_offline_count\"})",
               "format": "time_series",
@@ -900,7 +900,7 @@
               "legendFormat": "Offline Stores",
               "refId": "F",
               "step": 20
-            },
+          },
             {
               "expr": "sum(pd_cluster_status{instance=\"$instance\", type=\"store_tombstone_count\"})",
               "format": "time_series",
@@ -908,20 +908,20 @@
               "legendFormat": "Tombstone Stores",
               "refId": "G",
               "step": 20
-            }
-          ],
+          }
+         ],
           "timeFrom": "1s",
           "title": "Abnormal stores",
           "transform": "timeseries_aggregations",
           "type": "table"
-        },
+      },
         {
           "columns": [
             {
               "text": "Current",
               "value": "current"
-            }
-          ],
+          }
+         ],
           "datasource": "${DS_TEST-CLUSTER}",
           "fontSize": "90%",
           "gridPos": {
@@ -929,7 +929,7 @@
             "w": 4,
             "x": 0,
             "y": 14
-          },
+        },
           "hideTimeOverride": true,
           "id": 115,
           "links": [],
@@ -939,7 +939,7 @@
           "sort": {
             "col": 0,
             "desc": true
-          },
+        },
           "styles": [
             {
               "alias": "",
@@ -948,14 +948,14 @@
                 "rgba(245, 54, 54, 0.9)",
                 "rgba(237, 129, 40, 0.89)",
                 "rgba(50, 172, 45, 0.97)"
-              ],
+             ],
               "decimals": 2,
               "link": false,
               "pattern": "Value",
               "thresholds": [],
               "type": "number",
               "unit": "none"
-            },
+          },
             {
               "alias": "Meta",
               "colorMode": null,
@@ -963,15 +963,15 @@
                 "rgba(245, 54, 54, 0.9)",
                 "rgba(237, 129, 40, 0.89)",
                 "rgba(50, 172, 45, 0.97)"
-              ],
+             ],
               "dateFormat": "YYYY-MM-DD HH:mm:ss",
               "decimals": 2,
               "pattern": "Metric",
               "thresholds": [],
               "type": "number",
               "unit": "short"
-            }
-          ],
+          }
+         ],
           "targets": [
             {
               "expr": "pd_cluster_metadata{instance=\"$instance\"}",
@@ -980,13 +980,13 @@
               "intervalFactor": 2,
               "legendFormat": "{{type}}",
               "refId": "A"
-            }
-          ],
+          }
+         ],
           "timeFrom": "1s",
           "title": "pd_cluster_metadata",
           "transform": "timeseries_aggregations",
           "type": "table"
-        },
+      },
         {
           "aliasColors": {},
           "bars": false,
@@ -1004,7 +1004,7 @@
             "w": 8,
             "x": 4,
             "y": 14
-          },
+        },
           "id": 18,
           "legend": {
             "avg": false,
@@ -1014,7 +1014,7 @@
             "show": false,
             "total": false,
             "values": false
-          },
+        },
           "lines": true,
           "linewidth": 3,
           "links": [],
@@ -1035,8 +1035,8 @@
               "legendFormat": "count",
               "refId": "A",
               "step": 4
-            }
-          ],
+          }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -1047,7 +1047,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "cumulative"
-          },
+        },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -1055,7 +1055,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+        },
           "yaxes": [
             {
               "format": "none",
@@ -1064,7 +1064,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+          },
             {
               "format": "none",
               "label": null,
@@ -1072,13 +1072,13 @@
               "max": null,
               "min": null,
               "show": false
-            }
-          ],
+          }
+         ],
           "yaxis": {
             "align": false,
             "alignLevel": null
-          }
-        },
+        }
+      },
         {
           "alert": {
             "conditions": [
@@ -1086,26 +1086,26 @@
                 "evaluator": {
                   "params": [
                     100
-                  ],
+                 ],
                   "type": "gt"
-                },
+              },
                 "operator": {
                   "type": "and"
-                },
+              },
                 "query": {
                   "params": [
                     "B",
                     "1m",
                     "now"
-                  ]
-                },
+                 ]
+              },
                 "reducer": {
                   "params": [],
                   "type": "max"
-                },
+              },
                 "type": "query"
-              }
-            ],
+            }
+           ],
             "executionErrorState": "alerting",
             "frequency": "60s",
             "handler": 1,
@@ -1113,7 +1113,7 @@
             "name": "region health alert",
             "noDataState": "keep_state",
             "notifications": []
-          },
+        },
           "aliasColors": {},
           "bars": false,
           "dashLength": 10,
@@ -1126,7 +1126,7 @@
             "w": 12,
             "x": 12,
             "y": 14
-          },
+        },
           "id": 72,
           "legend": {
             "alignAsTable": true,
@@ -1138,7 +1138,7 @@
             "show": true,
             "total": false,
             "values": true
-          },
+        },
           "lines": true,
           "linewidth": 1,
           "links": [],
@@ -1158,7 +1158,7 @@
               "intervalFactor": 2,
               "legendFormat": "{{type}}",
               "refId": "A"
-            },
+          },
             {
               "expr": "sum(pd_regions_status) by (instance, type)",
               "format": "time_series",
@@ -1166,8 +1166,8 @@
               "intervalFactor": 2,
               "legendFormat": "{{type}}",
               "refId": "B"
-            }
-          ],
+          }
+         ],
           "thresholds": [
             {
               "colorMode": "critical",
@@ -1175,8 +1175,8 @@
               "line": true,
               "op": "gt",
               "value": 100
-            }
-          ],
+          }
+         ],
           "timeFrom": null,
           "timeRegions": [],
           "timeShift": null,
@@ -1185,7 +1185,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+        },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -1193,7 +1193,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+        },
           "yaxes": [
             {
               "format": "short",
@@ -1202,7 +1202,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+          },
             {
               "format": "short",
               "label": null,
@@ -1210,18 +1210,18 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ],
+          }
+         ],
           "yaxis": {
             "align": false,
             "alignLevel": null
-          }
         }
-      ],
+      }
+     ],
       "repeat": null,
       "title": "Cluster",
       "type": "row"
-    },
+  },
     {
       "collapsed": true,
       "gridPos": {
@@ -1229,7 +1229,7 @@
         "w": 24,
         "x": 0,
         "y": 1
-      },
+    },
       "id": 119,
       "panels": [
         {
@@ -1245,7 +1245,7 @@
             "w": 12,
             "x": 0,
             "y": 2
-          },
+        },
           "id": 45,
           "legend": {
             "alignAsTable": true,
@@ -1259,7 +1259,7 @@
             "show": true,
             "total": false,
             "values": true
-          },
+        },
           "lines": true,
           "linewidth": 2,
           "links": [],
@@ -1280,8 +1280,8 @@
               "legendFormat": "{{type}}",
               "refId": "A",
               "step": 4
-            }
-          ],
+          }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -1291,7 +1291,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+        },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -1299,7 +1299,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+        },
           "yaxes": [
             {
               "format": "opm",
@@ -1308,7 +1308,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+          },
             {
               "format": "short",
               "label": null,
@@ -1316,13 +1316,13 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ],
+          }
+         ],
           "yaxis": {
             "align": false,
             "alignLevel": null
-          }
-        },
+        }
+      },
         {
           "aliasColors": {},
           "bars": false,
@@ -1336,7 +1336,7 @@
             "w": 12,
             "x": 12,
             "y": 2
-          },
+        },
           "id": 79,
           "legend": {
             "alignAsTable": true,
@@ -1350,7 +1350,7 @@
             "show": true,
             "total": false,
             "values": true
-          },
+        },
           "lines": true,
           "linewidth": 2,
           "links": [],
@@ -1371,8 +1371,8 @@
               "legendFormat": "{{type}}",
               "refId": "A",
               "step": 4
-            }
-          ],
+          }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -1382,7 +1382,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+        },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -1390,7 +1390,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+        },
           "yaxes": [
             {
               "format": "opm",
@@ -1399,7 +1399,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+          },
             {
               "format": "short",
               "label": null,
@@ -1407,13 +1407,13 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ],
+          }
+         ],
           "yaxis": {
             "align": false,
             "alignLevel": null
-          }
-        },
+        }
+      },
         {
           "aliasColors": {},
           "bars": false,
@@ -1427,7 +1427,7 @@
             "w": 12,
             "x": 0,
             "y": 9
-          },
+        },
           "id": 77,
           "legend": {
             "alignAsTable": true,
@@ -1441,7 +1441,7 @@
             "show": true,
             "total": false,
             "values": true
-          },
+        },
           "lines": true,
           "linewidth": 2,
           "links": [],
@@ -1462,8 +1462,8 @@
               "legendFormat": "{{type}}",
               "refId": "A",
               "step": 4
-            }
-          ],
+          }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -1473,7 +1473,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+        },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -1481,7 +1481,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+        },
           "yaxes": [
             {
               "format": "opm",
@@ -1490,7 +1490,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+          },
             {
               "format": "short",
               "label": null,
@@ -1498,13 +1498,13 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ],
+          }
+         ],
           "yaxis": {
             "align": false,
             "alignLevel": null
-          }
-        },
+        }
+      },
         {
           "aliasColors": {},
           "bars": false,
@@ -1517,7 +1517,7 @@
             "w": 12,
             "x": 12,
             "y": 9
-          },
+        },
           "id": 78,
           "legend": {
             "alignAsTable": true,
@@ -1531,7 +1531,7 @@
             "show": true,
             "total": false,
             "values": true
-          },
+        },
           "lines": true,
           "linewidth": 2,
           "links": [],
@@ -1552,8 +1552,8 @@
               "legendFormat": "{{type}}",
               "refId": "A",
               "step": 4
-            }
-          ],
+          }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -1563,7 +1563,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+        },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -1571,7 +1571,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+        },
           "yaxes": [
             {
               "format": "opm",
@@ -1580,7 +1580,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+          },
             {
               "format": "short",
               "label": null,
@@ -1588,13 +1588,13 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ],
+          }
+         ],
           "yaxis": {
             "align": false,
             "alignLevel": null
-          }
-        },
+        }
+      },
         {
           "aliasColors": {},
           "bars": false,
@@ -1608,7 +1608,7 @@
             "w": 12,
             "x": 0,
             "y": 16
-          },
+        },
           "id": 80,
           "legend": {
             "alignAsTable": true,
@@ -1622,7 +1622,7 @@
             "show": true,
             "total": false,
             "values": true
-          },
+        },
           "lines": true,
           "linewidth": 2,
           "links": [],
@@ -1643,7 +1643,7 @@
               "legendFormat": "{{type}}",
               "refId": "A",
               "step": 4
-            },
+          },
             {
               "expr": "sum(delta(pd_schedule_operators_count{instance=\"$instance\", event=\"replace\"}[1m])) by (type)",
               "format": "time_series",
@@ -1651,8 +1651,8 @@
               "legendFormat": "{{type}}",
               "refId": "B",
               "step": 4
-            }
-          ],
+          }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -1662,7 +1662,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+        },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -1670,7 +1670,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+        },
           "yaxes": [
             {
               "format": "opm",
@@ -1679,7 +1679,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+          },
             {
               "format": "short",
               "label": null,
@@ -1687,13 +1687,13 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ],
+          }
+         ],
           "yaxis": {
             "align": false,
             "alignLevel": null
-          }
-        },
+        }
+      },
         {
           "aliasColors": {},
           "bars": false,
@@ -1707,7 +1707,7 @@
             "w": 12,
             "x": 12,
             "y": 16
-          },
+        },
           "id": 47,
           "legend": {
             "alignAsTable": true,
@@ -1722,7 +1722,7 @@
             "sortDesc": true,
             "total": false,
             "values": true
-          },
+        },
           "lines": true,
           "linewidth": 2,
           "links": [],
@@ -1744,8 +1744,8 @@
               "metric": "pd_scheduler_status",
               "refId": "A",
               "step": 4
-            }
-          ],
+          }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -1755,7 +1755,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+        },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -1763,7 +1763,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+        },
           "yaxes": [
             {
               "format": "short",
@@ -1772,7 +1772,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+          },
             {
               "format": "short",
               "label": null,
@@ -1780,13 +1780,13 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ],
+          }
+         ],
           "yaxis": {
             "align": false,
             "alignLevel": null
-          }
-        },
+        }
+      },
         {
           "aliasColors": {},
           "bars": false,
@@ -1800,7 +1800,7 @@
             "w": 12,
             "x": 0,
             "y": 23
-          },
+        },
           "id": 67,
           "legend": {
             "alignAsTable": true,
@@ -1814,7 +1814,7 @@
             "show": true,
             "total": false,
             "values": true
-          },
+        },
           "lines": true,
           "linewidth": 2,
           "links": [],
@@ -1835,8 +1835,8 @@
               "legendFormat": "{{type}}",
               "refId": "A",
               "step": 4
-            }
-          ],
+          }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -1846,7 +1846,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+        },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -1854,7 +1854,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+        },
           "yaxes": [
             {
               "format": "s",
@@ -1863,7 +1863,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+          },
             {
               "format": "short",
               "label": null,
@@ -1871,13 +1871,13 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ],
+          }
+         ],
           "yaxis": {
             "align": false,
             "alignLevel": null
-          }
-        },
+        }
+      },
         {
           "aliasColors": {},
           "bars": false,
@@ -1891,7 +1891,7 @@
             "w": 12,
             "x": 12,
             "y": 23
-          },
+        },
           "id": 68,
           "legend": {
             "alignAsTable": true,
@@ -1905,7 +1905,7 @@
             "show": true,
             "total": false,
             "values": true
-          },
+        },
           "lines": true,
           "linewidth": 2,
           "links": [],
@@ -1926,8 +1926,8 @@
               "legendFormat": "{{type}}",
               "refId": "A",
               "step": 4
-            }
-          ],
+          }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -1937,7 +1937,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+        },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -1945,7 +1945,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+        },
           "yaxes": [
             {
               "format": "s",
@@ -1954,7 +1954,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+          },
             {
               "format": "short",
               "label": null,
@@ -1962,13 +1962,13 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ],
+          }
+         ],
           "yaxis": {
             "align": false,
             "alignLevel": null
-          }
-        },
+        }
+      },
         {
           "aliasColors": {},
           "bars": false,
@@ -1982,7 +1982,7 @@
             "w": 12,
             "x": 0,
             "y": 30
-          },
+        },
           "id": 81,
           "legend": {
             "alignAsTable": true,
@@ -1997,7 +1997,7 @@
             "sideWidth": null,
             "total": false,
             "values": true
-          },
+        },
           "lines": true,
           "linewidth": 2,
           "links": [],
@@ -2017,8 +2017,8 @@
               "intervalFactor": 2,
               "legendFormat": "{{type}}",
               "refId": "A"
-            }
-          ],
+          }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -2028,7 +2028,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+        },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -2036,7 +2036,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+        },
           "yaxes": [
             {
               "format": "dtdurations",
@@ -2045,7 +2045,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+          },
             {
               "format": "short",
               "label": null,
@@ -2053,13 +2053,13 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ],
+          }
+         ],
           "yaxis": {
             "align": false,
             "alignLevel": null
-          }
-        },
+        }
+      },
         {
           "aliasColors": {},
           "bars": false,
@@ -2073,7 +2073,7 @@
             "w": 12,
             "x": 12,
             "y": 30
-          },
+        },
           "id": 82,
           "legend": {
             "alignAsTable": true,
@@ -2087,7 +2087,7 @@
             "show": true,
             "total": false,
             "values": true
-          },
+        },
           "lines": true,
           "linewidth": 2,
           "links": [],
@@ -2107,8 +2107,8 @@
               "intervalFactor": 2,
               "legendFormat": "{{type}}",
               "refId": "A"
-            }
-          ],
+          }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -2118,7 +2118,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+        },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -2126,7 +2126,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+        },
           "yaxes": [
             {
               "format": "dtdurations",
@@ -2135,7 +2135,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+          },
             {
               "format": "short",
               "label": null,
@@ -2143,18 +2143,18 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ],
+          }
+         ],
           "yaxis": {
             "align": false,
             "alignLevel": null
-          }
         }
-      ],
+      }
+     ],
       "repeat": null,
       "title": "Operator",
       "type": "row"
-    },
+  },
     {
       "collapsed": true,
       "gridPos": {
@@ -2162,7 +2162,7 @@
         "w": 24,
         "x": 0,
         "y": 2
-      },
+    },
       "id": 120,
       "panels": [
         {
@@ -2178,7 +2178,7 @@
             "w": 12,
             "x": 0,
             "y": 3
-          },
+        },
           "id": 83,
           "legend": {
             "alignAsTable": true,
@@ -2195,7 +2195,7 @@
             "sortDesc": null,
             "total": false,
             "values": true
-          },
+        },
           "lines": true,
           "linewidth": 2,
           "links": [],
@@ -2217,8 +2217,8 @@
               "intervalFactor": 2,
               "legendFormat": "{{address}}-store-{{store}}",
               "refId": "B"
-            }
-          ],
+          }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -2228,7 +2228,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+        },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -2236,7 +2236,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+        },
           "yaxes": [
             {
               "format": "decbytes",
@@ -2245,7 +2245,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+          },
             {
               "format": "percent",
               "label": null,
@@ -2253,13 +2253,13 @@
               "max": null,
               "min": null,
               "show": false
-            }
-          ],
+          }
+         ],
           "yaxis": {
             "align": false,
             "alignLevel": null
-          }
-        },
+        }
+      },
         {
           "aliasColors": {},
           "bars": false,
@@ -2273,7 +2273,7 @@
             "w": 12,
             "x": 12,
             "y": 3
-          },
+        },
           "id": 91,
           "legend": {
             "alignAsTable": true,
@@ -2287,7 +2287,7 @@
             "show": true,
             "total": false,
             "values": true
-          },
+        },
           "lines": true,
           "linewidth": 2,
           "links": [],
@@ -2307,8 +2307,8 @@
               "intervalFactor": 2,
               "legendFormat": "{{address}}-store-{{store}}",
               "refId": "A"
-            }
-          ],
+          }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -2318,7 +2318,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+        },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -2326,7 +2326,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+        },
           "yaxes": [
             {
               "format": "decbytes",
@@ -2335,7 +2335,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+          },
             {
               "format": "short",
               "label": null,
@@ -2343,13 +2343,13 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ],
+          }
+         ],
           "yaxis": {
             "align": false,
             "alignLevel": null
-          }
-        },
+        }
+      },
         {
           "aliasColors": {},
           "bars": false,
@@ -2363,7 +2363,7 @@
             "w": 12,
             "x": 0,
             "y": 9
-          },
+        },
           "id": 90,
           "legend": {
             "alignAsTable": true,
@@ -2378,7 +2378,7 @@
             "sortDesc": true,
             "total": false,
             "values": true
-          },
+        },
           "lines": true,
           "linewidth": 2,
           "links": [],
@@ -2398,8 +2398,8 @@
               "intervalFactor": 2,
               "legendFormat": "{{address}}-store-{{store}}",
               "refId": "A"
-            }
-          ],
+          }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -2409,7 +2409,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+        },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -2417,7 +2417,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+        },
           "yaxes": [
             {
               "format": "decbytes",
@@ -2426,7 +2426,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+          },
             {
               "format": "short",
               "label": null,
@@ -2434,13 +2434,13 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ],
+          }
+         ],
           "yaxis": {
             "align": false,
             "alignLevel": null
-          }
-        },
+        }
+      },
         {
           "aliasColors": {},
           "bars": false,
@@ -2454,7 +2454,7 @@
             "w": 12,
             "x": 12,
             "y": 9
-          },
+         },
           "id": 84,
           "legend": {
             "alignAsTable": true,
@@ -2468,7 +2468,7 @@
             "show": true,
             "total": false,
             "values": true
-          },
+         },
           "lines": true,
           "linewidth": 2,
           "links": [],
@@ -2488,8 +2488,8 @@
               "intervalFactor": 2,
               "legendFormat": "{{address}}-store-{{store}}",
               "refId": "A"
-            }
-          ],
+           }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -2499,7 +2499,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+         },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -2507,7 +2507,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+         },
           "yaxes": [
             {
               "format": "percentunit",
@@ -2516,7 +2516,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+           },
             {
               "format": "short",
               "label": null,
@@ -2524,13 +2524,13 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ],
+           }
+         ],
           "yaxis": {
             "align": false,
             "alignLevel": null
-          }
-        },
+         }
+       },
         {
           "aliasColors": {},
           "bars": false,
@@ -2544,7 +2544,7 @@
             "w": 12,
             "x": 0,
             "y": 15
-          },
+         },
           "id": 85,
           "legend": {
             "alignAsTable": true,
@@ -2558,7 +2558,7 @@
             "show": true,
             "total": false,
             "values": true
-          },
+         },
           "lines": true,
           "linewidth": 3,
           "links": [],
@@ -2579,8 +2579,8 @@
               "intervalFactor": 2,
               "legendFormat": "{{address}}-store-{{store}}",
               "refId": "A"
-            }
-          ],
+           }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -2590,7 +2590,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+         },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -2598,7 +2598,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+         },
           "yaxes": [
             {
               "format": "short",
@@ -2607,7 +2607,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+           },
             {
               "format": "short",
               "label": null,
@@ -2615,13 +2615,13 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ],
+           }
+         ],
           "yaxis": {
             "align": false,
             "alignLevel": null
-          }
-        },
+         }
+       },
         {
           "aliasColors": {},
           "bars": false,
@@ -2639,7 +2639,7 @@
             "w": 12,
             "x": 12,
             "y": 15
-          },
+         },
           "id": 41,
           "legend": {
             "alignAsTable": true,
@@ -2655,7 +2655,7 @@
             "sortDesc": true,
             "total": false,
             "values": true
-          },
+         },
           "lines": true,
           "linewidth": 2,
           "links": [],
@@ -2677,7 +2677,7 @@
               "legendFormat": "{{address}}-store-{{store}}",
               "refId": "A",
               "step": 4
-            },
+           },
             {
               "expr": "pd_scheduler_op_influence{instance=\"$instance\",scheduler=\"balance-region-scheduler\"}",
               "format": "time_series",
@@ -2685,7 +2685,7 @@
               "intervalFactor": 1,
               "legendFormat": "op-influence-{{store}}-{{type}}",
               "refId": "C"
-            },
+           },
             {
               "expr": "pd_scheduler_tolerant_resource{instance=\"$instance\",scheduler=\"balance-region-scheduler\"}",
               "format": "time_series",
@@ -2693,8 +2693,8 @@
               "intervalFactor": 1,
               "legendFormat": "tolerant-resource-{{source}}-{{target}}",
               "refId": "E"
-            }
-          ],
+           }
+         ],
           "thresholds": [
             {
               "colorMode": "critical",
@@ -2702,8 +2702,8 @@
               "line": true,
               "op": "gt",
               "value": 1000000000
-            }
-          ],
+           }
+         ],
           "timeFrom": null,
           "timeRegions": [],
           "timeShift": null,
@@ -2713,7 +2713,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "cumulative"
-          },
+         },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -2721,7 +2721,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+         },
           "yaxes": [
             {
               "format": "none",
@@ -2730,7 +2730,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+           },
             {
               "format": "short",
               "label": null,
@@ -2738,13 +2738,13 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ],
+           }
+         ],
           "yaxis": {
             "align": false,
             "alignLevel": null
-          }
-        },
+         }
+       },
         {
           "aliasColors": {},
           "bars": false,
@@ -2762,7 +2762,7 @@
             "w": 12,
             "x": 0,
             "y": 21
-          },
+         },
           "id": 40,
           "legend": {
             "alignAsTable": true,
@@ -2778,7 +2778,7 @@
             "sortDesc": true,
             "total": false,
             "values": true
-          },
+         },
           "lines": true,
           "linewidth": 2,
           "links": [],
@@ -2799,8 +2799,8 @@
               "legendFormat": "{{address}}-store-{{store}}",
               "refId": "A",
               "step": 4
-            }
-          ],
+           }
+         ],
           "thresholds": [
             {
               "colorMode": "critical",
@@ -2808,8 +2808,8 @@
               "line": true,
               "op": "gt",
               "value": 1000000000
-            }
-          ],
+           }
+         ],
           "timeFrom": null,
           "timeRegions": [],
           "timeShift": null,
@@ -2819,7 +2819,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "cumulative"
-          },
+         },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -2827,7 +2827,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+         },
           "yaxes": [
             {
               "format": "none",
@@ -2836,7 +2836,7 @@
               "max": null,
               "min": "0",
               "show": true
-            },
+           },
             {
               "format": "short",
               "label": null,
@@ -2844,13 +2844,13 @@
               "max": null,
               "min": null,
               "show": false
-            }
-          ],
+           }
+         ],
           "yaxis": {
             "align": false,
             "alignLevel": null
-          }
-        },
+         }
+       },
         {
           "aliasColors": {},
           "bars": false,
@@ -2864,7 +2864,7 @@
             "w": 12,
             "x": 12,
             "y": 21
-          },
+         },
           "id": 57,
           "legend": {
             "alignAsTable": true,
@@ -2880,7 +2880,7 @@
             "sortDesc": true,
             "total": false,
             "values": true
-          },
+         },
           "lines": true,
           "linewidth": 2,
           "links": [],
@@ -2901,8 +2901,8 @@
               "legendFormat": "{{address}}-store-{{store}}",
               "refId": "A",
               "step": 4
-            }
-          ],
+           }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -2912,7 +2912,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+         },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -2920,7 +2920,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+         },
           "yaxes": [
             {
               "format": "decmbytes",
@@ -2929,7 +2929,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+           },
             {
               "format": "short",
               "label": null,
@@ -2937,13 +2937,13 @@
               "max": null,
               "min": null,
               "show": false
-            }
-          ],
+           }
+         ],
           "yaxis": {
             "align": false,
             "alignLevel": null
-          }
-        },
+         }
+       },
         {
           "aliasColors": {},
           "bars": false,
@@ -2957,7 +2957,7 @@
             "w": 12,
             "x": 0,
             "y": 27
-          },
+         },
           "id": 56,
           "legend": {
             "alignAsTable": true,
@@ -2973,7 +2973,7 @@
             "sortDesc": true,
             "total": false,
             "values": true
-          },
+         },
           "lines": true,
           "linewidth": 2,
           "links": [],
@@ -2994,8 +2994,8 @@
               "legendFormat": "{{address}}-store-{{store}}",
               "refId": "A",
               "step": 4
-            }
-          ],
+           }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -3005,7 +3005,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+         },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -3013,7 +3013,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+         },
           "yaxes": [
             {
               "format": "decmbytes",
@@ -3022,7 +3022,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+           },
             {
               "format": "short",
               "label": null,
@@ -3030,13 +3030,13 @@
               "max": null,
               "min": null,
               "show": false
-            }
-          ],
+           }
+         ],
           "yaxis": {
             "align": false,
             "alignLevel": null
-          }
-        },
+         }
+       },
         {
           "aliasColors": {},
           "bars": false,
@@ -3050,7 +3050,7 @@
             "w": 12,
             "x": 12,
             "y": 27
-          },
+         },
           "id": 59,
           "legend": {
             "alignAsTable": true,
@@ -3066,7 +3066,7 @@
             "sortDesc": true,
             "total": false,
             "values": true
-          },
+         },
           "lines": true,
           "linewidth": 2,
           "links": [],
@@ -3087,8 +3087,8 @@
               "legendFormat": "{{address}}-store-{{store}}",
               "refId": "A",
               "step": 4
-            }
-          ],
+           }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -3098,7 +3098,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+         },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -3106,7 +3106,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+         },
           "yaxes": [
             {
               "format": "short",
@@ -3115,7 +3115,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+           },
             {
               "format": "short",
               "label": null,
@@ -3123,13 +3123,13 @@
               "max": null,
               "min": null,
               "show": false
-            }
-          ],
+           }
+         ],
           "yaxis": {
             "align": false,
             "alignLevel": null
-          }
-        },
+         }
+       },
         {
           "aliasColors": {},
           "bars": false,
@@ -3143,7 +3143,7 @@
             "w": 12,
             "x": 0,
             "y": 33
-          },
+         },
           "id": 58,
           "legend": {
             "alignAsTable": true,
@@ -3158,7 +3158,7 @@
             "sortDesc": true,
             "total": false,
             "values": true
-          },
+         },
           "lines": true,
           "linewidth": 2,
           "links": [],
@@ -3179,8 +3179,8 @@
               "legendFormat": "{{address}}-store-{{store}}",
               "refId": "A",
               "step": 4
-            }
-          ],
+           }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -3190,7 +3190,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+         },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -3198,7 +3198,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+         },
           "yaxes": [
             {
               "format": "short",
@@ -3207,7 +3207,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+           },
             {
               "format": "short",
               "label": null,
@@ -3215,18 +3215,18 @@
               "max": null,
               "min": null,
               "show": false
-            }
-          ],
+           }
+         ],
           "yaxis": {
             "align": false,
             "alignLevel": null
-          }
-        }
-      ],
+         }
+       }
+     ],
       "repeat": null,
       "title": "Statistics - balance",
       "type": "row"
-    },
+   },
     {
       "collapsed": true,
       "gridPos": {
@@ -3234,7 +3234,7 @@
         "w": 24,
         "x": 0,
         "y": 3
-      },
+     },
       "id": 121,
       "panels": [
         {
@@ -3251,7 +3251,7 @@
             "w": 12,
             "x": 0,
             "y": 83
-          },
+         },
           "id": 50,
           "legend": {
             "alignAsTable": true,
@@ -3267,7 +3267,7 @@
             "sortDesc": true,
             "total": false,
             "values": true
-          },
+         },
           "lines": true,
           "linewidth": 2,
           "links": [],
@@ -3288,8 +3288,8 @@
               "legendFormat": "{{address}}-store-{{store}}",
               "refId": "A",
               "step": 4
-            }
-          ],
+           }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -3299,7 +3299,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "cumulative"
-          },
+         },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -3307,7 +3307,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+         },
           "yaxes": [
             {
               "format": "short",
@@ -3316,7 +3316,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+           },
             {
               "format": "short",
               "label": null,
@@ -3324,9 +3324,9 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ]
-        },
+           }
+         ]
+       },
         {
           "aliasColors": {},
           "bars": false,
@@ -3341,7 +3341,7 @@
             "w": 12,
             "x": 12,
             "y": 83
-          },
+         },
           "id": 51,
           "legend": {
             "alignAsTable": true,
@@ -3357,7 +3357,7 @@
             "sortDesc": true,
             "total": false,
             "values": true
-          },
+         },
           "lines": true,
           "linewidth": 2,
           "links": [],
@@ -3378,8 +3378,8 @@
               "legendFormat": "{{address}}-store-{{store}}",
               "refId": "A",
               "step": 4
-            }
-          ],
+           }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -3389,7 +3389,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+         },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -3397,7 +3397,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+         },
           "yaxes": [
             {
               "format": "short",
@@ -3406,7 +3406,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+           },
             {
               "format": "short",
               "label": null,
@@ -3414,9 +3414,9 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ]
-        },
+           }
+         ]
+       },
         {
           "aliasColors": {},
           "bars": false,
@@ -3431,7 +3431,7 @@
             "w": 12,
             "x": 0,
             "y": 90
-          },
+         },
           "id": 48,
           "legend": {
             "alignAsTable": true,
@@ -3447,7 +3447,7 @@
             "sortDesc": true,
             "total": false,
             "values": true
-          },
+         },
           "lines": true,
           "linewidth": 2,
           "links": [],
@@ -3469,8 +3469,8 @@
               "metric": "pd_hotspot_status",
               "refId": "A",
               "step": 4
-            }
-          ],
+           }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -3480,7 +3480,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+         },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -3488,7 +3488,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+         },
           "yaxes": [
             {
               "format": "decbytes",
@@ -3497,7 +3497,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+           },
             {
               "format": "short",
               "label": null,
@@ -3505,9 +3505,9 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ]
-        },
+           }
+         ]
+       },
         {
           "aliasColors": {},
           "bars": false,
@@ -3522,7 +3522,7 @@
             "w": 12,
             "x": 12,
             "y": 90
-          },
+         },
           "id": 49,
           "legend": {
             "alignAsTable": true,
@@ -3538,7 +3538,7 @@
             "sortDesc": true,
             "total": false,
             "values": true
-          },
+         },
           "lines": true,
           "linewidth": 2,
           "links": [],
@@ -3559,8 +3559,8 @@
               "legendFormat": "{{address}}-store-{{store}}",
               "refId": "A",
               "step": 4
-            }
-          ],
+           }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -3570,7 +3570,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+         },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -3578,7 +3578,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+         },
           "yaxes": [
             {
               "format": "decbytes",
@@ -3587,7 +3587,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+           },
             {
               "format": "short",
               "label": null,
@@ -3595,9 +3595,9 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ]
-        },
+           }
+         ]
+       },
         {
           "aliasColors": {},
           "bars": false,
@@ -3612,7 +3612,7 @@
             "w": 12,
             "x": 0,
             "y": 97
-          },
+         },
           "id": 60,
           "legend": {
             "alignAsTable": true,
@@ -3628,7 +3628,7 @@
             "sortDesc": true,
             "total": false,
             "values": true
-          },
+         },
           "lines": true,
           "linewidth": 1,
           "links": [],
@@ -3649,8 +3649,8 @@
               "legendFormat": "{{address}}-store-{{store}}",
               "refId": "A",
               "step": 4
-            }
-          ],
+           }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -3660,7 +3660,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "cumulative"
-          },
+         },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -3668,7 +3668,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+         },
           "yaxes": [
             {
               "format": "short",
@@ -3677,7 +3677,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+           },
             {
               "format": "short",
               "label": null,
@@ -3685,9 +3685,9 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ]
-        },
+           }
+         ]
+       },
         {
           "aliasColors": {},
           "bars": false,
@@ -3701,7 +3701,7 @@
             "w": 12,
             "x": 12,
             "y": 97
-          },
+         },
           "id": 62,
           "legend": {
             "alignAsTable": true,
@@ -3717,7 +3717,7 @@
             "sortDesc": true,
             "total": false,
             "values": true
-          },
+         },
           "lines": true,
           "linewidth": 2,
           "links": [],
@@ -3739,8 +3739,8 @@
               "metric": "pd_hotspot_status",
               "refId": "A",
               "step": 4
-            }
-          ],
+           }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -3750,7 +3750,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+         },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -3758,7 +3758,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+         },
           "yaxes": [
             {
               "format": "decbytes",
@@ -3767,7 +3767,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+           },
             {
               "format": "short",
               "label": null,
@@ -3775,9 +3775,9 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ]
-        },
+           }
+         ]
+       },
         {
           "aliasColors": {},
           "bars": false,
@@ -3791,7 +3791,7 @@
             "w": 12,
             "x": 0,
             "y": 104
-          },
+         },
           "id": 61,
           "legend": {
             "alignAsTable": true,
@@ -3807,7 +3807,7 @@
             "sortDesc": true,
             "total": false,
             "values": true
-          },
+         },
           "lines": true,
           "linewidth": 1,
           "links": [],
@@ -3828,8 +3828,8 @@
               "legendFormat": "{{address}}-store-{{store}}",
               "refId": "A",
               "step": 4
-            }
-          ],
+           }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -3839,7 +3839,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+         },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -3847,7 +3847,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+         },
           "yaxes": [
             {
               "decimals": null,
@@ -3857,7 +3857,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+           },
             {
               "format": "short",
               "label": null,
@@ -3865,9 +3865,9 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ]
-        },
+           }
+         ]
+       },
         {
           "aliasColors": {},
           "bars": false,
@@ -3881,7 +3881,7 @@
             "w": 12,
             "x": 12,
             "y": 104
-          },
+         },
           "id": 105,
           "legend": {
             "alignAsTable": true,
@@ -3897,7 +3897,7 @@
             "sortDesc": true,
             "total": false,
             "values": true
-          },
+         },
           "lines": true,
           "linewidth": 1,
           "links": [],
@@ -3918,8 +3918,8 @@
               "legendFormat": "{{address}}-store-{{store}}",
               "refId": "A",
               "step": 4
-            }
-          ],
+           }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -3929,7 +3929,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+         },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -3937,7 +3937,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+         },
           "yaxes": [
             {
               "format": "Bps",
@@ -3946,7 +3946,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+           },
             {
               "format": "short",
               "label": null,
@@ -3954,9 +3954,9 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ]
-        },
+           }
+         ]
+       },
         {
           "aliasColors": {},
           "bars": false,
@@ -3970,7 +3970,7 @@
             "w": 12,
             "x": 0,
             "y": 111
-          },
+         },
           "id": 106,
           "legend": {
             "alignAsTable": true,
@@ -3986,7 +3986,7 @@
             "sortDesc": true,
             "total": false,
             "values": true
-          },
+         },
           "lines": true,
           "linewidth": 1,
           "links": [],
@@ -4007,8 +4007,8 @@
               "legendFormat": "{{address}}-store-{{store}}",
               "refId": "A",
               "step": 4
-            }
-          ],
+           }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -4018,7 +4018,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+         },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -4026,7 +4026,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+         },
           "yaxes": [
             {
               "decimals": null,
@@ -4036,7 +4036,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+           },
             {
               "format": "short",
               "label": null,
@@ -4044,9 +4044,9 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ]
-        },
+           }
+         ]
+       },
         {
           "aliasColors": {},
           "bars": false,
@@ -4060,7 +4060,7 @@
             "w": 12,
             "x": 12,
             "y": 111
-          },
+         },
           "id": 107,
           "legend": {
             "alignAsTable": true,
@@ -4076,7 +4076,7 @@
             "sortDesc": true,
             "total": false,
             "values": true
-          },
+         },
           "lines": true,
           "linewidth": 1,
           "links": [],
@@ -4097,8 +4097,8 @@
               "legendFormat": "{{address}}-store-{{store}}",
               "refId": "A",
               "step": 4
-            }
-          ],
+           }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -4108,7 +4108,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+         },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -4116,7 +4116,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+         },
           "yaxes": [
             {
               "decimals": null,
@@ -4126,7 +4126,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+           },
             {
               "format": "short",
               "label": null,
@@ -4134,14 +4134,14 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ]
-        }
-      ],
+           }
+         ]
+       }
+     ],
       "repeat": null,
       "title": "Statistics - hotspot",
       "type": "row"
-    },
+   },
     {
       "collapsed": true,
       "gridPos": {
@@ -4149,7 +4149,7 @@
         "w": 24,
         "x": 0,
         "y": 4
-      },
+     },
       "id": 122,
       "panels": [
         {
@@ -4165,7 +4165,7 @@
             "w": 24,
             "x": 0,
             "y": 112
-          },
+         },
           "id": 46,
           "legend": {
             "alignAsTable": true,
@@ -4179,7 +4179,7 @@
             "show": true,
             "total": false,
             "values": true
-          },
+         },
           "lines": false,
           "linewidth": 1,
           "links": [],
@@ -4201,8 +4201,8 @@
               "metric": "pd_scheduler_status",
               "refId": "A",
               "step": 2
-            }
-          ],
+           }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -4212,7 +4212,7 @@
             "shared": true,
             "sort": 1,
             "value_type": "individual"
-          },
+         },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -4220,7 +4220,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+         },
           "yaxes": [
             {
               "format": "short",
@@ -4229,7 +4229,7 @@
               "max": null,
               "min": "0",
               "show": true
-            },
+           },
             {
               "format": "short",
               "label": null,
@@ -4237,9 +4237,9 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ]
-        },
+           }
+         ]
+       },
         {
           "aliasColors": {},
           "bars": false,
@@ -4253,7 +4253,7 @@
             "w": 12,
             "x": 0,
             "y": 120
-          },
+         },
           "id": 87,
           "legend": {
             "alignAsTable": true,
@@ -4269,7 +4269,7 @@
             "sortDesc": true,
             "total": true,
             "values": true
-          },
+         },
           "lines": true,
           "linewidth": 1,
           "links": [],
@@ -4289,15 +4289,15 @@
               "intervalFactor": 2,
               "legendFormat": "store-{{store}}",
               "refId": "A"
-            },
+           },
             {
               "expr": "sum(delta(pd_scheduler_balance_leader{store=~\"$store\", address=~\".*in\",instance=\"$instance\", type=\"move-leader\"}[30s])) by (address, store)",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "store-{{store}}",
               "refId": "B"
-            }
-          ],
+           }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -4307,7 +4307,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+         },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -4315,7 +4315,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+         },
           "yaxes": [
             {
               "format": "short",
@@ -4324,7 +4324,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+           },
             {
               "format": "short",
               "label": null,
@@ -4332,9 +4332,9 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ]
-        },
+           }
+         ]
+       },
         {
           "aliasColors": {},
           "bars": false,
@@ -4348,7 +4348,7 @@
             "w": 12,
             "x": 12,
             "y": 120
-          },
+         },
           "hideTimeOverride": false,
           "id": 86,
           "legend": {
@@ -4365,7 +4365,7 @@
             "sortDesc": true,
             "total": true,
             "values": true
-          },
+         },
           "lines": true,
           "linewidth": 1,
           "links": [],
@@ -4385,15 +4385,15 @@
               "intervalFactor": 2,
               "legendFormat": "store-{{store}}",
               "refId": "A"
-            },
+           },
             {
               "expr": "sum(delta(pd_scheduler_balance_region{store=~\"$store\", address=~\".*in\",instance=\"$instance\", type=\"move-peer\"}[1m])) by (address, store)",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "store-{{store}}",
               "refId": "B"
-            }
-          ],
+           }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -4403,7 +4403,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+         },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -4411,7 +4411,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+         },
           "yaxes": [
             {
               "format": "short",
@@ -4420,7 +4420,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+           },
             {
               "format": "short",
               "label": null,
@@ -4428,9 +4428,9 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ]
-        },
+           }
+         ]
+       },
         {
           "aliasColors": {},
           "bars": true,
@@ -4444,7 +4444,7 @@
             "w": 12,
             "x": 0,
             "y": 128
-          },
+         },
           "id": 89,
           "legend": {
             "alignAsTable": true,
@@ -4458,7 +4458,7 @@
             "show": true,
             "total": true,
             "values": true
-          },
+         },
           "lines": false,
           "linewidth": 1,
           "links": [],
@@ -4478,8 +4478,8 @@
               "intervalFactor": 2,
               "legendFormat": "{{type}}-store-{{store}}",
               "refId": "A"
-            }
-          ],
+           }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -4489,7 +4489,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+         },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -4497,7 +4497,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+         },
           "yaxes": [
             {
               "format": "short",
@@ -4506,7 +4506,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+           },
             {
               "format": "short",
               "label": null,
@@ -4514,9 +4514,9 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ]
-        },
+           }
+         ]
+       },
         {
           "aliasColors": {},
           "bars": true,
@@ -4530,7 +4530,7 @@
             "w": 12,
             "x": 12,
             "y": 128
-          },
+         },
           "id": 88,
           "legend": {
             "alignAsTable": true,
@@ -4545,7 +4545,7 @@
             "sortDesc": false,
             "total": true,
             "values": true
-          },
+         },
           "lines": false,
           "linewidth": 1,
           "links": [],
@@ -4565,8 +4565,8 @@
               "intervalFactor": 2,
               "legendFormat": "{{type}}-store-{{store}}",
               "refId": "A"
-            }
-          ],
+           }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -4576,7 +4576,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+         },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -4584,7 +4584,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+         },
           "yaxes": [
             {
               "format": "short",
@@ -4593,7 +4593,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+           },
             {
               "format": "short",
               "label": null,
@@ -4601,9 +4601,9 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ]
-        },
+           }
+         ]
+       },
         {
           "aliasColors": {},
           "bars": false,
@@ -4617,7 +4617,7 @@
             "w": 12,
             "x": 0,
             "y": 136
-          },
+         },
           "id": 52,
           "legend": {
             "alignAsTable": true,
@@ -4633,7 +4633,7 @@
             "sortDesc": true,
             "total": false,
             "values": true
-          },
+         },
           "lines": true,
           "linewidth": 2,
           "links": [],
@@ -4655,8 +4655,8 @@
               "metric": "pd_scheduler_event_count",
               "refId": "A",
               "step": 4
-            }
-          ],
+           }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -4666,7 +4666,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+         },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -4674,7 +4674,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+         },
           "yaxes": [
             {
               "format": "ops",
@@ -4683,7 +4683,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+           },
             {
               "format": "short",
               "label": null,
@@ -4691,9 +4691,9 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ]
-        },
+           }
+         ]
+       },
         {
           "aliasColors": {},
           "bars": false,
@@ -4707,7 +4707,7 @@
             "w": 12,
             "x": 12,
             "y": 136
-          },
+         },
           "id": 53,
           "legend": {
             "alignAsTable": true,
@@ -4723,7 +4723,7 @@
             "sortDesc": true,
             "total": false,
             "values": true
-          },
+         },
           "lines": true,
           "linewidth": 2,
           "links": [],
@@ -4745,8 +4745,8 @@
               "metric": "pd_scheduler_event_count",
               "refId": "A",
               "step": 4
-            }
-          ],
+           }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -4756,7 +4756,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+         },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -4764,7 +4764,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+         },
           "yaxes": [
             {
               "format": "ops",
@@ -4773,7 +4773,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+           },
             {
               "format": "short",
               "label": null,
@@ -4781,9 +4781,9 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ]
-        },
+           }
+         ]
+       },
         {
           "aliasColors": {},
           "bars": false,
@@ -4797,7 +4797,7 @@
             "w": 12,
             "x": 0,
             "y": 144
-          },
+         },
           "id": 70,
           "legend": {
             "alignAsTable": true,
@@ -4809,7 +4809,7 @@
             "show": true,
             "total": false,
             "values": false
-          },
+         },
           "lines": true,
           "linewidth": 2,
           "links": [],
@@ -4830,8 +4830,8 @@
               "legendFormat": "{{name}}",
               "refId": "A",
               "step": 10
-            }
-          ],
+           }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeShift": null,
@@ -4840,7 +4840,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+         },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -4848,7 +4848,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+         },
           "yaxes": [
             {
               "format": "short",
@@ -4857,7 +4857,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+           },
             {
               "format": "short",
               "label": null,
@@ -4865,9 +4865,9 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ]
-        },
+           }
+         ]
+       },
         {
           "aliasColors": {},
           "bars": false,
@@ -4881,7 +4881,7 @@
             "w": 12,
             "x": 12,
             "y": 144
-          },
+         },
           "id": 71,
           "legend": {
             "alignAsTable": true,
@@ -4893,7 +4893,7 @@
             "show": true,
             "total": false,
             "values": false
-          },
+         },
           "lines": true,
           "linewidth": 2,
           "links": [],
@@ -4914,8 +4914,8 @@
               "legendFormat": "{{name}}",
               "refId": "A",
               "step": 10
-            }
-          ],
+           }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeShift": null,
@@ -4924,7 +4924,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+         },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -4932,7 +4932,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+         },
           "yaxes": [
             {
               "format": "short",
@@ -4941,7 +4941,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+           },
             {
               "format": "short",
               "label": null,
@@ -4949,9 +4949,9 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ]
-        },
+           }
+         ]
+       },
         {
           "aliasColors": {},
           "bars": false,
@@ -4964,7 +4964,7 @@
             "w": 12,
             "x": 0,
             "y": 152
-          },
+         },
           "id": 110,
           "legend": {
             "alignAsTable": true,
@@ -4980,7 +4980,7 @@
             "sortDesc": true,
             "total": false,
             "values": true
-          },
+         },
           "lines": true,
           "linewidth": 2,
           "links": [],
@@ -5002,8 +5002,8 @@
               "metric": "pd_scheduler_event_count",
               "refId": "A",
               "step": 4
-            }
-          ],
+           }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeShift": null,
@@ -5012,7 +5012,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+         },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -5020,7 +5020,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+         },
           "yaxes": [
             {
               "format": "ops",
@@ -5029,7 +5029,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+           },
             {
               "format": "short",
               "label": null,
@@ -5037,9 +5037,9 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ]
-        },
+           }
+         ]
+       },
         {
           "aliasColors": {},
           "bars": false,
@@ -5052,7 +5052,7 @@
             "w": 12,
             "x": 12,
             "y": 152
-          },
+         },
           "id": 109,
           "legend": {
             "alignAsTable": true,
@@ -5068,7 +5068,7 @@
             "sortDesc": true,
             "total": false,
             "values": true
-          },
+         },
           "lines": true,
           "linewidth": 2,
           "links": [],
@@ -5090,8 +5090,8 @@
               "metric": "pd_scheduler_event_count",
               "refId": "A",
               "step": 4
-            }
-          ],
+           }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeShift": null,
@@ -5100,7 +5100,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+         },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -5108,7 +5108,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+         },
           "yaxes": [
             {
               "format": "ops",
@@ -5117,7 +5117,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+           },
             {
               "format": "short",
               "label": null,
@@ -5125,9 +5125,9 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ]
-        },
+           }
+         ]
+       },
         {
           "aliasColors": {},
           "bars": false,
@@ -5140,7 +5140,7 @@
             "w": 12,
             "x": 0,
             "y": 160
-          },
+         },
           "id": 108,
           "legend": {
             "alignAsTable": true,
@@ -5156,7 +5156,7 @@
             "sortDesc": true,
             "total": false,
             "values": true
-          },
+         },
           "lines": true,
           "linewidth": 2,
           "links": [],
@@ -5178,8 +5178,8 @@
               "metric": "pd_scheduler_event_count",
               "refId": "A",
               "step": 4
-            }
-          ],
+           }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeShift": null,
@@ -5188,7 +5188,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+         },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -5196,7 +5196,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+         },
           "yaxes": [
             {
               "format": "ops",
@@ -5205,7 +5205,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+           },
             {
               "format": "short",
               "label": null,
@@ -5213,9 +5213,9 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ]
-        },
+           }
+         ]
+       },
         {
           "aliasColors": {},
           "bars": false,
@@ -5228,7 +5228,7 @@
             "w": 12,
             "x": 12,
             "y": 160
-          },
+         },
           "id": 111,
           "legend": {
             "alignAsTable": true,
@@ -5244,7 +5244,7 @@
             "sortDesc": true,
             "total": false,
             "values": true
-          },
+         },
           "lines": true,
           "linewidth": 2,
           "links": [],
@@ -5266,15 +5266,15 @@
               "metric": "pd_scheduler_event_count",
               "refId": "A",
               "step": 4
-            },
+           },
             {
               "expr": "pd_schedule_store_limit{store=~\"$store\", type=\"take\"}",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{store}}-take",
               "refId": "B"
-            }
-          ],
+           }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeShift": null,
@@ -5283,7 +5283,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+         },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -5291,7 +5291,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+         },
           "yaxes": [
             {
               "format": "ops",
@@ -5300,7 +5300,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+           },
             {
               "format": "short",
               "label": null,
@@ -5308,14 +5308,14 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ]
-        }
-      ],
+           }
+         ]
+       }
+     ],
       "repeat": null,
       "title": "Scheduler",
       "type": "row"
-    },
+   },
     {
       "collapsed": true,
       "gridPos": {
@@ -5323,7 +5323,7 @@
         "w": 24,
         "x": 0,
         "y": 5
-      },
+     },
       "id": 123,
       "panels": [
         {
@@ -5343,7 +5343,7 @@
             "w": 12,
             "x": 0,
             "y": 6
-          },
+         },
           "id": 1,
           "legend": {
             "alignAsTable": true,
@@ -5358,7 +5358,7 @@
             "sideWidth": 300,
             "total": false,
             "values": true
-          },
+         },
           "lines": true,
           "linewidth": 1,
           "links": [],
@@ -5378,8 +5378,8 @@
               "legendFormat": "{{grpc_method}}",
               "refId": "A",
               "step": 4
-            }
-          ],
+           }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -5390,7 +5390,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "cumulative"
-          },
+         },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -5398,7 +5398,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+         },
           "yaxes": [
             {
               "format": "ops",
@@ -5407,7 +5407,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+           },
             {
               "format": "short",
               "label": null,
@@ -5415,13 +5415,13 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ],
+           }
+         ],
           "yaxis": {
             "align": false,
             "alignLevel": null
-          }
-        },
+         }
+       },
         {
           "aliasColors": {},
           "bars": false,
@@ -5438,7 +5438,7 @@
             "w": 12,
             "x": 12,
             "y": 6
-          },
+         },
           "id": 2,
           "legend": {
             "alignAsTable": true,
@@ -5454,7 +5454,7 @@
             "sortDesc": true,
             "total": false,
             "values": true
-          },
+         },
           "lines": true,
           "linewidth": 1,
           "links": [],
@@ -5474,8 +5474,8 @@
               "legendFormat": "{{grpc_method}}",
               "refId": "A",
               "step": 4
-            }
-          ],
+           }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -5486,7 +5486,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "cumulative"
-          },
+         },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -5494,7 +5494,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+         },
           "yaxes": [
             {
               "format": "s",
@@ -5503,7 +5503,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+           },
             {
               "format": "short",
               "label": null,
@@ -5511,18 +5511,18 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ],
+           }
+         ],
           "yaxis": {
             "align": false,
             "alignLevel": null
-          }
-        }
-      ],
+         }
+       }
+     ],
       "repeat": null,
       "title": "gRPC",
       "type": "row"
-    },
+   },
     {
       "collapsed": true,
       "gridPos": {
@@ -5530,7 +5530,7 @@
         "w": 24,
         "x": 0,
         "y": 6
-      },
+     },
       "id": 124,
       "panels": [
         {
@@ -5549,7 +5549,7 @@
             "w": 24,
             "x": 0,
             "y": 162
-          },
+         },
           "id": 5,
           "legend": {
             "alignAsTable": true,
@@ -5562,7 +5562,7 @@
             "sideWidth": 300,
             "total": false,
             "values": true
-          },
+         },
           "lines": true,
           "linewidth": 1,
           "links": [],
@@ -5582,8 +5582,8 @@
               "legendFormat": "{{instance}} : {{result}}",
               "refId": "A",
               "step": 2
-            }
-          ],
+           }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeShift": null,
@@ -5593,7 +5593,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "cumulative"
-          },
+         },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -5601,7 +5601,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+         },
           "yaxes": [
             {
               "format": "short",
@@ -5610,7 +5610,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+           },
             {
               "format": "short",
               "label": null,
@@ -5618,9 +5618,9 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ]
-        },
+           }
+         ]
+       },
         {
           "aliasColors": {},
           "bars": false,
@@ -5637,7 +5637,7 @@
             "w": 12,
             "x": 0,
             "y": 170
-          },
+         },
           "id": 6,
           "legend": {
             "alignAsTable": true,
@@ -5650,7 +5650,7 @@
             "sideWidth": 300,
             "total": false,
             "values": true
-          },
+         },
           "lines": true,
           "linewidth": 1,
           "links": [],
@@ -5670,8 +5670,8 @@
               "legendFormat": "{{instance}} {{result}}",
               "refId": "A",
               "step": 4
-            }
-          ],
+           }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeShift": null,
@@ -5681,7 +5681,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "cumulative"
-          },
+         },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -5689,7 +5689,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+         },
           "yaxes": [
             {
               "format": "s",
@@ -5698,7 +5698,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+           },
             {
               "format": "short",
               "label": null,
@@ -5706,9 +5706,9 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ]
-        },
+           }
+         ]
+       },
         {
           "aliasColors": {},
           "bars": false,
@@ -5725,7 +5725,7 @@
             "w": 12,
             "x": 12,
             "y": 170
-          },
+         },
           "id": 7,
           "legend": {
             "alignAsTable": true,
@@ -5740,7 +5740,7 @@
             "sideWidth": 300,
             "total": false,
             "values": true
-          },
+         },
           "lines": true,
           "linewidth": 1,
           "links": [],
@@ -5761,8 +5761,8 @@
               "metric": "",
               "refId": "A",
               "step": 4
-            }
-          ],
+           }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeShift": null,
@@ -5772,7 +5772,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "cumulative"
-          },
+         },
           "transparent": false,
           "type": "graph",
           "xaxis": {
@@ -5781,7 +5781,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+         },
           "yaxes": [
             {
               "format": "s",
@@ -5790,7 +5790,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+           },
             {
               "format": "short",
               "label": null,
@@ -5798,9 +5798,9 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ]
-        },
+           }
+         ]
+       },
         {
           "aliasColors": {},
           "bars": false,
@@ -5817,7 +5817,7 @@
             "w": 12,
             "x": 0,
             "y": 178
-          },
+         },
           "id": 34,
           "legend": {
             "alignAsTable": true,
@@ -5830,7 +5830,7 @@
             "sideWidth": 300,
             "total": false,
             "values": true
-          },
+         },
           "lines": true,
           "linewidth": 2,
           "links": [],
@@ -5851,8 +5851,8 @@
               "metric": "",
               "refId": "A",
               "step": 4
-            }
-          ],
+           }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeShift": null,
@@ -5862,7 +5862,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "cumulative"
-          },
+         },
           "transparent": false,
           "type": "graph",
           "xaxis": {
@@ -5871,7 +5871,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+         },
           "yaxes": [
             {
               "alignLevel": null,
@@ -5880,7 +5880,7 @@
               "logBase": 1,
               "max": null,
               "min": null
-            },
+           },
             {
               "format": "short",
               "label": null,
@@ -5888,9 +5888,9 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ]
-        },
+           }
+         ]
+       },
         {
           "alert": {
             "conditions": [
@@ -5898,12 +5898,12 @@
                 "evaluator": {
                   "params": [
                     0.1
-                  ],
+                 ],
                   "type": "lt"
-                },
+               },
                 "operator": {
                   "type": "and"
-                },
+               },
                 "query": {
                   "datasourceId": 1,
                   "model": {
@@ -5912,20 +5912,20 @@
                     "legendFormat": "{{instance}} etch disk wal fsync rate",
                     "refId": "A",
                     "step": 4
-                  },
+                 },
                   "params": [
                     "A",
                     "1m",
                     "now"
-                  ]
-                },
+                 ]
+               },
                 "reducer": {
                   "params": [],
                   "type": "avg"
-                },
+               },
                 "type": "query"
-              }
-            ],
+             }
+           ],
             "executionErrorState": "alerting",
             "frequency": "60s",
             "handler": 1,
@@ -5933,7 +5933,7 @@
             "name": "etcd disk fsync",
             "noDataState": "ok",
             "notifications": []
-          },
+         },
           "aliasColors": {},
           "bars": false,
           "dashLength": 10,
@@ -5947,7 +5947,7 @@
             "w": 12,
             "x": 12,
             "y": 178
-          },
+         },
           "id": 44,
           "legend": {
             "avg": false,
@@ -5957,7 +5957,7 @@
             "show": true,
             "total": false,
             "values": false
-          },
+         },
           "lines": true,
           "linewidth": 1,
           "links": [],
@@ -5978,8 +5978,8 @@
               "legendFormat": "{{instance}} etch disk wal fsync rate",
               "refId": "A",
               "step": 4
-            }
-          ],
+           }
+         ],
           "thresholds": [
             {
               "colorMode": "critical",
@@ -5987,8 +5987,8 @@
               "line": true,
               "op": "lt",
               "value": 0.1
-            }
-          ],
+           }
+         ],
           "timeFrom": null,
           "timeRegions": [],
           "timeShift": null,
@@ -5997,7 +5997,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+         },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -6005,7 +6005,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+         },
           "yaxes": [
             {
               "format": "opm",
@@ -6014,7 +6014,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+           },
             {
               "format": "short",
               "label": null,
@@ -6022,13 +6022,13 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ],
+           }
+         ],
           "yaxis": {
             "align": false,
             "alignLevel": null
-          }
-        },
+         }
+       },
         {
           "aliasColors": {},
           "bars": false,
@@ -6042,7 +6042,7 @@
             "w": 8,
             "x": 0,
             "y": 186
-          },
+         },
           "id": 92,
           "legend": {
             "alignAsTable": true,
@@ -6056,7 +6056,7 @@
             "show": true,
             "total": false,
             "values": true
-          },
+         },
           "lines": true,
           "linewidth": 1,
           "links": [],
@@ -6076,8 +6076,8 @@
               "intervalFactor": 2,
               "legendFormat": "{{instance}} - {{job}}",
               "refId": "A"
-            }
-          ],
+           }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -6087,7 +6087,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+         },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -6095,7 +6095,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+         },
           "yaxes": [
             {
               "format": "none",
@@ -6104,7 +6104,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+           },
             {
               "format": "short",
               "label": null,
@@ -6112,9 +6112,9 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ]
-        },
+           }
+         ]
+       },
         {
           "aliasColors": {},
           "bars": false,
@@ -6128,7 +6128,7 @@
             "w": 8,
             "x": 8,
             "y": 186
-          },
+         },
           "id": 93,
           "legend": {
             "alignAsTable": true,
@@ -6142,7 +6142,7 @@
             "rightSide": true,
             "total": false,
             "values": true
-          },
+         },
           "lines": true,
           "linewidth": 1,
           "links": [],
@@ -6162,8 +6162,8 @@
               "intervalFactor": 2,
               "legendFormat": "{{instance}} - {{job}}",
               "refId": "A"
-            }
-          ],
+           }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -6173,7 +6173,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+         },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -6181,7 +6181,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+         },
           "yaxes": [
             {
               "format": "none",
@@ -6190,7 +6190,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+           },
             {
               "format": "short",
               "label": null,
@@ -6198,9 +6198,9 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ]
-        },
+           }
+         ]
+       },
         {
           "aliasColors": {},
           "bars": false,
@@ -6214,7 +6214,7 @@
             "w": 8,
             "x": 16,
             "y": 186
-          },
+         },
           "id": 94,
           "legend": {
             "alignAsTable": true,
@@ -6228,7 +6228,7 @@
             "show": true,
             "total": false,
             "values": true
-          },
+         },
           "lines": true,
           "linewidth": 1,
           "links": [],
@@ -6248,8 +6248,8 @@
               "intervalFactor": 2,
               "legendFormat": "{{instance}} - {{job}}",
               "refId": "A"
-            }
-          ],
+           }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -6259,7 +6259,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+         },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -6267,7 +6267,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+         },
           "yaxes": [
             {
               "format": "none",
@@ -6276,7 +6276,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+           },
             {
               "format": "short",
               "label": null,
@@ -6284,14 +6284,14 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ]
-        }
-      ],
+           }
+         ]
+       }
+     ],
       "repeat": null,
       "title": "etcd",
       "type": "row"
-    },
+   },
     {
       "collapsed": true,
       "gridPos": {
@@ -6299,7 +6299,7 @@
         "w": 24,
         "x": 0,
         "y": 7
-      },
+     },
       "id": 125,
       "panels": [
         {
@@ -6318,7 +6318,7 @@
             "w": 24,
             "x": 0,
             "y": 8
-          },
+         },
           "id": 28,
           "legend": {
             "alignAsTable": true,
@@ -6331,7 +6331,7 @@
             "sideWidth": 300,
             "total": false,
             "values": true
-          },
+         },
           "lines": true,
           "linewidth": 1,
           "links": [],
@@ -6351,8 +6351,8 @@
               "legendFormat": "{{type}}",
               "refId": "A",
               "step": 2
-            }
-          ],
+           }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -6363,7 +6363,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+         },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -6371,7 +6371,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+         },
           "yaxes": [
             {
               "format": "short",
@@ -6380,7 +6380,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+           },
             {
               "format": "short",
               "label": null,
@@ -6388,13 +6388,13 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ],
+           }
+         ],
           "yaxis": {
             "align": false,
             "alignLevel": null
-          }
-        },
+         }
+       },
         {
           "aliasColors": {},
           "bars": false,
@@ -6411,7 +6411,7 @@
             "w": 24,
             "x": 0,
             "y": 16
-          },
+         },
           "id": 29,
           "legend": {
             "alignAsTable": true,
@@ -6428,7 +6428,7 @@
             "sortDesc": false,
             "total": false,
             "values": true
-          },
+         },
           "lines": true,
           "linewidth": 1,
           "links": [],
@@ -6449,15 +6449,15 @@
               "legendFormat": "{{type}} 98th percentile",
               "refId": "A",
               "step": 2
-            },
+           },
             {
               "expr": "avg(rate(pd_client_request_handle_requests_duration_seconds_sum[30s])) by (type) /  avg(rate(pd_client_request_handle_requests_duration_seconds_count[30s])) by (type)",
               "intervalFactor": 2,
               "legendFormat": "{{type}} average",
               "refId": "B",
               "step": 2
-            }
-          ],
+           }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -6468,7 +6468,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+         },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -6476,7 +6476,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+         },
           "yaxes": [
             {
               "format": "s",
@@ -6485,7 +6485,7 @@
               "max": null,
               "min": "0",
               "show": true
-            },
+           },
             {
               "format": "short",
               "label": null,
@@ -6493,18 +6493,18 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ],
+           }
+         ],
           "yaxis": {
             "align": false,
             "alignLevel": null
-          }
-        }
-      ],
+         }
+       }
+     ],
       "repeat": null,
       "title": "TiDB",
       "type": "row"
-    },
+   },
     {
       "collapsed": true,
       "gridPos": {
@@ -6512,7 +6512,7 @@
         "w": 24,
         "x": 0,
         "y": 8
-      },
+     },
       "id": 126,
       "panels": [
         {
@@ -6531,7 +6531,7 @@
             "w": 12,
             "x": 0,
             "y": 9
-          },
+         },
           "id": 74,
           "legend": {
             "alignAsTable": true,
@@ -6545,7 +6545,7 @@
             "show": true,
             "total": false,
             "values": true
-          },
+         },
           "lines": true,
           "linewidth": 1,
           "links": [],
@@ -6567,8 +6567,8 @@
               "legendFormat": "{{address}}-store-{{store}}",
               "refId": "A",
               "step": 4
-            }
-          ],
+           }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -6579,7 +6579,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+         },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -6587,7 +6587,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+         },
           "yaxes": [
             {
               "format": "ms",
@@ -6596,7 +6596,7 @@
               "max": null,
               "min": "0",
               "show": true
-            },
+           },
             {
               "format": "ms",
               "label": null,
@@ -6604,13 +6604,13 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ],
+           }
+         ],
           "yaxis": {
             "align": false,
             "alignLevel": null
-          }
-        },
+         }
+       },
         {
           "aliasColors": {},
           "bars": false,
@@ -6627,7 +6627,7 @@
             "w": 12,
             "x": 12,
             "y": 9
-          },
+         },
           "id": 64,
           "legend": {
             "alignAsTable": true,
@@ -6641,7 +6641,7 @@
             "show": true,
             "total": false,
             "values": true
-          },
+         },
           "lines": true,
           "linewidth": 1,
           "links": [],
@@ -6663,8 +6663,8 @@
               "legendFormat": "{{address}}-{{status}}-store-{{store}}",
               "refId": "A",
               "step": 4
-            }
-          ],
+           }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -6675,7 +6675,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+         },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -6683,7 +6683,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+         },
           "yaxes": [
             {
               "format": "opm",
@@ -6692,7 +6692,7 @@
               "max": null,
               "min": "0",
               "show": true
-            },
+           },
             {
               "format": "s",
               "label": null,
@@ -6700,13 +6700,13 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ],
+           }
+         ],
           "yaxis": {
             "align": false,
             "alignLevel": null
-          }
-        },
+         }
+       },
         {
           "aliasColors": {},
           "bars": false,
@@ -6723,7 +6723,7 @@
             "w": 12,
             "x": 0,
             "y": 17
-          },
+         },
           "id": 54,
           "legend": {
             "alignAsTable": true,
@@ -6737,7 +6737,7 @@
             "show": true,
             "total": false,
             "values": true
-          },
+         },
           "lines": true,
           "linewidth": 1,
           "links": [],
@@ -6759,8 +6759,8 @@
               "legendFormat": "{{address}}-store-{{store}}",
               "refId": "A",
               "step": 4
-            }
-          ],
+           }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -6771,7 +6771,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+         },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -6779,7 +6779,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+         },
           "yaxes": [
             {
               "format": "opm",
@@ -6788,7 +6788,7 @@
               "max": null,
               "min": "0",
               "show": true
-            },
+           },
             {
               "format": "s",
               "label": null,
@@ -6796,13 +6796,13 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ],
+           }
+         ],
           "yaxis": {
             "align": false,
             "alignLevel": null
-          }
-        },
+         }
+       },
         {
           "aliasColors": {},
           "bars": false,
@@ -6819,7 +6819,7 @@
             "w": 12,
             "x": 12,
             "y": 17
-          },
+         },
           "id": 78,
           "legend": {
             "alignAsTable": true,
@@ -6833,7 +6833,7 @@
             "show": true,
             "total": false,
             "values": true
-          },
+         },
           "lines": true,
           "linewidth": 1,
           "links": [],
@@ -6855,8 +6855,8 @@
               "legendFormat": "{{address}}-store-{{store}}",
               "refId": "A",
               "step": 4
-            }
-          ],
+           }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -6867,7 +6867,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+         },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -6875,7 +6875,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+         },
           "yaxes": [
             {
               "format": "opm",
@@ -6884,7 +6884,7 @@
               "max": null,
               "min": "0",
               "show": true
-            },
+           },
             {
               "format": "s",
               "label": null,
@@ -6892,13 +6892,13 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ],
+           }
+         ],
           "yaxis": {
             "align": false,
             "alignLevel": null
-          }
-        },
+         }
+       },
         {
           "aliasColors": {},
           "bars": false,
@@ -6915,7 +6915,7 @@
             "w": 12,
             "x": 0,
             "y": 25
-          },
+         },
           "id": 77,
           "legend": {
             "alignAsTable": true,
@@ -6929,7 +6929,7 @@
             "show": true,
             "total": false,
             "values": true
-          },
+         },
           "lines": true,
           "linewidth": 1,
           "links": [],
@@ -6951,8 +6951,8 @@
               "legendFormat": "{{address}}-store-{{store}}",
               "refId": "A",
               "step": 4
-            }
-          ],
+           }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -6963,7 +6963,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+         },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -6971,7 +6971,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+         },
           "yaxes": [
             {
               "format": "opm",
@@ -6980,7 +6980,7 @@
               "max": null,
               "min": "0",
               "show": true
-            },
+           },
             {
               "format": "s",
               "label": null,
@@ -6988,18 +6988,18 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ],
+           }
+         ],
           "yaxis": {
             "align": false,
             "alignLevel": null
-          }
-        }
-      ],
+         }
+       }
+     ],
       "repeat": null,
       "title": "Heartbeat",
       "type": "row"
-    },
+   },
     {
       "collapsed": true,
       "gridPos": {
@@ -7007,7 +7007,7 @@
         "w": 24,
         "x": 0,
         "y": 9
-      },
+     },
       "id": 127,
       "panels": [
         {
@@ -7022,7 +7022,7 @@
             "w": 12,
             "x": 0,
             "y": 213
-          },
+         },
           "id": 112,
           "legend": {
             "alignAsTable": true,
@@ -7034,7 +7034,7 @@
             "show": true,
             "total": false,
             "values": false
-          },
+         },
           "lines": true,
           "linewidth": 1,
           "links": [],
@@ -7054,8 +7054,8 @@
               "intervalFactor": 2,
               "legendFormat": "{{instance}}",
               "refId": "A"
-            }
-          ],
+           }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -7065,7 +7065,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+         },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -7073,7 +7073,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+         },
           "yaxes": [
             {
               "format": "none",
@@ -7082,7 +7082,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+           },
             {
               "format": "short",
               "label": null,
@@ -7090,9 +7090,9 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ]
-        },
+           }
+         ]
+       },
         {
           "aliasColors": {},
           "bars": false,
@@ -7105,7 +7105,7 @@
             "w": 12,
             "x": 12,
             "y": 213
-          },
+         },
           "id": 113,
           "legend": {
             "alignAsTable": true,
@@ -7117,7 +7117,7 @@
             "show": true,
             "total": false,
             "values": false
-          },
+         },
           "lines": true,
           "linewidth": 1,
           "links": [],
@@ -7137,8 +7137,8 @@
               "intervalFactor": 2,
               "legendFormat": "{{instance}}",
               "refId": "A"
-            }
-          ],
+           }
+         ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
@@ -7148,7 +7148,7 @@
             "shared": true,
             "sort": 0,
             "value_type": "individual"
-          },
+         },
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -7156,7 +7156,7 @@
             "name": null,
             "show": true,
             "values": []
-          },
+         },
           "yaxes": [
             {
               "format": "none",
@@ -7165,7 +7165,7 @@
               "max": null,
               "min": null,
               "show": true
-            },
+           },
             {
               "format": "short",
               "label": null,
@@ -7173,15 +7173,15 @@
               "max": null,
               "min": null,
               "show": true
-            }
-          ]
-        }
-      ],
+           }
+         ]
+       }
+     ],
       "repeat": null,
       "title": "Region storage",
       "type": "row"
-    }
-  ],
+   }
+ ],
   "refresh": "30s",
   "schemaVersion": 18,
   "style": "dark",
@@ -7209,7 +7209,7 @@
         "tagsQuery": null,
         "type": "query",
         "useTags": false
-      },
+     },
       {
         "allValue": ".*",
         "current": {},
@@ -7231,13 +7231,13 @@
         "tagsQuery": "",
         "type": "query",
         "useTags": false
-      }
-    ]
-  },
+     }
+   ]
+ },
   "time": {
     "from": "now-1h",
     "to": "now"
-  },
+ },
   "timepicker": {
     "refresh_intervals": [
       "5s",
@@ -7250,7 +7250,7 @@
       "1h",
       "2h",
       "1d"
-    ],
+   ],
     "time_options": [
       "5m",
       "15m",
@@ -7261,8 +7261,8 @@
       "2d",
       "7d",
       "30d"
-    ]
-  },
+   ]
+ },
   "timezone": "browser",
   "title": "Test-Cluster-PD",
   "uid": "Q6RuHYIWk",

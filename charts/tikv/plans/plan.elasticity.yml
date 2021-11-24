@@ -1,10 +1,11 @@
+---
 apiVersion: frisbee.io/v1alpha1
 kind: Workflow
 metadata:
   name: tikv-elasticity
 spec:
   withTelemetry:
-    importMonitors: [ "sysmon/container", "ycsbmon/client", "tikvmon/pd", "tikvmon/worker" ]
+    importMonitors: ["sysmon/container", "ycsbmon/client", "tikvmon/pd", "tikvmon/worker"]
     ingress:
       host: platform.science-hangar.eu
 
@@ -17,85 +18,83 @@ spec:
         fromTemplate:
           templateRef: tikv/placementDriver
           inputs:
-            - { cpu: "4", memory: "8Gi" }
+            - {cpu: "4", memory: "8Gi"}
 
 
     # add a cluster of 3 TiKV instances
     - action: Cluster
-      depends: { running: [ master ] }
+      depends: {running: [master]}
       name: workers
       cluster:
         templateRef: tikv/worker
         instances: 3
         inputs:
-          - { placementDriver: .service.master.any }
+          - {placementDriver: .service.master.any}
 
 
     # Step 1: populate the cluster with keys
     # We use no throttling to maximize this step and complete it soon.
     - action: Cluster
       name: loaders
-      depends: { running: [ master, workers ] }
+      depends: {running: [master, workers]}
       cluster:
         templateRef: ycsb-tikv/loader
         inputs:
-          - { server: .service.master.any, recordcount: "1000000", offset: "0", threads: "400" }
-
+          - {server: .service.master.any, recordcount: "1000000", offset: "0", threads: "400"}
 
 
     # Step 2: gradually increase the number of TiKV servers
     # We use no throttling to maximize this step and complete it soon.
     - action: Cluster
-      depends: { running: [ master ], success: [ loaders ] }
+      depends: {running: [master], success: [loaders]}
       name: moreWorkers
       cluster:
         templateRef: tikv/worker
         instances: 5
         inputs:
-          - { placementDriver: .service.master.any }
+          - {placementDriver: .service.master.any}
         tolerate:
           failedServices: 5
         schedule:
           cron: "@every 1m"
 
-
     # Step 3: gradually decrease the number of TiKV servers
     - action: Chaos
       name: killer1
-      depends: { running: [ workers, moreWorkers ] }
+      depends: {running: [workers, moreWorkers]}
       chaos:
         type: kill
         kill:
-          selector: { macro: .cluster.moreWorkers.any }
+          selector: {macro: .cluster.moreWorkers.any}
 
     - action: Chaos
       name: killer2
-      depends: { running: [ workers, moreWorkers, killer1 ] }
+      depends: {running: [workers, moreWorkers, killer1]}
       chaos:
         type: kill
         kill:
-          selector: { macro: .cluster.moreWorkers.any }
+          selector: {macro: .cluster.moreWorkers.any}
 
     - action: Chaos
       name: killer3
-      depends: { running: [ workers, moreWorkers, killer2 ] }
+      depends: {running: [workers, moreWorkers, killer2]}
       chaos:
         type: kill
         kill:
-          selector: { macro: .cluster.moreWorkers.any }
+          selector: {macro: .cluster.moreWorkers.any}
 
     - action: Chaos
       name: killer4
-      depends: { running: [ workers, moreWorkers, killer3 ] }
+      depends: {running: [workers, moreWorkers, killer3]}
       chaos:
         type: kill
         kill:
-          selector: { macro: .cluster.moreWorkers.any }
+          selector: {macro: .cluster.moreWorkers.any}
 
     - action: Chaos
       name: killer5
-      depends: { running: [ workers, moreWorkers, killer4 ] }
+      depends: {running: [workers, moreWorkers, killer4]}
       chaos:
         type: kill
         kill:
-          selector: { macro: .cluster.moreWorkers.any }
+          selector: {macro: .cluster.moreWorkers.any}

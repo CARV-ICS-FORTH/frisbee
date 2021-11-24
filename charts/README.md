@@ -11,8 +11,6 @@ $ helm search repo frisbee
 $ helm install my-release frisbee/<chart>
 ```
 
-
-
 The easiest way to begin with is by have a look at the examples. It consists of two sub-directories:
 
 * **Templates:** are libraries of frequently-used specifications that are reusable throughout the testing plan.

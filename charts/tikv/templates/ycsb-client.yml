@@ -1,7 +1,10 @@
+---
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: ycsb-tikv
+  labels:
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 spec:
   entries:
     # Loader injecting keys into a single server
@@ -19,7 +22,7 @@ spec:
           dropdata: "false"
       spec: |
         agents:                                       # Agents
-          telemetry: [ sysmon/container, ycsbmon/client ]
+          telemetry: [sysmon/container, ycsbmon/client]
         resources:                                    # Resources
           cpu: {{"{{.Inputs.Parameters.cpu}}"}}
           memory: {{"{{.Inputs.Parameters.memory}}"}}
@@ -61,7 +64,7 @@ spec:
           threads: ""
       spec: |
         agents:                                       # Agents
-          telemetry: [ sysmon/container, ycsbmon/client ]
+          telemetry: [sysmon/container, ycsbmon/client]
         resources:                                    # Resources
           cpu: {{"{{.Inputs.Parameters.cpu}}"}}
           memory: {{"{{.Inputs.Parameters.memory}}"}}

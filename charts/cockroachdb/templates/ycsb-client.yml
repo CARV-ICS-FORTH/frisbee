@@ -1,7 +1,10 @@
+---
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: ycsb-cockroach
+  labels:
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 spec:
   entries:
     # Loader injecting keys into a single server
@@ -49,8 +52,6 @@ spec:
                   -p pg.port={{"{{.Inputs.Parameters.port}}"}}               \
                   -p pg.db="defaultdb"                                 \
               >> /dev/shm/pipe
-
-
 
     # Run queries against a single server
     "runner":

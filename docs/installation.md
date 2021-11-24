@@ -130,20 +130,12 @@ https://medium.com/@maanadev/how-set-up-a-helm-chart-repository-using-apache-web
 
 Deploy as helm chart helm repo index ./ --url https://carv-ics-forth.github.io/frisbee
 
-
-
-
-
 ## Deploy a new Version
-
-
 
 ```bash
 >> make release
 >> git push --set-upstream origin $(git branch --show-current) && git push --tags
 ```
-
-
 
 1. Go to GitHub and create a pull request
 
@@ -152,16 +144,6 @@ Deploy as helm chart helm repo index ./ --url https://carv-ics-forth.github.io/f
 3. Delete branch
 
 4. Go to [GitHub Tags](https://github.com/CARV-ICS-FORTH/frisbee/tags ) and create a new release for the latest tag
-
-
-
-
-
-
-
-
-
-
 
 # Run Frisbee Locally
 
@@ -341,9 +323,6 @@ kubectl port-forward -n chaos-testing svc/chaos-dashboard 2333:2333
 # Now access Dashboard at:
 http://127.0.0.1:2333/dashboard
 ```
-
-
-
 
 # Run Frisbee on a Remote Kubernetes Cluster
 

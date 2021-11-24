@@ -3,6 +3,8 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: rediscluster
+  labels:
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 spec:
   entries:
     # Master server handling a keyspace
@@ -28,7 +30,7 @@ spec:
           cpu: ""
       spec: |
         agents:                                         # Agents
-          telemetry: [ sysmon/container, redismon/server ]
+          telemetry: [sysmon/container, redismon/server]
         resources:                                      # Resources
           memory: {{"{{.Inputs.Parameters.memory}}"}}
           cpu: {{"{{.Inputs.Parameters.cpu}}"}}
@@ -39,7 +41,7 @@ spec:
             - name: to-clients
               containerPort: {{"{{.Inputs.Parameters.port}}"}}
             - name: to-cluster
-              containerPort: {{"{{ $toClusterbus := add .Inputs.Parameters.port 10000}}"}}{{"{{$toClusterbus}}"}}
+              containerPort: {{"{{$toClusterbus := add .Inputs.Parameters.port 10000}}"}}{{"{{$toClusterbus}}"}}
           env:
             - name: podIP
               valueFrom:
@@ -78,7 +80,7 @@ spec:
                   set -eum
 
                   response=$(timeout -s QUIT 30 redis-cli -h localhost -p {{"{{.Inputs.Parameters.port}}"}} ping)
-                  if [ "$response" != "PONG" ]; then
+                  if ["$response" != "PONG"]; then
                       exit 1
                   fi
 
@@ -110,7 +112,7 @@ spec:
 
               all=()
               for i in ${!ips[*]}; do
-                if [ "${#ports[@]}" -eq 1 ];
+                if ["${#ports[@]}" -eq 1];
                 then
                       service=$(echo ${ips[$i]}:${ports[0]})
                 else
