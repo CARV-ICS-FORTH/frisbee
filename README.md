@@ -72,19 +72,16 @@ We welcome also every contribution, even if it is just punctuation. Here are som
 Make sure that [Microk8s](https://microk8s.io/docs) and  [Helm](https://helm.sh/docs/intro/install/) are installed on your system, then install the Frisbee dependencies:
 
 ```bash
-# Add repo
->> helm repo add frisbee https://carv-ics-forth.github.io/frisbee/charts
-# Install dependencies
->> helm install my-frisbee frisbee/platform
->> helm install my-observability frisbee/observability
->> helm install my-sysmon frisbee/sysmon
->> helm install my-ycsbmon frisbee/ycsbmon
-# Install TiKV
->> helm install my-tikv frisbee/tikv
 # Clone Frisbee repository
 >> git clone https://github.com/CARV-ICS-FORTH/frisbee.git
+# Install TiKV dependencies
+>> helm install my-frisbee charts/platform --dependency-update
+>> helm install my-observability charts/observability --dependency-update
+>> helm install my-sysmon charts/sysmon --dependency-update
+>> helm install my-ycsbmon charts/ycsbmon --dependency-update
+# Install TiKV store
+>> helm install my-tikv charts/tikv --dependency-update
 ```
-
 
 Then run:
 
