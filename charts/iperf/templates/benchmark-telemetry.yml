@@ -3,6 +3,8 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: iperfmon
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
 spec:
   entries:
     "client":
@@ -57,5 +59,6 @@ kind: ConfigMap
 metadata:
   name: grafana-iperf-dashboard
   labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
     dashboard: iperf
 data:   {{ (.Files.Glob "dashboards/iperf.json").AsConfig | nindent 2 }}

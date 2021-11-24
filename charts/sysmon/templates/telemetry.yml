@@ -3,6 +3,8 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: sysmon
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
 spec:
   entries:
     "container":
@@ -40,5 +42,6 @@ kind: ConfigMap
 metadata:
   name: grafana-system-container
   labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
     dashboard: sysmon
 data: {{ (.Files.Glob "dashboards/syscontainer.json").AsConfig | nindent 2 }}

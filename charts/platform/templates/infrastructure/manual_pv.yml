@@ -4,6 +4,8 @@ apiVersion: v1
 kind: PersistentVolume
 metadata:
   name: scratch
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
 spec:
   capacity:
     storage: 256Gi
@@ -57,6 +59,8 @@ apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: nvme-storage
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
 provisioner: "kubernetes.io/no-provisioner"
 volumeBindingMode: "WaitForFirstConsumer"
 
@@ -65,6 +69,8 @@ apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: ssd-storage
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
 provisioner: "kubernetes.io/no-provisioner"
 volumeBindingMode: "WaitForFirstConsumer"
 
@@ -73,6 +79,8 @@ apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: shared-ssd-storage
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
 provisioner: "kubernetes.io/no-provisioner"
 volumeBindingMode: "WaitForFirstConsumer"
 
@@ -81,6 +89,8 @@ apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: backup-storage
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
 provisioner: "kubernetes.io/no-provisioner"
 volumeBindingMode: "WaitForFirstConsumer"
 

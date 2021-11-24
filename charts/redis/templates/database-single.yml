@@ -2,6 +2,8 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: redis
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
 spec:
   entries:
     # Master node servicing requests

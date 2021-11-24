@@ -3,6 +3,8 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: tikvmon
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
 spec:
   entries:
     "pd":

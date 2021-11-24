@@ -3,6 +3,8 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: ycsbmon
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
 spec:
   entries:
     "client":
@@ -50,6 +52,7 @@ kind: ConfigMap
 metadata:
   name: ycsb-dashboard
   labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
     dashboard: ycsb
 data:   {{ (.Files.Glob "dashboards/ycsb.json").AsConfig | nindent 2 }}
 
