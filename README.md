@@ -74,10 +74,9 @@ Make sure that [Microk8s](https://microk8s.io/docs) and  [Helm](https://helm.sh/
 ```bash
 # Clone Frisbee repository
 >> git clone https://github.com/CARV-ICS-FORTH/frisbee.git
-# Install TiKV dependencies
+# Install the Frisbee platform
 >> helm install my-frisbee charts/platform --dependency-update
->> helm install my-observability charts/observability --dependency-update
->> helm install my-sysmon charts/sysmon --dependency-update
+# Install the package for monitoring YCSB output
 >> helm install my-ycsbmon charts/ycsbmon --dependency-update
 # Install TiKV store
 >> helm install my-tikv charts/tikv --dependency-update
