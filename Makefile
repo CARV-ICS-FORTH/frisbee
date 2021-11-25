@@ -57,9 +57,6 @@ endef
 SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
-HELMIFY = $(shell pwd)/bin/helmify
-helmify:
-	$(call go-get-tool,$(HELMIFY),github.com/arttor/helmify/cmd/helmify@v0.3.2)
 
 CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
 controller-gen:
@@ -68,6 +65,12 @@ controller-gen:
 KUSTOMIZE = $(shell pwd)/bin/kustomize
 kustomize:
 	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v3@v3.8.7)
+
+
+HELMIFY = $(shell pwd)/bin/helmify
+helmify:
+	$(call go-get-tool,$(HELMIFY),github.com/arttor/helmify/cmd/helmify@v0.3.2)
+
 
 ENVTEST = $(shell pwd)/bin/setup-envtest
 envtest:
@@ -96,7 +99,7 @@ help: ## Display this help.
 ##@ Development
 
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
-	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=charts/platform/crds
+	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
@@ -121,17 +124,19 @@ run: manifests generate fmt vet ## Run a controller from your host.
 
 	go run ./main.go
 
-docker-build: test ## Build docker image with the manager.
+docker-build: test ## Build docker image for the Frisbee controller.
 	docker build -t ${IMG} .
 
-docker-push: ## Push docker image with the manager.
+docker-push: ## Push docker image for the Frisbee controller.
 	docker push ${IMG}
 
+#helm-build: manifests generate kustomize helmify ## Build helm charts for the Frisbee platform (charts/platform)
+#	$(KUSTOMIZE) build config/default | $(HELMIFY) charts/platform
+
+helm-build: manifests generate kustomize helmify ## Build helm charts for the Frisbee platform (charts/platform)
+	$(shell cp -r ./config/crd/bases ./charts/platform/crds)
 
 ##@ Deployment
-helm: manifests kustomize helmify # Create helm charts from kubebuilder
-	$(KUSTOMIZE) build config/default | $(HELMIFY) charts/platform
-
 install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/crd | kubectl $(KUBECONFIG) apply -f -
 

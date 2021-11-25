@@ -1,37 +1,7 @@
-controllerManager:
-  manager:
-    image:
-      repository: docker.io/icsforth/frisbee-operator
-      tag: v0.0.1
-    resources:
-      limits:
-        cpu: 200m
-        memory: 100Mi
-      requests:
-        cpu: 100m
-        memory: 20Mi
-  replicas: 1
-managerConfig:
-  controllerManagerConfigYaml:
-    health:
-      healthProbeBindAddress: :8081
-    leaderElection:
-      leaderElect: true
-      resourceName: 233dac68.frisbee.io
-    metrics:
-      bindAddress: 127.0.0.1:8080
-    webhook:
-      port: 9443
-metricsService:
-  ports:
-  - name: https
-    port: 8443
-    protocol: TCP
-    targetPort: https
-  type: ClusterIP
-webhookService:
-  ports:
-  - port: 443
-    protocol: TCP
-    targetPort: 9443
-  type: ClusterIP
+# Global values are values that can be accessed from any chart or subchart by
+# exactly the same name. They should be accessed explicitly
+# via {{.Values.global.salad}}
+global:
+  # Ingress specifies the DNS postfix from which Telemetry stack is accessible outside the cluster.
+  # e.g grafana.localhost, or grafana.platform.science-hangar.eu
+  ingress: localhost

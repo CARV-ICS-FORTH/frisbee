@@ -2,12 +2,12 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: minimal-ingress
+  name: telemetry-ingress
 #  annotations:
 #    "kubernetes.io/ingress.class": "ambassador"
 spec:
   rules:
-    - host: prometheus.localhost
+    - host: prometheus.{{.Values.global.ingress}}
       http:
         paths:
           - path: /
@@ -18,7 +18,7 @@ spec:
                 port:
                   number: 3000
 
-    - host: grafana.localhost
+    - host: grafana.{{.Values.global.ingress}}
       http:
         paths:
           - path: /

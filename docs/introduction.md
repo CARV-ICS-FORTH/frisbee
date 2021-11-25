@@ -6,11 +6,7 @@ This tutorial introduces the basic functionalities of Frisbee:
 - **Run tests:**  provides seamless scaling from a single workstation to hundreds of machines.
 - **Debug tests:**  through extensive monitoring and comprehensive dashboards.
 
-
-
 For the rest of this tutorial we will use the Frisbee package of TiKV key/value store.
-
-
 
 #### Frisbee Installation
 
@@ -19,16 +15,6 @@ Before anything else, we need to install the Frisbee platform and the Frisbee pa
 ```
 
 ```
-
-
-
-
-
-
-
-
-
-
 
 At this step we will deploy the Frisbee CRDs and its dependencies.
 

@@ -1,6 +1,6 @@
 # Installation
 
-This tutorial describes how to deploy Frisbee and start running tests. 
+This tutorial describes how to deploy Frisbee and start running tests.
 
 # Requirements
 
@@ -256,11 +256,7 @@ Frisbee uses Ingress controller to expose Grafana dashboard externally to the cl
 
 We use Ambassador as the default Ingress controller, as shown in  `examples/testplans/validate-local.yml` .
 
-```bash
-ingress:
-  host: localhost
-   useAmbassador: true
-```
+
 
 #### Deploy the plan
 

@@ -2,12 +2,12 @@
 # since it depends on service name and namespace that are out of this kustomize package.
 # It should be run by config/default
 resources:
-  - base/frisbee.io_workflows.yaml
-  - base/frisbee.io_services.yaml
-  - base/frisbee.io_clusters.yaml
-  - base/frisbee.io_chaos.yaml
-  - base/frisbee.io_telemetries.yaml
-  - base/frisbee.io_templates.yaml
+  - bases/frisbee.io_workflows.yaml
+  - bases/frisbee.io_services.yaml
+  - bases/frisbee.io_clusters.yaml
+  - bases/frisbee.io_chaos.yaml
+  - bases/frisbee.io_telemetries.yaml
+  - bases/frisbee.io_templates.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 
 patchesStrategicMerge:

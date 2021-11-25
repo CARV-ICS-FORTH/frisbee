@@ -1156,9 +1156,6 @@ spec:
                 type: object
               domain:
                 description: Domain specifies the location where Service will be placed.
-                  For this to work, the nodes included in the domain must have the
-                  label domain:{{domain-name}}. for the moment simply match domain
-                  to a specific node. this will change in the future
                 items:
                   type: string
                 type: array

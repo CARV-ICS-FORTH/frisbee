@@ -17,9 +17,15 @@ limitations under the License.
 package workflow
 
 import (
+	"context"
+
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
+	"github.com/carv-ics-forth/frisbee/controllers/telemetry/grafana"
+	"github.com/carv-ics-forth/frisbee/controllers/utils"
+	notifier "github.com/golanghelper/grafana-webhook"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"k8s.io/apimachinery/pkg/util/json"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -75,4 +81,33 @@ func (r *Controller) chaos(action v1alpha1.Action) (client.Object, error) {
 	action.Chaos.DeepCopyInto(&chaos.Spec)
 
 	return &chaos, nil
+}
+
+func (r *Controller) ConnectToGrafana(ctx context.Context, cr *v1alpha1.Workflow) error {
+
+	config, err := utils.LoadPlatformConfiguration(ctx, r)
+	if err != nil {
+		return errors.Wrapf(err, "cannot get platform configuration")
+	}
+
+	endpoint := utils.MustGetGrafanaEndpoint(config)
+
+	return grafana.NewGrafanaClient(ctx, r, endpoint,
+		// Set a callback that will be triggered when there is Grafana alert.
+		// Through this channel we can get informed for SLA violations.
+		grafana.WithNotifyOnAlert(func(b *notifier.Body) {
+			r.Logger.Info("Grafana Alert", "body", b)
+
+			alertJSON, _ := json.Marshal(b)
+
+			assertionInfo := map[string]string{
+				SLAViolationFired: b.RuleName,
+				SLAViolationInfo:  string(alertJSON),
+			}
+
+			if err := utils.PatchAnnotation(ctx, r, cr, assertionInfo); err != nil {
+				r.Logger.Error(err, "unable to inform CR for SLA violation", "cr", cr.GetName())
+			}
+		}),
+	)
 }

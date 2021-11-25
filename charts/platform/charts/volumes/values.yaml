@@ -15,12 +15,3 @@ openebs:
 # Provision the infrastructure manually
 manual:
   enabled: false
-
-# Observability
-observability:
-
-# Global values are values that can be accessed from any chart or subchart by
-# exactly the same name. They should be accessed explicitly
-# via {{.Values.global.salad}}
-global:
-  salad: caesar

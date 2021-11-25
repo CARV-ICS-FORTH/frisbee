@@ -19,6 +19,9 @@ type: application
 # It is recommended to use it with quotes.
 appVersion: "1.16.0"
 
+annotations:
+  category: Infrastructure
+
 maintainers:
   - name: Fotis Nikolaidis
     email: nikolaidis.fotis@gmail.com
