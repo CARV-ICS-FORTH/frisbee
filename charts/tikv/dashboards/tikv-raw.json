@@ -12,7 +12,7 @@
         "showIn": 0,
         "tags": [],
         "type": "tags"
-    },
+      },
       {
         "datasource": "-- Grafana --",
         "enable": true,
@@ -23,17 +23,17 @@
         "showIn": 0,
         "tags": [
           "run"
-       ],
+        ],
         "target": {
           "limit": 100,
           "matchAny": false,
           "tags": [
             "run"
-         ],
+          ],
           "type": "tags"
-      },
+        },
         "type": "tags"
-    },
+      },
       {
         "datasource": "-- Grafana --",
         "enable": false,
@@ -44,9 +44,9 @@
         "showIn": 0,
         "tags": [
           "exit"
-       ],
+        ],
         "type": "tags"
-    },
+      },
       {
         "datasource": "-- Grafana --",
         "enable": true,
@@ -57,20 +57,20 @@
         "showIn": 0,
         "tags": [
           "failure"
-       ],
+        ],
         "target": {
           "limit": 100,
           "matchAny": false,
           "tags": [
             "failure"
-         ],
+          ],
           "type": "tags"
-      },
+        },
         "type": "tags",
         "useValueForTime": false
-    }
-   ]
-},
+      }
+    ]
+  },
   "editable": true,
   "fiscalYearStartMonth": 0,
   "gnetId": null,
@@ -86,26 +86,26 @@
       "fieldConfig": {
         "defaults": {},
         "overrides": []
-    },
+      },
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
         "y": 0
-    },
+      },
       "id": 2,
       "panels": [],
       "repeat": "command",
       "title": "Read - $command",
       "type": "row"
-  },
+    },
     {
       "datasource": null,
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
-        },
+          },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -117,23 +117,23 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-          },
+            },
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-          },
+            },
             "showPoints": "never",
             "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
-          },
+            },
             "thresholdsStyle": {
               "mode": "off"
-          }
-        },
+            }
+          },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -141,23 +141,23 @@
               {
                 "color": "green",
                 "value": null
-            },
+              },
               {
                 "color": "red",
                 "value": 80
-            }
-           ]
-        },
+              }
+            ]
+          },
           "unit": "ms"
-      },
+        },
         "overrides": []
-    },
+      },
       "gridPos": {
         "h": 9,
         "w": 12,
         "x": 0,
         "y": 1
-    },
+      },
       "id": 4,
       "links": [],
       "options": {
@@ -166,14 +166,14 @@
             "mean",
             "lastNotNull",
             "max"
-         ],
+          ],
           "displayMode": "table",
           "placement": "right"
-      },
+        },
         "tooltip": {
           "mode": "single"
-      }
-    },
+        }
+      },
       "pluginVersion": "8.2.2",
       "targets": [
         {
@@ -184,34 +184,34 @@
           "refId": "A",
           "target": "select metric",
           "type": "timeserie"
-      },
+        },
         {
           "expr": "histogram_quantile(0.95, sum(rate(tikv_scheduler_command_duration_seconds_bucket{instance=~\"$instance\", type=~\"$command\"}[1m])) by (le))",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "95%",
           "refId": "B"
-      },
+        },
         {
           "expr": "sum(rate(tikv_scheduler_command_duration_seconds_sum{instance=~\"$instance\", type=~\"$command\"}[1m])) / sum(rate(tikv_scheduler_command_duration_seconds_count{instance=~\"$instance\", type=~\"$command\"}[1m])) ",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "avg",
           "refId": "C"
-      }
-     ],
+        }
+      ],
       "timeFrom": null,
       "timeShift": null,
       "title": "Command Duration",
       "type": "timeseries"
-  },
+    },
     {
       "datasource": null,
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
-        },
+          },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -223,23 +223,23 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-          },
+            },
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-          },
+            },
             "showPoints": "never",
             "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
-          },
+            },
             "thresholdsStyle": {
               "mode": "off"
-          }
-        },
+            }
+          },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -247,23 +247,23 @@
               {
                 "color": "green",
                 "value": null
-            },
+              },
               {
                 "color": "red",
                 "value": 80
-            }
-           ]
-        },
+              }
+            ]
+          },
           "unit": "ms"
-      },
+        },
         "overrides": []
-    },
+      },
       "gridPos": {
         "h": 9,
         "w": 12,
         "x": 12,
         "y": 1
-    },
+      },
       "id": 6,
       "links": [],
       "options": {
@@ -272,14 +272,14 @@
             "mean",
             "lastNotNull",
             "max"
-         ],
+          ],
           "displayMode": "table",
           "placement": "right"
-      },
+        },
         "tooltip": {
           "mode": "single"
-      }
-    },
+        }
+      },
       "pluginVersion": "8.2.2",
       "targets": [
         {
@@ -290,28 +290,28 @@
           "refId": "A",
           "target": "select metric",
           "type": "timeserie"
-      },
+        },
         {
           "expr": "histogram_quantile(0.95, sum(rate(tikv_scheduler_processing_read_duration_seconds_bucket{instance=~\"$instance\", type=~\"$command\"}[1m])) by (le))",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "95%",
           "refId": "B"
-      },
+        },
         {
           "expr": "sum(rate(tikv_scheduler_processing_read_duration_seconds_sum{instance=~\"$instance\", type=~\"$command\"}[1m])) / sum(rate(tikv_scheduler_processing_read_duration_seconds_count{instance=~\"$instance\", type=~\"$command\"}[1m]))",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "avg",
           "refId": "C"
-      }
-     ],
+        }
+      ],
       "timeFrom": null,
       "timeShift": null,
       "title": "Read Processing Duration",
       "type": "timeseries"
-  }
- ],
+    }
+  ],
   "refresh": false,
   "schemaVersion": 31,
   "style": "dark",
@@ -323,17 +323,17 @@
         "current": {
           "text": [
             null
-         ],
+          ],
           "value": [
             null
-         ]
-      },
+          ]
+        },
         "datasource": "${DS_TEST-CLUSTER}",
         "definition": "label_values(tikv_storage_command_total, type)",
         "description": null,
         "error": {
           "message": "Datasource named ${DS_TEST-CLUSTER} was not found"
-      },
+        },
         "hide": 0,
         "includeAll": true,
         "label": "command",
@@ -349,23 +349,23 @@
         "tagsQuery": "",
         "type": "query",
         "useTags": false
-    },
+      },
       {
         "allValue": null,
         "current": {
           "text": [
             null
-         ],
+          ],
           "value": [
             null
-         ]
-      },
+          ]
+        },
         "datasource": "${DS_TEST-CLUSTER}",
         "definition": "label_values(tikv_engine_size_bytes, instance)",
         "description": null,
         "error": {
           "message": "Datasource named ${DS_TEST-CLUSTER} was not found"
-      },
+        },
         "hide": 0,
         "includeAll": true,
         "label": "instance",
@@ -381,13 +381,13 @@
         "tagsQuery": "",
         "type": "query",
         "useTags": false
-    }
-   ]
-},
+      }
+    ]
+  },
   "time": {
     "from": "now-5m",
     "to": "now"
-},
+  },
   "timepicker": {
     "refresh_intervals": [
       "5s",
@@ -400,7 +400,7 @@
       "1h",
       "2h",
       "1d"
-   ],
+    ],
     "time_options": [
       "5m",
       "15m",
@@ -411,8 +411,8 @@
       "2d",
       "7d",
       "30d"
-   ]
-},
+    ]
+  },
   "timezone": "",
   "title": "Test-Cluster-TiKV-Raw",
   "uid": "K0D2tEZZz",

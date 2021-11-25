@@ -109,17 +109,7 @@ spec:
   # Here we declare the Grafana dashboards that Workflow will make use of.
   withTelemetry:
     importMonitors: [ "sysmon/container", "ycsbmon/client",  "redismon/server" ]
-    ingress:
-      host: localhost
-      useAmbassador: true
-
-  # Now, the experiment is over ... or not ? 
-  # The loaders are complete, the partition are retracted, but the Redis nodes are still running.
-  # Hence, how do we know if the test has passed or fail ? 
-  # This task is left to the oracle. 
-  withTestOracle:
-    pass: >-
-      {{.IsSuccessful "partition1"}} == true          
+      
 ```
 
 # Run the experiment

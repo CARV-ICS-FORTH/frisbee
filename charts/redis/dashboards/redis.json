@@ -12,7 +12,7 @@
         "showIn": 0,
         "tags": [],
         "type": "tags"
-     },
+      },
       {
         "datasource": "-- Grafana --",
         "enable": true,
@@ -23,17 +23,17 @@
         "showIn": 0,
         "tags": [
           "run"
-       ],
+        ],
         "target": {
           "limit": 100,
           "matchAny": false,
           "tags": [
             "run"
-         ],
+          ],
           "type": "tags"
-       },
+        },
         "type": "tags"
-     },
+      },
       {
         "datasource": "-- Grafana --",
         "enable": false,
@@ -44,9 +44,9 @@
         "showIn": 0,
         "tags": [
           "exit"
-       ],
+        ],
         "type": "tags"
-     },
+      },
       {
         "datasource": "-- Grafana --",
         "enable": true,
@@ -57,20 +57,20 @@
         "showIn": 0,
         "tags": [
           "failure"
-       ],
+        ],
         "target": {
           "limit": 100,
           "matchAny": false,
           "tags": [
             "failure"
-         ],
+          ],
           "type": "tags"
-       },
+        },
         "type": "tags",
         "useValueForTime": false
-     }
-   ]
- },
+      }
+    ]
+  },
   "description": "Prometheus dashboard for Redis servers",
   "editable": true,
   "gnetId": 4074,
@@ -85,25 +85,25 @@
       "fieldConfig": {
         "defaults": {},
         "overrides": []
-     },
+      },
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
         "y": 0
-     },
+      },
       "id": 53,
       "panels": [],
       "title": "Cluster Overview",
       "type": "row"
-   },
+    },
     {
       "datasource": null,
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "thresholds"
-         },
+          },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -111,23 +111,23 @@
               {
                 "color": "green",
                 "value": null
-             },
+              },
               {
                 "color": "red",
                 "value": 80
-             }
-           ]
-         },
+              }
+            ]
+          },
           "unit": "short"
-       },
+        },
         "overrides": []
-     },
+      },
       "gridPos": {
         "h": 7,
         "w": 24,
         "x": 0,
         "y": 1
-     },
+      },
       "id": 51,
       "options": {
         "displayMode": "basic",
@@ -135,13 +135,13 @@
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
-         ],
+          ],
           "fields": "",
           "values": false
-       },
+        },
         "showUnfilled": true,
         "text": {}
-     },
+      },
       "pluginVersion": "8.1.3",
       "targets": [
         {
@@ -151,13 +151,13 @@
           "interval": "",
           "legendFormat": "{{instance}}",
           "refId": "A"
-       }
-     ],
+        }
+      ],
       "timeFrom": null,
       "timeShift": null,
       "title": "Keyspace Distribution",
       "type": "bargauge"
-   },
+    },
     {
       "datasource": null,
       "description": "Total number of commands processed by the server",
@@ -165,7 +165,7 @@
         "defaults": {
           "color": {
             "mode": "thresholds"
-         },
+          },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -173,23 +173,23 @@
               {
                 "color": "green",
                 "value": null
-             },
+              },
               {
                 "color": "red",
                 "value": 80
-             }
-           ]
-         },
+              }
+            ]
+          },
           "unit": "short"
-       },
+        },
         "overrides": []
-     },
+      },
       "gridPos": {
         "h": 7,
         "w": 24,
         "x": 0,
         "y": 8
-     },
+      },
       "id": 65,
       "options": {
         "displayMode": "basic",
@@ -197,13 +197,13 @@
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
-         ],
+          ],
           "fields": "",
           "values": false
-       },
+        },
         "showUnfilled": true,
         "text": {}
-     },
+      },
       "pluginVersion": "8.1.3",
       "targets": [
         {
@@ -213,32 +213,32 @@
           "interval": "",
           "legendFormat": "{{instance}}",
           "refId": "A"
-       }
-     ],
+        }
+      ],
       "timeFrom": null,
       "timeShift": null,
       "title": "Total Commands Processed",
       "type": "bargauge"
-   },
+    },
     {
       "collapsed": false,
       "datasource": null,
       "fieldConfig": {
         "defaults": {},
         "overrides": []
-     },
+      },
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
         "y": 15
-     },
+      },
       "id": 37,
       "panels": [],
       "repeat": null,
       "title": "Overview  $instance",
       "type": "row"
-   },
+    },
     {
       "cacheTimeout": null,
       "datasource": null,
@@ -247,22 +247,22 @@
         "defaults": {
           "color": {
             "mode": "thresholds"
-         },
+          },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": []
-         },
+          },
           "unit": "dtdurations"
-       },
+        },
         "overrides": []
-     },
+      },
       "gridPos": {
         "h": 4,
         "w": 5,
         "x": 0,
         "y": 16
-     },
+      },
       "id": 20,
       "interval": null,
       "links": [],
@@ -275,13 +275,13 @@
         "reduceOptions": {
           "calcs": [
             "max"
-         ],
+          ],
           "fields": "",
           "values": false
-       },
+        },
         "text": {},
         "textMode": "auto"
-     },
+      },
       "pluginVersion": "8.1.3",
       "targets": [
         {
@@ -290,16 +290,16 @@
             {
               "params": [
                 "$__interval"
-             ],
+              ],
               "type": "time"
-           },
+            },
             {
               "params": [
                 "null"
-             ],
+              ],
               "type": "fill"
-           }
-         ],
+            }
+          ],
           "instant": false,
           "interval": "",
           "legendFormat": "{{instance}}",
@@ -313,27 +313,27 @@
               {
                 "params": [
                   "uptime"
-               ],
+                ],
                 "type": "field"
-             },
+              },
               {
                 "params": [],
                 "type": "mean"
-             }
-           ]
-         ],
+              }
+            ]
+          ],
           "tags": [
             {
               "key": "host",
               "operator": "=~",
               "value": "/^$Host$/"
-           }
-         ]
-       }
-     ],
+            }
+          ]
+        }
+      ],
       "title": "Redis Up Time",
       "type": "stat"
-   },
+    },
     {
       "cacheTimeout": null,
       "datasource": null,
@@ -342,41 +342,41 @@
         "defaults": {
           "color": {
             "mode": "thresholds"
-         },
+          },
           "mappings": [
             {
               "options": {
                 "match": "null",
                 "result": {
                   "text": "N/A"
-               }
-             },
+                }
+              },
               "type": "special"
-           }
-         ],
+            }
+          ],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
                 "color": "green",
                 "value": null
-             },
+              },
               {
                 "color": "red",
                 "value": 80
-             }
-           ]
-         },
+              }
+            ]
+          },
           "unit": "none"
-       },
+        },
         "overrides": []
-     },
+      },
       "gridPos": {
         "h": 4,
         "w": 6,
         "x": 5,
         "y": 16
-     },
+      },
       "id": 33,
       "interval": null,
       "links": [],
@@ -389,13 +389,13 @@
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
-         ],
+          ],
           "fields": "",
           "values": false
-       },
+        },
         "text": {},
         "textMode": "auto"
-     },
+      },
       "pluginVersion": "8.1.3",
       "targets": [
         {
@@ -405,16 +405,16 @@
             {
               "params": [
                 "$__interval"
-             ],
+              ],
               "type": "time"
-           },
+            },
             {
               "params": [
                 "none"
-             ],
+              ],
               "type": "fill"
-           }
-         ],
+            }
+          ],
           "interval": "",
           "legendFormat": "",
           "measurement": "redis",
@@ -427,40 +427,40 @@
               {
                 "params": [
                   "total_commands_processed"
-               ],
+                ],
                 "type": "field"
-             },
+              },
               {
                 "params": [],
                 "type": "mean"
-             }
-           ]
-         ],
+              }
+            ]
+          ],
           "tags": [
             {
               "key": "host",
               "operator": "=~",
               "value": "/^$Host$/"
-           },
+            },
             {
               "condition": "AND",
               "key": "server",
               "operator": "=~",
               "value": "/^$Server$/"
-           }
-         ]
-       }
-     ],
+            }
+          ]
+        }
+      ],
       "title": "Number of Keys",
       "type": "stat"
-   },
+    },
     {
       "datasource": null,
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "thresholds"
-         },
+          },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -468,23 +468,23 @@
               {
                 "color": "green",
                 "value": null
-             },
+              },
               {
                 "color": "red",
                 "value": 80
-             }
-           ]
-         },
+              }
+            ]
+          },
           "unit": "short"
-       },
+        },
         "overrides": []
-     },
+      },
       "gridPos": {
         "h": 4,
         "w": 3,
         "x": 11,
         "y": 16
-     },
+      },
       "id": 61,
       "options": {
         "colorMode": "background",
@@ -494,13 +494,13 @@
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
-         ],
+          ],
           "fields": "",
           "values": false
-       },
+        },
         "text": {},
         "textMode": "auto"
-     },
+      },
       "pluginVersion": "8.1.3",
       "targets": [
         {
@@ -511,14 +511,14 @@
           "interval": "",
           "legendFormat": "connected_clients",
           "refId": "A"
-       }
-     ],
+        }
+      ],
       "timeFrom": null,
       "timeShift": null,
       "title": "Connected Clients",
       "transformations": [],
       "type": "stat"
-   },
+    },
     {
       "cacheTimeout": null,
       "datasource": null,
@@ -526,7 +526,7 @@
         "defaults": {
           "color": {
             "mode": "thresholds"
-         },
+          },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -534,23 +534,23 @@
               {
                 "color": "green",
                 "value": null
-             },
+              },
               {
                 "color": "red",
                 "value": 80
-             }
-           ]
-         },
+              }
+            ]
+          },
           "unit": "short"
-       },
+        },
         "overrides": []
-     },
+      },
       "gridPos": {
         "h": 4,
         "w": 3,
         "x": 14,
         "y": 16
-     },
+      },
       "id": 30,
       "interval": null,
       "links": [],
@@ -563,13 +563,13 @@
         "reduceOptions": {
           "calcs": [
             "last"
-         ],
+          ],
           "fields": "",
           "values": false
-       },
+        },
         "text": {},
         "textMode": "auto"
-     },
+      },
       "pluginVersion": "8.1.3",
       "targets": [
         {
@@ -582,14 +582,14 @@
           "intervalFactor": 1,
           "legendFormat": "Total Connections",
           "refId": "B"
-       }
-     ],
+        }
+      ],
       "timeFrom": null,
       "timeShift": null,
       "title": "Total Connection Received",
       "transformations": [],
       "type": "stat"
-   },
+    },
     {
       "cacheTimeout": null,
       "datasource": null,
@@ -598,7 +598,7 @@
         "defaults": {
           "color": {
             "mode": "thresholds"
-         },
+          },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -606,23 +606,23 @@
               {
                 "color": "green",
                 "value": null
-             },
+              },
               {
                 "color": "red",
                 "value": 80
-             }
-           ]
-         },
+              }
+            ]
+          },
           "unit": "short"
-       },
+        },
         "overrides": []
-     },
+      },
       "gridPos": {
         "h": 4,
         "w": 4,
         "x": 17,
         "y": 16
-     },
+      },
       "id": 32,
       "interval": null,
       "links": [],
@@ -635,13 +635,13 @@
         "reduceOptions": {
           "calcs": [
             "last"
-         ],
+          ],
           "fields": "",
           "values": false
-       },
+        },
         "text": {},
         "textMode": "auto"
-     },
+      },
       "pluginVersion": "8.1.3",
       "targets": [
         {
@@ -651,16 +651,16 @@
             {
               "params": [
                 "$__interval"
-             ],
+              ],
               "type": "time"
-           },
+            },
             {
               "params": [
                 "none"
-             ],
+              ],
               "type": "fill"
-           }
-         ],
+            }
+          ],
           "instant": false,
           "interval": "",
           "legendFormat": "",
@@ -674,33 +674,33 @@
               {
                 "params": [
                   "total_commands_processed"
-               ],
+                ],
                 "type": "field"
-             },
+              },
               {
                 "params": [],
                 "type": "mean"
-             }
-           ]
-         ],
+              }
+            ]
+          ],
           "tags": [
             {
               "key": "host",
               "operator": "=~",
               "value": "/^$Host$/"
-           },
+            },
             {
               "condition": "AND",
               "key": "server",
               "operator": "=~",
               "value": "/^$Server$/"
-           }
-         ]
-       }
-     ],
+            }
+          ]
+        }
+      ],
       "title": "Total Commands Processed",
       "type": "stat"
-   },
+    },
     {
       "cacheTimeout": null,
       "datasource": null,
@@ -709,7 +709,7 @@
         "defaults": {
           "color": {
             "mode": "thresholds"
-         },
+          },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -717,23 +717,23 @@
               {
                 "color": "green",
                 "value": null
-             },
+              },
               {
                 "color": "red",
                 "value": 80
-             }
-           ]
-         },
+              }
+            ]
+          },
           "unit": "short"
-       },
+        },
         "overrides": []
-     },
+      },
       "gridPos": {
         "h": 4,
         "w": 3,
         "x": 21,
         "y": 16
-     },
+      },
       "id": 66,
       "interval": null,
       "links": [],
@@ -746,13 +746,13 @@
         "reduceOptions": {
           "calcs": [
             "last"
-         ],
+          ],
           "fields": "",
           "values": false
-       },
+        },
         "text": {},
         "textMode": "auto"
-     },
+      },
       "pluginVersion": "8.1.3",
       "targets": [
         {
@@ -762,16 +762,16 @@
             {
               "params": [
                 "$__interval"
-             ],
+              ],
               "type": "time"
-           },
+            },
             {
               "params": [
                 "none"
-             ],
+              ],
               "type": "fill"
-           }
-         ],
+            }
+          ],
           "instant": false,
           "interval": "",
           "legendFormat": "",
@@ -785,33 +785,33 @@
               {
                 "params": [
                   "total_commands_processed"
-               ],
+                ],
                 "type": "field"
-             },
+              },
               {
                 "params": [],
                 "type": "mean"
-             }
-           ]
-         ],
+              }
+            ]
+          ],
           "tags": [
             {
               "key": "host",
               "operator": "=~",
               "value": "/^$Host$/"
-           },
+            },
             {
               "condition": "AND",
               "key": "server",
               "operator": "=~",
               "value": "/^$Server$/"
-           }
-         ]
-       }
-     ],
+            }
+          ]
+        }
+      ],
       "title": "Total Error Replies",
       "type": "stat"
-   },
+    },
     {
       "datasource": null,
       "description": "Number of commands processed per second",
@@ -819,7 +819,7 @@
         "defaults": {
           "color": {
             "mode": "palette-classic"
-         },
+          },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -831,23 +831,23 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-           },
+            },
             "lineInterpolation": "smooth",
             "lineWidth": 2,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-           },
+            },
             "showPoints": "always",
             "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
-           },
+            },
             "thresholdsStyle": {
               "mode": "off"
-           }
-         },
+            }
+          },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -855,39 +855,39 @@
               {
                 "color": "green",
                 "value": null
-             },
+              },
               {
                 "color": "red",
                 "value": 80
-             }
-           ]
-         },
+              }
+            ]
+          },
           "unit": "short"
-       },
+        },
         "overrides": [
           {
             "matcher": {
               "id": "byName",
               "options": "Instantaneous OPS per sec"
-           },
+            },
             "properties": [
               {
                 "id": "color",
                 "value": {
                   "fixedColor": "#0a437c",
                   "mode": "fixed"
-               }
-             }
-           ]
-         }
-       ]
-     },
+                }
+              }
+            ]
+          }
+        ]
+      },
       "gridPos": {
         "h": 8,
         "w": 10,
         "x": 0,
         "y": 20
-     },
+      },
       "id": 49,
       "links": [],
       "options": {
@@ -896,14 +896,14 @@
             "mean",
             "lastNotNull",
             "max"
-         ],
+          ],
           "displayMode": "hidden",
           "placement": "bottom"
-       },
+        },
         "tooltip": {
           "mode": "single"
-       }
-     },
+        }
+      },
       "pluginVersion": "8.1.3",
       "targets": [
         {
@@ -914,16 +914,16 @@
             {
               "params": [
                 "$__interval"
-             ],
+              ],
               "type": "time"
-           },
+            },
             {
               "params": [
                 "linear"
-             ],
+              ],
               "type": "fill"
-           }
-         ],
+            }
+          ],
           "instant": false,
           "interval": "",
           "intervalFactor": 1,
@@ -938,36 +938,36 @@
               {
                 "params": [
                   "instantaneous_ops_per_sec"
-               ],
+                ],
                 "type": "field"
-             },
+              },
               {
                 "params": [],
                 "type": "mean"
-             }
-           ]
-         ],
+              }
+            ]
+          ],
           "tags": [
             {
               "key": "host",
               "operator": "=~",
               "value": "/^$Host$/"
-           },
+            },
             {
               "condition": "AND",
               "key": "server",
               "operator": "=~",
               "value": "/^$Server$/"
-           }
-         ]
-       }
-     ],
+            }
+          ]
+        }
+      ],
       "timeFrom": null,
       "timeShift": null,
       "title": "Commands Executed / Sec",
       "transparent": true,
       "type": "timeseries"
-   },
+    },
     {
       "datasource": null,
       "description": "User CPU consumed by the Redis server",
@@ -975,7 +975,7 @@
         "defaults": {
           "color": {
             "mode": "palette-classic"
-         },
+          },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -987,23 +987,23 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-           },
+            },
             "lineInterpolation": "smooth",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-           },
+            },
             "showPoints": "always",
             "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
-           },
+            },
             "thresholdsStyle": {
               "mode": "off"
-           }
-         },
+            }
+          },
           "links": [],
           "mappings": [],
           "thresholds": {
@@ -1012,66 +1012,66 @@
               {
                 "color": "green",
                 "value": null
-             },
+              },
               {
                 "color": "red",
                 "value": 80
-             }
-           ]
-         },
+              }
+            ]
+          },
           "unit": "percent"
-       },
+        },
         "overrides": [
           {
             "matcher": {
               "id": "byName",
               "options": "Uuser CPU"
-           },
+            },
             "properties": [
               {
                 "id": "color",
                 "value": {
                   "fixedColor": "#cca300",
                   "mode": "fixed"
-               }
-             }
-           ]
-         },
+                }
+              }
+            ]
+          },
           {
             "matcher": {
               "id": "byName",
               "options": "Redis User CPU"
-           },
+            },
             "properties": [
               {
                 "id": "color",
                 "value": {
                   "fixedColor": "rgb(250, 192, 42)",
                   "mode": "fixed"
-               }
-             },
+                }
+              },
               {
                 "id": "custom.fillOpacity",
                 "value": 20
-             },
+              },
               {
                 "id": "custom.lineWidth",
                 "value": 0
-             },
+              },
               {
                 "id": "custom.lineWidth",
                 "value": 2
-             }
-           ]
-         }
-       ]
-     },
+              }
+            ]
+          }
+        ]
+      },
       "gridPos": {
         "h": 7,
         "w": 14,
         "x": 10,
         "y": 20
-     },
+      },
       "id": 26,
       "links": [],
       "options": {
@@ -1080,14 +1080,14 @@
             "mean",
             "lastNotNull",
             "max"
-         ],
+          ],
           "displayMode": "table",
           "placement": "bottom"
-       },
+        },
         "tooltip": {
           "mode": "single"
-       }
-     },
+        }
+      },
       "pluginVersion": "8.1.3",
       "targets": [
         {
@@ -1098,16 +1098,16 @@
             {
               "params": [
                 "$__interval"
-             ],
+              ],
               "type": "time"
-           },
+            },
             {
               "params": [
                 "linear"
-             ],
+              ],
               "type": "fill"
-           }
-         ],
+            }
+          ],
           "interval": "",
           "intervalFactor": 1,
           "legendFormat": "User",
@@ -1121,29 +1121,29 @@
               {
                 "params": [
                   "used_cpu_user"
-               ],
+                ],
                 "type": "field"
-             },
+              },
               {
                 "params": [],
                 "type": "mean"
-             }
-           ]
-         ],
+              }
+            ]
+          ],
           "tags": [
             {
               "key": "host",
               "operator": "=~",
               "value": "/^$Host$/"
-           },
+            },
             {
               "condition": "AND",
               "key": "server",
               "operator": "=~",
               "value": "/^$Server$/"
-           }
-         ]
-       },
+            }
+          ]
+        },
         {
           "exemplar": true,
           "expr": "max (irate(container_cpu_system_seconds_total{instance=\"$instance\"}[1m]))  *100\n",
@@ -1152,7 +1152,7 @@
           "interval": "",
           "legendFormat": "System",
           "refId": "C"
-       },
+        },
         {
           "exemplar": true,
           "expr": "",
@@ -1160,21 +1160,21 @@
           "interval": "",
           "legendFormat": "",
           "refId": "B"
-       }
-     ],
+        }
+      ],
       "timeFrom": null,
       "timeShift": null,
       "title": "Redis CPU Usage",
       "transparent": true,
       "type": "timeseries"
-   },
+    },
     {
       "datasource": null,
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
-         },
+          },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -1186,23 +1186,23 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-           },
+            },
             "lineInterpolation": "smooth",
             "lineWidth": 2,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-           },
+            },
             "showPoints": "always",
             "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
-           },
+            },
             "thresholdsStyle": {
               "mode": "off"
-           }
-         },
+            }
+          },
           "links": [],
           "mappings": [],
           "thresholds": {
@@ -1211,53 +1211,53 @@
               {
                 "color": "green",
                 "value": null
-             },
+              },
               {
                 "color": "red",
                 "value": 80
-             }
-           ]
-         },
+              }
+            ]
+          },
           "unit": "bytes"
-       },
+        },
         "overrides": [
           {
             "matcher": {
               "id": "byName",
               "options": "input_bytes"
-           },
+            },
             "properties": [
               {
                 "id": "color",
                 "value": {
                   "fixedColor": "orange",
                   "mode": "fixed"
-               }
-             }
-           ]
-         }
-       ]
-     },
+                }
+              }
+            ]
+          }
+        ]
+      },
       "gridPos": {
         "h": 8,
         "w": 14,
         "x": 10,
         "y": 27
-     },
+      },
       "id": 47,
       "options": {
         "legend": {
           "calcs": [
             "mean",
             "lastNotNull"
-         ],
+          ],
           "displayMode": "table",
           "placement": "bottom"
-       },
+        },
         "tooltip": {
           "mode": "single"
-       }
-     },
+        }
+      },
       "pluginVersion": "8.1.3",
       "targets": [
         {
@@ -1265,21 +1265,21 @@
           "interval": "",
           "legendFormat": "input_bytes",
           "refId": "A"
-       },
+        },
         {
           "exemplar": true,
           "expr": "- max(redis_total_net_output_bytes{instance=\"$instance\"})",
           "interval": "",
           "legendFormat": "output_bytes",
           "refId": "B"
-       }
-     ],
+        }
+      ],
       "timeFrom": null,
       "timeShift": null,
       "title": "Network Input / Output",
       "transparent": true,
       "type": "timeseries"
-   },
+    },
     {
       "aliasColors": {},
       "bars": true,
@@ -1296,7 +1296,7 @@
         "w": 10,
         "x": 0,
         "y": 28
-     },
+      },
       "hiddenSeries": false,
       "id": 14,
       "legend": {
@@ -1309,14 +1309,14 @@
         "show": false,
         "total": false,
         "values": false
-     },
+      },
       "lines": false,
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
       "options": {
         "alertThreshold": false
-     },
+      },
       "percentage": true,
       "pluginVersion": "8.1.3",
       "pointradius": 5,
@@ -1337,8 +1337,8 @@
           "metric": "redis_command_calls_total",
           "refId": "A",
           "step": 240
-       }
-     ],
+        }
+      ],
       "thresholds": [],
       "timeFrom": null,
       "timeRegions": [],
@@ -1349,7 +1349,7 @@
         "shared": false,
         "sort": 1,
         "value_type": "cumulative"
-     },
+      },
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -1358,8 +1358,8 @@
         "show": true,
         "values": [
           "total"
-       ]
-     },
+        ]
+      },
       "yaxes": [
         {
           "$$hashKey": "object:615",
@@ -1369,7 +1369,7 @@
           "max": null,
           "min": null,
           "show": true
-       },
+        },
         {
           "$$hashKey": "object:616",
           "format": "short",
@@ -1378,13 +1378,13 @@
           "max": null,
           "min": null,
           "show": false
-       }
-     ],
+        }
+      ],
       "yaxis": {
         "align": false,
         "alignLevel": null
-     }
-   },
+      }
+    },
     {
       "datasource": null,
       "description": "Total number of bytes allocated by Redis using its allocator",
@@ -1392,7 +1392,7 @@
         "defaults": {
           "color": {
             "mode": "palette-classic"
-         },
+          },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -1404,23 +1404,23 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-           },
+            },
             "lineInterpolation": "smooth",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-           },
+            },
             "showPoints": "always",
             "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
-           },
+            },
             "thresholdsStyle": {
               "mode": "off"
-           }
-         },
+            }
+          },
           "links": [],
           "mappings": [],
           "thresholds": {
@@ -1429,118 +1429,118 @@
               {
                 "color": "green",
                 "value": null
-             },
+              },
               {
                 "color": "red",
                 "value": 80
-             }
-           ]
-         },
+              }
+            ]
+          },
           "unit": "bytes"
-       },
+        },
         "overrides": [
           {
             "matcher": {
               "id": "byName",
               "options": "redis: mem_rss"
-           },
+            },
             "properties": [
               {
                 "id": "color",
                 "value": {
                   "fixedColor": "rgba(239, 132, 60, 0.94)",
                   "mode": "fixed"
-               }
-             }
-           ]
-         },
+                }
+              }
+            ]
+          },
           {
             "matcher": {
               "id": "byName",
               "options": "redis: mem_used"
-           },
+            },
             "properties": [
               {
                 "id": "color",
                 "value": {
                   "fixedColor": "orange",
                   "mode": "fixed"
-               }
-             }
-           ]
-         },
+                }
+              }
+            ]
+          },
           {
             "matcher": {
               "id": "byName",
               "options": "redis: mem_used"
-           },
+            },
             "properties": [
               {
                 "id": "custom.lineWidth",
                 "value": 0
-             },
+              },
               {
                 "id": "custom.lineWidth",
                 "value": 2
-             }
-           ]
-         },
+              }
+            ]
+          },
           {
             "matcher": {
               "id": "byName",
               "options": "redis: mem_lua"
-           },
+            },
             "properties": [
               {
                 "id": "custom.lineWidth",
                 "value": 0
-             },
+              },
               {
                 "id": "custom.lineWidth",
                 "value": 2
-             }
-           ]
-         },
+              }
+            ]
+          },
           {
             "matcher": {
               "id": "byName",
               "options": "redis: mem_peak"
-           },
+            },
             "properties": [
               {
                 "id": "custom.lineWidth",
                 "value": 0
-             },
+              },
               {
                 "id": "custom.lineWidth",
                 "value": 2
-             }
-           ]
-         },
+              }
+            ]
+          },
           {
             "matcher": {
               "id": "byName",
               "options": "redis: mem_rss"
-           },
+            },
             "properties": [
               {
                 "id": "custom.lineWidth",
                 "value": 0
-             },
+              },
               {
                 "id": "custom.lineWidth",
                 "value": 2
-             }
-           ]
-         }
-       ]
-     },
+              }
+            ]
+          }
+        ]
+      },
       "gridPos": {
         "h": 8,
         "w": 14,
         "x": 10,
         "y": 35
-     },
+      },
       "id": 24,
       "links": [],
       "options": {
@@ -1549,14 +1549,14 @@
             "mean",
             "lastNotNull",
             "max"
-         ],
+          ],
           "displayMode": "table",
           "placement": "bottom"
-       },
+        },
         "tooltip": {
           "mode": "single"
-       }
-     },
+        }
+      },
       "pluginVersion": "8.1.3",
       "targets": [
         {
@@ -1567,16 +1567,16 @@
             {
               "params": [
                 "$__interval"
-             ],
+              ],
               "type": "time"
-           },
+            },
             {
               "params": [
                 "linear"
-             ],
+              ],
               "type": "fill"
-           }
-         ],
+            }
+          ],
           "instant": false,
           "interval": "",
           "legendFormat": "mem_used",
@@ -1590,82 +1590,82 @@
               {
                 "params": [
                   "used_memory"
-               ],
+                ],
                 "type": "field"
-             },
+              },
               {
                 "params": [],
                 "type": "mean"
-             }
-           ]
-         ],
+              }
+            ]
+          ],
           "tags": [
             {
               "key": "host",
               "operator": "=~",
               "value": "/^$Host$/"
-           },
+            },
             {
               "condition": "AND",
               "key": "server",
               "operator": "=~",
               "value": "/^$Server$/"
-           }
-         ]
-       },
+            }
+          ]
+        },
         {
           "expr": "max(redis_used_memory_lua{instance=~\"$instance\"})",
           "instant": false,
           "interval": "",
           "legendFormat": "mem_lua",
           "refId": "B"
-       },
+        },
         {
           "expr": "max(redis_used_memory_peak{instance=\"$instance\"})",
           "instant": false,
           "interval": "",
           "legendFormat": "mem_peak",
           "refId": "C"
-       },
+        },
         {
           "expr": "max(redis_used_memory_rss{instance=\"$instance\"})",
           "interval": "",
           "legendFormat": "mem_rss",
           "refId": "D"
-       }
-     ],
+        }
+      ],
       "timeFrom": null,
       "timeShift": null,
       "title": "Redis Memory Utilization",
       "transformations": [],
       "transparent": true,
       "type": "timeseries"
-   },
+    },
     {
       "collapsed": true,
       "datasource": null,
       "fieldConfig": {
         "defaults": {},
         "overrides": []
-     },
+      },
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
         "y": 43
-     },
+      },
       "id": 63,
       "panels": [],
       "title": "Replication",
       "type": "row"
-   },
+    },
     {
       "datasource": null,
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "thresholds"
-         },
+          },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -1673,23 +1673,23 @@
               {
                 "color": "green",
                 "value": null
-             },
+              },
               {
                 "color": "red",
                 "value": 80
-             }
-           ]
-         },
+              }
+            ]
+          },
           "unit": "short"
-       },
+        },
         "overrides": []
-     },
+      },
       "gridPos": {
         "h": 4,
         "w": 3,
         "x": 0,
         "y": 44
-     },
+      },
       "id": 64,
       "options": {
         "colorMode": "background",
@@ -1699,13 +1699,13 @@
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
-         ],
+          ],
           "fields": "",
           "values": false
-       },
+        },
         "text": {},
         "textMode": "auto"
-     },
+      },
       "pluginVersion": "8.1.3",
       "targets": [
         {
@@ -1716,14 +1716,14 @@
           "interval": "",
           "legendFormat": "connected_clients",
           "refId": "A"
-       }
-     ],
+        }
+      ],
       "timeFrom": null,
       "timeShift": null,
       "title": "Connected Slaves",
       "transformations": [],
       "type": "stat"
-   },
+    },
     {
       "datasource": null,
       "description": "The number of full resyncs with replicas",
@@ -1731,7 +1731,7 @@
         "defaults": {
           "color": {
             "mode": "thresholds"
-         },
+          },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -1739,23 +1739,23 @@
               {
                 "color": "green",
                 "value": null
-             },
+              },
               {
                 "color": "red",
                 "value": 80
-             }
-           ]
-         },
+              }
+            ]
+          },
           "unit": "short"
-       },
+        },
         "overrides": []
-     },
+      },
       "gridPos": {
         "h": 4,
         "w": 3,
         "x": 3,
         "y": 44
-     },
+      },
       "id": 67,
       "options": {
         "colorMode": "background",
@@ -1765,13 +1765,13 @@
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
-         ],
+          ],
           "fields": "",
           "values": false
-       },
+        },
         "text": {},
         "textMode": "auto"
-     },
+      },
       "pluginVersion": "8.1.3",
       "targets": [
         {
@@ -1782,14 +1782,14 @@
           "interval": "",
           "legendFormat": "The number of full resyncs with replicas",
           "refId": "A"
-       }
-     ],
+        }
+      ],
       "timeFrom": null,
       "timeShift": null,
       "title": "Sync Full",
       "transformations": [],
       "type": "stat"
-   },
+    },
     {
       "datasource": null,
       "description": "The number of accepted partial resync requests",
@@ -1797,7 +1797,7 @@
         "defaults": {
           "color": {
             "mode": "thresholds"
-         },
+          },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -1805,23 +1805,23 @@
               {
                 "color": "green",
                 "value": null
-             },
+              },
               {
                 "color": "red",
                 "value": 80
-             }
-           ]
-         },
+              }
+            ]
+          },
           "unit": "short"
-       },
+        },
         "overrides": []
-     },
+      },
       "gridPos": {
         "h": 4,
         "w": 3,
         "x": 6,
         "y": 44
-     },
+      },
       "id": 68,
       "options": {
         "colorMode": "background",
@@ -1831,13 +1831,13 @@
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
-         ],
+          ],
           "fields": "",
           "values": false
-       },
+        },
         "text": {},
         "textMode": "auto"
-     },
+      },
       "pluginVersion": "8.1.3",
       "targets": [
         {
@@ -1848,14 +1848,14 @@
           "interval": "",
           "legendFormat": "The number of accepted partial resync requests",
           "refId": "A"
-       }
-     ],
+        }
+      ],
       "timeFrom": null,
       "timeShift": null,
       "title": "Sync Partial OK",
       "transformations": [],
       "type": "stat"
-   },
+    },
     {
       "datasource": null,
       "description": "The number of denied partial resync requests",
@@ -1863,7 +1863,7 @@
         "defaults": {
           "color": {
             "mode": "thresholds"
-         },
+          },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -1871,23 +1871,23 @@
               {
                 "color": "green",
                 "value": null
-             },
+              },
               {
                 "color": "red",
                 "value": 80
-             }
-           ]
-         },
+              }
+            ]
+          },
           "unit": "short"
-       },
+        },
         "overrides": []
-     },
+      },
       "gridPos": {
         "h": 4,
         "w": 3,
         "x": 9,
         "y": 44
-     },
+      },
       "id": 69,
       "options": {
         "colorMode": "background",
@@ -1897,13 +1897,13 @@
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
-         ],
+          ],
           "fields": "",
           "values": false
-       },
+        },
         "text": {},
         "textMode": "auto"
-     },
+      },
       "pluginVersion": "8.1.3",
       "targets": [
         {
@@ -1914,21 +1914,21 @@
           "interval": "",
           "legendFormat": "The number of denied partial resync requests",
           "refId": "A"
-       }
-     ],
+        }
+      ],
       "timeFrom": null,
       "timeShift": null,
       "title": "Sync Partial Error",
       "transformations": [],
       "type": "stat"
-   },
+    },
     {
       "datasource": null,
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
-         },
+          },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -1940,23 +1940,23 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-           },
+            },
             "lineInterpolation": "linear",
             "lineWidth": 2,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-           },
+            },
             "showPoints": "always",
             "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
-           },
+            },
             "thresholdsStyle": {
               "mode": "off"
-           }
-         },
+            }
+          },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -1964,34 +1964,34 @@
               {
                 "color": "green",
                 "value": null
-             },
+              },
               {
                 "color": "red",
                 "value": 80
-             }
-           ]
-         },
+              }
+            ]
+          },
           "unit": "s"
-       },
+        },
         "overrides": []
-     },
+      },
       "gridPos": {
         "h": 6,
         "w": 24,
         "x": 0,
         "y": 48
-     },
+      },
       "id": 56,
       "options": {
         "legend": {
           "calcs": [],
           "displayMode": "list",
           "placement": "bottom"
-       },
+        },
         "tooltip": {
           "mode": "single"
-       }
-     },
+        }
+      },
       "pluginVersion": "8.1.3",
       "targets": [
         {
@@ -2001,39 +2001,39 @@
           "interval": "",
           "legendFormat": "{{replication_role}}",
           "refId": "A"
-       }
-     ],
+        }
+      ],
       "timeFrom": null,
       "timeShift": null,
       "title": "Uptime per Role",
       "transparent": true,
       "type": "timeseries"
-   },
+    },
     {
       "collapsed": false,
       "datasource": null,
       "fieldConfig": {
         "defaults": {},
         "overrides": []
-     },
+      },
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
         "y": 54
-     },
+      },
       "id": 18,
       "panels": [],
       "title": "Redis Cache",
       "type": "row"
-   },
+    },
     {
       "datasource": null,
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
-         },
+          },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -2045,23 +2045,23 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-           },
+            },
             "lineInterpolation": "smooth",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-           },
+            },
             "showPoints": "always",
             "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "normal"
-           },
+            },
             "thresholdsStyle": {
               "mode": "off"
-           }
-         },
+            }
+          },
           "links": [],
           "mappings": [],
           "thresholds": {
@@ -2070,57 +2070,57 @@
               {
                 "color": "green",
                 "value": null
-             },
+              },
               {
                 "color": "red",
                 "value": 80
-             }
-           ]
-         },
+              }
+            ]
+          },
           "unit": "short"
-       },
+        },
         "overrides": [
           {
             "matcher": {
               "id": "byName",
               "options": "redis_hitrate"
-           },
+            },
             "properties": [
               {
                 "id": "color",
                 "value": {
                   "fixedColor": "rgb(57, 179, 121)",
                   "mode": "fixed"
-               }
-             },
+                }
+              },
               {
                 "id": "custom.lineWidth",
                 "value": 2
-             }
-           ]
-         }
-       ]
-     },
+              }
+            ]
+          }
+        ]
+      },
       "gridPos": {
         "h": 10,
         "w": 12,
         "x": 0,
         "y": 55
-     },
+      },
       "id": 39,
       "options": {
         "legend": {
           "calcs": [
             "mean",
             "lastNotNull"
-         ],
+          ],
           "displayMode": "table",
           "placement": "bottom"
-       },
+        },
         "tooltip": {
           "mode": "single"
-       }
-     },
+        }
+      },
       "pluginVersion": "8.1.3",
       "targets": [
         {
@@ -2130,21 +2130,21 @@
           "interval": "",
           "legendFormat": "redis_hitrate",
           "refId": "A"
-       }
-     ],
+        }
+      ],
       "timeFrom": null,
       "timeShift": null,
       "title": "Hit / Miss Rate",
       "transparent": true,
       "type": "timeseries"
-   },
+    },
     {
       "datasource": "Prometheus",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
-         },
+          },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
@@ -2156,23 +2156,23 @@
               "legend": false,
               "tooltip": false,
               "viz": false
-           },
+            },
             "lineInterpolation": "smooth",
             "lineWidth": 2,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-           },
+            },
             "showPoints": "always",
             "spanNulls": false,
             "stacking": {
               "group": "A",
               "mode": "none"
-           },
+            },
             "thresholdsStyle": {
               "mode": "off"
-           }
-         },
+            }
+          },
           "mappings": [],
           "min": 0,
           "thresholds": {
@@ -2181,23 +2181,23 @@
               {
                 "color": "green",
                 "value": null
-             },
+              },
               {
                 "color": "red",
                 "value": 80
-             }
-           ]
-         },
+              }
+            ]
+          },
           "unit": "short"
-       },
+        },
         "overrides": []
-     },
+      },
       "gridPos": {
         "h": 10,
         "w": 6,
         "x": 12,
         "y": 55
-     },
+      },
       "id": 1,
       "links": [],
       "options": {
@@ -2205,11 +2205,11 @@
           "calcs": [],
           "displayMode": "hidden",
           "placement": "bottom"
-       },
+        },
         "tooltip": {
           "mode": "single"
-       }
-     },
+        }
+      },
       "pluginVersion": "8.1.3",
       "targets": [
         {
@@ -2224,7 +2224,7 @@
           "refId": "A",
           "step": 240,
           "target": ""
-       },
+        },
         {
           "exemplar": true,
           "expr": "max(irate(redis_keyspace_misses{instance=\"$instance\"}[1m]))",
@@ -2237,14 +2237,14 @@
           "refId": "B",
           "step": 240,
           "target": ""
-       }
-     ],
+        }
+      ],
       "timeFrom": null,
       "timeShift": null,
       "title": "Hits / Misses per Sec",
       "transparent": true,
       "type": "timeseries"
-   },
+    },
     {
       "aliasColors": {},
       "bars": true,
@@ -2261,7 +2261,7 @@
         "w": 6,
         "x": 18,
         "y": 55
-     },
+      },
       "hiddenSeries": false,
       "id": 13,
       "legend": {
@@ -2272,14 +2272,14 @@
         "show": false,
         "total": false,
         "values": false
-     },
+      },
       "lines": false,
       "linewidth": 2,
       "links": [],
       "nullPointMode": "connected",
       "options": {
         "alertThreshold": true
-     },
+      },
       "percentage": false,
       "pluginVersion": "8.1.3",
       "pointradius": 5,
@@ -2300,7 +2300,7 @@
           "refId": "A",
           "step": 240,
           "target": ""
-       },
+        },
         {
           "expr": "sum (redis_expired_keys{instance=~\"$instance\", host=~\"$host\"}) ",
           "format": "time_series",
@@ -2310,8 +2310,8 @@
           "metric": "",
           "refId": "B",
           "step": 240
-       }
-     ],
+        }
+      ],
       "thresholds": [],
       "timeFrom": null,
       "timeRegions": [],
@@ -2322,7 +2322,7 @@
         "shared": false,
         "sort": 0,
         "value_type": "individual"
-     },
+      },
       "transparent": true,
       "type": "graph",
       "xaxis": {
@@ -2332,8 +2332,8 @@
         "show": true,
         "values": [
           "total"
-       ]
-     },
+        ]
+      },
       "yaxes": [
         {
           "$$hashKey": "object:316",
@@ -2343,7 +2343,7 @@
           "max": null,
           "min": null,
           "show": true
-       },
+        },
         {
           "$$hashKey": "object:317",
           "format": "short",
@@ -2352,18 +2352,18 @@
           "max": null,
           "min": null,
           "show": false
-       }
-     ],
+        }
+      ],
       "yaxis": {
         "align": false,
         "alignLevel": null
-     }
-   },
+      }
+    },
     {
       "aliasColors": {
         "evicted_keys": "purple",
         "expirted_keys": "red"
-     },
+      },
       "bars": false,
       "dashLength": 10,
       "dashes": false,
@@ -2372,9 +2372,9 @@
       "fieldConfig": {
         "defaults": {
           "links": []
-       },
+        },
         "overrides": []
-     },
+      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -2382,7 +2382,7 @@
         "w": 6,
         "x": 0,
         "y": 65
-     },
+      },
       "hiddenSeries": false,
       "id": 43,
       "legend": {
@@ -2395,13 +2395,13 @@
         "show": true,
         "total": false,
         "values": true
-     },
+      },
       "lines": true,
       "linewidth": 1,
       "nullPointMode": "null",
       "options": {
         "alertThreshold": true
-     },
+      },
       "percentage": false,
       "pluginVersion": "8.1.3",
       "pointradius": 2,
@@ -2418,15 +2418,15 @@
           "interval": "",
           "legendFormat": "evicted_keys",
           "refId": "A"
-       },
+        },
         {
           "exemplar": true,
           "expr": "sum(redis_expired_keys{instance=\"$instance\"})",
           "interval": "",
           "legendFormat": "expirted_keys",
           "refId": "B"
-       }
-     ],
+        }
+      ],
       "thresholds": [],
       "timeFrom": null,
       "timeRegions": [],
@@ -2436,7 +2436,7 @@
         "shared": true,
         "sort": 0,
         "value_type": "individual"
-     },
+      },
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -2444,7 +2444,7 @@
         "name": null,
         "show": true,
         "values": []
-     },
+      },
       "yaxes": [
         {
           "$$hashKey": "object:731",
@@ -2454,7 +2454,7 @@
           "max": null,
           "min": null,
           "show": true
-       },
+        },
         {
           "$$hashKey": "object:732",
           "format": "short",
@@ -2463,17 +2463,17 @@
           "max": null,
           "min": null,
           "show": true
-       }
-     ],
+        }
+      ],
       "yaxis": {
         "align": false,
         "alignLevel": null
-     }
-   },
+      }
+    },
     {
       "aliasColors": {
         "total_tracking_items": "light-blue"
-     },
+      },
       "bars": false,
       "dashLength": 10,
       "dashes": false,
@@ -2481,9 +2481,9 @@
       "fieldConfig": {
         "defaults": {
           "links": []
-       },
+        },
         "overrides": []
-     },
+      },
       "fill": 3,
       "fillGradient": 0,
       "gridPos": {
@@ -2491,7 +2491,7 @@
         "w": 12,
         "x": 6,
         "y": 65
-     },
+      },
       "hiddenSeries": false,
       "id": 41,
       "legend": {
@@ -2502,13 +2502,13 @@
         "show": false,
         "total": false,
         "values": false
-     },
+      },
       "lines": true,
       "linewidth": 3,
       "nullPointMode": "null",
       "options": {
         "alertThreshold": true
-     },
+      },
       "percentage": false,
       "pluginVersion": "8.1.3",
       "pointradius": 2,
@@ -2524,8 +2524,8 @@
           "interval": "",
           "legendFormat": "total_tracking_items",
           "refId": "A"
-       }
-     ],
+        }
+      ],
       "thresholds": [],
       "timeFrom": null,
       "timeRegions": [],
@@ -2535,7 +2535,7 @@
         "shared": true,
         "sort": 0,
         "value_type": "individual"
-     },
+      },
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -2543,7 +2543,7 @@
         "name": null,
         "show": true,
         "values": []
-     },
+      },
       "yaxes": [
         {
           "format": "short",
@@ -2552,7 +2552,7 @@
           "max": null,
           "min": null,
           "show": true
-       },
+        },
         {
           "format": "short",
           "label": null,
@@ -2560,21 +2560,21 @@
           "max": null,
           "min": null,
           "show": true
-       }
-     ],
+        }
+      ],
       "yaxis": {
         "align": false,
         "alignLevel": null
-     }
-   }
- ],
+      }
+    }
+  ],
   "refresh": "30s",
   "schemaVersion": 30,
   "style": "dark",
   "tags": [
     "prometheus",
     "redis"
- ],
+  ],
   "templating": {
     "list": [
       {
@@ -2583,7 +2583,7 @@
           "selected": false,
           "text": "masters",
           "value": "masters"
-       },
+        },
         "datasource": "Prometheus",
         "definition": "label_values(redis_uptime,instance)",
         "description": null,
@@ -2597,7 +2597,7 @@
         "query": {
           "query": "label_values(redis_uptime,instance)",
           "refId": "StandardVariableQuery"
-       },
+        },
         "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
@@ -2606,14 +2606,14 @@
         "tagsQuery": "",
         "type": "query",
         "useTags": false
-     },
+      },
       {
         "allValue": ".*",
         "current": {
           "selected": false,
           "text": "jedi5.cluster.ics.forth.gr",
           "value": "jedi5.cluster.ics.forth.gr"
-       },
+        },
         "datasource": "Prometheus",
         "definition": "label_values(redis_uptime,host)",
         "description": null,
@@ -2627,7 +2627,7 @@
         "query": {
           "query": "label_values(redis_uptime,host)",
           "refId": "StandardVariableQuery"
-       },
+        },
         "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
@@ -2636,13 +2636,13 @@
         "tagsQuery": "",
         "type": "query",
         "useTags": false
-     }
-   ]
- },
+      }
+    ]
+  },
   "time": {
     "from": "now-1h",
     "to": "now"
- },
+  },
   "timepicker": {
     "refresh_intervals": [
       "5s",
@@ -2655,7 +2655,7 @@
       "1h",
       "2h",
       "1d"
-   ],
+    ],
     "time_options": [
       "5m",
       "15m",
@@ -2666,8 +2666,8 @@
       "2d",
       "7d",
       "30d"
-   ]
- },
+    ]
+  },
   "timezone": "browser",
   "title": "Prometheus Redis (by addr and host)",
   "uid": "EeXaCe8Mz",

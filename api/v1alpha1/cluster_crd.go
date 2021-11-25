@@ -53,9 +53,7 @@ type ClusterSpec struct {
 	// +optional
 	Tolerate TolerateSpec `json:"tolerate,omitempty"`
 
-	// Domain specifies the location where Service will be placed. For this to work,
-	// the nodes included in the domain must have the label domain:{{domain-name}}.
-	// for the moment simply match domain to a specific node. this will change in the future
+	// Domain specifies the location where Service will be placed.
 	// +optional
 	Domain string `json:"domain,omitempty"`
 

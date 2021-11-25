@@ -9,8 +9,6 @@ spec:
       - sysmon/container
       - ycsbmon/client
       - cockroachmon/server
-    ingress:
-      host: platform.science-hangar.eu
 
   actions:
     - action: Cluster
@@ -24,7 +22,7 @@ spec:
     - action: Service
       name: boot
       depends:
-        running: [master]
+        running: [ master ]
       service:
         fromTemplate:
           templateRef: cockroachdb-cluster/bootstrap
@@ -33,7 +31,7 @@ spec:
 
     - action: Service
       depends:
-        success: [boot]
+        success: [ boot ]
       name: loader
       service:
         fromTemplate:
@@ -47,7 +45,7 @@ spec:
 
     - action: Service
       depends:
-        success: [loader]
+        success: [ loader ]
       name: workload-a
       service:
         fromTemplate:
@@ -63,7 +61,7 @@ spec:
 
     - action: Service
       depends:
-        success: [workload-a]
+        success: [ workload-a ]
       name: workload-b
       service:
         fromTemplate:
@@ -78,7 +76,7 @@ spec:
 
     - action: Service
       depends:
-        success: [workload-b]
+        success: [ workload-b ]
       name: workload-c
       service:
         fromTemplate:
@@ -93,7 +91,7 @@ spec:
 
     - action: Service
       depends:
-        success: [workload-c]
+        success: [ workload-c ]
       name: workload-f
       service:
         fromTemplate:
@@ -108,7 +106,7 @@ spec:
 
     - action: Service
       depends:
-        success: [workload-f]
+        success: [ workload-f ]
       name: workload-d
       service:
         fromTemplate:
@@ -123,7 +121,7 @@ spec:
 
     - action: Service
       depends:
-        success: [workload-d]
+        success: [ workload-d ]
       name: reloader
       service:
         fromTemplate:
@@ -137,7 +135,7 @@ spec:
 
     - action: Service
       depends:
-        success: [reloader]
+        success: [ reloader ]
       name: workload-e
       service:
         fromTemplate:

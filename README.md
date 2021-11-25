@@ -1,4 +1,5 @@
 # Frisbee
+
 **Kubernetes Native Testbed**
 
 ![releaser](https://github.com/carv-ics-forth/frisbee/actions/workflows/release.yml/badge.svg)
@@ -27,8 +28,6 @@ testing procedure.
 
 Frisbee provides a flexible, YAML-based configuration syntax and is trivially extensible with additional functionality.
 
-
-
 ## 📙 Documentation
 
 Frisbee installation and reference documents are available at:
@@ -38,7 +37,6 @@ Frisbee installation and reference documents are available at:
 👉 **[Installation](docs/installation.md)**
 
 👉 **[Test Plans](charts)**
-
 
 ## 🙋‍♂️ Getting Help
 
@@ -51,8 +49,6 @@ We are here to help!
 👉 For great new ideas, browse through the [GitHub discussions](https://github.com/carv-ics-forth/frisbee/discussions).
 
 👉 To get updates ⭐️ [star this repository](https://github.com/carv-ics-forth/frisbee/stargazers).
-
-
 
 ## ➕ Contributing
 
@@ -69,7 +65,8 @@ We welcome also every contribution, even if it is just punctuation. Here are som
 
 ## TL;DR
 
-Make sure that [Microk8s](https://microk8s.io/docs) and  [Helm](https://helm.sh/docs/intro/install/) are installed on your system, then install the Frisbee dependencies:
+Make sure that [Microk8s](https://microk8s.io/docs) and  [Helm](https://helm.sh/docs/intro/install/) are installed on
+your system, then install the Frisbee dependencies:
 
 ```bash
 # Clone Frisbee repository
@@ -92,9 +89,9 @@ Then run:
 >> kubectl apply -f charts/tikv/plans/plan.localhost.yml 
 ```
 
-
-
-If everything went smoothly, you should see a similar [Grafana Dashboard](http://grafana.localhost/d/R5y4AE8Mz/kubernetes-cluster-monitoring-via-prometheus?orgId=1&amp;from=now-15m&amp;to=now). 
+If everything went smoothly, you should see a
+similar [Grafana Dashboard](http://grafana.localhost/d/R5y4AE8Mz/kubernetes-cluster-monitoring-via-prometheus?orgId=1&amp;from=now-15m&amp;to=now)
+.
 
 Through these dashboards humans and controllers can examine to check things like completion, health, and SLA compliance.
 
@@ -105,7 +102,6 @@ Through these dashboards humans and controllers can examine to check things like
 #### Client-View (Redis-Dashboard)
 
 ![](docs/images/masterdashboard.png)
-
 
 ## Acknowledgements
 

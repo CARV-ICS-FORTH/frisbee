@@ -12,15 +12,22 @@
     # We use the dropdata field to remove all data before test.
     # Step 9:Run workload E
 
-
-
 # dependencies:
-#  - name: observability
-#    version: 0.1.1
-#    repository: https://carv-ics-forth.github.io/frisbee/charts
-#  - name: sysmon
-#    version: 0.1.1
-#    repository: https://carv-ics-forth.github.io/frisbee/charts
-#  - name: ycsbmon
-#    version: 0.1.1
-#    repository: https://carv-ics-forth.github.io/frisbee/charts
+
+# - name: observability
+
+# version: 0.1.1
+
+# repository: https://carv-ics-forth.github.io/frisbee/charts
+
+# - name: sysmon
+
+# version: 0.1.1
+
+# repository: https://carv-ics-forth.github.io/frisbee/charts
+
+# - name: ycsbmon
+
+# version: 0.1.1
+
+# repository: https://carv-ics-forth.github.io/frisbee/charts

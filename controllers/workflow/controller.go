@@ -26,13 +26,11 @@ import (
 	"github.com/carv-ics-forth/frisbee/controllers/utils"
 	"github.com/carv-ics-forth/frisbee/controllers/utils/lifecycle"
 	"github.com/go-logr/logr"
-	notifier "github.com/golanghelper/grafana-webhook"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -42,10 +40,6 @@ import (
 // +kubebuilder:rbac:groups=frisbee.io,resources=workflows,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=frisbee.io,resources=workflows/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=frisbee.io,resources=workflows/finalizers,verbs=update
-
-const (
-	GrafanaEndpoint = "http://grafana.localhost"
-)
 
 type Controller struct {
 	ctrl.Manager
@@ -300,25 +294,9 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		// this should normally happen when the telemetry is running
 		if grafana.DefaultClient == nil {
-			if err := grafana.NewGrafanaClient(ctx, r, GrafanaEndpoint,
-				// Set a callback that will be triggered when there is Grafana alert.
-				// Through this channel we can get informed for SLA violations.
-				grafana.WithNotifyOnAlert(func(b *notifier.Body) {
-					r.Logger.Info("Grafana Alert", "body", b)
-
-					alertJSON, _ := json.Marshal(b)
-
-					assertionInfo := map[string]string{
-						SLAViolationFired: b.RuleName,
-						SLAViolationInfo:  string(alertJSON),
-					}
-
-					if err := utils.PatchAnnotation(ctx, r, &cr, assertionInfo); err != nil {
-						r.Logger.Error(err, "unable to inform CR for SLA violation", "cr", cr.GetName())
-					}
-				}),
-			); err != nil {
+			if err := r.ConnectToGrafana(ctx, &cr); err != nil {
 				return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot communicate with the telemetry stack"))
+
 			}
 		}
 	}

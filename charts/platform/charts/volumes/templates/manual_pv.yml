@@ -1,5 +1,5 @@
 ---
-{{- if .Values.manual.enabled}}
+  {{- if .Values.manual.enabled}}
 apiVersion: v1
 kind: PersistentVolume
 metadata:
@@ -91,4 +91,4 @@ metadata:
 provisioner: "kubernetes.io/no-provisioner"
 volumeBindingMode: "WaitForFirstConsumer"
 
-{{- end}}
+  {{- end}}

@@ -7,9 +7,7 @@ metadata:
   name: tikv-scaleout
 spec:
   withTelemetry:
-    importMonitors: ["sysmon/container", "ycsbmon/client", "tikvmon/pd", "tikvmon/worker"]
-    ingress:
-      host: platform.science-hangar.eu
+    importMonitors: [ "sysmon/container", "ycsbmon/client", "tikvmon/pd", "tikvmon/worker" ]
 
   actions:
     # Step 0: bootstrap.
@@ -21,21 +19,21 @@ spec:
           templateRef: tikv/placementDriver
 
     - action: Cluster
-      depends: {running: [master]}
+      depends: { running: [ master ] }
       name: workers
       cluster:
         templateRef: tikv/worker
         instances: 256
         inputs:
-          - {placementDriver: .service.master.any}
+          - { placementDriver: .service.master.any }
 
 
     # Step 1: Load a new dataset, using the parameters of workload A.
     # We use no throttling to maximize this step and complete it soon.
     - action: Cluster
       name: loaders
-      depends: {running: [master, workers]}
+      depends: { running: [ master, workers ] }
       cluster:
         templateRef: ycsb-tikv/loader
         inputs:
-          - {server: .service.master.any, recordcount: "100000000000", offset: "0", threads: "32"}
+          - { server: .service.master.any, recordcount: "100000000000", offset: "0", threads: "32" }

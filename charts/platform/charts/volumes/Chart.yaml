@@ -1,10 +1,7 @@
----
 apiVersion: v2
-name: sysmon
-description: "sysmon provides container users an understanding of the resource usage
-and performance characteristics of their running containers."
+name: infrastructure
+description: This sub-chart containers the Frisbee dependencies
 
-# A chart can be either an 'application' or a 'library' chart.
 #
 # Application charts are a collection of templates that can be packaged into versioned archives
 # to be deployed.
@@ -20,12 +17,17 @@ type: application
 # It is recommended to use it with quotes.
 appVersion: "1.16.0"
 
-home: https://github.com/CARV-ICS-FORTH/frisbee/tree/main/charts/sysmon
-
-icon: http://new.sevenhillstechnology.com/wp-content/uploads/2021/01/undraw_programming_2svr.png
-
-annotations:
-  category: Infrastructure
+# The dependency commands operate on that file, making it easy to synchronize between
+# the desired dependencies and the actual dependencies stored in the 'charts/' directory.
+dependencies:
+  - condition: chaos-mesh.enabled
+    name: chaos-mesh
+    version: "2.0.3"
+    repository: https://charts.chaos-mesh.org
+  - condition: openebs.enabled
+    name: openebs
+    version: "3.0.0"
+    repository: https://openebs.github.io/charts
 
 maintainers:
   - name: Fotis Nikolaidis
