@@ -3,10 +3,10 @@ entries:
   cockroachdb:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2021-11-24T14:34:31.62761059Z"
+    created: "2021-11-25T10:53:00.948526767Z"
     description: CockroachDB is a distributed database with standard SQL for cloud
       applications.
-    digest: 4cd412688da86f735f58e032f82cb50fb076f97bb1d0d51dd14af4ecaa33c9bb
+    digest: cd7b6b4d0605770cbe6448379d373063c82f34cba8d069eb09048bb230b3bbab
     name: cockroachdb
     type: application
     urls:
@@ -48,9 +48,9 @@ entries:
   fio:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2021-11-24T14:34:31.627976697Z"
+    created: "2021-11-25T10:53:00.948902371Z"
     description: fio is a benchmark to test I/O performance.
-    digest: 8c77cca1185b3e03a0ac968ca0083af3ad1c892aa2bc038982ead4ae94cc3a68
+    digest: 832d2259a343ddb06a9335c0860ad16c456acbc3bcd096245a346280a0a531e3
     name: fio
     type: application
     urls:
@@ -89,10 +89,10 @@ entries:
   iperf:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2021-11-24T14:34:31.628232302Z"
+    created: "2021-11-25T10:53:00.949187275Z"
     description: iPerf is a tool for active measurements of the maximum achievable
       bandwidth on IP networks
-    digest: 42beebedd8503f2a6a6a0f461f03042b944f88b31b8f09d62aafdbfd6491fc3a
+    digest: c6112529654444afbb91971863aff269161e54d756d446d756a7687026abe26a
     name: iperf
     type: application
     urls:
@@ -134,10 +134,10 @@ entries:
   mongodb:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2021-11-24T14:34:31.62916132Z"
+    created: "2021-11-25T10:53:00.949794183Z"
     description: MongoDB is a source-available cross-platform document-oriented database
       program.
-    digest: 341ca73e0ee4a10283ba2cb2045a3d17d6a664e36c7bc1a50c9270124d6d02c0
+    digest: 8cb9ad8296c53f62e07b51b66c05e8fe410a1b04d63b1ad3e1addbf1da7ed99f
     name: mongodb
     type: application
     urls:
@@ -181,9 +181,9 @@ entries:
       category: Infrastructure
     apiVersion: v2
     appVersion: 1.10.0
-    created: "2021-11-24T14:34:31.629434626Z"
+    created: "2021-11-25T10:53:00.950017086Z"
     description: The Observability stack of Frisbee. Installs Prometheus + Grafana
-    digest: da7d87421ff3db9057b210eeb634b856a1264971fed50f1a4a3260679560e249
+    digest: 58e6880cac5d76999dd2e782a1d7f0ea9f57b96ea7bc202ab60f2204d02d633f
     home: https://github.com/bitnami/charts/tree/master/bitnami/common
     icon: http://new.sevenhillstechnology.com/wp-content/uploads/2021/01/undraw_programming_2svr.png
     name: observability
@@ -236,7 +236,7 @@ entries:
   platform:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2021-11-24T14:34:31.659052898Z"
+    created: "2021-11-25T10:53:00.976686723Z"
     dependencies:
     - condition: chaos-mesh.enabled
       name: chaos-mesh
@@ -248,7 +248,7 @@ entries:
       version: 3.0.0
     description: Frisbee is a Kubernetes platform for exploring, testing, and benchmarking
       distributed applications.
-    digest: 4c541c76bc2d77d2f8d501c95aaa30b2ad90d9c018762f7ff488eb48e2459432
+    digest: 215def6413133850f45cdcc49dac2eca482ee3891a9f3b985b5f670b96af8e25
     name: platform
     type: application
     urls:
@@ -317,10 +317,10 @@ entries:
   redis:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2021-11-24T14:34:31.659923415Z"
+    created: "2021-11-25T10:53:00.977263131Z"
     description: Redis is an in-memory data structure store, used as a distributed,
       in-memory key–value database, cache and message broker, with optional durability.
-    digest: 570947667d8c334c8dbbdfc53f1a77461b9fcb0359909f6e9c570cba427a61ba
+    digest: 81c2938a17a632c677d749bda0591c0054575dab2f94022a343e55e791bd30cf
     name: redis
     type: application
     urls:
@@ -364,10 +364,10 @@ entries:
       category: Infrastructure
     apiVersion: v2
     appVersion: 1.16.0
-    created: "2021-11-24T14:34:31.660471425Z"
+    created: "2021-11-25T10:53:00.977613135Z"
     description: sysmon provides container users an understanding of the resource
       usage and performance characteristics of their running containers.
-    digest: 68df02316310c267a830406072f05f40d3b74b5ccea2e54e4db888060941d22f
+    digest: 521c78f8f14341f85e0110f42fbc2b77ba352be1773a9c21f9cd7e30b7f9a825
     home: https://github.com/CARV-ICS-FORTH/frisbee/tree/main/charts/sysmon
     icon: http://new.sevenhillstechnology.com/wp-content/uploads/2021/01/undraw_programming_2svr.png
     name: sysmon
@@ -423,10 +423,10 @@ entries:
   tikv:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2021-11-24T14:34:31.664449602Z"
+    created: "2021-11-25T10:53:00.979138654Z"
     description: TiKV is a highly scalable, low latency, and easy to use key-value
       database.
-    digest: 27d12c64cfda84a422386a271be3341bc3c007999832eeb03c6cd3e1be2300db
+    digest: b41ba2a157d1986a457c7c6651f26b0db960d95aa9ff2344084128dde9a41892
     icon: https://tikv.org/img/logos/horizontal/color/tikv-horizontal-color.png
     name: tikv
     type: application
@@ -472,10 +472,10 @@ entries:
   ycsbmon:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2021-11-24T14:34:31.665059014Z"
+    created: "2021-11-25T10:53:00.979440658Z"
     description: ycsbmon parses ycsb output and integrates into the observability
       stack of Frisbee.
-    digest: 390a2c3256a12ab2c0e58087511b646b71eb228d5d10dd7db2bdf3b89a71b8d6
+    digest: 19dd77beea176bf8506ea8f46ec720e0da33736e04dc1c18d141e811753bf8bc
     name: ycsbmon
     type: application
     urls:
@@ -514,4 +514,4 @@ entries:
     urls:
     - https://CARV-ICS-FORTH.github.io/frisbee/charts/ycsbmon-1.0.5.tgz
     version: 1.0.5
-generated: "2021-11-24T14:34:31.626948678Z"
+generated: "2021-11-25T10:53:00.947717156Z"
