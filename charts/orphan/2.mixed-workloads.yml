@@ -4,7 +4,7 @@ kind: Workflow
 metadata:
   name: redis-mixed-workloads
 spec:
-  importMonitors: [ "sysmon/container", "redismon/server", "ycsbmon/client" ]
+  importMonitors: [ "platform.telemetry.container", "redis.telemetry.server", "ycsb.telemetry.client" ]
 
   testOracle:
     pass: >-
@@ -16,14 +16,14 @@ spec:
       name: master
       service:
         fromTemplate:
-          templateRef: redis/master
+          templateRef: redis.single.master
 
     # Ingest keys in parallel, into different ranges
     - action: Cluster
       name: "loaders"
       depends: { running: [ master ] }
       cluster:
-        templateRef: ycsb-redis/loader
+        templateRef: ycsb.redis.loader
         inputs:
           - { server: .service.master.any, recordcount: "1000000", offset: "0" }
           - { server: .service.master.any, recordcount: "1000000", offset: "1000000" }
@@ -34,7 +34,7 @@ spec:
       name: "runners"
       depends: { running: [ master ], success: [ loaders ] }
       cluster:
-        templateRef: ycsb-redis/runner
+        templateRef: ycsb.redis.runner
         inputs:
           - { server: .service.master.any, workload: workloada, operationcount: "1000000" }
           - { server: .service.master.any, workload: workloadb, operationcount: "1000000" }

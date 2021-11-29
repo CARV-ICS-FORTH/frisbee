@@ -1,0 +1,67 @@
+---
+apiVersion: frisbee.io/v1alpha1
+kind: Template
+metadata:
+  name: cockroach.cluster.master
+  labels:
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+spec:
+  inputs:
+    parameters:
+      servers: "localhost:26257"
+  service:
+    agents:
+      telemetry: [ platform.telemetry.container, cockroach.telemetry.server ]
+    container:
+      name: app
+      image: cockroachdb/cockroach:latest
+      ports:
+        - name: to-clients
+          containerPort: 26257
+        - name: to-console
+          containerPort: 8080
+      command:
+        - /bin/sh   # Run shell
+        - -c        # Read from string
+        - |         # Multi-line str
+          set -eum
+          trap "touch /dev/shm/stop" EXIT
+
+          echo "Start Cockroachdb: " {{"{{.Inputs.Parameters.servers}}"}}
+
+          cockroach start                               \
+              --insecure                                \
+              --store=$${HOSTNAME}                      \
+              --listen-addr=$${HOSTNAME}:26257          \
+              --http-addr=$${HOSTNAME}:8080             \
+              --join={{"{{.Inputs.Parameters.servers}}"}}
+
+
+
+---
+apiVersion: frisbee.io/v1alpha1
+kind: Template
+metadata:
+  name: cockroach.cluster.bootstrap
+  labels:
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+spec:
+  inputs:
+    parameters:
+      server: localhost
+      port: "26257"
+  service:
+    container:
+      name: app
+      image: cockroachdb/cockroach:latest
+      command:
+        - /bin/sh   # Run shell
+        - -c        # Read from string
+        - |         # Multi-line str
+          set -eum
+
+          addr={{"{{.Inputs.Parameters.server}}"}}:{{"{{.Inputs.Parameters.port}}"}}
+
+          echo "Initiate cluster using $addr"
+
+          cockroach init --insecure --host=$addr

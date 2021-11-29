@@ -25,6 +25,19 @@ annotations:
 maintainers:
   - name: Fotis Nikolaidis
     email: nikolaidis.fotis@gmail.com
+    url: https://www.linkedin.com/in/fotis-nikolaidis-444a6634/
+
+dependencies:
+  - name: volumes
+    version: 0.0.0
+    repository: "file://./charts/volumes"
+  - name: chaos
+    repository: "file://./charts/chaos"
+    version: 0.0.0
+  - name: telemetry
+    repository: "file://./charts/telemetry"
+    version: 0.0.0
+
 
 # This is the chart version. This version number should be incremented each time you make changes
 # to the chart and its templates, including the app version.

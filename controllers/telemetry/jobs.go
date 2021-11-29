@@ -33,8 +33,8 @@ import (
 const (
 	// grafana specific.
 	grafanaDashboards  = "/etc/grafana/provisioning/dashboards"
-	prometheusTemplate = "telemetry/prometheus"
-	grafanaTemplate    = "telemetry/grafana"
+	prometheusTemplate = "prometheus"
+	grafanaTemplate    = "grafana"
 )
 
 func (r *Controller) installPrometheus(ctx context.Context, w *v1alpha1.Telemetry) error {
@@ -46,7 +46,7 @@ func (r *Controller) installPrometheus(ctx context.Context, w *v1alpha1.Telemetr
 	}
 
 	{ // spec
-		prom.Spec.FromTemplate = &v1alpha1.FromTemplate{
+		prom.Spec.FromTemplate = &v1alpha1.GenerateFromTemplate{
 			TemplateRef: prometheusTemplate,
 			Instances:   0,
 			Inputs:      nil,
@@ -69,7 +69,7 @@ func (r *Controller) installGrafana(ctx context.Context, w *v1alpha1.Telemetry) 
 	}
 
 	{ // spec
-		grafana.Spec.FromTemplate = &v1alpha1.FromTemplate{
+		grafana.Spec.FromTemplate = &v1alpha1.GenerateFromTemplate{
 			TemplateRef: grafanaTemplate,
 			Instances:   0,
 			Inputs:      nil,
@@ -92,7 +92,7 @@ func (r *Controller) importDashboards(ctx context.Context, obj *v1alpha1.Telemet
 
 	// iterate monitoring services
 	for _, monRef := range obj.Spec.ImportMonitors {
-		monSpec, err := r.serviceControl.GetMonitorSpec(ctx, obj.GetNamespace(), v1alpha1.FromTemplate{TemplateRef: monRef})
+		monSpec, err := r.serviceControl.GetMonitorSpec(ctx, obj.GetNamespace(), v1alpha1.GenerateFromTemplate{TemplateRef: monRef})
 		if err != nil {
 			return errors.Wrapf(err, "cannot get spec for %s", monRef)
 		}

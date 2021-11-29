@@ -95,7 +95,7 @@ func TestFromTemplate_Validate(t1 *testing.T) {
 
 	for _, tt := range tests {
 		t1.Run(tt.name, func(t1 *testing.T) {
-			t := &FromTemplate{
+			t := &GenerateFromTemplate{
 				TemplateRef: tt.fields.TemplateRef,
 				Instances:   tt.fields.Instances,
 				Inputs:      tt.fields.Inputs,

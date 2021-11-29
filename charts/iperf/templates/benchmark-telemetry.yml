@@ -2,55 +2,52 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
-  name: iperfmon
+  name: iperfmon.client
   labels:
     app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 spec:
-  entries:
-    "client":
-      spec: |
-        agent:
-          container:
-            name: telegraf
-            image: telegraf:1.20.3
-            ports:
-              - name: mon-iperf
-                containerPort: 9443
-            command:
-              - /bin/sh # Run shell
-              - -c # Read from string
-              - |  # Multi-line str
-                set -eum
+  monitor:
+    dashboards:
+      matchLabels:
+        dashboard: iperf
+    agent:
+      container:
+        name: telegraf
+        image: telegraf:1.20.3
+        ports:
+          - name: mon-iperf
+            containerPort: 9443
+        command:
+          - /bin/sh # Run shell
+          - -c # Read from string
+          - |  # Multi-line str
+            set -eum
 
-                cat > /tmp/prometheus.conf <<EOF
-                [[inputs.tail]]
-                  files = ["/dev/shm/pipe"]
-                  from_beginning = true
-                  name_override = "iperf"
-                  data_format = "grok"
+            cat > /tmp/prometheus.conf <<EOF
+            [[inputs.tail]]
+              files = ["/dev/shm/pipe"]
+              from_beginning = true
+              name_override = "iperf"
+              data_format = "grok"
 
-                  # Example line
-                  #[  5]   0.00-1.00   sec  3.79 GBytes  32.5 Gbits/sec  304   2.75 MBytes
-                  grok_patterns = [ ".*-%{NUMBER:timestamp:float}.* %{NUMBER:transfer:float} %{WORD:transfer_units}.* %{NUMBER:bitrate:float} %{WORD:bitrate_unit}/sec.* %{NUMBER:retries:int}.* %{NUMBER:cwnd:float} %{WORD:cwnd_units}"]
+              # Example line
+              #[  5]   0.00-1.00   sec  3.79 GBytes  32.5 Gbits/sec  304   2.75 MBytes
+              grok_patterns = [ ".*-%{NUMBER:timestamp:float}.* %{NUMBER:transfer:float} %{WORD:transfer_units}.* %{NUMBER:bitrate:float} %{WORD:bitrate_unit}/sec.* %{NUMBER:retries:int}.* %{NUMBER:cwnd:float} %{WORD:cwnd_units}"]
 
-                [[outputs.prometheus_client]]
-                   listen = ":9443"
-                   metric_version = 2
-                   export_timestamp = true
-                   collectors_exclude = ["gocollector","process"]
-                EOF
+            [[outputs.prometheus_client]]
+               listen = ":9443"
+               metric_version = 2
+               export_timestamp = true
+               collectors_exclude = ["gocollector","process"]
+            EOF
 
-                telegraf --config /tmp/prometheus.conf &
+            telegraf --config /tmp/prometheus.conf &
 
-                # When the stop file is added by the container, the process stop
-                while [ ! -f "/dev/shm/stop" ];
-                do
-                  sleep 10
-                done
-
-        dashboards:
-          matchlabels:
-            dashboard: iperf
+            # When the stop file is added by the container, the process stop
+            while [ ! -f "/dev/shm/stop" ];
+            do
+              sleep 10
+            done
 
 
 ---

@@ -1,0 +1,62 @@
+---
+apiVersion: frisbee.io/v1alpha1
+kind: Workflow
+metadata:
+  name: tebis-baseline
+spec:
+  withTelemetry:
+    importMonitors:
+      - platform.telemetry.container
+
+  actions:
+    # Start a Zookeeper server
+    - action: Service
+      name: zookeeper
+      service:
+        fromTemplate:
+          templateRef: tebis.cluster.zookeeper
+
+    # Initialize metadata in Zookeeper
+    - action: Service
+      name: boot
+      depends:
+        running: [ zookeeper ]
+      service:
+        fromTemplate:
+          templateRef: tebis.cluster.bootstrap
+          inputs:
+            - { zookeeper: .service.zookeeper.any }
+
+    # Initialize a data node
+    - action: Service
+      name: master0
+      depends:
+        success: [ boot ]
+      service:
+        fromTemplate:
+          templateRef: tebis.cluster.master
+          inputs:
+            - { zookeeper: .service.zookeeper.any, domain: "jedi8.cluster.ics.forth.gr", port: "6060" }
+
+    # Initialize a data node
+    - action: Service
+      name: master1
+      depends:
+        success: [ boot ]
+      service:
+        fromTemplate:
+          templateRef: tebis.cluster.master
+          inputs:
+            - { zookeeper: .service.zookeeper.any, domain: "jedi8.cluster.ics.forth.gr", port: "6061" }
+
+
+    # Initialize a data node
+    - action: Service
+      name: master2
+      depends:
+        success: [ boot ]
+      service:
+        fromTemplate:
+          templateRef: tebis.cluster.master
+          inputs:
+            - { zookeeper: .service.zookeeper.any, domain: "jedi8.cluster.ics.forth.gr", port: "6062" }

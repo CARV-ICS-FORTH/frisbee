@@ -3,95 +3,91 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
-  name: fio
+  name: fio.benchmark
   labels:
     app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 spec:
-  entries:
-    "benchmark":
-      inputs:
-        parameters:
-          device: "/mnt/fio-benchmark-exporter"
-          size: "10M"
-          direct: "0"
-          node: ""
-          cpu: ""
-          memory: ""
-      spec: |
-        requirements:                         # Requirements
-          frisbee.io/pvc: local-storage
-          pvc.frisbee.io/spec: |
-            storageClassName: ssd-storage
-            accessModes:
-              - ReadWriteOnce
-            resources:
-              requests:
-                storage: 15Gi
-        domain:
-          - {{"{{.Inputs.Parameters.node}}"}}         # Placement
-        agents:                                 # Agents
-          telemetry: [ sysmon/container, fiomon/server ]
-        resources:                              # Resources
-          cpu: {{"{{.Inputs.Parameters.cpu}}"}}
-          memory: {{"{{.Inputs.Parameters.memory}}"}}
-        container:                              # Container
-          name: app
-          image: xridge/fio
-          volumeMounts:
-            - name: local-storage
-              mountPath: {{"{{.Inputs.Parameters.device}}"}}
-          command:
-            - /bin/sh # Run shell
-            - -c      # Read from string
-            - |       # Multi-line str
-              set -eum
-              trap "touch /dev/shm/stop" EXIT
+  inputs:
+    parameters:
+      device: "/mnt/fio-benchmark-exporter"
+      size: "10M"
+      direct: "0"
+      node: ""
+      cpu: ""
+      memory: ""
+  service:
+    requirements: # Requirements
+      frisbee.io/pvc: local-storage
+      pvc.frisbee.io/spec: |
+        storageClassName: ssd-storage
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 15Gi
+    domain:
+      - {{"{{.Inputs.Parameters.node}}" | quote}}         # Placement
+    agents: # Agents
+      telemetry: [ platform.telemetry.container, fiomon/server ]
+    resources: # Resources
+      cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
+      memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
+    container: # Container
+      name: app
+      image: xridge/fio
+      volumeMounts:
+        - name: local-storage
+          mountPath: {{"{{.Inputs.Parameters.device}}" | quote}}
+      command:
+        - /bin/sh # Run shell
+        - -c      # Read from string
+        - |       # Multi-line str
+          set -eum
+          trap "touch /dev/shm/stop" EXIT
 
-              DEVICE={{"{{.Inputs.Parameters.device}}"}}
-              SIZE={{"{{.Inputs.Parameters.size}}"}}
-              DIRECT={{"{{.Inputs.Parameters.direct}}"}}
+          DEVICE={{"{{.Inputs.Parameters.device}}"}}
+          SIZE={{"{{.Inputs.Parameters.size}}"}}
+          DIRECT={{"{{.Inputs.Parameters.direct}}"}}
 
-              echo "USING DEVICE: $DEVICE"
+          echo "USING DEVICE: $DEVICE"
 
-              cat > fio.conf <<EOF
-              [global]
-              directory=$DEVICE
-              size=$SIZE
-              direct=$DIRECT
-              gtod_reduce=1
-              time_based=1
-              runtime=1m
-              group_reporting=1
+          cat > fio.conf <<EOF
+          [global]
+          directory=$DEVICE
+          size=$SIZE
+          direct=$DIRECT
+          gtod_reduce=1
+          time_based=1
+          runtime=1m
+          group_reporting=1
 
-              [file1]
-              ioengine=libaio
-              EOF
+          [file1]
+          ioengine=libaio
+          EOF
 
-              for rw in randread randwrite; do
-                  for numjobs in 1 4 8 16; do
-                      for iodepth in 1 4 32 128; do
-                          cmd="fio --rw=$$rw --bs=4K --numjobs=$$numjobs --iodepth=$$iodepth fio.conf"
-                          echo $$cmd
-                          $$cmd >> /dev/shm/pipe
+          for rw in randread randwrite; do
+              for numjobs in 1 4 8 16; do
+                  for iodepth in 1 4 32 128; do
+                      cmd="fio --rw=$$rw --bs=4K --numjobs=$$numjobs --iodepth=$$iodepth fio.conf"
+                      echo $$cmd
+                      $$cmd >> /dev/shm/pipe
 
-                          echo
-                          echo
-                          echo
-                      done
+                      echo
+                      echo
+                      echo
                   done
               done
-              for rw in read write; do
-                  for numjobs in 1; do
-                      for iodepth in 1 4 32 128 256; do
-                          cmd="fio --rw=$$rw --bs=1M --numjobs=$$numjobs --iodepth=$$iodepth fio.conf"
-                          echo $$cmd
-                          $$cmd >> /dev/shm/pipe
+          done
+          for rw in read write; do
+              for numjobs in 1; do
+                  for iodepth in 1 4 32 128 256; do
+                      cmd="fio --rw=$$rw --bs=1M --numjobs=$$numjobs --iodepth=$$iodepth fio.conf"
+                      echo $$cmd
+                      $$cmd >> /dev/shm/pipe
 
-                          echo
-                          echo
-                          echo
-                      done
+                      echo
+                      echo
+                      echo
                   done
               done
-
-              sleep 3600
+          done

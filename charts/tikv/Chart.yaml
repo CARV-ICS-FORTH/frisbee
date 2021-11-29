@@ -24,6 +24,7 @@ icon: https://tikv.org/img/logos/horizontal/color/tikv-horizontal-color.png
 maintainers:
   - name: Fotis Nikolaidis
     email: nikolaidis.fotis@gmail.com
+    url: https://www.linkedin.com/in/fotis-nikolaidis-444a6634/
 
 # dependencies:
 #  - name: observability

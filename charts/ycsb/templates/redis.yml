@@ -1,0 +1,95 @@
+---
+apiVersion: frisbee.io/v1alpha1
+kind: Template
+metadata:
+  name: ycsb.redis.loader
+  labels:
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+spec:
+  inputs:
+    parameters:
+      server: localhost
+      port: "6379"
+      mode: "single"
+      offset: "0"
+      recordcount: "1000000"
+      cpu: ""     # Example: 8
+      memory: ""  # Example: 8Gi
+      threads: "1"
+      workload: "workloada"
+      dropdata: "false"
+  service:
+    agents: # Agents
+      telemetry: [ platform.telemetry.container, ycsb.telemetry.client ]
+    resources: # Resources
+      cpu: {{"{{.Inputs.Parameters.cpu}}" |quote }}
+      memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
+    container: # Container
+      name: app
+      image: aylei/go-ycsb:20201029
+      command:
+        - /bin/sh   # Run shell
+        - -c        # Read from string
+        - |         # Multi-line str
+          set -eum
+          trap "touch /dev/shm/stop" EXIT
+
+          addr={{"{{.Inputs.Parameters.server}}"}}:{{"{{.Inputs.Parameters.port}}"}}
+
+          echo "Loader: $addr <- {{"{{.Inputs.Parameters.recordcount}}"}}:{{"{{.Inputs.Parameters.offset}}"}}"
+
+          ./go-ycsb load redis                                     \
+              -P workloads/{{"{{.Inputs.Parameters.workload}}"}}         \
+              -p dropdata={{"{{.Inputs.Parameters.dropdata}}"}}          \
+              -p recordcount={{"{{.Inputs.Parameters.recordcount}}"}}    \
+              -p insertstart={{"{{.Inputs.Parameters.offset}}"}}         \
+              -p threadcount={{"{{.Inputs.Parameters.threads}}"}}        \
+              -p redis.mode={{"{{.Inputs.Parameters.mode}}"}}            \
+              -p redis.addr=${addr}                                \
+          >> /dev/shm/pipe
+
+---
+apiVersion: frisbee.io/v1alpha1
+kind: Template
+metadata:
+  name: ycsb.redis.runner
+  labels:
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+spec:
+  inputs:
+    parameters:
+      server: localhost
+      port: "6379"
+      mode: "single"
+      workload: "workloada"
+      operationcount: "30000000"
+      cpu: "8"
+      memory: "8Gi"
+      threads: "1"
+  service:
+    agents: # Agents
+      telemetry: [ platform.telemetry.container, ycsb.telemetry.client ]
+    resources: # Resources
+      cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
+      memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
+    container: # Container
+      name: app
+      image: aylei/go-ycsb:20201029
+      command:
+        - /bin/sh   # Run shell
+        - -c        # Read from string
+        - |         # Multi-line str
+          set -eum
+          trap "touch /dev/shm/stop" EXIT
+
+          addr={{"{{.Inputs.Parameters.server"}}}}:{{"{{.Inputs.Parameters.port}}"}}
+
+          echo "Runner: $addr <- {{"{{.Inputs.Parameters.workload}}"}}:{{"{{.Inputs.Parameters.operationcount}}"}}"
+
+          ./go-ycsb run redis                                             \
+                -P workloads/{{"{{.Inputs.Parameters.workload}}"}}              \
+                -p operationcount={{"{{.Inputs.Parameters.operationcount}}"}}   \
+                -p threadcount={{"{{.Inputs.Parameters.threads}}"}}             \
+                -p redis.mode={{"{{.Inputs.Parameters.mode}}"}}                 \
+                -p redis.addr=${addr}                                     \
+          >> /dev/shm/pipe

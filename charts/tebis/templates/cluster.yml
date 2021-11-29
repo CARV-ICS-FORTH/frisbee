@@ -1,0 +1,123 @@
+---
+apiVersion: frisbee.io/v1alpha1
+kind: Template
+metadata:
+  name: tebis.cluster.zookeeper
+  labels:
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+spec:
+  service:
+    container:
+      name: app
+      image: zookeeper:3.5.9
+      ports:
+        - name: http
+          containerPort: 2181
+      command:
+        - /bin/sh   # Run shell
+        - -c        # Read from string
+        - |         # Multi-line str
+          set -eum
+
+          echo "Initiate Zookeeper at 0.0.0.0:2181"
+          /docker-entrypoint.sh zkServer.sh start-foreground
+
+
+---
+apiVersion: frisbee.io/v1alpha1
+kind: Template
+metadata:
+  name: tebis.cluster.boostrap
+  labels:
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+spec:
+  inputs:
+    parameters:
+      zookeeper: localhost
+      serverHost: "localhost"
+      serverPort: "6060"
+  service:
+    container:
+      name: app
+      image: icsforth/tebis-manager:latest
+      command:
+        - /bin/sh   # Run shell
+        - -c        # Read from string
+        - |         # Multi-line str
+          set -eum
+
+          echo "Create hosts file"
+          cat > hosts <<EOF
+            master0-6060 leader
+            master1-6061
+            master2-6062
+          EOF
+
+          echo "Create regions file"
+          cat > regions <<EOF
+            0 -oo AB master0-6060
+            1 AB AC master1-6061
+            2 AC +oo master2-6062
+          EOF
+
+          zookeeper={{"{{.Inputs.Parameters.zookeeper}}:2181"}}
+
+          sleep 10
+
+          echo "Contact Zookeeper at ${zookeeper}"
+          python /tebis_zk_init.py hosts regions ${zookeeper}
+
+
+---
+apiVersion: frisbee.io/v1alpha1
+kind: Template
+metadata:
+  name: tebis.cluster.master
+  labels:
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+spec:
+  inputs:
+    parameters:
+      zookeeper: localhost
+      device: "/tmp/tebis.dat"
+      rdma_subnet: "192.168.5"
+      port: "6060"
+      domain: ""
+  service:
+    domain: [ {{"{{.Inputs.Parameters.domain}}" | quote}} ]
+    hostNetwork: false
+    agents:
+      telemetry: [ platform.telemetry.container ]
+    container:
+      name: app
+      # image: icsforth/tebis-node:latest
+      image: mellanox/centos_7_4_mofed_4_2_1_2_0_0_60
+      ports:
+        - name: to-clients
+          containerPort: {{"{{.Inputs.Parameters.port}}" | quote | int}}
+      command:
+        - /bin/sh   # Run shell
+        - -c        # Read from string
+        - |         # Multi-line str
+          set -eum
+          trap "touch /dev/shm/stop" EXIT
+
+          device={{"{{.Inputs.Parameters.device}}"}}
+          zookeeper={{"{{.Inputs.Parameters.zookeeper}}:2181"}}
+          rdma={{"{{.Inputs.Parameters.rdma_subnet}}"}}
+          port={{"{{.Inputs.Parameters.port}}"}}
+          cores="0,1,2"
+
+          echo "Pre-allocate space for Tebis server"
+          fallocate --length 16G ${device}
+
+          echo /kreon-server/kreon_server ${device} ${device} ${zookeeper} ${rdma} ${port},${cores}
+
+          yum install -y net-tools
+
+          sleep 3600
+
+          ifconfig ib0 10.0.0.50/24
+
+          echo "Starting Tebis server"
+          /kreon-server/kreon_server ${device} ${device} ${zookeeper} ${rdma} ${port},${cores}

@@ -41,12 +41,12 @@ spec:
   # Here we specify the workflow as a directed-acyclic graph (DAG) by specifying the dependencies of each action.
   actions:
     # Service creates an instance of a Redis Master
-    # To create the instance we use the redis/master with the default parameters.
+    # To create the instance we use the redis.single.master with the default parameters.
     - action: Service
       name: master
       service:
         fromTemplate:
-          templateRef: redis/master
+          templateRef: redis.single.master
 
     # This action is same as before, with two additions. 
     # 1. The `depends' keyword ensure that the action will be executed only after the `master' action 
@@ -57,7 +57,7 @@ spec:
       depends: { running: [ master ] }
       service:
         fromTemplate:
-          templateRef: redis/slave
+          templateRef: redis.single.slave
           inputs:
             - { master: .service.master.any }
 
@@ -67,7 +67,7 @@ spec:
       depends: { running: [ master, slave ] }
       service:
         fromTemplate:
-          templateRef: redis/sentinel
+          templateRef: redis.single.sentinel
           inputs:
             - { master: .service.master.any }
 
@@ -77,7 +77,7 @@ spec:
       name: "loaders"
       depends: { running: [ master ] }
       cluster:
-        templateRef: ycsb-redis/loader
+        templateRef: ycsb.redis.loader
         inputs:
           - { server: .service.master.any, recordcount: "100000000", offset: "0" }
           - { server: .service.master.any, recordcount: "100000000", offset: "100000000" }
@@ -108,8 +108,8 @@ spec:
 
   # Here we declare the Grafana dashboards that Workflow will make use of.
   withTelemetry:
-    importMonitors: [ "sysmon/container", "ycsbmon/client",  "redismon/server" ]
-      
+    importMonitors: [ "platform.telemetry.container", "ycsb.telemetry.client",  "redis.telemetry.server" ]
+
 ```
 
 # Run the experiment

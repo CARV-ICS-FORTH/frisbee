@@ -160,7 +160,7 @@ func main() {
 		}
 
 		if err = (&frisbeev1alpha1.Template{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "Template")
+			setupLog.Error(err, "unable to create webhook", "webhook", "Group")
 			os.Exit(1)
 		}
 

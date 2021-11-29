@@ -1182,11 +1182,13 @@ spec:
                       use Inputs.
                     type: integer
                   templateRef:
-                    description: TemplateRef refers to a  template
+                    description: TemplateRef refers to a  template (e.g, iperf-server).
                     type: string
                 required:
                 - templateRef
                 type: object
+              hostNetwork:
+                type: boolean
               requirements:
                 additionalProperties:
                   type: string

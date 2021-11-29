@@ -1,7 +1,11 @@
-# Global values are values that can be accessed from any chart or subchart by
-# exactly the same name. They should be accessed explicitly
-# via {{.Values.global.salad}}
+## @section Global parameters
+## Global Frisbee Platform parameters
+##
+
+## @param global.ingress DNS name for making Telemetry stack accessible outside the cluster.
+##
 global:
-  # Ingress specifies the DNS postfix from which Telemetry stack is accessible outside the cluster.
-  # e.g grafana.localhost, or grafana.platform.science-hangar.eu
+  ## E.g.
+  ## ingress: localhost
+  ## ingress: platform.science-hangar.eu
   ingress: localhost

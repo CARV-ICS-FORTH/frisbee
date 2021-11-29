@@ -22,13 +22,11 @@ import (
 	"time"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	templateutils "github.com/carv-ics-forth/frisbee/controllers/template/utils"
 	"github.com/carv-ics-forth/frisbee/controllers/utils"
 	"github.com/carv-ics-forth/frisbee/controllers/utils/lifecycle"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/apimachinery/pkg/util/yaml"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -81,33 +79,8 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	if cr.Status.Lifecycle.Phase == v1alpha1.PhaseUninitialized {
-		// validate services
-		for name, scheme := range cr.Spec.Entries {
-			specStr, err := templateutils.Evaluate(scheme.DeepCopy())
-			if err != nil {
-				return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "template %s error", name))
-			}
-
-			sSpec := v1alpha1.ServiceSpec{}
-
-			if err := yaml.Unmarshal([]byte(specStr), &sSpec); err != nil {
-				// if it is not a service, it may be a monitor
-				mSpec := v1alpha1.MonitorSpec{}
-				if err := yaml.Unmarshal([]byte(specStr), &mSpec); err != nil {
-					return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "unparsable scheme for %s", name))
-				}
-			}
-		}
-
-		names := make([]string, 0, len(cr.Spec.Entries))
-
-		for name := range cr.Spec.Entries {
-			names = append(names, name)
-		}
-
-		r.Logger.Info("Import Template",
+		r.Logger.Info("Import Group",
 			"name", req.NamespacedName,
-			"entries", names,
 		)
 
 		return lifecycle.Running(ctx, r, &cr, "all templates are loaded")

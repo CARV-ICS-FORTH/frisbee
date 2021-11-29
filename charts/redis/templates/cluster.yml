@@ -1,0 +1,125 @@
+---
+# Master server handling a keyspace
+# Every Redis Cluster node has an additional TCP port for receiving incoming connections from other
+# Redis Cluster nodes. This port is at a fixed offset from the normal TCP port used to receive incoming
+# connections from clients. To obtain the Redis Cluster port, 10000 should be added to the normal commands port.
+# For example, if a Redis node is listening for client connections on port 6379,
+# the Cluster bus port 16379 will also be opened.
+#
+# In certain deployments, Redis Cluster nodes address discovery fails, because
+# addresses are NAT-ted or because ports are forwarded (the typical case is
+# Docker and other containers).
+#
+# In order to make Redis Cluster working in such environments, a static
+# configuration where each node knows its public address is needed.
+#
+# Without this wraparound, the bootstrap stuck forever with the notorious "Waiting for the cluster to join".
+apiVersion: frisbee.io/v1alpha1
+kind: Template
+metadata:
+  name: redis.cluster.master
+  labels:
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+spec:
+  inputs:
+    parameters:
+      memory: ""
+      cpu: ""
+  service:
+    agents: # Agents
+      telemetry: [ platform.telemetry.container, redis.telemetry.server ]
+    resources: # Resources
+      memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
+      cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
+    container: # Container
+      name: app
+      image: redis
+      ports:
+        - name: to-clients
+          containerPort: 6379
+        - name: to-cluster
+          containerPort: 16379
+      env:
+        - name: podIP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+      command:
+        - /bin/sh   # Run shell
+        - -c        # Read from string
+        - |         # Multi-line str
+          set -eum
+          trap "touch /dev/shm/stop" EXIT
+
+          echo "Start master node at ${podIP}:6379"
+
+          echo "Create Redis configuration"
+          cat > redis.conf <<EOF
+            port 6379
+            appendonly yes
+            cluster-enabled yes
+            cluster-config-file nodes.conf
+            cluster-node-timeout 5000
+
+            cluster-announce-ip $podIP
+            cluster-announce-port 6379
+            cluster-announce-bus-port 16379
+          EOF
+
+          redis-server redis.conf
+
+      livenessProbe:
+        exec:
+          command:
+            - /bin/sh   # Run shell
+            - -c        # Read from string
+            - |         # Multi-line str
+              set -eum
+
+              response=$(timeout -s QUIT 30 redis-cli -h localhost -p 6379 ping)
+              if ["$response" != "PONG"]; then
+                  exit 1
+              fi
+
+
+
+---
+# Combine servers into a cluster
+# Because Redis requires IPS instead of hosts, we have to manually translate the given names to ips.
+# The servers are expected to be given in the form "Masters-0 Masters-1 Masters-2 ...."
+apiVersion: frisbee.io/v1alpha1
+kind: Template
+metadata:
+  name: redis.cluster.bootstrap
+  labels:
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+spec:
+  inputs:
+    parameters:
+      servers: localhost
+  service:
+    container:
+      name: app
+      image: redis
+      command:
+        - /bin/bash   # Run shell
+        - -c        # Read from string
+        - |         # Multi-line str
+          set -eum
+
+          servers=( {{"{{.Inputs.Parameters.servers}}"}} )
+
+          echo "Create cluster from ${servers[*]}"
+
+          ips=($(getent hosts ${servers[*]} | awk '{print $1}'))
+
+          all=()
+          for i in ${!ips[*]}; do
+            all[i]=$(echo ${ips[$i]}:6379)
+          done
+
+          echo "Create cluster from ${all[*]}"
+
+          # Sleep a bit to compensate for Kubernetes delays.
+          sleep 10
+          redis-cli --cluster create --cluster-yes ${all[*]}

@@ -2,64 +2,67 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
-  name: telemetry
+  name: prometheus
   labels:
     app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 spec:
-  entries:
-    prometheus:
-      spec: |
-        volumes:
-          - name: prometheus-config-volume
-            configMap:
-              name: prometheus-config
+  service:
+    volumes:
+      - name: prometheus-config-volume
+        configMap:
+          name: prometheus-config
 
-        container:
-          name: prometheus
-          image: "prom/prometheus"
-          ports:
-            - name: http
-              containerPort: 9090
+    container:
+      name: prometheus
+      image: "prom/prometheus"
+      ports:
+        - name: http
+          containerPort: 9090
 
-          volumeMounts:
-            - name: prometheus-config-volume
-              mountPath: /etc/prometheus/prometheus.yml
-              subPath: prometheus.yml
-              readOnly: true
+      volumeMounts:
+        - name: prometheus-config-volume
+          mountPath: /etc/prometheus/prometheus.yml
+          subPath: prometheus.yml
+          readOnly: true
 
-    grafana:
-      spec: |
-        volumes:
-          - name: grafana-config-volume
-            configMap:
-              name: grafana-config
+---
+apiVersion: frisbee.io/v1alpha1
+kind: Template
+metadata:
+  name: grafana
+  labels:
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+spec:
+  service:
+    volumes:
+      - name: grafana-config-volume
+        configMap:
+          name: grafana-config
+    resources:
+      memory: "4Gi"
+      cpu: "1"
+    container:
+      name: grafana
+      image: "grafana/grafana-oss:8.2.3"
+      ports:
+        - name: http
+          containerPort: 3000
 
-        resources:
-          memory: 4Gi
-          cpu: 1
+      volumeMounts:
+        - name: grafana-config-volume
+          mountPath: /etc/grafana/grafana.ini
+          subPath: grafana.ini
+          readOnly: true
 
-        container:
-          name: grafana
-          image: "grafana/grafana-oss:8.2.3"
-          ports:
-            - name: http
-              containerPort: 3000
+        - name: grafana-config-volume
+          mountPath: /etc/grafana/provisioning/dashboards/dashboard.yml
+          subPath: dashboard.yml
+          readOnly: true
 
-          volumeMounts:
-            - name: grafana-config-volume
-              mountPath: /etc/grafana/grafana.ini
-              subPath: grafana.ini
-              readOnly: true
-
-            - name: grafana-config-volume
-              mountPath: /etc/grafana/provisioning/dashboards/dashboard.yml
-              subPath: dashboard.yml
-              readOnly: true
-
-            - name: grafana-config-volume
-              mountPath: /etc/grafana/provisioning/datasources/prometheus.yml
-              subPath: prometheus.yml
-              readOnly: true
+        - name: grafana-config-volume
+          mountPath: /etc/grafana/provisioning/datasources/prometheus.yml
+          subPath: prometheus.yml
+          readOnly: true
 
 
 ---

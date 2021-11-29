@@ -133,8 +133,8 @@ docker-push: ## Push docker image for the Frisbee controller.
 #helm-build: manifests generate kustomize helmify ## Build helm charts for the Frisbee platform (charts/platform)
 #	$(KUSTOMIZE) build config/default | $(HELMIFY) charts/platform
 
-helm-build: manifests generate kustomize helmify ## Build helm charts for the Frisbee platform (charts/platform)
-	$(shell cp -r ./config/crd/bases ./charts/platform/crds)
+helm-build: manifests generate kustomize ## Build helm charts for the Frisbee platform (charts/platform)
+	$(shell cp  ./config/crd/bases/* ./charts/platform/crds)
 
 ##@ Deployment
 install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.

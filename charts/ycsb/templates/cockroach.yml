@@ -1,0 +1,100 @@
+---
+apiVersion: frisbee.io/v1alpha1
+kind: Template
+metadata:
+  name: ycsb.cockroach.loader
+  labels:
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+spec:
+  inputs:
+    parameters:
+      server: localhost
+      port: "26257"
+      offset: "0"
+      recordcount: "10000000"
+      cpu: ""     # Example: 8
+      memory: ""  # Example: 8Gi
+      threads: "1"
+      workload: "workloada"
+      dropdata: "false"
+  service:
+    agents:
+      telemetry: [ platform.telemetry.container, ycsb.telemetry.client ]
+    resources: # Resources
+      cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
+      memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
+    container: # Container
+      name: app
+      image: aylei/go-ycsb:20201029
+      command:
+        - /bin/sh   # Run shell
+        - -c        # Read from string
+        - |         # Multi-line str
+          set -eum
+          trap "touch /dev/shm/stop" EXIT
+
+          addr={{"{{.Inputs.Parameters.server}}"}}:{{"{{.Inputs.Parameters.port}}"}}
+
+          echo "Loader: $addr <- {{"{{.Inputs.Parameters.recordcount}}"}}:{{"{{.Inputs.Parameters.offset}}"}}"
+
+          # Cockroach implements the same interface as postgresql
+
+          ./go-ycsb load postgresql                                \
+              -P workloads/{{"{{.Inputs.Parameters.workload}}"}}         \
+              -p dropdata={{"{{.Inputs.Parameters.dropdata}}"}}          \
+              -p recordcount={{"{{.Inputs.Parameters.recordcount}}"}}    \
+              -p insertstart={{"{{.Inputs.Parameters.offset}}"}}         \
+              -p threadcount={{"{{.Inputs.Parameters.threads}}"}}        \
+              -p pg.host={{"{{.Inputs.Parameters.server}}"}}             \
+              -p pg.port={{"{{.Inputs.Parameters.port}}"}}               \
+              -p pg.db="defaultdb"                                 \
+          >> /dev/shm/pipe
+
+
+---
+apiVersion: frisbee.io/v1alpha1
+kind: Template
+metadata:
+  name: ycsb.cockroach.runner
+  labels:
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+spec:
+  inputs:
+    parameters:
+      server: localhost
+      port: "26257"
+      workload: "workloada"
+      operationcount: "5000000"
+      cpu: "8"
+      memory: "8Gi"
+      threads: "1"
+  service:
+    agents: # Agents
+      telemetry: [ platform.telemetry.container, ycsb.telemetry.client ]
+    resources: # Resources
+      cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
+      memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
+    container: # Container
+      name: app
+      image: aylei/go-ycsb:20201029
+      command:
+        - /bin/sh   # Run shell
+        - -c        # Read from string
+        - |         # Multi-line str
+          set -eum
+          trap "touch /dev/shm/stop" EXIT
+
+          addr={{"{{.Inputs.Parameters.server}}"}}:{{"{{.Inputs.Parameters.port}}"}}
+
+          echo "Runner: $addr <- {{"{{.Inputs.Parameters.workload}}"}}:{{"{{.Inputs.Parameters.operationcount}}"}}"
+
+          # Cockroach implements the same interface as postgresql
+
+          ./go-ycsb run postgresql                                                          \
+                -P workloads/{{"{{.Inputs.Parameters.workload}}"}}                                \
+                -p operationcount={{"{{.Inputs.Parameters.operationcount}}"}}                     \
+                -p threadcount={{"{{.Inputs.Parameters.threads}}"}}                               \
+                -p pg.host={{"{{.Inputs.Parameters.server}}"}}                                    \
+                -p pg.port={{"{{.Inputs.Parameters.port}}"}}                                      \
+                -p pg.db="defaultdb"                                                        \
+          >> /dev/shm/pipe

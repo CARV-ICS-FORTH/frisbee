@@ -135,6 +135,7 @@ func constructPod(ctx context.Context, r *Controller, obj *v1alpha1.Service) (*c
 	{ // spec
 		setPlacement(obj, &pod)
 
+		pod.Spec.HostNetwork = obj.Spec.Advanced.HostNetwork
 		pod.Spec.RestartPolicy = corev1.RestartPolicyNever
 		pod.Spec.Volumes = obj.Spec.Volumes
 
@@ -199,7 +200,7 @@ func setAgents(ctx context.Context, r *Controller, obj *v1alpha1.Service, pod *c
 
 	// import monitoring agents to the service
 	for _, monRef := range spec.Agents.Telemetry {
-		monSpec, err := r.serviceControl.GetMonitorSpec(ctx, obj.GetNamespace(), v1alpha1.FromTemplate{TemplateRef: monRef})
+		monSpec, err := r.serviceControl.GetMonitorSpec(ctx, obj.GetNamespace(), v1alpha1.GenerateFromTemplate{TemplateRef: monRef})
 		if err != nil {
 			return errors.Wrapf(err, "cannot get monitor")
 		}
@@ -316,7 +317,7 @@ func (*Controller) setPlacementConstraints(obj *v1alpha1.Service, pod *corev1.Po
 					Weight: 1,
 					PodAffinityTerm: corev1.PodAffinityTerm{
 						LabelSelector: &metav1.LabelSelector{
-							MatchLabels: domainLabels,
+							matchLabels: domainLabels,
 						},
 						TopologyKey: "kubernetes.io/hostname",
 					},

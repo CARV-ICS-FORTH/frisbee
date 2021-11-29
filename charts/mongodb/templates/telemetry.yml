@@ -1,0 +1,105 @@
+---
+apiVersion: frisbee.io/v1alpha1
+kind: Template
+metadata:
+  name: mongodb.telemetry.server
+  labels:
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+spec:
+  monitor:
+    dashboards:
+      matchLabels:
+        dashboard: mongo-telegraf
+
+    agent:
+      container:
+        name: telegraf
+        image: telegraf:1.20.3
+        ports:
+          - name: mon-mongo
+            containerPort: 9443
+        command:
+          - /bin/sh # Run shell
+          - -c # Read from string
+          - |  # Multi-line str
+            set -eum
+
+            cat > /tmp/prometheus.conf <<EOF
+            [[inputs.mongodb]]
+              servers = ["mongodb://localhost:27017"]
+
+              # When true, collect per database stats
+              gather_perdb_stats = true
+
+              # When true, collect cluster status.
+              # Note that the query that counts jumbo chunks triggers a COLLSCAN, which
+              # may have an impact on performance.
+              gather_cluster_status = true
+
+
+            [[outputs.prometheus_client]]
+               listen = ":9443"
+               metric_version = 2
+               export_timestamp = true
+               collectors_exclude = ["gocollector","process"]
+            EOF
+
+            telegraf --config /tmp/prometheus.conf &
+
+            # When the stop file is added by the container, the process stop
+            while [ ! -f "/dev/shm/stop" ];
+            do
+              sleep 10
+            done
+
+
+---
+apiVersion: frisbee.io/v1alpha1
+kind: Template
+metadata:
+  name: mongodb.telemetry.server2
+  labels:
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+spec:
+  monitor:
+    dashboards:
+      matchLabels:
+        dashboard: mongo-exporter
+
+    agent:
+      container:
+        name: exporter
+        image: bitnami/mongodb-exporter:latest
+        ports:
+          - name: mon-mongo
+            containerPort: 9443
+        command:
+          - /bin/sh # Run shell
+          - -c # Read from string
+          - |  # Multi-line str
+            set -eum
+
+             mongodb_exporter                               \
+              --web.listen-address=":9443"                  \
+              --mongodb.uri="mongodb://localhost:27017"     &
+
+            # When the stop file is added by the container, the process stop
+            while [ ! -f "/dev/shm/stop" ];
+            do
+              sleep 10
+            done
+
+
+
+
+
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-mongodb-dashboard
+  labels:
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+    dashboard: mongo-telegraf
+data: {{(.Files.Glob "dashboards/mongodb.json").AsConfig | nindent 2}}

@@ -1,6 +1,8 @@
 # TiKV
 
-TiKV is a highly scalable, low latency, and easy to use key-value database.
+TiKV provides both raw and ACID-compliant transactional key-value API, which is widely used in online serving services,
+such as the metadata storage system for object storage service, the storage system for recommendation systems, the
+online feature store, etc.
 
 ## TL;DR
 
@@ -9,9 +11,7 @@ TiKV is a highly scalable, low latency, and easy to use key-value database.
 >> helm repo add frisbee https://carv-ics-forth.github.io/frisbee/charts
 # Install dependencies
 >> helm install my-frisbee frisbee/platform
->> helm install my-observability frisbee/observability
->> helm install my-sysmon frisbee/sysmon
->> helm install my-ycsbmon frisbee/ycsbmon
+>> helm install my-ycsb frisbee/ycsbmon
 # Install TiKV
 >> helm install my-tikv frisbee/tikv
 # Run Frisbee controller
@@ -55,3 +55,7 @@ To uninstall/delete the `my-tikv` release:
 
 The command removes all the Kubernetes components associated with the chart and deletes the release. Use the
 option `--purge` to delete all history too.
+
+## Sources
+
+https://docs.google.com/spreadsheets/d/1VjzC3IxCiqGQmSUgRxewgExE3c32YiZMUKNsKDuvrPg/edit#gid=1700439087

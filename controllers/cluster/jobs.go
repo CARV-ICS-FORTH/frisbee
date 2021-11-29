@@ -45,11 +45,11 @@ func getJob(cluster *v1alpha1.Cluster, i int) *v1alpha1.Service {
 }
 
 func (r *Controller) constructJobSpecList(ctx context.Context, cluster *v1alpha1.Cluster) ([]v1alpha1.ServiceSpec, error) {
-	if err := cluster.Spec.FromTemplate.Validate(true); err != nil {
+	if err := cluster.Spec.GenerateFromTemplate.Validate(true); err != nil {
 		return nil, errors.Wrapf(err, "template validation")
 	}
 
-	specs, err := r.serviceControl.GetServiceSpecList(ctx, cluster.GetNamespace(), cluster.Spec.FromTemplate)
+	specs, err := r.serviceControl.GetServiceSpecList(ctx, cluster.GetNamespace(), cluster.Spec.GenerateFromTemplate)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot get specs")
 	}
