@@ -74,7 +74,7 @@ your system, then install the Frisbee dependencies:
 # Install the Frisbee platform
 >> helm install my-frisbee charts/platform --dependency-update
 # Install the package for monitoring YCSB output
->> helm install my-ycsbmon charts/ycsbmon --dependency-update
+>> helm install my-ycsb charts/ycsb --dependency-update
 # Install TiKV store
 >> helm install my-tikv charts/tikv --dependency-update
 ```
@@ -86,7 +86,7 @@ Then run:
 >> make run
 
 # Deploy the testing plan
->> kubectl apply -f charts/tikv/plans/plan.localhost.yml 
+>> kubectl apply -f charts/tikv/examples/plan.localhost.yml 
 ```
 
 If everything went smoothly, you should see a
