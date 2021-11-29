@@ -1,0 +1,43 @@
+---
+apiVersion: frisbee.io/v1alpha1
+kind: Workflow
+metadata:
+  name: cockroach-scaleout
+spec:
+  withTelemetry:
+    importMonitors:
+      - platform.telemetry.container
+      - ycsb.telemetry.client
+      - cockroach.telemetry.server
+  actions:
+    - action: Cluster
+      name: master
+      cluster:
+        templateRef: cockroach.cluster.master
+        instances: 3
+        inputs:
+          - servers: "master-1:26257,master-2:26257,master-3:26257"
+
+
+    - action: Cluster
+      name: workers
+      depends:
+        running: [ master ]
+      cluster:
+        templateRef: tikv.cluster.worker
+        instances: 256
+        inputs:
+          - placementDriver: .service.master.any
+
+
+    - action: Cluster
+      name: loaders
+      depends:
+        running: [ master, workers ]
+      cluster:
+        templateRef: ycsb.tikv.loader
+        inputs:
+          - offset: "0"
+            recordcount: "100000000000"
+            server: .service.master.any
+            threads: "32"

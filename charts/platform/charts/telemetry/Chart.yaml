@@ -2,10 +2,11 @@
 apiVersion: v2
 appVersion: 1.10.0
 description: The Observability stack of Frisbee. Installs Prometheus + Grafana
-home: https://github.com/bitnami/charts/tree/master/bitnami/common
+
+
 icon: http://new.sevenhillstechnology.com/wp-content/uploads/2021/01/undraw_programming_2svr.png
 
-name: observability
+name: telemetry
 
 # A chart can be either an 'application' or a 'library' chart.
 #

@@ -1,0 +1,12 @@
+dependencies:
+- name: volumes
+  repository: ""
+  version: 0.0.0
+- name: chaos
+  repository: ""
+  version: 0.0.0
+- name: telemetry
+  repository: ""
+  version: 0.0.0
+digest: sha256:04da3ad8ef0a94b9f9bd8434e51d4736888d7dd79a6645899edfc19f46858d8a
+generated: "2021-11-29T19:17:55.041374149+02:00"

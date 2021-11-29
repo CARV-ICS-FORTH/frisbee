@@ -135,6 +135,7 @@ func constructPod(ctx context.Context, r *Controller, obj *v1alpha1.Service) (*c
 	{ // spec
 		setPlacement(obj, &pod)
 
+		pod.Spec.HostNetwork = obj.Spec.Advanced.HostNetwork
 		pod.Spec.RestartPolicy = corev1.RestartPolicyNever
 		pod.Spec.Volumes = obj.Spec.Volumes
 

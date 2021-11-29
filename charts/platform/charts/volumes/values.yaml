@@ -1,16 +1,32 @@
 ---
-chaos-mesh:
-  enabled: false
-
 # OpenEBS - Provision dynamic volumes
 openebs:
   enabled: true
-  ndm:
-    enabled: false
+
   ndmOperator:
     enabled: false
+
+  ndm:
+    enabled: false
+
+  cstor:
+    enabled: false
+
+  snapshotOperator:
+    enabled: false
+
+  jiva:
+    enabled: false
+
+  zfs-localpv:
+    enabled: false
+
+  nfs-provisioner:
+    enabled: false
+
   defaultStorageConfig:
     enabled: false
+
 
 # Provision the infrastructure manually
 manual:

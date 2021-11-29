@@ -136,6 +136,8 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			utils.Delete(ctx, r, &pod)
 		}
 
+		// TODO: remove dns service.
+
 		return utils.Stop()
 	}
 

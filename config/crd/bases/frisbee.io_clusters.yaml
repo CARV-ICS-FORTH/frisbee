@@ -1379,6 +1379,8 @@ spec:
                       required:
                       - templateRef
                       type: object
+                    hostNetwork:
+                      type: boolean
                     requirements:
                       additionalProperties:
                         type: string

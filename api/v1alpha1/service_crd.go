@@ -87,6 +87,15 @@ type ServiceSpec struct {
 	// Domain specifies the location where Service will be placed.
 	// +optional
 	Domain []string `json:"domain,omitempty"`
+
+	// Pod is used as the base for building the container
+	// +optional
+	Advanced `json:",inline"`
+}
+
+type Advanced struct {
+	// +optional
+	HostNetwork bool `json:"hostNetwork,omitempty"`
 }
 
 // ServiceStatus defines the observed state of Service.

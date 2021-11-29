@@ -2,38 +2,36 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
-  name: sysmon
+  name: platform.telemetry.container
   labels:
     app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 spec:
-  entries:
-    "container":
-      spec: |
-        agent:
-          container:
-            name: cadvisor
-            image: gcr.io/cadvisor/cadvisor
-            ports:
-              - name: mon-system
-                containerPort: 9442
-            command:
-              - /bin/sh # Run shell
-              - -c # Read from string
-              - |  # Multi-line str
-                set -eum
+  monitor:
+    agent:
+      container:
+        name: cadvisor
+        image: gcr.io/cadvisor/cadvisor
+        ports:
+          - name: mon-system
+            containerPort: 9442
+        command:
+          - /bin/sh # Run shell
+          - -c # Read from string
+          - |  # Multi-line str
+            set -eum
 
-                # https://github.com/google/cadvisor/blob/master/docs/storage/prometheus.md
-                cadvisor -port=9442  &
-                # -enable_metrics=diskIO,cpuLoad,hugetlb,memory,network
+            # https://github.com/google/cadvisor/blob/master/docs/storage/prometheus.md
+            cadvisor -port=9442  &
+            # -enable_metrics=diskIO,cpuLoad,hugetlb,memory,network
 
-                while [ ! -f "/dev/shm/stop" ];
-                do
-                  sleep 10
-                done
+            while [ ! -f "/dev/shm/stop" ];
+            do
+              sleep 10
+            done
 
-        dashboards:
-          matchlabels:
-            dashboard: sysmon
+    dashboards:
+      matchLabels:
+        dashboard: sysmon
 
 
 ---
