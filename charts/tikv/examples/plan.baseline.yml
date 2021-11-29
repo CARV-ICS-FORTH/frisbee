@@ -15,8 +15,8 @@ spec:
       service:
         fromTemplate:
           templateRef: tikv.cluster.placement-driver
-          #inputs:
-            # - { cpu: "4", memory: "8Gi" }
+            #inputs:
+          # - { cpu: "4", memory: "8Gi" }
 
     - action: Cluster
       depends: { running: [ master ] }

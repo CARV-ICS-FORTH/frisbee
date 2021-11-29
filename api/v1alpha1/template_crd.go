@@ -17,25 +17,14 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"strings"
-
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type Inputs struct {
 	// Parameters define dynamically valued fields. The values are given by higher level entities, such as the workflow.
-	// +optional
-	Parameters map[string]string `json:"parameters"`
-}
-
-type Scheme struct {
-	// Inputs are dynamic fields that populate the spec.
-	// +optional
-	Inputs *Inputs `json:"inputs,omitempty"`
-
-	// Spec is the Service specification whose values will be replaced by parameters.
-	Spec string `json:"spec"`
+	Parameters map[string]string `json:"parameters,omitempty"`
 }
 
 type MonitorSpec struct {
@@ -48,9 +37,19 @@ type MonitorSpec struct {
 
 // TemplateSpec defines the desired state of Template
 type TemplateSpec struct {
-	// Entries are indices to service specifications
+	// Inputs are dynamic fields that populate the spec.
 	// +optional
-	Entries map[string]Scheme `json:"entries,omitempty"`
+	Inputs *Inputs `json:"inputs,omitempty"`
+
+	*EmbedSpecs `json:",inline"`
+}
+
+type EmbedSpecs struct {
+	// +optional
+	Service *ServiceSpec `json:"service,omitempty"`
+
+	// +optional
+	Monitor *MonitorSpec `json:"monitor,omitempty"`
 }
 
 // TemplateStatus defines the observed state of Template
@@ -91,23 +90,9 @@ func init() {
 	SchemeBuilder.Register(&Template{}, &TemplateList{})
 }
 
-type TemplateRef struct {
-	Template string
-	Ref      string
-}
-
-const (
-	Separator = "/"
-)
-
-// String returns the general purpose string representation
-func (n TemplateRef) String() string {
-	return n.Template + string(Separator) + n.Ref
-}
-
-// FromTemplate generates a spec by parameterizing the templateRef with the given inputs.
-type FromTemplate struct {
-	// TemplateRef refers to a  template
+// GenerateFromTemplate generates a spec by parameterizing the templateRef with the given inputs.
+type GenerateFromTemplate struct {
+	// TemplateRef refers to a  template (e.g, iperf-server).
 	TemplateRef string `json:"templateRef"`
 
 	// Instances dictate the number of objects to be created for the service. If Env is specified, the values
@@ -122,23 +107,17 @@ type FromTemplate struct {
 	Inputs []map[string]string `json:"inputs,omitempty"`
 }
 
-func (t *FromTemplate) GetTemplateRef() TemplateRef {
-	parsed := strings.Split(t.TemplateRef, Separator)
-
-	return TemplateRef{
-		Template: parsed[0],
-		Ref:      parsed[1],
-	}
-}
-
-func (t *FromTemplate) Validate(allowMultipleInputs bool) error {
+func (t *GenerateFromTemplate) Validate(allowMultipleInputs bool) error {
 	switch {
 	case t.TemplateRef == "":
 		return errors.New("empty templateRef")
 
-	case len(t.Inputs) == 0 && t.Instances == 0: // use the default
+	case len(t.Inputs) == 0 && t.Instances == 0: // use default parameters for all instances
 		t.Instances = 1
 
+		return nil
+
+	case len(t.Inputs) == 0 && t.Instances > 0: // use default parameters for all instances
 		return nil
 
 	case !allowMultipleInputs && len(t.Inputs) > 1: // object violation
@@ -156,11 +135,18 @@ func (t *FromTemplate) Validate(allowMultipleInputs bool) error {
 		return nil
 
 	default:
+		logrus.Warn(
+			"TemplateRef:", t.TemplateRef,
+			" Instances:", t.Instances,
+			" AllowMultipleInputs:", allowMultipleInputs,
+			" Inputs:", t.Inputs,
+		)
+
 		panic("unhandled case")
 	}
 }
 
-func (t *FromTemplate) GetInput(i int) map[string]string {
+func (t *GenerateFromTemplate) GetInput(i int) map[string]string {
 	switch len(t.Inputs) {
 	case 0:
 		// no inputs
@@ -179,7 +165,7 @@ func (t *FromTemplate) GetInput(i int) map[string]string {
 	}
 }
 
-func (t *FromTemplate) Iterate(cb func(in map[string]string) error) error {
+func (t *GenerateFromTemplate) Iterate(cb func(in map[string]string) error) error {
 	for i := 0; i < t.Instances; i++ {
 		if err := cb(t.GetInput(i)); err != nil {
 			return err

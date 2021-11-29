@@ -256,8 +256,6 @@ Frisbee uses Ingress controller to expose Grafana dashboard externally to the cl
 
 We use Ambassador as the default Ingress controller, as shown in  `examples/testplans/validate-local.yml` .
 
-
-
 #### Deploy the plan
 
 ```bash

@@ -1,49 +1,48 @@
----
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
-  name: redismon
+  name: redis.telemetry.server
   labels:
     app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 spec:
-  entries:
-    "server":
-      spec: |
-        agent:
-          container:
-            name: telegraf
-            image: telegraf:1.20.3
-            ports:
-              - name: mon-redis
-                containerPort: 9443
-            command:
-              - /bin/sh # Run shell
-              - -c # Read from string
-              - |  # Multi-line str
-                set -eum
+  monitor:
+    dashboards:
+      matchLabels:
+        dashboard: redis
+    agent:
+      container:
+        name: telegraf
+        image: telegraf:1.20.3
+        ports:
+          - name: mon-redis
+            containerPort: 9443
+        command:
+          - /bin/bash # Run shell
+          - -c # Read from string
+          - |  # Multi-line str
+            #!/bin/sh
+            set -eum
 
-                cat > /tmp/prometheus.conf <<EOF
-                [[inputs.redis]]
-                   servers = ["tcp://localhost:6379"]
+            cat > /tmp/prometheus.conf <<EOF
+            [[inputs.redis]]
+               servers = ["tcp://localhost:6379"]
 
-                [[outputs.prometheus_client]]
-                   listen = ":9443"
-                   metric_version = 2
-                   export_timestamp = true
-                   collectors_exclude = ["gocollector","process"]
-                EOF
+            [[outputs.prometheus_client]]
+               listen = ":9443"
+               metric_version = 2
+               export_timestamp = true
+               collectors_exclude = ["gocollector","process"]
+            EOF
 
-                telegraf --config /tmp/prometheus.conf &
+            telegraf --config /tmp/prometheus.conf &
 
-                # When the stop file is added by the container, the process stop
-                while [! -f "/dev/shm/stop"];
-                do
-                  sleep 10
-                done
+            # When the stop file is added by the container, the process stop
+            while [ ! -f "/dev/shm/stop" ];
+            do
+              sleep 10
+            done
 
-        dashboards:
-          matchLabels:
-            dashboard: redis
+
 
 ---
 apiVersion: v1

@@ -34,6 +34,21 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+func (s *ServiceControl) getTemplate(ctx context.Context, namespace string, ref string) (*v1alpha1.Template, error) {
+	var template v1alpha1.Template
+
+	key := client.ObjectKey{
+		Namespace: namespace,
+		Name:      ref,
+	}
+
+	if err := s.GetClient().Get(ctx, key, &template); err != nil {
+		return nil, errors.Wrapf(err, "cannot find template")
+	}
+
+	return &template, nil
+}
+
 func parseMacro(namespace string, ss *v1alpha1.ServiceSelector) {
 	fields := strings.Split(*ss.Macro, ".")
 
@@ -291,7 +306,7 @@ func RandomFixedIndexes(start, end, count uint) []uint {
 	return indexes
 }
 
-func (s *ServiceControl) generateSpecFromScheme(ctx context.Context, namespace string, scheme *v1alpha1.Scheme, userInputs map[string]string,
+func (s *ServiceControl) generateSpecFromScheme(ctx context.Context, namespace string, scheme *templateutils.Scheme, userInputs map[string]string,
 	cache map[string]v1alpha1.SList) (v1alpha1.ServiceSpec, error) {
 	// custom parameters
 	if userInputs != nil {
@@ -322,7 +337,7 @@ func isMacro(macro string) bool {
 	return strings.HasPrefix(macro, ".")
 }
 
-func (s *ServiceControl) expandInputs(ctx context.Context, nm string, scheme *v1alpha1.Scheme, userInputs map[string]string, cache map[string]v1alpha1.SList) error {
+func (s *ServiceControl) expandInputs(ctx context.Context, nm string, scheme *templateutils.Scheme, userInputs map[string]string, cache map[string]v1alpha1.SList) error {
 	if scheme.Inputs == nil {
 		return errors.New("scheme does not support inputs")
 	}

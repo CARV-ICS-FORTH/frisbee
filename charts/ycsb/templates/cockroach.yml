@@ -2,7 +2,7 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
-  name: cockroach.yscb.loader
+  name: ycsb.cockroach.loader
   labels:
     app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 spec:
@@ -19,7 +19,7 @@ spec:
       dropdata: "false"
   service:
     agents:
-      telemetry: [ sysmon.container, ycsbmon.client ]
+      telemetry: [ platform.telemetry.container, ycsb.telemetry.client ]
     resources: # Resources
       cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
       memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
@@ -55,7 +55,7 @@ spec:
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
-  name: cockroach.yscb.runner
+  name: ycsb.cockroach.runner
   labels:
     app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 spec:
@@ -70,7 +70,7 @@ spec:
       threads: "1"
   service:
     agents: # Agents
-      telemetry: [ sysmon.container, ycsbmon.client ]
+      telemetry: [ platform.telemetry.container, ycsb.telemetry.client ]
     resources: # Resources
       cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
       memory: {{"{{.Inputs.Parameters.memory}}" | quote}}

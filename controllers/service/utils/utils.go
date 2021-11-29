@@ -23,16 +23,16 @@ import (
 	templateutils "github.com/carv-ics-forth/frisbee/controllers/template/utils"
 	"github.com/carv-ics-forth/frisbee/controllers/utils"
 	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/apimachinery/pkg/util/yaml"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type ServiceControlInterface interface {
-	GetServiceSpec(ctx context.Context, namespace string, fromTemplate v1alpha1.FromTemplate) (v1alpha1.ServiceSpec, error)
+	GetServiceSpec(ctx context.Context, namespace string, fromTemplate v1alpha1.GenerateFromTemplate) (v1alpha1.ServiceSpec, error)
 
-	GetServiceSpecList(ctx context.Context, namespace string, fromTemplate v1alpha1.FromTemplate) ([]v1alpha1.ServiceSpec, error)
+	GetServiceSpecList(ctx context.Context, namespace string, fromTemplate v1alpha1.GenerateFromTemplate) ([]v1alpha1.ServiceSpec, error)
 
-	GetMonitorSpec(ctx context.Context, namespace string, fromTemplate v1alpha1.FromTemplate) (v1alpha1.MonitorSpec, error)
+	GetMonitorSpec(ctx context.Context, namespace string, fromTemplate v1alpha1.GenerateFromTemplate) (v1alpha1.MonitorSpec, error)
 
 	LoadSpecFromTemplate(ctx context.Context, obj *v1alpha1.Service) error
 
@@ -49,23 +49,17 @@ func NewServiceControl(r utils.Reconciler) *ServiceControl {
 	}
 }
 
-func (s *ServiceControl) GetServiceSpecList(ctx context.Context, namespace string, fromTemplate v1alpha1.FromTemplate) ([]v1alpha1.ServiceSpec, error) {
-	templateRef := fromTemplate.GetTemplateRef()
-
-	var template v1alpha1.Template
-
-	key := client.ObjectKey{
-		Namespace: namespace,
-		Name:      templateRef.Template,
+func (s *ServiceControl) GetServiceSpecList(ctx context.Context, namespace string, fromTemplate v1alpha1.GenerateFromTemplate) ([]v1alpha1.ServiceSpec, error) {
+	template, err := s.getTemplate(ctx, namespace, fromTemplate.TemplateRef)
+	if err != nil {
+		return nil, errors.Wrapf(err, "template %s error", fromTemplate.TemplateRef)
 	}
 
-	if err := s.GetClient().Get(ctx, key, &template); err != nil {
-		return nil, errors.Wrapf(err, "cannot find template")
-	}
+	// convert the service to a json and then expand templated values.
+	serviceSpec, err := json.Marshal(template.Spec.Service)
+	if err != nil {
+		return nil, errors.Errorf("cannot marshal service of %s", fromTemplate.TemplateRef)
 
-	scheme, ok := template.Spec.Entries[templateRef.Ref]
-	if !ok {
-		return nil, errors.Errorf("invalid template ref %s", templateRef.String())
 	}
 
 	// cache the results of macro as to avoid asking the Kubernetes API. This, however, is only applicable
@@ -75,8 +69,13 @@ func (s *ServiceControl) GetServiceSpecList(ctx context.Context, namespace strin
 
 	specs := make([]v1alpha1.ServiceSpec, 0, fromTemplate.Instances)
 
-	if err := fromTemplate.Iterate(func(in map[string]string) error {
-		spec, err := s.generateSpecFromScheme(ctx, namespace, &scheme, in, lookupCache)
+	if err := fromTemplate.Iterate(func(userInputs map[string]string) error {
+		scheme := templateutils.Scheme{
+			Inputs: template.Spec.Inputs,
+			Spec:   string(serviceSpec),
+		}
+
+		spec, err := s.generateSpecFromScheme(ctx, namespace, &scheme, userInputs, lookupCache)
 		if err != nil {
 			return errors.Wrapf(err, "macro expansion failed")
 		}
@@ -91,23 +90,21 @@ func (s *ServiceControl) GetServiceSpecList(ctx context.Context, namespace strin
 	return specs, nil
 }
 
-func (s *ServiceControl) GetServiceSpec(ctx context.Context, namespace string, fromTemplate v1alpha1.FromTemplate) (v1alpha1.ServiceSpec, error) {
-	templateRef := fromTemplate.GetTemplateRef()
-
-	var template v1alpha1.Template
-
-	key := client.ObjectKey{
-		Namespace: namespace,
-		Name:      templateRef.Template,
+func (s *ServiceControl) GetServiceSpec(ctx context.Context, namespace string, fromTemplate v1alpha1.GenerateFromTemplate) (v1alpha1.ServiceSpec, error) {
+	template, err := s.getTemplate(ctx, namespace, fromTemplate.TemplateRef)
+	if err != nil {
+		return v1alpha1.ServiceSpec{}, errors.Wrapf(err, "template %s error", fromTemplate.TemplateRef)
 	}
 
-	if err := s.GetClient().Get(ctx, key, &template); err != nil {
-		return v1alpha1.ServiceSpec{}, errors.Wrapf(err, "cannot find template")
+	// convert the service to a json and then expand templated values.
+	serviceSpec, err := json.Marshal(template.Spec.Service)
+	if err != nil {
+		return v1alpha1.ServiceSpec{}, errors.Errorf("cannot marshal service of %s", fromTemplate.TemplateRef)
 	}
 
-	scheme, ok := template.Spec.Entries[templateRef.Ref]
-	if !ok {
-		return v1alpha1.ServiceSpec{}, errors.Errorf("invalid template ref %s", templateRef.String())
+	scheme := templateutils.Scheme{
+		Inputs: template.Spec.Inputs,
+		Spec:   string(serviceSpec),
 	}
 
 	lookupCache := make(map[string]v1alpha1.SList)
@@ -130,23 +127,21 @@ func (s *ServiceControl) LoadSpecFromTemplate(ctx context.Context, obj *v1alpha1
 	return nil
 }
 
-func (s *ServiceControl) GetMonitorSpec(ctx context.Context, namespace string, fromTemplate v1alpha1.FromTemplate) (v1alpha1.MonitorSpec, error) {
-	templateRef := fromTemplate.GetTemplateRef()
-
-	var template v1alpha1.Template
-
-	key := client.ObjectKey{
-		Namespace: namespace,
-		Name:      templateRef.Template,
+func (s *ServiceControl) GetMonitorSpec(ctx context.Context, namespace string, fromTemplate v1alpha1.GenerateFromTemplate) (v1alpha1.MonitorSpec, error) {
+	template, err := s.getTemplate(ctx, namespace, fromTemplate.TemplateRef)
+	if err != nil {
+		return v1alpha1.MonitorSpec{}, errors.Wrapf(err, "template %s error", fromTemplate.TemplateRef)
 	}
 
-	if err := s.GetClient().Get(ctx, key, &template); err != nil {
-		return v1alpha1.MonitorSpec{}, errors.Wrapf(err, "cannot find template")
+	// convert the service to a json and then expand templated values.
+	monSpec, err := json.Marshal(template.Spec.Monitor)
+	if err != nil {
+		return v1alpha1.MonitorSpec{}, errors.Errorf("cannot marshal service of %s", fromTemplate.TemplateRef)
 	}
 
-	scheme, ok := template.Spec.Entries[templateRef.Ref]
-	if !ok {
-		return v1alpha1.MonitorSpec{}, errors.Errorf("invalid template ref %s", templateRef.String())
+	scheme := templateutils.Scheme{
+		Inputs: template.Spec.Inputs,
+		Spec:   string(monSpec),
 	}
 
 	genericSpec, err := templateutils.Evaluate(&scheme)

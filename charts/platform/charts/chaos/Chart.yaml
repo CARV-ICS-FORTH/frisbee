@@ -31,6 +31,7 @@ dependencies:
 maintainers:
   - name: Fotis Nikolaidis
     email: nikolaidis.fotis@gmail.com
+    url: https://www.linkedin.com/in/fotis-nikolaidis-444a6634/
 
 # This is the chart version. This version number should be incremented each time you make changes
 # to the chart and its templates, including the app version.

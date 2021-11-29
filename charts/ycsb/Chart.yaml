@@ -1,7 +1,7 @@
 ---
 apiVersion: v2
-name: ycsbmon
-description: ycsbmon parses ycsb output and integrates into the observability stack of Frisbee.
+name: ycsb
+description: Yahoo! Cloud Serving Benchmark.
 
 # A chart can be either an 'application' or a 'library' chart.
 #
@@ -22,6 +22,7 @@ appVersion: "1.16.0"
 maintainers:
   - name: Fotis Nikolaidis
     email: nikolaidis.fotis@gmail.com
+    url: https://www.linkedin.com/in/fotis-nikolaidis-444a6634/
 
 # This is the chart version. This version number should be incremented each time you make changes
 # to the chart and its templates, including the app version.

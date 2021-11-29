@@ -2,59 +2,59 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
-  name: fiomon
+  name: fio.telemetry.server
   labels:
     app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 spec:
-  entries:
-    "server":
-      spec: |
-        agent:
-          container:
-            name: telegraf
-            image: telegraf:1.20.3
-            ports:
-              - name: mon-fio
-                containerPort: 9443
-            command:
-              - /bin/sh # Run shell
-              - -c # Read from string
-              - |  # Multi-line str
-                set -eum
+  monitor:
+    dashboards:
+      matchLabels:
+        dashboard: fio
 
-                cat > /tmp/fio.conf <<EOF
-                [[inputs.tail]]
-                  files = ["/dev/shm/pipe"]
-                  from_beginning = true
-                  name_override = "fio"
-                  data_format = "grok"
+    agent:
+      container:
+        name: telegraf
+        image: telegraf:1.20.3
+        ports:
+          - name: mon-fio
+            containerPort: 9443
+        command:
+          - /bin/sh # Run shell
+          - -c # Read from string
+          - |  # Multi-line str
+            set -eum
 
-                  # Example line
-                  #[  5]   0.00-1.00   sec  3.79 GBytes  32.5 Gbits/sec  304   2.75 MBytes
-                  grok_patterns = [
-                    '  write: IOPS=%{NUMBER:val1}%{GREEDYDATA:thsd}, %{GREEDYDATA}',
-                    '  write: IOPS=%{GREEDYDATA}, BW=%{NUMBER:val2}%{GREEDYDATA:kibs} %{GREEDYDATA}'
-                    '     lat (%{GREEDYDATA:nsec}): min=%{GREEDYDATA}, max=%{GREEDYDATA}, avg=%{NUMBER:val3}, stdev=%{GREEDYDATA}'
-                  ]
+            cat > /tmp/fio.conf <<EOF
+            [[inputs.tail]]
+              files = ["/dev/shm/pipe"]
+              from_beginning = true
+              name_override = "fio"
+              data_format = "grok"
 
-                [[outputs.prometheus_client]]
-                   listen = ":9443"
-                   metric_version = 2
-                   export_timestamp = true
-                   collectors_exclude = ["gocollector","process"]
-                EOF
+              # Example line
+              #[  5]   0.00-1.00   sec  3.79 GBytes  32.5 Gbits/sec  304   2.75 MBytes
+              grok_patterns = [
+                '  write: IOPS=%{NUMBER:val1}%{GREEDYDATA:thsd}, %{GREEDYDATA}',
+                '  write: IOPS=%{GREEDYDATA}, BW=%{NUMBER:val2}%{GREEDYDATA:kibs} %{GREEDYDATA}'
+                '     lat (%{GREEDYDATA:nsec}): min=%{GREEDYDATA}, max=%{GREEDYDATA}, avg=%{NUMBER:val3}, stdev=%{GREEDYDATA}'
+              ]
 
-                telegraf --config /tmp/fio.conf &
+            [[outputs.prometheus_client]]
+               listen = ":9443"
+               metric_version = 2
+               export_timestamp = true
+               collectors_exclude = ["gocollector","process"]
+            EOF
 
-                # When the stop file is added by the container, the process stop
-                while [ ! -f "/dev/shm/stop" ];
-                do
-                  sleep 10
-                done
+            telegraf --config /tmp/fio.conf &
 
-        dashboards:
-          matchlabels:
-            dashboard: fio
+            # When the stop file is added by the container, the process stop
+            while [ ! -f "/dev/shm/stop" ];
+            do
+              sleep 10
+            done
+
+
 
 
 ---

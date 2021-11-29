@@ -8,10 +8,6 @@ yamllint ./platform/Chart.yaml
 docker run quay.io/helmpack/chart-testing:lates ct lint --target-branch=main --check-version-increment=false
 ```
 
-
-
-
-
 #### Working with MicroK8s’ built-in registry
 
 ```bash
@@ -25,13 +21,16 @@ docker build . -t localhost:32000/mynginx:registry
 docker push localhost:32000/mynginx
 ```
 
-Pushing to this insecure registry may fail in some versions of Docker  unless the daemon is explicitly configured to trust this registry.
+Pushing to this insecure registry may fail in some versions of Docker unless the daemon is explicitly configured to
+trust this registry.
 
 To address this we need to edit `/etc/docker/daemon.json` and add:
 
 ```json
 {
-  "insecure-registries" : ["localhost:32000"]
+  "insecure-registries": [
+    "localhost:32000"
+  ]
 }
 ```
 
@@ -40,6 +39,5 @@ The new configuration should be loaded with a Docker daemon restart:
 ```bash
 sudo systemctl restart docker
 ```
-
 
 Source: https://microk8s.io/docs/registry-built-in

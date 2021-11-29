@@ -21,6 +21,7 @@ type: application
 maintainers:
   - name: Fotis Nikolaidis
     email: nikolaidis.fotis@gmail.com
+    url: https://www.linkedin.com/in/fotis-nikolaidis-444a6634/
 
 annotations:
   category: Infrastructure

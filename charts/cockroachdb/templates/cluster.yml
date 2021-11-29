@@ -11,7 +11,7 @@ spec:
       servers: "localhost:26257"
   service:
     agents:
-      telemetry: [ sysmon.container, cockroachmon.server ]
+      telemetry: [ platform.telemetry.container, cockroach.telemetry.server ]
     container:
       name: app
       image: cockroachdb/cockroach:latest

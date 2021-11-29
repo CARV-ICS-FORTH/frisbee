@@ -8,7 +8,7 @@ metadata:
 spec:
   service:
     agents:
-      telemetry: [ sysmon.container, cockroachmon/server ]
+      telemetry: [ platform.telemetry.container, cockroachmon/server ]
     container:
       name: app
       image: cockroachdb/cockroach:latest

@@ -6,8 +6,7 @@ metadata:
 spec:
   withTelemetry:
     importMonitors:
-      - sysmon/container
-      - ycsbmon/client
+      - platform.telemetry.container
 
   actions:
     # Start a Zookeeper server
@@ -15,7 +14,7 @@ spec:
       name: zookeeper
       service:
         fromTemplate:
-          templateRef: tebis-cluster/zookeeper
+          templateRef: tebis.cluster.zookeeper
 
     # Initialize metadata in Zookeeper
     - action: Service
@@ -24,9 +23,9 @@ spec:
         running: [ zookeeper ]
       service:
         fromTemplate:
-          templateRef: tebis-cluster/bootstrap
+          templateRef: tebis.cluster.bootstrap
           inputs:
-            - {zookeeper: .service.zookeeper.any}
+            - { zookeeper: .service.zookeeper.any }
 
     # Initialize a data node
     - action: Service
@@ -35,7 +34,7 @@ spec:
         success: [ boot ]
       service:
         fromTemplate:
-          templateRef: tebis-cluster/master
+          templateRef: tebis.cluster.master
           inputs:
             - { zookeeper: .service.zookeeper.any, domain: "jedi8.cluster.ics.forth.gr", port: "6060" }
 
@@ -46,7 +45,7 @@ spec:
         success: [ boot ]
       service:
         fromTemplate:
-          templateRef: tebis-cluster/master
+          templateRef: tebis.cluster.master
           inputs:
             - { zookeeper: .service.zookeeper.any, domain: "jedi8.cluster.ics.forth.gr", port: "6061" }
 
@@ -58,6 +57,6 @@ spec:
         success: [ boot ]
       service:
         fromTemplate:
-          templateRef: tebis-cluster/master
+          templateRef: tebis.cluster.master
           inputs:
             - { zookeeper: .service.zookeeper.any, domain: "jedi8.cluster.ics.forth.gr", port: "6062" }

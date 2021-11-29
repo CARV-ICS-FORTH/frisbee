@@ -51,10 +51,14 @@ type Disk struct {
 
 // Resources specifies limitations as to how the container will access host resources.
 type Resources struct {
+	// +optional
 	Memory string `json:"memory,omitempty"`
-	CPU    string `json:"cpu,omitempty"`
-	NIC    *NIC   `json:"nic,omitempty"`
-	Disk   *Disk  `json:"disk,omitempty"`
+	// +optional
+	CPU string `json:"cpu,omitempty"`
+	// +optional
+	NIC *NIC `json:"nic,omitempty"`
+	// +optional
+	Disk *Disk `json:"disk,omitempty"`
 }
 
 // ServiceSpec defines the desired state of Service.
@@ -67,7 +71,7 @@ type ServiceSpec struct {
 	// FromTemplate populates the service fields from a template. This is used for backward compatibility
 	// with Cluster with just one instance. This field cannot be used in conjunction with other fields.
 	// +optional
-	FromTemplate *FromTemplate `json:"fromTemplate,omitempty"`
+	FromTemplate *GenerateFromTemplate `json:"fromTemplate,omitempty"`
 
 	// List of sidecar agents
 	// +optional

@@ -5,7 +5,7 @@ metadata:
   name: validate-local
 spec:
   withTelemetry:
-    importMonitors: [ "sysmon/container", "iperfmon/client" ]
+    importMonitors: [ "platform.telemetry.container", "iperfmon.client" ]
 
   actions:
     # Create an iperf server
@@ -13,7 +13,7 @@ spec:
       name: server
       service:
         fromTemplate:
-          templateRef: iperf/server
+          templateRef: iperf.server
           inputs:
             - { "cpu": "2", memory: "4Gi" }
 
@@ -23,7 +23,7 @@ spec:
       depends: { running: [ server ] }
       service:
         fromTemplate:
-          templateRef: iperf/client
+          templateRef: iperf.client
           inputs:
             - { server: .service.server.any }
 

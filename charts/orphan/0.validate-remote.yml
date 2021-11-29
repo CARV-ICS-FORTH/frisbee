@@ -5,7 +5,7 @@ metadata:
   name: validate-remote
 spec:
   withTelemetry:
-    importMonitors: [ "sysmon/container" ]
+    importMonitors: [ "platform.telemetry.container" ]
 
   actions:
     # Create a single Master node
@@ -13,7 +13,7 @@ spec:
       name: master
       service:
         fromTemplate:
-          templateRef: redis/master
+          templateRef: redis.single.master
 
     # Cause two partition failures with different duration
     - action: Chaos

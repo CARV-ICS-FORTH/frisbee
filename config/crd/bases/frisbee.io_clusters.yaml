@@ -84,7 +84,7 @@ spec:
                   to false.
                 type: boolean
               templateRef:
-                description: TemplateRef refers to a  template
+                description: TemplateRef refers to a  template (e.g, iperf-server).
                 type: string
               tolerate:
                 description: Tolerate specifies the conditions under which the cluster
@@ -1374,7 +1374,7 @@ spec:
                             with different parameters, use Inputs.
                           type: integer
                         templateRef:
-                          description: TemplateRef refers to a  template
+                          description: TemplateRef refers to a  template (e.g, iperf-server).
                           type: string
                       required:
                       - templateRef

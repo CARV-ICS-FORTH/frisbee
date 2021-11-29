@@ -40,7 +40,7 @@ func (in TolerateSpec) String() string {
 
 // ClusterSpec defines the desired state of Cluster
 type ClusterSpec struct {
-	FromTemplate `json:",inline"`
+	GenerateFromTemplate `json:",inline"`
 
 	// Schedule defines the interval between the creation of services within the group. Executed creation is not
 	// supported in collocated mode. Since Pods are intended to be disposable and replaceable, we cannot add a

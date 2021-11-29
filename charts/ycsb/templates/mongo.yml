@@ -2,84 +2,88 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
-  name: ycsb-mongo
+  name: ycsb.mongo.loader
   labels:
     app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 spec:
-  entries:
-    # Loader injecting keys into a single server
-    "loader":
-      inputs:
-        parameters:
-          server: localhost
-          port: "27017"
-          offset: "0"
-          recordcount: "10000000"
-          cpu: ""     # Example: 8
-          memory: ""  # Example: 8Gi
-          threads: "1"
-          workload: "workloada"
-          dropdata: "false"
-      spec: |
-        agents:                                       # Agents
-          telemetry: [platform.telemetry.container, ycsb.telemetry.client]
-        resources:                                    # Resources
-          cpu: {{"{{.Inputs.Parameters.cpu}}"}}
-          memory: {{"{{.Inputs.Parameters.memory}}"}}
-        container:                                    # Container
-          name: app
-          image: aylei/go-ycsb:20201029
-          command:
-            - /bin/sh   # Run shell
-            - -c        # Read from string
-            - |         # Multi-line str
-              set -eum
-              trap "touch /dev/shm/stop" EXIT
+  inputs:
+    parameters:
+      server: localhost
+      port: "27017"
+      offset: "0"
+      recordcount: "10000000"
+      cpu: ""     # Example: 8
+      memory: ""  # Example: 8Gi
+      threads: "1"
+      workload: "workloada"
+      dropdata: "false"
+  service:
+    agents: # Agents
+      telemetry: [ platform.telemetry.container, ycsb.telemetry.client ]
+    resources: # Resources
+      cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
+      memory: {{"{{.Inputs.Parameters.memory}}" |quote }}
+    container: # Container
+      name: app
+      image: aylei/go-ycsb:20201029
+      command:
+        - /bin/sh   # Run shell
+        - -c        # Read from string
+        - |         # Multi-line str
+          set -eum
+          trap "touch /dev/shm/stop" EXIT
 
-              addr={{"{{.Inputs.Parameters.server}}"}}:{{"{{.Inputs.Parameters.port}}"}}
+          addr={{"{{.Inputs.Parameters.server}}"}}:{{"{{.Inputs.Parameters.port}}"}}
 
-              echo "Loader: $addr <- {{"{{.Inputs.Parameters.recordcount}}"}}:{{"{{.Inputs.Parameters.offset}}"}}"
+          echo "Loader: $addr <- {{"{{.Inputs.Parameters.recordcount}}"}}:{{"{{.Inputs.Parameters.offset}}"}}"
 
-              ./go-ycsb load mongodb                                   \
-                  -P workloads/{{"{{.Inputs.Parameters.workload}}"}}         \
-                  -p dropdata={{"{{.Inputs.Parameters.dropdata}}"}}          \
-                  -p recordcount={{"{{.Inputs.Parameters.recordcount}}"}}    \
-                  -p insertstart={{"{{.Inputs.Parameters.offset}}"}}         \
-                  -p threadcount={{"{{.Inputs.Parameters.threads}}"}}        \
-                  -p mongodb.uri="mongodb://$addr"                     \
-              >> /dev/shm/pipe
+          ./go-ycsb load mongodb                                   \
+              -P workloads/{{"{{.Inputs.Parameters.workload}}"}}         \
+              -p dropdata={{"{{.Inputs.Parameters.dropdata}}"}}          \
+              -p recordcount={{"{{.Inputs.Parameters.recordcount}}"}}    \
+              -p insertstart={{"{{.Inputs.Parameters.offset}}"}}         \
+              -p threadcount={{"{{.Inputs.Parameters.threads}}"}}        \
+              -p mongodb.uri="mongodb://$addr"                     \
+          >> /dev/shm/pipe
 
-    # Run queries against a single server
-    "runner":
-      inputs:
-        parameters:
-          server: localhost
-          port: "27017"
-          workload: "workloada"
-          operationcount: "30000000"
-          cpu: "8"
-          memory: "8Gi"
-          threads: "1"
-      spec: |
-        agents:
-          telemetry: [platform.telemetry.container, ycsb.telemetry.client]
-        container:
-          name: app
-          image: aylei/go-ycsb:20201029
-          command:
-            - /bin/sh   # Run shell
-            - -c        # Read from string
-            - |         # Multi-line str
-              set -eum
-              trap "touch /dev/shm/stop" EXIT
 
-              addr={{"{{.Inputs.Parameters.server}}"}}:{{"{{.Inputs.Parameters.port}}"}}
+---
+apiVersion: frisbee.io/v1alpha1
+kind: Template
+metadata:
+  name: ycsb.mongo.runner
+  labels:
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+spec:
+  inputs:
+    parameters:
+      server: localhost
+      port: "27017"
+      workload: "workloada"
+      operationcount: "30000000"
+      cpu: "8"
+      memory: "8Gi"
+      threads: "1"
+  service:
+    agents:
+      telemetry: [ platform.telemetry.container, ycsb.telemetry.client ]
+    container:
+      name: app
+      image: aylei/go-ycsb:20201029
+      command:
+        - /bin/sh   # Run shell
+        - -c        # Read from string
+        - |         # Multi-line str
+          set -eum
+          trap "touch /dev/shm/stop" EXIT
 
-              echo "Runner: $addr <- {{"{{.Inputs.Parameters.workload}}"}}:{{"{{.Inputs.Parameters.operationcount}}"}}"
+          addr={{"{{.Inputs.Parameters.server}}"}}:{{"{{.Inputs.Parameters.port}}"}}
 
-              ./go-ycsb run mongodb                                                               \
-                    -P workloads/{{"{{.Inputs.Parameters.workload}}"}}                                  \
-                    -p operationcount={{"{{.Inputs.Parameters.operationcount}}"}}                       \
-                    -p threadcount={{"{{.Inputs.Parameters.threads}}"}}                                 \
-                    -p mongodb.uri="mongodb://$addr"                                              \
-              >> /dev/shm/pipe
+          echo "Runner: $addr <- {{"{{.Inputs.Parameters.workload}}"}}:{{"{{.Inputs.Parameters.operationcount}}"}}"
+
+          ./go-ycsb run mongodb                                                               \
+                -P workloads/{{"{{.Inputs.Parameters.workload}}"}}                                  \
+                -p operationcount={{"{{.Inputs.Parameters.operationcount}}"}}                       \
+                -p threadcount={{"{{.Inputs.Parameters.threads}}"}}                                 \
+                -p mongodb.uri="mongodb://$addr"                                              \
+          >> /dev/shm/pipe
