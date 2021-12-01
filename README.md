@@ -7,8 +7,6 @@
 
 # <div align="center">Frisbee – Kubernetes Native Testbed</div>
 
-
-
 🏗️ Spin up entire dependency stack
 
 🎁 Setup initial dependency state – easily!
@@ -21,6 +19,9 @@
 
 
 ## <div align="center">![releaser](https://github.com/carv-ics-forth/frisbee/actions/workflows/release.yml/badge.svg) [![Go Report Card](https://goreportcard.com/badge/github.com/carv-ics-forth/frisbee)](https://goreportcard.com/report/github.com/carv-ics-forth/frisbee) ![License: Apache-2.0](https://img.shields.io/github/license/carv-ics-forth/frisbee?color=blue) [![GitHub Repo stars](https://img.shields.io/github/stars/carv-ics-forth/frisbee)](https://github.com/carv-ics-forth/frisbee/stargazers)</div>
+
+
+> The effort being put in automating tests should not take over delivering value to users.
 
 Frisbee addresses the key pain points developers and QA engineers face when testing cloud-native applications in the earlier
 stages of the software lifecycle. We make it possible to:
