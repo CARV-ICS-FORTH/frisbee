@@ -4,7 +4,7 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
-  name: tikv.cluster.placement-driver
+  name: tikv.cluster.coverage.placement-driver
   labels:
     app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 spec:
@@ -33,7 +33,7 @@ spec:
       memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
     container: # Container
       name: app
-      image: pingcap/pd:v5.1.2
+      image: icsforth/tikv-pd-coverage
       volumeMounts:
         - name: datastore
           mountPath: /store
@@ -42,6 +42,8 @@ spec:
           containerPort: 2379
         - name: to-cluster
           containerPort: 2380
+        - name: coverage
+          containerPort: 80
       command:
         - /bin/sh   # Run shell
         - -c        # Read from string
@@ -49,26 +51,43 @@ spec:
           set -eum
           trap "touch /dev/shm/stop" EXIT
 
+          echo "Starting goc server"
+          /goc server &>/dev/null &
+
+          echo "Starting lcov webserver at :80 Path:/var/www/localhost/htdocs/"
+          lighttpd -f /etc/lighttpd/lighttpd.conf
+
+          echo "Starting the instrumented binary"
           rm -rf /store/$${HOSTNAME}
           mkdir -p /store/$${HOSTNAME}/pd
 
-          # see https://github.com/tikv/pd/blob/master/conf/config.toml
-
-          echo "Start PD server at $${HOSTNAME}"
-
-          /pd-server                                                  \
+          /instr_bin                                                  \
           --client-urls=http://0.0.0.0:2379                           \
           --advertise-client-urls=http://$${HOSTNAME}:2379            \
           --peer-urls=http://0.0.0.0:2380                             \
           --advertise-peer-urls=http://$${HOSTNAME}:2380              \
-          --data-dir=/store/$${HOSTNAME}/pd
+          --data-dir=/store/$${HOSTNAME}/pd                           &
 
+          sleep 10
+
+          echo "Periodically update the coverage report"
+          while true
+          do
+            echo "Update coverage"
+            # Get the report in the go cover format
+            /goc profile  | \
+            # Convert it to lcov format
+            /gcov2lcov > /tmp/profile.out  | \
+            # Generate http.
+            genhtml -o /var/www/localhost/htdocs/  /tmp/profile.out &> /dev/null
+            sleep 30
+          done
 
 ---
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
-  name: tikv.cluster.worker
+  name: tikv.cluster.coverage.worker
   labels:
     app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 spec:
@@ -98,7 +117,7 @@ spec:
       memory: {{"{{.Inputs.Parameters.memory}}" |quote}}
     container: # Container
       name: app
-      image: pingcap/tikv:v5.1.2
+      image: localhost:32000/tikv-datanode-coverage2
       volumeMounts:
         - name: in-memory
           mountPath: /store
@@ -120,6 +139,8 @@ spec:
 
           # see https://github.com/tikv/tikv/blob/master/etc/config-template.toml
           cat > config.toml <<EOF
+          log-file = "/var/log/tikv-server.log"
+
           [server]
             addr="0.0.0.0:20160"
             advertise-addr="$${HOSTNAME}:20160"
@@ -135,4 +156,6 @@ spec:
             data-dir = "/store/$${HOSTNAME}/data"
           EOF
 
-          /tikv-server --config=config.toml
+          echo "Start profiler"
+          mkdir -p /source/coverage
+          kcov --exclude-pattern=/usr /var/www/html/ ./target/debug/tikv-server --config=config.toml

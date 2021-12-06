@@ -13,7 +13,7 @@ spec:
         specificTo: pd
     agent:
       container:
-        name: tikv-pd
+        name: telegraf
         image: telegraf:1.20.3
         ports:
           - name: mon-pd
@@ -70,7 +70,7 @@ spec:
 
     agent:
       container:
-        name: tikv-worker
+        name: telegraf
         image: telegraf:1.20.3
         ports:
           - name: mon-tikv

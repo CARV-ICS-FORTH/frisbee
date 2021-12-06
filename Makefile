@@ -151,7 +151,6 @@ undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/confi
 	$(KUSTOMIZE) build config/default | kubectl delete -f -
 
 
-
 release: ## Release a new version of Frisbee.
 	if [[ -z "${VERSION}" ]]; then echo "VERSION is not set"; exit 1; fi
 	echo "${VERSION}" > VERSION
