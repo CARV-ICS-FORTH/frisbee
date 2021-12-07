@@ -6,10 +6,14 @@ metadata:
   labels:
     app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 spec:
-  monitor:
-    agent:
-      container:
-        name: cockroachdb
+  service:
+    decorators:
+      dashboards:
+        matchLabels:
+          dashboard: cockroach
+
+    containers:
+      - name: cockroachdb
         image: telegraf:1.20.3
         ports:
           - name: mon-cockroach
@@ -47,9 +51,6 @@ spec:
               sleep 10
             done
 
-    dashboards:
-      matchLabels:
-        dashboard: cockroach
 
 
 ---

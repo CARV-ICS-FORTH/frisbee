@@ -16,7 +16,19 @@ spec:
                 port:
                   number: 80
 
-    - host: worker0.platform.science-hangar.eu
+    - host: workers.platform.science-hangar.eu
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: workers
+                port:
+                  number: 80
+
+
+    - host: workers-0.platform.science-hangar.eu
       http:
         paths:
           - path: /
@@ -27,14 +39,25 @@ spec:
                 port:
                   number: 80
 
-    - host: worker1.platform.science-hangar.eu
+    - host: workers-1.platform.science-hangar.eu
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: worker1
+                name: workers-1
+                port:
+                  number: 80
+
+    - host: workers-2.platform.science-hangar.eu
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: workers-2
                 port:
                   number: 80
 
@@ -53,60 +76,60 @@ spec:
     - action: Service
       name: master
       service:
-        fromTemplate:
-          templateRef: tikv.cluster.coverage.placement-driver
-            #inputs:
-          # - { cpu: "4", memory: "8Gi" }
+        
+        templateRef: tikv.cluster.coverage.placement-driver
+        #inputs:
+        # - { cpu: "4", memory: "8Gi" }
 
     - action: Cluster
       depends: { running: [ master ] }
       name: workers
       cluster:
         templateRef: tikv.cluster.coverage.worker
-        instances: 1
+        instances: 2
         inputs:
           - { placementDriver: .service.master.any }
 
     # Step 1: Load a new dataset, using the parameters of workload A.
     # We use no throttling to maximize this step and complete it soon.
     - action: Service
-      depends: { running: [ workers ] , after: 30h}
+      depends: { running: [ workers ] }
       name: loader
       service:
-        fromTemplate:
-          templateRef: ycsb.tikv.loader
-          inputs:
-            - { server: .service.master.any, workload: workloada, recordcount: "10000000" }
+        
+        templateRef: ycsb.tikv.loader
+        inputs:
+          - { server: .service.master.any, workload: workloada, recordcount: "10000000" }
 
     # Step 2: Run workload A
     - action: Service
       depends: { success: [ loader ] }
       name: workload-a
       service:
-        fromTemplate:
-          templateRef: ycsb.tikv.runner
-          inputs:
-            - { server: .service.master.any, workload: workloada, operationcount: "1000000", }
+        
+        templateRef: ycsb.tikv.runner
+        inputs:
+          - { server: .service.master.any, workload: workloada, operationcount: "1000000", }
 
     # Step 3: Run workload B
     - action: Service
       depends: { success: [ workload-a ] }
       name: workload-b
       service:
-        fromTemplate:
-          templateRef: ycsb.tikv.runner
-          inputs:
-            - { server: .service.master.any, workload: workloadb, operationcount: "1000000",}
+        
+        templateRef: ycsb.tikv.runner
+        inputs:
+          - { server: .service.master.any, workload: workloadb, operationcount: "1000000", }
 
     # Step 4: Run workload C
     - action: Service
       depends: { success: [ workload-b ] }
       name: workload-c
       service:
-        fromTemplate:
-          templateRef: ycsb.tikv.runner
-          inputs:
-            - { server: .service.master.any, workload: workloadc, operationcount: "1000000",}
+        
+        templateRef: ycsb.tikv.runner
+        inputs:
+          - { server: .service.master.any, workload: workloadc, operationcount: "1000000", }
 
 
     # Step 5: Run workload F
@@ -114,10 +137,10 @@ spec:
       depends: { success: [ workload-c ] }
       name: workload-f
       service:
-        fromTemplate:
-          templateRef: ycsb.tikv.runner
-          inputs:
-            - { server: .service.master.any, workload: workloadf, operationcount: "1000000",}
+        
+        templateRef: ycsb.tikv.runner
+        inputs:
+          - { server: .service.master.any, workload: workloadf, operationcount: "1000000", }
 
 
     # Step 6: Run workload D.
@@ -125,10 +148,10 @@ spec:
       depends: { success: [ workload-f ] }
       name: workload-d
       service:
-        fromTemplate:
-          templateRef: ycsb.tikv.runner
-          inputs:
-            - { server: .service.master.any, workload: workloadd, operationcount: "1000000",}
+        
+        templateRef: ycsb.tikv.runner
+        inputs:
+          - { server: .service.master.any, workload: workloadd, operationcount: "1000000", }
 
 
     # Step 7,8: Reload the data with parameters of workload E.
@@ -137,17 +160,17 @@ spec:
       depends: { success: [ workload-d ] }
       name: reloader
       service:
-        fromTemplate:
-          templateRef: ycsb.tikv.loader
-          inputs:
-            - { server: .service.master.any, workload: workloade, dropdata: "true", recordcount: "1000000",}
+        
+        templateRef: ycsb.tikv.loader
+        inputs:
+          - { server: .service.master.any, workload: workloade, dropdata: "true", recordcount: "1000000", }
 
     # Step 9:Run workload E
     - action: Service
       depends: { success: [ reloader ] }
       name: workload-e
       service:
-        fromTemplate:
-          templateRef: ycsb.tikv.runner
-          inputs:
-            - { server: .service.master.any, workload: workloade, operationcount: "1000000",}
+        
+        templateRef: ycsb.tikv.runner
+        inputs:
+          - { server: .service.master.any, workload: workloade, operationcount: "1000000", }

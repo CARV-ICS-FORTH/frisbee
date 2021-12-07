@@ -45,7 +45,7 @@ spec:
     - action: Service
       name: master
       service:
-        fromTemplate:
+        
           templateRef: redis.single.master
 
     # This action is same as before, with two additions. 
@@ -56,7 +56,7 @@ spec:
       name: slave
       depends: { running: [ master ] }
       service:
-        fromTemplate:
+        
           templateRef: redis.single.slave
           inputs:
             - { master: .service.master.any }
@@ -66,7 +66,7 @@ spec:
       name: sentinel
       depends: { running: [ master, slave ] }
       service:
-        fromTemplate:
+        
           templateRef: redis.single.sentinel
           inputs:
             - { master: .service.master.any }

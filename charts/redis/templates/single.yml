@@ -11,48 +11,48 @@ spec:
       memory: ""
       cpu: ""
   service:
-    agents:
+    decorators: # Decorators
       telemetry: [ platform.telemetry.container, redis.telemetry.server ]
-    resources:
-      memory: {{"{{.Inputs.Parameters.memory}}" |quote}}
-      cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
-    container:
-      name: app
-      image: redis
-      ports:
-        - name: to-clients
-          containerPort: 6379
-        - name: clusterbus
-          containerPort: 16379
-        - name: sentinel
-          containerPort: 26379
-      command:
-        - /bin/sh   # Run shell
-        - -c        # Read from string
-        - |         # Multi-line str
-          set -eum
-          trap "touch /dev/shm/stop" EXIT
+      resources:
+        memory: {{"{{.Inputs.Parameters.memory}}" |quote}}
+        cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
+    containers:
+      - name: app
+        image: redis
+        ports:
+          - name: to-clients
+            containerPort: 6379
+          - name: clusterbus
+            containerPort: 16379
+          - name: sentinel
+            containerPort: 26379
+        command:
+          - /bin/sh   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
+            set -eum
+            trap "touch /dev/shm/stop" EXIT
 
-          cat > redis.conf <<EOF
-            port 6379
-            appendonly yes
-          EOF
+            cat > redis.conf <<EOF
+              port 6379
+              appendonly yes
+            EOF
 
-          redis-server redis.conf
+            redis-server redis.conf
 
-      startupProbe:
-        exec:
-          command:
-            - /bin/sh   # Run shell
-            - -c        # Read from string
-            - |         # Multi-line str
-              set -eum
+        startupProbe:
+          exec:
+            command:
+              - /bin/sh   # Run shell
+              - -c        # Read from string
+              - |         # Multi-line str
+                set -eum
 
-              response=$(timeout -s QUIT 30 redis-cli -h localhost -p 6379 ping)
-              if ["$response" != "PONG"]; then
-                  echo "$response"
-                  exit 1
-              fi
+                response=$(timeout -s QUIT 30 redis-cli -h localhost -p 6379 ping)
+                if ["$response" != "PONG"]; then
+                    echo "$response"
+                    exit 1
+                fi
 
 
 ---
@@ -67,46 +67,46 @@ spec:
     parameters:
       master: localhost
   service:
-    agents:
+    decorators:
       telemetry: [ platform.telemetry.container, redis.telemetry.server ]
-    container:
-      name: app
-      image: redis
-      ports:
-        - name: to-clients
-          containerPort: 6379
-        - name: clusterbus
-          containerPort: 16379
-        - name: sentinel
-          containerPort: 26379
-      command:
-        - /bin/sh   # Run shell
-        - -c        # Read from string
-        - |         # Multi-line str
-          set -eum
-          trap "touch /dev/shm/stop" EXIT
+    containers:
+      - name: app
+        image: redis
+        ports:
+          - name: to-clients
+            containerPort: 6379
+          - name: clusterbus
+            containerPort: 16379
+          - name: sentinel
+            containerPort: 26379
+        command:
+          - /bin/sh   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
+            set -eum
+            trap "touch /dev/shm/stop" EXIT
 
-          cat > redis.conf <<EOF
-            port 6379
-            appendonly yes
-            slaveof {{"{{.Inputs.Parameters.master}}"}} 6379
-          EOF
+            cat > redis.conf <<EOF
+              port 6379
+              appendonly yes
+              slaveof {{"{{.Inputs.Parameters.master}}"}} 6379
+            EOF
 
-          redis-server redis.conf
+            redis-server redis.conf
 
-      startupProbe:
-        exec:
-          command:
-            - /bin/sh   # Run shell
-            - -c        # Read from string
-            - |         # Multi-line str
-              set -eum
+        startupProbe:
+          exec:
+            command:
+              - /bin/sh   # Run shell
+              - -c        # Read from string
+              - |         # Multi-line str
+                set -eum
 
-              response=$(timeout -s QUIT 30 redis-cli -h localhost -p 6379 ping)
-              if ["$response" != "PONG"]; then
-                  echo "$response"
-                  exit 1
-              fi
+                response=$(timeout -s QUIT 30 redis-cli -h localhost -p 6379 ping)
+                if ["$response" != "PONG"]; then
+                    echo "$response"
+                    exit 1
+                fi
 
 
 ---
@@ -122,27 +122,27 @@ spec:
     parameters:
       master: localhost
   service:
-    container:
-      name: app
-      image: redis
-      ports:
-        - name: sentinel
-          containerPort: 26379
-      command:
-        - /bin/sh   # Run shell
-        - -c        # Read from string
-        - |         # Multi-line str
-          set -eum
-          trap "touch /dev/shm/stop" EXIT
+    containers:
+      - name: app
+        image: redis
+        ports:
+          - name: sentinel
+            containerPort: 26379
+        command:
+          - /bin/sh   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
+            set -eum
+            trap "touch /dev/shm/stop" EXIT
 
-          echo "Watch {{"{{.Inputs.Parameters.master}}"}}:6379"
+            echo "Watch {{"{{.Inputs.Parameters.master}}"}}:6379"
 
-          cat > sentinel.conf <<EOF
-            sentinel resolve-hostnames yes
-            sentinel monitor mymaster {{"{{.Inputs.Parameters.master}}"}} 6379 1
-            sentinel down-after-milliseconds mymaster 5000
-            sentinel failover-timeout mymaster 10000
-            sentinel parallel-syncs mymaster 1
-          EOF
+            cat > sentinel.conf <<EOF
+              sentinel resolve-hostnames yes
+              sentinel monitor mymaster {{"{{.Inputs.Parameters.master}}"}} 6379 1
+              sentinel down-after-milliseconds mymaster 5000
+              sentinel failover-timeout mymaster 10000
+              sentinel parallel-syncs mymaster 1
+            EOF
 
-          redis-sentinel sentinel.conf
+            redis-sentinel sentinel.conf

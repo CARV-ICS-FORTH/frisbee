@@ -65,7 +65,7 @@ type WaitSpec struct {
 
 type EmbedActions struct {
 	// +optional
-	Service *ServiceSpec `json:"service,omitempty"`
+	Service *GenerateFromTemplate `json:"service,omitempty"`
 
 	// +optional
 	Cluster *ClusterSpec `json:"cluster,omitempty"`

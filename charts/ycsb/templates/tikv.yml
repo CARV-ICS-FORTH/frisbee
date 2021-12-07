@@ -18,34 +18,35 @@ spec:
       workload: "workloada"
       dropdata: "false"
   service:
-    agents: # Agents
+    decorators: # Decorators
       telemetry: [ platform.telemetry.container, ycsb.telemetry.client ]
-    resources: # Resources
-      cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
-      memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
-    container: # Container
-      name: app
-      image: aylei/go-ycsb:20201029
-      command:
-        - /bin/sh   # Run shell
-        - -c        # Read from string
-        - |         # Multi-line str
-          set -eum
-          trap "touch /dev/shm/stop" EXIT
+      resources:
+        cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
+        memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
 
-          addr={{"{{.Inputs.Parameters.server}}"}}:{{"{{.Inputs.Parameters.port}}"}}
+    containers: # Container(s)
+      - name: app
+        image: aylei/go-ycsb:20201029
+        command:
+          - /bin/sh   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
+            set -eum
+            trap "touch /dev/shm/stop" EXIT
 
-          echo "Loader: $addr <- {{"{{.Inputs.Parameters.recordcount}}"}}:{{"{{.Inputs.Parameters.offset}}"}}"
+            addr={{"{{.Inputs.Parameters.server}}"}}:{{"{{.Inputs.Parameters.port}}"}}
 
-          ./go-ycsb load tikv                                      \
-              -P workloads/{{"{{.Inputs.Parameters.workload}}"}}         \
-              -p dropdata={{"{{.Inputs.Parameters.dropdata}}"}}          \
-              -p recordcount={{"{{.Inputs.Parameters.recordcount}}"}}    \
-              -p insertstart={{"{{.Inputs.Parameters.offset}}"}}         \
-              -p threadcount={{"{{.Inputs.Parameters.threads}}"}}        \
-              -p tikv.pd=${addr}                                   \
-              -p tikv.type="raw"                                   \
-          >> /dev/shm/pipe
+            echo "Loader: $addr <- {{"{{.Inputs.Parameters.recordcount}}"}}:{{"{{.Inputs.Parameters.offset}}"}}"
+
+            ./go-ycsb load tikv                                      \
+                -P workloads/{{"{{.Inputs.Parameters.workload}}"}}         \
+                -p dropdata={{"{{.Inputs.Parameters.dropdata}}"}}          \
+                -p recordcount={{"{{.Inputs.Parameters.recordcount}}"}}    \
+                -p insertstart={{"{{.Inputs.Parameters.offset}}"}}         \
+                -p threadcount={{"{{.Inputs.Parameters.threads}}"}}        \
+                -p tikv.pd=${addr}                                   \
+                -p tikv.type="raw"                                   \
+            >> /dev/shm/pipe
 
 
 ---
@@ -66,29 +67,30 @@ spec:
       memory: ""
       threads: ""
   service:
-    agents: # Agents
+    decorators: # Decorators
       telemetry: [ platform.telemetry.container, ycsb.telemetry.client ]
-    resources: # Resources
-      cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
-      memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
-    container: # Container
-      name: app
-      image: aylei/go-ycsb:20201029
-      command:
-        - /bin/sh   # Run shell
-        - -c        # Read from string
-        - |         # Multi-line str
-          set -eum
-          trap "touch /dev/shm/stop" EXIT
+      resources: # Resources
+        cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
+        memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
 
-          addr={{"{{.Inputs.Parameters.server}}"}}:{{"{{.Inputs.Parameters.port}}"}}
+    containers: # Container(s)
+      - name: app
+        image: aylei/go-ycsb:20201029
+        command:
+          - /bin/sh   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
+            set -eum
+            trap "touch /dev/shm/stop" EXIT
 
-          echo "Runner: $addr <- {{"{{.Inputs.Parameters.workload}}"}}:{{"{{.Inputs.Parameters.operationcount}}"}}"
+            addr={{"{{.Inputs.Parameters.server}}"}}:{{"{{.Inputs.Parameters.port}}"}}
 
-          ./go-ycsb run tikv                                                                  \
-                -P workloads/{{"{{.Inputs.Parameters.workload}}"}}                                  \
-                -p operationcount={{"{{.Inputs.Parameters.operationcount}}"}}                       \
-                -p threadcount={{"{{.Inputs.Parameters.threads}}"}}                                 \
-                -p tikv.pd=${addr}                                                            \
-                -p tikv.type="raw"                                                            \
-          >> /dev/shm/pipe
+            echo "Runner: $addr <- {{"{{.Inputs.Parameters.workload}}"}}:{{"{{.Inputs.Parameters.operationcount}}"}}"
+
+            ./go-ycsb run tikv                                                                  \
+                  -P workloads/{{"{{.Inputs.Parameters.workload}}"}}                                  \
+                  -p operationcount={{"{{.Inputs.Parameters.operationcount}}"}}                       \
+                  -p threadcount={{"{{.Inputs.Parameters.threads}}"}}                                 \
+                  -p tikv.pd=${addr}                                                            \
+                  -p tikv.type="raw"                                                            \
+            >> /dev/shm/pipe

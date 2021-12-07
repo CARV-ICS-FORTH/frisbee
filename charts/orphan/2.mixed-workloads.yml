@@ -15,8 +15,8 @@ spec:
     - action: Service
       name: master
       service:
-        fromTemplate:
-          templateRef: redis.single.master
+        
+        templateRef: redis.single.master
 
     # Ingest keys in parallel, into different ranges
     - action: Cluster

@@ -15,8 +15,8 @@ spec:
     - action: Service
       name: master
       service:
-        fromTemplate:
-          templateRef: tikv.cluster.placement-driver
+        
+        templateRef: tikv.cluster.placement-driver
 
     - action: Cluster
       depends: { running: [ master ] }

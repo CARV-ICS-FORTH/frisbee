@@ -13,68 +13,68 @@ spec:
       memory: ""
       cpu: ""
   service:
-    agents: # Agents
+    decorators:
       telemetry: [ platform.telemetry.container, mongo.telemetry.server ]
-    resources: # Resources
-      cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
-      memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
-    container: # Container
-      name: app
-      image: bitnami/mongodb
-      ports:
-        - name: to-clients
-          containerPort: {{"{{.Inputs.Parameters.port}}" | quote | int}}
-      command:
-        - /bin/sh   # Run shell
-        - -c        # Read from string
-        - |         # Multi-line str
-          set -eum
-          trap "touch /dev/shm/stop" EXIT
+      resources:
+        cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
+        memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
+    containers: # Container
+      - name: app
+        image: bitnami/mongodb
+        ports:
+          - name: to-clients
+            containerPort: {{"{{.Inputs.Parameters.port}}" | quote | int}}
+        command:
+          - /bin/sh   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
+            set -eum
+            trap "touch /dev/shm/stop" EXIT
 
-          echo "Create Mongo configuration"
-          cat > /tmp/mongod.conf <<EOF
-            # network interfaces
-            net:
-              port: {{"{{.Inputs.Parameters.port}}"}}
-              bindIp: 0.0.0.0
+            echo "Create Mongo configuration"
+            cat > /tmp/mongod.conf <<EOF
+              # network interfaces
+              net:
+                port: {{"{{.Inputs.Parameters.port}}"}}
+                bindIp: 0.0.0.0
 
-            # Where and how to store data.
-            storage:
-              dbPath: /bitnami/mongodb/data/
-              journal:
-                enabled: true
+              # Where and how to store data.
+              storage:
+                dbPath: /bitnami/mongodb/data/
+                journal:
+                  enabled: true
 
-            # operation mode
-            replication:
-              replSetName: app1r0
-          EOF
+              # operation mode
+              replication:
+                replSetName: app1r0
+            EOF
 
-          echo "Create Replicaset with {{"{{.Inputs.Parameters.slaves}}"}}"
-          cat > /tmp/rs-init.js <<EOF
-            rs.initiate()
-          {{`{{- range splitList " " .Inputs.Parameters.slaves}}
-                rs.add("{{.}}")
-          {{- end}}`}}
-          EOF
+            echo "Create Replicaset with {{"{{.Inputs.Parameters.slaves}}"}}"
+            cat > /tmp/rs-init.js <<EOF
+              rs.initiate()
+            {{`{{- range splitList " " .Inputs.Parameters.slaves}}
+                  rs.add("{{.}}")
+            {{- end}}`}}
+            EOF
 
-          echo "Schedule replicate set creation"
-          sleep 10 && mongo < /tmp/rs-init.js &
+            echo "Schedule replicate set creation"
+            sleep 10 && mongo < /tmp/rs-init.js &
 
-          echo "Create Mongo daemon"
-          mongod --config /tmp/mongod.conf
+            echo "Create Mongo daemon"
+            mongod --config /tmp/mongod.conf
 
-      startupProbe:
-        exec:
-          command:
-            - /bin/sh   # Run shell
-            - -c        # Read from string
-            - |         # Multi-line str
-              set -eum
+        startupProbe:
+          exec:
+            command:
+              - /bin/sh   # Run shell
+              - -c        # Read from string
+              - |         # Multi-line str
+                set -eum
 
-              response=$(timeout -s QUIT 30 mongo --eval 'rs.status().ok' localhost:{{"{{.Inputs.Parameters.port}}"}} --quiet)
-              if ["$response" != "1"]; then
-                  exit 1
-              fi
+                response=$(timeout -s QUIT 30 mongo --eval 'rs.status().ok' localhost:{{"{{.Inputs.Parameters.port}}"}} --quiet)
+                if ["$response" != "1"]; then
+                    exit 1
+                fi
 
 ---
 apiVersion: frisbee.io/v1alpha1
@@ -90,53 +90,53 @@ spec:
       memory: ""
       cpu: ""
   service:
-    agents: # Agents
+    decorators: # Decorators
       telemetry: [ platform.telemetry.container, mongo.telemetry.server/telegraf ]
-    resources: # Resources
-      cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
-      memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
-    container: # Container
-      name: app
-      image: bitnami/mongodb
-      ports:
-        - name: to-clients
-          containerPort: {{"{{.Inputs.Parameters.port}}"| quote | int}}
-      command:
-        - /bin/sh   # Run shell
-        - -c        # Read from string
-        - |         # Multi-line str
-          set -eum
-          trap "touch /dev/shm/stop" EXIT
+      resources:
+        cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
+        memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
+    containers: # Container
+      - name: app
+        image: bitnami/mongodb
+        ports:
+          - name: to-clients
+            containerPort: {{"{{.Inputs.Parameters.port}}"| quote | int}}
+        command:
+          - /bin/sh   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
+            set -eum
+            trap "touch /dev/shm/stop" EXIT
 
-          echo "Create Mongo configuration"
-          cat > /tmp/mongod.conf <<EOF
-            # network interfaces
-            net:
-              port: {{"{{.Inputs.Parameters.port}}"}}
-              bindIp: 0.0.0.0
+            echo "Create Mongo configuration"
+            cat > /tmp/mongod.conf <<EOF
+              # network interfaces
+              net:
+                port: {{"{{.Inputs.Parameters.port}}"}}
+                bindIp: 0.0.0.0
 
-            # Where and how to store data.
-            storage:
-              dbPath: /bitnami/mongodb/data/
-              journal:
-                enabled: true
+              # Where and how to store data.
+              storage:
+                dbPath: /bitnami/mongodb/data/
+                journal:
+                  enabled: true
 
-            # operation mode
-            replication:
-              replSetName: app1r0
-          EOF
+              # operation mode
+              replication:
+                replSetName: app1r0
+            EOF
 
-          mongod --config /tmp/mongod.conf
+            mongod --config /tmp/mongod.conf
 
-      startupProbe:
-        exec:
-          command:
-            - /bin/sh   # Run shell
-            - -c        # Read from string
-            - |         # Multi-line str
-              set -eum
+        startupProbe:
+          exec:
+            command:
+              - /bin/sh   # Run shell
+              - -c        # Read from string
+              - |         # Multi-line str
+                set -eum
 
-              response=$(timeout -s QUIT 30 mongo --eval 'db.runCommand("ping").ok' localhost:{{"{{.Inputs.Parameters.port}}"}}/test --quiet)
-              if ["$response" != "1"]; then
-                  exit 1
-              fi
+                response=$(timeout -s QUIT 30 mongo --eval 'db.runCommand("ping").ok' localhost:{{"{{.Inputs.Parameters.port}}"}}/test --quiet)
+                if ["$response" != "1"]; then
+                    exit 1
+                fi

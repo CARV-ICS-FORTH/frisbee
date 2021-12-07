@@ -6,10 +6,13 @@ metadata:
   labels:
     app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 spec:
-  monitor:
-    agent:
-      container:
-        name: cadvisor
+  service:
+    decorators:
+      dashboards:
+        matchLabels:
+          dashboard: sysmon
+    containers:
+      - name: cadvisor
         image: gcr.io/cadvisor/cadvisor
         ports:
           - name: mon-system
@@ -29,9 +32,7 @@ spec:
               sleep 10
             done
 
-    dashboards:
-      matchLabels:
-        dashboard: sysmon
+
 
 
 ---

@@ -13,8 +13,8 @@ spec:
     - action: Service
       name: zookeeper
       service:
-        fromTemplate:
-          templateRef: tebis.cluster.zookeeper
+        
+        templateRef: tebis.cluster.zookeeper
 
     # Initialize metadata in Zookeeper
     - action: Service
@@ -22,10 +22,10 @@ spec:
       depends:
         running: [ zookeeper ]
       service:
-        fromTemplate:
-          templateRef: tebis.cluster.bootstrap
-          inputs:
-            - { zookeeper: .service.zookeeper.any }
+        
+        templateRef: tebis.cluster.bootstrap
+        inputs:
+          - { zookeeper: .service.zookeeper.any }
 
     # Initialize a data node
     - action: Service
@@ -33,10 +33,10 @@ spec:
       depends:
         success: [ boot ]
       service:
-        fromTemplate:
-          templateRef: tebis.cluster.master
-          inputs:
-            - { zookeeper: .service.zookeeper.any, domain: "jedi8.cluster.ics.forth.gr", port: "6060" }
+        
+        templateRef: tebis.cluster.master
+        inputs:
+          - { zookeeper: .service.zookeeper.any, domain: "jedi8.cluster.ics.forth.gr", port: "6060" }
 
     # Initialize a data node
     - action: Service
@@ -44,10 +44,10 @@ spec:
       depends:
         success: [ boot ]
       service:
-        fromTemplate:
-          templateRef: tebis.cluster.master
-          inputs:
-            - { zookeeper: .service.zookeeper.any, domain: "jedi8.cluster.ics.forth.gr", port: "6061" }
+        
+        templateRef: tebis.cluster.master
+        inputs:
+          - { zookeeper: .service.zookeeper.any, domain: "jedi8.cluster.ics.forth.gr", port: "6061" }
 
 
     # Initialize a data node
@@ -56,7 +56,7 @@ spec:
       depends:
         success: [ boot ]
       service:
-        fromTemplate:
-          templateRef: tebis.cluster.master
-          inputs:
-            - { zookeeper: .service.zookeeper.any, domain: "jedi8.cluster.ics.forth.gr", port: "6062" }
+        
+        templateRef: tebis.cluster.master
+        inputs:
+          - { zookeeper: .service.zookeeper.any, domain: "jedi8.cluster.ics.forth.gr", port: "6062" }

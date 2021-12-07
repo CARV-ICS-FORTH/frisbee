@@ -26,60 +26,60 @@ spec:
       memory: ""
       cpu: ""
   service:
-    agents: # Agents
+    decorators: # Decorators
       telemetry: [ platform.telemetry.container, redis.telemetry.server ]
-    resources: # Resources
-      memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
-      cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
-    container: # Container
-      name: app
-      image: redis
-      ports:
-        - name: to-clients
-          containerPort: 6379
-        - name: to-cluster
-          containerPort: 16379
-      env:
-        - name: podIP
-          valueFrom:
-            fieldRef:
-              fieldPath: status.podIP
-      command:
-        - /bin/sh   # Run shell
-        - -c        # Read from string
-        - |         # Multi-line str
-          set -eum
-          trap "touch /dev/shm/stop" EXIT
+      resources:
+        memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
+        cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
+    containers: # Container
+      - name: app
+        image: redis
+        ports:
+          - name: to-clients
+            containerPort: 6379
+          - name: to-cluster
+            containerPort: 16379
+        env:
+          - name: podIP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+        command:
+          - /bin/sh   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
+            set -eum
+            trap "touch /dev/shm/stop" EXIT
 
-          echo "Start master node at ${podIP}:6379"
+            echo "Start master node at ${podIP}:6379"
 
-          echo "Create Redis configuration"
-          cat > redis.conf <<EOF
-            port 6379
-            appendonly yes
-            cluster-enabled yes
-            cluster-config-file nodes.conf
-            cluster-node-timeout 5000
+            echo "Create Redis configuration"
+            cat > redis.conf <<EOF
+              port 6379
+              appendonly yes
+              cluster-enabled yes
+              cluster-config-file nodes.conf
+              cluster-node-timeout 5000
 
-            cluster-announce-ip $podIP
-            cluster-announce-port 6379
-            cluster-announce-bus-port 16379
-          EOF
+              cluster-announce-ip $podIP
+              cluster-announce-port 6379
+              cluster-announce-bus-port 16379
+            EOF
 
-          redis-server redis.conf
+            redis-server redis.conf
 
-      livenessProbe:
-        exec:
-          command:
-            - /bin/sh   # Run shell
-            - -c        # Read from string
-            - |         # Multi-line str
-              set -eum
+        livenessProbe:
+          exec:
+            command:
+              - /bin/sh   # Run shell
+              - -c        # Read from string
+              - |         # Multi-line str
+                set -eum
 
-              response=$(timeout -s QUIT 30 redis-cli -h localhost -p 6379 ping)
-              if ["$response" != "PONG"]; then
-                  exit 1
-              fi
+                response=$(timeout -s QUIT 30 redis-cli -h localhost -p 6379 ping)
+                if ["$response" != "PONG"]; then
+                    exit 1
+                fi
 
 
 
@@ -98,28 +98,28 @@ spec:
     parameters:
       servers: localhost
   service:
-    container:
-      name: app
-      image: redis
-      command:
-        - /bin/bash   # Run shell
-        - -c        # Read from string
-        - |         # Multi-line str
-          set -eum
+    containers:
+      - name: app
+        image: redis
+        command:
+          - /bin/bash   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
+            set -eum
 
-          servers=( {{"{{.Inputs.Parameters.servers}}"}} )
+            servers=( {{"{{.Inputs.Parameters.servers}}"}} )
 
-          echo "Create cluster from ${servers[*]}"
+            echo "Create cluster from ${servers[*]}"
 
-          ips=($(getent hosts ${servers[*]} | awk '{print $1}'))
+            ips=($(getent hosts ${servers[*]} | awk '{print $1}'))
 
-          all=()
-          for i in ${!ips[*]}; do
-            all[i]=$(echo ${ips[$i]}:6379)
-          done
+            all=()
+            for i in ${!ips[*]}; do
+              all[i]=$(echo ${ips[$i]}:6379)
+            done
 
-          echo "Create cluster from ${all[*]}"
+            echo "Create cluster from ${all[*]}"
 
-          # Sleep a bit to compensate for Kubernetes delays.
-          sleep 10
-          redis-cli --cluster create --cluster-yes ${all[*]}
+            # Sleep a bit to compensate for Kubernetes delays.
+            sleep 10
+            redis-cli --cluster create --cluster-yes ${all[*]}

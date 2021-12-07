@@ -12,8 +12,8 @@ spec:
     - action: Service
       name: master
       service:
-        fromTemplate:
-          templateRef: redis.single.master
+        
+        templateRef: redis.single.master
 
     # Cause two partition failures with different duration
     - action: Chaos

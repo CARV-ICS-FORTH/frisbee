@@ -15,18 +15,18 @@ spec:
     - action: Service
       name: master
       service:
-        fromTemplate:
-          templateRef: redis.single.master
+        
+        templateRef: redis.single.master
 
     # Create a Slave node
     - action: Service
       name: slave
       depends: { running: [ master ] }
       service:
-        fromTemplate:
-          templateRef: redis.single.slave
-          inputs:
-            - { master: .service.master.any }
+        
+        templateRef: redis.single.slave
+        inputs:
+          - { master: .service.master.any }
 
 
     # Create a failover manager
@@ -34,10 +34,10 @@ spec:
       name: sentinel
       depends: { running: [ master, slave ] }
       service:
-        fromTemplate:
-          templateRef: redis.single.sentinel
-          inputs:
-            - { master: .service.master.any }
+        
+        templateRef: redis.single.sentinel
+        inputs:
+          - { master: .service.master.any }
 
 
     # Ingest keys in parallel, into different ranges

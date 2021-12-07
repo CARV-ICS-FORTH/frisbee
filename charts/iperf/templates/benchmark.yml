@@ -11,18 +11,18 @@ spec:
       memory: ""
       cpu: ""
   service:
-    agents: # Agents
+    decorators:
       telemetry: [ platform.telemetry.container ]
-    resources: # Resources
-      cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
-      memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
-    container: # Container
-      name: app
-      image: "networkstatic/iperf3"
-      ports:
-        - name: tcp
-          containerPort: 5201
-      args: [ "-s", "-f", "m" ]
+      resources: # Resources
+        cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
+        memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
+    containers: # Container
+      - name: app
+        image: "networkstatic/iperf3"
+        ports:
+          - name: tcp
+            containerPort: 5201
+        args: [ "-s", "-f", "m" ]
 
 
 
@@ -41,24 +41,24 @@ spec:
       cpu: ""
       seconds: "60"
   service:
-    agents:
+    decorators:
       telemetry: [ platform.telemetry.container, iperfmon.client ]
-    resources:
-      memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
-      cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
-    container:
-      name: app
-      image: "networkstatic/iperf3"
-      ports:
-        - name: tcp
-          containerPort: 5201
-      command:
-        - /bin/sh # Run shell
-        - -c # Read from string
-        - |  # Multi-line str
-          set -eum
-          trap "touch /dev/shm/stop" EXIT
+      resources:
+        memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
+        cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
+    containers:
+      - name: app
+        image: "networkstatic/iperf3"
+        ports:
+          - name: tcp
+            containerPort: 5201
+        command:
+          - /bin/sh # Run shell
+          - -c # Read from string
+          - |  # Multi-line str
+            set -eum
+            trap "touch /dev/shm/stop" EXIT
 
-          server={{"{{.Inputs.Parameters.server}}"}}
+            server={{"{{.Inputs.Parameters.server}}"}}
 
-          iperf3 -c ${server} -t {{"{{.Inputs.Parameters.seconds}}"}} -f m > /dev/shm/pipe
+            iperf3 -c ${server} -t {{"{{.Inputs.Parameters.seconds}}"}} -f m > /dev/shm/pipe

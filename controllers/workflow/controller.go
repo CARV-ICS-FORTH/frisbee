@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
+	serviceutils "github.com/carv-ics-forth/frisbee/controllers/service/utils"
 	"github.com/carv-ics-forth/frisbee/controllers/telemetry/grafana"
 	"github.com/carv-ics-forth/frisbee/controllers/utils"
 	"github.com/carv-ics-forth/frisbee/controllers/utils/lifecycle"
@@ -48,6 +49,8 @@ type Controller struct {
 	gvk schema.GroupVersionKind
 
 	state lifecycle.Classifier
+
+	serviceControl serviceutils.ServiceControlInterface
 }
 
 func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -323,7 +326,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	for _, action := range actionList {
-		job, err := r.getJob(action)
+		job, err := r.getJob(ctx, &cr, action)
 		if err != nil {
 			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "invalid action %s spec", action.Name))
 		}
@@ -392,6 +395,8 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 		Logger:  logger.WithName("workflow"),
 		gvk:     v1alpha1.GroupVersion.WithKind("Workflow"),
 	}
+
+	r.serviceControl = serviceutils.NewServiceControl(r)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named("workflow").

@@ -14,54 +14,53 @@ spec:
       memory: ""
   service:
     requirements: # Requirements
-      frisbee.io/pvc: datastore             # Will create a PVC and mount the volume
-      pvc.frisbee.io/spec: |
-        storageClassName: ssd-storage
-        accessModes:
-          - ReadWriteOnce
-        resources:
-          requests:
-            storage: 15Gi
-    volumes: # Manual volumes
-      - name: in-memory
-        emptyDir:
-          medium: Memory
-    agents: # Agents
+      persistentVolumeClaim:
+        name: datastore
+        spec:
+          storageClassName: ssd-storage
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 15Gi
+
+    decorators: # Decorators
       telemetry: [ platform.telemetry.container, tikv.telemetry.pd ]
-    resources: # Resources
-      cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
-      memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
-    container: # Container
-      name: app
-      image: pingcap/pd:v5.1.2
-      volumeMounts:
-        - name: datastore
-          mountPath: /store
-      ports:
-        - name: to-clients
-          containerPort: 2379
-        - name: to-cluster
-          containerPort: 2380
-      command:
-        - /bin/sh   # Run shell
-        - -c        # Read from string
-        - |         # Multi-line str
-          set -eum
-          trap "touch /dev/shm/stop" EXIT
+      resources: # Resources
+        cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
+        memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
 
-          rm -rf /store/$${HOSTNAME}
-          mkdir -p /store/$${HOSTNAME}/pd
+    containers: # Container
+      - name: app
+        image: pingcap/pd:v5.1.2
+        volumeMounts:
+          - name: datastore
+            mountPath: /store
+        ports:
+          - name: to-clients
+            containerPort: 2379
+          - name: to-cluster
+            containerPort: 2380
+        command:
+          - /bin/sh   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
+            set -eum
+            trap "touch /dev/shm/stop" EXIT
 
-          # see https://github.com/tikv/pd/blob/master/conf/config.toml
+            rm -rf /store/$${HOSTNAME}
+            mkdir -p /store/$${HOSTNAME}/pd
 
-          echo "Start PD server at $${HOSTNAME}"
+            # see https://github.com/tikv/pd/blob/master/conf/config.toml
 
-          /pd-server                                                  \
-          --client-urls=http://0.0.0.0:2379                           \
-          --advertise-client-urls=http://$${HOSTNAME}:2379            \
-          --peer-urls=http://0.0.0.0:2380                             \
-          --advertise-peer-urls=http://$${HOSTNAME}:2380              \
-          --data-dir=/store/$${HOSTNAME}/pd
+            echo "Start PD server at $${HOSTNAME}"
+
+            /pd-server                                                  \
+            --client-urls=http://0.0.0.0:2379                           \
+            --advertise-client-urls=http://$${HOSTNAME}:2379            \
+            --peer-urls=http://0.0.0.0:2380                             \
+            --advertise-peer-urls=http://$${HOSTNAME}:2380              \
+            --data-dir=/store/$${HOSTNAME}/pd
 
 
 ---
@@ -79,60 +78,59 @@ spec:
       memory: ""
   service:
     requirements: # Requirements
-      frisbee.io/pvc: datastore             # Will create a PVC and mount the volume
-      pvc.frisbee.io/spec: |
-        storageClassName: ssd-storage
-        accessModes:
-          - ReadWriteOnce
-        resources:
-          requests:
-            storage: 15Gi
-    volumes: # Manual volumes
-      - name: in-memory
-        emptyDir:
-          medium: Memory
-    agents: # Agents
+      persistentVolumeClaim:
+        name: datastore
+        spec:
+          storageClassName: ssd-storage
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 15Gi
+
+    decorators: # Decorators
       telemetry: [ platform.telemetry.container, tikv.telemetry.worker ]
-    resources: # Resources
-      cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
-      memory: {{"{{.Inputs.Parameters.memory}}" |quote}}
-    container: # Container
-      name: app
-      image: pingcap/tikv:v5.1.2
-      volumeMounts:
-        - name: in-memory
-          mountPath: /store
-      ports:
-        - name: clusterbus
-          containerPort: 20160
-      command:
-        - /bin/sh   # Run shell
-        - -c        # Read from string
-        - |         # Multi-line str
-          set -eum
-          trap "touch /dev/shm/stop" EXIT
+      resources: # Resources
+        cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
+        memory: {{"{{.Inputs.Parameters.memory}}" |quote}}
 
-          # increase the maximum number of open file descriptors
-          ulimit -n 82920
+    containers: # Container
+      - name: app
+        image: pingcap/tikv:v5.1.2
+        volumeMounts:
+          - name: in-memory
+            mountPath: /store
+        ports:
+          - name: clusterbus
+            containerPort: 20160
+        command:
+          - /bin/sh   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
+            set -eum
+            trap "touch /dev/shm/stop" EXIT
 
-          rm -rf /store/$${HOSTNAME}
-          mkdir -p /store/$${HOSTNAME}/data
+            # increase the maximum number of open file descriptors
+            ulimit -n 82920
 
-          # see https://github.com/tikv/tikv/blob/master/etc/config-template.toml
-          cat > config.toml <<EOF
-          [server]
-            addr="0.0.0.0:20160"
-            advertise-addr="$${HOSTNAME}:20160"
+            rm -rf /store/$${HOSTNAME}
+            mkdir -p /store/$${HOSTNAME}/data
 
-            # used by the prometheus agent
-            status-addr = "127.0.0.1:20180"
+            # see https://github.com/tikv/tikv/blob/master/etc/config-template.toml
+            cat > config.toml <<EOF
+            [server]
+              addr="0.0.0.0:20160"
+              advertise-addr="$${HOSTNAME}:20160"
 
-          [pd]
-            endpoints = ["{{"{{.Inputs.Parameters.placementDriver}}"}}:2379"]
+              # used by the prometheus agent
+              status-addr = "127.0.0.1:20180"
 
-          [storage]
-            reserve-space = "0"
-            data-dir = "/store/$${HOSTNAME}/data"
-          EOF
+            [pd]
+              endpoints = ["{{"{{.Inputs.Parameters.placementDriver}}"}}:2379"]
 
-          /tikv-server --config=config.toml
+            [storage]
+              reserve-space = "0"
+              data-dir = "/store/$${HOSTNAME}/data"
+            EOF
+
+            /tikv-server --config=config.toml

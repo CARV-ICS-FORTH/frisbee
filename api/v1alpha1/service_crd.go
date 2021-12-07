@@ -21,13 +21,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// Agents are sidecar services will be deployed in the same Pod as the Service container.
-type Agents struct {
-	// Telemetry is a list of references to monitoring packages.
-	// +optional
-	Telemetry []string `json:"telemetry,omitempty"`
-}
-
 // NIC specifies the capabilities of the emulated network interface.
 type NIC struct {
 	Rate    string `json:"rate,omitempty"`
@@ -63,43 +56,57 @@ type Resources struct {
 
 // ServiceSpec defines the desired state of Service.
 type ServiceSpec struct {
-	// Requirements points to Kinds and their respective configurations required for the Service operation.
-	// For example, this field can be used to create PVCs dedicated to this service.
 	// +optional
-	Requirements map[string]string `json:"requirements,omitempty"`
+	Requirements *Requirements `json:"requirements,omitempty"`
 
-	// FromTemplate populates the service fields from a template. This is used for backward compatibility
-	// with Cluster with just one instance. This field cannot be used in conjunction with other fields.
 	// +optional
-	FromTemplate *GenerateFromTemplate `json:"fromTemplate,omitempty"`
+	Decorators *Decorators `json:"decorators,omitempty"`
 
-	// List of sidecar agents
+	// +kubebuilder:validation:Optional
 	// +optional
-	Agents *Agents `json:"agents,omitempty"`
+	corev1.PodSpec `json:",inline,omitempty"`
+}
 
-	// Container is the container running the application
-	Container corev1.Container `json:"container,omitempty"`
+type Requirements struct {
+	// +optional
+	PVC *PVC `json:"persistentVolumeClaim,omitempty"`
+}
 
+type Placement struct {
+	Domain []string `json:"domain,omitempty"`
+}
+
+type PVC struct {
+	Name string                           `json:"name"`
+	Spec corev1.PersistentVolumeClaimSpec `json:"spec,omitempty"`
+}
+
+// Decorators takes in a PodSpec, add some functionality and returns it.
+type Decorators struct {
 	// Resources specifies limitations as to how the container will access host resources.
 	// +optional
 	Resources *Resources `json:"resources,omitempty"`
 
-	// List of volumes that can be mounted by containers belonging to the pod.
+	// Telemetry is a list of referenced agents responsible to monitor the Service.
+	// Agents are sidecar services will be deployed in the same Pod as the Service container.
 	// +optional
-	Volumes []corev1.Volume `json:"volumes,omitempty"`
+	Telemetry []string `json:"telemetry,omitempty"`
+
+	// Requirements points to Kinds and their respective configurations required for the Service operation.
+	// For example, this field can be used to create PVCs dedicated to this service.
+	// +optional
+	// Requirements map[string]string `json:"requirements,omitempty"`
+
+	// Container is the container running the application
+	// Container corev1.Container `json:"container,omitempty"`
 
 	// Domain specifies the location where Service will be placed.
 	// +optional
-	Domain []string `json:"domain,omitempty"`
+	Placement *Placement `json:"placement,omitempty"`
 
-	// Pod is used as the base for building the container
-	// +optional
-	Advanced `json:",inline"`
-}
-
-type Advanced struct {
-	// +optional
-	HostNetwork bool `json:"hostNetwork,omitempty"`
+	// Dashboard is dashboard payload that will be installed in Grafana.
+	// This option is only applicable to Agents.
+	Dashboards metav1.LabelSelector `json:"dashboards,omitempty"`
 }
 
 // ServiceStatus defines the observed state of Service.

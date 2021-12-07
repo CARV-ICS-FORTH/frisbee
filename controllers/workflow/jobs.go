@@ -29,12 +29,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (r *Controller) getJob(action v1alpha1.Action) (client.Object, error) {
+func (r *Controller) getJob(ctx context.Context, w *v1alpha1.Workflow, action v1alpha1.Action) (client.Object, error) {
 	logrus.Warn("Handle job ", action.Name)
 
 	switch action.ActionType {
 	case "Service":
-		return r.service(action)
+		return r.service(ctx, w, action)
 
 	case "Cluster":
 		return r.cluster(action)
@@ -47,12 +47,20 @@ func (r *Controller) getJob(action v1alpha1.Action) (client.Object, error) {
 	}
 }
 
-func (r *Controller) service(action v1alpha1.Action) (client.Object, error) {
+func (r *Controller) service(ctx context.Context, w *v1alpha1.Workflow, action v1alpha1.Action) (client.Object, error) {
 	var service v1alpha1.Service
 
-	service.SetName(action.Name)
+	if err := action.Service.Validate(false); err != nil {
+		return nil, errors.Wrapf(err, "template validation")
+	}
 
-	action.Service.DeepCopyInto(&service.Spec)
+	spec, err := r.serviceControl.GetServiceSpec(ctx, w.GetNamespace(), *action.Service)
+	if err != nil {
+		return nil, errors.Wrapf(err, "cannot get spec")
+	}
+
+	service.SetName(action.Name)
+	spec.DeepCopyInto(&service.Spec)
 
 	return &service, nil
 }

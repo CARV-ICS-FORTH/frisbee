@@ -19,10 +19,10 @@ spec:
     - action: Service
       name: master
       service:
-        fromTemplate:
-          templateRef: tikv.cluster.placement-driver
-          inputs:
-            - { cpu: "4", memory: "8Gi" }
+        
+        templateRef: tikv.cluster.placement-driver
+        inputs:
+          - { cpu: "4", memory: "8Gi" }
 
     - action: Cluster
       depends: { running: [ master ] }
@@ -39,10 +39,10 @@ spec:
       depends: { running: [ workers ] }
       name: loader
       service:
-        fromTemplate:
-          templateRef: ycsb.tikv.loader
-          inputs:
-            - { server: .service.master.any, workload: workloada, recordcount: "1000000", threads: "40" }
+        
+        templateRef: ycsb.tikv.loader
+        inputs:
+          - { server: .service.master.any, workload: workloada, recordcount: "1000000", threads: "40" }
 
 
     # Step 2: Run workload A, for various number of non-overlapping clients.

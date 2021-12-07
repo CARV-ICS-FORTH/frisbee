@@ -11,19 +11,18 @@ spec:
       - name: prometheus-config-volume
         configMap:
           name: prometheus-config
+    containers:
+      - name: prometheus
+        image: "prom/prometheus"
+        ports:
+          - name: http
+            containerPort: 9090
 
-    container:
-      name: prometheus
-      image: "prom/prometheus"
-      ports:
-        - name: http
-          containerPort: 9090
-
-      volumeMounts:
-        - name: prometheus-config-volume
-          mountPath: /etc/prometheus/prometheus.yml
-          subPath: prometheus.yml
-          readOnly: true
+        volumeMounts:
+          - name: prometheus-config-volume
+            mountPath: /etc/prometheus/prometheus.yml
+            subPath: prometheus.yml
+            readOnly: true
 
 ---
 apiVersion: frisbee.io/v1alpha1
@@ -38,31 +37,31 @@ spec:
       - name: grafana-config-volume
         configMap:
           name: grafana-config
-    resources:
-      memory: "4Gi"
-      cpu: "1"
-    container:
-      name: grafana
-      image: "grafana/grafana-oss:8.2.3"
-      ports:
-        - name: http
-          containerPort: 3000
+    containers:
+      - name: grafana
+        image: "grafana/grafana-oss:8.2.3"
+        ports:
+          - name: http
+            containerPort: 3000
+        resources:
+          requests:
+            memory: "4Gi"
+            cpu: "1"
+        volumeMounts:
+          - name: grafana-config-volume
+            mountPath: /etc/grafana/grafana.ini
+            subPath: grafana.ini
+            readOnly: true
 
-      volumeMounts:
-        - name: grafana-config-volume
-          mountPath: /etc/grafana/grafana.ini
-          subPath: grafana.ini
-          readOnly: true
+          - name: grafana-config-volume
+            mountPath: /etc/grafana/provisioning/dashboards/dashboard.yml
+            subPath: dashboard.yml
+            readOnly: true
 
-        - name: grafana-config-volume
-          mountPath: /etc/grafana/provisioning/dashboards/dashboard.yml
-          subPath: dashboard.yml
-          readOnly: true
-
-        - name: grafana-config-volume
-          mountPath: /etc/grafana/provisioning/datasources/prometheus.yml
-          subPath: prometheus.yml
-          readOnly: true
+          - name: grafana-config-volume
+            mountPath: /etc/grafana/provisioning/datasources/prometheus.yml
+            subPath: prometheus.yml
+            readOnly: true
 
 
 ---
@@ -102,11 +101,11 @@ data:
         kubernetes_sd_configs:
           - role: endpoints
             namespaces:
-             names:
-              -  {{.Release.Namespace}} # Replaced by HELM
+              names:
+                -  {{.Release.Namespace}} # Replaced by HELM
 
         relabel_configs:
-           # Condition 1. Monitor only the ports with name "mon-*". The * is used as type to the dashboard
+          # Condition 1. Monitor only the ports with name "mon-*". The * is used as type to the dashboard
           - source_labels: [ __meta_kubernetes_pod_container_port_name ]
             separator: ;
             regex: mon-(.*)

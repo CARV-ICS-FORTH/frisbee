@@ -6,14 +6,14 @@ metadata:
   labels:
     app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 spec:
-  monitor:
-    dashboards:
-      matchLabels:
-        dashboard: mongo-telegraf
+  service:
+    decorators:
+      dashboards:
+        matchLabels:
+          dashboard: mongo-telegraf
 
-    agent:
-      container:
-        name: telegraf
+    containers:
+      - name: telegraf
         image: telegraf:1.20.3
         ports:
           - name: mon-mongo
@@ -61,14 +61,14 @@ metadata:
   labels:
     app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 spec:
-  monitor:
-    dashboards:
-      matchLabels:
-        dashboard: mongo-exporter
+  service:
+    decorators:
+      dashboards:
+        matchLabels:
+          dashboard: mongo-exporter
 
-    agent:
-      container:
-        name: exporter
+    containers:
+      - name: exporter
         image: bitnami/mongodb-exporter:latest
         ports:
           - name: mon-mongo
@@ -88,9 +88,6 @@ spec:
             do
               sleep 10
             done
-
-
-
 
 
 

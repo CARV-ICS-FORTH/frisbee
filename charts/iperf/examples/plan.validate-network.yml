@@ -12,10 +12,10 @@ spec:
     - action: Service
       name: server
       service:
-        fromTemplate:
-          templateRef: iperf.server
-          inputs:
-            - { "cpu": "2", memory: "4Gi" }
+        
+        templateRef: iperf.server
+        inputs:
+          - { "cpu": "2", memory: "4Gi" }
 
     # Create an iperf client
     - action: Service
@@ -25,7 +25,7 @@ spec:
         state: '{{.Runtime.IsSuccessful "client"}} == true'
         sla: 'avg() OF query(wpFnYRwGk/2/bitrate, 5m, now) IS BELOW(1000)'
       service:
-        fromTemplate:
-          templateRef: iperf.client
-          inputs:
-            - { server: .service.server.any, seconds: "600" }
+        
+        templateRef: iperf.client
+        inputs:
+          - { server: .service.server.any, seconds: "600" }

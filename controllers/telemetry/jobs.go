@@ -46,15 +46,22 @@ func (r *Controller) installPrometheus(ctx context.Context, w *v1alpha1.Telemetr
 	}
 
 	{ // spec
-		prom.Spec.FromTemplate = &v1alpha1.GenerateFromTemplate{
+		fromtemplate := &v1alpha1.GenerateFromTemplate{
 			TemplateRef: prometheusTemplate,
 			Instances:   0,
 			Inputs:      nil,
 		}
 
-		if err := r.serviceControl.LoadSpecFromTemplate(ctx, &prom); err != nil {
-			return errors.Wrapf(err, "cannot get prometheus spec")
+		if err := fromtemplate.Validate(false); err != nil {
+			return errors.Wrapf(err, "template validation")
 		}
+
+		spec, err := r.serviceControl.GetServiceSpec(ctx, w.GetNamespace(), *fromtemplate)
+		if err != nil {
+			return errors.Wrapf(err, "cannot get spec")
+		}
+
+		spec.DeepCopyInto(&prom.Spec)
 	}
 
 	return utils.Create(ctx, r, w, &prom)
@@ -69,15 +76,22 @@ func (r *Controller) installGrafana(ctx context.Context, w *v1alpha1.Telemetry) 
 	}
 
 	{ // spec
-		grafana.Spec.FromTemplate = &v1alpha1.GenerateFromTemplate{
+		fromtemplate := &v1alpha1.GenerateFromTemplate{
 			TemplateRef: grafanaTemplate,
 			Instances:   0,
 			Inputs:      nil,
 		}
 
-		if err := r.serviceControl.LoadSpecFromTemplate(ctx, &grafana); err != nil {
-			return errors.Wrapf(err, "cannot get prometheus spec")
+		if err := fromtemplate.Validate(false); err != nil {
+			return errors.Wrapf(err, "template validation")
 		}
+
+		spec, err := r.serviceControl.GetServiceSpec(ctx, w.GetNamespace(), *fromtemplate)
+		if err != nil {
+			return errors.Wrapf(err, "cannot get spec")
+		}
+
+		spec.DeepCopyInto(&grafana.Spec)
 
 		if err := r.importDashboards(ctx, w, &grafana.Spec); err != nil {
 			return errors.Wrapf(err, "import dashboards")
@@ -92,14 +106,14 @@ func (r *Controller) importDashboards(ctx context.Context, obj *v1alpha1.Telemet
 
 	// iterate monitoring services
 	for _, monRef := range obj.Spec.ImportMonitors {
-		monSpec, err := r.serviceControl.GetMonitorSpec(ctx, obj.GetNamespace(), v1alpha1.GenerateFromTemplate{TemplateRef: monRef})
+		monSpec, err := r.serviceControl.GetServiceSpec(ctx, obj.GetNamespace(), v1alpha1.GenerateFromTemplate{TemplateRef: monRef})
 		if err != nil {
 			return errors.Wrapf(err, "cannot get spec for %s", monRef)
 		}
 
 		var configMaps corev1.ConfigMapList
 
-		selector, err := metav1.LabelSelectorAsSelector(&monSpec.Dashboards)
+		selector, err := metav1.LabelSelectorAsSelector(&monSpec.Decorators.Dashboards)
 		if err != nil {
 			return errors.Wrapf(err, "invalid dashboard definition")
 		}
@@ -132,7 +146,7 @@ func (r *Controller) importDashboards(ctx context.Context, obj *v1alpha1.Telemet
 					"configMap", configMap.GetName(),
 					"file", file)
 
-				spec.Container.VolumeMounts = append(spec.Container.VolumeMounts, corev1.VolumeMount{
+				spec.Containers[0].VolumeMounts = append(spec.Containers[0].VolumeMounts, corev1.VolumeMount{
 					Name:      configMap.GetName(), // Name of a Volume.
 					ReadOnly:  true,
 					MountPath: filepath.Join(grafanaDashboards, file), // Path within the container

@@ -25,251 +25,156 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
 func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Service) error {
-	if cr.Spec.FromTemplate != nil {
-		if err := r.serviceControl.LoadSpecFromTemplate(ctx, cr); err != nil {
-			return errors.Wrapf(err, "cannot get spec")
-		}
-
-		// from now on, we will use the populated fields, not the template.
-		cr.Spec.FromTemplate = nil
-
-		if err := utils.Update(ctx, r, cr); err != nil {
-			return errors.Wrapf(err, "cannot update populated fields")
-		}
-	}
-
 	if err := prepareRequirements(ctx, r, cr); err != nil {
 		return errors.Wrapf(err, "requirements error")
 	}
 
-	pod, err := constructPod(ctx, r, cr)
-	if err != nil {
-		return err
+	if err := decoratePod(ctx, r, cr); err != nil {
+		return errors.Wrapf(err, "decorator error")
 	}
 
-	discovery := constructDiscoveryService(cr, pod)
+	discovery, discoveryLabels := constructDiscoveryService(cr)
 
 	if err := utils.Create(ctx, r, cr, discovery); err != nil {
 		return errors.Wrapf(err, "cannot create discovery service")
 	}
 
-	if err := utils.Create(ctx, r, cr, pod); err != nil {
+	// finally, create the pod
+	var pod corev1.Pod
+
+	pod.SetName(cr.GetName())
+	pod.SetAnnotations(cr.GetAnnotations())
+	pod.SetLabels(labels.Merge(cr.GetLabels(), discoveryLabels))
+	cr.Spec.PodSpec.DeepCopyInto(&pod.Spec)
+
+	if err := utils.Create(ctx, r, cr, &pod); err != nil {
 		return errors.Wrapf(err, "cannot create pod")
 	}
 
 	return nil
 }
 
-const (
-	RequirePersistentVolumeClaim = "frisbee.io/pvc"
-	PersistentVolumeClaimSpec    = "pvc.frisbee.io/spec"
-)
-
 func prepareRequirements(ctx context.Context, r *Controller, cr *v1alpha1.Service) error {
-	requirements := cr.Spec.Requirements
-	if requirements == nil {
+	if cr.Spec.Requirements == nil {
 		return nil
 	}
 
-	// handle persistent volume claims
-	volumeName, exists := requirements[RequirePersistentVolumeClaim]
-	if !exists {
-		return nil
-	}
+	// Volume
+	if req := cr.Spec.Requirements.PVC; req != nil {
+		var pvc corev1.PersistentVolumeClaim
 
-	config, ok := requirements[PersistentVolumeClaimSpec]
-	if !ok {
-		return errors.New("no PVC config")
-	}
+		pvc.SetName(cr.GetName())
+		req.Spec.DeepCopyInto(&pvc.Spec)
 
-	var content map[string]interface{}
+		if err := utils.Create(ctx, r, cr, &pvc); err != nil {
+			return errors.Wrapf(err, "cannot create pvc")
+		}
 
-	if err := yaml.Unmarshal([]byte(config), &content); err != nil {
-		return errors.Wrapf(err, "cannot unmarshal pvc content")
-	}
-
-	var pvc unstructured.Unstructured
-
-	pvc.SetUnstructuredContent(map[string]interface{}{
-		"spec": content,
-	})
-	pvc.SetAPIVersion("v1")
-	pvc.SetKind("PersistentVolumeClaim")
-	pvc.SetName(cr.GetName())
-
-	if err := utils.Create(ctx, r, cr, &pvc); err != nil {
-		return errors.Wrapf(err, "cannot create pvc")
-	}
-
-	volume := corev1.Volume{
-		Name: volumeName,
-		VolumeSource: corev1.VolumeSource{
-			PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-				ClaimName: pvc.GetName(),
-				ReadOnly:  false,
+		// auto-mount the created pvc.
+		volume := corev1.Volume{
+			Name: req.Name,
+			VolumeSource: corev1.VolumeSource{
+				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+					ClaimName: pvc.GetName(),
+					ReadOnly:  false,
+				},
 			},
-		},
-	}
+		}
 
-	cr.Spec.Volumes = append(cr.Spec.Volumes, volume)
+		cr.Spec.Volumes = append(cr.Spec.Volumes, volume)
+	}
 
 	return nil
 }
 
-func constructPod(ctx context.Context, r *Controller, obj *v1alpha1.Service) (*corev1.Pod, error) {
-	var pod corev1.Pod
-
-	{ // metadata
-		pod.SetName(obj.GetName())
-
-		pod.SetLabels(obj.GetLabels())
-		pod.SetAnnotations(obj.GetAnnotations())
+func decoratePod(ctx context.Context, r *Controller, cr *v1alpha1.Service) error {
+	if cr.Spec.Decorators == nil {
+		return nil
 	}
 
-	{ // spec
-		setPlacement(obj, &pod)
-
-		pod.Spec.HostNetwork = obj.Spec.Advanced.HostNetwork
-		pod.Spec.RestartPolicy = corev1.RestartPolicyNever
-		pod.Spec.Volumes = obj.Spec.Volumes
-
-		pod.Spec.Containers = []corev1.Container{setContainer(obj)}
-	}
-
-	{ // deployment
-		if err := setAgents(ctx, r, obj, &pod); err != nil {
-			return nil, errors.Wrapf(err, "agent deployment error")
+	// set placement policies
+	if req := cr.Spec.Decorators.Placement; req != nil {
+		// for the moment simply match domain to a specific node. this will change in the future
+		if len(req.Domain) > 0 {
+			cr.Spec.Affinity = &corev1.Affinity{
+				NodeAffinity: &corev1.NodeAffinity{ // Match pods to a node
+					RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+						NodeSelectorTerms: []corev1.NodeSelectorTerm{
+							{
+								MatchExpressions: []corev1.NodeSelectorRequirement{
+									{
+										Key:      "kubernetes.io/hostname",
+										Operator: corev1.NodeSelectorOpIn,
+										Values:   req.Domain,
+									},
+								},
+							},
+						},
+					}, // Equally, for podAntiAffinity
+				},
+			}
 		}
 	}
 
-	return &pod, nil
-}
+	// set resources, to the first container only
+	if req := cr.Spec.Decorators.Resources; req != nil {
+		if len(cr.Spec.Containers) != 1 {
+			return errors.New("Decoration resources are not applicable for multiple containers")
+		}
 
-func setContainer(obj *v1alpha1.Service) corev1.Container {
-	spec := obj.Spec
-
-	container := obj.Spec.Container
-
-	// security
-	privilege := true
-
-	securityContext := corev1.SecurityContext{
-		Capabilities: &corev1.Capabilities{
-			Add:  []corev1.Capability{"SYS_ADMIN", "CAP_SYS_RESOURCE", "IPC_LOCK"},
-			Drop: nil,
-		},
-		Privileged: &privilege,
-	}
-
-	container.SecurityContext = &securityContext
-	container.TTY = true
-
-	// deployment
-	if spec.Resources != nil {
 		resources := make(map[corev1.ResourceName]resource.Quantity)
 
-		if len(spec.Resources.CPU) > 0 {
-			resources[corev1.ResourceCPU] = resource.MustParse(spec.Resources.CPU)
+		if len(req.CPU) > 0 {
+			resources[corev1.ResourceCPU] = resource.MustParse(req.CPU)
 		}
 
-		if len(spec.Resources.Memory) > 0 {
-			resources[corev1.ResourceMemory] = resource.MustParse(spec.Resources.Memory)
+		if len(req.Memory) > 0 {
+			resources[corev1.ResourceMemory] = resource.MustParse(req.Memory)
 		}
 
-		container.Resources = corev1.ResourceRequirements{
+		cr.Spec.Containers[0].Resources = corev1.ResourceRequirements{
 			Limits:   resources,
 			Requests: resources,
 		}
 	}
 
-	return container
-}
+	// import telemetry agents
+	if req := cr.Spec.Decorators.Telemetry; req != nil {
+		// import monitoring agents to the service
+		for _, monRef := range req {
+			monSpec, err := r.serviceControl.GetServiceSpec(ctx, cr.GetNamespace(), v1alpha1.GenerateFromTemplate{TemplateRef: monRef})
+			if err != nil {
+				return errors.Wrapf(err, "cannot get monitor")
+			}
 
-func setAgents(ctx context.Context, r *Controller, obj *v1alpha1.Service, pod *corev1.Pod) error {
-	spec := obj.Spec
+			if len(monSpec.Containers) != 1 {
+				return errors.Wrapf(err, "invalid agent %s", monRef)
+			}
 
-	if spec.Agents == nil {
-		return nil
-	}
-
-	// import monitoring agents to the service
-	for _, monRef := range spec.Agents.Telemetry {
-		monSpec, err := r.serviceControl.GetMonitorSpec(ctx, obj.GetNamespace(), v1alpha1.GenerateFromTemplate{TemplateRef: monRef})
-		if err != nil {
-			return errors.Wrapf(err, "cannot get monitor")
+			cr.Spec.Containers = append(cr.Spec.Containers, monSpec.Containers[0])
+			cr.Spec.Volumes = append(cr.Spec.Volumes, monSpec.Volumes...)
+			cr.Spec.Volumes = append(cr.Spec.Volumes, monSpec.Volumes...)
 		}
-
-		pod.Spec.Volumes = append(pod.Spec.Volumes, monSpec.Agent.Volumes...)
-		pod.Spec.Containers = append(pod.Spec.Containers, monSpec.Agent.Container)
 	}
+
+	// set default values
+	cr.Spec.RestartPolicy = corev1.RestartPolicyNever
 
 	return nil
 }
 
-func setPlacement(obj *v1alpha1.Service, pod *corev1.Pod) {
-	spec := obj.Spec
-
-	// for the moment simply match domain to a specific node. this will change in the future
-	if len(spec.Domain) > 0 {
-		pod.Spec.Affinity = &corev1.Affinity{
-			NodeAffinity: &corev1.NodeAffinity{ // Match pods to a node
-				RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
-					NodeSelectorTerms: []corev1.NodeSelectorTerm{
-						{
-							MatchExpressions: []corev1.NodeSelectorRequirement{
-								{
-									Key:      "kubernetes.io/hostname",
-									Operator: corev1.NodeSelectorOpIn,
-									Values:   spec.Domain,
-								},
-							},
-						},
-					},
-				},
-			},
-		}
-	}
-
-	/*
-	   affinity:
-	      podAffinity:
-	        requiredDuringSchedulingIgnoredDuringExecution:
-	        - labelSelector:
-	            matchExpressions:
-	            - key: app
-	              operator: In
-	              values:
-	              - local-test-affinity
-	          topologyKey: kubernetes.io/hostname
-
-	      podAntiAffinity:
-	        requiredDuringSchedulingIgnoredDuringExecution:
-	        - labelSelector:
-	            matchExpressions:
-	            - key: app
-	              operator: In
-	              values:
-	              - local-test-anti-affinity
-	          topologyKey: kubernetes.io/hostname
-	*/
-}
-
-func constructDiscoveryService(obj *v1alpha1.Service, pod *corev1.Pod) *corev1.Service {
-	spec := obj.Spec
-
+func constructDiscoveryService(cr *v1alpha1.Service) (*corev1.Service, labels.Set) {
 	// register ports from containers and sidecars
 	var allPorts []corev1.ServicePort
 
-	for _, container := range pod.Spec.Containers {
+	for _, container := range cr.Spec.Containers {
 		for _, port := range container.Ports {
 			if port.ContainerPort == 0 {
-				spew.Dump(spec)
+				spew.Dump(cr.Spec)
 
 				panic("invalid port")
 			}
@@ -290,41 +195,15 @@ func constructDiscoveryService(obj *v1alpha1.Service, pod *corev1.Pod) *corev1.S
 
 	kubeService := corev1.Service{}
 
-	kubeService.SetName(pod.GetName())
+	kubeService.SetName(cr.GetName())
 
 	kubeService.Spec.Ports = allPorts
 	kubeService.Spec.ClusterIP = clusterIP
 
 	// bind service to the pod
-	service2Pod := map[string]string{pod.GetName(): "discover"}
+	service2Pod := map[string]string{cr.GetName(): "discover"}
 
 	kubeService.Spec.Selector = service2Pod
-	pod.SetLabels(labels.Merge(pod.GetLabels(), service2Pod))
 
-	return &kubeService
+	return &kubeService, service2Pod
 }
-
-/*
-func (*Controller) setPlacementConstraints(obj *v1alpha1.Service, pod *corev1.Pod) {
-	domainLabels := map[string]string{"domain": obj.Spec.Domain}
-	obj.SetLabels(labels.Merge(obj.GetLabels(), domainLabels))
-
-	pod.Spec.Affinity = &corev1.Affinity{
-		NodeAffinity: nil,
-		PodAffinity: &corev1.PodAffinity{
-			PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
-				{
-					Weight: 1,
-					PodAffinityTerm: corev1.PodAffinityTerm{
-						LabelSelector: &metav1.LabelSelector{
-							matchLabels: domainLabels,
-						},
-						TopologyKey: "kubernetes.io/hostname",
-					},
-				},
-			},
-		},
-		PodAntiAffinity: nil,
-	}
-}
-*/

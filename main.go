@@ -138,7 +138,7 @@ func main() {
 	/*
 		Our existing call to SetupWebhookWithManager registers our conversion webhooks with the manager, too.
 	*/
-	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+	if os.Getenv("ENABLE_WEBHOOKS") == "true" {
 		if err = (&frisbeev1alpha1.Workflow{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Workflow")
 			os.Exit(1)

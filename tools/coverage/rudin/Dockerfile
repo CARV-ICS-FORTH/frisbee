@@ -49,6 +49,4 @@ WORKDIR code
 
 COPY --from=builder /code/${TargetBin} ${TargetBin}
 
-RUN lighttpd -f /etc/lighttpd/lighttpd.conf
-
 ENTRYPOINT ["/kcov", "--exclude-pattern=/usr", "/var/www/html/htdocs/", "${TargetBin}"]

@@ -24,7 +24,6 @@ import (
 	"github.com/carv-ics-forth/frisbee/controllers/utils"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/json"
-	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
 type ServiceControlInterface interface {
@@ -32,9 +31,7 @@ type ServiceControlInterface interface {
 
 	GetServiceSpecList(ctx context.Context, namespace string, fromTemplate v1alpha1.GenerateFromTemplate) ([]v1alpha1.ServiceSpec, error)
 
-	GetMonitorSpec(ctx context.Context, namespace string, fromTemplate v1alpha1.GenerateFromTemplate) (v1alpha1.MonitorSpec, error)
-
-	LoadSpecFromTemplate(ctx context.Context, obj *v1alpha1.Service) error
+	// LoadSpecFromTemplate(ctx context.Context, obj *v1alpha1.Service) error
 
 	Select(ctx context.Context, nm string, ss *v1alpha1.ServiceSelector) (v1alpha1.SList, error)
 }
@@ -110,53 +107,6 @@ func (s *ServiceControl) GetServiceSpec(ctx context.Context, namespace string, f
 	lookupCache := make(map[string]v1alpha1.SList)
 
 	return s.generateSpecFromScheme(ctx, namespace, &scheme, fromTemplate.GetInput(0), lookupCache)
-}
-
-func (s *ServiceControl) LoadSpecFromTemplate(ctx context.Context, obj *v1alpha1.Service) error {
-	if err := obj.Spec.FromTemplate.Validate(false); err != nil {
-		return errors.Wrapf(err, "template validation")
-	}
-
-	spec, err := s.GetServiceSpec(ctx, obj.GetNamespace(), *obj.Spec.FromTemplate)
-	if err != nil {
-		return errors.Wrapf(err, "cannot get spec")
-	}
-
-	spec.DeepCopyInto(&obj.Spec)
-
-	return nil
-}
-
-func (s *ServiceControl) GetMonitorSpec(ctx context.Context, namespace string, fromTemplate v1alpha1.GenerateFromTemplate) (v1alpha1.MonitorSpec, error) {
-	template, err := s.getTemplate(ctx, namespace, fromTemplate.TemplateRef)
-	if err != nil {
-		return v1alpha1.MonitorSpec{}, errors.Wrapf(err, "template %s error", fromTemplate.TemplateRef)
-	}
-
-	// convert the service to a json and then expand templated values.
-	monSpec, err := json.Marshal(template.Spec.Monitor)
-	if err != nil {
-		return v1alpha1.MonitorSpec{}, errors.Errorf("cannot marshal service of %s", fromTemplate.TemplateRef)
-	}
-
-	scheme := templateutils.Scheme{
-		Inputs: template.Spec.Inputs,
-		Spec:   string(monSpec),
-	}
-
-	genericSpec, err := templateutils.Evaluate(&scheme)
-	if err != nil {
-		return v1alpha1.MonitorSpec{}, errors.Wrapf(err, "cannot convert scheme to spec")
-	}
-
-	var spec v1alpha1.MonitorSpec
-
-	if err := yaml.Unmarshal([]byte(genericSpec), &spec); err != nil {
-		return v1alpha1.MonitorSpec{}, errors.Wrapf(err, "decoding error")
-	}
-
-	return spec, nil
-
 }
 
 func (s *ServiceControl) Select(ctx context.Context, nm string, ss *v1alpha1.ServiceSelector) (v1alpha1.SList, error) {

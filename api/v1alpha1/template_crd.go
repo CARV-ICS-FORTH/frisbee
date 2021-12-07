@@ -27,14 +27,6 @@ type Inputs struct {
 	Parameters map[string]string `json:"parameters,omitempty"`
 }
 
-type MonitorSpec struct {
-	// Agent is the sidecar that will be deployed in the same pod as the app
-	Agent ServiceSpec `json:"agent,omitempty"`
-
-	// Dashboard is dashboard payload that will be installed in Grafana.
-	Dashboards metav1.LabelSelector `json:"dashboards,omitempty"`
-}
-
 // TemplateSpec defines the desired state of Template
 type TemplateSpec struct {
 	// Inputs are dynamic fields that populate the spec.
@@ -47,9 +39,6 @@ type TemplateSpec struct {
 type EmbedSpecs struct {
 	// +optional
 	Service *ServiceSpec `json:"service,omitempty"`
-
-	// +optional
-	Monitor *MonitorSpec `json:"monitor,omitempty"`
 }
 
 // TemplateStatus defines the observed state of Template
