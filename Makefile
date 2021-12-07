@@ -154,6 +154,7 @@ undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/confi
 release: ## Release a new version of Frisbee.
 	if [[ -z "${VERSION}" ]]; then echo "VERSION is not set"; exit 1; fi
 	echo "${VERSION}" > VERSION
+	git pull
 	git add VERSION
 	git commit -m "Bump version"
 	git tag ${VERSION}

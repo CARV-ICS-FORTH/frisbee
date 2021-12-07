@@ -30,12 +30,12 @@ maintainers:
 dependencies:
   - name: volumes
     version: 0.0.0
-    repository: "file://./charts/volumes"
+    repository: "file://./sub-charts/volumes"
   - name: chaos
-    repository: "file://./charts/chaos"
+    repository: "file://./sub-charts/chaos"
     version: 0.0.0
   - name: telemetry
-    repository: "file://./charts/telemetry"
+    repository: "file://./sub-charts/telemetry"
     version: 0.0.0
 
 
