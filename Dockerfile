@@ -1,4 +1,4 @@
-# Build the manager binary
+# Build the Frisbee operator binary
 FROM golang:1.17 as builder
 
 WORKDIR /workspace
@@ -16,13 +16,30 @@ COPY controllers/ controllers/
 COPY pkg/ pkg/
 
 # Build
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o manager main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o /manager main.go
 
-# Use distroless as minimal base image to package the manager binary
-# Refer to https://github.com/GoogleContainerTools/distroless for more details
-FROM gcr.io/distroless/static:nonroot
-WORKDIR /
-COPY --from=builder /workspace/manager .
-USER 65532:65532
+# Use alpine as minimal base image to package the Frisbee operator binary
+# We use a non-root user setup.
+#
+# usage:
+# $ docker build --build-arg "USER=someuser" . -t test
+# $ docker run --rm -v ${HOME}/.kube/:/home/default/.kube test
+FROM alpine
+
+ARG USER=default
+ENV HOME /home/$USER
+
+# install sudo as root
+RUN apk add --update sudo
+
+# add new user
+RUN adduser -D $USER \
+        && echo "$USER ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/$USER \
+        && chmod 0440 /etc/sudoers.d/$USER
+
+USER $USER
+WORKDIR $HOME
+
+COPY --from=builder /manager /
 
 ENTRYPOINT ["/manager"]

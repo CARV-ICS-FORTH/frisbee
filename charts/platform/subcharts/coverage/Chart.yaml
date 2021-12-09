@@ -1,9 +1,10 @@
----
 apiVersion: v2
-name: platform
-description: Frisbee is a Kubernetes platform for exploring, testing, and benchmarking distributed applications.
+name: coverage
+description: This sub-chart contains the Frisbee coverage tools
 
-# A chart can be either an 'application' or a 'library' chart.
+annotations:
+  category: Infrastructure
+
 #
 # Application charts are a collection of templates that can be packaged into versioned archives
 # to be deployed.
@@ -19,28 +20,17 @@ type: application
 # It is recommended to use it with quotes.
 appVersion: "1.16.0"
 
-annotations:
-  category: Infrastructure
+# The dependency commands operate on that file, making it easy to synchronize between
+# the desired dependencies and the actual dependencies stored in the 'charts/' directory.
+dependencies:
+  - name: sonarqube
+    condition: sonarqube.enabled
+    version: 1.2.1+162
+    repository: https://SonarSource.github.io/helm-chart-sonarqube
 
 maintainers:
   - name: Fotis Nikolaidis
     email: nikolaidis.fotis@gmail.com
-    url: https://www.linkedin.com/in/fotis-nikolaidis-444a6634/
-
-dependencies:
-  - name: volumes
-    version: 0.0.0
-    repository: "file://./subcharts/volumes"
-  - name: chaos
-    repository: "file://./subcharts/chaos"
-    version: 0.0.0
-  - name: telemetry
-    repository: "file://./subcharts/telemetry"
-    version: 0.0.0
-  - name: coverage
-    repository: "file://./subcharts/coverage"
-    version: 0.0.0
-
 
 # This is the chart version. This version number should be incremented each time you make changes
 # to the chart and its templates, including the app version.

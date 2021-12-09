@@ -46,6 +46,7 @@ func (r *Controller) installPrometheus(ctx context.Context, w *v1alpha1.Telemetr
 	}
 
 	{ // spec
+
 		fromtemplate := &v1alpha1.GenerateFromTemplate{
 			TemplateRef: prometheusTemplate,
 			Instances:   0,

@@ -2,6 +2,15 @@
 ## Global Frisbee Platform parameters
 ##
 
+favorite:
+  drink: coffee
+  food: pizza
+pizzaToppings:
+  - mushrooms
+  - cheese
+  - peppers
+  - onions
+
 ## @param global.ingress DNS name for making Telemetry stack accessible outside the cluster.
 ##
 global:
