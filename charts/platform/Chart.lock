@@ -1,0 +1,12 @@
+dependencies:
+- name: openebs
+  repository: https://openebs.github.io/charts
+  version: 3.0.0
+- name: chaos-mesh
+  repository: https://charts.chaos-mesh.org
+  version: 2.0.3
+- name: sonarqube
+  repository: https://SonarSource.github.io/helm-chart-sonarqube
+  version: 1.2.1+162
+digest: sha256:8d4ae30bf4e290e930038c7ee76cf1d2ac0be26d6115a534f8b97cb46b956ce0
+generated: "2021-12-09T21:14:03.525289528+02:00"

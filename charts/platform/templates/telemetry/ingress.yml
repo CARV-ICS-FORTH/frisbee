@@ -9,7 +9,7 @@ metadata:
 #    "kubernetes.io/ingress.class": "ambassador"
 spec:
   rules:
-    - host: prometheus.{{.Values.ingress}}
+    - host: prometheus.{{.Values.global.ingress}}
       http:
         paths:
           - path: /
@@ -20,7 +20,7 @@ spec:
                 port:
                   number: 3000
 
-    - host: grafana.{{.Values.ingress}}
+    - host: grafana.{{.Values.global.ingress}}
       http:
         paths:
           - path: /

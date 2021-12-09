@@ -4,7 +4,6 @@ another chart.
 In this method, each chart must be installed separately. However, this workflow may be more useful for cluster operators
 who have admin access to a cluster
 
-
-Charts vs Subcharts 
+Charts vs Subcharts
 
 https://newbedev.com/helm-conditionally-install-subchart
