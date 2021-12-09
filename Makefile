@@ -53,11 +53,6 @@ CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
 controller-gen:
 	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.6.1)
 
-KUSTOMIZE = $(shell pwd)/bin/kustomize
-kustomize:
-	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v3@v3.8.7)
-
-
 ENVTEST = $(shell pwd)/bin/setup-envtest
 envtest:
 	$(call go-get-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest@latest)
@@ -85,7 +80,7 @@ help: ## Display this help.
 ##@ Development
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
-	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+	$(CONTROLLER_GEN) $(CRD_OPTIONS) output:crd:artifacts:config=charts/platform/crds
 
 fmt: ## Run go fmt against code.
 	go fmt ./...
@@ -117,25 +112,18 @@ docker-run: docker-build ## Build and Run docker image for the Frisbee controlle
 	docker run --rm -ti -v ${HOME}/.kube/:/home/default/.kube ${IMG}
 
 
-#helm-build: generate ## Build helm charts for the Frisbee platform (charts/platform)
-	$(shell cp  ./config/crd/bases/* ./charts/platform/crds)
 
 ##@ Deployment
 docker-push: ## Push docker image for the Frisbee controller.
 	docker push ${IMG}
 
-install: generate kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
-	$(KUSTOMIZE) build config/crd | kubectl $(KUBECONFIG) apply -f -
 
-uninstall: generate kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config.
-	$(KUSTOMIZE) build config/crd | kubectl $(KUBECONFIG) delete -f -
+install: generate ## Deploy platform to the K8s cluster specified in ~/.kube/config.
+	echo ">> yamllint charts/platform/ | grep -v \"line too long\""
+	echo ">> helm upgrade --install my-frisbee charts/platform"
 
-deploy: generate kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
-	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
-	$(KUSTOMIZE) build config/default | kubectl $(KUBECONFIG) apply -f -
-
-undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
-	$(KUSTOMIZE) build config/default | kubectl delete -f -
+uninstall: ## Undeploy platform from the K8s cluster specified in ~/.kube/config.
+	echo ">> helm uninstall my-frisbee"
 
 
 release: ## Release a new version of Frisbee.

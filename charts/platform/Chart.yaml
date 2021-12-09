@@ -27,19 +27,23 @@ maintainers:
     email: nikolaidis.fotis@gmail.com
     url: https://www.linkedin.com/in/fotis-nikolaidis-444a6634/
 
+icon: https://github.com/CARV-ICS-FORTH/frisbee/blob/main/docs/images/logo.jpg
+
 dependencies:
-  - name: volumes
-    version: 0.0.0
-    repository: "file://./subcharts/volumes"
-  - name: chaos
-    repository: "file://./subcharts/chaos"
-    version: 0.0.0
-  - name: telemetry
-    repository: "file://./subcharts/telemetry"
-    version: 0.0.0
-  - name: coverage
-    repository: "file://./subcharts/coverage"
-    version: 0.0.0
+  - name: openebs # Dynamic volume provisioning
+    condition: global.volumes.enabled
+    version: "3.0.0"
+    repository: https://openebs.github.io/charts
+
+  - name: chaos-mesh # Fault injection
+    condition: global.chaos.enabled
+    version: "2.0.3"
+    repository: https://charts.chaos-mesh.org
+
+  - name: sonarqube # Coverage
+    condition: global.coverage.enabled
+    version: 1.2.1+162
+    repository: https://SonarSource.github.io/helm-chart-sonarqube
 
 
 # This is the chart version. This version number should be incremented each time you make changes
