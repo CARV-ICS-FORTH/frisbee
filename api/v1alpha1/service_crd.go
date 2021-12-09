@@ -21,6 +21,18 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+type PVC struct {
+	Name string                           `json:"name"`
+	Spec corev1.PersistentVolumeClaimSpec `json:"spec,omitempty"`
+}
+
+// Requirements points to Kinds and their respective configurations required for the Service operation.
+// For example, this field can be used to create PVCs dedicated to this service.
+type Requirements struct {
+	// +optional
+	PVC *PVC `json:"persistentVolumeClaim,omitempty"`
+}
+
 // NIC specifies the capabilities of the emulated network interface.
 type NIC struct {
 	Rate    string `json:"rate,omitempty"`
@@ -54,31 +66,8 @@ type Resources struct {
 	Disk *Disk `json:"disk,omitempty"`
 }
 
-// ServiceSpec defines the desired state of Service.
-type ServiceSpec struct {
-	// +optional
-	Requirements *Requirements `json:"requirements,omitempty"`
-
-	// +optional
-	Decorators *Decorators `json:"decorators,omitempty"`
-
-	// +kubebuilder:validation:Optional
-	// +optional
-	corev1.PodSpec `json:",inline,omitempty"`
-}
-
-type Requirements struct {
-	// +optional
-	PVC *PVC `json:"persistentVolumeClaim,omitempty"`
-}
-
 type Placement struct {
 	Domain []string `json:"domain,omitempty"`
-}
-
-type PVC struct {
-	Name string                           `json:"name"`
-	Spec corev1.PersistentVolumeClaimSpec `json:"spec,omitempty"`
 }
 
 // Decorators takes in a PodSpec, add some functionality and returns it.
@@ -92,21 +81,27 @@ type Decorators struct {
 	// +optional
 	Telemetry []string `json:"telemetry,omitempty"`
 
-	// Requirements points to Kinds and their respective configurations required for the Service operation.
-	// For example, this field can be used to create PVCs dedicated to this service.
-	// +optional
-	// Requirements map[string]string `json:"requirements,omitempty"`
-
-	// Container is the container running the application
-	// Container corev1.Container `json:"container,omitempty"`
-
 	// Domain specifies the location where Service will be placed.
 	// +optional
 	Placement *Placement `json:"placement,omitempty"`
 
 	// Dashboard is dashboard payload that will be installed in Grafana.
 	// This option is only applicable to Agents.
+	// +optional
 	Dashboards metav1.LabelSelector `json:"dashboards,omitempty"`
+}
+
+// ServiceSpec defines the desired state of Service.
+type ServiceSpec struct {
+	// +optional
+	Requirements *Requirements `json:"requirements,omitempty"`
+
+	// +optional
+	Decorators *Decorators `json:"decorators,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	// +optional
+	corev1.PodSpec `json:",inline,omitempty"`
 }
 
 // ServiceStatus defines the observed state of Service.

@@ -4690,6 +4690,9 @@ spec:
                       type: object
                     type: array
                   requirements:
+                    description: Requirements points to Kinds and their respective
+                      configurations required for the Service operation. For example,
+                      this field can be used to create PVCs dedicated to this service.
                     properties:
                       persistentVolumeClaim:
                         properties:
