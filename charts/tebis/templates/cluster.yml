@@ -86,7 +86,8 @@ spec:
   service:
     decorators:
       telemetry: [ platform.telemetry.container ]
-      domain: [ {{"{{.Inputs.Parameters.domain}}" | quote}} ]
+      placement:
+        domain: [ {{"{{.Inputs.Parameters.domain}}" | quote}} ]
 
     containers:
       - name: app

@@ -42,6 +42,10 @@ import (
 // +kubebuilder:rbac:groups=frisbee.io,resources=workflows/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=frisbee.io,resources=workflows/finalizers,verbs=update
 
+// +kubebuilder:rbac:groups=frisbee.io,resources=services,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=frisbee.io,resources=services/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=frisbee.io,resources=services/finalizers,verbs=update
+
 type Controller struct {
 	ctrl.Manager
 	logr.Logger

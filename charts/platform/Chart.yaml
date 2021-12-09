@@ -31,17 +31,17 @@ icon: https://github.com/CARV-ICS-FORTH/frisbee/blob/main/docs/images/logo.jpg
 
 dependencies:
   - name: openebs # Dynamic volume provisioning
-    condition: global.volumes.enabled
+    condition: openebs.enabled
     version: "3.0.0"
     repository: https://openebs.github.io/charts
 
   - name: chaos-mesh # Fault injection
-    condition: global.chaos.enabled
+    condition: chaos-mesh.enabled
     version: "2.0.3"
     repository: https://charts.chaos-mesh.org
 
   - name: sonarqube # Coverage
-    condition: global.coverage.enabled
+    condition: sonarqube.enabled
     version: 1.2.1+162
     repository: https://SonarSource.github.io/helm-chart-sonarqube
 

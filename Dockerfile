@@ -40,6 +40,6 @@ RUN adduser -D $USER \
 USER $USER
 WORKDIR $HOME
 
-COPY --from=builder /manager /
+COPY --from=builder /manager ./
 
-ENTRYPOINT ["/manager"]
+ENTRYPOINT ["./manager"]

@@ -1,10 +1,35 @@
+{{- if .Values.operator.enabled }}
+# Create an account for the Frisbee Deployment.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: frisbee-account
+  labels:
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+
 ---
+# Glue between the rbac role and the Frisbee Account.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: manager-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: manager-role
+subjects:
+  - kind: ServiceAccount
+    name: frisbee-account
+    namespace: {{.Release.Namespace}}
+
+---
+# Deployment of the Frisbee controller.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: frisbee-operator
   labels:
-  #  app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 spec:
   replicas: 1
   selector:
@@ -15,6 +40,7 @@ spec:
       labels:
         control-plane: manager
     spec:
+      serviceAccountName: frisbee-account
       securityContext:
         runAsNonRoot: true
         runAsUser: 666
@@ -22,7 +48,7 @@ spec:
       terminationGracePeriodSeconds: 10
       containers:
         - name: manager
-          image: localhost:32000/frisbee-operator:latest
+          image: icsforth/frisbee-operator:latest
           ports:
             - containerPort: 9443
               name: webhook-server
@@ -32,7 +58,7 @@ spec:
             - /bin/sh   # Run shell
             - -c        # Read from string
             - |         # Multi-line str
-              ~/manager --leader-elect
+              ~/manager
 
           livenessProbe:
             httpGet:
@@ -47,3 +73,4 @@ spec:
               port: 8081
             initialDelaySeconds: 5
             periodSeconds: 10
+{{- end }}
