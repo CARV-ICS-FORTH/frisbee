@@ -1,5 +1,22 @@
-<a href="https://www.vectorstock.com/royalty-free-vector/disc-golf-frisbee-eps-vector-25179185" target="_blank"><figure><img src="https://github.com/CARV-ICS-FORTH/frisbee/blob/main/docs/images/logo.jpg" width="400"></figure></a>
+<div align="center">
+<a href="https://www.vectorstock.com/royalty-free-vector/disc-golf-frisbee-eps-vector-25179185">
+  <img src="docs/images/logo.jpg" width="400">
+</a>
+</div>
 
+
+
+# <div align="center">Frisbee – Kubernetes Native Testbed</div>
+
+🏗️ Spin up entire dependency stack
+
+🎁 Setup initial dependency state – easily!
+
+🏭 Test against actual, close to production software
+
+⏳ Spend no time writing mocks
+
+🕹️ Test actual program behavior and side effects
 
 ## Usage
 
