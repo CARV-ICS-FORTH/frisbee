@@ -27,7 +27,7 @@ spec:
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
-  name: tebis.cluster.boostrap
+  name: tebis.cluster.bootstrap
   labels:
     app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 spec:
@@ -67,6 +67,8 @@ spec:
             echo "Contact Zookeeper at ${zookeeper}"
             python /tebis_zk_init.py hosts regions ${zookeeper}
 
+            echo "Regions have been successfully created"
+
 
 ---
 apiVersion: frisbee.io/v1alpha1
@@ -80,22 +82,23 @@ spec:
     parameters:
       zookeeper: localhost
       device: "/tmp/tebis.dat"
-      rdma_subnet: "192.168.5"
       port: "6060"
-      domain: ""
   service:
     decorators:
+      annotations:
+        k8s.v1.cni.cncf.io/networks: macvlan-rdma
       telemetry: [ platform.telemetry.container ]
-      placement:
-        domain: [ {{"{{.Inputs.Parameters.domain}}" | quote}} ]
-
+      setFields:
+        - field: Containers.0.Ports.0.ContainerPort
+          value: {{"{{.Inputs.Parameters.port | int}}" | quote}}
     containers:
       - name: app
         image: icsforth/tebis-node:latest
-        #image: mellanox/centos_7_4_mofed_4_2_1_2_0_0_60
         ports:
           - name: to-clients
-            containerPort: {{"{{.Inputs.Parameters.port}}" | quote | int}}
+            containerPort: 0 # Will be populated by set field
+        securityContext:
+          privileged: true
         command:
           - /bin/sh   # Run shell
           - -c        # Read from string
@@ -105,20 +108,14 @@ spec:
 
             device={{"{{.Inputs.Parameters.device}}"}}
             zookeeper={{"{{.Inputs.Parameters.zookeeper}}:2181"}}
-            rdma={{"{{.Inputs.Parameters.rdma_subnet}}"}}
             port={{"{{.Inputs.Parameters.port}}"}}
             cores="0,1,2"
+
+            rdma=$(hostname -I | awk '{print $2}')
 
             echo "Pre-allocate space for Tebis server"
             fallocate --length 16G ${device}
 
-            echo /kreon-server/kreon_server ${device} ${device} ${zookeeper} ${rdma} ${port},${cores}
-
-            yum install -y net-tools
-
-            sleep 3600
-
-            ifconfig ib0 10.0.0.50/24
-
             echo "Starting Tebis server"
+            echo /kreon-server/kreon_server ${device} ${device} ${zookeeper} ${rdma} ${port},${cores}
             /kreon-server/kreon_server ${device} ${device} ${zookeeper} ${rdma} ${port},${cores}

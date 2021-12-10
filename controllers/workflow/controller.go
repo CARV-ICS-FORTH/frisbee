@@ -42,9 +42,9 @@ import (
 // +kubebuilder:rbac:groups=frisbee.io,resources=workflows/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=frisbee.io,resources=workflows/finalizers,verbs=update
 
-// +kubebuilder:rbac:groups=frisbee.io,resources=services,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=frisbee.io,resources=services/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=frisbee.io,resources=services/finalizers,verbs=update
+// +kubebuilder:rbac:groups=core,resources=configmaps,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=core,resources=configmaps/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=core,resources=configmaps/finalizers,verbs=update
 
 type Controller struct {
 	ctrl.Manager
@@ -266,6 +266,10 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "invalid dependency DAG"))
 		}
 
+		if err := utils.UseDefaultPlatformConfiguration(ctx, r, cr.GetNamespace()); err != nil {
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot get platform configuration"))
+		}
+
 		if cr.Spec.WithTelemetry != nil {
 			telemetryJob.SetName("telemetry")
 
@@ -332,7 +336,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	for _, action := range actionList {
 		job, err := r.getJob(ctx, &cr, action)
 		if err != nil {
-			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "invalid action %s spec", action.Name))
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "erroneous action [%s]", action.Name))
 		}
 
 		if err := InsertSLAAlert(action, &cr, job); err != nil {

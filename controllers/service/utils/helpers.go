@@ -43,7 +43,7 @@ func (s *ServiceControl) getTemplate(ctx context.Context, namespace string, ref 
 	}
 
 	if err := s.GetClient().Get(ctx, key, &template); err != nil {
-		return nil, errors.Wrapf(err, "cannot find template")
+		return nil, errors.Wrapf(err, "cannot find template [%s]", key.String())
 	}
 
 	return &template, nil

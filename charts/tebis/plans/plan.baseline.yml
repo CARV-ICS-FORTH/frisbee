@@ -13,7 +13,6 @@ spec:
     - action: Service
       name: zookeeper
       service:
-        
         templateRef: tebis.cluster.zookeeper
 
     # Initialize metadata in Zookeeper
@@ -22,7 +21,6 @@ spec:
       depends:
         running: [ zookeeper ]
       service:
-        
         templateRef: tebis.cluster.bootstrap
         inputs:
           - { zookeeper: .service.zookeeper.any }
@@ -33,10 +31,9 @@ spec:
       depends:
         success: [ boot ]
       service:
-        
         templateRef: tebis.cluster.master
         inputs:
-          - { zookeeper: .service.zookeeper.any, domain: "jedi8.cluster.ics.forth.gr", port: "6060" }
+          - { zookeeper: .service.zookeeper.any, port: "6060" }
 
     # Initialize a data node
     - action: Service
@@ -44,10 +41,9 @@ spec:
       depends:
         success: [ boot ]
       service:
-        
         templateRef: tebis.cluster.master
         inputs:
-          - { zookeeper: .service.zookeeper.any, domain: "jedi8.cluster.ics.forth.gr", port: "6061" }
+          - { zookeeper: .service.zookeeper.any,  port: "6061" }
 
 
     # Initialize a data node
@@ -56,7 +52,6 @@ spec:
       depends:
         success: [ boot ]
       service:
-        
         templateRef: tebis.cluster.master
         inputs:
-          - { zookeeper: .service.zookeeper.any, domain: "jedi8.cluster.ics.forth.gr", port: "6062" }
+          - { zookeeper: .service.zookeeper.any, port: "6062" }

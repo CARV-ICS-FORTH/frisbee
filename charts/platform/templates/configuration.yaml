@@ -1,0 +1,19 @@
+# Maintain a list of installation variables that need to be passed to the controller.
+  # See utils.Configuration
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: platform
+  labels:
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+data:
+  # If the operator runs within the cluster, it will reach Grafana via the service.
+  {{ if .Values.operator.enabled }}
+  PrometheusEndpoint: "http://prometheus:{{.Values.operator.prometheusPort}}"
+  GrafanaEndpoint: "http://grafana:{{.Values.operator.grafanaPort}}"
+  {{ else }}
+  # If the other runs outside the cluster, it will reach Grafana via the ingress.
+  PrometheusEndpoint: "http://prometheus.{{.Values.global.ingress}}"
+  GrafanaEndpoint: "http://grafana.{{.Values.global.ingress}}"
+  {{ end }}

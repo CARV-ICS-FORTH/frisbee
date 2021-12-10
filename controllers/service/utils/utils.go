@@ -46,6 +46,28 @@ func NewServiceControl(r utils.Reconciler) *ServiceControl {
 	}
 }
 
+func (s *ServiceControl) GetServiceSpec(ctx context.Context, namespace string, fromTemplate v1alpha1.GenerateFromTemplate) (v1alpha1.ServiceSpec, error) {
+	template, err := s.getTemplate(ctx, namespace, fromTemplate.TemplateRef)
+	if err != nil {
+		return v1alpha1.ServiceSpec{}, errors.Wrapf(err, "getTemplate error")
+	}
+
+	// convert the service to a json and then expand templated values.
+	serviceSpec, err := json.Marshal(template.Spec.Service)
+	if err != nil {
+		return v1alpha1.ServiceSpec{}, errors.Errorf("cannot marshal service of %s", fromTemplate.TemplateRef)
+	}
+
+	scheme := templateutils.Scheme{
+		Inputs: template.Spec.Inputs,
+		Spec:   string(serviceSpec),
+	}
+
+	lookupCache := make(map[string]v1alpha1.SList)
+
+	return s.generateSpecFromScheme(ctx, namespace, &scheme, fromTemplate.GetInput(0), lookupCache)
+}
+
 func (s *ServiceControl) GetServiceSpecList(ctx context.Context, namespace string, fromTemplate v1alpha1.GenerateFromTemplate) ([]v1alpha1.ServiceSpec, error) {
 	template, err := s.getTemplate(ctx, namespace, fromTemplate.TemplateRef)
 	if err != nil {
@@ -85,28 +107,6 @@ func (s *ServiceControl) GetServiceSpecList(ctx context.Context, namespace strin
 	}
 
 	return specs, nil
-}
-
-func (s *ServiceControl) GetServiceSpec(ctx context.Context, namespace string, fromTemplate v1alpha1.GenerateFromTemplate) (v1alpha1.ServiceSpec, error) {
-	template, err := s.getTemplate(ctx, namespace, fromTemplate.TemplateRef)
-	if err != nil {
-		return v1alpha1.ServiceSpec{}, errors.Wrapf(err, "template %s error", fromTemplate.TemplateRef)
-	}
-
-	// convert the service to a json and then expand templated values.
-	serviceSpec, err := json.Marshal(template.Spec.Service)
-	if err != nil {
-		return v1alpha1.ServiceSpec{}, errors.Errorf("cannot marshal service of %s", fromTemplate.TemplateRef)
-	}
-
-	scheme := templateutils.Scheme{
-		Inputs: template.Spec.Inputs,
-		Spec:   string(serviceSpec),
-	}
-
-	lookupCache := make(map[string]v1alpha1.SList)
-
-	return s.generateSpecFromScheme(ctx, namespace, &scheme, fromTemplate.GetInput(0), lookupCache)
 }
 
 func (s *ServiceControl) Select(ctx context.Context, nm string, ss *v1alpha1.ServiceSelector) (v1alpha1.SList, error) {

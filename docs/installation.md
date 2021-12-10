@@ -6,14 +6,59 @@ This tutorial describes how to deploy Frisbee and start running tests.
 
 Firstly, we need to install the requirements. For convenience, we have packaged them into Helm Charts.
 
-## Installation
+Make sure that [Microk8s](https://microk8s.io/docs) and  [Helm](https://helm.sh/docs/intro/install/) are installed on
+your system.
+
+*MicroK8s* is a CNCF certified upstream Kubernetes deployment that runs entirely on your workstation or edge device.
 
 ```bash
->> helm install my-deployment --create-namespace -n frisbee-testing ./
+# Install microk8s
+>> sudo snap install microk8s --classic
+
+# Create alias 
+>> sudo snap alias microk8s.kubectl kubectl
+
+# Enable Ingress
+>> microk8s enable dns ingress ambassador
+
+# Use microk8s config as the default kubernetes config
+>> microk8s config > config
+
+# Install Helm3
+>curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 ```
 
-By default helm will use the Kubernetes configuration from `~/.kube/config`. If you wish to run Frisbee on a remote
-cluster, use `--kubeconfig=~/.kube/config.remote`
+## Install the Platform
+
+First, install the Frisbee platform
+
+```bash
+>> helm repo add frisbee https://carv-ics-forth.github.io/frisbee/charts
+>> helm repo update
+>> helm upgrade --install my-frisbee frisbee/platform
+```
+
+Under circumstances, it may be needed to perform the "upgrade" twice.
+
+By default helm will use the Kubernetes configuration taken from `~/.kube/config`.
+
+If you wish to use another configuration
+
+```bash
+# Use a non-default configuration file
+>> helm upgrade --kubeconfig=~/.kube/config.remote  --install my-frisbee frisbee/platform
+# Use a non-default namespace
+>> helm upgrade --create-namespace -n another --install my-frisbee frisbee/platform
+```
+
+## Install the test components
+
+```bash
+# Install the package for monitoring YCSB output
+>> helm upgrade --install my-ycsb frisbee/ycsb
+# Install TiKV store
+>> helm upgrade --install my-tikv frisbee/tikv
+```
 
 #### Run the controller
 
@@ -150,22 +195,6 @@ Deploy as helm chart helm repo index ./ --url https://carv-ics-forth.github.io/f
 ## Before Starting
 
 ### Install Microk8s
-
-*MicroK8s* is a CNCF certified upstream Kubernetes deployment that runs entirely on your workstation or edge device.
-
-```bash
-# Install microk8s
->> sudo snap install microk8s --classic
-
-# Create alias 
->> sudo snap alias microk8s.kubectl kubectl
-
-# Enable Ingress
->> microk8s enable dns ingress ambassador
-
-# Use microk8s config as the default kubernetes config
->> microk8s config > config
-```
 
 Verify the installation
 

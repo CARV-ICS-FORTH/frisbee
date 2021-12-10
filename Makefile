@@ -116,10 +116,10 @@ docker-run: docker-build ## Build and Run docker image for the Frisbee controlle
 	docker run --rm -ti -v ${HOME}/.kube/:/home/default/.kube ${IMG}
 
 
-
 ##@ Deployment
-docker-push: ## Push docker image for the Frisbee controller.
-	docker push ${IMG}
+docker-push: docker-build ## Push the latest docker image for Frisbee controller.
+	docker tag ${IMG} $(IMAGE_TAG_BASE)/frisbee-operator:latest
+	docker push $(IMAGE_TAG_BASE)/frisbee-operator:latest
 
 
 install: generate ## Deploy platform to the K8s cluster specified in ~/.kube/config.

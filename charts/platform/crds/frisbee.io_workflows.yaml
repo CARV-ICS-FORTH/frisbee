@@ -1,4 +1,3 @@
-
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
@@ -16,341 +15,341 @@ spec:
     singular: workflow
   scope: Namespaced
   versions:
-  - name: v1alpha1
-    schema:
-      openAPIV3Schema:
-        description: Workflow is the Schema for the workflows API
-        properties:
-          apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
+    - name: v1alpha1
+      schema:
+        openAPIV3Schema:
+          description: Workflow is the Schema for the workflows API
+          properties:
+            apiVersion:
+              description: 'APIVersion defines the versioned schema of this representation
               of an object. Servers should convert recognized schemas to the latest
               internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
-            type: string
-          kind:
-            description: 'Kind is a string value representing the REST resource this
+              type: string
+            kind:
+              description: 'Kind is a string value representing the REST resource this
               object represents. Servers may infer this from the endpoint the client
               submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-            type: string
-          metadata:
-            type: object
-          spec:
-            description: WorkflowSpec defines the desired state of Workflow
-            properties:
-              actions:
-                description: Actions are the tasks that will be taken.
-                items:
-                  description: Action delegates arguments to the proper action handler.
-                  properties:
-                    action:
-                      type: string
-                    assert:
-                      description: Assert defines the conditions under which the workflow
-                        will terminate with a "passed" or "failed" message
-                      properties:
-                        sla:
-                          description: SLA is a Grafana alert that will be triggered
-                            if the SLA condition is met. SLA assertion is applicable
-                            throughout the execution of an action.
-                          type: string
-                        state:
-                          description: State describe the runtime condition that should
-                            be met after the action has been executed
-                          type: string
-                      required:
-                      - sla
-                      - state
-                      type: object
-                    chaos:
-                      description: ChaosSpec defines the desired state of Chaos
-                      properties:
-                        kill:
-                          description: KillSpec terminates the selected Pod. Because
-                            this failure is permanent, it can only be waited in the
-                            Running Phase. It does not go through Pass.
-                          properties:
-                            selector:
-                              properties:
-                                macro:
-                                  description: Macro abstract selector parameters
-                                    into a structured string (e.g, .cluster.master.all).
-                                    Every parsed field is represents an inner structure
-                                    of the selector. In case of invalid macro, the
-                                    selector will return empty results. Macro conflicts
-                                    with any other parameter.
-                                  type: string
-                                match:
-                                  description: Match contains the rules to select
-                                    target
-                                  enum:
-                                  - one
-                                  - all
-                                  - fixed
-                                  - fixed-percent
-                                  - random-max-percent
-                                  properties:
-                                    byCluster:
-                                      additionalProperties:
-                                        type: string
-                                      description: ByCluster defines the service group
-                                        where services belong.
-                                      type: object
-                                    byName:
-                                      additionalProperties:
-                                        items:
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: WorkflowSpec defines the desired state of Workflow
+              properties:
+                actions:
+                  description: Actions are the tasks that will be taken.
+                  items:
+                    description: Action delegates arguments to the proper action handler.
+                    properties:
+                      action:
+                        type: string
+                      assert:
+                        description: Assert defines the conditions under which the workflow
+                          will terminate with a "passed" or "failed" message
+                        properties:
+                          sla:
+                            description: SLA is a Grafana alert that will be triggered
+                              if the SLA condition is met. SLA assertion is applicable
+                              throughout the execution of an action.
+                            type: string
+                          state:
+                            description: State describe the runtime condition that should
+                              be met after the action has been executed
+                            type: string
+                        required:
+                          - sla
+                          - state
+                        type: object
+                      chaos:
+                        description: ChaosSpec defines the desired state of Chaos
+                        properties:
+                          kill:
+                            description: KillSpec terminates the selected Pod. Because
+                              this failure is permanent, it can only be waited in the
+                              Running Phase. It does not go through Pass.
+                            properties:
+                              selector:
+                                properties:
+                                  macro:
+                                    description: Macro abstract selector parameters
+                                      into a structured string (e.g, .cluster.master.all).
+                                      Every parsed field is represents an inner structure
+                                      of the selector. In case of invalid macro, the
+                                      selector will return empty results. Macro conflicts
+                                      with any other parameter.
+                                    type: string
+                                  match:
+                                    description: Match contains the rules to select
+                                      target
+                                    enum:
+                                      - one
+                                      - all
+                                      - fixed
+                                      - fixed-percent
+                                      - random-max-percent
+                                    properties:
+                                      byCluster:
+                                        additionalProperties:
                                           type: string
-                                        type: array
-                                      description: ByName is a map of string keys
-                                        and a set values that used to select services.
-                                        The key defines the namespace which services
-                                        belong, and the values is a set of service
-                                        names.
-                                      type: object
-                                  type: object
-                                mode:
-                                  description: 'Mode defines which of the selected
+                                        description: ByCluster defines the service group
+                                          where services belong.
+                                        type: object
+                                      byName:
+                                        additionalProperties:
+                                          items:
+                                            type: string
+                                          type: array
+                                        description: ByName is a map of string keys
+                                          and a set values that used to select services.
+                                          The key defines the namespace which services
+                                          belong, and the values is a set of service
+                                          names.
+                                        type: object
+                                    type: object
+                                  mode:
+                                    description: 'Mode defines which of the selected
                                     services to use. If undefined, all() is used Supported
                                     mode: one / all / fixed / fixed-percent / random-max-percent'
-                                  type: string
-                                value:
-                                  description: Value is required when the mode is
-                                    set to `FixedPodMode` / `FixedPercentPodMod` /
-                                    `RandomMaxPercentPodMod`. If `FixedPodMode`, provide
-                                    an integer of pods to do chaos action. If `FixedPercentPodMod`,
-                                    provide a number from 0-100 to specify the percent
-                                    of pods the server can do chaos action. IF `RandomMaxPercentPodMod`,  provide
-                                    a number from 0-100 to specify the max percent
-                                    of pods to do chaos action
-                                  type: string
-                              type: object
-                          type: object
-                        partition:
-                          description: PartitionSpec separate the given Pod from the
-                            rest of the network. This chaos typeis retractable (either
-                            manually or after a duration) and can be waited at both
-                            Running and Pass Phase. Running phase begins when the
-                            failure is injected. Pass begins when the failure is retracted.
-                            If anything goes wrong in between, the chaos goes into
-                            Failed phase.
-                          properties:
-                            duration:
-                              description: Duration is the time after which Frisbee
-                                will roll back the injected fault.
-                              type: string
-                            selector:
-                              properties:
-                                macro:
-                                  description: Macro abstract selector parameters
-                                    into a structured string (e.g, .cluster.master.all).
-                                    Every parsed field is represents an inner structure
-                                    of the selector. In case of invalid macro, the
-                                    selector will return empty results. Macro conflicts
-                                    with any other parameter.
-                                  type: string
-                                match:
-                                  description: Match contains the rules to select
-                                    target
-                                  enum:
-                                  - one
-                                  - all
-                                  - fixed
-                                  - fixed-percent
-                                  - random-max-percent
-                                  properties:
-                                    byCluster:
-                                      additionalProperties:
-                                        type: string
-                                      description: ByCluster defines the service group
-                                        where services belong.
-                                      type: object
-                                    byName:
-                                      additionalProperties:
-                                        items:
-                                          type: string
-                                        type: array
-                                      description: ByName is a map of string keys
-                                        and a set values that used to select services.
-                                        The key defines the namespace which services
-                                        belong, and the values is a set of service
-                                        names.
-                                      type: object
-                                  type: object
-                                mode:
-                                  description: 'Mode defines which of the selected
-                                    services to use. If undefined, all() is used Supported
-                                    mode: one / all / fixed / fixed-percent / random-max-percent'
-                                  type: string
-                                value:
-                                  description: Value is required when the mode is
-                                    set to `FixedPodMode` / `FixedPercentPodMod` /
-                                    `RandomMaxPercentPodMod`. If `FixedPodMode`, provide
-                                    an integer of pods to do chaos action. If `FixedPercentPodMod`,
-                                    provide a number from 0-100 to specify the percent
-                                    of pods the server can do chaos action. IF `RandomMaxPercentPodMod`,  provide
-                                    a number from 0-100 to specify the max percent
-                                    of pods to do chaos action
-                                  type: string
-                              type: object
-                          required:
-                          - selector
-                          type: object
-                        type:
-                          description: Type indicate the type of the injected fault
-                          enum:
-                          - partition
-                          - kill
-                          type: string
-                      required:
-                      - type
-                      type: object
-                    cluster:
-                      description: ClusterSpec defines the desired state of Cluster
-                      properties:
-                        domain:
-                          description: Domain specifies the location where Service
-                            will be placed.
-                          type: string
-                        inputs:
-                          description: Inputs are list of inputs passed to the objects.
-                            When used in conjunction with Instances, there can be
-                            only one input and all the instances will run with identical
-                            parameters. If Instances is defined and there are more
-                            than one inputs, the request will be rejected.
-                          items:
-                            additionalProperties:
-                              type: string
+                                    type: string
+                                  value:
+                                    description: Value is required when the mode is
+                                      set to `FixedPodMode` / `FixedPercentPodMod` /
+                                      `RandomMaxPercentPodMod`. If `FixedPodMode`, provide
+                                      an integer of pods to do chaos action. If `FixedPercentPodMod`,
+                                      provide a number from 0-100 to specify the percent
+                                      of pods the server can do chaos action. IF `RandomMaxPercentPodMod`,  provide
+                                      a number from 0-100 to specify the max percent
+                                      of pods to do chaos action
+                                    type: string
+                                type: object
                             type: object
-                          type: array
-                        instances:
-                          description: Instances dictate the number of objects to
-                            be created for the service. If Env is specified, the values
-                            with be identical across the spawned instances. For instances
-                            with different parameters, use Inputs.
-                          type: integer
-                        schedule:
-                          description: Schedule defines the interval between the creation
-                            of services within the group. Executed creation is not
-                            supported in collocated mode. Since Pods are intended
-                            to be disposable and replaceable, we cannot add a container
-                            to a Pod once it has been created
-                          properties:
-                            cron:
-                              description: "Cron defines a cron job rule. \n Some
+                          partition:
+                            description: PartitionSpec separate the given Pod from the
+                              rest of the network. This chaos typeis retractable (either
+                              manually or after a duration) and can be waited at both
+                              Running and Pass Phase. Running phase begins when the
+                              failure is injected. Pass begins when the failure is retracted.
+                              If anything goes wrong in between, the chaos goes into
+                              Failed phase.
+                            properties:
+                              duration:
+                                description: Duration is the time after which Frisbee
+                                  will roll back the injected fault.
+                                type: string
+                              selector:
+                                properties:
+                                  macro:
+                                    description: Macro abstract selector parameters
+                                      into a structured string (e.g, .cluster.master.all).
+                                      Every parsed field is represents an inner structure
+                                      of the selector. In case of invalid macro, the
+                                      selector will return empty results. Macro conflicts
+                                      with any other parameter.
+                                    type: string
+                                  match:
+                                    description: Match contains the rules to select
+                                      target
+                                    enum:
+                                      - one
+                                      - all
+                                      - fixed
+                                      - fixed-percent
+                                      - random-max-percent
+                                    properties:
+                                      byCluster:
+                                        additionalProperties:
+                                          type: string
+                                        description: ByCluster defines the service group
+                                          where services belong.
+                                        type: object
+                                      byName:
+                                        additionalProperties:
+                                          items:
+                                            type: string
+                                          type: array
+                                        description: ByName is a map of string keys
+                                          and a set values that used to select services.
+                                          The key defines the namespace which services
+                                          belong, and the values is a set of service
+                                          names.
+                                        type: object
+                                    type: object
+                                  mode:
+                                    description: 'Mode defines which of the selected
+                                    services to use. If undefined, all() is used Supported
+                                    mode: one / all / fixed / fixed-percent / random-max-percent'
+                                    type: string
+                                  value:
+                                    description: Value is required when the mode is
+                                      set to `FixedPodMode` / `FixedPercentPodMod` /
+                                      `RandomMaxPercentPodMod`. If `FixedPodMode`, provide
+                                      an integer of pods to do chaos action. If `FixedPercentPodMod`,
+                                      provide a number from 0-100 to specify the percent
+                                      of pods the server can do chaos action. IF `RandomMaxPercentPodMod`,  provide
+                                      a number from 0-100 to specify the max percent
+                                      of pods to do chaos action
+                                    type: string
+                                type: object
+                            required:
+                              - selector
+                            type: object
+                          type:
+                            description: Type indicate the type of the injected fault
+                            enum:
+                              - partition
+                              - kill
+                            type: string
+                        required:
+                          - type
+                        type: object
+                      cluster:
+                        description: ClusterSpec defines the desired state of Cluster
+                        properties:
+                          domain:
+                            description: Domain specifies the location where Service
+                              will be placed.
+                            type: string
+                          inputs:
+                            description: Inputs are list of inputs passed to the objects.
+                              When used in conjunction with Instances, there can be
+                              only one input and all the instances will run with identical
+                              parameters. If Instances is defined and there are more
+                              than one inputs, the request will be rejected.
+                            items:
+                              additionalProperties:
+                                type: string
+                              type: object
+                            type: array
+                          instances:
+                            description: Instances dictate the number of objects to
+                              be created for the service. If Env is specified, the values
+                              with be identical across the spawned instances. For instances
+                              with different parameters, use Inputs.
+                            type: integer
+                          schedule:
+                            description: Schedule defines the interval between the creation
+                              of services within the group. Executed creation is not
+                              supported in collocated mode. Since Pods are intended
+                              to be disposable and replaceable, we cannot add a container
+                              to a Pod once it has been created
+                            properties:
+                              cron:
+                                description: "Cron defines a cron job rule. \n Some
                                 rule examples: \"0 30 * * * *\" means to \"Every hour
                                 on the half hour\" \"@hourly\"      means to \"Every
                                 hour\" \"@every 1h30m\" means to \"Every hour thirty\"
                                 \n More rule info: https://godoc.org/github.com/robfig/cron"
-                              type: string
-                            startingDeadlineSeconds:
-                              description: StartingDeadlineSeconds is an optional
-                                deadline in seconds for starting the job if it misses
-                                scheduled time for any reason. if we miss this deadline,
-                                we'll just wait till the next scheduled time
-                              format: int64
-                              type: integer
-                          required:
-                          - cron
-                          type: object
-                        suspend:
-                          description: Suspend flag tells the controller to suspend
-                            subsequent executions, it does not apply to already started
-                            executions.  Defaults to false.
-                          type: boolean
-                        templateRef:
-                          description: TemplateRef refers to a  template (e.g, iperf-server).
-                          type: string
-                        tolerate:
-                          description: Tolerate specifies the conditions under which
-                            the cluster will fail. If left undefined, the cluster
-                            will fail immediately when a service has failed.
-                          properties:
-                            failedServices:
-                              description: FailedServices indicate the number of services
-                                that may fail before the cluster fails itself.
-                              type: integer
-                          required:
-                          - failedServices
-                          type: object
-                      required:
-                      - templateRef
-                      type: object
-                    depends:
-                      description: DependsOn defines the conditions for the execution
-                        of this action
-                      properties:
-                        after:
-                          description: After is the time offset since the beginning
-                            of this action.
-                          type: string
-                        running:
-                          description: Running waits for the given groups to be running
-                          items:
-                            type: string
-                          type: array
-                        success:
-                          description: Success waits for the given groups to be succeeded
-                          items:
-                            type: string
-                          type: array
-                      type: object
-                    name:
-                      description: Name is a unique identifier of the action
-                      type: string
-                    service:
-                      description: GenerateFromTemplate generates a spec by parameterizing
-                        the templateRef with the given inputs.
-                      properties:
-                        inputs:
-                          description: Inputs are list of inputs passed to the objects.
-                            When used in conjunction with Instances, there can be
-                            only one input and all the instances will run with identical
-                            parameters. If Instances is defined and there are more
-                            than one inputs, the request will be rejected.
-                          items:
-                            additionalProperties:
-                              type: string
+                                type: string
+                              startingDeadlineSeconds:
+                                description: StartingDeadlineSeconds is an optional
+                                  deadline in seconds for starting the job if it misses
+                                  scheduled time for any reason. if we miss this deadline,
+                                  we'll just wait till the next scheduled time
+                                format: int64
+                                type: integer
+                            required:
+                              - cron
                             type: object
-                          type: array
-                        instances:
-                          description: Instances dictate the number of objects to
-                            be created for the service. If Env is specified, the values
-                            with be identical across the spawned instances. For instances
-                            with different parameters, use Inputs.
-                          type: integer
-                        templateRef:
-                          description: TemplateRef refers to a  template (e.g, iperf-server).
-                          type: string
-                      required:
-                      - templateRef
-                      type: object
-                  required:
-                  - action
-                  - name
+                          suspend:
+                            description: Suspend flag tells the controller to suspend
+                              subsequent executions, it does not apply to already started
+                              executions.  Defaults to false.
+                            type: boolean
+                          templateRef:
+                            description: TemplateRef refers to a  template (e.g, iperf-server).
+                            type: string
+                          tolerate:
+                            description: Tolerate specifies the conditions under which
+                              the cluster will fail. If left undefined, the cluster
+                              will fail immediately when a service has failed.
+                            properties:
+                              failedServices:
+                                description: FailedServices indicate the number of services
+                                  that may fail before the cluster fails itself.
+                                type: integer
+                            required:
+                              - failedServices
+                            type: object
+                        required:
+                          - templateRef
+                        type: object
+                      depends:
+                        description: DependsOn defines the conditions for the execution
+                          of this action
+                        properties:
+                          after:
+                            description: After is the time offset since the beginning
+                              of this action.
+                            type: string
+                          running:
+                            description: Running waits for the given groups to be running
+                            items:
+                              type: string
+                            type: array
+                          success:
+                            description: Success waits for the given groups to be succeeded
+                            items:
+                              type: string
+                            type: array
+                        type: object
+                      name:
+                        description: Name is a unique identifier of the action
+                        type: string
+                      service:
+                        description: GenerateFromTemplate generates a spec by parameterizing
+                          the templateRef with the given inputs.
+                        properties:
+                          inputs:
+                            description: Inputs are list of inputs passed to the objects.
+                              When used in conjunction with Instances, there can be
+                              only one input and all the instances will run with identical
+                              parameters. If Instances is defined and there are more
+                              than one inputs, the request will be rejected.
+                            items:
+                              additionalProperties:
+                                type: string
+                              type: object
+                            type: array
+                          instances:
+                            description: Instances dictate the number of objects to
+                              be created for the service. If Env is specified, the values
+                              with be identical across the spawned instances. For instances
+                              with different parameters, use Inputs.
+                            type: integer
+                          templateRef:
+                            description: TemplateRef refers to a  template (e.g, iperf-server).
+                            type: string
+                        required:
+                          - templateRef
+                        type: object
+                    required:
+                      - action
+                      - name
+                    type: object
+                  type: array
+                suspend:
+                  description: Suspend flag tells the controller to suspend subsequent
+                    executions, it does not apply to already started executions.  Defaults
+                    to false.
+                  type: boolean
+                withTelemetry:
+                  description: TelemetrySpec defines the desired state of Telemetry
+                  properties:
+                    importMonitors:
+                      description: ImportMonitors are references to monitoring packages
+                        that will be used in the monitoring stack.
+                      items:
+                        type: string
+                      type: array
                   type: object
-                type: array
-              suspend:
-                description: Suspend flag tells the controller to suspend subsequent
-                  executions, it does not apply to already started executions.  Defaults
-                  to false.
-                type: boolean
-              withTelemetry:
-                description: TelemetrySpec defines the desired state of Telemetry
-                properties:
-                  importMonitors:
-                    description: ImportMonitors are references to monitoring packages
-                      that will be used in the monitoring stack.
-                    items:
-                      type: string
-                    type: array
-                type: object
-            required:
-            - actions
-            type: object
-          status:
-            description: WorkflowStatus defines the observed state of Workflow
-            properties:
-              conditions:
-                items:
-                  description: "Condition contains details for one aspect of the current
+              required:
+                - actions
+              type: object
+            status:
+              description: WorkflowStatus defines the observed state of Workflow
+              properties:
+                conditions:
+                  items:
+                    description: "Condition contains details for one aspect of the current
                     state of this API Resource. --- This struct is intended for direct
                     use as an array at the field path .status.conditions.  For example,
                     type FooStatus struct{     // Represents the observations of a
@@ -360,97 +359,97 @@ spec:
                     \    Conditions []metav1.Condition `json:\"conditions,omitempty\"
                     patchStrategy:\"merge\" patchMergeKey:\"type\" protobuf:\"bytes,1,rep,name=conditions\"`
                     \n     // other fields }"
-                  properties:
-                    lastTransitionTime:
-                      description: lastTransitionTime is the last time the condition
-                        transitioned from one status to another. This should be when
-                        the underlying condition changed.  If that is not known, then
-                        using the time when the API field changed is acceptable.
-                      format: date-time
-                      type: string
-                    message:
-                      description: message is a human readable message indicating
-                        details about the transition. This may be an empty string.
-                      maxLength: 32768
-                      type: string
-                    observedGeneration:
-                      description: observedGeneration represents the .metadata.generation
-                        that the condition was set based upon. For instance, if .metadata.generation
-                        is currently 12, but the .status.conditions[x].observedGeneration
-                        is 9, the condition is out of date with respect to the current
-                        state of the instance.
-                      format: int64
-                      minimum: 0
-                      type: integer
-                    reason:
-                      description: reason contains a programmatic identifier indicating
-                        the reason for the condition's last transition. Producers
-                        of specific condition types may define expected values and
-                        meanings for this field, and whether the values are considered
-                        a guaranteed API. The value should be a CamelCase string.
-                        This field may not be empty.
-                      maxLength: 1024
-                      minLength: 1
-                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
-                      type: string
-                    status:
-                      description: status of the condition, one of True, False, Unknown.
-                      enum:
-                      - "True"
-                      - "False"
-                      - Unknown
-                      type: string
-                    type:
-                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
-                        --- Many .condition.type values are consistent across resources
-                        like Available, but because arbitrary conditions can be useful
-                        (see .node.status.conditions), the ability to deconflict is
-                        important. The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)
-                      maxLength: 316
-                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
-                      type: string
-                  required:
-                  - lastTransitionTime
-                  - message
-                  - reason
-                  - status
-                  - type
+                    properties:
+                      lastTransitionTime:
+                        description: lastTransitionTime is the last time the condition
+                          transitioned from one status to another. This should be when
+                          the underlying condition changed.  If that is not known, then
+                          using the time when the API field changed is acceptable.
+                        format: date-time
+                        type: string
+                      message:
+                        description: message is a human readable message indicating
+                          details about the transition. This may be an empty string.
+                        maxLength: 32768
+                        type: string
+                      observedGeneration:
+                        description: observedGeneration represents the .metadata.generation
+                          that the condition was set based upon. For instance, if .metadata.generation
+                          is currently 12, but the .status.conditions[x].observedGeneration
+                          is 9, the condition is out of date with respect to the current
+                          state of the instance.
+                        format: int64
+                        minimum: 0
+                        type: integer
+                      reason:
+                        description: reason contains a programmatic identifier indicating
+                          the reason for the condition's last transition. Producers
+                          of specific condition types may define expected values and
+                          meanings for this field, and whether the values are considered
+                          a guaranteed API. The value should be a CamelCase string.
+                          This field may not be empty.
+                        maxLength: 1024
+                        minLength: 1
+                        pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                        type: string
+                      status:
+                        description: status of the condition, one of True, False, Unknown.
+                        enum:
+                          - "True"
+                          - "False"
+                          - Unknown
+                        type: string
+                      type:
+                        description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                          --- Many .condition.type values are consistent across resources
+                          like Available, but because arbitrary conditions can be useful
+                          (see .node.status.conditions), the ability to deconflict is
+                          important. The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)
+                        maxLength: 316
+                        pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                        type: string
+                    required:
+                      - lastTransitionTime
+                      - message
+                      - reason
+                      - status
+                      - type
+                    type: object
+                  type: array
+                expectedAlerts:
+                  additionalProperties:
+                    type: boolean
+                  description: ExpectedAlerts is a list of alerts should drive to SLA
+                    violations
                   type: object
-                type: array
-              expectedAlerts:
-                additionalProperties:
-                  type: boolean
-                description: ExpectedAlerts is a list of alerts should drive to SLA
-                  violations
-                type: object
-              message:
-                description: Message provides more details for understanding the Reason.
-                type: string
-              phase:
-                description: Phase is a simple, high-level summary of where the Object
-                  is in its lifecycle. The conditions array, the reason and message
-                  fields, and the individual container status arrays contain more
-                  detail about the pod's status.
-                type: string
-              reason:
-                description: Reason is A brief CamelCase message indicating details
-                  about why the service is in this Phase. e.g. 'Evicted'
-                type: string
-              scheduled:
-                additionalProperties:
-                  format: date-time
+                message:
+                  description: Message provides more details for understanding the Reason.
                   type: string
-                description: Executed is a list of executed actions.
-                type: object
-            type: object
-        type: object
-    served: true
-    storage: true
-    subresources:
-      status: {}
+                phase:
+                  description: Phase is a simple, high-level summary of where the Object
+                    is in its lifecycle. The conditions array, the reason and message
+                    fields, and the individual container status arrays contain more
+                    detail about the pod's status.
+                  type: string
+                reason:
+                  description: Reason is A brief CamelCase message indicating details
+                    about why the service is in this Phase. e.g. 'Evicted'
+                  type: string
+                scheduled:
+                  additionalProperties:
+                    format: date-time
+                    type: string
+                  description: Executed is a list of executed actions.
+                  type: object
+              type: object
+          type: object
+      served: true
+      storage: true
+      subresources:
+        status: { }
 status:
   acceptedNames:
     kind: ""
     plural: ""
-  conditions: []
-  storedVersions: []
+  conditions: [ ]
+  storedVersions: [ ]

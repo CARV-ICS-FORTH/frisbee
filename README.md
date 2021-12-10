@@ -4,7 +4,6 @@
 </a>
 </div>
 
-
 # <div align="center">Frisbee – Kubernetes Native Testbed</div>
 
 🏗️ Spin up entire dependency stack
@@ -17,21 +16,20 @@
 
 🕹️ Test actual program behavior and side effects
 
-
 ## <div align="center">![releaser](https://github.com/carv-ics-forth/frisbee/actions/workflows/release.yml/badge.svg) [![Go Report Card](https://goreportcard.com/badge/github.com/carv-ics-forth/frisbee)](https://goreportcard.com/report/github.com/carv-ics-forth/frisbee) ![License: Apache-2.0](https://img.shields.io/github/license/carv-ics-forth/frisbee?color=blue) [![GitHub Repo stars](https://img.shields.io/github/stars/carv-ics-forth/frisbee)](https://github.com/carv-ics-forth/frisbee/stargazers)</div>
-
 
 > The effort being put in automating tests should not take over delivering value to users.
 
-Frisbee addresses the key pain points developers and QA engineers face when testing cloud-native applications in the earlier
-stages of the software lifecycle. We make it possible to:
+Frisbee addresses the key pain points developers and QA engineers face when testing cloud-native applications in the
+earlier stages of the software lifecycle. We make it possible to:
 
-* **Run tests:**  create temporary containers for application dependencies, setup their initial state and clean them up in the end.
-* **Write tests:** describe complex topologies, dynamic operating conditions, Chaos Events, and distributed assertions. 
-* **Debug tests:** integrate application-specific metrics, monitor site-wide health metrics, and raise notifications on SLA violations. 
+* **Run tests:**  create temporary containers for application dependencies, setup their initial state and clean them up
+  in the end.
+* **Write tests:** describe complex topologies, dynamic operating conditions, Chaos Events, and distributed assertions.
+* **Debug tests:** integrate application-specific metrics, monitor site-wide health metrics, and raise notifications on
+  SLA violations.
 
-
-Frisbee consists of a set of Kubernetes controllers, and YAML-based testplans. 
+Frisbee consists of a set of Kubernetes controllers, and YAML-based testplans.
 
 ## Getting started
 
@@ -107,7 +105,6 @@ We welcome also every contribution, even if it is just punctuation. Here are som
 ✔ Read Frisbee design and development details on the [GitHub Wiki](https://github.com/carv-ics-forth/frisbee/wiki).
 
 ✔ Contact us [directly](fnikol@ics.forth.gr) for other ways to get involved.
-
 
 ## Acknowledgements
 
