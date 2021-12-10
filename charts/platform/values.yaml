@@ -10,23 +10,23 @@ global:
   ## ingress: platform.science-hangar.eu
   ingress: localhost
 
-  volumes:
-    enabled: true
 
-  chaos:
-    enabled: true
+# Frisbee Operator
+operator:
+  enabled: true
+  prometheusPort: 9090
+  grafanaPort: 3000
 
-  coverage:
-    enabled: false
 
----
+# Chaos Injection
 chaos-mesh:
+  enabled: true
 
 
-
-
----
+# Code coverage
 sonarqube:
+  enabled: false
+
   # Ignore  deployment taints, if any.
   tolerations:
     - key: "sonarqube"
@@ -70,11 +70,10 @@ sonarqube:
         - pattern: ".*"
 
 
----
+
 # OpenEBS - Provision dynamic volumes
 openebs:
-  openebs-ndm:
-    enabled: false
+  enabled: true
 
   ndm:
     enabled: false

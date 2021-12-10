@@ -31,6 +31,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// +kubebuilder:rbac:groups=frisbee.io,resources=templates,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=frisbee.io,resources=templates/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=frisbee.io,resources=templates/finalizers,verbs=update
+
 // Controller reconciles a Templates object.
 type Controller struct {
 	ctrl.Manager

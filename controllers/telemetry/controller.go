@@ -213,13 +213,6 @@ func (r *Controller) Finalize(obj client.Object) error {
 */
 
 func NewController(mgr ctrl.Manager, logger logr.Logger) error {
-	/*
-		// register the admission controller
-		mgr.GetWebhookServer().Register("/validate-workflow", &webhook.Admission{
-			Handler: &workflowValidator{Client: mgr.GetClient()},
-		})
-
-	*/
 
 	// register the reconcile controller
 	r := &Controller{

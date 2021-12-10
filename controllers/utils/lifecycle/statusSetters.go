@@ -138,7 +138,7 @@ func Failed(ctx context.Context, r utils.Reconciler, obj client.Object, issue er
 	status := v1alpha1.Lifecycle{
 		Phase:  v1alpha1.PhaseFailed,
 		Reason: fmt.Sprintf("%s%s", obj.GetName(), "Failed"),
-		Message: errors.Wrapf(issue, "unable to update status for %s (rv = %s): %v",
+		Message: errors.Wrapf(issue, "execution error for %s (rv = %s): %v",
 			obj.GetNamespace(), obj.GetName(), obj.GetResourceVersion()).Error(),
 	}
 

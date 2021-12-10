@@ -4,7 +4,7 @@ kind: Template
 metadata:
   name: prometheus
   labels:
-    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+    app.kubernetes.io/managed-by: {{.Release.Service}}
 spec:
   service:
     volumes:
@@ -30,7 +30,7 @@ kind: Template
 metadata:
   name: grafana
   labels:
-    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+    app.kubernetes.io/managed-by: {{.Release.Service}}
 spec:
   service:
     volumes:

@@ -1,0 +1,255 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: manager-role
+rules:
+  - apiGroups:
+      - chaos-mesh.org
+    resources:
+      - networkchaos
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - chaos-mesh.org
+    resources:
+      - networkchaos/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - chaos-mesh.org
+    resources:
+      - networkchaos/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - pods/status
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - services
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - services/status
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - frisbee.io
+    resources:
+      - chaos
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - frisbee.io
+    resources:
+      - chaos/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - frisbee.io
+    resources:
+      - chaos/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - frisbee.io
+    resources:
+      - clusters
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - frisbee.io
+    resources:
+      - clusters/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - frisbee.io
+    resources:
+      - clusters/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - frisbee.io
+    resources:
+      - services
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - frisbee.io
+    resources:
+      - services/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - frisbee.io
+    resources:
+      - services/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - frisbee.io
+    resources:
+      - telemetries
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - frisbee.io
+    resources:
+      - telemetries/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - frisbee.io
+    resources:
+      - telemetries/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - frisbee.io
+    resources:
+      - templates
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - frisbee.io
+    resources:
+      - templates/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - frisbee.io
+    resources:
+      - templates/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - frisbee.io
+    resources:
+      - workflows
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - frisbee.io
+    resources:
+      - workflows/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - frisbee.io
+    resources:
+      - workflows/status
+    verbs:
+      - get
+      - patch
+      - update

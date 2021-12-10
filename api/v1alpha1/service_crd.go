@@ -70,6 +70,13 @@ type Placement struct {
 	Domain []string `json:"domain,omitempty"`
 }
 
+type SetField struct {
+	// Field is the path to the field whose value will be replaced.
+	// Examples: Containers.0.Ports.0
+	Field string `json:"field"`
+	Value string `json:"value"`
+}
+
 // Decorators takes in a PodSpec, add some functionality and returns it.
 type Decorators struct {
 	// Resources specifies limitations as to how the container will access host resources.
@@ -89,6 +96,13 @@ type Decorators struct {
 	// This option is only applicable to Agents.
 	// +optional
 	Dashboards metav1.LabelSelector `json:"dashboards,omitempty"`
+
+	// SetFields is used to populate fields. Used for dynamic assignment based templated inputs.
+	// +optional
+	SetFields []SetField `json:"setFields,omitempty"`
+
+	// +optional
+	Annotations map[string]string `json:"annotations,omitempty"`
 }
 
 // ServiceSpec defines the desired state of Service.

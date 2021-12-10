@@ -56,7 +56,7 @@ func (r *Controller) service(ctx context.Context, w *v1alpha1.Workflow, action v
 
 	spec, err := r.serviceControl.GetServiceSpec(ctx, w.GetNamespace(), *action.Service)
 	if err != nil {
-		return nil, errors.Wrapf(err, "cannot get spec")
+		return nil, errors.Wrapf(err, "service spec")
 	}
 
 	service.SetName(action.Name)
@@ -92,13 +92,7 @@ func (r *Controller) chaos(action v1alpha1.Action) (client.Object, error) {
 }
 
 func (r *Controller) ConnectToGrafana(ctx context.Context, cr *v1alpha1.Workflow) error {
-
-	config, err := utils.LoadPlatformConfiguration(ctx, r)
-	if err != nil {
-		return errors.Wrapf(err, "cannot get platform configuration")
-	}
-
-	endpoint := utils.MustGetGrafanaEndpoint(config)
+	endpoint := utils.DefaultConfiguration.GrafanaEndpoint
 
 	return grafana.NewGrafanaClient(ctx, r, endpoint,
 		// Set a callback that will be triggered when there is Grafana alert.

@@ -13,8 +13,7 @@ IMAGE_TAG_BASE ?= icsforth
 # You can use it as an arg. (E.g make bundle-build BUNDLE_IMG=<some-registry>/<project-name-bundle>:<tag>)
 IMG ?= $(IMAGE_TAG_BASE)/frisbee-operator:$(VERSION)
 
-# Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
-CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
+
 
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.21
@@ -77,10 +76,15 @@ envtest:
 help: ## Display this help.
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
+
+# Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
+CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
+
 ##@ Development
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
-	$(CONTROLLER_GEN) $(CRD_OPTIONS) output:crd:artifacts:config=charts/platform/crds
+	$(CONTROLLER_GEN) $(CRD_OPTIONS) paths="./..."  output:crd:artifacts:config=charts/platform/crds
+	$(CONTROLLER_GEN) rbac:roleName=manager-role paths="./..."  output:rbac:artifacts:config=charts/platform/templates/operator/rbac
 
 fmt: ## Run go fmt against code.
 	go fmt ./...
@@ -112,10 +116,10 @@ docker-run: docker-build ## Build and Run docker image for the Frisbee controlle
 	docker run --rm -ti -v ${HOME}/.kube/:/home/default/.kube ${IMG}
 
 
-
 ##@ Deployment
-docker-push: ## Push docker image for the Frisbee controller.
-	docker push ${IMG}
+docker-push: docker-build ## Push the latest docker image for Frisbee controller.
+	docker tag ${IMG} $(IMAGE_TAG_BASE)/frisbee-operator:latest
+	docker push $(IMAGE_TAG_BASE)/frisbee-operator:latest
 
 
 install: generate ## Deploy platform to the K8s cluster specified in ~/.kube/config.

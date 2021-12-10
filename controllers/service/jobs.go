@@ -18,10 +18,12 @@ package service
 
 import (
 	"context"
+	"reflect"
+	"strconv"
+	"strings"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/utils"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -29,6 +31,8 @@ import (
 )
 
 func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Service) error {
+	setDefaultValues(cr)
+
 	if err := prepareRequirements(ctx, r, cr); err != nil {
 		return errors.Wrapf(err, "requirements error")
 	}
@@ -37,7 +41,10 @@ func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Service) error {
 		return errors.Wrapf(err, "decorator error")
 	}
 
-	discovery, discoveryLabels := constructDiscoveryService(cr)
+	discovery, discoveryLabels, err := constructDiscoveryService(cr)
+	if err != nil {
+		return errors.Wrapf(err, "DNS service error")
+	}
 
 	if err := utils.Create(ctx, r, cr, discovery); err != nil {
 		return errors.Wrapf(err, "cannot create discovery service")
@@ -56,6 +63,10 @@ func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Service) error {
 	}
 
 	return nil
+}
+
+func setDefaultValues(cr *v1alpha1.Service) {
+	cr.Spec.RestartPolicy = corev1.RestartPolicyNever
 }
 
 func prepareRequirements(ctx context.Context, r *Controller, cr *v1alpha1.Service) error {
@@ -91,9 +102,70 @@ func prepareRequirements(ctx context.Context, r *Controller, cr *v1alpha1.Servic
 	return nil
 }
 
+func setField(cr *v1alpha1.Service, val v1alpha1.SetField) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = errors.Errorf("cannot set field [%s]. err: %s", val.Field, r)
+		}
+	}()
+
+	v := reflect.ValueOf(&cr.Spec.PodSpec).Elem()
+
+	index := func(v reflect.Value, idx string) reflect.Value {
+		if i, err := strconv.Atoi(idx); err == nil {
+			return v.Index(i)
+		}
+
+		return v.FieldByName(idx)
+	}
+
+	for _, s := range strings.Split(val.Field, ".") {
+		v = index(v, s)
+	}
+
+	var conv interface{} = val.Value
+
+	// Convert src value to something that may fit to the dst.
+	switch v.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		toInt, err := strconv.Atoi(val.Value)
+		if err != nil {
+			return errors.Wrapf(err, "convert to Int error")
+		}
+
+		conv = toInt
+
+	case reflect.Bool:
+		toBool, err := strconv.ParseBool(val.Value)
+		if err != nil {
+			return errors.Wrapf(err, "convert to Bool error")
+		}
+
+		conv = toBool
+	}
+
+	v.Set(reflect.ValueOf(conv).Convert(v.Type()))
+
+	return nil
+}
+
 func decoratePod(ctx context.Context, r *Controller, cr *v1alpha1.Service) error {
 	if cr.Spec.Decorators == nil {
 		return nil
+	}
+
+	// set annotations
+	if req := cr.Spec.Decorators.Annotations; req != nil {
+		cr.SetAnnotations(labels.Merge(cr.GetAnnotations(), req))
+	}
+
+	// set dynamically evaluated fields
+	if req := cr.Spec.Decorators.SetFields; req != nil {
+		for _, val := range req {
+			if err := setField(cr, val); err != nil {
+				return errors.Wrapf(err, "cannot set field [%v]", val)
+			}
+		}
 	}
 
 	// set placement policies
@@ -161,22 +233,17 @@ func decoratePod(ctx context.Context, r *Controller, cr *v1alpha1.Service) error
 		}
 	}
 
-	// set default values
-	cr.Spec.RestartPolicy = corev1.RestartPolicyNever
-
 	return nil
 }
 
-func constructDiscoveryService(cr *v1alpha1.Service) (*corev1.Service, labels.Set) {
+func constructDiscoveryService(cr *v1alpha1.Service) (*corev1.Service, labels.Set, error) {
 	// register ports from containers and sidecars
 	var allPorts []corev1.ServicePort
 
-	for _, container := range cr.Spec.Containers {
-		for _, port := range container.Ports {
+	for ci, container := range cr.Spec.Containers {
+		for pi, port := range container.Ports {
 			if port.ContainerPort == 0 {
-				spew.Dump(cr.Spec)
-
-				panic("invalid port")
+				return nil, nil, errors.Errorf("port is 0 for container[%d].port[%d]", ci, pi)
 			}
 
 			allPorts = append(allPorts, corev1.ServicePort{
@@ -205,5 +272,5 @@ func constructDiscoveryService(cr *v1alpha1.Service) (*corev1.Service, labels.Se
 
 	kubeService.Spec.Selector = service2Pod
 
-	return &kubeService, service2Pod
+	return &kubeService, service2Pod, nil
 }
