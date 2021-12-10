@@ -3,6 +3,21 @@ entries:
   cockroachdb:
   - apiVersion: v2
     appVersion: 1.16.0
+    created: "2021-12-10T18:40:58.540711713Z"
+    description: CockroachDB is a distributed database with standard SQL for cloud
+      applications.
+    digest: 1d8deb28c13b1380cc94e4f6d3c25f4bc4d2f4cd7f92cd0cdaaedcf0119448f8
+    maintainers:
+    - email: nikolaidis.fotis@gmail.com
+      name: Fotis Nikolaidis
+      url: https://www.linkedin.com/in/fotis-nikolaidis-444a6634/
+    name: cockroachdb
+    type: application
+    urls:
+    - https://CARV-ICS-FORTH.github.io/frisbee/charts/cockroachdb-1.0.14.tgz
+    version: 1.0.14
+  - apiVersion: v2
+    appVersion: 1.16.0
     created: "2021-12-09T19:32:17.810199663Z"
     description: CockroachDB is a distributed database with standard SQL for cloud
       applications.
@@ -107,6 +122,20 @@ entries:
   fio:
   - apiVersion: v2
     appVersion: 1.16.0
+    created: "2021-12-10T18:40:58.541143516Z"
+    description: fio is a benchmark to test I/O performance.
+    digest: a9a401f81c73797cd7a5bfa0b7ec85dbd2bb50048c6eed903e45c0d57b25f68b
+    maintainers:
+    - email: nikolaidis.fotis@gmail.com
+      name: Fotis Nikolaidis
+      url: https://www.linkedin.com/in/fotis-nikolaidis-444a6634/
+    name: fio
+    type: application
+    urls:
+    - https://CARV-ICS-FORTH.github.io/frisbee/charts/fio-1.0.14.tgz
+    version: 1.0.14
+  - apiVersion: v2
+    appVersion: 1.16.0
     created: "2021-12-09T19:32:17.810633964Z"
     description: fio is a benchmark to test I/O performance.
     digest: 46bc991c404aca8e2222d0435beee12acb407168d246f9a9020955762e89e569
@@ -201,6 +230,21 @@ entries:
     - https://CARV-ICS-FORTH.github.io/frisbee/charts/fio-1.0.5.tgz
     version: 1.0.5
   iperf:
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2021-12-10T18:40:58.541976221Z"
+    description: iPerf is a tool for active measurements of the maximum achievable
+      bandwidth on IP networks
+    digest: d7023b288a25b3c1dca2b29455fc82e569139d74e6ad44e38b9c8afd6d968228
+    maintainers:
+    - email: nikolaidis.fotis@gmail.com
+      name: Fotis Nikolaidis
+      url: https://www.linkedin.com/in/fotis-nikolaidis-444a6634/
+    name: iperf
+    type: application
+    urls:
+    - https://CARV-ICS-FORTH.github.io/frisbee/charts/iperf-1.0.14.tgz
+    version: 1.0.14
   - apiVersion: v2
     appVersion: 1.16.0
     created: "2021-12-09T19:32:17.810956764Z"
@@ -305,6 +349,21 @@ entries:
     - https://CARV-ICS-FORTH.github.io/frisbee/charts/iperf-1.0.5.tgz
     version: 1.0.5
   mongodb:
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2021-12-10T18:40:58.542554225Z"
+    description: MongoDB is a source-available cross-platform document-oriented database
+      program.
+    digest: d75411dd39b2b1b02680b17bebbae62bf23ea4366ed2cff7bfcd31d3f2befbc9
+    maintainers:
+    - email: nikolaidis.fotis@gmail.com
+      name: Fotis Nikolaidis
+      url: https://www.linkedin.com/in/fotis-nikolaidis-444a6634/
+    name: mongodb
+    type: application
+    urls:
+    - https://CARV-ICS-FORTH.github.io/frisbee/charts/mongodb-1.0.14.tgz
+    version: 1.0.14
   - apiVersion: v2
     appVersion: 1.16.0
     created: "2021-12-09T19:32:17.811569064Z"
@@ -466,6 +525,37 @@ entries:
     - https://CARV-ICS-FORTH.github.io/frisbee/charts/observability-1.0.5.tgz
     version: 1.0.5
   platform:
+  - annotations:
+      category: Infrastructure
+    apiVersion: v2
+    appVersion: 1.16.0
+    created: "2021-12-10T18:40:58.589664927Z"
+    dependencies:
+    - condition: openebs.enabled
+      name: openebs
+      repository: https://openebs.github.io/charts
+      version: 3.0.0
+    - condition: chaos-mesh.enabled
+      name: chaos-mesh
+      repository: https://charts.chaos-mesh.org
+      version: 2.0.3
+    - condition: sonarqube.enabled
+      name: sonarqube
+      repository: https://SonarSource.github.io/helm-chart-sonarqube
+      version: 1.2.1+162
+    description: Frisbee is a Kubernetes platform for exploring, testing, and benchmarking
+      distributed applications.
+    digest: c65c7cd46b222bdbb0637c8d88c53584333e67046dff0f2c3f0b190f655a282d
+    icon: https://github.com/CARV-ICS-FORTH/frisbee/blob/main/docs/images/logo.jpg
+    maintainers:
+    - email: nikolaidis.fotis@gmail.com
+      name: Fotis Nikolaidis
+      url: https://www.linkedin.com/in/fotis-nikolaidis-444a6634/
+    name: platform
+    type: application
+    urls:
+    - https://CARV-ICS-FORTH.github.io/frisbee/charts/platform-1.0.14.tgz
+    version: 1.0.14
   - annotations:
       category: Infrastructure
     apiVersion: v2
@@ -663,6 +753,20 @@ entries:
   redis:
   - apiVersion: v2
     appVersion: 1.16.0
+    created: "2021-12-10T18:40:58.590276031Z"
+    description: Redis is an in-memory data structure store, used as a distributed,
+      in-memory key–value database, cache and message broker, with optional durability.
+    digest: 69632276ede64116c528d2dd22d3e7928b103dca601013fb280ef4d0e45e4ff7
+    maintainers:
+    - email: nikolaidis.fotis@gmail.com
+      name: Fotis Nikolaidis
+    name: redis
+    type: application
+    urls:
+    - https://CARV-ICS-FORTH.github.io/frisbee/charts/redis-1.0.14.tgz
+    version: 1.0.14
+  - apiVersion: v2
+    appVersion: 1.16.0
     created: "2021-12-09T19:32:17.850508388Z"
     description: Redis is an in-memory data structure store, used as a distributed,
       in-memory key–value database, cache and message broker, with optional durability.
@@ -825,6 +929,21 @@ entries:
   tebis:
   - apiVersion: v2
     appVersion: 1.16.0
+    created: "2021-12-10T18:40:58.590544733Z"
+    description: Tebis is a rack-scale key/value store optimized for replication over
+      RDMA
+    digest: ffac082c977c89deab5948943673d7ca8ffc37b46d5c78c33a23d963cf863653
+    maintainers:
+    - email: nikolaidis.fotis@gmail.com
+      name: Fotis Nikolaidis
+      url: https://www.linkedin.com/in/fotis-nikolaidis-444a6634/
+    name: tebis
+    type: application
+    urls:
+    - https://CARV-ICS-FORTH.github.io/frisbee/charts/tebis-1.0.14.tgz
+    version: 1.0.14
+  - apiVersion: v2
+    appVersion: 1.16.0
     created: "2021-12-09T19:32:17.850742688Z"
     description: Tebis is a rack-scale key/value store optimized for replication over
       RDMA
@@ -883,6 +1002,22 @@ entries:
     - https://CARV-ICS-FORTH.github.io/frisbee/charts/tebis-1.0.9.tgz
     version: 1.0.9
   tikv:
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2021-12-10T18:40:58.592953648Z"
+    description: TiKV is a highly scalable, low latency, and easy to use key-value
+      database.
+    digest: 625d03509d6f7cc086b39766f5a90a4cddd656ccc8bc0475a06b7f065903618b
+    icon: https://tikv.org/img/logos/horizontal/color/tikv-horizontal-color.png
+    maintainers:
+    - email: nikolaidis.fotis@gmail.com
+      name: Fotis Nikolaidis
+      url: https://www.linkedin.com/in/fotis-nikolaidis-444a6634/
+    name: tikv
+    type: application
+    urls:
+    - https://CARV-ICS-FORTH.github.io/frisbee/charts/tikv-1.0.14.tgz
+    version: 1.0.14
   - apiVersion: v2
     appVersion: 1.16.0
     created: "2021-12-09T19:32:17.852499889Z"
@@ -997,6 +1132,20 @@ entries:
   ycsb:
   - apiVersion: v2
     appVersion: 1.16.0
+    created: "2021-12-10T18:40:58.593474052Z"
+    description: Yahoo! Cloud Serving Benchmark.
+    digest: 4a8ef43691a07a486f78b429b919c0eadd57c110a51bd211df6163767fe9ccea
+    maintainers:
+    - email: nikolaidis.fotis@gmail.com
+      name: Fotis Nikolaidis
+      url: https://www.linkedin.com/in/fotis-nikolaidis-444a6634/
+    name: ycsb
+    type: application
+    urls:
+    - https://CARV-ICS-FORTH.github.io/frisbee/charts/ycsb-1.0.14.tgz
+    version: 1.0.14
+  - apiVersion: v2
+    appVersion: 1.16.0
     created: "2021-12-09T19:32:17.85359549Z"
     description: Yahoo! Cloud Serving Benchmark.
     digest: 798e1af09554220edb6a7e8998a0ea53243e469b5a93900b2932b61ae47f5ff1
@@ -1096,4 +1245,4 @@ entries:
     urls:
     - https://CARV-ICS-FORTH.github.io/frisbee/charts/ycsbmon-1.0.5.tgz
     version: 1.0.5
-generated: "2021-12-09T19:32:17.809579263Z"
+generated: "2021-12-10T18:40:58.539836307Z"
