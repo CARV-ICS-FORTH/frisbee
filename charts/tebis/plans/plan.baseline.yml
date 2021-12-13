@@ -30,6 +30,7 @@ spec:
       name: master0
       depends:
         success: [ boot ]
+        running: [zookeeper]
       service:
         templateRef: tebis.cluster.master
         inputs:
@@ -40,6 +41,7 @@ spec:
       name: master1
       depends:
         success: [ boot ]
+        running: [zookeeper]
       service:
         templateRef: tebis.cluster.master
         inputs:
@@ -51,7 +53,20 @@ spec:
       name: master2
       depends:
         success: [ boot ]
+        running: [zookeeper]
       service:
         templateRef: tebis.cluster.master
         inputs:
           - { zookeeper: .service.zookeeper.any, port: "6062" }
+
+
+    # Initialize a client node
+    - action: Service
+      name: client
+      depends:
+        success: [ boot ]
+        running: [zookeeper, master0, master1, master2]
+      service:
+        templateRef: tebis.cluster.client
+        inputs:
+          - { zookeeper: .service.zookeeper.any, regions: "3" }

@@ -1,0 +1,64 @@
+# Create the SDK layers
+ARG CENTOS=7.7.1908
+FROM centos:${CENTOS} as builder
+
+WORKDIR /root
+
+# Install kubectl
+ARG KUBECTL_VERSION=v1.19.8
+RUN curl -o /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl && \
+    chmod +x /usr/local/bin/kubectl
+
+# Install kernel, development tools, and Mellanox OFED
+ARG OFED=4.7-3.2.9.0
+RUN yum groupinstall -y "Development Tools" && \
+    yum install -y python-devel pciutils numactl-libs valgrind-devel tcsh libdb-devel lsof zlib-devel ethtool numactl-devel libmnl-devel binutils-devel iptables-devel openssl-devel libselinux-devel libnl3 elfutils-devel libnl3-devel && \
+    curl -L -o MLNX_OFED_SRC-${OFED}.tgz http://www.mellanox.com/downloads/ofed/MLNX_OFED-${OFED}/MLNX_OFED_SRC-${OFED}.tgz && \
+    tar -xvzf MLNX_OFED_SRC-${OFED}.tgz && \
+    ./MLNX_OFED_SRC-${OFED}/install.pl --all --user-space-only && \
+    yum clean all \
+    && rm -rf /var/cache/yum \
+        /tmp/* \
+        /var/tmp/* \
+        /usr/share/man \
+        /usr/share/doc \
+        /usr/share/doc-base \
+	MLNX_OFED_SRC_${OFED} \
+	MLNX_OFED_SRC_${OFED}.tgz
+
+# Install Tebis dependencies
+RUN yum install -y epel-release centos-release-scl && \
+    yum install -y cmake3 devtoolset-10 boost-devel wget ant cppunit-devel \
+    && rm -rf /var/cache/yum \
+        /tmp/* \
+        /var/tmp/* \
+        /usr/share/man \
+        /usr/share/doc \
+        /usr/share/doc-base
+
+RUN wget https://ftp.cc.uoc.gr/mirrors/apache/zookeeper/zookeeper-3.5.9/apache-zookeeper-3.5.9.tar.gz && \
+    tar xzf apache-zookeeper-3.5.9.tar.gz && \
+    (cd apache-zookeeper-3.5.9 && ant compile_jute) && \
+    (cd apache-zookeeper-3.5.9/zookeeper-client/zookeeper-client-c && autoreconf -if && ./configure && make install) && \
+    rm -rf apache-zookeeper-3.5.9.tar.gz apache-zookeeper-3.5.9 && \
+    ldconfig /usr/local/lib
+
+# Install Tebis
+RUN git clone --branch metadata_string_format "https://tebis-docker-container:kEmvUT1ZaceUsad6usGF@carvgit.ics.forth.gr/storage/tebis.git" tebis && \
+    mkdir tebis/build && \
+    (cd tebis/build && scl enable devtoolset-10 -- /bin/bash -c "cmake3 -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF .. && make -j8")
+
+
+# Create the manager container
+FROM  centos:${CENTOS} as tebis-node
+
+RUN  yum install -y numactl-libs  numactl-devel libibverbs librdmacm
+# yum groupinstall -y "Infiniband Support"
+# yum -y install infiniband-diags perftest gperf
+
+WORKDIR /
+COPY --from=builder /root/tebis/build/kreon_server ./kreon-server
+
+RUN ls /kreon-server/kreon_server
+
+ENTRYPOINT ["/kreon-server/kreon_server"]
