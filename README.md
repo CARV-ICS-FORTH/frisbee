@@ -31,31 +31,37 @@ earlier stages of the software lifecycle. We make it possible to:
 
 Frisbee consists of a set of Kubernetes controllers, and YAML-based testplans.
 
-## Getting started
 
-Make sure that [Microk8s](https://microk8s.io/docs) and  [Helm](https://helm.sh/docs/intro/install/) are installed on
-your system, then install the Frisbee dependencies:
+# TL;DR
 
-```bash
-# Clone Frisbee repository
->> git clone https://github.com/CARV-ICS-FORTH/frisbee.git
-# Install the Frisbee platform
->> helm install my-frisbee charts/platform --dependency-update
-# Install the package for monitoring YCSB output
->> helm install my-ycsb charts/ycsb --dependency-update
-# Install TiKV store
->> helm install my-tikv charts/tikv --dependency-update
-```
+1. Make sure that [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/) and  [Helm](https://helm.sh/docs/intro/install/) are installed on your system.
 
-Then run:
+2. Update Helm repo.
 
-```bash
-# Run Frisbee controller
->> make run
+   ```bash
+   >> helm repo add frisbee https://carv-ics-forth.github.io/frisbee/charts
+   ```
 
-# Deploy the testing plan
->> kubectl apply -f charts/tikv/examples/plan.localhost.yml 
-```
+3. Install Helm Packages.
+
+   ```bash
+   # Install the platform
+   >> helm upgrade --install my-frisbee frisbee/platform
+   # Install the package for monitoring YCSB output
+   >> helm upgrade --install my-ycsb frisbee/ycsb
+   # Install TiKV store
+   >> helm upgrade --install my-tikv frisbee/tikv
+   ```
+
+4. Create/Destroy the test plan.
+
+   ```bash
+   # Create 
+   >>  kubectl -f charts/tikv/examples/plan.baseline.yml apply 
+   
+   # Destroy
+   >> kubectl -f charts/tikv/examples/plan.baseline.yml delete --cascade=foreground
+   ```
 
 If everything went smoothly, you should see a
 similar [Grafana Dashboard](http://grafana.localhost/d/R5y4AE8Mz/kubernetes-cluster-monitoring-via-prometheus?orgId=1&amp;from=now-15m&amp;to=now)
