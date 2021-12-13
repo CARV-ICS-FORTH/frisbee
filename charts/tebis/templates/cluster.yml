@@ -55,7 +55,7 @@ spec:
 
             echo "Create regions file"
             cat > regions <<EOF
-              0 -oo AB master0-6060
+              0 AA AB master0-6060
               1 AB AC master1-6061
               2 AC +oo master2-6062
             EOF
@@ -119,3 +119,49 @@ spec:
             echo "Starting Tebis server"
             echo /kreon-server/kreon_server ${device} ${device} ${zookeeper} ${rdma} ${port},${cores}
             /kreon-server/kreon_server ${device} ${device} ${zookeeper} ${rdma} ${port},${cores}
+
+
+---
+apiVersion: frisbee.io/v1alpha1
+kind: Template
+metadata:
+  name: tebis.cluster.client
+  labels:
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+spec:
+  inputs:
+    parameters:
+      zookeeper: localhost
+      plan: "./ycsb_execution_plans/execution_plan_la.txt"
+      threads: "4"
+      regions: "1"
+  service:
+    decorators:
+      annotations:
+        k8s.v1.cni.cncf.io/networks: macvlan-rdma
+      telemetry: [ platform.telemetry.container ]
+    containers:
+      - name: app
+        image: icsforth/tebis-client:latest
+        securityContext:
+          privileged: true
+        command:
+          - /bin/sh   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
+            set -eum
+            trap "touch /dev/shm/stop" EXIT
+
+            echo "Starting Tebis client"
+
+            echo /ycsb-async-kreon                                 \
+            -e {{"{{.Inputs.Parameters.plan}}"}}              \
+            -threads {{"{{.Inputs.Parameters.threads}}"}}     \
+            -dbnum 1                                          \
+            -w sd                                             \
+            -r {{"{{.Inputs.Parameters.regions}}"}}           \
+            -zk_host  {{"{{.Inputs.Parameters.zookeeper}}"}}  \
+            -zk_port  2181
+
+
+            sleep 3660
