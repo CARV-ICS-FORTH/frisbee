@@ -16,6 +16,7 @@ limitations under the License.
 
 package chaos
 
+/*
 import (
 	"context"
 
@@ -25,6 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
+
 
 type Fault = unstructured.Unstructured
 
@@ -62,9 +64,9 @@ func AsKill(fault *Fault) {
 	})
 }
 
-/*
+/ *
 	Network Partition Handler
-*/
+* /
 
 type partitionHandler struct {
 	cr *v1alpha1.Chaos
@@ -123,9 +125,9 @@ func (h partitionHandler) Inject(ctx context.Context, r *Controller) error {
 	return nil
 }
 
-/*
+/ *
 	Service Killer
-*/
+* /
 
 type killHandler struct {
 	cr *v1alpha1.Chaos
@@ -175,3 +177,4 @@ func (h killHandler) Inject(ctx context.Context, r *Controller) error {
 
 	return nil
 }
+*/

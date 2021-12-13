@@ -20,6 +20,7 @@ import (
 	"flag"
 	"os"
 
+	"github.com/carv-ics-forth/frisbee/controllers/utils/platform"
 	"github.com/pkg/errors"
 
 	"github.com/carv-ics-forth/frisbee/controllers/chaos"
@@ -94,6 +95,11 @@ func main() {
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
+		os.Exit(1)
+	}
+
+	if err := platform.UseDefaultConfiguration(mgr.GetClient()); err != nil {
+		utilruntime.HandleError(errors.Wrapf(err, "unable to load platform configuration"))
 		os.Exit(1)
 	}
 

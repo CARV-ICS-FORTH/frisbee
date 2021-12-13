@@ -19,7 +19,6 @@ package chaos
 import (
 	"context"
 	"reflect"
-	"time"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	serviceutils "github.com/carv-ics-forth/frisbee/controllers/service/utils"
@@ -28,11 +27,8 @@ import (
 	"github.com/go-logr/logr"
 	cmap "github.com/orcaman/concurrent-map"
 	"github.com/pkg/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/util/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -90,98 +86,106 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}()
 
 	/*
-		2: Load CR's components.
-		------------------------------------------------------------------
+			2: Load CR's components.
+			------------------------------------------------------------------
 
-		Because we use the unstructured type,  Get will return an empty if there is no object. In turn, the
-		client's parses will return the following error: "Object 'Kind' is missing in 'unstructured object has no kind'"
-		To avoid that, we ignore errors if the map is empty -- yielding the same behavior as empty, but valid objects.
-	*/
-	handler := dispatch(&cr)
+			Because we use the unstructured type,  Get will return an empty if there is no object. In turn, the
+			client's parses will return the following error: "Object 'Kind' is missing in 'unstructured object has no kind'"
+			To avoid that, we ignore errors if the map is empty -- yielding the same behavior as empty, but valid objects.
 
-	fault := handler.GetFault(r)
-	{
-		key := client.ObjectKeyFromObject(&cr)
+		handler := dispatch(&cr)
 
-		if err := r.GetClient().Get(ctx, key, fault); client.IgnoreNotFound(err) != nil {
-			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "retrieve chaos"))
+		fault := handler.GetFault(r)
+		{
+			key := client.ObjectKeyFromObject(&cr)
+
+			if err := r.GetClient().Get(ctx, key, fault); client.IgnoreNotFound(err) != nil {
+				return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "retrieve chaos"))
+			}
 		}
-	}
+	*/
 
 	/*
-		3: Update the CR status using the data we've gathered
-		------------------------------------------------------------------
+			3: Update the CR status using the data we've gathered
+			------------------------------------------------------------------
 
-		The Update at this step serves two functions.
-		First, it is like "journaling" for the upcoming operations.
-		Second, it is a roadblock for stall (queued) requests.
+			The Update at this step serves two functions.
+			First, it is like "journaling" for the upcoming operations.
+			Second, it is a roadblock for stall (queued) requests.
 
-		However, due to the multiple updates, it is possible for this function to
-		be in conflict. We fix this issue by re-queueing the request.
-		We also suppress verbose error reporting as to avoid polluting the output.
+			However, due to the multiple updates, it is possible for this function to
+			be in conflict. We fix this issue by re-queueing the request.
+			We also suppress verbose error reporting as to avoid polluting the output.
+
+		newStatus := calculateLifecycle(&cr, fault)
+		cr.Status.Lifecycle = newStatus
+
+		if err := utils.UpdateStatus(ctx, r, &cr); err != nil {
+			runtime.HandleError(err)
+
+			return utils.RequeueAfter(time.Second)
+		}
 	*/
-	newStatus := calculateLifecycle(&cr, fault)
-	cr.Status.Lifecycle = newStatus
-
-	if err := utils.UpdateStatus(ctx, r, &cr); err != nil {
-		runtime.HandleError(err)
-
-		return utils.RequeueAfter(time.Second)
-	}
 
 	/*
-		4: Clean up the controller from finished jobs
-		------------------------------------------------------------------
+			4: Clean up the controller from finished jobs
+			------------------------------------------------------------------
 
-		First, we'll try to clean up old jobs, so that we don't leave too many lying
-		around.
+			First, we'll try to clean up old jobs, so that we don't leave too many lying
+			around.
+
+		if newStatus.Phase == v1alpha1.PhaseSuccess {
+			// Remove cr children once the cr is successfully complete.
+			// We should not remove the cr descriptor itself, as we need to maintain its
+			// status for higher-entities like the Workflow.
+			utils.Delete(ctx, r, fault)
+
+			return utils.Stop()
+		}
+
+		if newStatus.Phase == v1alpha1.PhaseFailed {
+			r.Logger.Error(errors.New(cr.Status.Lifecycle.Reason),
+				"chaos failed",
+				"chaos", cr.GetName())
+
+			return utils.Stop()
+		}
+
 	*/
-	if newStatus.Phase == v1alpha1.PhaseSuccess {
-		// Remove cr children once the cr is successfully complete.
-		// We should not remove the cr descriptor itself, as we need to maintain its
-		// status for higher-entities like the Workflow.
-		utils.Delete(ctx, r, fault)
-
-		return utils.Stop()
-	}
-
-	if newStatus.Phase == v1alpha1.PhaseFailed {
-		r.Logger.Error(errors.New(cr.Status.Lifecycle.Reason),
-			"chaos failed",
-			"chaos", cr.GetName())
-
-		return utils.Stop()
-	}
 
 	/*
-		5: Make the world matching what we want in our spec
-		------------------------------------------------------------------
+			5: Make the world matching what we want in our spec
+			------------------------------------------------------------------
 
-		Once we've updated our status, we can move on to ensuring that the status of
-		the world matches what we want in our spec.
+			Once we've updated our status, we can move on to ensuring that the status of
+			the world matches what we want in our spec.
 
-		We may delete the cr, add a pod, or wait for existing pod to change its status.
+			We may delete the cr, add a pod, or wait for existing pod to change its status.
+
+		if cr.Status.LastScheduleTime != nil {
+			// next reconciliation cycle will be trigger by the watchers
+			return utils.Stop()
+		}
+
+		if err := handler.Inject(ctx, r); err != nil {
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "injection failed"))
+		}
+
+
 	*/
-	if cr.Status.LastScheduleTime != nil {
-		// next reconciliation cycle will be trigger by the watchers
-		return utils.Stop()
-	}
-
-	if err := handler.Inject(ctx, r); err != nil {
-		return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "injection failed"))
-	}
-
 	/*
-		6: Avoid double actions
-		------------------------------------------------------------------
+			6: Avoid double actions
+			------------------------------------------------------------------
 
-		If this process restarts at this point (after posting a job, but
-		before updating the status), then we might try to start the job on
-		the next time.  Actually, if we re-list the Jobs on the next cycle
-		we might not see our own status update, and then post one again.
-		So, we need to use the job name as a lock to prevent us from making the job twice.
+			If this process restarts at this point (after posting a job, but
+			before updating the status), then we might try to start the job on
+			the next time.  Actually, if we re-list the Jobs on the next cycle
+			we might not see our own status update, and then post one again.
+			So, we need to use the job name as a lock to prevent us from making the job twice.
+
+		cr.Status.LastScheduleTime = &metav1.Time{Time: time.Now()}
+
 	*/
-	cr.Status.LastScheduleTime = &metav1.Time{Time: time.Now()}
 
 	return lifecycle.Pending(ctx, r, &cr, "injecting fault")
 }
@@ -223,13 +227,13 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 
 	r.serviceControl = serviceutils.NewServiceControl(r)
 
-	var fault Fault
+	// var fault Fault
 
-	AsPartition(&fault)
+	// AsPartition(&fault)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named("chaos").
 		For(&v1alpha1.Chaos{}).
-		Owns(&fault, builder.WithPredicates(r.Watchers())).
+		//	Owns(&fault, builder.WithPredicates(r.Watchers())).
 		Complete(r)
 }

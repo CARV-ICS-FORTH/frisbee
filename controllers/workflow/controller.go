@@ -266,10 +266,6 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "invalid dependency DAG"))
 		}
 
-		if err := utils.UseDefaultPlatformConfiguration(ctx, r, cr.GetNamespace()); err != nil {
-			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot get platform configuration"))
-		}
-
 		if cr.Spec.WithTelemetry != nil {
 			telemetryJob.SetName("telemetry")
 

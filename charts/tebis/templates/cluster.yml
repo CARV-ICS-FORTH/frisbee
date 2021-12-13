@@ -87,7 +87,8 @@ spec:
     decorators:
       annotations:
         k8s.v1.cni.cncf.io/networks: macvlan-rdma
-      telemetry: [ platform.telemetry.container ]
+      telemetry:
+        - platform.telemetry.container
       setFields:
         - field: Containers.0.Ports.0.ContainerPort
           value: {{"{{.Inputs.Parameters.port | int}}" | quote}}

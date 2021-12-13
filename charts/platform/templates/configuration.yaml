@@ -7,6 +7,7 @@ metadata:
   name: platform
   labels:
     app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+    app.frisbee.io/component: configuration
 data:
   # If the operator runs within the cluster, it will reach Grafana via the service.
   {{ if .Values.operator.enabled }}

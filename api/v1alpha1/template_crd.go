@@ -39,6 +39,9 @@ type TemplateSpec struct {
 type EmbedSpecs struct {
 	// +optional
 	Service *ServiceSpec `json:"service,omitempty"`
+
+	// +optional
+	Chaos *ChaosSpec `json:"chaos,omitempty"`
 }
 
 // TemplateStatus defines the observed state of Template

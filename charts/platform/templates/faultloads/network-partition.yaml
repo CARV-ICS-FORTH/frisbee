@@ -1,0 +1,31 @@
+---
+apiVersion: frisbee.io/v1alpha1
+kind: Template
+metadata:
+  name: fault.network.partition
+  labels:
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+    app.frisbee.io/component: faultload
+  annotations:
+    faultload.frisbee.io/apply-to: core/v1/Service
+spec:
+  inputs:
+    parameters:
+      memory: ""
+      cpu: ""
+  chaos:
+    apiVersion: chaos-mesh.org/v1alpha1
+    kind: NetworkChaos
+    spec:
+      action: partition
+      mode: one
+      selector:
+        labelSelectors:
+          "app.kubernetes.io/component": "tikv"
+      direction: to
+      target:
+        selector:
+          labelSelectors:
+            "app.kubernetes.io/component": "tikv"
+        mode: one
+      duration: "10s"

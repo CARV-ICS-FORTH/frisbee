@@ -18,47 +18,14 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
-type FaultType string
+type Fault unstructured.Unstructured
 
-const (
-	FaultPartition = FaultType("partition")
-	FaultKill      = FaultType("kill")
-)
-
-type EmbedFaultType struct {
-	// +optional
-	Partition *PartitionSpec `json:"partition,omitempty"`
-
-	Kill *KillSpec `json:"kill,omitempty"`
-}
-
-// PartitionSpec separate the given Pod from the rest of the network. This chaos typeis retractable
-// (either manually or after a duration) and can be waited at both Running and Pass Phase.
-// Running phase begins when the failure is injected. Pass begins when the failure is retracted.
-// If anything goes wrong in between, the chaos goes into Failed phase.
-type PartitionSpec struct {
-	Selector ServiceSelector `json:"selector"`
-
-	// Duration is the time after which Frisbee will roll back the injected fault.
-	// +optional
-	Duration *metav1.Duration `json:"duration,omitempty"`
-}
-
-// KillSpec terminates the selected Pod. Because this failure is permanent, it can only be waited in the
-// Running Phase. It does not go through Pass.
-type KillSpec struct {
-	Selector ServiceSelector `json:"selector,omitempty"`
-}
-
-// ChaosSpec defines the desired state of Chaos
+// ChaosSpec defines the desired state of Kaos
 type ChaosSpec struct {
-	// Type indicate the type of the injected fault
-	// +kubebuilder:validation:Enum=partition;kill;
-	Type FaultType `json:"type"`
-
-	*EmbedFaultType `json:",inline"`
+	Fault `json:",inline"`
 }
 
 // ChaosStatus defines the observed state of Chaos

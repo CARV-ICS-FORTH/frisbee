@@ -22,6 +22,7 @@ import (
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/telemetry/grafana"
 	"github.com/carv-ics-forth/frisbee/controllers/utils"
+	"github.com/carv-ics-forth/frisbee/controllers/utils/platform"
 	notifier "github.com/golanghelper/grafana-webhook"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -92,7 +93,7 @@ func (r *Controller) chaos(action v1alpha1.Action) (client.Object, error) {
 }
 
 func (r *Controller) ConnectToGrafana(ctx context.Context, cr *v1alpha1.Workflow) error {
-	endpoint := utils.DefaultConfiguration.GrafanaEndpoint
+	endpoint := platform.DefaultConfiguration.GrafanaEndpoint
 
 	return grafana.NewGrafanaClient(ctx, r, endpoint,
 		// Set a callback that will be triggered when there is Grafana alert.

@@ -68,3 +68,7 @@ Next, we present the family of controllers that each available controller belong
 
 https://cloud.redhat.com/blog/kubernetes-operators-best-practices
 https://developers.redhat.com/articles/2021/09/17/kubernetes-admission-control-validating-webhooks#overview_of_kubernetes_admission_control
+
+## Consume Configuration
+app.frisbee.io/component: configuration
+app.frisbee.io/component: faultload
