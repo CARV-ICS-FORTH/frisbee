@@ -34,11 +34,11 @@ The effort being put in automating tests should not take over delivering value t
 
    ```bash
    # Install the platform
-   >> helm upgrade --install my-frisbee frisbee/platform
+   >> helm upgrade --install --wait my-frisbee frisbee/platform
    # Install the package for monitoring YCSB output
-   >> helm upgrade --install my-ycsb frisbee/ycsb
+   >> helm upgrade --install --wait my-ycsb frisbee/ycsb
    # Install TiKV store
-   >> helm upgrade --install my-tikv frisbee/tikv
+   >> helm upgrade --install --wait my-tikv frisbee/tikv
    ```
 
 4. Create/Destroy the test plan.
