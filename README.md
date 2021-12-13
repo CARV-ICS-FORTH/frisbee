@@ -45,10 +45,10 @@ The effort being put in automating tests should not take over delivering value t
 
    ```bash
    # Create 
-   >>  kubectl -f charts/tikv/examples/plan.baseline.yml apply 
+   >> curl -sSL https://raw.githubusercontent.com/CARV-ICS-FORTH/frisbee/main/charts/tikv/examples/plan.baseline.yml | kubectl -f - apply
    
    # Destroy
-   >> kubectl -f charts/tikv/examples/plan.baseline.yml delete --cascade=foreground
+   >> curl -sSL https://raw.githubusercontent.com/CARV-ICS-FORTH/frisbee/main/charts/tikv/examples/plan.baseline.yml | kubectl -f - delete --cascade=foreground
    ```
 
 If everything went smoothly, you should see a
