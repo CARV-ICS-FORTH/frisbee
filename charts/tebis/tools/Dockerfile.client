@@ -55,8 +55,8 @@ FROM  centos:${CENTOS} as tebis-node
 RUN  yum install -y numactl-libs  numactl-devel libibverbs librdmacm
 
 WORKDIR /
-COPY --from=builder /root/tebis/build/YCSB-CXX/ycsb-async-kreon ycsb-async-kreon
-COPY --from=builder /root/tebis/ansible/ycsb_execution_plans ycsb_executions_plans
+COPY --from=builder /root/tebis/build/YCSB-CXX/ycsb-async-kreon /ycsb-async-kreon
+COPY --from=builder /root/tebis/ansible/ycsb_execution_plans /ycsb_execution_plans
 COPY --from=builder /root/tebis/build/YCSB-CXX/workloads /workloads
 
 

@@ -154,7 +154,7 @@ spec:
 
             echo "Starting Tebis client"
 
-            echo /ycsb-async-kreon                                 \
+             /ycsb-async-kreon                                \
             -e {{"{{.Inputs.Parameters.plan}}"}}              \
             -threads {{"{{.Inputs.Parameters.threads}}"}}     \
             -dbnum 1                                          \
@@ -163,5 +163,5 @@ spec:
             -zk_host  {{"{{.Inputs.Parameters.zookeeper}}"}}  \
             -zk_port  2181
 
-
-            sleep 3660
+            echo "Exit code $?"
+            sleep 3600
