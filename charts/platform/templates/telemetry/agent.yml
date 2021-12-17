@@ -17,6 +17,8 @@ spec:
         ports:
           - name: mon-system
             containerPort: 9442
+        securityContext:
+          privileged: true
         command:
           - /bin/sh # Run shell
           - -c # Read from string
@@ -31,8 +33,6 @@ spec:
             do
               sleep 10
             done
-
-
 
 
 ---

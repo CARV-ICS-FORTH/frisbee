@@ -98,11 +98,14 @@ spec:
       - name: app
         image: pingcap/tikv:v5.1.2
         volumeMounts:
-          - name: in-memory
+          - name: datastore
             mountPath: /store
         ports:
           - name: clusterbus
             containerPort: 20160
+        securityContext:
+          capabilities:
+            add: ["SYS_RESOURCE"]
         command:
           - /bin/sh   # Run shell
           - -c        # Read from string
