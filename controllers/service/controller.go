@@ -26,6 +26,7 @@ import (
 	"github.com/carv-ics-forth/frisbee/controllers/utils"
 	"github.com/carv-ics-forth/frisbee/controllers/utils/lifecycle"
 	"github.com/go-logr/logr"
+	cmap "github.com/orcaman/concurrent-map"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -44,6 +45,8 @@ import (
 // +kubebuilder:rbac:groups=core,resources=pods/status,verbs=get;list;watch
 // +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,resources=services/status,verbs=get;list;watch
+// +kubebuilder:rbac:groups=core,resources=persistentvolumeclaims,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=core,resources=persistentvolumeclaims/status,verbs=get;list;watch
 
 // Controller reconciles a Service object.
 type Controller struct {
@@ -51,6 +54,9 @@ type Controller struct {
 	logr.Logger
 
 	gvk schema.GroupVersionKind
+
+	// because the range annotator has state (uid), we need to save in the controller's store.
+	regionAnnotations cmap.ConcurrentMap
 
 	serviceControl serviceutils.ServiceControlInterface
 }
@@ -211,9 +217,10 @@ func (r *Controller) Finalize(obj client.Object) error {
 
 func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 	r := &Controller{
-		Manager: mgr,
-		Logger:  logger.WithName("service"),
-		gvk:     v1alpha1.GroupVersion.WithKind("Service"),
+		Manager:           mgr,
+		Logger:            logger.WithName("service"),
+		gvk:               v1alpha1.GroupVersion.WithKind("Service"),
+		regionAnnotations: cmap.New(),
 	}
 
 	r.serviceControl = serviceutils.NewServiceControl(r)

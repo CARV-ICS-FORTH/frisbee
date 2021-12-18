@@ -33,10 +33,12 @@ import (
 //		Grafana Annotations
 // ///////////////////////////////////////////
 
+type Tag = string
+
 const (
-	AnnotationRun     = "run"
-	AnnotationExit    = "exit"
-	AnnotationFailure = "failure"
+	TagRun     = "run"
+	TagExit    = "exit"
+	TagFailure = "failure"
 )
 
 // Annotation provides a way to mark points on the graph with rich events.
@@ -56,7 +58,7 @@ func (a *PointAnnotation) Add(obj client.Object) {
 	ga := sdk.CreateAnnotationRequest{
 		Time:    obj.GetCreationTimestamp().UnixMilli(),
 		TimeEnd: 0,
-		Tags:    []string{AnnotationRun},
+		Tags:    []string{TagRun},
 		Text:    fmt.Sprintf("Job added. Kind:%s Name:%s", reflect.TypeOf(obj), obj.GetName()),
 	}
 
@@ -69,7 +71,7 @@ func (a *PointAnnotation) Delete(obj client.Object) {
 	ga := sdk.CreateAnnotationRequest{
 		Time:    obj.GetDeletionTimestamp().UnixMilli(),
 		TimeEnd: 0,
-		Tags:    []string{AnnotationExit},
+		Tags:    []string{TagExit},
 		Text:    fmt.Sprintf("Job Deleted. Kind:%s Name:%s", reflect.TypeOf(obj), obj.GetName()),
 	}
 
@@ -88,11 +90,15 @@ type RangeAnnotation struct {
 	reqID uint
 }
 
-func (a *RangeAnnotation) Add(obj client.Object) {
+func (a *RangeAnnotation) Add(obj client.Object, tags ...Tag) {
+	if tags == nil {
+		tags = []Tag{TagRun}
+	}
+
 	ga := sdk.CreateAnnotationRequest{
 		Time:    obj.GetCreationTimestamp().UnixMilli(),
 		TimeEnd: 0,
-		Tags:    []string{AnnotationFailure},
+		Tags:    tags,
 		Text:    fmt.Sprintf("Job Added. Kind:%s Name:%s", reflect.TypeOf(obj), obj.GetName()),
 	}
 
@@ -101,7 +107,11 @@ func (a *RangeAnnotation) Add(obj client.Object) {
 	}
 }
 
-func (a *RangeAnnotation) Delete(obj client.Object) {
+func (a *RangeAnnotation) Delete(obj client.Object, tags ...Tag) {
+	if tags == nil {
+		tags = []Tag{TagExit}
+	}
+
 	timeStart := obj.GetCreationTimestamp()
 	timeEnd := obj.GetDeletionTimestamp()
 
@@ -114,7 +124,7 @@ func (a *RangeAnnotation) Delete(obj client.Object) {
 	ga := sdk.PatchAnnotationRequest{
 		Time:    0,
 		TimeEnd: timeEnd.UnixMilli(),
-		Tags:    []string{AnnotationFailure},
+		Tags:    tags,
 		Text:    fmt.Sprintf("Job Deleted. Kind:%s Name:%s", reflect.TypeOf(obj), obj.GetName()),
 	}
 

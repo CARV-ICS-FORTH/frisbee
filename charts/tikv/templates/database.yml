@@ -105,7 +105,7 @@ spec:
             containerPort: 20160
         securityContext:
           capabilities:
-            add: ["SYS_RESOURCE"]
+            add: [ "SYS_RESOURCE" ]
         command:
           - /bin/sh   # Run shell
           - -c        # Read from string

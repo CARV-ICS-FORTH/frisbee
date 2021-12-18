@@ -87,7 +87,7 @@
   "gnetId": 315,
   "graphTooltip": 0,
   "id": 2,
-  "iteration": 1636387814566,
+  "iteration": 1639766122550,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -655,6 +655,7 @@
         "alertName": "",
         "dashboardAlerts": false,
         "dashboardTitle": "",
+        "folderId": null,
         "maxItems": 10,
         "showOptions": "current",
         "sortOrder": 1,

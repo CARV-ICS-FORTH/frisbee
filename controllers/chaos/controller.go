@@ -51,8 +51,8 @@ type Controller struct {
 
 	gvk schema.GroupVersionKind
 
-	// annotator sends annotations to grafana
-	annotators cmap.ConcurrentMap
+	// because the range annotator has state (uid), we need to save in the controller's store.
+	regionAnnotations cmap.ConcurrentMap
 
 	serviceControl serviceutils.ServiceControlInterface
 }
@@ -215,10 +215,10 @@ func (r *Controller) Finalize(obj client.Object) error {
 
 func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 	r := &Controller{
-		Manager:    mgr,
-		Logger:     logger.WithName("chaos"),
-		gvk:        v1alpha1.GroupVersion.WithKind("Chaos"),
-		annotators: cmap.New(),
+		Manager:           mgr,
+		Logger:            logger.WithName("chaos"),
+		gvk:               v1alpha1.GroupVersion.WithKind("Chaos"),
+		regionAnnotations: cmap.New(),
 	}
 
 	r.serviceControl = serviceutils.NewServiceControl(r)

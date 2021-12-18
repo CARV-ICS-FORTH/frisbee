@@ -23,6 +23,8 @@ spec:
       resources:
         cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
         memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
+      #annotations:
+        #"grafana.frisbee.io/draw": "range"
 
     containers: # Container(s)
       - name: app
@@ -72,6 +74,8 @@ spec:
       resources: # Resources
         cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
         memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
+      #annotations:
+        #"grafana.frisbee.io/draw": "range"
 
     containers: # Container(s)
       - name: app

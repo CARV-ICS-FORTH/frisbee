@@ -32,7 +32,7 @@ spec:
       service:
         templateRef: ycsb.tikv.loader
         inputs:
-          - { server: .service.master.any, workload: workloada, recordcount: "10000000", threads: "4" }
+          - { server: .service.master.any, workload: workloada, recordcount: "500000", threads: "40" }
 
     # Step 2: Run workload A
     - action: Service
@@ -41,7 +41,7 @@ spec:
       service:
         templateRef: ycsb.tikv.runner
         inputs:
-          - { server: .service.master.any, workload: workloada, operationcount: "1000000", threads: "4" }
+          - { server: .service.master.any, workload: workloada, operationcount: "500000", threads: "40" }
 
     # Step 3: Run workload B
     - action: Service
@@ -50,7 +50,7 @@ spec:
       service:
         templateRef: ycsb.tikv.runner
         inputs:
-          - { server: .service.master.any, workload: workloadb, operationcount: "1000000", threads: "4" }
+          - { server: .service.master.any, workload: workloadb, operationcount: "500000", threads: "40" }
 
     # Step 4: Run workload C
     - action: Service
@@ -59,7 +59,7 @@ spec:
       service:
         templateRef: ycsb.tikv.runner
         inputs:
-          - { server: .service.master.any, workload: workloadc, operationcount: "1000000", threads: "4" }
+          - { server: .service.master.any, workload: workloadc, operationcount: "500000", threads: "40" }
 
     # Step 5: Run workload F
     - action: Service
@@ -68,7 +68,7 @@ spec:
       service:
         templateRef: ycsb.tikv.runner
         inputs:
-          - { server: .service.master.any, workload: workloadf, operationcount: "1000000", threads: "4" }
+          - { server: .service.master.any, workload: workloadf, operationcount: "500000", threads: "40" }
 
 
     # Step 6: Run workload D.
@@ -78,7 +78,7 @@ spec:
       service:
         templateRef: ycsb.tikv.runner
         inputs:
-          - { server: .service.master.any, workload: workloadd, operationcount: "1000000", threads: "4" }
+          - { server: .service.master.any, workload: workloadd, operationcount: "500000", threads: "40" }
 
 
     # Step 7,8: Reload the data with parameters of workload E.
@@ -89,7 +89,7 @@ spec:
       service:
         templateRef: ycsb.tikv.loader
         inputs:
-          - { server: .service.master.any, workload: workloade, dropdata: "true", recordcount: "1000000", threads: "4" }
+          - { server: .service.master.any, workload: workloade, dropdata: "true", recordcount: "500000", threads: "40" }
 
     # Step 9:Run workload E
     - action: Service
@@ -98,4 +98,4 @@ spec:
       service:
         templateRef: ycsb.tikv.runner
         inputs:
-          - { server: .service.master.any, workload: workloade, operationcount: "1000000", threads: "4" }
+          - { server: .service.master.any, workload: workloade, operationcount: "500000", threads: "40" }

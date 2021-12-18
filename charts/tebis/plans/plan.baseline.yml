@@ -30,7 +30,7 @@ spec:
       name: master0
       depends:
         success: [ boot ]
-        running: [zookeeper]
+        running: [ zookeeper ]
       service:
         templateRef: tebis.cluster.master
         inputs:
@@ -41,7 +41,7 @@ spec:
       name: master1
       depends:
         success: [ boot ]
-        running: [zookeeper]
+        running: [ zookeeper ]
       service:
         templateRef: tebis.cluster.master
         inputs:
@@ -53,7 +53,7 @@ spec:
       name: master2
       depends:
         success: [ boot ]
-        running: [zookeeper]
+        running: [ zookeeper ]
       service:
         templateRef: tebis.cluster.master
         inputs:
@@ -65,7 +65,7 @@ spec:
       name: client
       depends:
         success: [ boot ]
-        running: [zookeeper, master0, master1, master2]
+        running: [ zookeeper, master0, master1, master2 ]
       service:
         templateRef: tebis.cluster.client
         inputs:

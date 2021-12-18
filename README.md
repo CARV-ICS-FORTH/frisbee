@@ -22,7 +22,8 @@ The effort being put in automating tests should not take over delivering value t
 
 # TL;DR
 
-1. Make sure that [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/) and  [Helm](https://helm.sh/docs/intro/install/) are installed on your system.
+1. Make sure that [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/)
+   and  [Helm](https://helm.sh/docs/intro/install/) are installed on your system.
 
 2. Update Helm repo.
 
@@ -80,7 +81,7 @@ For more information, Frisbee installation and reference documents are available
 
 👉 **[Quick Start](docs/introduction.md)**
 
-👉 **[Installation](docs/installation.md)**
+👉 **[Installation](docs/tutorial.md)**
 
 👉 **[Test Plans](charts)**
 

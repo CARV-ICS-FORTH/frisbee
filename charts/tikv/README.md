@@ -1,23 +1,24 @@
 # TiKV
 
-TiKV provides both raw and ACID-compliant transactional key-value API, which is widely used in online serving services,
-such as the metadata storage system for object storage service, the storage system for recommendation systems, the
-online feature store, etc.
+> [TiKV](https://tikv.org/) provides both raw and ACID-compliant transactional key-value API, which is widely used in online serving services,
+> such as the metadata storage system for object storage service, the storage system for recommendation systems, the
+> online feature store, etc.
 
 ## TL;DR
 
+Install the platform and dependent charts.
+
 ```bash
-# Add repo
 >> helm repo add frisbee https://carv-ics-forth.github.io/frisbee/charts
-# Install dependencies
 >> helm install my-frisbee frisbee/platform
 >> helm install my-ycsb frisbee/ycsbmon
-# Install TiKV
 >> helm install my-tikv frisbee/tikv
-# Run Frisbee controller
->> make run
-# Deploy the testing plan
->> kubectl apply -f plans/plan.baseline.yml 
+```
+
+Run any of the testing plans.
+
+```bash
+>> kubectl apply -f examples/plan.baseline.yml 
 ```
 
 ## Introduction
@@ -35,13 +36,19 @@ the [Helm](https://helm.sh) package manager.
 
 To install the chart with the release name `my-release`:
 
-```console
-$ helm repo add bitnami https://charts.bitnami.com/bitnami
-$ helm install my-release bitnami/influxdb
+```bash
+# Install helm repo
+>> helm repo add frisbee https://carv-ics-forth.github.io/frisbee/charts
+# Install Frisbee platform
+>> helm install my-frisbee frisbee/platform
+# Install dependent charts
+>> helm install my-ycsb frisbee/ycsbmon
+>> helm install my-tikv frisbee/tikv
 ```
 
-These commands deploy influxdb on the Kubernetes cluster in the default configuration. The [Parameters](#parameters)
-section lists the parameters that can be configured during installation.
+These commands deploy TiKV on the Kubernetes cluster in the default configuration.
+
+The [Parameters](#parameters) section lists the parameters that can be configured during installation.
 
 > **Tip**: List all releases using `helm list`
 

@@ -110,7 +110,7 @@ docker-build: test ## Build docker image for the Frisbee controller.
 	docker build -t ${IMG} .
 
 docker-run: docker-build ## Build and Run docker image for the Frisbee controller.
-	# --rm autonatically clean up the container when the container exits
+	# --rm automatically clean up the container when the container exits
 	# -ti allocate a pseudo-TTY and ieep STDIN open even if not attached
 	# -v mount the local kubernetes configuration to the container
 	docker run --rm -ti -v ${HOME}/.kube/:/home/default/.kube ${IMG}

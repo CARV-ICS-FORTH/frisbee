@@ -20,14 +20,24 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/telemetry/grafana"
 	"github.com/carv-ics-forth/frisbee/controllers/utils"
+	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
+
+func printWrongType(logger logr.Logger, expected interface{}, got client.Object) {
+	logger.Error(errors.New("invalid type"), "invalid conversion",
+		"expected", reflect.TypeOf(expected),
+		"got", reflect.TypeOf(got),
+	)
+}
 
 func (r *Controller) Watchers() predicate.Funcs {
 	return predicate.Funcs{
@@ -56,8 +66,15 @@ func (r *Controller) create(e event.CreateEvent) bool {
 		"version", e.Object.GetResourceVersion(),
 	)
 
-	annotation := &grafana.PointAnnotation{}
-	annotation.Add(e.Object)
+	if e.Object.GetAnnotations()[v1alpha1.DrawAs] == v1alpha1.DrawAsRegion {
+		annotation := &grafana.RangeAnnotation{}
+		annotation.Add(e.Object)
+
+		r.regionAnnotations.Set(e.Object.GetName(), annotation)
+	} else {
+		annotation := &grafana.PointAnnotation{}
+		annotation.Add(e.Object)
+	}
 
 	return false
 }
@@ -82,8 +99,19 @@ func (r *Controller) update(e event.UpdateEvent) bool {
 	}
 
 	// if the status is the same, there is no need to inform the service
-	prev := e.ObjectOld.(*corev1.Pod)
-	latest := e.ObjectNew.(*corev1.Pod)
+	prev, ok := e.ObjectOld.(*corev1.Pod)
+	if !ok {
+		printWrongType(r.Logger, corev1.Pod{}, e.ObjectOld)
+
+		return false
+	}
+
+	latest, ok := e.ObjectNew.(*corev1.Pod)
+	if !ok {
+		printWrongType(r.Logger, corev1.Pod{}, e.ObjectNew)
+
+		return false
+	}
 
 	if prev.Status.Phase == latest.Status.Phase {
 		// a controller never initiates a phase change, and so is never asleep waiting for the same.
@@ -123,8 +151,20 @@ func (r *Controller) delete(e event.DeleteEvent) bool {
 		"version", e.Object.GetResourceVersion(),
 	)
 
-	annotation := &grafana.PointAnnotation{}
-	annotation.Delete(e.Object)
+	if e.Object.GetAnnotations()[v1alpha1.DrawAs] == v1alpha1.DrawAsRegion {
+		annotation, ok := r.regionAnnotations.Get(e.Object.GetName())
+		if !ok {
+			// this is a stall condition that happens when the controller is restarted. just ignore it
+			return false
+		}
+
+		annotation.(*grafana.RangeAnnotation).Delete(e.Object)
+
+		r.regionAnnotations.Remove(e.Object.GetName())
+	} else {
+		annotation := &grafana.PointAnnotation{}
+		annotation.Delete(e.Object)
+	}
 
 	return true
 }

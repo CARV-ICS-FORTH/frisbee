@@ -57,9 +57,9 @@ func (r *Controller) create(e event.CreateEvent) bool {
 
 	// because the range annotator has state (uid), we need to save in the controller's store.
 	annotator := &grafana.RangeAnnotation{}
-	annotator.Add(e.Object)
+	annotator.Add(e.Object, grafana.TagFailure)
 
-	r.annotators.Set(e.Object.GetName(), annotator)
+	r.regionAnnotations.Set(e.Object.GetName(), annotator)
 
 	return true
 }
@@ -114,15 +114,15 @@ func (r *Controller) delete(e event.DeleteEvent) bool {
 		"version", e.Object.GetResourceVersion(),
 	)
 
-	annotator, ok := r.annotators.Get(e.Object.GetName())
+	annotator, ok := r.regionAnnotations.Get(e.Object.GetName())
 	if !ok {
 		// this is a stall condition that happens when the controller is restarted. just ignore it
 		return false
 	}
 
-	annotator.(*grafana.RangeAnnotation).Delete(e.Object)
+	annotator.(*grafana.RangeAnnotation).Delete(e.Object, grafana.TagFailure)
 
-	r.annotators.Remove(e.Object.GetName())
+	r.regionAnnotations.Remove(e.Object.GetName())
 
 	return true
 }

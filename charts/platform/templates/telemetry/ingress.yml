@@ -5,8 +5,6 @@ metadata:
   name: telemetry-ingress
   labels:
     app.kubernetes.io/managed-by: {{.Release.Service | quote}}
-#  annotations:
-#    "kubernetes.io/ingress.class": "ambassador"
 spec:
   rules:
     - host: prometheus.{{.Values.global.ingress}}

@@ -93,7 +93,8 @@ data:
       - job_name: 'agent'
 
         honor_labels: true
-        honor_timestamps: true
+        # Set it to false in order to avoid time drifts
+        honor_timestamps: false
 
         scheme: http
 
