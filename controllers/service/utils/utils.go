@@ -86,7 +86,7 @@ func (s *ServiceControl) GetServiceSpecList(ctx context.Context, namespace strin
 	// throughout the experiment,  thus yielding different results.
 	lookupCache := make(map[string]v1alpha1.SList)
 
-	specs := make([]v1alpha1.ServiceSpec, 0, fromTemplate.Instances)
+	specs := make([]v1alpha1.ServiceSpec, 0, fromTemplate.MaxInstances)
 
 	if err := fromTemplate.Iterate(func(userInputs map[string]string) error {
 		scheme := templateutils.Scheme{

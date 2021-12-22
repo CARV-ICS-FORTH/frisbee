@@ -25,12 +25,36 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+type ClassifierReader interface {
+	IsZero() bool
+	IsActive(jobName string) bool
+	IsRunning(name string) bool
+	IsSuccessful(name string) bool
+	IsFailed(name string) bool
+	NumActiveJobs() int
+	NumRunningJobs() int
+	NumSuccessfulJobs() int
+	NumFailedJobs() int
+	ActiveList() []string
+	RunningList() []string
+	SuccessfulList() []string
+	FailedList() []string
+	ActiveJobs() []client.Object
+	RunningJobs() []client.Object
+	SuccessfulJobs() []client.Object
+	FailedJobs() []client.Object
+}
+
 type Classifier struct {
 	// activeJobs involve pending + running
 	activeJobs     map[string]client.Object
 	runningJobs    map[string]client.Object
 	successfulJobs map[string]client.Object
 	failedJobs     map[string]client.Object
+}
+
+func (in Classifier) IsZero() bool {
+	return in.activeJobs == nil && in.runningJobs == nil && in.successfulJobs == nil && in.failedJobs == nil
 }
 
 func (in *Classifier) Reset() {
@@ -66,9 +90,9 @@ func (in *Classifier) Classify(name string, obj client.Object) {
 	}
 }
 
-// ClassifyAsFrisbeeService registers a system service.
+// Exclude registers a system service.
 // Services classified by this function are not accounted, unless they have failed.
-func (in *Classifier) ClassifyAsFrisbeeService(name string, obj client.Object) {
+func (in *Classifier) Exclude(name string, obj client.Object) {
 	if statusAware, getStatus := obj.(ReconcileStatusAware); getStatus {
 		status := statusAware.GetReconcileStatus()
 
@@ -80,47 +104,47 @@ func (in *Classifier) ClassifyAsFrisbeeService(name string, obj client.Object) {
 	}
 }
 
-func (in *Classifier) IsActive(jobName string) bool {
+func (in Classifier) IsActive(jobName string) bool {
 	_, ok := in.activeJobs[jobName]
 
 	return ok
 }
 
-func (in *Classifier) IsRunning(name string) bool {
+func (in Classifier) IsRunning(name string) bool {
 	_, ok := in.runningJobs[name]
 
 	return ok
 }
 
-func (in *Classifier) IsSuccessful(name string) bool {
+func (in Classifier) IsSuccessful(name string) bool {
 	_, ok := in.successfulJobs[name]
 
 	return ok
 }
 
-func (in *Classifier) IsFailed(name string) bool {
+func (in Classifier) IsFailed(name string) bool {
 	_, ok := in.failedJobs[name]
 
 	return ok
 }
 
-func (in *Classifier) NumActiveJobs() int {
+func (in Classifier) NumActiveJobs() int {
 	return len(in.activeJobs)
 }
 
-func (in *Classifier) NumRunningJobs() int {
+func (in Classifier) NumRunningJobs() int {
 	return len(in.runningJobs)
 }
 
-func (in *Classifier) NumSuccessfulJobs() int {
+func (in Classifier) NumSuccessfulJobs() int {
 	return len(in.successfulJobs)
 }
 
-func (in *Classifier) NumFailedJobs() int {
+func (in Classifier) NumFailedJobs() int {
 	return len(in.failedJobs)
 }
 
-func (in *Classifier) ActiveList() []string {
+func (in Classifier) ActiveList() []string {
 	list := make([]string, 0, len(in.activeJobs))
 
 	for jobName := range in.activeJobs {
@@ -132,7 +156,7 @@ func (in *Classifier) ActiveList() []string {
 	return list
 }
 
-func (in *Classifier) RunningList() []string {
+func (in Classifier) RunningList() []string {
 	list := make([]string, 0, len(in.runningJobs))
 
 	for jobName := range in.runningJobs {
@@ -144,7 +168,7 @@ func (in *Classifier) RunningList() []string {
 	return list
 }
 
-func (in *Classifier) SuccessfulList() []string {
+func (in Classifier) SuccessfulList() []string {
 	list := make([]string, 0, len(in.successfulJobs))
 
 	for jobName := range in.successfulJobs {
@@ -156,7 +180,7 @@ func (in *Classifier) SuccessfulList() []string {
 	return list
 }
 
-func (in *Classifier) FailedList() []string {
+func (in Classifier) FailedList() []string {
 	list := make([]string, 0, len(in.failedJobs))
 
 	for jobName := range in.failedJobs {
@@ -168,7 +192,7 @@ func (in *Classifier) FailedList() []string {
 	return list
 }
 
-func (in *Classifier) ActiveJobs() []client.Object {
+func (in Classifier) ActiveJobs() []client.Object {
 	list := make([]client.Object, 0, len(in.activeJobs))
 
 	for _, job := range in.activeJobs {
@@ -178,7 +202,7 @@ func (in *Classifier) ActiveJobs() []client.Object {
 	return list
 }
 
-func (in *Classifier) RunningJobs() []client.Object {
+func (in Classifier) RunningJobs() []client.Object {
 	list := make([]client.Object, 0, len(in.runningJobs))
 
 	for _, job := range in.runningJobs {
@@ -188,7 +212,7 @@ func (in *Classifier) RunningJobs() []client.Object {
 	return list
 }
 
-func (in *Classifier) SuccessfulJobs() []client.Object {
+func (in Classifier) SuccessfulJobs() []client.Object {
 	list := make([]client.Object, 0, len(in.successfulJobs))
 
 	for _, job := range in.successfulJobs {
@@ -198,7 +222,7 @@ func (in *Classifier) SuccessfulJobs() []client.Object {
 	return list
 }
 
-func (in *Classifier) FailedJobs() []client.Object {
+func (in Classifier) FailedJobs() []client.Object {
 	list := make([]client.Object, 0, len(in.failedJobs))
 
 	for _, job := range in.failedJobs {

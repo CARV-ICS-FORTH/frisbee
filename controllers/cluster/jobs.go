@@ -27,7 +27,7 @@ import (
 // if there is only one instance, it will be named after the group. otherwise, the instances will be named
 // as Master-0, Master-1, ...
 func generateName(group *v1alpha1.Cluster, i int) string {
-	if group.Spec.Instances == 1 {
+	if group.Spec.MaxInstances == 1 {
 		return group.GetName()
 	}
 
@@ -39,7 +39,10 @@ func getJob(cluster *v1alpha1.Cluster, i int) *v1alpha1.Service {
 
 	instance.SetName(generateName(cluster, i))
 
-	cluster.Status.Expected[i].DeepCopyInto(&instance.Spec)
+	// modulo is needed to re-iterate the job list, required for the implementation of "Until".
+	jobSpec := cluster.Status.QueuedJobs[i%len(cluster.Status.QueuedJobs)]
+
+	jobSpec.DeepCopyInto(&instance.Spec)
 
 	return &instance
 }

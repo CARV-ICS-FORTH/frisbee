@@ -22,10 +22,10 @@ import (
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/telemetry/grafana"
 	"github.com/carv-ics-forth/frisbee/controllers/utils"
+	"github.com/carv-ics-forth/frisbee/controllers/utils/assertions"
 	notifier "github.com/golanghelper/grafana-webhook"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"k8s.io/apimachinery/pkg/util/json"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -100,14 +100,11 @@ func (r *Controller) ConnectToGrafana(ctx context.Context, cr *v1alpha1.Workflow
 		grafana.WithNotifyOnAlert(func(b *notifier.Body) {
 			r.Logger.Info("Grafana Alert", "body", b)
 
-			alertJSON, _ := json.Marshal(b)
-
-			assertionInfo := map[string]string{
-				SLAViolationFired: b.RuleName,
-				SLAViolationInfo:  string(alertJSON),
-			}
-
-			if err := utils.PatchAnnotation(ctx, r, cr, assertionInfo); err != nil {
+			// when Grafana fires an alert, this alert is captured by the Webhook.
+			// The webhook must someone notify the appropriate controller.
+			// To do that, it adds information of the fired alert to the object's metadata
+			// and updates (patches) the object.
+			if err := assertions.DispatchAlert(ctx, r, b); err != nil {
 				r.Logger.Error(err, "unable to inform CR for SLA violation", "cr", cr.GetName())
 			}
 		}),

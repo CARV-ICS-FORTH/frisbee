@@ -46,11 +46,10 @@ func (r *Controller) installPrometheus(ctx context.Context, w *v1alpha1.Telemetr
 	}
 
 	{ // spec
-
 		fromtemplate := &v1alpha1.GenerateFromTemplate{
-			TemplateRef: prometheusTemplate,
-			Instances:   0,
-			Inputs:      nil,
+			TemplateRef:  prometheusTemplate,
+			MaxInstances: 1,
+			Inputs:       nil,
 		}
 
 		if err := fromtemplate.Validate(false); err != nil {
@@ -78,9 +77,9 @@ func (r *Controller) installGrafana(ctx context.Context, w *v1alpha1.Telemetry) 
 
 	{ // spec
 		fromtemplate := &v1alpha1.GenerateFromTemplate{
-			TemplateRef: grafanaTemplate,
-			Instances:   0,
-			Inputs:      nil,
+			TemplateRef:  grafanaTemplate,
+			MaxInstances: 1,
+			Inputs:       nil,
 		}
 
 		if err := fromtemplate.Validate(false); err != nil {

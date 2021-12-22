@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
+	"github.com/carv-ics-forth/frisbee/controllers/utils/assertions"
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -39,7 +40,7 @@ func (r *Controller) updateLifecycle(w *v1alpha1.Workflow) {
 		return
 	}
 
-	if info, exists := AssertSLA(w); exists {
+	if info, fired := assertions.FiredAlert(w); fired {
 		w.Status.Lifecycle = v1alpha1.Lifecycle{
 			Phase:   v1alpha1.PhaseFailed,
 			Reason:  "AssertionError",
@@ -47,7 +48,7 @@ func (r *Controller) updateLifecycle(w *v1alpha1.Workflow) {
 		}
 
 		meta.SetStatusCondition(&w.Status.Conditions, metav1.Condition{
-			Type:    v1alpha1.WorkflowAssertion.String(),
+			Type:    v1alpha1.ConditionTerminated.String(),
 			Status:  metav1.ConditionTrue,
 			Reason:  "AssertionError",
 			Message: info,
@@ -64,17 +65,18 @@ func (r *Controller) updateLifecycle(w *v1alpha1.Workflow) {
 					continue
 				}
 
-				if err := AssertState(action.Assert.State, &BuiltinState{Runtime: &r.state}); err != nil {
+				info, fired, err := assertions.FiredState(action.Assert.State, r.state)
+				if err != nil || fired {
 					w.Status.Lifecycle = v1alpha1.Lifecycle{
 						Phase:   v1alpha1.PhaseFailed,
-						Reason:  "AssertionError",
+						Reason:  info,
 						Message: err.Error(),
 					}
 
 					meta.SetStatusCondition(&w.Status.Conditions, metav1.Condition{
-						Type:    v1alpha1.WorkflowAssertion.String(),
+						Type:    v1alpha1.ConditionTerminated.String(),
 						Status:  metav1.ConditionTrue,
-						Reason:  "AssertionError",
+						Reason:  info,
 						Message: err.Error(),
 					})
 				}
@@ -108,7 +110,7 @@ func (r *Controller) updateLifecycle(w *v1alpha1.Workflow) {
 				Message: fmt.Sprintf("successful jobs: %s", r.state.SuccessfulList()),
 			},
 			condition: metav1.Condition{
-				Type:    v1alpha1.ConditionAllJobsDone.String(),
+				Type:    v1alpha1.ConditionAllJobsCompleted.String(),
 				Status:  metav1.ConditionTrue,
 				Reason:  "AllJobsCompleted",
 				Message: fmt.Sprintf("successful jobs: %s", r.state.SuccessfulList()),
@@ -122,7 +124,7 @@ func (r *Controller) updateLifecycle(w *v1alpha1.Workflow) {
 				Message: fmt.Sprintf("running jobs: %s", r.state.RunningList()),
 			},
 			condition: metav1.Condition{
-				Type:    v1alpha1.ConditionAllJobs.String(),
+				Type:    v1alpha1.ConditionAllJobsScheduled.String(),
 				Status:  metav1.ConditionTrue,
 				Reason:  "AllJobsRunning",
 				Message: fmt.Sprintf("running jobs: %s", r.state.RunningList()),

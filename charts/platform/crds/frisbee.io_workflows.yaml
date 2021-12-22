@@ -48,17 +48,18 @@ spec:
                         will terminate with a "passed" or "failed" message
                       properties:
                         sla:
-                          description: SLA is a Grafana alert that will be triggered
+                          description: 'SLA is a Grafana alert that will be triggered
                             if the SLA condition is met. SLA assertion is applicable
-                            throughout the execution of an action.
+                            throughout the execution of an action. Parsing: Grafana
+                            URL: http://grafana/d/A2EjFbsMk/ycsb-services?editPanel=86
+                            SLA: A2EjFbsMk/86/Average Rational: Panel/Dashboard/Metric'
+                          nullable: true
                           type: string
                         state:
                           description: State describe the runtime condition that should
                             be met after the action has been executed
+                          nullable: true
                           type: string
-                      required:
-                      - sla
-                      - state
                       type: object
                     chaos:
                       description: ChaosSpec defines the desired state of Chaos
@@ -211,20 +212,20 @@ spec:
                           type: string
                         inputs:
                           description: Inputs are list of inputs passed to the objects.
-                            When used in conjunction with Instances, there can be
-                            only one input and all the instances will run with identical
-                            parameters. If Instances is defined and there are more
-                            than one inputs, the request will be rejected.
+                            When used in conjunction with instances, if the number
+                            of instances is larger that the number of inputs, then
+                            inputs are recursively iteration.
                           items:
                             additionalProperties:
                               type: string
                             type: object
                           type: array
                         instances:
-                          description: Instances dictate the number of objects to
-                            be created for the service. If Env is specified, the values
-                            with be identical across the spawned instances. For instances
-                            with different parameters, use Inputs.
+                          description: MaxInstances dictate the number of objects
+                            to be created for the service. If no inputs are defined,
+                            then all instances will be initiated using the default
+                            parameters of the template. When used in conjunction with
+                            Until, MaxInstances as a max bound.
                           type: integer
                         schedule:
                           description: Schedule defines the interval between the creation
@@ -270,6 +271,26 @@ spec:
                           required:
                           - failedServices
                           type: object
+                        until:
+                          description: Until defines the conditions under which the
+                            Cluster will stop spawning new services. If used in conjunction
+                            with inputs, it will loop over inputs until the conditions
+                            are met.
+                          properties:
+                            sla:
+                              description: 'SLA is a Grafana alert that will be triggered
+                                if the SLA condition is met. SLA assertion is applicable
+                                throughout the execution of an action. Parsing: Grafana
+                                URL: http://grafana/d/A2EjFbsMk/ycsb-services?editPanel=86
+                                SLA: A2EjFbsMk/86/Average Rational: Panel/Dashboard/Metric'
+                              nullable: true
+                              type: string
+                            state:
+                              description: State describe the runtime condition that
+                                should be met after the action has been executed
+                              nullable: true
+                              type: string
+                          type: object
                       required:
                       - templateRef
                       type: object
@@ -301,24 +322,44 @@ spec:
                       properties:
                         inputs:
                           description: Inputs are list of inputs passed to the objects.
-                            When used in conjunction with Instances, there can be
-                            only one input and all the instances will run with identical
-                            parameters. If Instances is defined and there are more
-                            than one inputs, the request will be rejected.
+                            When used in conjunction with instances, if the number
+                            of instances is larger that the number of inputs, then
+                            inputs are recursively iteration.
                           items:
                             additionalProperties:
                               type: string
                             type: object
                           type: array
                         instances:
-                          description: Instances dictate the number of objects to
-                            be created for the service. If Env is specified, the values
-                            with be identical across the spawned instances. For instances
-                            with different parameters, use Inputs.
+                          description: MaxInstances dictate the number of objects
+                            to be created for the service. If no inputs are defined,
+                            then all instances will be initiated using the default
+                            parameters of the template. When used in conjunction with
+                            Until, MaxInstances as a max bound.
                           type: integer
                         templateRef:
                           description: TemplateRef refers to a  template (e.g, iperf-server).
                           type: string
+                        until:
+                          description: Until defines the conditions under which the
+                            Cluster will stop spawning new services. If used in conjunction
+                            with inputs, it will loop over inputs until the conditions
+                            are met.
+                          properties:
+                            sla:
+                              description: 'SLA is a Grafana alert that will be triggered
+                                if the SLA condition is met. SLA assertion is applicable
+                                throughout the execution of an action. Parsing: Grafana
+                                URL: http://grafana/d/A2EjFbsMk/ycsb-services?editPanel=86
+                                SLA: A2EjFbsMk/86/Average Rational: Panel/Dashboard/Metric'
+                              nullable: true
+                              type: string
+                            state:
+                              description: State describe the runtime condition that
+                                should be met after the action has been executed
+                              nullable: true
+                              type: string
+                          type: object
                       required:
                       - templateRef
                       type: object
@@ -417,12 +458,6 @@ spec:
                   - type
                   type: object
                 type: array
-              expectedAlerts:
-                additionalProperties:
-                  type: boolean
-                description: ExpectedAlerts is a list of alerts should drive to SLA
-                  violations
-                type: object
               message:
                 description: Message provides more details for understanding the Reason.
                 type: string

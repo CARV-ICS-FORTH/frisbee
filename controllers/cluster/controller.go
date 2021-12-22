@@ -24,6 +24,7 @@ import (
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	serviceutils "github.com/carv-ics-forth/frisbee/controllers/service/utils"
 	"github.com/carv-ics-forth/frisbee/controllers/utils"
+	"github.com/carv-ics-forth/frisbee/controllers/utils/assertions"
 	"github.com/carv-ics-forth/frisbee/controllers/utils/lifecycle"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -129,20 +130,8 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	*/
 	r.state.Reset()
 
-	var mostRecentTime *time.Time // find the last run so we can update the status
-
 	for i, job := range childJobs.Items {
 		r.state.Classify(job.GetName(), &childJobs.Items[i])
-
-		scheduledTimeForJob := &job.CreationTimestamp.Time
-
-		if !scheduledTimeForJob.IsZero() {
-			if mostRecentTime == nil {
-				mostRecentTime = scheduledTimeForJob
-			} else if mostRecentTime.Before(*scheduledTimeForJob) {
-				mostRecentTime = scheduledTimeForJob
-			}
-		}
 	}
 
 	/*
@@ -153,12 +142,6 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		subresource, we'll use the `Status` part of the client, with the `Update`
 		method.
 	*/
-	if mostRecentTime != nil {
-		cr.Status.LastScheduleTime = &metav1.Time{Time: *mostRecentTime}
-	} else {
-		cr.Status.LastScheduleTime = nil
-	}
-
 	newStatus := calculateLifecycle(&cr, r.state)
 
 	cr.Status = newStatus
@@ -177,8 +160,11 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		pause runs to investigate or putz with the cluster, without deleting the object.
 	*/
 	if cr.Spec.Suspend != nil && *cr.Spec.Suspend {
-		r.Logger.Info("Not starting job because the cluster is suspended",
-			"cluster", cr.GetName())
+		r.Logger.Info("Cluster is suspended",
+			"cluster", cr.GetName(),
+			"reason", cr.Status.Reason,
+			"message", cr.Status.Message,
+		)
 
 		return utils.Stop()
 	}
@@ -200,9 +186,11 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			"successfulJobs", r.state.SuccessfulList(),
 		)
 
-		// Remove cr children once the cr is successfully complete.
-		// We should not remove the cr descriptor itself, as we need to maintain its
-		// status for higher-entities like the Workflow.
+		/*
+			Remove cr children once the cr is successfully complete.
+			We should not remove the cr descriptor itself, as we need to maintain its
+			status for higher-entities like the Workflow.
+		*/
 		for _, job := range r.state.SuccessfulJobs() {
 			utils.Delete(ctx, r, job)
 		}
@@ -264,8 +252,15 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "unable to construct job list"))
 		}
 
-		cr.Status.Expected = jobList
-		cr.Status.LastScheduleJob = -1
+		cr.Status.QueuedJobs = jobList
+		cr.Status.ScheduledJobs = -1
+
+		// SLA-driven execution requires to set SLA alerts on Grafana.
+		if cr.Spec.Until != nil && cr.Spec.Until.SLA != "" {
+			if err := assertions.SetAlert(&cr, cr.Spec.Until.SLA, "until"); err != nil {
+				return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "SLA error"))
+			}
+		}
 
 		if _, err := lifecycle.Pending(ctx, r, &cr, "submitting job requests"); err != nil {
 			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "status update"))
@@ -275,9 +270,18 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	/*
-		If all actions are executed, just wait for them to complete.
+		If all jobs are scheduled, we have nothing else to do.
+		If all jobs are scheduled but are not in the Running phase, they may be in the Pending phase. A
+		In both cases, we have nothing else to do but waiting for the next reconciliation cycle.
 	*/
-	if newStatus.Phase == v1alpha1.PhaseRunning {
+	nextExpectedJob := cr.Status.ScheduledJobs + 1
+
+	if newStatus.Phase == v1alpha1.PhaseRunning ||
+		(cr.Spec.Until == nil && (nextExpectedJob >= len(cr.Status.QueuedJobs))) {
+		r.Logger.Info("All jobs are scheduled. Nothing else to do. Waiting for something to happen",
+			"cluster", cr.GetName(),
+		)
+
 		return utils.Stop()
 	}
 
@@ -290,36 +294,40 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		If we've missed a run, and we're still within the deadline to start it, we'll need to run a job.
 	*/
-	missedRun, nextRun, err := utils.GetNextScheduleTime(&cr, cr.Spec.Schedule, cr.Status.LastScheduleTime)
+	if cr.Spec.Schedule != nil {
+		missedRun, nextRun, err := utils.GetNextScheduleTime(&cr, cr.Spec.Schedule, cr.Status.LastScheduleTime)
+		if err != nil {
+			r.GetEventRecorderFor("").Event(&cr, corev1.EventTypeWarning,
+				err.Error(), "unable to figure execution schedule")
 
-	if err != nil {
-		r.GetEventRecorderFor("").Event(&cr, corev1.EventTypeWarning,
-			err.Error(), "unable to figure execution schedule")
-
-		// we don't really care about re-queuing until we get an update that
-		// fixes the schedule, so don't return an error.
-		return utils.Stop()
-	}
-
-	r.Logger.Info("next run", "missed ", missedRun, "next", nextRun)
-
-	if missedRun.IsZero() {
-		if nextRun.IsZero() {
-			r.Logger.Info("scheduling is complete.")
-
+			/*
+				we don't really care about re-queuing until we get an update that
+				fixes the schedule, so don't return an error.
+			*/
 			return utils.Stop()
 		}
 
-		r.Logger.Info("no upcoming scheduled times, sleeping until", "next", nextRun)
+		if missedRun.IsZero() {
+			if nextRun.IsZero() {
+				r.Logger.Info("scheduling is complete.",
+					"cluster", cr.GetName(),
+				)
 
-		return utils.RequeueAfter(time.Until(nextRun))
-	}
+				return utils.Stop()
+			}
 
-	if schedule := cr.Spec.Schedule; schedule != nil {
-		// if there is a schedule defined, make sure we're not too late to start the run
+			r.Logger.Info("too early in the schedule. requeue request for next tick.",
+				"cluster", cr.GetName(),
+				"next", nextRun,
+				"waitFor", time.Until(nextRun).String(),
+			)
+
+			return utils.RequeueAfter(time.Until(nextRun))
+		}
+
+		// if there is a missed run, make sure we're not too late to start the run
 		tooLate := false
-
-		if deadline := schedule.StartingDeadlineSeconds; deadline != nil {
+		if deadline := cr.Spec.Schedule.StartingDeadlineSeconds; deadline != nil {
 			tooLate = missedRun.Add(time.Duration(*deadline) * time.Second).Before(time.Now())
 		}
 
@@ -335,14 +343,6 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		We need to construct a job based on our Cluster's template. Since we have prepared these jobs at
 		initialization, all we need is to get a pointer to the next job.
 	*/
-
-	nextExpectedJob := cr.Status.LastScheduleJob + 1
-
-	// this may happen when all jobs are created, but some of them are still in the pending phase.
-	if nextExpectedJob >= len(cr.Status.Expected) {
-		return utils.Stop()
-	}
-
 	nextJob := getJob(&cr, nextExpectedJob)
 
 	if err := utils.Create(ctx, r, &cr, nextJob); err != nil {
@@ -364,7 +364,8 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		we might not see our own status update, and then post one again.
 		So, we need to use the job name as a lock to prevent us from making the job twice.
 	*/
-	cr.Status.LastScheduleJob = nextExpectedJob
+	cr.Status.ScheduledJobs = nextExpectedJob
+	cr.Status.LastScheduleTime = &metav1.Time{Time: time.Now()}
 
 	return lifecycle.Pending(ctx, r, &cr, "some jobs are still pending")
 }

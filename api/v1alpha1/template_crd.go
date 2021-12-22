@@ -84,14 +84,20 @@ type GenerateFromTemplate struct {
 	// TemplateRef refers to a  template (e.g, iperf-server).
 	TemplateRef string `json:"templateRef"`
 
-	// Instances dictate the number of objects to be created for the service. If Env is specified, the values
-	// with be identical across the spawned instances. For instances with different parameters, use Inputs.
+	// Until defines the conditions under which the Cluster will stop spawning new services.
+	// If used in conjunction with inputs, it will loop over inputs until the conditions are met.
 	// +optional
-	Instances int `json:"instances"`
+	Until *Assert `json:"until,omitempty"`
 
-	// Inputs are list of inputs passed to the objects. When used in conjunction with Instances, there can be
-	// only one input and all the instances will run with identical parameters. If Instances is defined and there are
-	// more than one inputs, the request will be rejected.
+	// MaxInstances dictate the number of objects to be created for the service.
+	// If no inputs are defined, then all instances will be initiated using the default parameters of the template.
+	// When used in conjunction with Until, MaxInstances as a max bound.
+	// +optional
+	MaxInstances int `json:"instances"`
+
+	// Inputs are list of inputs passed to the objects.
+	// When used in conjunction with instances, if the number of instances is larger that the number of inputs,
+	// then inputs are recursively iteration.
 	// +optional
 	Inputs []map[string]string `json:"inputs,omitempty"`
 }
@@ -101,32 +107,28 @@ func (t *GenerateFromTemplate) Validate(allowMultipleInputs bool) error {
 	case t.TemplateRef == "":
 		return errors.New("empty templateRef")
 
-	case len(t.Inputs) == 0 && t.Instances == 0: // use default parameters for all instances
-		t.Instances = 1
+	case len(t.Inputs) == 0: // use default parameters for all instances
+		if t.MaxInstances == 0 {
+			t.MaxInstances = 1
+		}
 
-		return nil
-
-	case len(t.Inputs) == 0 && t.Instances > 0: // use default parameters for all instances
 		return nil
 
 	case !allowMultipleInputs && len(t.Inputs) > 1: // object violation
 		return errors.Errorf("Allowed inputs [%t] but got [%d]", allowMultipleInputs, len(t.Inputs))
 
-	case len(t.Inputs) >= t.Instances: // every instance has its own parameters.
-		t.Instances = len(t.Inputs)
+	case len(t.Inputs) >= t.MaxInstances: // every instance has its own parameters.
+		t.MaxInstances = len(t.Inputs)
 
 		return nil
 
-	case t.Instances > len(t.Inputs) && len(t.Inputs) > 1:
-		return errors.New("Max one input when multiple instances are defined")
-
-	case len(t.Inputs) == 1 && t.Instances > 0: // all instances have the same parameters.
+	case t.MaxInstances > 0: // all instances have the same parameters.
 		return nil
 
 	default:
 		logrus.Warn(
 			"TemplateRef:", t.TemplateRef,
-			" Instances:", t.Instances,
+			" MaxInstances:", t.MaxInstances,
 			" AllowMultipleInputs:", allowMultipleInputs,
 			" Inputs:", t.Inputs,
 		)
@@ -150,13 +152,15 @@ func (t *GenerateFromTemplate) GetInput(i int) map[string]string {
 		return copied
 
 	default:
+		// safety is assumed by Iterate
 		return t.Inputs[i]
 	}
 }
 
 func (t *GenerateFromTemplate) Iterate(cb func(in map[string]string) error) error {
-	for i := 0; i < t.Instances; i++ {
-		if err := cb(t.GetInput(i)); err != nil {
+	for i := 0; i < t.MaxInstances; i++ {
+		// recursively iterate the input.
+		if err := cb(t.GetInput(i % len(t.Inputs))); err != nil {
 			return err
 		}
 	}

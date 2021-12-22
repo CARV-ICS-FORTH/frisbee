@@ -1,7 +1,5 @@
 # Guide for the Frisbee Platform Developers
 
-
-
 ## Change the Code
 
 ```bash
@@ -18,23 +16,26 @@ There are two ways to run a Frisbee controller.
 By default, Frisbee prefers the second way.
 
 However, when debugging a few feature it is impractical to have to create and deploy the container all the time. In such
-cases, it is preferable to run the controller outside the cluster.
+cases, it is preferable to run the controller outside the cluster, as shown next.
 
-This is a two-step procedure. Firstly, we have to inform the Helm chart responsible for handling the platform deployment
-to not include the controller.
+**Step 1:**
+
+Firstly, we have to inform the Helm chart responsible for handling the platform deployment to not include the
+controller.
 
 ```bash
 # Remove the contairized controller from a running deployment
->> helm upgrade --install  my-frisbee charts/platform/ --set operator.enabled=false
+>> helm upgrade --install  my-frisbee charts/platform/ --set operator.enabled=false \ 
+	--set global.ingress=platform.science-hangar.eu
 ```
 
-Remember, that you must still define the Ingress flag as shown in the Installation.
+Notice we the flag `global.ingress` . Set it accordingly to the Ingress in your cluster.
 
-Example: `--set global.ingress=platform.science-hangar.eu`
+If you run Frisbee on a local cluster, simply omit the flag.
 
+**Step 2:**
 
-
-Second, we need to run the controller as a standalone binary.
+On the second step, we need to run the controller as a standalone binary.
 
 ```bash
 # Run Frisbee controller outside a cluster (from Frisbee directory)
@@ -55,8 +56,6 @@ Given that we are under the Frisbee directory, the `charts/platform` points to t
 one we want to modify.
 
 Otherwise, if `frisbee/platform` is used, Helm will use the released version of the repo.
-
-
 
 ## Make a new release
 

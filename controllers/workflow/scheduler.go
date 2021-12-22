@@ -40,7 +40,7 @@ func isJobInScheduledList(name string, scheduledJobs map[string]metav1.Time) boo
 // However, if there are no actions, the workflow will stop the reconciliation cycle, and we will miss the
 // next timeout. To handle this scenario, we have to requeue the request with the given duration.
 // In this case, the given duration is the nearest expected timeout.
-func GetNextLogicalJob(obj metav1.Object, all v1alpha1.ActionList, gs lifecycle.Classifier, scheduled map[string]metav1.Time) (v1alpha1.ActionList, time.Time) {
+func GetNextLogicalJob(obj metav1.Object, all v1alpha1.ActionList, gs lifecycle.ClassifierReader, scheduled map[string]metav1.Time) (v1alpha1.ActionList, time.Time) {
 	var candidates v1alpha1.ActionList
 
 	var nextCycle time.Time
