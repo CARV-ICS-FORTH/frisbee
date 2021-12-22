@@ -25,10 +25,18 @@ import (
 type Assert struct {
 	// SLA is a Grafana alert that will be triggered if the SLA condition is met.
 	// SLA assertion is applicable throughout the execution of an action.
-	SLA string `json:"sla"`
+	// Parsing:
+	// Grafana URL: http://grafana/d/A2EjFbsMk/ycsb-services?editPanel=86
+	// SLA: A2EjFbsMk/86/Average
+	// Rational: Panel/Dashboard/Metric
+	// +optional
+	// +nullable
+	SLA string `json:"sla,omitempty"`
 
 	// State describe the runtime condition that should be met after the action has been executed
-	State string `json:"state"`
+	// +optional
+	// +nullable
+	State string `json:"state,omitempty"`
 }
 
 // Action delegates arguments to the proper action handler.
@@ -97,9 +105,6 @@ type WorkflowStatus struct {
 	// Executed is a list of executed actions.
 	// +optional
 	Executed map[string]metav1.Time `json:"scheduled,omitempty"`
-
-	// ExpectedAlerts is a list of alerts should drive to SLA violations
-	ExpectedAlerts map[string]bool `json:"expectedAlerts,omitempty"`
 }
 
 func (in *Workflow) GetReconcileStatus() Lifecycle {

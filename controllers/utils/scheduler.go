@@ -41,7 +41,6 @@ func GetNextScheduleTime(
 	lastScheduleTime *metav1.Time,
 ) (lastMissed time.Time, next time.Time, err error) {
 	cur := time.Now()
-
 	// start the job immediately if there is no defined scheduler.
 	if scheduler == nil {
 		return time.Now(), time.Time{}, nil
@@ -54,12 +53,7 @@ func GetNextScheduleTime(
 
 	var earliestTime time.Time
 
-	if lastScheduleTime != nil {
-		// for optimization purposes, cheat a bit and start from our last observed run time
-		// we could reconstitute this here, but there's not much point, since we've
-		// just updated it.
-		earliestTime = lastScheduleTime.Time
-	} else {
+	if lastScheduleTime.IsZero() {
 		// If none found, then this is either a recently created cronJob,
 		// or the active/completed info was somehow lost (contract for status
 		// in kubernetes says it may need to be recreated), or that we have
@@ -67,6 +61,11 @@ func GetNextScheduleTime(
 		// have arbitrary delays).  In any case, use the creation time of the
 		// object as last known start time.
 		earliestTime = obj.GetCreationTimestamp().Time
+	} else {
+		// for optimization purposes, cheat a bit and start from our last observed run time
+		// we could reconstitute this here, but there's not much point, since we've
+		// just updated it.
+		earliestTime = lastScheduleTime.Time
 	}
 
 	if scheduler.StartingDeadlineSeconds != nil {

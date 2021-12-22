@@ -6,8 +6,7 @@ This tutorial describes how to deploy Frisbee and start running tests.
 
 #### Step 1:  Install Dependencies
 
-Make sure that [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/)
-and  [Helm](https://helm.sh/docs/intro/install/) are installed on your system, and that you have access to a Kubernetes
+Make sure that [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/) and  [Helm](https://helm.sh/docs/intro/install/) are installed on your system, and that you have access to a Kubernetes
 installation.
 
 * **Local Installation** If you want a local installation you can use [Microk8s](https://microk8s.io/docs) that runs
@@ -106,16 +105,16 @@ to : https://raw.githubusercontent.com/CARV-ICS-FORTH/frisbee/main/charts/tikv/e
 
 #### Step 6: Wait for completion
 
-After you have successful ran a test, the next question that comes is about its completion.
+After you have successfully run a test, the next question that comes is about its completion.
 
 ```bash
 # View deployed plans
->> kubectl -n karvdash-fnikol get workflows.frisbee.io
+>> kubectl get workflows.frisbee.io
 NAME            AGE
 tikv-baseline   1m
 
 # Inspect a plan
->> kubectl -n karvdash-fnikol describe workflows.frisbee.io tikv-baseline
+>> kubectl describe workflows.frisbee.io tikv-baseline
 ```
 
 Describe will return a lot of information about the plan. We are interested in the fields `conditions`.
@@ -124,11 +123,11 @@ We can use these fields to wait until they become true -- thus saving us from ma
 
 ```bash
 # Wait until the test oracle is triggered.
->> kubectl  wait --for=condition=allActions workflows.frisbee.io/tikv-baseline -n karvdash-fnikol
+>> kubectl  wait --for=condition=allActions workflows.frisbee.io/tikv-baseline 
 workflow.frisbee.io/tikv-baseline condition met
 ```
 
-####  
+####    
 
 #### Step 7: Destroy the testing workflow
 
@@ -162,7 +161,7 @@ Starting to serve on 127.0.0.1:8001
 http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/.
 ```
 
-###  
+###    
 
 If you use a microk8s installation of Kubernetes, then the procedure is slightly different.
 

@@ -21,10 +21,13 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	k8errors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
@@ -231,4 +234,50 @@ func Delete(ctx context.Context, r Reconciler, obj client.Object) {
 	if err := r.GetClient().Delete(ctx, obj, &options); client.IgnoreNotFound(err) != nil {
 		r.Error(err, "unable to delete", "obj", obj)
 	}
+}
+
+// SetOwner is a helper method to make sure the given object contains an object reference to the object provided.
+// This behavior is instrumental to guarantee correct garbage collection of resources especially when resources
+// control other resources in a multilevel hierarchy (think deployment-> repilcaset->pod).
+func SetOwner(r Reconciler, parent, child metav1.Object) {
+	child.SetNamespace(parent.GetNamespace())
+
+	// SetControllerReference sets owner as a Controller OwnerReference on controlled.
+	// This is used for garbage collection of the controlled object and for
+	// reconciling the owner object on changes to controlled (with a Watch + EnqueueRequestForOwner).
+	// Since only one OwnerReference can be a controller, it returns an error if
+	// there is another OwnerReference with Controller flag set.
+	if err := controllerutil.SetControllerReference(parent, child, r.GetClient().Scheme()); err != nil {
+		panic(errors.Wrapf(err, "set controller reference"))
+	}
+
+	/*
+		if err := controllerutil.SetOwnerReference(parent, child, Globals.Client.Scheme()); err != nil {
+			panic(errors.Wrapf(err, "set owner reference"))
+		}
+	*/
+
+	// owner labels are used by the selectors.
+	// workflow labels are used to select only objects that belong to this experiment.
+	// used to narrow down the scope of fault injection in a common namespace
+	child.SetLabels(labels.Merge(child.GetLabels(), map[string]string{
+		v1alpha1.LabelManagedBy:    parent.GetName(),
+		v1alpha1.BelongsToWorkflow: parent.GetLabels()[v1alpha1.BelongsToWorkflow],
+	}))
+}
+
+// IsManagedByThisController returns true if the object is managed by the specified controller.
+// If it is managed by another controller, or no controller is being resolved, it returns false.
+func IsManagedByThisController(obj metav1.Object, controller schema.GroupVersionKind) bool {
+	owner := metav1.GetControllerOf(obj)
+	if owner == nil {
+		return false
+	}
+
+	if owner.APIVersion != controller.GroupVersion().String() ||
+		owner.Kind != controller.Kind {
+		return false
+	}
+
+	return true
 }

@@ -32,8 +32,8 @@ var (
 )
 
 func init() {
-	// Expressions evaluated with https://regex101.com/r/sIspYb/1/
-	Assertor = regexp.MustCompile(`(?m)^(?P<reducer>\w+)\(\)\s+OF\s+query\((?P<dashboardUID>\w+)\/(?P<panelID>\d+)\/(?P<metric>\w+),\s+(?P<from>\w+),\s+(?P<to>\w+)\)\s+IS\s+(?P<evaluator>\w+)\((?P<params>\d*[,\s]*\d*)\)$`)
+	// Expressions evaluated with https://regex101.com/r/xrSyEz/1
+	Assertor = regexp.MustCompile(`(?mi)^(?P<reducer>\w+)\(\)\s+OF\s+QUERY\((?P<dashboardUID>\w+)\/(?P<panelID>\d+)\/(?P<metric>\w+),\s+(?P<from>\w+),\s+(?P<to>\w+)\)\s+IS\s+(?P<evaluator>\w+)\((?P<params>\d*[,\s]*\d*)\)\s*(FOR\((?P<for>\w+)\))*\s*(Every\((?P<every>\w+)\))*\s*$`)
 }
 
 func ConvertEvaluatorAlias(alias string) string {
@@ -77,8 +77,22 @@ type Query struct {
 	* min
 	* max
 	* sum
+	* count
+	* last
+	* median
+	* diff
+	* diff_abs
+	* percent_diff
+	* percent_diff_abs
+	* count_non_null
 	 */
 	Reducer sdk.AlertReducer
+}
+
+type Evaluation struct {
+	Every string
+
+	For string
 }
 
 type TimeRange struct {
@@ -96,19 +110,28 @@ type Alert struct {
 	TimeRange
 
 	Query
+
+	Evaluation
 }
 
 func NewAlert(query string) (*Alert, error) {
 	matches := Assertor.FindStringSubmatch(query)
 	if len(matches) == 0 {
-		return nil, errors.Errorf(`erroneous query. Examples:
+		return nil, errors.Errorf(`erroneous query %s. 
+		Examples:
 			1) avg() OF query(wpFnYRwGk/2/bitrate, 15m, now) IS BELOW(14)
 			2) avg() OF query(wpFnYRwGk/2/bitrate, 15m, now) IS NOVALUE()
 			3) avg() OF query(wpFnYRwGk/2/bitrate, 15m, now) IS WithinRange(4, 88)
-		`)
+			4) avg() OF query(wpFnYRwGk/2/bitrate, 15m, now) IS WithinRange(4, 88) FOR (1m)
+			5) avg() OF query(wpFnYRwGk/2/bitrate, 15m, now) IS WithinRange(4, 88) FOR (1m) EVERY(1m)
+
+		Validate your expressions at: https://regex101.com/r/sIspYb/1/`, query)
 	}
 
 	alert := Alert{}
+	// These are optional, so we must have a default value.
+	alert.For = DefaultStabilityWindow
+	alert.Every = DefaultEvaluationFrequency
 
 	for _, name := range Assertor.SubexpNames() {
 		if name == "" {
@@ -120,7 +143,7 @@ func NewAlert(query string) (*Alert, error) {
 
 		switch name {
 		case "reducer":
-			alert.Reducer.Type = match
+			alert.Reducer.Type = strings.ToLower(match)
 			alert.Reducer.Params = nil // Not captured by the present regex
 
 		case "dashboardUID":
@@ -167,6 +190,12 @@ func NewAlert(query string) (*Alert, error) {
 
 			alert.Evaluator.Params = params
 
+		case "for":
+			alert.For = match
+
+		case "every":
+			alert.Every = match
+
 		default:
 			panic(errors.Errorf("invalid field %s", name))
 		}
@@ -179,8 +208,17 @@ func NewAlert(query string) (*Alert, error) {
 //		Grafana Alerting Client
 // ///////////////////////////////////////////
 
+const (
+	DefaultEvaluationFrequency = "30s"
+	DefaultStabilityWindow     = "1m"
+)
+
 // SetAlert adds a new alert to Grafana.
 func (c *Client) SetAlert(alert *Alert) (uint, error) {
+	if alert == nil {
+		return 0, errors.New("NIL alert was given")
+	}
+
 	board, _, err := c.Conn.GetDashboardByUID(context.Background(), alert.DashboardUID)
 	if err != nil {
 		return 0, errors.Wrapf(err, "cannot retrieve dashboard %s", alert.DashboardUID)
@@ -217,11 +255,11 @@ func (c *Client) SetAlert(alert *Alert) (uint, error) {
 				// Frequency specifies how often the scheduler should evaluate the alert rule.
 				// This is referred to as the evaluation interval. Because in Frisbee we use alerts as
 				// assertions, we only need to run them once. Default: 1m
-				Frequency: "1m",
+				Frequency: alert.Every,
 
 				// For specifies how long the query needs to violate the configured thresholds before the alert notification
 				// triggers. Default: 5m
-				For: "0s",
+				For: alert.For,
 			}
 
 			break
@@ -237,8 +275,6 @@ func (c *Client) SetAlert(alert *Alert) (uint, error) {
 	if err != nil {
 		return 0, errors.Wrap(err, "set dashboard")
 	}
-
-	logrus.Warn("STATUS ", res)
 
 	if *res.Status == "success" {
 		return 0, nil

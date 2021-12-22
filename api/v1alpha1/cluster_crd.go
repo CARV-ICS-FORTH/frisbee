@@ -70,12 +70,12 @@ type ClusterStatus struct {
 	// +optional
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 
-	// Expected is a list of services scheduled for creation by the cluster.
+	// QueuedJobs is a list of services scheduled for creation by the cluster.
 	// +optional
-	Expected []ServiceSpec `json:"expected,omitempty"`
+	QueuedJobs []ServiceSpec `json:"queuedJobs,omitempty"`
 
-	// LastScheduleJob points to the next Expect Job
-	LastScheduleJob int `json:"lastScheduleJob,omitempty"`
+	// ScheduledJobs points to the next QueuedJobs.
+	ScheduledJobs int `json:"scheduledJobs,omitempty"`
 
 	// LastScheduleTime provide information about  the last time a Service was successfully scheduled.
 	LastScheduleTime *metav1.Time `json:"lastScheduleTime,omitempty"`

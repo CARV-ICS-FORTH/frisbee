@@ -1,42 +1,20 @@
 ## Guide for the Frisbee Chart Developers
 
-
-
-This is a guide for those who wish to contribute new Charts in Frisbee. 
+This is a guide for those who wish to contribute new Charts in Frisbee.
 
 Because there is an overlap, we advise you to have a look at the Guide for Code Developers first.
-
-
-
-
 
 ## What is a Helm Chart ?
 
 Helm is a package manager for Kubernetes.
 
-Helm uses **a packaging format called charts**. A chart is a collection of files that describe a related set of  Kubernetes resources. A single chart might be used to deploy something  simple, like a memcached pod, or something complex, like a full web app  stack with HTTP servers, databases, caches, and so on.
-
-
+Helm uses **a packaging format called charts**. A chart is a collection of files that describe a related set of
+Kubernetes resources. A single chart might be used to deploy something simple, like a memcached pod, or something
+complex, like a full web app stack with HTTP servers, databases, caches, and so on.
 
 The best way to start is by reading the official [Helm documentation](https://helm.sh/docs/).
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Control how to visualize the services. 
-
-
+Control how to visualize the services.
 
 ```
 // DrawAs hints how to mark points on the Grafana dashboard.
@@ -47,8 +25,6 @@ DrawAsPoint string = "pointInTime"
 // DrawAsRegion will draw a region starting from the creation of a service and ending to the deletion of the service.
 DrawAsRegion string = "timeRegion"
 ```
-
-
 
 #### Lint Charts
 
@@ -94,38 +70,6 @@ sudo systemctl restart docker
 
 Source: https://microk8s.io/docs/registry-built-in
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ## Run a Test
 
 The easiest way to begin with is by have a look at the examples. Let's assume you are interested in testing TiKV.
@@ -166,12 +110,6 @@ For TikV, the dependencies are:
 > 1) flag `-f` does not work recursively. You must explicitly declare the telemetry directory.
 > 2) If you modify a template, you must re-apply it
 
-
-
-
-
-
-
 ### Debugging an Installation
 
 Error: UPGRADE FAILED: unable to recognize "": no matches for kind "Template" in version "frisbee.io/v1alpha1"
@@ -207,8 +145,6 @@ https://medium.com/@maanadev/how-set-up-a-helm-chart-repository-using-apache-web
 Deploy as helm chart helm repo index ./ --url https://carv-ics-forth.github.io/frisbee
 
 # Change the Code
-
-
 
 ````
 The easiest way to begin with is by have a look at the examples. It consists of two sub-directories:

@@ -12,7 +12,6 @@ spec:
     - action: Service
       name: server
       service:
-        
         templateRef: iperf.server
         inputs:
           - { "cpu": "2", memory: "4Gi" }
@@ -22,7 +21,7 @@ spec:
       name: client
       depends: { running: [ server ] }
       assert:
-        state: '{{.Runtime.IsSuccessful "client"}} == true'
+        state: '{{.IsSuccessful "client"}} == true'
         sla: 'avg() OF query(wpFnYRwGk/2/bitrate, 5m, now) IS BELOW(1000)'
       service:
         

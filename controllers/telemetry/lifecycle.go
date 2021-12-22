@@ -33,7 +33,7 @@ type test struct {
 	condition  metav1.Condition
 }
 
-func calculateLifecycle(t *v1alpha1.Telemetry, gs lifecycle.Classifier) v1alpha1.TelemetryStatus {
+func calculateLifecycle(t *v1alpha1.Telemetry, gs lifecycle.ClassifierReader) v1alpha1.TelemetryStatus {
 	status := t.Status
 
 	// Skip any CR which are already completed, or uninitialized.
@@ -68,7 +68,7 @@ func calculateLifecycle(t *v1alpha1.Telemetry, gs lifecycle.Classifier) v1alpha1
 				Message: fmt.Sprintf("running jobs: %s", gs.RunningList()),
 			},
 			condition: metav1.Condition{
-				Type:    v1alpha1.ConditionAllJobs.String(),
+				Type:    v1alpha1.ConditionAllJobsScheduled.String(),
 				Status:  metav1.ConditionTrue,
 				Reason:  "AllJobsRunning",
 				Message: fmt.Sprintf("active jobs: %s", gs.ActiveList()),

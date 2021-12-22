@@ -96,9 +96,9 @@ func TestFromTemplate_Validate(t1 *testing.T) {
 	for _, tt := range tests {
 		t1.Run(tt.name, func(t1 *testing.T) {
 			t := &GenerateFromTemplate{
-				TemplateRef: tt.fields.TemplateRef,
-				Instances:   tt.fields.Instances,
-				Inputs:      tt.fields.Inputs,
+				TemplateRef:  tt.fields.TemplateRef,
+				MaxInstances: tt.fields.Instances,
+				Inputs:       tt.fields.Inputs,
 			}
 			if err := t.Validate(tt.args.allowMultipleInputs); (err != nil) != tt.wantErr {
 				t1.Errorf("Validate() error = %v, wantErr %v", err, tt.wantErr)

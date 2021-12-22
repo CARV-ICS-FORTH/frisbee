@@ -5,11 +5,11 @@ go 1.17
 require (
 	github.com/Knetic/govaluate v3.0.0+incompatible
 	github.com/Masterminds/sprig/v3 v3.2.2
+	github.com/dustinkirkland/golang-petname v0.0.0-20191129215211-8e5a1ed0cff0
 	github.com/go-logr/logr v0.4.0
 	github.com/golanghelper/grafana-webhook v0.0.0-20180512191629-e0da26114467
 	github.com/grafana-tools/sdk v0.0.0-20211015115518-56cdea6a09d6
 	github.com/mitchellh/mapstructure v1.4.1
-	github.com/nofeaturesonlybugs/set v0.3.1
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.13.0
 	github.com/orcaman/concurrent-map v0.0.0-20210501183033-44dafcb38ecc
@@ -57,7 +57,6 @@ require (
 	github.com/moby/spdystream v0.2.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
-	github.com/nofeaturesonlybugs/errors v1.0.1 // indirect
 	github.com/nxadm/tail v1.4.8 // indirect
 	github.com/prometheus/client_golang v1.11.0 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect

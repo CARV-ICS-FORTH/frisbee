@@ -25,6 +25,7 @@ import (
 	serviceutils "github.com/carv-ics-forth/frisbee/controllers/service/utils"
 	"github.com/carv-ics-forth/frisbee/controllers/telemetry/grafana"
 	"github.com/carv-ics-forth/frisbee/controllers/utils"
+	"github.com/carv-ics-forth/frisbee/controllers/utils/assertions"
 	"github.com/carv-ics-forth/frisbee/controllers/utils/lifecycle"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -149,7 +150,8 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	*/
 	r.state.Reset()
 
-	r.state.ClassifyAsFrisbeeService(telemetryJob.GetName(), telemetryJob.DeepCopy())
+	// Do not account telemetry jobs, unless they have failed.
+	r.state.Exclude(telemetryJob.GetName(), telemetryJob.DeepCopy())
 
 	for i, job := range serviceJobs.Items {
 		r.state.Classify(job.GetName(), &serviceJobs.Items[i])
@@ -189,8 +191,11 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		pause runs to investigate or putz with the cluster, without deleting the object.
 	*/
 	if cr.Spec.Suspend != nil && *cr.Spec.Suspend {
-		r.Logger.Info("Not starting job because the workflow is suspended",
-			"workflow", cr.GetName())
+		r.Logger.Info("Workflow is suspended",
+			"workflow", cr.GetName(),
+			"reason", cr.Status.Reason,
+			"message", cr.Status.Message,
+		)
 
 		return utils.Stop()
 	}
@@ -207,10 +212,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		// We maintain testbed components (e.g, prometheus and grafana) for getting back the test results.
 		// These components are removed by deleting the Workflow.
 		for _, job := range r.state.SuccessfulJobs() {
-			alertID, exists := job.GetAnnotations()[JobHasSLA]
-			if exists {
-				grafana.DefaultClient.UnsetAlert(alertID)
-			}
+			assertions.UnsetAlert(job)
 
 			utils.Delete(ctx, r, job)
 		}
@@ -307,7 +309,6 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		if grafana.DefaultClient == nil {
 			if err := r.ConnectToGrafana(ctx, &cr); err != nil {
 				return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot communicate with the telemetry stack"))
-
 			}
 		}
 	}
@@ -339,8 +340,10 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "erroneous action [%s]", action.Name))
 		}
 
-		if err := InsertSLAAlert(action, &cr, job); err != nil {
-			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "assertion error"))
+		if action.Assert != nil && action.Assert.SLA != "" {
+			if err := assertions.SetAlert(job, action.Assert.SLA, action.Name); err != nil {
+				return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "assertion error"))
+			}
 		}
 
 		if err := utils.Create(ctx, r, &cr, job); err != nil {
@@ -409,9 +412,9 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		Named("workflow").
 		For(&v1alpha1.Workflow{}).
-		Owns(&v1alpha1.Service{}, builder.WithPredicates(r.WatchServices())).    // Watch Services
-		Owns(&v1alpha1.Cluster{}, builder.WithPredicates(r.WatchClusters())).    // Watch Cluster
-		Owns(&v1alpha1.Chaos{}, builder.WithPredicates(r.WatchChaos())).         // Watch Chaos
+		Owns(&v1alpha1.Service{}, builder.WithPredicates(r.WatchServices())). // Watch Services
+		Owns(&v1alpha1.Cluster{}, builder.WithPredicates(r.WatchClusters())). // Watch Cluster
+		Owns(&v1alpha1.Chaos{}, builder.WithPredicates(r.WatchChaos())). // Watch Chaos
 		Owns(&v1alpha1.Telemetry{}, builder.WithPredicates(r.WatchTelemetry())). // Watch Telemetry
 		Complete(r)
 }
