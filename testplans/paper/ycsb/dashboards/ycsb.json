@@ -23,7 +23,7 @@
         "datasource": "-- Grafana --",
         "enable": true,
         "hide": false,
-        "iconColor": "text",
+        "iconColor": "#5794F2",
         "limit": 100,
         "name": "run",
         "showIn": 0,
@@ -44,7 +44,7 @@
         "datasource": "-- Grafana --",
         "enable": true,
         "hide": false,
-        "iconColor": "dark-orange",
+        "iconColor": "#FF9830",
         "limit": 100,
         "name": "exit",
         "showIn": 0,
@@ -63,7 +63,7 @@
       },
       {
         "datasource": "-- Grafana --",
-        "enable": false,
+        "enable": true,
         "hide": false,
         "iconColor": "rgba(255, 96, 96, 1)",
         "limit": 100,
@@ -841,30 +841,25 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic",
-            "seriesBy": "last"
+            "mode": "palette-classic"
           },
           "custom": {
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
-            "drawStyle": "bars",
-            "fillOpacity": 21,
+            "drawStyle": "line",
+            "fillOpacity": 0,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
               "viz": false
             },
-            "lineInterpolation": "linear",
-            "lineStyle": {
-              "fill": "solid"
-            },
-            "lineWidth": 1,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
             "pointSize": 5,
             "scaleDistribution": {
-              "log": 2,
-              "type": "log"
+              "type": "linear"
             },
             "showPoints": "always",
             "spanNulls": false,
@@ -896,13 +891,13 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "workload-f"
+              "options": "Average"
             },
             "properties": [
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "semi-dark-purple",
+                  "fixedColor": "orange",
                   "mode": "fixed"
                 }
               },
@@ -945,7 +940,7 @@
           "hide": false,
           "instant": false,
           "interval": "",
-          "intervalFactor": 1,
+          "intervalFactor": 4,
           "legendFormat": "{{instance}}",
           "refId": "QPS",
           "step": 10
@@ -955,6 +950,7 @@
       "timeShift": null,
       "title": "Throughput (Queries Per Second)",
       "transformations": [],
+      "transparent": true,
       "type": "timeseries"
     },
     {
@@ -2150,5 +2146,5 @@
   "timezone": "browser",
   "title": "YCSB Services",
   "uid": "A2EjFbsMk",
-  "version": 5
+  "version": 2
 }

@@ -27,14 +27,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var (
-	Assertor *regexp.Regexp
-)
-
-func init() {
-	// Expressions evaluated with https://regex101.com/r/xrSyEz/1
-	Assertor = regexp.MustCompile(`(?mi)^(?P<reducer>\w+)\(\)\s+OF\s+QUERY\((?P<dashboardUID>\w+)\/(?P<panelID>\d+)\/(?P<metric>\w+),\s+(?P<from>\w+),\s+(?P<to>\w+)\)\s+IS\s+(?P<evaluator>\w+)\((?P<params>\d*[,\s]*\d*)\)\s*(FOR\((?P<for>\w+)\))*\s*(Every\((?P<every>\w+)\))*\s*$`)
-}
+// Assertor expressions evaluated with https://regex101.com/r/xrSyEz/1
+var Assertor = regexp.MustCompile(`(?mi)^(?P<reducer>\w+)\(\)\s+OF\s+QUERY\((?P<dashboardUID>\w+)\/(?P<panelID>\d+)\/(?P<metric>\w+),\s+(?P<from>\w+),\s+(?P<to>\w+)\)\s+IS\s+(?P<evaluator>\w+)\((?P<params>\d*[,\s]*\d*)\)\s*(FOR\((?P<for>\w+)\))*\s*(EVERY\((?P<every>\w+)\))*\s*$`)
 
 func ConvertEvaluatorAlias(alias string) string {
 	switch v := strings.ToLower(alias); v {
@@ -89,7 +83,7 @@ type Query struct {
 	Reducer sdk.AlertReducer
 }
 
-type Evaluation struct {
+type Execution struct {
 	Every string
 
 	For string
@@ -101,20 +95,16 @@ type TimeRange struct {
 }
 
 type Alert struct {
-	Name string
-
-	Message string
-
 	Metric
 
 	TimeRange
 
 	Query
 
-	Evaluation
+	Execution
 }
 
-func NewAlert(query string) (*Alert, error) {
+func ParseAlertExpr(query string) (*Alert, error) {
 	matches := Assertor.FindStringSubmatch(query)
 	if len(matches) == 0 {
 		return nil, errors.Errorf(`erroneous query %s. 
@@ -128,20 +118,29 @@ func NewAlert(query string) (*Alert, error) {
 		Validate your expressions at: https://regex101.com/r/sIspYb/1/`, query)
 	}
 
-	alert := Alert{}
-	// These are optional, so we must have a default value.
-	alert.For = DefaultStabilityWindow
-	alert.Every = DefaultEvaluationFrequency
+	alert := Alert{
+		Metric:    Metric{},
+		TimeRange: TimeRange{},
+		Query:     Query{},
+		Execution: Execution{ // These are optional, so we must have a default value.
+			Every: DefaultEvaluationFrequency,
+			For:   DefaultStabilityWindow,
+		},
+	}
 
-	for _, name := range Assertor.SubexpNames() {
-		if name == "" {
+	for _, field := range Assertor.SubexpNames() {
+		if field == "" { // Evaluate only existing fields.
 			continue
 		}
 
-		index := Assertor.SubexpIndex(name)
+		index := Assertor.SubexpIndex(field)
 		match := matches[index]
 
-		switch name {
+		if match == "" { // The Field is not set
+			continue
+		}
+
+		switch field {
 		case "reducer":
 			alert.Reducer.Type = strings.ToLower(match)
 			alert.Reducer.Params = nil // Not captured by the present regex
@@ -170,11 +169,6 @@ func NewAlert(query string) (*Alert, error) {
 			alert.Evaluator.Type = ConvertEvaluatorAlias(match)
 
 		case "params":
-			// todo: improve the way we parse params
-			if match == "" {
-				continue
-			}
-
 			paramsStr := strings.Split(match, ",")
 
 			params := make([]float64, len(paramsStr))
@@ -197,7 +191,7 @@ func NewAlert(query string) (*Alert, error) {
 			alert.Every = match
 
 		default:
-			panic(errors.Errorf("invalid field %s", name))
+			panic(errors.Errorf("invalid field %s", field))
 		}
 	}
 
@@ -209,12 +203,18 @@ func NewAlert(query string) (*Alert, error) {
 // ///////////////////////////////////////////
 
 const (
-	DefaultEvaluationFrequency = "30s"
-	DefaultStabilityWindow     = "1m"
+	DefaultEvaluationFrequency = "1m"
+	DefaultStabilityWindow     = "0s"
+)
+
+const (
+	defaultAction = "keep_state"
+
+	alertingAction = "alerting"
 )
 
 // SetAlert adds a new alert to Grafana.
-func (c *Client) SetAlert(alert *Alert) (uint, error) {
+func (c *Client) SetAlert(alert *Alert, name string, msg string) (uint, error) {
 	if alert == nil {
 		return 0, errors.New("NIL alert was given")
 	}
@@ -227,12 +227,12 @@ func (c *Client) SetAlert(alert *Alert) (uint, error) {
 	for _, panel := range board.Panels {
 		if panel.ID == alert.PanelID {
 			if panel.Alert != nil {
-				return 0, errors.Errorf("An alert has already been set for this panel")
+				return 0, errors.Errorf("Alert [%s] has already been set for this panel.", panel.Alert.Name)
 			}
 
 			panel.Alert = &sdk.Alert{
-				Name:    alert.Name,
-				Message: alert.Message,
+				Name:    name,
+				Message: msg,
 				Conditions: []sdk.AlertCondition{
 					{
 						Evaluator: alert.Evaluator,
@@ -246,8 +246,8 @@ func (c *Client) SetAlert(alert *Alert) (uint, error) {
 						Type:    "query",
 					},
 				},
-				ExecutionErrorState: "keep_state",
-				NoDataState:         "keep_state",
+				ExecutionErrorState: alertingAction,
+				NoDataState:         alertingAction,
 				Notifications:       nil,
 
 				Handler: 1, // Send to default notification channel (should be the controller)
@@ -286,5 +286,6 @@ func (c *Client) SetAlert(alert *Alert) (uint, error) {
 // UnsetAlert removes an alert from Grafana.
 func (c *Client) UnsetAlert(alertID string) {
 	_ = alertID
+
 	logrus.Warn("ADD FUNCTION TO REMOVE A GRAFANA ALERT")
 }

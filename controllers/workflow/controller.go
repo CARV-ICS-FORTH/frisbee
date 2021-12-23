@@ -341,7 +341,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		}
 
 		if action.Assert != nil && action.Assert.SLA != "" {
-			if err := assertions.SetAlert(job, action.Assert.SLA, action.Name); err != nil {
+			if err := assertions.SetAlert(job, action.Assert.SLA); err != nil {
 				return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "assertion error"))
 			}
 		}
@@ -412,9 +412,9 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		Named("workflow").
 		For(&v1alpha1.Workflow{}).
-		Owns(&v1alpha1.Service{}, builder.WithPredicates(r.WatchServices())). // Watch Services
-		Owns(&v1alpha1.Cluster{}, builder.WithPredicates(r.WatchClusters())). // Watch Cluster
-		Owns(&v1alpha1.Chaos{}, builder.WithPredicates(r.WatchChaos())). // Watch Chaos
+		Owns(&v1alpha1.Service{}, builder.WithPredicates(r.WatchServices())).    // Watch Services
+		Owns(&v1alpha1.Cluster{}, builder.WithPredicates(r.WatchClusters())).    // Watch Cluster
+		Owns(&v1alpha1.Chaos{}, builder.WithPredicates(r.WatchChaos())).         // Watch Chaos
 		Owns(&v1alpha1.Telemetry{}, builder.WithPredicates(r.WatchTelemetry())). // Watch Telemetry
 		Complete(r)
 }

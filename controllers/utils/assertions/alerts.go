@@ -19,15 +19,14 @@ package assertions
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/telemetry/grafana"
 	"github.com/carv-ics-forth/frisbee/controllers/utils"
-	petname "github.com/dustinkirkland/golang-petname"
 	notifier "github.com/golanghelper/grafana-webhook"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -54,53 +53,51 @@ type endpoint struct {
 	Namespace string
 	Name      string
 	Kind      string
-	AlertID   string
 }
 
-func (e endpoint) ToString() string {
-	return fmt.Sprintf("%s/%s/%s/%s", e.Namespace, e.Kind, e.Name, e.AlertID)
+func (e endpoint) String() string {
+	return fmt.Sprintf("%s/%s/%s", e.Namespace, e.Kind, e.Name)
 }
 
-func parseEndpoint(in string) (e endpoint, err error) {
+func (e *endpoint) Parse(in string) error {
 	fields := strings.Split(in, "/")
-	if len(fields) != 4 {
-		return endpoint{}, errors.New("invalid endpoint")
+	if len(fields) != endpointFields {
+		return errors.New("invalid endpoint")
 	}
 
-	return endpoint{
-		Namespace: fields[0],
-		Kind:      fields[1],
-		Name:      fields[2],
-		AlertID:   fields[3],
-	}, nil
+	e.Namespace = fields[0]
+	e.Kind = fields[1]
+	e.Name = fields[2]
+
+	return nil
 }
 
-func SetAlert(job client.Object, sla string, name string) error {
-	// create an alert
-	alert, err := grafana.NewAlert(sla)
+var endpointFields = reflect.TypeOf(endpoint{}).NumField()
+
+func SetAlert(job client.Object, sla string) error {
+	alert, err := grafana.ParseAlertExpr(sla)
 	if err != nil {
-		return errors.Wrapf(err, "cannot set alert")
+		return errors.Wrapf(err, "invalid alert expression")
 	}
 
-	alert.Message = fmt.Sprintf("Alert [%s] for object %s has been fired", name, job.GetName())
-
-	alert.Name = endpoint{
+	name := endpoint{
 		Namespace: job.GetNamespace(),
 		Kind:      job.GetObjectKind().GroupVersionKind().Kind,
 		Name:      job.GetName(),
-		AlertID:   petname.Name(),
-	}.ToString()
+	}.String()
+
+	msg := fmt.Sprintf("Alert [%s] for object %s has been fired", name, job.GetName())
 
 	// push the alert to grafana
-	if _, err := grafana.DefaultClient.SetAlert(alert); err != nil {
-		return errors.Wrapf(err, "SLA injection error")
+	if _, err := grafana.DefaultClient.SetAlert(alert, name, msg); err != nil {
+		return errors.Wrapf(err, "cannot set the alarm")
 	}
 
 	// use annotations to know which jobs have alert in Grafana.
 	// we use this information to remove alerts when the jobs are complete.
 	// We also use to discover the object based on the alertID.
 	job.SetLabels(labels.Merge(job.GetLabels(),
-		map[string]string{jobHasAlert: fmt.Sprint(alert.Name)}),
+		map[string]string{jobHasAlert: fmt.Sprint(name)}),
 	)
 
 	return nil
@@ -108,8 +105,6 @@ func SetAlert(job client.Object, sla string, name string) error {
 
 // DispatchAlert informs an object about the fired alert by updating the metadata of that object.
 func DispatchAlert(ctx context.Context, r utils.Reconciler, b *notifier.Body) error {
-	logrus.Warn("RECEIVE ALERT WITH ID ", b.RuleID, " name ", b.RuleName)
-
 	// Step 1. create the patch
 
 	// For more examples see:
@@ -135,9 +130,10 @@ func DispatchAlert(ctx context.Context, r utils.Reconciler, b *notifier.Body) er
 	patch := client.RawPatch(types.MergePatchType, patchJSON)
 
 	// Step 2. find objects interested in that alert.
-	e, err := parseEndpoint(b.RuleName)
-	if err != nil {
-		r.Info("alert is not intended for Frisbee", "name", b.RuleName)
+	var e endpoint
+	if err := e.Parse(b.RuleName); err != nil {
+		r.Info("alert fired, but is not intended for Frisbee",
+			"name", b.RuleName)
 
 		return nil
 	}

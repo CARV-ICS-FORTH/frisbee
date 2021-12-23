@@ -1,9 +1,10 @@
-package grafana
+package grafana_test
 
 import (
 	"reflect"
 	"testing"
 
+	"github.com/carv-ics-forth/frisbee/controllers/telemetry/grafana"
 	"github.com/grafana-tools/sdk"
 )
 
@@ -14,7 +15,7 @@ func TestParseAlert(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    *Alert
+		want    *grafana.Alert
 		wantErr bool
 	}{
 		{
@@ -26,19 +27,19 @@ func TestParseAlert(t *testing.T) {
 		{
 			name: "single-params",
 			args: args{query: "avg() OF query(wpFnYRwGk/2/bitrate, 15m, now) IS BELOW(14)"},
-			want: &Alert{
-				Metric: Metric{
+			want: &grafana.Alert{
+				Metric: grafana.Metric{
 					DashboardUID: "wpFnYRwGk",
 					PanelID:      2,
 					MetricName:   "bitrate",
 				},
-				TimeRange: TimeRange{
+				TimeRange: grafana.TimeRange{
 					From: "15m",
 					To:   "now",
 				},
-				Query: Query{
+				Query: grafana.Query{
 					Evaluator: sdk.AlertEvaluator{
-						Type:   ConvertEvaluatorAlias("BELOW"),
+						Type:   grafana.ConvertEvaluatorAlias("BELOW"),
 						Params: []float64{14},
 					},
 					Reducer: sdk.AlertReducer{
@@ -53,19 +54,19 @@ func TestParseAlert(t *testing.T) {
 		{
 			name: "no-params",
 			args: args{query: "avg() OF query(wpFnYRwGk/2/bitrate, 15m, now) IS NOVALUE()"},
-			want: &Alert{
-				Metric: Metric{
+			want: &grafana.Alert{
+				Metric: grafana.Metric{
 					DashboardUID: "wpFnYRwGk",
 					PanelID:      2,
 					MetricName:   "bitrate",
 				},
-				TimeRange: TimeRange{
+				TimeRange: grafana.TimeRange{
 					From: "15m",
 					To:   "now",
 				},
-				Query: Query{
+				Query: grafana.Query{
 					Evaluator: sdk.AlertEvaluator{
-						Type:   ConvertEvaluatorAlias("NOVALUE"),
+						Type:   grafana.ConvertEvaluatorAlias("NOVALUE"),
 						Params: nil,
 					},
 					Reducer: sdk.AlertReducer{
@@ -79,19 +80,19 @@ func TestParseAlert(t *testing.T) {
 		{
 			name: "multi-params",
 			args: args{query: "avg() OF query(wpFnYRwGk/2/bitrate, 15m, now) IS WITHIN_RANGE(10,50)"},
-			want: &Alert{
-				Metric: Metric{
+			want: &grafana.Alert{
+				Metric: grafana.Metric{
 					DashboardUID: "wpFnYRwGk",
 					PanelID:      2,
 					MetricName:   "bitrate",
 				},
-				TimeRange: TimeRange{
+				TimeRange: grafana.TimeRange{
 					From: "15m",
 					To:   "now",
 				},
-				Query: Query{
+				Query: grafana.Query{
 					Evaluator: sdk.AlertEvaluator{
-						Type:   ConvertEvaluatorAlias("WITHIN_RANGE"),
+						Type:   grafana.ConvertEvaluatorAlias("WITHIN_RANGE"),
 						Params: []float64{10, 50},
 					},
 					Reducer: sdk.AlertReducer{
@@ -106,13 +107,13 @@ func TestParseAlert(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewAlert(tt.args.query)
+			got, err := grafana.ParseAlertExpr(tt.args.query)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("NewAlert() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ParseAlertExpr() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewAlert() got = %v, want %v", got, tt.want)
+				t.Errorf("ParseAlertExpr() got = %v, want %v", got, tt.want)
 			}
 		})
 	}

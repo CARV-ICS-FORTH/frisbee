@@ -6,7 +6,8 @@ This tutorial describes how to deploy Frisbee and start running tests.
 
 #### Step 1:  Install Dependencies
 
-Make sure that [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/) and  [Helm](https://helm.sh/docs/intro/install/) are installed on your system, and that you have access to a Kubernetes
+Make sure that [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/)
+and  [Helm](https://helm.sh/docs/intro/install/) are installed on your system, and that you have access to a Kubernetes
 installation.
 
 * **Local Installation** If you want a local installation you can use [Microk8s](https://microk8s.io/docs) that runs
@@ -127,7 +128,7 @@ We can use these fields to wait until they become true -- thus saving us from ma
 workflow.frisbee.io/tikv-baseline condition met
 ```
 
-####    
+####     
 
 #### Step 7: Destroy the testing workflow
 
@@ -161,7 +162,7 @@ Starting to serve on 127.0.0.1:8001
 http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/.
 ```
 
-###    
+###     
 
 If you use a microk8s installation of Kubernetes, then the procedure is slightly different.
 
