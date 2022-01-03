@@ -119,6 +119,7 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 
 	// examine DeletionTimestamp to determine if object is under deletion
 	if obj.GetDeletionTimestamp().IsZero() {
+
 		// The object is not being deleted, so if it does not have our finalizer,
 		// then lets add the finalizer and Update the object. This is equivalent
 		// registering our finalizer.

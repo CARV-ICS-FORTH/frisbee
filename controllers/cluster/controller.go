@@ -257,7 +257,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		// SLA-driven execution requires to set SLA alerts on Grafana.
 		if cr.Spec.Until != nil && cr.Spec.Until.SLA != "" {
-			if err := assertions.SetAlert(&cr, cr.Spec.Until.SLA, "until"); err != nil {
+			if err := assertions.SetAlert(&cr, cr.Spec.Until.SLA); err != nil {
 				return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "SLA error"))
 			}
 		}

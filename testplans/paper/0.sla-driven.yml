@@ -15,41 +15,53 @@ spec:
       service:
         templateRef: tikv.cluster.placement-driver
 
+    # Set a baseline cluster of workers
     - action: Cluster
       depends: { running: [ master ] }
-      name: workers
+      name: baselineworkers
       cluster:
         templateRef: tikv.cluster.worker
-        instances: 100
-        until:
-          sla: 'MAX() OF QUERY(A2EjFbsMk/88/99Latency, 1m, now) IS ABOVE(70000)'
+        instances: 3
         inputs:
           - { placementDriver: .service.master.any }
 
-    # Preload-key
+    # Preload the baseline workers with keys.
     - action: Cluster
       depends: { running: [ master ] }
       name: loaders
       cluster:
-          templateRef: tikv.cluster.worker
-          instances: 1
-          inputs:
-            - { server: .service.master.any, workload: workloada, recordcount: "1000000", threads: "400" }
+        templateRef: ycsb.tikv.loader
+        instances: 1
+        inputs:
+          - { server: .service.master.any, workload: workloada, recordcount: "500000", threads: "400" }
 
-
+    # Create elastic workers. New workers are spawned when the maximum tail latency of clients goes beyond 80ms.
     - action: Cluster
-      depends: { running: [ master ], success: [loaders] }
+      depends: { running: [ master ], success: [ loaders ]  }
+      name: elasticworkers
+      cluster:
+        templateRef: tikv.cluster.worker
+        instances: 50
+        until:
+          sla: 'AVG() OF QUERY(CR1YMET7z/88/99Latency, 1m, now) IS BELOW(80000)'
+        inputs:
+          - { placementDriver: .service.master.any }
+        schedule:
+          cron: "@every 1m"
+
+    # Create elastic clients. New clients are spawned when the CPU utilization of workers goes beyond 80%.
+    - action: Cluster
+      depends: { running: [ master ], success: [ loaders ] }
       name: runners
       cluster:
         templateRef: ycsb.tikv.runner
-        instances: 400 # Set max instances to bound the experiment from scaling indefinitely
+        instances: 50 # Set max instances to bound the experiment from scaling indefinitely
         until:
-          sla: 'MAX() OF QUERY(A2EjFbsMk/88/99Latency, 1m, now) IS ABOVE(70000)'
+          sla: 'AVG() OF QUERY(CR1YMET7z/104/99Latency, 1m, now) IS ABOVE(80000)'
         inputs:
-          - { server: .service.master.any, workload: workloada, recordcount: "1000000", threads: "10" }
-          - { server: .service.master.any, workload: workloadd, recordcount: "1000000", threads: "10" }
-          - { server: .service.master.any, workload: workloada, recordcount: "1000000", threads: "10" }
-          - { server: .service.master.any, workload: workloadd, recordcount: "1000000", threads: "10" }
+          - { server: .service.master.any, workload: workloada, recordcount: "500000", threads: "10" }
+#          - { server: .service.master.any, workload: workloadb, recordcount: "500000", threads: "10" }
+#          - { server: .service.master.any, workload: workloadc, recordcount: "500000", threads: "10" }
         schedule:
           cron: "@every 1m"
         tolerate:
