@@ -20,8 +20,8 @@ package v1alpha1
 type Mode string
 
 const (
-	// AnyMode represents that the system will select one object randomly.
-	AnyMode Mode = "any"
+	// OneMode represents that the system will select one object randomly.
+	OneMode Mode = "one"
 	// AllMode represents that the system will select all objects  regardless of status
 	// (not ready or not running pods includes).
 	// Use this label carefully.
@@ -36,8 +36,8 @@ const (
 
 func Convert(mode string) Mode {
 	switch mode {
-	case "any":
-		return AnyMode
+	case "one":
+		return OneMode
 	case "all":
 		return AllMode
 	case "fixed":
@@ -50,8 +50,6 @@ func Convert(mode string) Mode {
 		panic("invalid mode")
 	}
 }
-
-// +kubebuilder:validation:Enum=one;all;fixed;fixed-percent;random-max-percent
 
 // MatchBy defines the selectors for services.
 // If the all selectors are empty, all services will be selected.
@@ -90,6 +88,7 @@ type ServiceSelector struct {
 	// If `FixedPercentPodMod`, provide a number from 0-100 to specify the percent of pods the server can do chaos action.
 	// IF `RandomMaxPercentPodMod`,  provide a number from 0-100 to specify the max percent of pods to do chaos action
 	// +optional
+	// +kubebuilder:validation:Enum=one;all;fixed;fixed-percent;random-max-percent
 	Value string `json:"value,omitempty"`
 
 	// Macro abstract selector parameters into a structured string (e.g, .cluster.master.all). Every parsed field is

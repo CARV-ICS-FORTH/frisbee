@@ -51,7 +51,7 @@ func Evaluate(tspec *Scheme) (GenericSpec, error) {
 		Parse(tspec.Spec)
 
 	if err != nil {
-		return GenericSpec(""), errors.Wrapf(err, "parsing error")
+		return "", errors.Wrapf(err, "parsing error")
 	}
 
 	var out strings.Builder

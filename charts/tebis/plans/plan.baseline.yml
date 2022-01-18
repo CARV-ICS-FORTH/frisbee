@@ -5,7 +5,7 @@ metadata:
   name: tebis-baseline
 spec:
   withTelemetry:
-    importMonitors:
+    importDashboards:
       - platform.telemetry.container
 
   actions:
@@ -23,7 +23,7 @@ spec:
       service:
         templateRef: tebis.cluster.bootstrap
         inputs:
-          - { zookeeper: .service.zookeeper.any }
+          - { zookeeper: .service.zookeeper.one }
 
     # Initialize a data node
     - action: Service
@@ -34,7 +34,7 @@ spec:
       service:
         templateRef: tebis.cluster.master
         inputs:
-          - { zookeeper: .service.zookeeper.any, port: "6060" }
+          - { zookeeper: .service.zookeeper.one, port: "6060" }
 
     # Initialize a data node
     - action: Service
@@ -45,7 +45,7 @@ spec:
       service:
         templateRef: tebis.cluster.master
         inputs:
-          - { zookeeper: .service.zookeeper.any,  port: "6061" }
+          - { zookeeper: .service.zookeeper.one,  port: "6061" }
 
 
     # Initialize a data node
@@ -57,7 +57,7 @@ spec:
       service:
         templateRef: tebis.cluster.master
         inputs:
-          - { zookeeper: .service.zookeeper.any, port: "6062" }
+          - { zookeeper: .service.zookeeper.one, port: "6062" }
 
 
     # Initialize a client node
@@ -69,4 +69,4 @@ spec:
       service:
         templateRef: tebis.cluster.client
         inputs:
-          - { zookeeper: .service.zookeeper.any, regions: "3" }
+          - { zookeeper: .service.zookeeper.one, regions: "3" }

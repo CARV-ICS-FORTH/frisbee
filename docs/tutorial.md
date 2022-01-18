@@ -14,17 +14,20 @@ installation.
   entirely on your workstation or edge device.
 
 ```bash
-# Install microk8s
->> sudo snap install microk8s --classic
+# Install microk8s v.1.21
+>> sudo snap install microk8s --classic --channel=1.21/stable
 
 # Create alias 
 >> sudo snap alias microk8s.kubectl kubectl
 
 # Enable Dependencies
->> microk8s enable dns ingress ambassador
+>> microk8s enable dns ingress helm3
 
 # Use microk8s config as the default kubernetes config
->> microk8s config > config
+>> microk8s config > ~/.kube/config
+
+# Start microk8s
+>> microk8s start
 ```
 
 * **Remote Installation**: Set  `~/.kube/config` appropriately, and create tunnel for sending requests to Kubernetes
@@ -128,7 +131,7 @@ We can use these fields to wait until they become true -- thus saving us from ma
 workflow.frisbee.io/tikv-baseline condition met
 ```
 
-####     
+####         
 
 #### Step 7: Destroy the testing workflow
 
@@ -162,7 +165,7 @@ Starting to serve on 127.0.0.1:8001
 http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/.
 ```
 
-###     
+###         
 
 If you use a microk8s installation of Kubernetes, then the procedure is slightly different.
 

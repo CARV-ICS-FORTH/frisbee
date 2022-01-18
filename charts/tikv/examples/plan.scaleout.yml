@@ -7,7 +7,11 @@ metadata:
   name: tikv-scaleout
 spec:
   withTelemetry:
-    importMonitors: [ "platform.telemetry.container", "ycsb.telemetry.client", "tikv.telemetry.pd", "tikv.telemetry.worker" ]
+    importDashboards:
+      - platform.telemetry.container
+      - ycsb.telemetry.client
+      - tikv.telemetry.pd
+      - tikv.telemetry.worker
 
   actions:
     # Step 0: bootstrap.
@@ -25,7 +29,7 @@ spec:
         templateRef: tikv.cluster.worker
         instances: 256
         inputs:
-          - { placementDriver: .service.master.any }
+          - { placementDriver: .service.master.one }
 
 
     # Step 1: Load a new dataset, using the parameters of workload A.
@@ -36,4 +40,4 @@ spec:
       cluster:
         templateRef: ycsb.tikv.loader
         inputs:
-          - { server: .service.master.any, recordcount: "100000000000", offset: "0", threads: "32" }
+          - { server: .service.master.one, recordcount: "100000000000", offset: "0", threads: "32" }

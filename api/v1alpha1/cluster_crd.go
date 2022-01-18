@@ -38,7 +38,7 @@ func (in TolerateSpec) String() string {
 	return fmt.Sprintf("FailedServices:%d", in.FailedServices)
 }
 
-// ClusterSpec defines the desired state of Cluster
+// ClusterSpec defines the desired state of Cluster.
 type ClusterSpec struct {
 	GenerateFromTemplate `json:",inline"`
 
@@ -63,7 +63,7 @@ type ClusterSpec struct {
 	Suspend *bool `json:"suspend,omitempty"`
 }
 
-// ClusterStatus defines the observed state of Cluster
+// ClusterStatus defines the observed state of Cluster.
 type ClusterStatus struct {
 	Lifecycle `json:",inline"`
 
@@ -92,7 +92,7 @@ func (in *Cluster) SetReconcileStatus(lifecycle Lifecycle) {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-// Cluster is the Schema for the clusters API
+// Cluster is the Schema for the clusters API.
 type Cluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -103,7 +103,7 @@ type Cluster struct {
 
 // +kubebuilder:object:root=true
 
-// ClusterList contains a list of Cluster
+// ClusterList contains a list of Cluster.
 type ClusterList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

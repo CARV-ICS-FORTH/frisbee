@@ -1,0 +1,33 @@
+---
+apiVersion: frisbee.io/v1alpha1
+kind: Workflow
+metadata:
+  name: hello-network
+spec:
+  withTelemetry:
+    importDashboards:
+      - platform.telemetry.container
+      - iperfmon.client
+
+  actions:
+    # Create an iperf server
+    - action: Service
+      name: server
+      service:
+        templateRef: iperf.server
+
+    # Create a cluster of iperf clients
+    - action: Cluster
+      name: clients
+      depends: { running: [ server ] }
+      assert:
+        state: '{{.state.NumOfFailures()}} >= 1'
+        metrics: 'avg() of query(wpFnYRwGk, 5m, now) is below(1000)'
+      cluster:
+        templateRef: iperf.client
+        instances: 30
+        inputs:
+            - { server: .service.server.one, seconds: "600" }
+            - { server: .service.server.one, seconds: "30" }
+      schedule:
+        cron: "@every 1m"

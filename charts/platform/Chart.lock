@@ -4,9 +4,9 @@ dependencies:
   version: 3.0.0
 - name: chaos-mesh
   repository: https://charts.chaos-mesh.org
-  version: 2.0.3
+  version: 2.1.2
 - name: sonarqube
   repository: https://SonarSource.github.io/helm-chart-sonarqube
   version: 1.2.1+162
-digest: sha256:ef99280f32e87be218e66bc4f5466ce92344615a961c46156e92f03770a1e69b
-generated: "2021-12-10T20:41:56.338862055+02:00"
+digest: sha256:984d6456390c8f785a9f1ce82a08714eb73b5e17e75a868370a7dc5b103143ee
+generated: "2022-01-09T21:20:23.270456593+02:00"

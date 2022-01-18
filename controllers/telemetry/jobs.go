@@ -105,7 +105,7 @@ func (r *Controller) importDashboards(ctx context.Context, obj *v1alpha1.Telemet
 	imported := make(map[string]struct{})
 
 	// iterate monitoring services
-	for _, monRef := range obj.Spec.ImportMonitors {
+	for _, monRef := range obj.Spec.ImportDashboards {
 		monSpec, err := r.serviceControl.GetServiceSpec(ctx, obj.GetNamespace(), v1alpha1.GenerateFromTemplate{TemplateRef: monRef})
 		if err != nil {
 			return errors.Wrapf(err, "cannot get spec for %s", monRef)

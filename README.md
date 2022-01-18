@@ -79,9 +79,7 @@ earlier stages of the software lifecycle. We make it possible to:
 
 For more information, Frisbee installation and reference documents are available at:
 
-👉 **[Quick Start](docs/introduction.md)**
-
-👉 **[Installation](docs/tutorial.md)**
+👉 **[Quick Start](docs/tutorial.md)**
 
 👉 **[Test Plans](charts)**
 

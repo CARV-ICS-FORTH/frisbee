@@ -78,8 +78,8 @@ type Reconciler interface {
 //
 // Bool indicate whether the caller should return immediately (true) or continue (false).
 // The reconciliation cycle is where the framework gives us back control after a watch has passed up an event.
-func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.Object, returnNow *bool) (ctrl.Result, error) {
-	*returnNow = true
+func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.Object, requeue *bool) (ctrl.Result, error) {
+	*requeue = true
 
 	/*
 		### 1: Retrieve the CR by name
@@ -127,7 +127,7 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 			controllerutil.AddFinalizer(obj, r.Finalizer())
 
 			if err := Update(ctx, r, obj); err != nil {
-				r.Error(err, "unable to add finalizers", "instance", obj.GetName())
+				r.Error(err, "unable to add finalizers", "object", obj.GetName())
 
 				return RequeueAfter(time.Second)
 			}
@@ -143,7 +143,7 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 			// Run finalization logic to remove external dependencies.
 			// If the finalization logic fails, don't remove the finalizer
 			// so that we can retry during the next reconciliation.
-			r.Error(err, "unable to finalize instance", "instance", obj.GetName())
+			r.Error(err, "unable to finalize instance", "object", obj.GetName())
 
 			return RequeueAfter(time.Second)
 		}
@@ -160,7 +160,7 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 	}
 
 	// delegate reconciliation logic to the concrete controller.
-	*returnNow = false
+	*requeue = false
 
 	return Stop()
 }

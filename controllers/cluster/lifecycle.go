@@ -20,7 +20,7 @@ import (
 	"fmt"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	"github.com/carv-ics-forth/frisbee/controllers/utils/assertions"
+	"github.com/carv-ics-forth/frisbee/controllers/utils/expressions"
 	"github.com/carv-ics-forth/frisbee/controllers/utils/lifecycle"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -34,8 +34,8 @@ type test struct {
 }
 
 // calculateLifecycle returns the update lifecycle of the cluster.
-func calculateLifecycle(cluster *v1alpha1.Cluster, gs lifecycle.ClassifierReader) v1alpha1.ClusterStatus {
-	status := cluster.Status
+func calculateLifecycle(group *v1alpha1.Cluster, gs lifecycle.ClassifierReader) v1alpha1.ClusterStatus {
+	status := group.Status
 
 	// Step 1. Skip any CR which are already completed, or uninitialized.
 	if status.Phase == v1alpha1.PhaseUninitialized ||
@@ -44,13 +44,13 @@ func calculateLifecycle(cluster *v1alpha1.Cluster, gs lifecycle.ClassifierReader
 		return status
 	}
 
-	// Step 2. Check if failures violate cluster's tolerations
-	if gs.NumFailedJobs() > cluster.Spec.Tolerate.FailedServices {
+	// Step 2. Check if failures violate group's tolerations
+	if gs.NumFailedJobs() > group.Spec.Tolerate.FailedServices {
 		status.Lifecycle = v1alpha1.Lifecycle{
 			Phase:  v1alpha1.PhaseFailed,
 			Reason: "TolerateFailuresExceeded",
 			Message: fmt.Sprintf("tolerate: %s. failed jobs: %s",
-				cluster.Spec.Tolerate.String(), gs.FailedList()),
+				group.Spec.Tolerate.String(), gs.FailedList()),
 		}
 
 		meta.SetStatusCondition(&status.Conditions, metav1.Condition{
@@ -64,37 +64,37 @@ func calculateLifecycle(cluster *v1alpha1.Cluster, gs lifecycle.ClassifierReader
 	}
 
 	// Step 3. Check if "Until" conditions are met.
-	if until := cluster.Spec.Until; until != nil {
-		info, fired := assertions.FiredAlert(cluster)
+	if until := group.Spec.Until; until != nil {
+		info, fired := expressions.FiredAlert(group)
 		if fired {
 			status.Lifecycle = v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseRunning,
-				Reason:  "SLAAssertionFired",
+				Reason:  "MetricsEventFired",
 				Message: info,
 			}
 
 			meta.SetStatusCondition(&status.Conditions, metav1.Condition{
 				Type:    v1alpha1.ConditionAllJobsScheduled.String(),
 				Status:  metav1.ConditionTrue,
-				Reason:  "SLAAssertionFired",
+				Reason:  "MetricsEventFired",
 				Message: info,
 			})
 
 			return status
 		}
 
-		info, fired, err := assertions.FiredState(until.State, gs)
+		info, fired, err := expressions.FiredState(until.State, gs)
 		if err != nil {
 			status.Lifecycle = v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseFailed,
-				Reason:  "StateAssertionFailed",
+				Reason:  "StateEventFired",
 				Message: err.Error(),
 			}
 
 			meta.SetStatusCondition(&status.Conditions, metav1.Condition{
 				Type:    v1alpha1.ConditionJobFailed.String(),
 				Status:  metav1.ConditionTrue,
-				Reason:  "StateAssertionFailed",
+				Reason:  "StateEventFired",
 				Message: err.Error(),
 			})
 
@@ -104,27 +104,27 @@ func calculateLifecycle(cluster *v1alpha1.Cluster, gs lifecycle.ClassifierReader
 		if fired {
 			status.Lifecycle = v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseRunning,
-				Reason:  "StateAssertionFired",
+				Reason:  "StateEventFired",
 				Message: info,
 			}
 
 			meta.SetStatusCondition(&status.Conditions, metav1.Condition{
 				Type:    v1alpha1.ConditionAllJobsScheduled.String(),
 				Status:  metav1.ConditionTrue,
-				Reason:  "StateAssertionFired",
+				Reason:  "StateEventFired",
 				Message: info,
 			})
 
 			return status
 		}
 
-		// When used in conjunction with "Until", instance act as a maximum bound.
+		// Conditions used in conjunction with "Until", instance act as a maximum bound.
 		// If the maximum instances are reached before the Until conditions, we assume that
 		// the experiment never converges, and it fails.
-		if cluster.Spec.MaxInstances > 0 && cluster.Status.ScheduledJobs > cluster.Spec.MaxInstances {
+		if group.Spec.MaxInstances > 0 && group.Status.ScheduledJobs > group.Spec.MaxInstances {
 			msg := fmt.Sprintf(`Cluster [%s] has reached Max instances [%d] before Until conditions are met.
 			Abort the experiment as it too flaky to accept. You can retry without defining instances.`,
-				cluster.GetName(), cluster.Spec.MaxInstances)
+				group.GetName(), group.Spec.MaxInstances)
 
 			status.Lifecycle = v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseFailed,
@@ -155,7 +155,7 @@ func calculateLifecycle(cluster *v1alpha1.Cluster, gs lifecycle.ClassifierReader
 	}
 
 	// Step 4. Check if scheduling goes as expected.
-	queuedJobs := len(cluster.Status.QueuedJobs)
+	queuedJobs := len(group.Status.QueuedJobs)
 	autotests := []test{
 		{ // All jobs are successfully completed
 			expression: gs.NumSuccessfulJobs() == queuedJobs,
@@ -172,7 +172,7 @@ func calculateLifecycle(cluster *v1alpha1.Cluster, gs lifecycle.ClassifierReader
 			},
 		},
 		{ // All jobs are created, and at least one is still running
-			expression: gs.NumRunningJobs()+gs.NumSuccessfulJobs() == queuedJobs,
+			expression: gs.NumPendingJobs()+gs.NumRunningJobs()+gs.NumSuccessfulJobs() == queuedJobs,
 			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseRunning,
 				Reason:  "AllJobsRunning",
@@ -215,5 +215,5 @@ func calculateLifecycle(cluster *v1alpha1.Cluster, gs lifecycle.ClassifierReader
 		runningJobs: %s,
 		successfulJobs: %s,
 		failedJobs: %s
-	`, status.Lifecycle, queuedJobs, gs.ActiveList(), gs.RunningList(), gs.SuccessfulList(), gs.FailedList()))
+	`, status.Lifecycle, queuedJobs, gs.PendingList(), gs.RunningList(), gs.SuccessfulList(), gs.FailedList()))
 }

@@ -1,0 +1,30 @@
+---
+apiVersion: frisbee.io/v1alpha1
+kind: Workflow
+metadata:
+  name: tikv-baseline
+spec:
+  withTelemetry:
+    importDashboards:
+      - platform.telemetry.container
+      - ycsb.telemetry.client
+      - tikv.telemetry.pd
+      - tikv.telemetry.worker
+
+  actions:
+    # Step 0: bootstrap.
+    # For TiKV, we must first create a placementDriver and then add the workers.
+    - action: Service
+      name: master
+      service:
+        templateRef: tikv.cluster.placement-driver
+
+    # Set a baseline cluster of workers
+    - action: Cluster
+      depends: { running: [ master ] }
+      name: baselineworkers
+      cluster:
+        templateRef: tikv.cluster.worker
+        instances: 1
+        inputs:
+          - { placementDriver: .service.master.one }

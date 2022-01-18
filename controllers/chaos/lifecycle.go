@@ -17,6 +17,8 @@ limitations under the License.
 package chaos
 
 import (
+	"fmt"
+
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
@@ -207,6 +209,14 @@ func convertLifecycle(fault *Fault) v1alpha1.Lifecycle {
 				Phase:   v1alpha1.PhaseRunning,
 				Reason:  "ChaosRunning",
 				Message: "The faults have been successfully injected into all target pods",
+			},
+		},
+		{ // Target not found
+			condition: phase.Stop() && !selected.True() && injected.True() && recovered.True(),
+			outcome: v1alpha1.Lifecycle{
+				Phase:   v1alpha1.PhaseFailed,
+				Reason:  "TargetNotFound",
+				Message: fmt.Sprintf("%v", parsed),
 			},
 		},
 		{ // Stopping the experiment

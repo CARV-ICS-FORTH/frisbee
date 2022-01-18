@@ -38,6 +38,13 @@ import (
 // +kubebuilder:rbac:groups=frisbee.io,resources=telemetries/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=frisbee.io,resources=telemetries/finalizers,verbs=update
 
+// +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=core,resources=pods/status,verbs=get;list;watch
+// +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=core,resources=services/status,verbs=get;list;watch
+// +kubebuilder:rbac:groups=core,resources=endpoints,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=core,resources=endpoints/status,verbs=get;list;watch
+
 type Controller struct {
 	ctrl.Manager
 	logr.Logger
@@ -92,7 +99,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	*/
 
 	// validate
-	if len(cr.Spec.ImportMonitors) == 0 {
+	if len(cr.Spec.ImportDashboards) == 0 {
 		return utils.Stop()
 	}
 

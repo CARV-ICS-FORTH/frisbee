@@ -34,13 +34,13 @@ func generateName(group *v1alpha1.Cluster, i int) string {
 	return fmt.Sprintf("%s-%d", group.GetName(), i)
 }
 
-func getJob(cluster *v1alpha1.Cluster, i int) *v1alpha1.Service {
+func getJob(group *v1alpha1.Cluster, i int) *v1alpha1.Service {
 	var instance v1alpha1.Service
 
-	instance.SetName(generateName(cluster, i))
+	instance.SetName(generateName(group, i))
 
 	// modulo is needed to re-iterate the job list, required for the implementation of "Until".
-	jobSpec := cluster.Status.QueuedJobs[i%len(cluster.Status.QueuedJobs)]
+	jobSpec := group.Status.QueuedJobs[i%len(group.Status.QueuedJobs)]
 
 	jobSpec.DeepCopyInto(&instance.Spec)
 

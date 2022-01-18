@@ -42,7 +42,7 @@ const (
 )
 
 // Annotation provides a way to mark points on the graph with rich events.
-// // When you hover over an annotation you can get event description and event tags.
+// // Conditions you hover over an annotation you can get event description and event tags.
 // // The text field can include links to other systems with more detail.
 type Annotation interface {
 	// Add  pushes an annotation to grafana indicating that a new component has joined the experiment.
@@ -82,7 +82,7 @@ func (a *PointAnnotation) Delete(obj client.Object) {
 
 // RangeAnnotation uses range annotations to indicate the duration of a Chaos.
 // It consists of two parts. In the first part, a failure annotation is created
-// with open end. When a new value is pushed to the timeEnd channel, the annotation is updated
+// with open end. Conditions a new value is pushed to the timeEnd channel, the annotation is updated
 // accordingly. TimeEnd channel can be used as many times as wished. The client is responsible to close the channel.
 type RangeAnnotation struct {
 	// Currently the Annotator works for a single watched object. If we want to support more, use a map with

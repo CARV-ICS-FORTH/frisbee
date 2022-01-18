@@ -5,7 +5,10 @@ metadata:
   name: mongo-baseline-replicated
 spec:
   withTelemetry:
-    importMonitors: [ "platform.telemetry.container", "ycsb.telemetry.client", "mongo.telemetry.server" ]
+    importDashboards:
+      - platform.telemetry.container
+      - ycsb.telemetry.client
+      - mongo.telemetry.server
 
   actions:
     # Step 0: bootstrap a replicated cluster.
@@ -35,7 +38,7 @@ spec:
         
         templateRef: ycsb.mongo.loader
         inputs:
-          - { server: .service.master.any, workload: workloada, recordcount: "1000000", threads: "400" }
+          - { server: .service.master.one, workload: workloada, recordcount: "1000000", threads: "400" }
 
     # Step 2: Run workload A
     - action: Service
@@ -45,7 +48,7 @@ spec:
         
         templateRef: ycsb.mongo.runner
         inputs:
-          - { server: .service.master.any, workload: workloada, operationcount: "1000000",
+          - { server: .service.master.one, workload: workloada, operationcount: "1000000",
               cpu: "8", memory: "8Gi", threads: "40" }
 
     # Step 3: Run workload B
@@ -56,7 +59,7 @@ spec:
         
         templateRef: ycsb.mongo.runner
         inputs:
-          - { server: .service.master.any, workload: workloadb, operationcount: "1000000",
+          - { server: .service.master.one, workload: workloadb, operationcount: "1000000",
               cpu: "8", memory: "8Gi", threads: "40" }
 
     # Step 4: Run workload C
@@ -67,7 +70,7 @@ spec:
         
         templateRef: ycsb.mongo.runner
         inputs:
-          - { server: .service.master.any, workload: workloadc, operationcount: "1000000",
+          - { server: .service.master.one, workload: workloadc, operationcount: "1000000",
               cpu: "8", memory: "8Gi", threads: "40" }
 
 
@@ -79,7 +82,7 @@ spec:
         
         templateRef: ycsb.mongo.runner
         inputs:
-          - { server: .service.master.any, workload: workloadf, operationcount: "1000000",
+          - { server: .service.master.one, workload: workloadf, operationcount: "1000000",
               cpu: "8", memory: "8Gi", threads: "40" }
 
 
@@ -91,7 +94,7 @@ spec:
         
         templateRef: ycsb.mongo.runner
         inputs:
-          - { server: .service.master.any, workload: workloadd, operationcount: "1000000",
+          - { server: .service.master.one, workload: workloadd, operationcount: "1000000",
               cpu: "8", memory: "8Gi", threads: "40" }
 
 
@@ -104,7 +107,7 @@ spec:
         
         templateRef: ycsb.mongo.loader
         inputs:
-          - { server: .service.master.any, workload: workloade, dropdata: "true", recordcount: "1000000",
+          - { server: .service.master.one, workload: workloade, dropdata: "true", recordcount: "1000000",
               threads: "400" }
 
 
@@ -116,5 +119,5 @@ spec:
         
         templateRef: ycsb.mongo.runner
         inputs:
-          - { server: .service.master.any, workload: workloade, operationcount: "1000000",
+          - { server: .service.master.one, workload: workloade, operationcount: "1000000",
               cpu: "8", memory: "8Gi", threads: "40" }

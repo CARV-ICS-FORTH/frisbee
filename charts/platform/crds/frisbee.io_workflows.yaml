@@ -19,7 +19,7 @@ spec:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Workflow is the Schema for the workflows API
+        description: Workflow is the Schema for the workflows API.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -34,7 +34,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: WorkflowSpec defines the desired state of Workflow
+            description: WorkflowSpec defines the desired state of Workflow.
             properties:
               actions:
                 description: Actions are the tasks that will be taken.
@@ -47,174 +47,28 @@ spec:
                       description: Assert defines the conditions under which the workflow
                         will terminate with a "passed" or "failed" message
                       properties:
-                        sla:
-                          description: 'SLA is a Grafana alert that will be triggered
-                            if the SLA condition is met. SLA assertion is applicable
-                            throughout the execution of an action. Parsing: Grafana
-                            URL: http://grafana/d/A2EjFbsMk/ycsb-services?editPanel=86
-                            SLA: A2EjFbsMk/86/Average Rational: Panel/Dashboard/Metric'
+                        metrics:
+                          description: 'Metrics set a Grafana alert that will be triggered
+                            once the condition is met. Parsing: Grafana URL: http://grafana/d/A2EjFbsMk/ycsb-services?editPanel=86
+                            metrics: A2EjFbsMk/86/Average (Panel/Dashboard/Metric)'
                           nullable: true
                           type: string
                         state:
                           description: State describe the runtime condition that should
-                            be met after the action has been executed
+                            be met after the action has been executed Shall be defined
+                            using .Lifecycle() methods. The methods account only jobs
+                            that are managed by the object.
                           nullable: true
                           type: string
                       type: object
-                    chaos:
-                      description: ChaosSpec defines the desired state of Chaos
+                    cascade:
+                      description: CascadeSpec defines the desired state of Cascade.
                       properties:
-                        kill:
-                          description: KillSpec terminates the selected Pod. Because
-                            this failure is permanent, it can only be waited in the
-                            Running Phase. It does not go through Pass.
-                          properties:
-                            selector:
-                              properties:
-                                macro:
-                                  description: Macro abstract selector parameters
-                                    into a structured string (e.g, .cluster.master.all).
-                                    Every parsed field is represents an inner structure
-                                    of the selector. In case of invalid macro, the
-                                    selector will return empty results. Macro conflicts
-                                    with any other parameter.
-                                  type: string
-                                match:
-                                  description: Match contains the rules to select
-                                    target
-                                  enum:
-                                  - one
-                                  - all
-                                  - fixed
-                                  - fixed-percent
-                                  - random-max-percent
-                                  properties:
-                                    byCluster:
-                                      additionalProperties:
-                                        type: string
-                                      description: ByCluster defines the service group
-                                        where services belong.
-                                      type: object
-                                    byName:
-                                      additionalProperties:
-                                        items:
-                                          type: string
-                                        type: array
-                                      description: ByName is a map of string keys
-                                        and a set values that used to select services.
-                                        The key defines the namespace which services
-                                        belong, and the values is a set of service
-                                        names.
-                                      type: object
-                                  type: object
-                                mode:
-                                  description: 'Mode defines which of the selected
-                                    services to use. If undefined, all() is used Supported
-                                    mode: one / all / fixed / fixed-percent / random-max-percent'
-                                  type: string
-                                value:
-                                  description: Value is required when the mode is
-                                    set to `FixedPodMode` / `FixedPercentPodMod` /
-                                    `RandomMaxPercentPodMod`. If `FixedPodMode`, provide
-                                    an integer of pods to do chaos action. If `FixedPercentPodMod`,
-                                    provide a number from 0-100 to specify the percent
-                                    of pods the server can do chaos action. IF `RandomMaxPercentPodMod`,  provide
-                                    a number from 0-100 to specify the max percent
-                                    of pods to do chaos action
-                                  type: string
-                              type: object
-                          type: object
-                        partition:
-                          description: PartitionSpec separate the given Pod from the
-                            rest of the network. This chaos typeis retractable (either
-                            manually or after a duration) and can be waited at both
-                            Running and Pass Phase. Running phase begins when the
-                            failure is injected. Pass begins when the failure is retracted.
-                            If anything goes wrong in between, the chaos goes into
-                            Failed phase.
-                          properties:
-                            duration:
-                              description: Duration is the time after which Frisbee
-                                will roll back the injected fault.
-                              type: string
-                            selector:
-                              properties:
-                                macro:
-                                  description: Macro abstract selector parameters
-                                    into a structured string (e.g, .cluster.master.all).
-                                    Every parsed field is represents an inner structure
-                                    of the selector. In case of invalid macro, the
-                                    selector will return empty results. Macro conflicts
-                                    with any other parameter.
-                                  type: string
-                                match:
-                                  description: Match contains the rules to select
-                                    target
-                                  enum:
-                                  - one
-                                  - all
-                                  - fixed
-                                  - fixed-percent
-                                  - random-max-percent
-                                  properties:
-                                    byCluster:
-                                      additionalProperties:
-                                        type: string
-                                      description: ByCluster defines the service group
-                                        where services belong.
-                                      type: object
-                                    byName:
-                                      additionalProperties:
-                                        items:
-                                          type: string
-                                        type: array
-                                      description: ByName is a map of string keys
-                                        and a set values that used to select services.
-                                        The key defines the namespace which services
-                                        belong, and the values is a set of service
-                                        names.
-                                      type: object
-                                  type: object
-                                mode:
-                                  description: 'Mode defines which of the selected
-                                    services to use. If undefined, all() is used Supported
-                                    mode: one / all / fixed / fixed-percent / random-max-percent'
-                                  type: string
-                                value:
-                                  description: Value is required when the mode is
-                                    set to `FixedPodMode` / `FixedPercentPodMod` /
-                                    `RandomMaxPercentPodMod`. If `FixedPodMode`, provide
-                                    an integer of pods to do chaos action. If `FixedPercentPodMod`,
-                                    provide a number from 0-100 to specify the percent
-                                    of pods the server can do chaos action. IF `RandomMaxPercentPodMod`,  provide
-                                    a number from 0-100 to specify the max percent
-                                    of pods to do chaos action
-                                  type: string
-                              type: object
-                          required:
-                          - selector
-                          type: object
-                        type:
-                          description: Type indicate the type of the injected fault
-                          enum:
-                          - partition
-                          - kill
-                          type: string
-                      required:
-                      - type
-                      type: object
-                    cluster:
-                      description: ClusterSpec defines the desired state of Cluster
-                      properties:
-                        domain:
-                          description: Domain specifies the location where Service
-                            will be placed.
-                          type: string
                         inputs:
                           description: Inputs are list of inputs passed to the objects.
-                            When used in conjunction with instances, if the number
-                            of instances is larger that the number of inputs, then
-                            inputs are recursively iteration.
+                            Conditions used in conjunction with instances, if the
+                            number of instances is larger that the number of inputs,
+                            then inputs are recursively iteration.
                           items:
                             additionalProperties:
                               type: string
@@ -224,8 +78,8 @@ spec:
                           description: MaxInstances dictate the number of objects
                             to be created for the service. If no inputs are defined,
                             then all instances will be initiated using the default
-                            parameters of the template. When used in conjunction with
-                            Until, MaxInstances as a max bound.
+                            parameters of the template. Conditions used in conjunction
+                            with Until, MaxInstances as a max bound.
                           type: integer
                         schedule:
                           description: Schedule defines the interval between the creation
@@ -234,6 +88,28 @@ spec:
                             to be disposable and replaceable, we cannot add a container
                             to a Pod once it has been created
                           properties:
+                            conditions:
+                              description: ConditionalExpr is a source of information
+                                about whether the state of the workflow after a given
+                                time is correct or not. This is needed because some
+                                workflows may run in infinite-horizons.
+                              properties:
+                                metrics:
+                                  description: 'Metrics set a Grafana alert that will
+                                    be triggered once the condition is met. Parsing:
+                                    Grafana URL: http://grafana/d/A2EjFbsMk/ycsb-services?editPanel=86
+                                    metrics: A2EjFbsMk/86/Average (Panel/Dashboard/Metric)'
+                                  nullable: true
+                                  type: string
+                                state:
+                                  description: State describe the runtime condition
+                                    that should be met after the action has been executed
+                                    Shall be defined using .Lifecycle() methods. The
+                                    methods account only jobs that are managed by
+                                    the object.
+                                  nullable: true
+                                  type: string
+                              type: object
                             cron:
                               description: "Cron defines a cron job rule. \n Some
                                 rule examples: \"0 30 * * * *\" means to \"Every hour
@@ -248,8 +124,154 @@ spec:
                                 we'll just wait till the next scheduled time
                               format: int64
                               type: integer
-                          required:
-                          - cron
+                          type: object
+                        suspend:
+                          description: Suspend flag tells the controller to suspend
+                            subsequent executions, it does not apply to already started
+                            executions.  Defaults to false.
+                          type: boolean
+                        templateRef:
+                          description: TemplateRef refers to a  template (e.g, iperf-server).
+                          type: string
+                        until:
+                          description: Until defines the conditions under which the
+                            Cluster will stop spawning new services. If used in conjunction
+                            with inputs, it will loop over inputs until the conditions
+                            are met.
+                          properties:
+                            metrics:
+                              description: 'Metrics set a Grafana alert that will
+                                be triggered once the condition is met. Parsing: Grafana
+                                URL: http://grafana/d/A2EjFbsMk/ycsb-services?editPanel=86
+                                metrics: A2EjFbsMk/86/Average (Panel/Dashboard/Metric)'
+                              nullable: true
+                              type: string
+                            state:
+                              description: State describe the runtime condition that
+                                should be met after the action has been executed Shall
+                                be defined using .Lifecycle() methods. The methods
+                                account only jobs that are managed by the object.
+                              nullable: true
+                              type: string
+                          type: object
+                      required:
+                      - templateRef
+                      type: object
+                    chaos:
+                      description: GenerateFromTemplate generates a spec by parameterizing
+                        the templateRef with the given inputs.
+                      properties:
+                        inputs:
+                          description: Inputs are list of inputs passed to the objects.
+                            Conditions used in conjunction with instances, if the
+                            number of instances is larger that the number of inputs,
+                            then inputs are recursively iteration.
+                          items:
+                            additionalProperties:
+                              type: string
+                            type: object
+                          type: array
+                        instances:
+                          description: MaxInstances dictate the number of objects
+                            to be created for the service. If no inputs are defined,
+                            then all instances will be initiated using the default
+                            parameters of the template. Conditions used in conjunction
+                            with Until, MaxInstances as a max bound.
+                          type: integer
+                        templateRef:
+                          description: TemplateRef refers to a  template (e.g, iperf-server).
+                          type: string
+                        until:
+                          description: Until defines the conditions under which the
+                            Cluster will stop spawning new services. If used in conjunction
+                            with inputs, it will loop over inputs until the conditions
+                            are met.
+                          properties:
+                            metrics:
+                              description: 'Metrics set a Grafana alert that will
+                                be triggered once the condition is met. Parsing: Grafana
+                                URL: http://grafana/d/A2EjFbsMk/ycsb-services?editPanel=86
+                                metrics: A2EjFbsMk/86/Average (Panel/Dashboard/Metric)'
+                              nullable: true
+                              type: string
+                            state:
+                              description: State describe the runtime condition that
+                                should be met after the action has been executed Shall
+                                be defined using .Lifecycle() methods. The methods
+                                account only jobs that are managed by the object.
+                              nullable: true
+                              type: string
+                          type: object
+                      required:
+                      - templateRef
+                      type: object
+                    cluster:
+                      description: ClusterSpec defines the desired state of Cluster.
+                      properties:
+                        domain:
+                          description: Domain specifies the location where Service
+                            will be placed.
+                          type: string
+                        inputs:
+                          description: Inputs are list of inputs passed to the objects.
+                            Conditions used in conjunction with instances, if the
+                            number of instances is larger that the number of inputs,
+                            then inputs are recursively iteration.
+                          items:
+                            additionalProperties:
+                              type: string
+                            type: object
+                          type: array
+                        instances:
+                          description: MaxInstances dictate the number of objects
+                            to be created for the service. If no inputs are defined,
+                            then all instances will be initiated using the default
+                            parameters of the template. Conditions used in conjunction
+                            with Until, MaxInstances as a max bound.
+                          type: integer
+                        schedule:
+                          description: Schedule defines the interval between the creation
+                            of services within the group. Executed creation is not
+                            supported in collocated mode. Since Pods are intended
+                            to be disposable and replaceable, we cannot add a container
+                            to a Pod once it has been created
+                          properties:
+                            conditions:
+                              description: ConditionalExpr is a source of information
+                                about whether the state of the workflow after a given
+                                time is correct or not. This is needed because some
+                                workflows may run in infinite-horizons.
+                              properties:
+                                metrics:
+                                  description: 'Metrics set a Grafana alert that will
+                                    be triggered once the condition is met. Parsing:
+                                    Grafana URL: http://grafana/d/A2EjFbsMk/ycsb-services?editPanel=86
+                                    metrics: A2EjFbsMk/86/Average (Panel/Dashboard/Metric)'
+                                  nullable: true
+                                  type: string
+                                state:
+                                  description: State describe the runtime condition
+                                    that should be met after the action has been executed
+                                    Shall be defined using .Lifecycle() methods. The
+                                    methods account only jobs that are managed by
+                                    the object.
+                                  nullable: true
+                                  type: string
+                              type: object
+                            cron:
+                              description: "Cron defines a cron job rule. \n Some
+                                rule examples: \"0 30 * * * *\" means to \"Every hour
+                                on the half hour\" \"@hourly\"      means to \"Every
+                                hour\" \"@every 1h30m\" means to \"Every hour thirty\"
+                                \n More rule info: https://godoc.org/github.com/robfig/cron"
+                              type: string
+                            startingDeadlineSeconds:
+                              description: StartingDeadlineSeconds is an optional
+                                deadline in seconds for starting the job if it misses
+                                scheduled time for any reason. if we miss this deadline,
+                                we'll just wait till the next scheduled time
+                              format: int64
+                              type: integer
                           type: object
                         suspend:
                           description: Suspend flag tells the controller to suspend
@@ -277,17 +299,18 @@ spec:
                             with inputs, it will loop over inputs until the conditions
                             are met.
                           properties:
-                            sla:
-                              description: 'SLA is a Grafana alert that will be triggered
-                                if the SLA condition is met. SLA assertion is applicable
-                                throughout the execution of an action. Parsing: Grafana
+                            metrics:
+                              description: 'Metrics set a Grafana alert that will
+                                be triggered once the condition is met. Parsing: Grafana
                                 URL: http://grafana/d/A2EjFbsMk/ycsb-services?editPanel=86
-                                SLA: A2EjFbsMk/86/Average Rational: Panel/Dashboard/Metric'
+                                metrics: A2EjFbsMk/86/Average (Panel/Dashboard/Metric)'
                               nullable: true
                               type: string
                             state:
                               description: State describe the runtime condition that
-                                should be met after the action has been executed
+                                should be met after the action has been executed Shall
+                                be defined using .Lifecycle() methods. The methods
+                                account only jobs that are managed by the object.
                               nullable: true
                               type: string
                           type: object
@@ -322,9 +345,9 @@ spec:
                       properties:
                         inputs:
                           description: Inputs are list of inputs passed to the objects.
-                            When used in conjunction with instances, if the number
-                            of instances is larger that the number of inputs, then
-                            inputs are recursively iteration.
+                            Conditions used in conjunction with instances, if the
+                            number of instances is larger that the number of inputs,
+                            then inputs are recursively iteration.
                           items:
                             additionalProperties:
                               type: string
@@ -334,8 +357,8 @@ spec:
                           description: MaxInstances dictate the number of objects
                             to be created for the service. If no inputs are defined,
                             then all instances will be initiated using the default
-                            parameters of the template. When used in conjunction with
-                            Until, MaxInstances as a max bound.
+                            parameters of the template. Conditions used in conjunction
+                            with Until, MaxInstances as a max bound.
                           type: integer
                         templateRef:
                           description: TemplateRef refers to a  template (e.g, iperf-server).
@@ -346,17 +369,18 @@ spec:
                             with inputs, it will loop over inputs until the conditions
                             are met.
                           properties:
-                            sla:
-                              description: 'SLA is a Grafana alert that will be triggered
-                                if the SLA condition is met. SLA assertion is applicable
-                                throughout the execution of an action. Parsing: Grafana
+                            metrics:
+                              description: 'Metrics set a Grafana alert that will
+                                be triggered once the condition is met. Parsing: Grafana
                                 URL: http://grafana/d/A2EjFbsMk/ycsb-services?editPanel=86
-                                SLA: A2EjFbsMk/86/Average Rational: Panel/Dashboard/Metric'
+                                metrics: A2EjFbsMk/86/Average (Panel/Dashboard/Metric)'
                               nullable: true
                               type: string
                             state:
                               description: State describe the runtime condition that
-                                should be met after the action has been executed
+                                should be met after the action has been executed Shall
+                                be defined using .Lifecycle() methods. The methods
+                                account only jobs that are managed by the object.
                               nullable: true
                               type: string
                           type: object
@@ -376,8 +400,8 @@ spec:
               withTelemetry:
                 description: TelemetrySpec defines the desired state of Telemetry
                 properties:
-                  importMonitors:
-                    description: ImportMonitors are references to monitoring packages
+                  importDashboards:
+                    description: ImportDashboards are references to monitoring packages
                       that will be used in the monitoring stack.
                     items:
                       type: string
@@ -387,7 +411,7 @@ spec:
             - actions
             type: object
           status:
-            description: WorkflowStatus defines the observed state of Workflow
+            description: WorkflowStatus defines the observed state of Workflow.
             properties:
               conditions:
                 items:

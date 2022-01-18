@@ -20,7 +20,7 @@ import (
 	"fmt"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	"github.com/carv-ics-forth/frisbee/controllers/utils/assertions"
+	"github.com/carv-ics-forth/frisbee/controllers/utils/expressions"
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,7 +40,7 @@ func (r *Controller) updateLifecycle(w *v1alpha1.Workflow) {
 		return
 	}
 
-	if info, fired := assertions.FiredAlert(w); fired {
+	if info, fired := expressions.FiredAlert(w); fired {
 		w.Status.Lifecycle = v1alpha1.Lifecycle{
 			Phase:   v1alpha1.PhaseFailed,
 			Reason:  "AssertionError",
@@ -65,7 +65,7 @@ func (r *Controller) updateLifecycle(w *v1alpha1.Workflow) {
 					continue
 				}
 
-				info, fired, err := assertions.FiredState(action.Assert.State, r.state)
+				info, fired, err := expressions.FiredState(action.Assert.State, r.state)
 				if err != nil || fired {
 					w.Status.Lifecycle = v1alpha1.Lifecycle{
 						Phase:   v1alpha1.PhaseFailed,
@@ -155,7 +155,7 @@ func (r *Controller) updateLifecycle(w *v1alpha1.Workflow) {
 	logrus.Warn("Workflow Debug info \n",
 		" current ", w.Status.Lifecycle.Phase,
 		" total actions: ", len(w.Spec.Actions),
-		" activeJobs: ", r.state.ActiveList(),
+		" activeJobs: ", r.state.PendingList(),
 		" successfulJobs: ", r.state.SuccessfulList(),
 		" failedJobs: ", r.state.FailedList(),
 		" cur status: ", w.Status,

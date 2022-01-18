@@ -195,7 +195,7 @@ spec:
         
           templateRef: redis.single.slave
           inputs:
-            - { master: .service.master.any }
+            - { master: .service.master.one }
 
     # The sentinel is Redis failover manager. Notice that we can have multiple dependencies.
     - action: Service
@@ -205,7 +205,7 @@ spec:
         
           templateRef: redis.single.sentinel
           inputs:
-            - { master: .service.master.any }
+            - { master: .service.master.one }
 
     # Cluster creates a list of services that run a shared context. 
     # In this case, we create a cluster of YCSB loaders to populate the master with keys. 
@@ -215,9 +215,9 @@ spec:
       cluster:
         templateRef: ycsb.redis.loader
         inputs:
-          - { server: .service.master.any, recordcount: "100000000", offset: "0" }
-          - { server: .service.master.any, recordcount: "100000000", offset: "100000000" }
-          - { server: .service.master.any, recordcount: "100000000", offset: "200000000" }
+          - { server: .service.master.one, recordcount: "100000000", offset: "0" }
+          - { server: .service.master.one, recordcount: "100000000", offset: "100000000" }
+          - { server: .service.master.one, recordcount: "100000000", offset: "200000000" }
 
     # While the loaders are running, we inject a network partition fault to the master node. 
     # The "after" dependency adds a delay so to have some keys before injecting the fault. 
@@ -229,7 +229,7 @@ spec:
         type: partition
         partition:
           selector:
-            macro: .service.master.any
+            macro: .service.master.one
           duration: "2m"
 
     # Here we repeat the partition, a few minutes after the previous fault has been recovered.
@@ -239,12 +239,12 @@ spec:
       chaos:
         type: partition
         partition:
-          selector: { macro: .service.master.any }
+          selector: { macro: .service.master.one }
           duration: "1m"
 
   # Here we declare the Grafana dashboards that Workflow will make use of.
   withTelemetry:
-    importMonitors: [ "platform.telemetry.container", "ycsb.telemetry.client",  "redis.telemetry.server" ]
+    importDashboards: [ "platform.telemetry.container", "ycsb.telemetry.client",  "redis.telemetry.server" ]
 
 ```
 

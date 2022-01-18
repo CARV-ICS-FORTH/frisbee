@@ -27,32 +27,33 @@ const (
 	FaultKill      = FaultType("kill")
 )
 
-type EmbedFaultType struct {
-	// +optional
-	Partition *PartitionSpec `json:"partition,omitempty"`
-
-	Kill *KillSpec `json:"kill,omitempty"`
-}
-
 // PartitionSpec separate the given Pod from the rest of the network. This chaos typeis retractable
 // (either manually or after a duration) and can be waited at both Running and Pass Phase.
 // Running phase begins when the failure is injected. Pass begins when the failure is retracted.
 // If anything goes wrong in between, the chaos goes into Failed phase.
 type PartitionSpec struct {
-	Selector ServiceSelector `json:"selector"`
+	Service string `json:"service,omitempty"`
 
 	// Duration is the time after which Frisbee will roll back the injected fault.
 	// +optional
-	Duration *metav1.Duration `json:"duration,omitempty"`
+	Duration string `json:"duration,omitempty"`
 }
 
 // KillSpec terminates the selected Pod. Because this failure is permanent, it can only be waited in the
 // Running Phase. It does not go through Pass.
 type KillSpec struct {
-	Selector ServiceSelector `json:"selector,omitempty"`
+	Service string `json:"service,omitempty"`
 }
 
-// ChaosSpec defines the desired state of Chaos
+type EmbedFaultType struct {
+	// +optional
+	Partition *PartitionSpec `json:"partition,omitempty"`
+
+	// +optional
+	Kill *KillSpec `json:"kill,omitempty"`
+}
+
+// ChaosSpec defines the desired state of Chaos.
 type ChaosSpec struct {
 	// Type indicate the type of the injected fault
 	// +kubebuilder:validation:Enum=partition;kill;
@@ -61,7 +62,7 @@ type ChaosSpec struct {
 	*EmbedFaultType `json:",inline"`
 }
 
-// ChaosStatus defines the observed state of Chaos
+// ChaosStatus defines the observed state of Chaos.
 type ChaosStatus struct {
 	Lifecycle `json:",inline"`
 
@@ -80,7 +81,7 @@ func (in *Chaos) SetReconcileStatus(lifecycle Lifecycle) {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-// Chaos is the Schema for the chaos API
+// Chaos is the Schema for the chaos API.
 type Chaos struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -91,7 +92,7 @@ type Chaos struct {
 
 // +kubebuilder:object:root=true
 
-// ChaosList contains a list of Chaos
+// ChaosList contains a list of Chaos.
 type ChaosList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

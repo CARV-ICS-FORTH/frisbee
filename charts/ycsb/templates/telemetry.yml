@@ -55,6 +55,6 @@ metadata:
     app.kubernetes.io/managed-by: {{.Release.Service | quote}}
     dashboard: ycsb
 data:
-{{ (.Files.Glob "dashboards/ycsb.json").AsConfig | indent 2 }}
+{{ (.Files.Glob "dashboards/*.json").AsConfig | indent 2 }}
 
 

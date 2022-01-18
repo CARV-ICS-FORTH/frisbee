@@ -22,10 +22,11 @@ import (
 	"time"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
+	chaosutils "github.com/carv-ics-forth/frisbee/controllers/chaos/utils"
 	serviceutils "github.com/carv-ics-forth/frisbee/controllers/service/utils"
 	"github.com/carv-ics-forth/frisbee/controllers/telemetry/grafana"
 	"github.com/carv-ics-forth/frisbee/controllers/utils"
-	"github.com/carv-ics-forth/frisbee/controllers/utils/assertions"
+	"github.com/carv-ics-forth/frisbee/controllers/utils/expressions"
 	"github.com/carv-ics-forth/frisbee/controllers/utils/lifecycle"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -56,6 +57,7 @@ type Controller struct {
 	state lifecycle.Classifier
 
 	serviceControl serviceutils.ServiceControlInterface
+	chaosControl   chaosutils.ChaosControlInterface
 }
 
 func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -212,7 +214,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		// We maintain testbed components (e.g, prometheus and grafana) for getting back the test results.
 		// These components are removed by deleting the Workflow.
 		for _, job := range r.state.SuccessfulJobs() {
-			assertions.UnsetAlert(job)
+			expressions.UnsetAlert(job)
 
 			utils.Delete(ctx, r, job)
 		}
@@ -228,7 +230,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			utils.Delete(ctx, r, job)
 		}
 
-		for _, job := range r.state.ActiveJobs() {
+		for _, job := range r.state.PendingJobs() {
 			utils.Delete(ctx, r, job)
 		}
 
@@ -340,8 +342,8 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "erroneous action [%s]", action.Name))
 		}
 
-		if action.Assert != nil && action.Assert.SLA != "" {
-			if err := assertions.SetAlert(job, action.Assert.SLA); err != nil {
+		if action.Assert.HasMetricsExpr() {
+			if err := expressions.SetAlert(job, action.Assert.Metrics); err != nil {
 				return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "assertion error"))
 			}
 		}
@@ -408,6 +410,7 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 	}
 
 	r.serviceControl = serviceutils.NewServiceControl(r)
+	r.chaosControl = chaosutils.NewChaosControl(r)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named("workflow").

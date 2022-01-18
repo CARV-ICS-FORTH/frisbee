@@ -20,6 +20,7 @@ import (
 	"flag"
 	"os"
 
+	"github.com/carv-ics-forth/frisbee/controllers/cascade"
 	"github.com/pkg/errors"
 
 	"github.com/carv-ics-forth/frisbee/controllers/chaos"
@@ -129,6 +130,12 @@ func main() {
 
 	if err := chaos.NewController(mgr, setupLog); err != nil {
 		utilruntime.HandleError(errors.Wrapf(err, "unable to create Chaos controller"))
+
+		os.Exit(1)
+	}
+
+	if err := cascade.NewController(mgr, setupLog); err != nil {
+		utilruntime.HandleError(errors.Wrapf(err, "unable to create Cascade controller"))
 
 		os.Exit(1)
 	}

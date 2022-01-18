@@ -4,13 +4,14 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/telemetry/grafana"
 	"github.com/grafana-tools/sdk"
 )
 
 func TestParseAlert(t *testing.T) {
 	type args struct {
-		query string
+		query v1alpha1.ExprMetrics
 	}
 	tests := []struct {
 		name    string

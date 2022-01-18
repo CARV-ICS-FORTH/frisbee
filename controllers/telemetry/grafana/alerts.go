@@ -22,16 +22,17 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/grafana-tools/sdk"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
 // Assertor expressions evaluated with https://regex101.com/r/xrSyEz/1
-var Assertor = regexp.MustCompile(`(?mi)^(?P<reducer>\w+)\(\)\s+OF\s+QUERY\((?P<dashboardUID>\w+)\/(?P<panelID>\d+)\/(?P<metric>\w+),\s+(?P<from>\w+),\s+(?P<to>\w+)\)\s+IS\s+(?P<evaluator>\w+)\((?P<params>\d*[,\s]*\d*)\)\s*(FOR\((?P<for>\w+)\))*\s*(EVERY\((?P<every>\w+)\))*\s*$`)
+var Assertor = regexp.MustCompile(`(?m)^(?P<reducer>\w+)\(\)\s+of\s+query\((?P<dashboardUID>\w+)\/(?P<panelID>\d+)\/(?P<metric>\w+),\s+(?P<from>\w+),\s+(?P<to>\w+)\)\s+is\s+(?P<evaluator>\w+)\((?P<params>\d*[,\s]*\d*)\)\s*(for\((?P<for>\w+)\))*\s*(every\((?P<every>\w+)\))*\s*$`)
 
 func ConvertEvaluatorAlias(alias string) string {
-	switch v := strings.ToLower(alias); v {
+	switch alias {
 	case "below":
 		return "lt"
 	case "above":
@@ -39,7 +40,7 @@ func ConvertEvaluatorAlias(alias string) string {
 	case "novalue":
 		return "no_value"
 	default:
-		return v
+		return alias
 	}
 }
 
@@ -104,8 +105,8 @@ type Alert struct {
 	Execution
 }
 
-func ParseAlertExpr(query string) (*Alert, error) {
-	matches := Assertor.FindStringSubmatch(query)
+func ParseAlertExpr(query v1alpha1.ExprMetrics) (*Alert, error) {
+	matches := Assertor.FindStringSubmatch(string(query))
 	if len(matches) == 0 {
 		return nil, errors.Errorf(`erroneous query %s. 
 		Examples:
@@ -142,7 +143,7 @@ func ParseAlertExpr(query string) (*Alert, error) {
 
 		switch field {
 		case "reducer":
-			alert.Reducer.Type = strings.ToLower(match)
+			alert.Reducer.Type = match
 			alert.Reducer.Params = nil // Not captured by the present regex
 
 		case "dashboardUID":
@@ -208,8 +209,8 @@ const (
 )
 
 const (
-	defaultAction = "keep_state"
-
+	keepState      = "keep_state"
+	noData         = "no_data"
 	alertingAction = "alerting"
 )
 
@@ -246,8 +247,8 @@ func (c *Client) SetAlert(alert *Alert, name string, msg string) (uint, error) {
 						Type:    "query",
 					},
 				},
-				ExecutionErrorState: alertingAction,
-				NoDataState:         alertingAction,
+				ExecutionErrorState: keepState,
+				NoDataState:         noData,
 				Notifications:       nil,
 
 				Handler: 1, // Send to default notification channel (should be the controller)
