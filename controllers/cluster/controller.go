@@ -24,8 +24,9 @@ import (
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	serviceutils "github.com/carv-ics-forth/frisbee/controllers/service/utils"
 	"github.com/carv-ics-forth/frisbee/controllers/utils"
-	"github.com/carv-ics-forth/frisbee/controllers/utils/assertions"
+	"github.com/carv-ics-forth/frisbee/controllers/utils/expressions"
 	"github.com/carv-ics-forth/frisbee/controllers/utils/lifecycle"
+	"github.com/carv-ics-forth/frisbee/controllers/utils/scheduler"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -39,10 +40,6 @@ import (
 // +kubebuilder:rbac:groups=frisbee.io,resources=clusters,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=frisbee.io,resources=clusters/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=frisbee.io,resources=clusters/finalizers,verbs=update
-
-// +kubebuilder:rbac:groups=frisbee.io,resources=services,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=frisbee.io,resources=services/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=frisbee.io,resources=services/finalizers,verbs=update
 
 const (
 	jobOwnerKey = ".metadata.controller"
@@ -157,7 +154,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	/*
 		If this object is suspended, we don't want to run any jobs, so we'll stop now.
 		This is useful if something's broken with the job we're running, and we want to
-		pause runs to investigate or putz with the cluster, without deleting the object.
+		pause runs to investigate the cluster, without deleting the object.
 	*/
 	if cr.Spec.Suspend != nil && *cr.Spec.Suspend {
 		r.Logger.Info("Cluster is suspended",
@@ -182,7 +179,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		r.Logger.Info("Cleaning up cluster jobs",
 			"cluster", cr.GetName(),
-			"activeJobs", r.state.ActiveList(),
+			"activeJobs", r.state.PendingList(),
 			"successfulJobs", r.state.SuccessfulList(),
 		)
 
@@ -204,7 +201,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		r.Logger.Info("Cleaning up cluster jobs",
 			"cluster", cr.GetName(),
 			"successfulJobs", r.state.SuccessfulList(),
-			"activeJobs", r.state.ActiveList(),
+			"activeJobs", r.state.PendingList(),
 		)
 
 		// Remove the non-failed components. Leave the failed jobs and system jobs for postmortem analysis.
@@ -212,7 +209,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			utils.Delete(ctx, r, job)
 		}
 
-		for _, job := range r.state.ActiveJobs() {
+		for _, job := range r.state.PendingJobs() {
 			utils.Delete(ctx, r, job)
 		}
 
@@ -255,10 +252,16 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		cr.Status.QueuedJobs = jobList
 		cr.Status.ScheduledJobs = -1
 
-		// SLA-driven execution requires to set SLA alerts on Grafana.
-		if cr.Spec.Until != nil && cr.Spec.Until.SLA != "" {
-			if err := assertions.SetAlert(&cr, cr.Spec.Until.SLA); err != nil {
-				return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "SLA error"))
+		// Metrics-driven execution requires to set alerts on Grafana.
+		if until := cr.Spec.Until; until != nil && until.HasMetricsExpr() {
+			if err := expressions.SetAlert(&cr, until.Metrics); err != nil {
+				return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "metrics expression error"))
+			}
+		}
+
+		if schedule := cr.Spec.Schedule; schedule != nil && schedule.Conditions.HasMetricsExpr() {
+			if err := expressions.SetAlert(&cr, schedule.Conditions.Metrics); err != nil {
+				return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "metrics expression error"))
 			}
 		}
 
@@ -294,46 +297,8 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		If we've missed a run, and we're still within the deadline to start it, we'll need to run a job.
 	*/
-	if cr.Spec.Schedule != nil {
-		missedRun, nextRun, err := utils.GetNextScheduleTime(&cr, cr.Spec.Schedule, cr.Status.LastScheduleTime)
-		if err != nil {
-			r.GetEventRecorderFor("").Event(&cr, corev1.EventTypeWarning,
-				err.Error(), "unable to figure execution schedule")
-
-			/*
-				we don't really care about re-queuing until we get an update that
-				fixes the schedule, so don't return an error.
-			*/
-			return utils.Stop()
-		}
-
-		if missedRun.IsZero() {
-			if nextRun.IsZero() {
-				r.Logger.Info("scheduling is complete.",
-					"cluster", cr.GetName(),
-				)
-
-				return utils.Stop()
-			}
-
-			r.Logger.Info("too early in the schedule. requeue request for next tick.",
-				"cluster", cr.GetName(),
-				"next", nextRun,
-				"waitFor", time.Until(nextRun).String(),
-			)
-
-			return utils.RequeueAfter(time.Until(nextRun))
-		}
-
-		// if there is a missed run, make sure we're not too late to start the run
-		tooLate := false
-		if deadline := cr.Spec.Schedule.StartingDeadlineSeconds; deadline != nil {
-			tooLate = missedRun.Add(time.Duration(*deadline) * time.Second).Before(time.Now())
-		}
-
-		if tooLate {
-			return lifecycle.Failed(ctx, r, &cr, errors.New("scheduling violation"))
-		}
+	if hasJob, requeue, err := scheduler.Schedule(ctx, r, &cr, cr.Spec.Schedule, cr.Status.LastScheduleTime, r.state); !hasJob {
+		return requeue, err
 	}
 
 	/*

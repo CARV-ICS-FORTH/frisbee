@@ -29,7 +29,7 @@ import (
 type Fault = unstructured.Unstructured
 
 type chaoHandler interface {
-	GetFault(r *Controller) *Fault
+	GetFault() *Fault
 
 	Inject(ctx context.Context, r *Controller) error
 }
@@ -70,12 +70,13 @@ type partitionHandler struct {
 	cr *v1alpha1.Chaos
 }
 
-func (h partitionHandler) GetFault(r *Controller) *Fault {
+func (h partitionHandler) GetFault() *Fault {
 	var fault Fault
 
 	AsPartition(&fault)
 
 	fault.SetName(h.cr.GetName())
+	fault.SetNamespace(h.cr.GetNamespace())
 
 	return &fault
 }
@@ -85,9 +86,8 @@ func (h partitionHandler) Inject(ctx context.Context, r *Controller) error {
 
 	var fault Fault
 
-	affectedPods, err := r.serviceControl.Select(ctx, h.cr.GetNamespace(), &spec.Selector)
-	if err != nil {
-		return errors.Wrapf(err, "service selection error")
+	affectedPods := map[string][]string{
+		h.cr.GetNamespace(): {spec.Service},
 	}
 
 	{ // spec
@@ -104,7 +104,7 @@ func (h partitionHandler) Inject(ctx context.Context, r *Controller) error {
 				"target": map[string]interface{}{
 					"mode": "all",
 					"selector": map[string]interface{}{
-						"pods": affectedPods.ByNamespace(),
+						"pods": affectedPods,
 					},
 				},
 				"duration": spec.Duration,
@@ -131,12 +131,13 @@ type killHandler struct {
 	cr *v1alpha1.Chaos
 }
 
-func (h *killHandler) GetFault(r *Controller) *Fault {
+func (h *killHandler) GetFault() *Fault {
 	var fault Fault
 
 	AsKill(&fault)
 
 	fault.SetName(h.cr.GetName())
+	fault.SetNamespace(h.cr.GetNamespace())
 
 	return &fault
 }
@@ -146,9 +147,8 @@ func (h killHandler) Inject(ctx context.Context, r *Controller) error {
 
 	var fault Fault
 
-	affectedPods, err := r.serviceControl.Select(ctx, h.cr.GetNamespace(), &spec.Selector)
-	if err != nil {
-		return errors.Wrapf(err, "service selection error")
+	affectedPods := map[string][]string{
+		h.cr.GetNamespace(): {spec.Service},
 	}
 
 	{ // spec
@@ -157,12 +157,12 @@ func (h killHandler) Inject(ctx context.Context, r *Controller) error {
 				"action": "pod-kill",
 				"mode":   "all",
 				"selector": map[string]interface{}{
-					"pods": affectedPods.ByNamespace(),
+					"pods": affectedPods,
 				},
 			},
 		})
 
-		r.Info("KILL", "pods", affectedPods.ToString())
+		r.Info("KILL", "pods", affectedPods)
 	}
 
 	AsKill(&fault)

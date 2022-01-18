@@ -5,7 +5,10 @@ metadata:
   name: redis-baseline-cluster
 spec:
   withTelemetry:
-    importMonitors: [ "platform.telemetry.container", "ycsb.telemetry.client", "redis.telemetry.server" ]
+    importDashboards:
+      - platform.telemetry.container
+      - ycsb.telemetry.client
+      - redis.telemetry.server
 
   actions:
     # Step 0: bootstrap.
@@ -37,7 +40,7 @@ spec:
         
         templateRef: ycsb.redis.loader
         inputs:
-          - { server: .cluster.master.any, workload: workloada, recordcount: "1000000", threads: "400",
+          - { server: .cluster.master.one, workload: workloada, recordcount: "1000000", threads: "400",
               mode: "cluster" }
 
     # Step 2: Run workload A
@@ -48,7 +51,7 @@ spec:
         
         templateRef: ycsb.redis.runner
         inputs:
-          - { server: .cluster.master.any, workload: workloada, operationcount: "1000000",
+          - { server: .cluster.master.one, workload: workloada, operationcount: "1000000",
               cpu: "8", memory: "8Gi", threads: "40", mode: "cluster" }
 
     # Step 3: Run workload B
@@ -59,7 +62,7 @@ spec:
         
         templateRef: ycsb.redis.runner
         inputs:
-          - { mode: "cluster", server: .cluster.master.any, workload: workloadb, operationcount: "1000000",
+          - { mode: "cluster", server: .cluster.master.one, workload: workloadb, operationcount: "1000000",
               cpu: "8", memory: "8Gi", threads: "40" }
 
     # Step 4: Run workload C
@@ -70,7 +73,7 @@ spec:
         
         templateRef: ycsb.redis.runner
         inputs:
-          - { server: .cluster.master.any, workload: workloadc, operationcount: "1000000",
+          - { server: .cluster.master.one, workload: workloadc, operationcount: "1000000",
               cpu: "8", memory: "8Gi", threads: "40", mode: "cluster" }
 
 
@@ -82,7 +85,7 @@ spec:
         
         templateRef: ycsb.redis.runner
         inputs:
-          - { server: .cluster.master.any, workload: workloadf, operationcount: "1000000",
+          - { server: .cluster.master.one, workload: workloadf, operationcount: "1000000",
               cpu: "8", memory: "8Gi", threads: "40", mode: "cluster" }
 
 
@@ -94,7 +97,7 @@ spec:
         
         templateRef: ycsb.redis.runner
         inputs:
-          - { server: .cluster.master.any, workload: workloadd, operationcount: "1000000",
+          - { server: .cluster.master.one, workload: workloadd, operationcount: "1000000",
               cpu: "8", memory: "8Gi", threads: "40", mode: "cluster" }
 
     # Step 7,8: Reload the data with parameters of workload E.
@@ -106,7 +109,7 @@ spec:
         
         templateRef: ycsb.redis.loader
         inputs:
-          - { mode: "cluster", server: .cluster.master.any, workload: workloade, dropdata: "true", recordcount: "1000000",
+          - { mode: "cluster", server: .cluster.master.one, workload: workloade, dropdata: "true", recordcount: "1000000",
               threads: "400" }
 
     # Step 9:Run workload E
@@ -117,5 +120,5 @@ spec:
         
         templateRef: ycsb.redis.runner
         inputs:
-          - { server: .cluster.master.any, workload: workloade, operationcount: "1000000",
+          - { server: .cluster.master.one, workload: workloade, operationcount: "1000000",
               cpu: "8", memory: "8Gi", threads: "40", mode: "cluster" }

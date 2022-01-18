@@ -5,7 +5,10 @@ metadata:
   name: redis-baseline-single
 spec:
   withTelemetry:
-    importMonitors: [ "platform.telemetry.container", "ycsb.telemetry.client", "redis.telemetry.server" ]
+    importDashboards:
+      - platform.telemetry.container
+      - ycsb.telemetry.client
+      - redis.telemetry.server
 
   actions:
     # Step 0: bootstrap.
@@ -27,7 +30,7 @@ spec:
         
         templateRef: ycsb.redis.loader
         inputs:
-          - { server: .service.master.any, workload: workloada, recordcount: "1000000", threads: "400", mode: "single" }
+          - { server: .service.master.one, workload: workloada, recordcount: "1000000", threads: "400", mode: "single" }
 
     # Step 2: Run workload A
     - action: Service
@@ -37,7 +40,7 @@ spec:
         
         templateRef: ycsb.redis.runner
         inputs:
-          - { server: .service.master.any, workload: workloada, operationcount: "1000000",
+          - { server: .service.master.one, workload: workloada, operationcount: "1000000",
               cpu: "8", memory: "8Gi", threads: "40", mode: "single" }
 
     # Step 3: Run workload B
@@ -48,7 +51,7 @@ spec:
         
         templateRef: ycsb.redis.runner
         inputs:
-          - { server: .service.master.any, workload: workloadb, operationcount: "1000000",
+          - { server: .service.master.one, workload: workloadb, operationcount: "1000000",
               cpu: "8", memory: "8Gi", threads: "40", mode: "single" }
 
     # Step 4: Run workload C
@@ -59,7 +62,7 @@ spec:
         
         templateRef: ycsb.redis.runner
         inputs:
-          - { server: .service.master.any, workload: workloadc, operationcount: "1000000",
+          - { server: .service.master.one, workload: workloadc, operationcount: "1000000",
               cpu: "8", memory: "8Gi", threads: "40", mode: "single" }
 
 
@@ -71,7 +74,7 @@ spec:
         
         templateRef: ycsb.redis.runner
         inputs:
-          - { server: .service.master.any, workload: workloadf, operationcount: "1000000",
+          - { server: .service.master.one, workload: workloadf, operationcount: "1000000",
               cpu: "8", memory: "8Gi", threads: "40", mode: "single" }
 
 
@@ -83,7 +86,7 @@ spec:
         
         templateRef: ycsb.redis.runner
         inputs:
-          - { server: .service.master.any, workload: workloadd, operationcount: "1000000",
+          - { server: .service.master.one, workload: workloadd, operationcount: "1000000",
               cpu: "8", memory: "8Gi", threads: "40", mode: "single" }
 
 
@@ -96,7 +99,7 @@ spec:
         
         templateRef: ycsb.redis.loader
         inputs:
-          - { server: .service.master.any, workload: workloade, dropdata: "true", recordcount: "1000000",
+          - { server: .service.master.one, workload: workloade, dropdata: "true", recordcount: "1000000",
               threads: "400", mode: "single" }
 
 
@@ -108,5 +111,5 @@ spec:
         
         templateRef: ycsb.redis.runner
         inputs:
-          - { server: .service.master.any, workload: workloade, operationcount: "1000000",
+          - { server: .service.master.one, workload: workloade, operationcount: "1000000",
               cpu: "8", memory: "8Gi", threads: "40", mode: "single" }

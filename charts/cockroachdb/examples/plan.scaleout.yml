@@ -5,7 +5,7 @@ metadata:
   name: cockroach-scaleout
 spec:
   withTelemetry:
-    importMonitors:
+    importDashboards:
       - platform.telemetry.container
       - ycsb.telemetry.client
       - cockroach.telemetry.server
@@ -27,7 +27,7 @@ spec:
         templateRef: tikv.cluster.worker
         instances: 256
         inputs:
-          - placementDriver: .service.master.any
+          - placementDriver: .service.master.one
 
 
     - action: Cluster
@@ -39,5 +39,5 @@ spec:
         inputs:
           - offset: "0"
             recordcount: "100000000000"
-            server: .service.master.any
+            server: .service.master.one
             threads: "32"

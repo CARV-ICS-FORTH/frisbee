@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 // SchedulerSpec defines information about schedule of the chaos experiment.
+// The scheduler will schedule up to spec.GenerateFromTemplate.Instances or spec.GenerateFromTemplate.Until.
 type SchedulerSpec struct {
 	// Cron defines a cron job rule.
 	//
@@ -26,10 +27,16 @@ type SchedulerSpec struct {
 	// "@every 1h30m" means to "Every hour thirty"
 	//
 	// More rule info: https://godoc.org/github.com/robfig/cron
-	Cron string `json:"cron"`
+	//
+	// +optional
+	Cron *string `json:"cron,omitempty"`
 
 	// StartingDeadlineSeconds is an optional deadline in seconds for starting the job if it misses scheduled
 	// time for any reason. if we miss this deadline, we'll just wait till the next scheduled time
+	//
 	// +optional
 	StartingDeadlineSeconds *int64 `json:"startingDeadlineSeconds,omitempty"`
+
+	// +optional
+	Conditions *ConditionalExpr `json:"conditions,omitempty"`
 }

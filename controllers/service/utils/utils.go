@@ -24,16 +24,14 @@ import (
 	"github.com/carv-ics-forth/frisbee/controllers/utils"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/json"
+	"k8s.io/apimachinery/pkg/util/yaml"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type ServiceControlInterface interface {
 	GetServiceSpec(ctx context.Context, namespace string, fromTemplate v1alpha1.GenerateFromTemplate) (v1alpha1.ServiceSpec, error)
 
 	GetServiceSpecList(ctx context.Context, namespace string, fromTemplate v1alpha1.GenerateFromTemplate) ([]v1alpha1.ServiceSpec, error)
-
-	// LoadSpecFromTemplate(ctx context.Context, obj *v1alpha1.Service) error
-
-	Select(ctx context.Context, nm string, ss *v1alpha1.ServiceSelector) (v1alpha1.SList, error)
 }
 
 type ServiceControl struct {
@@ -63,9 +61,7 @@ func (s *ServiceControl) GetServiceSpec(ctx context.Context, namespace string, f
 		Spec:   string(serviceSpec),
 	}
 
-	lookupCache := make(map[string]v1alpha1.SList)
-
-	return s.generateSpecFromScheme(ctx, namespace, &scheme, fromTemplate.GetInput(0), lookupCache)
+	return s.generateSpecFromScheme(&scheme, fromTemplate.GetInput(0))
 }
 
 func (s *ServiceControl) GetServiceSpecList(ctx context.Context, namespace string, fromTemplate v1alpha1.GenerateFromTemplate) ([]v1alpha1.ServiceSpec, error) {
@@ -81,11 +77,6 @@ func (s *ServiceControl) GetServiceSpecList(ctx context.Context, namespace strin
 
 	}
 
-	// cache the results of macro as to avoid asking the Kubernetes API. This, however, is only applicable
-	// to the level of a cluster, because different groups may be created in different moments
-	// throughout the experiment,  thus yielding different results.
-	lookupCache := make(map[string]v1alpha1.SList)
-
 	specs := make([]v1alpha1.ServiceSpec, 0, fromTemplate.MaxInstances)
 
 	if err := fromTemplate.Iterate(func(userInputs map[string]string) error {
@@ -94,7 +85,7 @@ func (s *ServiceControl) GetServiceSpecList(ctx context.Context, namespace strin
 			Spec:   string(serviceSpec),
 		}
 
-		spec, err := s.generateSpecFromScheme(ctx, namespace, &scheme, userInputs, lookupCache)
+		spec, err := s.generateSpecFromScheme(&scheme, userInputs)
 		if err != nil {
 			return errors.Wrapf(err, "macro expansion failed")
 		}
@@ -109,25 +100,47 @@ func (s *ServiceControl) GetServiceSpecList(ctx context.Context, namespace strin
 	return specs, nil
 }
 
-func (s *ServiceControl) Select(ctx context.Context, nm string, ss *v1alpha1.ServiceSelector) (v1alpha1.SList, error) {
-	if ss == nil {
-		return nil, errors.New("empty service selector")
+func (s *ServiceControl) getTemplate(ctx context.Context, namespace string, ref string) (*v1alpha1.Template, error) {
+	var template v1alpha1.Template
+
+	key := client.ObjectKey{
+		Namespace: namespace,
+		Name:      ref,
 	}
 
-	if ss.Macro != nil {
-		parseMacro(nm, ss)
+	if err := s.GetClient().Get(ctx, key, &template); err != nil {
+		return nil, errors.Wrapf(err, "cannot find template [%s]", key.String())
 	}
 
-	runningServices, err := selectServices(ctx, s.Reconciler, &ss.Match)
+	return &template, nil
+}
+
+func (s *ServiceControl) generateSpecFromScheme(scheme *templateutils.Scheme, userInputs map[string]string) (v1alpha1.ServiceSpec, error) {
+	if userInputs != nil {
+		if scheme.Inputs == nil || scheme.Inputs.Parameters == nil {
+			return v1alpha1.ServiceSpec{}, errors.New("template is not parameterizable")
+		}
+
+		for key, value := range userInputs {
+			_, exists := scheme.Inputs.Parameters[key]
+			if !exists {
+				return v1alpha1.ServiceSpec{}, errors.Errorf("parameteter [%s] does not exist", key)
+			}
+
+			scheme.Inputs.Parameters[key] = value
+		}
+	}
+
+	genericSpec, err := templateutils.Evaluate(scheme)
 	if err != nil {
-		return nil, errors.Wrapf(err, "service selection error")
+		return v1alpha1.ServiceSpec{}, errors.Wrapf(err, "cannot convert scheme to spec")
 	}
 
-	// filter services based on the pods
-	filteredServices, err := filterByMode(runningServices, ss.Mode, ss.Value)
-	if err != nil {
-		return nil, errors.Wrapf(err, "filter by mode")
+	var spec v1alpha1.ServiceSpec
+
+	if err := yaml.Unmarshal([]byte(genericSpec), &spec); err != nil {
+		return v1alpha1.ServiceSpec{}, errors.Wrapf(err, "decoding error")
 	}
 
-	return filteredServices, nil
+	return spec, nil
 }

@@ -1,0 +1,74 @@
+---
+apiVersion: frisbee.io/v1alpha1
+kind: Workflow
+metadata:
+  name: tikv-baseline
+spec:
+  withTelemetry:
+    importDashboards:
+      - platform.telemetry.container
+      - ycsb.telemetry.client
+      - tikv.telemetry.pd
+      - tikv.telemetry.worker
+
+  actions:
+    # Step 0: bootstrap.
+    # For TiKV, we must first create a placementDriver and then add the workers.
+    - action: Service
+      name: master
+      service:
+        templateRef: tikv.cluster.placement-driver
+
+    # Set a baseline cluster of workers
+    - action: Cluster
+      depends: { running: [ master ] }
+      name: baselineworkers
+      cluster:
+        templateRef: tikv.cluster.worker
+        instances: 3
+        inputs:
+          - { placementDriver: .service.master.one }
+
+    # Preload the baseline workers with keys.
+    - action: Cluster
+      depends: { running: [ master ] }
+      name: loaders
+      cluster:
+        templateRef: ycsb.tikv.loader
+        instances: 1
+        inputs:
+          - { server: .service.master.one, workload: workloada, recordcount: "500000", threads: "400" }
+
+    # Create elastic workers. New workers are spawned when the maximum tail latency of clients goes beyond 80ms.
+    - action: Cluster
+      depends: { running: [ master ], success: [ loaders ] }
+      name: elasticworkers
+      cluster:
+        templateRef: tikv.cluster.worker
+        instances: 50
+        inputs:
+          - { placementDriver: .service.master.one }
+        schedule:
+          cron: "@every 1m"
+        until:
+          metrics: 'avg() of query(CR1YMET7z/88/99Latency, 1m, now) is below(80000)'
+
+
+    # Create elastic clients. New clients are spawned when the CPU utilization of workers goes beyond 80%.
+    - action: Cluster
+      depends: { running: [ master ], success: [ loaders ] }
+      name: runners
+      cluster:
+        templateRef: ycsb.tikv.runner
+        instances: 50 # Set max instances to bound the experiment from scaling indefinitely
+        inputs:
+          - { server: .service.master.one, workload: workloada, recordcount: "500000", threads: "10" }
+        schedule:
+          cron: "@every 1m"
+        until:
+          metrics: 'avg() of query(CR1YMET7z/104/99Latency, 1m, now) is above(80000)'
+        tolerate:
+          failedServices: 5
+
+    # If there is a violation, we need to remove the latest client in order to come into the latest stable state.
+    #- action: Kill

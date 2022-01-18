@@ -71,7 +71,7 @@ func calculateLifecycle(t *v1alpha1.Telemetry, gs lifecycle.ClassifierReader) v1
 				Type:    v1alpha1.ConditionAllJobsScheduled.String(),
 				Status:  metav1.ConditionTrue,
 				Reason:  "AllJobsRunning",
-				Message: fmt.Sprintf("active jobs: %s", gs.ActiveList()),
+				Message: fmt.Sprintf("active jobs: %s", gs.PendingList()),
 			},
 		},
 		{ // Not all Jobs are yet created
@@ -95,7 +95,7 @@ func calculateLifecycle(t *v1alpha1.Telemetry, gs lifecycle.ClassifierReader) v1
 	logrus.Warn("Workflow Debug info \n",
 		" current ", status.Lifecycle.Phase,
 		" expected: ", expectedJobs,
-		" activeJobs: ", gs.ActiveList(),
+		" activeJobs: ", gs.PendingList(),
 		" runningJobs: ", gs.RunningList(),
 		" successfulJobs: ", gs.SuccessfulList(),
 		" failedJobs: ", gs.FailedList(),

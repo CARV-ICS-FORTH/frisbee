@@ -22,9 +22,9 @@ import (
 
 // TelemetrySpec defines the desired state of Telemetry
 type TelemetrySpec struct {
-	// ImportMonitors are references to monitoring packages that will be used in the monitoring stack.
+	// ImportDashboards are references to monitoring packages that will be used in the monitoring stack.
 	// +optional
-	ImportMonitors []string `json:"importMonitors,omitempty"`
+	ImportDashboards []string `json:"importDashboards,omitempty"`
 }
 
 // TelemetryStatus defines the observed state of Telemetry

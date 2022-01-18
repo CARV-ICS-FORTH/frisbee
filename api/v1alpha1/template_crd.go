@@ -39,6 +39,9 @@ type TemplateSpec struct {
 type EmbedSpecs struct {
 	// +optional
 	Service *ServiceSpec `json:"service,omitempty"`
+
+	// +optional
+	Chaos *ChaosSpec `json:"chaos,omitempty"`
 }
 
 // TemplateStatus defines the observed state of Template
@@ -87,16 +90,16 @@ type GenerateFromTemplate struct {
 	// Until defines the conditions under which the Cluster will stop spawning new services.
 	// If used in conjunction with inputs, it will loop over inputs until the conditions are met.
 	// +optional
-	Until *Assert `json:"until,omitempty"`
+	Until *ConditionalExpr `json:"until,omitempty"`
 
 	// MaxInstances dictate the number of objects to be created for the service.
 	// If no inputs are defined, then all instances will be initiated using the default parameters of the template.
-	// When used in conjunction with Until, MaxInstances as a max bound.
+	// Conditions used in conjunction with Until, MaxInstances as a max bound.
 	// +optional
 	MaxInstances int `json:"instances"`
 
 	// Inputs are list of inputs passed to the objects.
-	// When used in conjunction with instances, if the number of instances is larger that the number of inputs,
+	// Conditions used in conjunction with instances, if the number of instances is larger that the number of inputs,
 	// then inputs are recursively iteration.
 	// +optional
 	Inputs []map[string]string `json:"inputs,omitempty"`

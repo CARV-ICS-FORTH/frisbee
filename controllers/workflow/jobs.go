@@ -22,7 +22,7 @@ import (
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/telemetry/grafana"
 	"github.com/carv-ics-forth/frisbee/controllers/utils"
-	"github.com/carv-ics-forth/frisbee/controllers/utils/assertions"
+	"github.com/carv-ics-forth/frisbee/controllers/utils/expressions"
 	notifier "github.com/golanghelper/grafana-webhook"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -37,10 +37,13 @@ func (r *Controller) getJob(ctx context.Context, w *v1alpha1.Workflow, action v1
 		return r.service(ctx, w, action)
 
 	case "Cluster":
-		return r.cluster(action)
+		return r.cluster(ctx, w, action)
 
 	case "Chaos":
-		return r.chaos(action)
+		return r.chaos(ctx, w, action)
+
+	case "Cascade":
+		return r.cascade(ctx, w, action)
 
 	default:
 		return nil, errors.Errorf("unknown action %s", action.ActionType)
@@ -48,8 +51,11 @@ func (r *Controller) getJob(ctx context.Context, w *v1alpha1.Workflow, action v1
 }
 
 func (r *Controller) service(ctx context.Context, w *v1alpha1.Workflow, action v1alpha1.Action) (client.Object, error) {
-	var service v1alpha1.Service
+	if err := expandInput(ctx, r, w.GetNamespace(), &action.Service.Inputs); err != nil {
+		return nil, errors.Wrapf(err, "input error")
+	}
 
+	// get the service template
 	if err := action.Service.Validate(false); err != nil {
 		return nil, errors.Wrapf(err, "template validation")
 	}
@@ -59,36 +65,69 @@ func (r *Controller) service(ctx context.Context, w *v1alpha1.Workflow, action v
 		return nil, errors.Wrapf(err, "service spec")
 	}
 
-	service.SetName(action.Name)
+	var service v1alpha1.Service
+
 	spec.DeepCopyInto(&service.Spec)
+	service.SetName(action.Name)
 
 	return &service, nil
 }
 
-func (r *Controller) cluster(action v1alpha1.Action) (client.Object, error) {
+func (r *Controller) cluster(ctx context.Context, w *v1alpha1.Workflow, action v1alpha1.Action) (client.Object, error) {
+	if err := expandInput(ctx, r, w.GetNamespace(), &action.Cluster.Inputs); err != nil {
+		return nil, errors.Wrapf(err, "input error")
+	}
+
 	var cluster v1alpha1.Cluster
 
-	cluster.SetName(action.Name)
-
 	action.Cluster.DeepCopyInto(&cluster.Spec)
+	cluster.SetName(action.Name)
 
 	return &cluster, nil
 }
 
-func (r *Controller) chaos(action v1alpha1.Action) (client.Object, error) {
-	var chaos v1alpha1.Chaos
+func (r *Controller) chaos(ctx context.Context, w *v1alpha1.Workflow, action v1alpha1.Action) (client.Object, error) {
+	if err := expandInput(ctx, r, w.GetNamespace(), &action.Chaos.Inputs); err != nil {
+		return nil, errors.Wrapf(err, "input error")
+	}
 
-	if chaos.Spec.Type == v1alpha1.FaultKill {
+	logrus.Warn("INPUTS ", action.Chaos.Inputs)
+
+	// get the service template
+	if err := action.Chaos.Validate(false); err != nil {
+		return nil, errors.Wrapf(err, "template validation")
+	}
+
+	spec, err := r.chaosControl.GetChaosSpec(ctx, w.GetNamespace(), *action.Chaos)
+	if err != nil {
+		return nil, errors.Wrapf(err, "service spec")
+	}
+
+	if spec.Type == v1alpha1.FaultKill {
 		if action.DependsOn.Success != nil {
 			return nil, errors.Errorf("kill is a inject-only chaos. it does not have success. only running")
 		}
 	}
 
+	var chaos v1alpha1.Chaos
+
+	spec.DeepCopyInto(&chaos.Spec)
 	chaos.SetName(action.Name)
 
-	action.Chaos.DeepCopyInto(&chaos.Spec)
-
 	return &chaos, nil
+}
+
+func (r *Controller) cascade(ctx context.Context, w *v1alpha1.Workflow, action v1alpha1.Action) (client.Object, error) {
+	if err := expandInput(ctx, r, w.GetNamespace(), &action.Cascade.Inputs); err != nil {
+		return nil, errors.Wrapf(err, "input error")
+	}
+
+	var cascade v1alpha1.Cascade
+
+	action.Cascade.DeepCopyInto(&cascade.Spec)
+	cascade.SetName(action.Name)
+
+	return &cascade, nil
 }
 
 func (r *Controller) ConnectToGrafana(ctx context.Context, cr *v1alpha1.Workflow) error {
@@ -104,7 +143,7 @@ func (r *Controller) ConnectToGrafana(ctx context.Context, cr *v1alpha1.Workflow
 			// The webhook must someone notify the appropriate controller.
 			// To do that, it adds information of the fired alert to the object's metadata
 			// and updates (patches) the object.
-			if err := assertions.DispatchAlert(ctx, r, b); err != nil {
+			if err := expressions.DispatchAlert(ctx, r, b); err != nil {
 				r.Logger.Error(err, "unable to inform CR for SLA violation", "cr", cr.GetName())
 			}
 		}),

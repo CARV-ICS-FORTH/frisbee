@@ -5,7 +5,11 @@ metadata:
   name: tikv-baseline
 spec:
   withTelemetry:
-    importMonitors: [ "platform.telemetry.container", "ycsb.telemetry.client", "tikv.telemetry.pd", "tikv.telemetry.worker" ]
+    importDashboards:
+      - platform.telemetry.container
+      - ycsb.telemetry.client
+      - tikv.telemetry.pd
+      - tikv.telemetry.worker
 
   actions:
     # Step 0: bootstrap.
@@ -22,7 +26,7 @@ spec:
         templateRef: tikv.cluster.worker
         instances: 3
         inputs:
-          - { placementDriver: .service.master.any }
+          - { placementDriver: .service.master.one }
 
     # Step 1: Load a new dataset, using the parameters of workload A.
     # We use no throttling to maximize this step and complete it soon.
@@ -32,7 +36,7 @@ spec:
       service:
         templateRef: ycsb.tikv.loader
         inputs:
-          - { server: .service.master.any, workload: workloada, recordcount: "10000000", threads: "4" }
+          - { server: .service.master.one, workload: workloada, recordcount: "10000000", threads: "4" }
 
     # Step 2: Run workload A
     - action: Service
@@ -41,7 +45,7 @@ spec:
       service:
         templateRef: ycsb.tikv.runner
         inputs:
-          - { server: .service.master.any, workload: workloada, operationcount: "1000000", threads: "4" }
+          - { server: .service.master.one, workload: workloada, operationcount: "1000000", threads: "4" }
 
     # Step 3: Run workload B
     - action: Service
@@ -50,7 +54,7 @@ spec:
       service:
         templateRef: ycsb.tikv.runner
         inputs:
-          - { server: .service.master.any, workload: workloadb, operationcount: "1000000", threads: "4" }
+          - { server: .service.master.one, workload: workloadb, operationcount: "1000000", threads: "4" }
 
     # Step 4: Run workload C
     - action: Service
@@ -59,7 +63,7 @@ spec:
       service:
         templateRef: ycsb.tikv.runner
         inputs:
-          - { server: .service.master.any, workload: workloadc, operationcount: "1000000", threads: "4" }
+          - { server: .service.master.one, workload: workloadc, operationcount: "1000000", threads: "4" }
 
     # Step 5: Run workload F
     - action: Service
@@ -68,7 +72,7 @@ spec:
       service:
         templateRef: ycsb.tikv.runner
         inputs:
-          - { server: .service.master.any, workload: workloadf, operationcount: "1000000", threads: "4" }
+          - { server: .service.master.one, workload: workloadf, operationcount: "1000000", threads: "4" }
 
 
     # Step 6: Run workload D.
@@ -78,7 +82,7 @@ spec:
       service:
         templateRef: ycsb.tikv.runner
         inputs:
-          - { server: .service.master.any, workload: workloadd, operationcount: "1000000", threads: "4" }
+          - { server: .service.master.one, workload: workloadd, operationcount: "1000000", threads: "4" }
 
 
     # Step 7,8: Reload the data with parameters of workload E.
@@ -89,7 +93,7 @@ spec:
       service:
         templateRef: ycsb.tikv.loader
         inputs:
-          - { server: .service.master.any, workload: workloade, dropdata: "true", recordcount: "1000000", threads: "4" }
+          - { server: .service.master.one, workload: workloade, dropdata: "true", recordcount: "1000000", threads: "4" }
 
     # Step 9:Run workload E
     - action: Service
@@ -98,4 +102,4 @@ spec:
       service:
         templateRef: ycsb.tikv.runner
         inputs:
-          - { server: .service.master.any, workload: workloade, operationcount: "1000000", threads: "4" }
+          - { server: .service.master.one, workload: workloade, operationcount: "1000000", threads: "4" }

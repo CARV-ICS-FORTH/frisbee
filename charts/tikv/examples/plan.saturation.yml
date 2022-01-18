@@ -10,7 +10,11 @@ metadata:
   name: tikv-saturation
 spec:
   withTelemetry:
-    importMonitors: [ "platform.telemetry.container", "ycsb.telemetry.client", "tikv.telemetry.pd", "tikv.telemetry.worker" ]
+    importDashboards:
+      - platform.telemetry.container
+      - ycsb.telemetry.client
+      - tikv.telemetry.pd
+      - tikv.telemetry.worker
 
 
   actions:
@@ -31,7 +35,7 @@ spec:
         templateRef: tikv.cluster.worker
         instances: 3
         inputs:
-          - { placementDriver: .service.master.any, cpu: "8", memory: "32Gi" }
+          - { placementDriver: .service.master.one, cpu: "8", memory: "32Gi" }
 
     # Step 1: Load a new dataset, using the parameters of workload A.
     # We use no throttling to maximize this step and complete it soon.
@@ -42,7 +46,7 @@ spec:
         
         templateRef: ycsb.tikv.loader
         inputs:
-          - { server: .service.master.any, workload: workloada, recordcount: "1000000", threads: "40" }
+          - { server: .service.master.one, workload: workloada, recordcount: "1000000", threads: "40" }
 
 
     # Step 2: Run workload A, for various number of non-overlapping clients.
@@ -55,7 +59,7 @@ spec:
         templateRef: ycsb.tikv.runner
         instances: 1
         inputs:
-          - { server: .service.master.any, workload: workloada, operationcount: "1000000",
+          - { server: .service.master.one, workload: workloada, operationcount: "1000000",
               cpu: "8", memory: "8Gi", threads: "40" }
 
 
@@ -67,7 +71,7 @@ spec:
         templateRef: ycsb.tikv.runner
         instances: 2
         inputs:
-          - { server: .service.master.any, workload: workloada, operationcount: "1000000",
+          - { server: .service.master.one, workload: workloada, operationcount: "1000000",
               cpu: "8", memory: "8Gi", threads: "40" }
 
 
@@ -79,7 +83,7 @@ spec:
         templateRef: ycsb.tikv.runner
         instances: 3
         inputs:
-          - { server: .service.master.any, workload: workloada, operationcount: "1000000",
+          - { server: .service.master.one, workload: workloada, operationcount: "1000000",
               cpu: "8", memory: "8Gi", threads: "40" }
 
 
@@ -91,7 +95,7 @@ spec:
         templateRef: ycsb.tikv.runner
         instances: 4
         inputs:
-          - { server: .service.master.any, workload: workloada, operationcount: "1000000",
+          - { server: .service.master.one, workload: workloada, operationcount: "1000000",
               cpu: "8", memory: "8Gi", threads: "40" }
 
 
@@ -103,7 +107,7 @@ spec:
         templateRef: ycsb.tikv.runner
         instances: 5
         inputs:
-          - { server: .service.master.any, workload: workloada, operationcount: "1000000",
+          - { server: .service.master.one, workload: workloada, operationcount: "1000000",
               cpu: "8", memory: "8Gi", threads: "40" }
 
 
@@ -115,7 +119,7 @@ spec:
         templateRef: ycsb.tikv.runner
         instances: 6
         inputs:
-          - { server: .service.master.any, workload: workloada, operationcount: "1000000",
+          - { server: .service.master.one, workload: workloada, operationcount: "1000000",
               cpu: "8", memory: "8Gi", threads: "40" }
 
 
@@ -127,7 +131,7 @@ spec:
         templateRef: ycsb.tikv.runner
         instances: 7
         inputs:
-          - { server: .service.master.any, workload: workloada, operationcount: "1000000",
+          - { server: .service.master.one, workload: workloada, operationcount: "1000000",
               cpu: "8", memory: "8Gi", threads: "40" }
 
 
@@ -139,7 +143,7 @@ spec:
         templateRef: ycsb.tikv.runner
         instances: 8
         inputs:
-          - { server: .service.master.any, workload: workloada, operationcount: "1000000",
+          - { server: .service.master.one, workload: workloada, operationcount: "1000000",
               cpu: "8", memory: "8Gi", threads: "40" }
 
 
@@ -151,7 +155,7 @@ spec:
         templateRef: ycsb.tikv.runner
         instances: 9
         inputs:
-          - { server: .service.master.any, workload: workloada, operationcount: "1000000",
+          - { server: .service.master.one, workload: workloada, operationcount: "1000000",
               cpu: "8", memory: "8Gi", threads: "40" }
 
 
@@ -163,7 +167,7 @@ spec:
         templateRef: ycsb.tikv.runner
         instances: 10
         inputs:
-          - { server: .service.master.any, workload: workloada, operationcount: "1000000",
+          - { server: .service.master.one, workload: workloada, operationcount: "1000000",
               cpu: "8", memory: "8Gi", threads: "40" }
 
 
@@ -175,7 +179,7 @@ spec:
         templateRef: ycsb.tikv.runner
         instances: 11
         inputs:
-          - { server: .service.master.any, workload: workloada, operationcount: "1000000",
+          - { server: .service.master.one, workload: workloada, operationcount: "1000000",
               cpu: "8", memory: "8Gi", threads: "40" }
 
 
@@ -187,5 +191,5 @@ spec:
         templateRef: ycsb.tikv.runner
         instances: 12
         inputs:
-          - { server: .service.master.any, workload: workloada, operationcount: "1000000",
+          - { server: .service.master.one, workload: workloada, operationcount: "1000000",
               cpu: "8", memory: "8Gi", threads: "40" }

@@ -9,7 +9,7 @@ rules:
 - apiGroups:
   - chaos-mesh.org
   resources:
-  - networkchaos
+  - '*'
   verbs:
   - create
   - delete
@@ -21,13 +21,13 @@ rules:
 - apiGroups:
   - chaos-mesh.org
   resources:
-  - networkchaos/finalizers
+  - '*/finalizers'
   verbs:
   - update
 - apiGroups:
   - chaos-mesh.org
   resources:
-  - networkchaos/status
+  - '*/status'
   verbs:
   - get
   - patch
@@ -58,6 +58,26 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - ""
+  resources:
+  - endpoints
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - endpoints/status
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - ""
   resources:
@@ -118,6 +138,32 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - frisbee.io
+  resources:
+  - cascades
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - frisbee.io
+  resources:
+  - cascades/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - frisbee.io
+  resources:
+  - cascades/status
+  verbs:
+  - get
+  - patch
+  - update
 - apiGroups:
   - frisbee.io
   resources:

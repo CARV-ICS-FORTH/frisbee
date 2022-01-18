@@ -20,25 +20,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// Assert is a source of information about whether the state of the workflow after a given time is correct or not.
-// This is needed because some workflows may run in infinite-horizons.
-type Assert struct {
-	// SLA is a Grafana alert that will be triggered if the SLA condition is met.
-	// SLA assertion is applicable throughout the execution of an action.
-	// Parsing:
-	// Grafana URL: http://grafana/d/A2EjFbsMk/ycsb-services?editPanel=86
-	// SLA: A2EjFbsMk/86/Average
-	// Rational: Panel/Dashboard/Metric
-	// +optional
-	// +nullable
-	SLA string `json:"sla,omitempty"`
-
-	// State describe the runtime condition that should be met after the action has been executed
-	// +optional
-	// +nullable
-	State string `json:"state,omitempty"`
-}
-
 // Action delegates arguments to the proper action handler.
 type Action struct {
 	ActionType string `json:"action"`
@@ -52,7 +33,7 @@ type Action struct {
 
 	// Assert defines the conditions under which the workflow will terminate with a "passed" or "failed" message
 	// +optional
-	Assert *Assert `json:"assert,omitempty"`
+	Assert *ConditionalExpr `json:"assert,omitempty"`
 
 	*EmbedActions `json:",inline"`
 }
@@ -79,15 +60,18 @@ type EmbedActions struct {
 	Cluster *ClusterSpec `json:"cluster,omitempty"`
 
 	// +optional
-	Chaos *ChaosSpec `json:"chaos,omitempty"`
+	Chaos *GenerateFromTemplate `json:"chaos,omitempty"`
+
+	// +optional
+	Cascade *CascadeSpec `json:"cascade,omitempty"`
 }
 
-// WorkflowSpec defines the desired state of Workflow
+// WorkflowSpec defines the desired state of Workflow.
 type WorkflowSpec struct {
 	WithTelemetry *TelemetrySpec `json:"withTelemetry,omitempty"`
 
 	// Actions are the tasks that will be taken.
-	Actions ActionList `json:"actions"`
+	Actions []Action `json:"actions"`
 
 	// Suspend flag tells the controller to suspend subsequent executions, it does
 	// not apply to already started executions.  Defaults to false.
@@ -95,7 +79,7 @@ type WorkflowSpec struct {
 	Suspend *bool `json:"suspend,omitempty"`
 }
 
-// WorkflowStatus defines the observed state of Workflow
+// WorkflowStatus defines the observed state of Workflow.
 type WorkflowStatus struct {
 	Lifecycle `json:",inline"`
 
@@ -118,7 +102,7 @@ func (in *Workflow) SetReconcileStatus(lifecycle Lifecycle) {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-// Workflow is the Schema for the workflows API
+// Workflow is the Schema for the workflows API.
 type Workflow struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -129,7 +113,7 @@ type Workflow struct {
 
 // +kubebuilder:object:root=true
 
-// WorkflowList contains a list of Workflow
+// WorkflowList contains a list of Workflow.
 type WorkflowList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

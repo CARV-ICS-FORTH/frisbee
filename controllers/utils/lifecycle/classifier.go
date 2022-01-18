@@ -27,38 +27,38 @@ import (
 
 type ClassifierReader interface {
 	IsZero() bool
-	IsActive(jobName string) bool
+	IsPending(jobName string) bool
 	IsRunning(name string) bool
 	IsSuccessful(name string) bool
 	IsFailed(name string) bool
-	NumActiveJobs() int
+	NumPendingJobs() int
 	NumRunningJobs() int
 	NumSuccessfulJobs() int
 	NumFailedJobs() int
-	ActiveList() []string
+	PendingList() []string
 	RunningList() []string
 	SuccessfulList() []string
 	FailedList() []string
-	ActiveJobs() []client.Object
+	PendingJobs() []client.Object
 	RunningJobs() []client.Object
 	SuccessfulJobs() []client.Object
 	FailedJobs() []client.Object
 }
 
 type Classifier struct {
-	// activeJobs involve pending + running
-	activeJobs     map[string]client.Object
+	// pendingJobs involve pending + running
+	pendingJobs    map[string]client.Object
 	runningJobs    map[string]client.Object
 	successfulJobs map[string]client.Object
 	failedJobs     map[string]client.Object
 }
 
 func (in Classifier) IsZero() bool {
-	return in.activeJobs == nil && in.runningJobs == nil && in.successfulJobs == nil && in.failedJobs == nil
+	return in.pendingJobs == nil && in.runningJobs == nil && in.successfulJobs == nil && in.failedJobs == nil
 }
 
 func (in *Classifier) Reset() {
-	in.activeJobs = make(map[string]client.Object)
+	in.pendingJobs = make(map[string]client.Object)
 	in.runningJobs = make(map[string]client.Object)
 	in.successfulJobs = make(map[string]client.Object)
 	in.failedJobs = make(map[string]client.Object)
@@ -70,7 +70,7 @@ func (in *Classifier) Classify(name string, obj client.Object) {
 
 		switch status.Phase {
 		case v1alpha1.PhaseUninitialized, v1alpha1.PhasePending:
-			in.activeJobs[name] = obj
+			in.pendingJobs[name] = obj
 
 		case v1alpha1.PhaseSuccess:
 			in.successfulJobs[name] = obj
@@ -80,7 +80,6 @@ func (in *Classifier) Classify(name string, obj client.Object) {
 
 		case v1alpha1.PhaseRunning:
 			in.runningJobs[name] = obj
-			in.activeJobs[name] = obj
 
 		default:
 			panic("unhandled lifecycle condition")
@@ -104,8 +103,8 @@ func (in *Classifier) Exclude(name string, obj client.Object) {
 	}
 }
 
-func (in Classifier) IsActive(jobName string) bool {
-	_, ok := in.activeJobs[jobName]
+func (in Classifier) IsPending(jobName string) bool {
+	_, ok := in.pendingJobs[jobName]
 
 	return ok
 }
@@ -128,8 +127,8 @@ func (in Classifier) IsFailed(name string) bool {
 	return ok
 }
 
-func (in Classifier) NumActiveJobs() int {
-	return len(in.activeJobs)
+func (in Classifier) NumPendingJobs() int {
+	return len(in.pendingJobs)
 }
 
 func (in Classifier) NumRunningJobs() int {
@@ -144,10 +143,10 @@ func (in Classifier) NumFailedJobs() int {
 	return len(in.failedJobs)
 }
 
-func (in Classifier) ActiveList() []string {
-	list := make([]string, 0, len(in.activeJobs))
+func (in Classifier) PendingList() []string {
+	list := make([]string, 0, len(in.pendingJobs))
 
-	for jobName := range in.activeJobs {
+	for jobName := range in.pendingJobs {
 		list = append(list, jobName)
 	}
 
@@ -192,10 +191,10 @@ func (in Classifier) FailedList() []string {
 	return list
 }
 
-func (in Classifier) ActiveJobs() []client.Object {
-	list := make([]client.Object, 0, len(in.activeJobs))
+func (in Classifier) PendingJobs() []client.Object {
+	list := make([]client.Object, 0, len(in.pendingJobs))
 
-	for _, job := range in.activeJobs {
+	for _, job := range in.pendingJobs {
 		list = append(list, job)
 	}
 

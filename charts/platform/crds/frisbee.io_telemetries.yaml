@@ -36,8 +36,8 @@ spec:
           spec:
             description: TelemetrySpec defines the desired state of Telemetry
             properties:
-              importMonitors:
-                description: ImportMonitors are references to monitoring packages
+              importDashboards:
+                description: ImportDashboards are references to monitoring packages
                   that will be used in the monitoring stack.
                 items:
                   type: string

@@ -19,7 +19,7 @@ spec:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Chaos is the Schema for the chaos API
+        description: Chaos is the Schema for the chaos API.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -34,63 +34,15 @@ spec:
           metadata:
             type: object
           spec:
-            description: ChaosSpec defines the desired state of Chaos
+            description: ChaosSpec defines the desired state of Chaos.
             properties:
               kill:
                 description: KillSpec terminates the selected Pod. Because this failure
                   is permanent, it can only be waited in the Running Phase. It does
                   not go through Pass.
                 properties:
-                  selector:
-                    properties:
-                      macro:
-                        description: Macro abstract selector parameters into a structured
-                          string (e.g, .cluster.master.all). Every parsed field is
-                          represents an inner structure of the selector. In case of
-                          invalid macro, the selector will return empty results. Macro
-                          conflicts with any other parameter.
-                        type: string
-                      match:
-                        description: Match contains the rules to select target
-                        enum:
-                        - one
-                        - all
-                        - fixed
-                        - fixed-percent
-                        - random-max-percent
-                        properties:
-                          byCluster:
-                            additionalProperties:
-                              type: string
-                            description: ByCluster defines the service group where
-                              services belong.
-                            type: object
-                          byName:
-                            additionalProperties:
-                              items:
-                                type: string
-                              type: array
-                            description: ByName is a map of string keys and a set
-                              values that used to select services. The key defines
-                              the namespace which services belong, and the values
-                              is a set of service names.
-                            type: object
-                        type: object
-                      mode:
-                        description: 'Mode defines which of the selected services
-                          to use. If undefined, all() is used Supported mode: one
-                          / all / fixed / fixed-percent / random-max-percent'
-                        type: string
-                      value:
-                        description: Value is required when the mode is set to `FixedPodMode`
-                          / `FixedPercentPodMod` / `RandomMaxPercentPodMod`. If `FixedPodMode`,
-                          provide an integer of pods to do chaos action. If `FixedPercentPodMod`,
-                          provide a number from 0-100 to specify the percent of pods
-                          the server can do chaos action. IF `RandomMaxPercentPodMod`,  provide
-                          a number from 0-100 to specify the max percent of pods to
-                          do chaos action
-                        type: string
-                    type: object
+                  service:
+                    type: string
                 type: object
               partition:
                 description: PartitionSpec separate the given Pod from the rest of
@@ -104,58 +56,8 @@ spec:
                     description: Duration is the time after which Frisbee will roll
                       back the injected fault.
                     type: string
-                  selector:
-                    properties:
-                      macro:
-                        description: Macro abstract selector parameters into a structured
-                          string (e.g, .cluster.master.all). Every parsed field is
-                          represents an inner structure of the selector. In case of
-                          invalid macro, the selector will return empty results. Macro
-                          conflicts with any other parameter.
-                        type: string
-                      match:
-                        description: Match contains the rules to select target
-                        enum:
-                        - one
-                        - all
-                        - fixed
-                        - fixed-percent
-                        - random-max-percent
-                        properties:
-                          byCluster:
-                            additionalProperties:
-                              type: string
-                            description: ByCluster defines the service group where
-                              services belong.
-                            type: object
-                          byName:
-                            additionalProperties:
-                              items:
-                                type: string
-                              type: array
-                            description: ByName is a map of string keys and a set
-                              values that used to select services. The key defines
-                              the namespace which services belong, and the values
-                              is a set of service names.
-                            type: object
-                        type: object
-                      mode:
-                        description: 'Mode defines which of the selected services
-                          to use. If undefined, all() is used Supported mode: one
-                          / all / fixed / fixed-percent / random-max-percent'
-                        type: string
-                      value:
-                        description: Value is required when the mode is set to `FixedPodMode`
-                          / `FixedPercentPodMod` / `RandomMaxPercentPodMod`. If `FixedPodMode`,
-                          provide an integer of pods to do chaos action. If `FixedPercentPodMod`,
-                          provide a number from 0-100 to specify the percent of pods
-                          the server can do chaos action. IF `RandomMaxPercentPodMod`,  provide
-                          a number from 0-100 to specify the max percent of pods to
-                          do chaos action
-                        type: string
-                    type: object
-                required:
-                - selector
+                  service:
+                    type: string
                 type: object
               type:
                 description: Type indicate the type of the injected fault
@@ -167,7 +69,7 @@ spec:
             - type
             type: object
           status:
-            description: ChaosStatus defines the observed state of Chaos
+            description: ChaosStatus defines the observed state of Chaos.
             properties:
               lastScheduleTime:
                 description: LastScheduleTime provide information about  the last

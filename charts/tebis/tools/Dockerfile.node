@@ -59,6 +59,4 @@ RUN  yum install -y numactl-libs  numactl-devel libibverbs librdmacm
 WORKDIR /
 COPY --from=builder /root/tebis/build/kreon_server ./kreon-server
 
-RUN ls /kreon-server/kreon_server
-
 ENTRYPOINT ["/kreon-server/kreon_server"]

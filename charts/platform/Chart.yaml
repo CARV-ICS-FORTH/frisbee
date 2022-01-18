@@ -37,7 +37,7 @@ dependencies:
 
   - name: chaos-mesh # Fault injection
     condition: chaos-mesh.enabled
-    version: "2.0.3"
+    version: "2.1.2"
     repository: https://charts.chaos-mesh.org
 
   - name: sonarqube # Coverage

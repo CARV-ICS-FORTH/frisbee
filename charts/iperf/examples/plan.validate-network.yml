@@ -5,7 +5,9 @@ metadata:
   name: validate-network
 spec:
   withTelemetry:
-    importMonitors: [ "platform.telemetry.container", "iperfmon.client" ]
+    importDashboards:
+      - platform.telemetry.container
+      - iperfmon.client
 
   actions:
     # Create an iperf server
@@ -22,9 +24,8 @@ spec:
       depends: { running: [ server ] }
       assert:
         state: '{{.IsSuccessful "client"}} == true'
-        sla: 'avg() OF query(wpFnYRwGk/2/bitrate, 5m, now) IS BELOW(1000)'
+        metrics: 'avg() of query(wpFnYRwGk/2/bitrate, 5m, now) is below(1000)'
       service:
-        
         templateRef: iperf.client
         inputs:
-          - { server: .service.server.any, seconds: "600" }
+          - { server: .service.server.one, seconds: "600" }

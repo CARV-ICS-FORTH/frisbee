@@ -5,7 +5,11 @@ metadata:
   name: tikv-elasticity
 spec:
   withTelemetry:
-    importMonitors: [ "platform.telemetry.container", "ycsb.telemetry.client", "tikv.telemetry.pd", "tikv.telemetry.worker" ]
+    importDashboards:
+      - platform.telemetry.container
+      - ycsb.telemetry.client
+      - tikv.telemetry.pd
+      - tikv.telemetry.worker
 
   actions:
     # Step 0: bootstrap.
@@ -27,7 +31,7 @@ spec:
         templateRef: tikv.cluster.worker
         instances: 3
         inputs:
-          - { placementDriver: .service.master.any }
+          - { placementDriver: .service.master.one }
 
 
     # Step 1: populate the cluster with keys
@@ -38,7 +42,7 @@ spec:
       cluster:
         templateRef: ycsb.tikv.loader
         inputs:
-          - { server: .service.master.any, recordcount: "1000000", offset: "0", threads: "400" }
+          - { server: .service.master.one, recordcount: "1000000", offset: "0", threads: "400" }
 
 
     # Step 2: gradually increase the number of TiKV servers
@@ -50,7 +54,7 @@ spec:
         templateRef: tikv.cluster.worker
         instances: 5
         inputs:
-          - { placementDriver: .service.master.any }
+          - { placementDriver: .service.master.one }
         tolerate:
           failedServices: 5
         schedule:
@@ -63,7 +67,7 @@ spec:
       chaos:
         type: kill
         kill:
-          selector: { macro: .cluster.moreWorkers.any }
+          selector: { macro: .cluster.moreWorkers.one }
 
     - action: Chaos
       name: killer2
@@ -71,7 +75,7 @@ spec:
       chaos:
         type: kill
         kill:
-          selector: { macro: .cluster.moreWorkers.any }
+          selector: { macro: .cluster.moreWorkers.one }
 
     - action: Chaos
       name: killer3
@@ -79,7 +83,7 @@ spec:
       chaos:
         type: kill
         kill:
-          selector: { macro: .cluster.moreWorkers.any }
+          selector: { macro: .cluster.moreWorkers.one }
 
     - action: Chaos
       name: killer4
@@ -87,7 +91,7 @@ spec:
       chaos:
         type: kill
         kill:
-          selector: { macro: .cluster.moreWorkers.any }
+          selector: { macro: .cluster.moreWorkers.one }
 
     - action: Chaos
       name: killer5
@@ -95,4 +99,4 @@ spec:
       chaos:
         type: kill
         kill:
-          selector: { macro: .cluster.moreWorkers.any }
+          selector: { macro: .cluster.moreWorkers.one }

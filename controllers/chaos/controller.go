@@ -40,11 +40,11 @@ import (
 // +kubebuilder:rbac:groups=frisbee.io,resources=chaos/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=frisbee.io,resources=chaos/finalizers,verbs=update
 
-// +kubebuilder:rbac:groups=chaos-mesh.org,resources=networkchaos,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=chaos-mesh.org,resources=networkchaos/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=chaos-mesh.org,resources=networkchaos/finalizers,verbs=update
+// +kubebuilder:rbac:groups=chaos-mesh.org,resources=*,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=chaos-mesh.org,resources=*/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=chaos-mesh.org,resources=*/finalizers,verbs=update
 
-// Controller reconciles a Reference object
+// Controller reconciles a Reference object.
 type Controller struct {
 	ctrl.Manager
 	logr.Logger
@@ -99,7 +99,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	*/
 	handler := dispatch(&cr)
 
-	fault := handler.GetFault(r)
+	fault := handler.GetFault()
 	{
 		key := client.ObjectKeyFromObject(&cr)
 
@@ -223,13 +223,16 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 
 	r.serviceControl = serviceutils.NewServiceControl(r)
 
-	var fault Fault
+	var netChaos Fault
+	AsPartition(&netChaos)
 
-	AsPartition(&fault)
+	var podChaos Fault
+	AsKill(&podChaos)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named("chaos").
 		For(&v1alpha1.Chaos{}).
-		Owns(&fault, builder.WithPredicates(r.Watchers())).
+		Owns(&netChaos, builder.WithPredicates(r.Watchers())).
+		Owns(&podChaos, builder.WithPredicates(r.Watchers())).
 		Complete(r)
 }
