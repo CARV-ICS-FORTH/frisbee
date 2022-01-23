@@ -1,8 +1,6 @@
-## @section TiKV installation parameters
-
-## @param test This is something dummy
+## @section Common parameters
 ##
 
-
-## @section TiKV usage parameters
-## @param server.lala another nested variable
+## @param nameOverride String to partially override common.names.fullname
+###
+nameOverride: ""
