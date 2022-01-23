@@ -1,8 +1,7 @@
 # TiKV
 
 > [TiKV](https://tikv.org/) provides both raw and ACID-compliant transactional key-value API, which is widely used in online serving services,
-> such as the metadata storage system for object storage service, the storage system for recommendation systems, the
-> online feature store, etc.
+> such as the metadata storage system for object storage service, the storage system for recommendation systems, the online feature store, etc.
 
 ## TL;DR
 
@@ -11,7 +10,7 @@ Install the platform and dependent charts.
 ```bash
 >> helm repo add frisbee https://carv-ics-forth.github.io/frisbee/charts
 >> helm install my-frisbee frisbee/platform
->> helm install my-ycsb frisbee/ycsbmon
+>> helm install my-ycsb frisbee/ycsb
 >> helm install my-tikv frisbee/tikv
 ```
 
@@ -60,8 +59,7 @@ To uninstall/delete the `my-tikv` release:
 >> helm delete my-tikv
 ```
 
-The command removes all the Kubernetes components associated with the chart and deletes the release. Use the
-option `--purge` to delete all history too.
+The command removes all the Kubernetes components associated with the chart and deletes the release. Use the option `--purge` to delete all history too.
 
 ## Sources
 
