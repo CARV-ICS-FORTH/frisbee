@@ -3,30 +3,38 @@
 ## Please, note that this will override the image parameters, including dependencies, configured to use the global value
 ## 
 ## @param global.ingress DNS name for making Telemetry stack accessible outside the cluster.
-## @param operator.enabled Set it to false to run the controller outside the Kubernetes Cluster
 global:
   ## E.g.
-  ## ingress: localhost
-  ## ingress: platform.science-hangar.eu
+  ## ingress:
+  ##   - localhost
+  ##   - platform.science-hangar.eu
   ingress: localhost
 
 
-# Frisbee Operator
+## @section Frisbee Operator parameters
+
+## @param operator.enabled Set it to false to run the controller outside the Kubernetes Cluster
+## @param operator.prometheusPort Listening port for Prometheus
+## @param operator.grafanaPort Listening port for Grafana
 operator:
   enabled: true
   prometheusPort: 9090
   grafanaPort: 3000
 
 
-# Chaos Injection
+## @section Chaos Injection Parameters
+
+## @param chaos.enabled Whether or not to enable the Chaos controllers
+## @param chaos.chaosDaemon.runtime  Set the container runtime
+## @param chaos.chaosDaemon.socketPath  Set the socket for communicating the container runtime
 chaos-mesh:
   enabled: true
 
   chaosDaemon:
-  # If you are using Kind or using containerd as CRI, you can use the
-  # config below to use containerd as the runtime in chaos-daemon.
-  #runtime: containerd
-  #socketPath: /run/containerd/containerd.sock
+   # If you are using Kind or using containerd as CRI, you can use the
+   # config below to use containerd as the runtime in chaos-daemon.
+   #runtime: containerd
+   #socketPath: /run/containerd/containerd.sock
 
 # Code coverage
 sonarqube:
