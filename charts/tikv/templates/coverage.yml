@@ -25,7 +25,9 @@ spec:
               storage: 15Gi
 
     decorators: # Decorators
-      telemetry: [ platform.telemetry.container, tikv.telemetry.pd ]
+      telemetry:
+        - platform.telemetry.container
+        - tikv.telemetry.pd
       resources:
         cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
         memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
@@ -167,3 +169,4 @@ spec:
             echo "Start profiler"
             mkdir -p /source/coverage
             kcov --exclude-pattern=/usr /var/www/html/ ./target/debug/tikv-server --config=config.toml
+

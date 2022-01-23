@@ -25,7 +25,9 @@ spec:
               storage: 15Gi
 
     decorators: # Decorators
-      telemetry: [ platform.telemetry.container, tikv.telemetry.pd ]
+      telemetry:
+        - platform.telemetry.container
+        - tikv.telemetry.pd
       resources: # Resources
         cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
         memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
@@ -89,7 +91,9 @@ spec:
               storage: 15Gi
 
     decorators: # Decorators
-      telemetry: [ platform.telemetry.container, tikv.telemetry.worker ]
+      telemetry: 
+          - platform.telemetry.container
+          - tikv.telemetry.worker
       resources: # Resources
         cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
         memory: {{"{{.Inputs.Parameters.memory}}" |quote}}

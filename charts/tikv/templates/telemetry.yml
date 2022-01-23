@@ -26,16 +26,13 @@ spec:
             set -eum
 
             # Read metrics from one or many prometheus clients.
-            # See https://github.com/influxdata/telegraf/blob/master/plugins/inputs/prometheus/README.md
-
             cat > /tmp/prometheus.conf <<EOF
             [[inputs.prometheus]]
                ## An array of urls to scrape metrics from.
                urls = [
                   "http://localhost:2379/metrics"
-              ]
-
-              metric_version = 2
+               ]
+               metric_version = 2
 
             [[outputs.prometheus_client]]
                listen = ":9443"
@@ -51,9 +48,6 @@ spec:
             do
               sleep 10
             done
-
-
-
 
 ---
 apiVersion: frisbee.io/v1alpha1
@@ -83,16 +77,14 @@ spec:
             set -eum
 
             # Read metrics from one or many prometheus clients.
-            # See https://github.com/influxdata/telegraf/blob/master/plugins/inputs/prometheus/README.md
-
             cat > /tmp/prometheus.conf <<EOF
             [[inputs.prometheus]]
                ## An array of urls to scrape metrics from.
                urls = [
                   "http://localhost:20180/metrics"
-              ]
+               ]
 
-              metric_version = 2
+               metric_version = 2
 
             [[outputs.prometheus_client]]
                listen = ":9443"
@@ -156,3 +148,4 @@ metadata:
     dashboard: tikv
     specificTo: worker
 data: {{(.Files.Glob "dashboards/tikv-troubleshooting.json").AsConfig | nindent 2}}
+
