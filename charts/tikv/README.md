@@ -66,3 +66,6 @@ option `--purge` to delete all history too.
 ## Sources
 
 https://docs.google.com/spreadsheets/d/1VjzC3IxCiqGQmSUgRxewgExE3c32YiZMUKNsKDuvrPg/edit#gid=1700439087
+
+
+## Parameters
