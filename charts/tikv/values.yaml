@@ -1,8 +1,0 @@
-## @section TiKV installation parameters
-
-## @param test This is something dummy
-##
-
-
-## @section TiKV usage parameters
-## @param server.lala another nested variable
