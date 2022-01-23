@@ -1,33 +1,70 @@
-    # Step 0: bootstrap.
-    # Cockroachdb requires knowing the names of the clustered nodes, before they are started !.
-    # Run cockroach command to any of the created node.
-    # Step 1: Load a new dataset, using the parameters of workload A.
-    # We use no throttling to maximize this step and complete it soon.
-    # Step 2: Run workload A
-    # Step 3: Run workload B
-    # Step 4: Run workload C
-    # Step 5: Run workload F
-    # Step 6: Run workload D.
-    # Step 7,8: Reload the data with parameters of workload E.
-    # We use the dropdata field to remove all data before test.
-    # Step 9:Run workload E
+# CockroachDB
 
-# dependencies:
+> [*CockroachDB*](https://github.com/cockroachdb/cockroach) is a distributed database with standard SQL for cloud applications. 
 
-# - name: observability
 
-# version: 0.1.1
 
-# repository: https://carv-ics-forth.github.io/frisbee/charts
 
-# - name: sysmon
 
-# version: 0.1.1
+## TL;DR
 
-# repository: https://carv-ics-forth.github.io/frisbee/charts
+Install the platform and dependent charts.
 
-# - name: ycsbmon
+```bash
+>> helm repo add frisbee https://carv-ics-forth.github.io/frisbee/charts
+>> helm install my-frisbee frisbee/platform
+>> helm install my-ycsb frisbee/ycsb
+>> helm install my-cockroach frisbee/cockroachdb
+```
 
-# version: 0.1.1
+Run any of the testing plans.
 
-# repository: https://carv-ics-forth.github.io/frisbee/charts
+```bash
+>> kubectl apply -f examples/plan.baseline.yml 
+```
+
+## Introduction
+
+This chart bootstraps a CockroachDB deployment on a [Kubernetes](http://kubernetes.io) cluster using
+the [Helm](https://helm.sh) package manager.
+
+## Prerequisites
+
+- Kubernetes 1.19+
+
+- Helm 3.5.0
+
+## Installing the Chart
+
+To install the chart with the release name `my-release`:
+
+```bash
+# Install helm repo
+>> helm repo add frisbee https://carv-ics-forth.github.io/frisbee/charts
+# Install Frisbee platform
+>> helm install my-frisbee frisbee/platform
+# Install dependent charts
+>> helm install my-ycsb frisbee/ycs
+>> helm install my-cockroach frisbee/cockroachdb
+```
+
+These commands deploy CockroachDB on the Kubernetes cluster in the default configuration.
+
+The [Parameters](#parameters) section lists the parameters that can be configured during installation.
+
+> **Tip**: List all releases using `helm list`
+
+## Uninstalling the Chart
+
+To uninstall/delete the `my-tikv` release:
+
+```bash
+>> helm delete my-tikv
+```
+
+The command removes all the Kubernetes components associated with the chart and deletes the release. Use the option `--purge` to delete all history too.
+
+
+
+
+## Parameters
