@@ -1,9 +1,9 @@
 ## @section Global parameters
 ## Global Frisbee Platform parameters
-##
-
+## Please, note that this will override the image parameters, including dependencies, configured to use the global value
+## 
 ## @param global.ingress DNS name for making Telemetry stack accessible outside the cluster.
-##
+## @param operator.enabled Set it to false to run the controller outside the Kubernetes Cluster
 global:
   ## E.g.
   ## ingress: localhost
