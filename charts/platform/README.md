@@ -7,3 +7,5 @@ who have admin access to a cluster
 Charts vs Subcharts
 
 https://newbedev.com/helm-conditionally-install-subchart
+
+## Parameters
