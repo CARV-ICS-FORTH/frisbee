@@ -56,10 +56,10 @@ The [Parameters](#parameters) section lists the parameters that can be configure
 
 ## Uninstalling the Chart
 
-To uninstall/delete the `my-tikv` release:
+To uninstall/delete the `my-cockroach` release:
 
 ```bash
->> helm delete my-tikv
+>> helm delete my-cockroach
 ```
 
 The command removes all the Kubernetes components associated with the chart and deletes the release. Use the option `--purge` to delete all history too.
