@@ -49,7 +49,7 @@ jobs:
           cat $HOME/files.txt | tr " " "\n" | grep \/values\\.yaml > raw-inputs
           cat raw-inputs
           cat raw-inputs | sed 's/values.yaml/README.md/' >> raw-inputs
-          cat raw-inputs | sed 's/frisbee/charts\/frisbee/' > prepared-inputs
+          # cat raw-inputs | sed 's/frisbee/charts\/frisbee/' > prepared-inputs
 
       - name: Execute readme-generator-for-helm
         run: readme-generator-for-helm/bin/index.js -r $(cat prepared-inputs | grep README) -v $(cat prepared-inputs | grep values)
