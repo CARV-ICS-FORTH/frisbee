@@ -27,7 +27,7 @@ func TestParseAlert(t *testing.T) {
 		},
 		{
 			name: "single-params",
-			args: args{query: "avg() OF query(wpFnYRwGk/2/bitrate, 15m, now) IS BELOW(14)"},
+			args: args{query: "avg() of query(wpFnYRwGk/2/bitrate, 15m, now) is below(14)"},
 			want: &grafana.Alert{
 				Metric: grafana.Metric{
 					DashboardUID: "wpFnYRwGk",
@@ -40,7 +40,7 @@ func TestParseAlert(t *testing.T) {
 				},
 				Query: grafana.Query{
 					Evaluator: sdk.AlertEvaluator{
-						Type:   grafana.ConvertEvaluatorAlias("BELOW"),
+						Type:   grafana.ConvertEvaluatorAlias("below"),
 						Params: []float64{14},
 					},
 					Reducer: sdk.AlertReducer{
@@ -48,13 +48,17 @@ func TestParseAlert(t *testing.T) {
 						Params: nil,
 					},
 				},
+				Execution: grafana.Execution{
+					Every: grafana.DefaultEvaluationFrequency,
+					For:   grafana.DefaultStabilityWindow,
+				},
 			},
 			wantErr: false,
 		},
 
 		{
 			name: "no-params",
-			args: args{query: "avg() OF query(wpFnYRwGk/2/bitrate, 15m, now) IS NOVALUE()"},
+			args: args{query: "avg() of query(wpFnYRwGk/2/bitrate, 15m, now) is novalue()"},
 			want: &grafana.Alert{
 				Metric: grafana.Metric{
 					DashboardUID: "wpFnYRwGk",
@@ -67,20 +71,24 @@ func TestParseAlert(t *testing.T) {
 				},
 				Query: grafana.Query{
 					Evaluator: sdk.AlertEvaluator{
-						Type:   grafana.ConvertEvaluatorAlias("NOVALUE"),
+						Type:   grafana.ConvertEvaluatorAlias("novalue"),
 						Params: nil,
 					},
 					Reducer: sdk.AlertReducer{
 						Type:   "avg",
 						Params: nil,
 					},
+				},
+				Execution: grafana.Execution{
+					Every: grafana.DefaultEvaluationFrequency,
+					For:   grafana.DefaultStabilityWindow,
 				},
 			},
 			wantErr: false,
 		},
 		{
 			name: "multi-params",
-			args: args{query: "avg() OF query(wpFnYRwGk/2/bitrate, 15m, now) IS WITHIN_RANGE(10,50)"},
+			args: args{query: "avg() of query(wpFnYRwGk/2/bitrate, 15m, now) is within_range(10,50)"},
 			want: &grafana.Alert{
 				Metric: grafana.Metric{
 					DashboardUID: "wpFnYRwGk",
@@ -93,13 +101,17 @@ func TestParseAlert(t *testing.T) {
 				},
 				Query: grafana.Query{
 					Evaluator: sdk.AlertEvaluator{
-						Type:   grafana.ConvertEvaluatorAlias("WITHIN_RANGE"),
+						Type:   grafana.ConvertEvaluatorAlias("within_range"),
 						Params: []float64{10, 50},
 					},
 					Reducer: sdk.AlertReducer{
 						Type:   "avg",
 						Params: nil,
 					},
+				},
+				Execution: grafana.Execution{
+					Every: grafana.DefaultEvaluationFrequency,
+					For:   grafana.DefaultStabilityWindow,
 				},
 			},
 			wantErr: false,

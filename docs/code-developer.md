@@ -24,7 +24,7 @@ Firstly, we have to inform the Helm chart responsible for handling the platform 
 controller.
 
 ```bash
-# Remove the contairized controller from a running deployment
+# Remove the containerized controller from a running deployment
 >> helm upgrade --install  my-frisbee charts/platform/ --set operator.enabled=false \ 
 	--set global.ingress=platform.science-hangar.eu
 ```

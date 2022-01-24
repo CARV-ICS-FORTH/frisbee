@@ -2,7 +2,7 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Workflow
 metadata:
-  name: validate-network
+  name: hello-network-single
 spec:
   withTelemetry:
     importDashboards:
@@ -15,16 +15,11 @@ spec:
       name: server
       service:
         templateRef: iperf.server
-        inputs:
-          - { "cpu": "2", memory: "4Gi" }
 
     # Create an iperf client
     - action: Service
       name: client
       depends: { running: [ server ] }
-      assert:
-        state: '{{.IsSuccessful "client"}} == true'
-        metrics: 'avg() of query(wpFnYRwGk/2/bitrate, 5m, now) is below(1000)'
       service:
         templateRef: iperf.client
         inputs:

@@ -87,14 +87,14 @@ func calculateLifecycle(group *v1alpha1.Cluster, gs lifecycle.ClassifierReader) 
 		if err != nil {
 			status.Lifecycle = v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseFailed,
-				Reason:  "StateEventFired",
+				Reason:  "StateQueryError",
 				Message: err.Error(),
 			}
 
 			meta.SetStatusCondition(&status.Conditions, metav1.Condition{
 				Type:    v1alpha1.ConditionJobFailed.String(),
 				Status:  metav1.ConditionTrue,
-				Reason:  "StateEventFired",
+				Reason:  "StateQueryError",
 				Message: err.Error(),
 			})
 
@@ -121,7 +121,7 @@ func calculateLifecycle(group *v1alpha1.Cluster, gs lifecycle.ClassifierReader) 
 		// Conditions used in conjunction with "Until", instance act as a maximum bound.
 		// If the maximum instances are reached before the Until conditions, we assume that
 		// the experiment never converges, and it fails.
-		if group.Spec.MaxInstances > 0 && group.Status.ScheduledJobs > group.Spec.MaxInstances {
+		if group.Spec.MaxInstances > 0 && (group.Status.ScheduledJobs > group.Spec.MaxInstances) {
 			msg := fmt.Sprintf(`Cluster [%s] has reached Max instances [%d] before Until conditions are met.
 			Abort the experiment as it too flaky to accept. You can retry without defining instances.`,
 				group.GetName(), group.Spec.MaxInstances)

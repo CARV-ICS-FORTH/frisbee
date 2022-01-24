@@ -1,0 +1,62 @@
+---
+apiVersion: frisbee.io/v1alpha1
+kind: Template
+metadata:
+  name: iperf2.telemetry.client
+  labels:
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+spec:
+  service:
+    decorators:
+      dashboards:
+        matchLabels:
+          dashboard: iperf2
+    containers:
+      - name: telegraf
+        image: telegraf:1.20.3
+        ports:
+          - name: mon-iperf
+            containerPort: 9443
+        command:
+          - /bin/sh # Run shell
+          - -c # Read from string
+          - |  # Multi-line str
+            set -eum
+
+            cat > /tmp/prometheus.conf <<EOF
+            [[inputs.tail]]
+              files = ["/dev/shm/pipe"]
+              from_beginning = true
+              name_override = "iperf"
+              data_format = "grok"
+
+              # Example line
+              # https://grokconstructor.appspot.com/do/match#result
+              # [  3] 100.0-105.0 sec  19404 MBytes  32555 Mbits/sec
+              grok_patterns = [ "^.*%{NUMBER:timestamp:float}.* %{NUMBER:transfer:float} %{WORD:transfer_units}.* %{NUMBER:bitrate:float} %{WORD:bitrate_unit}/sec$"]
+
+            [[outputs.prometheus_client]]
+               listen = ":9443"
+               metric_version = 2
+               export_timestamp = true
+               collectors_exclude = ["gocollector","process"]
+            EOF
+
+            telegraf --config /tmp/prometheus.conf &
+
+            # When the stop file is added by the container, the process stop
+            while [ ! -f "/dev/shm/stop" ];
+            do
+              sleep 10
+            done
+
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-iperf-dashboard
+  labels:
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+    dashboard: iperf2
+data: {{(.Files.Glob "dashboards/iperf.json").AsConfig | nindent 2}}

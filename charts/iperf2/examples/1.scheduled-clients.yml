@@ -2,7 +2,7 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Workflow
 metadata:
-  name: hello-network
+  name: scheduled-clients
 spec:
   withTelemetry:
     importDashboards:
@@ -15,19 +15,18 @@ spec:
       name: server
       service:
         templateRef: iperf2.server
+        inputs:
+          - { "cpu": "2", memory: "4Gi" }
 
     # Create a cluster of iperf clients
     - action: Cluster
       name: clients
       depends: { running: [ server ] }
-      assert:
-        state: '{{.state.NumOfFailures()}} >= 1'
-        metrics: 'avg() of query(wpFnYRwGk/2/bitrate, 5m, now) is below(1000)'
       cluster:
         templateRef: iperf2.client
-        instances: 30
+        instances: 10
         inputs:
-          - { server: .service.server.one, seconds: "600" }
-          - { server: .service.server.one, seconds: "30" }
+          - { server: .service.server.one, seconds: "120" }
+          - { server: .service.server.one, seconds: "60" }
         schedule:
           cron: "@every 1m"

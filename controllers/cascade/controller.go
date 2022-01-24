@@ -200,14 +200,19 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		)
 
 		// Remove the non-failed components. Leave the failed jobs and system jobs for postmortem analysis.
-		for _, job := range r.state.SuccessfulJobs() {
-			utils.Delete(ctx, r, job)
-		}
-
 		for _, job := range r.state.PendingJobs() {
 			utils.Delete(ctx, r, job)
 		}
 
+		for _, job := range r.state.RunningJobs() {
+			utils.Delete(ctx, r, job)
+		}
+
+		for _, job := range r.state.SuccessfulJobs() {
+			utils.Delete(ctx, r, job)
+		}
+
+		// Block from creating further jobs
 		suspend := true
 		cr.Spec.Suspend = &suspend
 
@@ -315,7 +320,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	)
 
 	/*
-		8: Avoid double actions
+		9: Avoid double actions
 		------------------------------------------------------------------
 
 		If this process restarts at this point (after posting a job, but

@@ -81,7 +81,7 @@ This step will install the following components:
 
 By default the platform sets the Ingress to `localhost`.
 
-If you use a non-local cluster, you can these the ingress via the  `globa.ingress` flag.
+If you use a non-local cluster, you can these the ingress via the  `global.ingress` flag.
 
 ```bash
 # Install the platform with non-local ingress
@@ -131,7 +131,7 @@ We can use these fields to wait until they become true -- thus saving us from ma
 workflow.frisbee.io/tikv-baseline condition met
 ```
 
-####         
+####          
 
 #### Step 7: Destroy the testing workflow
 
@@ -165,7 +165,7 @@ Starting to serve on 127.0.0.1:8001
 http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/.
 ```
 
-###         
+###          
 
 If you use a microk8s installation of Kubernetes, then the procedure is slightly different.
 

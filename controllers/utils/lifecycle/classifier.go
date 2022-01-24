@@ -43,6 +43,9 @@ type ClassifierReader interface {
 	RunningJobs() []client.Object
 	SuccessfulJobs() []client.Object
 	FailedJobs() []client.Object
+
+	// Deletable returns true if a job is deletable: it is pending or running
+	IsDeletable(jobName string) (client.Object, bool)
 }
 
 type Classifier struct {
@@ -229,6 +232,18 @@ func (in Classifier) FailedJobs() []client.Object {
 	}
 
 	return list
+}
+
+func (in Classifier) IsDeletable(jobName string) (client.Object, bool) {
+	if job, exists := in.pendingJobs[jobName]; exists {
+		return job, true
+	}
+
+	if job, exists := in.runningJobs[jobName]; exists {
+		return job, true
+	}
+
+	return nil, false
 }
 
 func WaitUntil(src <-chan *v1alpha1.Lifecycle, phase v1alpha1.Phase) error {

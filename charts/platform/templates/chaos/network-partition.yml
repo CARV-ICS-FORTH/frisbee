@@ -1,0 +1,17 @@
+---
+apiVersion: frisbee.io/v1alpha1
+kind: Template
+metadata:
+  name: chaos.network.partition
+  labels:
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+spec:
+  inputs:
+    parameters:
+      target: localhost
+      duration: "2m"
+  chaos:
+    type: partition
+    partition:
+      service: {{"{{.Inputs.Parameters.target}}" | quote}}
+      duration: {{"{{.Inputs.Parameters.duration}}" | quote}}

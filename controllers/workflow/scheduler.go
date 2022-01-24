@@ -26,7 +26,7 @@ import (
 
 // isJobInScheduledList take a job and checks if activeJobs has a job with the same
 // name and namespace.
-func isJobInScheduledList(name string, scheduledJobs map[string]metav1.Time) bool {
+func isJobInScheduledList(name string, scheduledJobs map[string]v1alpha1.ConditionalExpr) bool {
 	_, ok := scheduledJobs[name]
 
 	return ok
@@ -40,9 +40,7 @@ func isJobInScheduledList(name string, scheduledJobs map[string]metav1.Time) boo
 // However, if there are no actions, the workflow will stop the reconciliation cycle, and we will miss the
 // next timeout. To handle this scenario, we have to requeue the request with the given duration.
 // In this case, the given duration is the nearest expected timeout.
-func GetNextLogicalJob(obj metav1.Object, all []v1alpha1.Action, gs lifecycle.ClassifierReader, scheduled map[string]metav1.Time) ([]v1alpha1.Action, time.Time) {
-	var candidates []v1alpha1.Action
-
+func GetNextLogicalJob(timebase metav1.Time, all []v1alpha1.Action, gs lifecycle.ClassifierReader, scheduled map[string]v1alpha1.ConditionalExpr) ([]v1alpha1.Action, time.Time) {
 	var nextCycle time.Time
 
 	successOK := func(deps *v1alpha1.WaitSpec) bool {
@@ -68,7 +66,7 @@ func GetNextLogicalJob(obj metav1.Object, all []v1alpha1.Action, gs lifecycle.Cl
 	timeOK := func(deps *v1alpha1.WaitSpec) bool {
 		if dur := deps.After; dur != nil {
 			cur := metav1.Now()
-			deadline := obj.GetCreationTimestamp().Time.Add(dur.Duration)
+			deadline := timebase.Add(dur.Duration)
 
 			// the deadline has expired.
 			if deadline.Before(cur.Time) {
@@ -88,19 +86,17 @@ func GetNextLogicalJob(obj metav1.Object, all []v1alpha1.Action, gs lifecycle.Cl
 		return true
 	}
 
-	for _, action := range all {
-		if gs.IsPending(action.Name) || isJobInScheduledList(action.Name, scheduled) {
-			// Not starting action because it is already processed.
+	var candidates []v1alpha1.Action
 
-			// logrus.Warnf("Ignore action %s since it is already processed", action.Name)
+	for _, action := range all {
+		if isJobInScheduledList(action.Name, scheduled) {
+			// Not starting action because it is already processed.
 			continue
 		}
 
 		if deps := action.DependsOn; deps != nil {
-			if !successOK(deps) || !runningOK(deps) || !timeOK(deps) {
-				// Not starting action because the dependencies are not met.
-
-				// logrus.Warnf("Ignore action %s because dependency are not met", action.Name)
+			if !(successOK(deps) && runningOK(deps) && timeOK(deps)) {
+				// some conditions are not met
 				continue
 			}
 		}

@@ -2,7 +2,7 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
-  name: iperfmon.client
+  name: iperf3.telemetry.client
   labels:
     app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 spec:
@@ -10,7 +10,7 @@ spec:
     decorators:
       dashboards:
         matchLabels:
-          dashboard: iperf
+          dashboard: iperf3
     containers:
       - name: telegraf
         image: telegraf:1.20.3
@@ -57,5 +57,5 @@ metadata:
   name: grafana-iperf-dashboard
   labels:
     app.kubernetes.io/managed-by: {{.Release.Service | quote}}
-    dashboard: iperf
+    dashboard: iperf3
 data: {{(.Files.Glob "dashboards/iperf.json").AsConfig | nindent 2}}

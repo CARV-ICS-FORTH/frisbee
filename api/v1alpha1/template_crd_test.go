@@ -89,7 +89,7 @@ func TestFromTemplate_Validate(t1 *testing.T) {
 				Inputs:      []map[string]string{{"keyA": "valA"}, {"keyB": "valB"}},
 			},
 			args:    args{true},
-			wantErr: true,
+			wantErr: false,
 		},
 	}
 
