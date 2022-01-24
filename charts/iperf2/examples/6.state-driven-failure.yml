@@ -25,7 +25,7 @@ spec:
       service:
         templateRef: iperf2.client
         inputs:
-          - { server: .service.server.one, seconds: "600" }
+          - { server: .service.server.one, seconds: "800" }
 
 
     # Create another iperf client, a bit later
