@@ -209,9 +209,11 @@ const (
 )
 
 const (
-	keepState      = "keep_state"
-	noData         = "no_data"
-	alertingAction = "alerting"
+	KeepState = "keep_state"
+	NoData    = "no_data"
+	OK        = "ok"
+
+	Alerting = "alerting"
 )
 
 // SetAlert adds a new alert to Grafana.
@@ -247,8 +249,8 @@ func (c *Client) SetAlert(alert *Alert, name string, msg string) (uint, error) {
 						Type:    "query",
 					},
 				},
-				ExecutionErrorState: keepState,
-				NoDataState:         noData,
+				ExecutionErrorState: KeepState,
+				NoDataState:         NoData,
 				Notifications:       nil,
 
 				Handler: 1, // Send to default notification channel (should be the controller)

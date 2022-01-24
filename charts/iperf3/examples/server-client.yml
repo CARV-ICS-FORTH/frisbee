@@ -2,32 +2,30 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Workflow
 metadata:
-  name: hello-network
+  name: validate-network
 spec:
   withTelemetry:
     importDashboards:
       - platform.telemetry.container
-      - iperf2.telemetry.client
+      - iperf3.telemetry.client
 
   actions:
     # Create an iperf server
     - action: Service
       name: server
       service:
-        templateRef: iperf2.server
+        templateRef: iperf3.server
+        inputs:
+          - { "cpu": "2", memory: "4Gi" }
 
-    # Create a cluster of iperf clients
-    - action: Cluster
-      name: clients
+    # Create an iperf client
+    - action: Service
+      name: client
       depends: { running: [ server ] }
       assert:
-        state: '{{.state.NumOfFailures()}} >= 1'
+        state: '{{.IsSuccessful "client"}} == true'
         metrics: 'avg() of query(wpFnYRwGk/2/bitrate, 5m, now) is below(1000)'
-      cluster:
-        templateRef: iperf2.client
-        instances: 30
+      service:
+        templateRef: iperf3.client
         inputs:
           - { server: .service.server.one, seconds: "600" }
-          - { server: .service.server.one, seconds: "30" }
-        schedule:
-          cron: "@every 1m"

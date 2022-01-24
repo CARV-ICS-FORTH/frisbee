@@ -129,11 +129,11 @@ const (
 	ConditionJobFailed = ConditionType("hasFailedJobs")
 
 	// ConditionAllJobsScheduled indicates whether all actions in the workflow have been executed.
-	ConditionAllJobsScheduled = ConditionType("AllJobsAreRunning")
+	ConditionAllJobsScheduled = ConditionType("AllJobsAreScheduled")
 
 	// ConditionAllJobsCompleted indicates whether all actions in the workflow have been completed.
 	ConditionAllJobsCompleted = ConditionType("complete")
 
 	// ConditionTerminated indicates the user-defined conditions are met.
-	ConditionTerminated = ConditionType("termnated")
+	ConditionTerminated = ConditionType("terminated")
 )

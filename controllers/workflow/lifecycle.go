@@ -33,53 +33,71 @@ type test struct {
 }
 
 func (r *Controller) updateLifecycle(w *v1alpha1.Workflow) {
-	// Skip any CR which are already completed, or uninitialized.
+	// Step 1. Skip any CR which are already completed, or uninitialized.
 	if w.Status.Phase == v1alpha1.PhaseUninitialized ||
 		w.Status.Phase == v1alpha1.PhaseSuccess ||
 		w.Status.Phase == v1alpha1.PhaseFailed {
 		return
 	}
 
+	// Step 2. Check if metrics-driven assertions are fired
 	if info, fired := expressions.FiredAlert(w); fired {
 		w.Status.Lifecycle = v1alpha1.Lifecycle{
 			Phase:   v1alpha1.PhaseFailed,
-			Reason:  "AssertionError",
+			Reason:  "MetricsAssertion",
 			Message: info,
 		}
 
 		meta.SetStatusCondition(&w.Status.Conditions, metav1.Condition{
 			Type:    v1alpha1.ConditionTerminated.String(),
 			Status:  metav1.ConditionTrue,
-			Reason:  "AssertionError",
+			Reason:  "MetricsAssertion",
 			Message: info,
 		})
 
 		return
 	}
 
-	// handle assertions for successfully completed operations
-	for _, job := range r.state.SuccessfulJobs() {
-		for _, action := range w.Spec.Actions {
-			if job.GetName() == action.Name {
-				if action.Assert == nil {
-					continue
+	// Step 3. Check if state-driven assertions are fired
+	for _, assertion := range w.Status.Executed {
+		if assertion.IsZero() {
+			continue
+		}
+
+		if assertion.HasStateExpr() {
+			info, fired, err := expressions.FiredState(assertion.State, r.state)
+			if err != nil {
+				w.Status.Lifecycle = v1alpha1.Lifecycle{
+					Phase:   v1alpha1.PhaseFailed,
+					Reason:  "StateQueryError",
+					Message: err.Error(),
 				}
 
-				info, fired, err := expressions.FiredState(action.Assert.State, r.state)
-				if err != nil || fired {
-					w.Status.Lifecycle = v1alpha1.Lifecycle{
-						Phase:   v1alpha1.PhaseFailed,
-						Reason:  info,
-						Message: err.Error(),
-					}
+				meta.SetStatusCondition(&w.Status.Conditions, metav1.Condition{
+					Type:    v1alpha1.ConditionTerminated.String(),
+					Status:  metav1.ConditionTrue,
+					Reason:  "StateQueryError",
+					Message: err.Error(),
+				})
 
-					meta.SetStatusCondition(&w.Status.Conditions, metav1.Condition{
-						Type:    v1alpha1.ConditionTerminated.String(),
-						Status:  metav1.ConditionTrue,
-						Reason:  info,
-						Message: err.Error(),
-					})
+				return
+			}
+
+			if fired {
+				w.Status.Lifecycle = v1alpha1.Lifecycle{
+					Phase:   v1alpha1.PhaseRunning,
+					Reason:  "StateAssertion",
+					Message: info,
 				}
+
+				meta.SetStatusCondition(&w.Status.Conditions, metav1.Condition{
+					Type:    v1alpha1.ConditionTerminated.String(),
+					Status:  metav1.ConditionTrue,
+					Reason:  "StateAssertion",
+					Message: info,
+				})
+
+				return
 			}
 		}
 	}
@@ -117,7 +135,7 @@ func (r *Controller) updateLifecycle(w *v1alpha1.Workflow) {
 			},
 		},
 		{ // All jobs are created, and at least one is still running
-			expression: r.state.NumRunningJobs()+r.state.NumSuccessfulJobs() == expectedJobs,
+			expression: len(w.Status.Executed) == expectedJobs,
 			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseRunning,
 				Reason:  "JobIsRunning",
@@ -131,7 +149,7 @@ func (r *Controller) updateLifecycle(w *v1alpha1.Workflow) {
 			},
 		},
 		{ // Not all Jobs are yet created
-			expression: w.Status.Phase == v1alpha1.PhasePending,
+			expression: len(w.Status.Executed) < expectedJobs,
 			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhasePending,
 				Reason:  "JobIsPending",
@@ -153,9 +171,11 @@ func (r *Controller) updateLifecycle(w *v1alpha1.Workflow) {
 	}
 
 	logrus.Warn("Workflow Debug info \n",
-		" current ", w.Status.Lifecycle.Phase,
-		" total actions: ", len(w.Spec.Actions),
-		" activeJobs: ", r.state.PendingList(),
+		" phase ", w.Status.Lifecycle.Phase,
+		" actions: ", expectedJobs,
+		" executed: ", len(w.Status.Executed),
+		" pending: ", r.state.PendingList(),
+		" running: ", r.state.RunningList(),
 		" successfulJobs: ", r.state.SuccessfulList(),
 		" failedJobs: ", r.state.FailedList(),
 		" cur status: ", w.Status,

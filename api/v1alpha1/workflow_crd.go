@@ -52,6 +52,11 @@ type WaitSpec struct {
 	After *metav1.Duration `json:"after,omitempty"`
 }
 
+type DeleteSpec struct {
+	// Jobs is a list of jobs to be deleted. The format is {"kind":"name"}, e.g, {"service","client"}
+	Jobs []string `json:"jobs"`
+}
+
 type EmbedActions struct {
 	// +optional
 	Service *GenerateFromTemplate `json:"service,omitempty"`
@@ -64,6 +69,9 @@ type EmbedActions struct {
 
 	// +optional
 	Cascade *CascadeSpec `json:"cascade,omitempty"`
+
+	// +optional
+	Delete *DeleteSpec `json:"delete,omitempty"`
 }
 
 // WorkflowSpec defines the desired state of Workflow.
@@ -84,11 +92,11 @@ type WorkflowStatus struct {
 	Lifecycle `json:",inline"`
 
 	// +optional
-	Conditions []metav1.Condition `json:"conditions,omitempty"`
+	Conditions []metav1.Condition `json:"conditions"`
 
 	// Executed is a list of executed actions.
 	// +optional
-	Executed map[string]metav1.Time `json:"scheduled,omitempty"`
+	Executed map[string]ConditionalExpr `json:"executed"`
 }
 
 func (in *Workflow) GetReconcileStatus() Lifecycle {

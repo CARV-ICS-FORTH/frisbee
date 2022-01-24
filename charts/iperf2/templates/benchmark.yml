@@ -1,0 +1,70 @@
+---
+apiVersion: frisbee.io/v1alpha1
+kind: Template
+metadata:
+  name: iperf2.server
+  labels:
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+spec:
+  inputs:
+    parameters:
+      memory: ""
+      cpu: ""
+  service:
+    decorators:
+      telemetry:
+        - platform.telemetry.container
+      resources:
+        cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
+        memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
+    containers:
+      - name: app
+        image: "czero/iperf2"
+        ports:
+          - name: tcp
+            containerPort: 5001
+        command:
+          - /bin/sh # Run shell
+          - -c # Read from string
+          - |  # Multi-line str
+            set -eum
+            trap "touch /dev/shm/stop" EXIT
+
+            iperf -s -f m -i 5
+
+
+---
+apiVersion: frisbee.io/v1alpha1
+kind: Template
+metadata:
+  name: iperf2.client
+  labels:
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+spec:
+  inputs:
+    parameters:
+      server: localhost
+      memory: ""
+      cpu: ""
+      seconds: "60"
+  service:
+    decorators:
+      telemetry:
+        - platform.telemetry.container
+        - iperf2.telemetry.client
+      resources:
+        memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
+        cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
+    containers:
+      - name: app
+        image: "czero/iperf2"
+        command:
+          - /bin/sh # Run shell
+          - -c # Read from string
+          - |  # Multi-line str
+            set -eum
+            trap "touch /dev/shm/stop" EXIT
+
+            server={{"{{.Inputs.Parameters.server}}"}}
+
+            iperf -c ${server} -t {{"{{.Inputs.Parameters.seconds}}"}} -f m -i 5 > /dev/shm/pipe

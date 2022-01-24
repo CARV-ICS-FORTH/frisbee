@@ -26,6 +26,7 @@ import (
 	notifier "github.com/golanghelper/grafana-webhook"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -44,6 +45,9 @@ func (r *Controller) getJob(ctx context.Context, w *v1alpha1.Workflow, action v1
 
 	case "Cascade":
 		return r.cascade(ctx, w, action)
+
+	case "Delete":
+		return r.delete(ctx, w, action)
 
 	default:
 		return nil, errors.Errorf("unknown action %s", action.ActionType)
@@ -67,8 +71,11 @@ func (r *Controller) service(ctx context.Context, w *v1alpha1.Workflow, action v
 
 	var service v1alpha1.Service
 
-	spec.DeepCopyInto(&service.Spec)
+	service.SetGroupVersionKind(v1alpha1.GroupVersion.WithKind("Service"))
+	service.SetNamespace(w.GetNamespace())
 	service.SetName(action.Name)
+
+	spec.DeepCopyInto(&service.Spec)
 
 	return &service, nil
 }
@@ -80,8 +87,11 @@ func (r *Controller) cluster(ctx context.Context, w *v1alpha1.Workflow, action v
 
 	var cluster v1alpha1.Cluster
 
-	action.Cluster.DeepCopyInto(&cluster.Spec)
+	cluster.SetGroupVersionKind(v1alpha1.GroupVersion.WithKind("Cluster"))
+	cluster.SetNamespace(w.GetNamespace())
 	cluster.SetName(action.Name)
+
+	action.Cluster.DeepCopyInto(&cluster.Spec)
 
 	return &cluster, nil
 }
@@ -90,8 +100,6 @@ func (r *Controller) chaos(ctx context.Context, w *v1alpha1.Workflow, action v1a
 	if err := expandInput(ctx, r, w.GetNamespace(), &action.Chaos.Inputs); err != nil {
 		return nil, errors.Wrapf(err, "input error")
 	}
-
-	logrus.Warn("INPUTS ", action.Chaos.Inputs)
 
 	// get the service template
 	if err := action.Chaos.Validate(false); err != nil {
@@ -111,8 +119,11 @@ func (r *Controller) chaos(ctx context.Context, w *v1alpha1.Workflow, action v1a
 
 	var chaos v1alpha1.Chaos
 
-	spec.DeepCopyInto(&chaos.Spec)
+	chaos.SetGroupVersionKind(v1alpha1.GroupVersion.WithKind("Chaos"))
+	chaos.SetNamespace(w.GetNamespace())
 	chaos.SetName(action.Name)
+
+	spec.DeepCopyInto(&chaos.Spec)
 
 	return &chaos, nil
 }
@@ -124,10 +135,48 @@ func (r *Controller) cascade(ctx context.Context, w *v1alpha1.Workflow, action v
 
 	var cascade v1alpha1.Cascade
 
-	action.Cascade.DeepCopyInto(&cascade.Spec)
+	cascade.SetGroupVersionKind(v1alpha1.GroupVersion.WithKind("Cascade"))
+	cascade.SetNamespace(w.GetNamespace())
 	cascade.SetName(action.Name)
 
+	action.Cascade.DeepCopyInto(&cascade.Spec)
+
 	return &cascade, nil
+}
+
+func (r *Controller) delete(ctx context.Context, w *v1alpha1.Workflow, action v1alpha1.Action) (client.Object, error) {
+	// delete normally does not return anything. This however would break all the pipeline for
+	// managing sequences of job. For that, we return a dummy virtual object without dedicated controller.
+	var deletionJob v1alpha1.VirtualObject
+
+	deletionJob.SetGroupVersionKind(v1alpha1.GroupVersion.WithKind("VirtualObject"))
+	deletionJob.SetNamespace(w.GetNamespace())
+	deletionJob.SetName(action.Name)
+
+	deletionJob.SetReconcileStatus(v1alpha1.Lifecycle{
+		Phase:   v1alpha1.PhaseSuccess,
+		Reason:  "AllJobsDeleted",
+		Message: "",
+	})
+
+	// delete the jobs in foreground -- jobs are deleted before the function returns.
+	propagation := metav1.DeletePropagationForeground
+	options := client.DeleteOptions{
+		PropagationPolicy: &propagation,
+	}
+
+	for _, name := range action.Delete.Jobs {
+		job, deletable := r.state.IsDeletable(name)
+		if !deletable {
+			return nil, errors.Errorf("job %s is not currently deletable", name)
+		}
+
+		if err := r.GetClient().Delete(ctx, job, &options); err != nil {
+			return nil, errors.Wrapf(err, "unable to delete job %s", job.GetName())
+		}
+	}
+
+	return &deletionJob, nil
 }
 
 func (r *Controller) ConnectToGrafana(ctx context.Context, cr *v1alpha1.Workflow) error {
@@ -144,7 +193,7 @@ func (r *Controller) ConnectToGrafana(ctx context.Context, cr *v1alpha1.Workflow
 			// To do that, it adds information of the fired alert to the object's metadata
 			// and updates (patches) the object.
 			if err := expressions.DispatchAlert(ctx, r, b); err != nil {
-				r.Logger.Error(err, "unable to inform CR for SLA violation", "cr", cr.GetName())
+				r.Logger.Error(err, "unable to inform CR for metrics alert", "cr", cr.GetName())
 			}
 		}),
 	)

@@ -1,0 +1,35 @@
+---
+apiVersion: frisbee.io/v1alpha1
+kind: Workflow
+metadata:
+  name: delete-job
+spec:
+  withTelemetry:
+    importDashboards:
+      - platform.telemetry.container
+      - iperf2.telemetry.client
+
+  actions:
+    # Create an iperf server
+    - action: Service
+      name: server
+      service:
+        templateRef: iperf2.server
+        inputs:
+          - { "cpu": "2", memory: "4Gi" }
+
+    # Create an iperf client
+    - action: Service
+      name: client
+      depends: { running: [ server ] }
+      service:
+        templateRef: iperf2.client
+        inputs:
+          - { server: .service.server.one, seconds: "300" }
+
+    # Delete the iperf client
+    - action: Delete
+      name: delete-client
+      depends: { after: "2m" }
+      delete:
+        jobs: [client]

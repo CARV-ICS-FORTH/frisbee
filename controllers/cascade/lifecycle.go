@@ -51,14 +51,14 @@ func calculateLifecycle(cascade *v1alpha1.Cascade, gs lifecycle.ClassifierReader
 			if fired {
 				status.Lifecycle = v1alpha1.Lifecycle{
 					Phase:   v1alpha1.PhaseRunning,
-					Reason:  "SLAAssertionFired",
+					Reason:  "MetricsEventFired",
 					Message: info,
 				}
 
 				meta.SetStatusCondition(&status.Conditions, metav1.Condition{
 					Type:    v1alpha1.ConditionAllJobsScheduled.String(),
 					Status:  metav1.ConditionTrue,
-					Reason:  "SLAAssertionFired",
+					Reason:  "MetricsEventFired",
 					Message: info,
 				})
 
@@ -71,14 +71,14 @@ func calculateLifecycle(cascade *v1alpha1.Cascade, gs lifecycle.ClassifierReader
 			if err != nil {
 				status.Lifecycle = v1alpha1.Lifecycle{
 					Phase:   v1alpha1.PhaseFailed,
-					Reason:  "StateAssertionFailed",
+					Reason:  "StateQueryError",
 					Message: err.Error(),
 				}
 
 				meta.SetStatusCondition(&status.Conditions, metav1.Condition{
 					Type:    v1alpha1.ConditionJobFailed.String(),
 					Status:  metav1.ConditionTrue,
-					Reason:  "StateAssertionFailed",
+					Reason:  "StateQueryError",
 					Message: err.Error(),
 				})
 
@@ -88,14 +88,14 @@ func calculateLifecycle(cascade *v1alpha1.Cascade, gs lifecycle.ClassifierReader
 			if fired {
 				status.Lifecycle = v1alpha1.Lifecycle{
 					Phase:   v1alpha1.PhaseRunning,
-					Reason:  "StateAssertionFired",
+					Reason:  "StateEventFired",
 					Message: info,
 				}
 
 				meta.SetStatusCondition(&status.Conditions, metav1.Condition{
 					Type:    v1alpha1.ConditionAllJobsScheduled.String(),
 					Status:  metav1.ConditionTrue,
-					Reason:  "StateAssertionFired",
+					Reason:  "StateEventFired",
 					Message: info,
 				})
 

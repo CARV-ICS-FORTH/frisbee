@@ -27,6 +27,7 @@ import (
 	"github.com/carv-ics-forth/frisbee/controllers/utils"
 	notifier "github.com/golanghelper/grafana-webhook"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -44,9 +45,12 @@ const (
 	// Used as [alertHasBeenFired]: [alertID].
 	alertHasBeenFired = "sla.frisbee.io/fired"
 
-	// firedAlertInfo include information about the fired Grafana Alert.
+	// firedAlertState points to the reason why the alert is fired.
+	firedAlertState = "sla.frisbee.io/state"
+
+	// firedAlertDetails include information about the fired Grafana Alert.
 	// Used as [SlaViolationINfo]: [string].
-	firedAlertInfo = "sla.frisbee.io/info"
+	firedAlertDetails = "sla.frisbee.io/details"
 )
 
 type endpoint struct {
@@ -86,7 +90,9 @@ func SetAlert(job client.Object, slo v1alpha1.ExprMetrics) error {
 		Name:      job.GetName(),
 	}.String()
 
-	msg := fmt.Sprintf("Alert [%s] for object %s has been fired", name, job.GetName())
+	msg := fmt.Sprintf("Alert [%s] for object %s %s has been fired", name,
+		job.GetObjectKind().GroupVersionKind(),
+		job.GetName())
 
 	// push the alert to grafana
 	if _, err := grafana.DefaultClient.SetAlert(alert, name, msg); err != nil {
@@ -96,7 +102,7 @@ func SetAlert(job client.Object, slo v1alpha1.ExprMetrics) error {
 	// use annotations to know which jobs have alert in Grafana.
 	// we use this information to remove alerts when the jobs are complete.
 	// We also use to discover the object based on the alertID.
-	job.SetLabels(labels.Merge(job.GetLabels(),
+	job.SetAnnotations(labels.Merge(job.GetAnnotations(),
 		map[string]string{jobHasAlert: fmt.Sprint(name)}),
 	)
 
@@ -119,7 +125,8 @@ func DispatchAlert(ctx context.Context, r utils.Reconciler, b *notifier.Body) er
 
 	patchStruct.Metadata.Annotations = map[string]string{
 		alertHasBeenFired: b.RuleName,
-		firedAlertInfo:    string(alertJSON),
+		firedAlertState:   string(b.State),
+		firedAlertDetails: string(alertJSON),
 	}
 
 	patchJSON, err := json.Marshal(patchStruct)
@@ -155,18 +162,57 @@ func FiredAlert(job metav1.Object) (string, bool) {
 
 	annotations := job.GetAnnotations()
 
-	_, exists := annotations[alertHasBeenFired]
+	// Step 0. Check if an alert has been dispatched to the given job.
+	alertName, exists := annotations[alertHasBeenFired]
 	if !exists {
 		return "", false
 	}
 
-	info := annotations[firedAlertInfo]
+	// Step 1. Decide if the alert is spurious, enabled, or disabled.
+	state, ok := annotations[firedAlertState]
+	if !ok {
+		logrus.Warn("Strange creatures have screwed the alerting mechanism.")
 
-	return info, true
+		return "SOMETHING IS WRONG WITH THE ALERTING MECHANISMS", true
+	}
+
+	if state == grafana.NoData {
+		/*
+		  Spurious Alert may be risen if the expr evaluation frequency is less than the scheduled interval.
+		  In this case, Grafana faces an idle period, and raises a NoData Alert.
+		  Just ignore it.
+		*/
+		return "", false
+	}
+
+	if state == grafana.Alerting {
+		info, ok := annotations[firedAlertDetails]
+		if !ok {
+			logrus.Warn("Strange creatures have screwed the alerting mechanism.")
+
+			return "SOMETHING IS WRONG WITH THE ALERTING MECHANISMS", true
+		}
+
+		return info, true
+	}
+
+	if state == grafana.OK {
+		/*
+				This is the equivalent of revoking an alert. It happens when,after sending an Alert, decides
+			    that the latest evaluation no longer matches the given rule.
+		*/
+		logrus.Warn("Revoke alert ", alertName)
+
+		return "", false
+	}
+
+	logrus.Warn("Should never reach this point")
+
+	return "", false
 }
 
 func UnsetAlert(obj metav1.Object) {
-	alertID, exists := obj.GetLabels()[jobHasAlert]
+	alertID, exists := obj.GetAnnotations()[jobHasAlert]
 	if exists {
 		grafana.DefaultClient.UnsetAlert(alertID)
 	}

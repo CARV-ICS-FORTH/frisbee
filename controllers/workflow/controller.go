@@ -137,6 +137,18 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "unable to list child chaosJobs"))
 	}
 
+	var cascadeJobs v1alpha1.CascadeList
+
+	if err := r.GetClient().List(ctx, &cascadeJobs, filters...); err != nil {
+		return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "unable to list child cascadeJobs"))
+	}
+
+	var virtualJobs v1alpha1.VirtualObjectList
+
+	if err := r.GetClient().List(ctx, &virtualJobs, filters...); err != nil {
+		return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "unable to list child virtual Jobs"))
+	}
+
 	/*
 		3: Classify CR's components.
 		------------------------------------------------------------------
@@ -165,6 +177,14 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	for i, job := range chaosJobs.Items {
 		r.state.Classify(job.GetName(), &chaosJobs.Items[i])
+	}
+
+	for i, job := range cascadeJobs.Items {
+		r.state.Classify(job.GetName(), &cascadeJobs.Items[i])
+	}
+
+	for i, job := range virtualJobs.Items {
+		r.state.Classify(job.GetName(), &virtualJobs.Items[i])
 	}
 
 	/*
@@ -234,6 +254,11 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			utils.Delete(ctx, r, job)
 		}
 
+		for _, job := range r.state.RunningJobs() {
+			utils.Delete(ctx, r, job)
+		}
+
+		// Suspend the workflow from creating new job.
 		suspend := true
 		cr.Spec.Suspend = &suspend
 
@@ -266,8 +291,8 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		initialize the CR.
 	*/
 	if cr.Status.Phase.Is(v1alpha1.PhaseUninitialized) {
-		if err := ValidateDAG(cr.Spec.Actions); err != nil {
-			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "invalid dependency DAG"))
+		if err := ValidateDAG(cr.Spec.Actions, r.state); err != nil {
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "invalid workflow graph"))
 		}
 
 		if err := utils.UseDefaultPlatformConfiguration(ctx, r, cr.GetNamespace()); err != nil {
@@ -290,6 +315,10 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			Reason:  "WorkflowInitialized",
 			Message: "The workflow has been initialized. Start running actions",
 		})
+
+		if cr.Status.Executed == nil {
+			cr.Status.Executed = make(map[string]v1alpha1.ConditionalExpr)
+		}
 
 		return lifecycle.Pending(ctx, r, &cr, "The Workflow is ready to start submitting jobs.")
 	}
@@ -323,7 +352,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return utils.Stop()
 	}
 
-	actionList, nextRun := GetNextLogicalJob(&cr, cr.Spec.Actions, r.state, cr.Status.Executed)
+	actionList, nextRun := GetNextLogicalJob(cr.GetCreationTimestamp(), cr.Spec.Actions, r.state, cr.Status.Executed)
 
 	if len(actionList) == 0 {
 		if nextRun.IsZero() {
@@ -343,7 +372,8 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		}
 
 		if action.Assert.HasMetricsExpr() {
-			if err := expressions.SetAlert(job, action.Assert.Metrics); err != nil {
+			// Assertions belong to the top-level workflow. Not to the job
+			if err := expressions.SetAlert(&cr, action.Assert.Metrics); err != nil {
 				return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "assertion error"))
 			}
 		}
@@ -351,24 +381,23 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		if err := utils.Create(ctx, r, &cr, job); err != nil {
 			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "action %s execution failed", action.Name))
 		}
-	}
 
-	/*
-		8: Avoid double actions
-		------------------------------------------------------------------
+		/*
+			8: Avoid double actions
+			------------------------------------------------------------------
 
-		If this process restarts at this point (after posting a job, but
-		before updating the status), then we might try to start the job on
-		the next time.  Actually, if we re-list the Jobs on the next cycle
-		we might not see our own status update, and then post one again.
-		So, we need to use the job name as a lock to prevent us from making the job twice.
-	*/
-	if cr.Status.Executed == nil {
-		cr.Status.Executed = make(map[string]metav1.Time)
-	}
+			If this process restarts at this point (after posting a job, but
+			before updating the status), then we might try to start the job on
+			the next time.  Actually, if we re-list the Jobs on the next cycle
+			we might not see our own status update, and then post one again.
+			So, we need to use the job name as a lock to prevent us from making the job twice.
+		*/
 
-	for _, action := range actionList {
-		cr.Status.Executed[action.Name] = metav1.Now()
+		if action.Assert.IsZero() {
+			cr.Status.Executed[action.Name] = v1alpha1.ConditionalExpr{}
+		} else {
+			cr.Status.Executed[action.Name] = *action.Assert
+		}
 	}
 
 	return lifecycle.Pending(ctx, r, &cr, "some jobs are still pending")
@@ -415,9 +444,10 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		Named("workflow").
 		For(&v1alpha1.Workflow{}).
-		Owns(&v1alpha1.Service{}, builder.WithPredicates(r.WatchServices())).    // Watch Services
-		Owns(&v1alpha1.Cluster{}, builder.WithPredicates(r.WatchClusters())).    // Watch Cluster
-		Owns(&v1alpha1.Chaos{}, builder.WithPredicates(r.WatchChaos())).         // Watch Chaos
-		Owns(&v1alpha1.Telemetry{}, builder.WithPredicates(r.WatchTelemetry())). // Watch Telemetry
+		Owns(&v1alpha1.Service{}, builder.WithPredicates(r.WatchServices())).             // Watch Services
+		Owns(&v1alpha1.Cluster{}, builder.WithPredicates(r.WatchClusters())).             // Watch Cluster
+		Owns(&v1alpha1.Chaos{}, builder.WithPredicates(r.WatchChaos())).                  // Watch Chaos
+		Owns(&v1alpha1.Telemetry{}, builder.WithPredicates(r.WatchTelemetry())).          // Watch Telemetry
+		Owns(&v1alpha1.VirtualObject{}, builder.WithPredicates(r.WatchVirtualObjects())). // Watch VirtualObjects
 		Complete(r)
 }

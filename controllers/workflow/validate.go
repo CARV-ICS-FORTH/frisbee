@@ -20,6 +20,9 @@ import (
 	"strings"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
+	"github.com/carv-ics-forth/frisbee/controllers/telemetry/grafana"
+	"github.com/carv-ics-forth/frisbee/controllers/utils/expressions"
+	"github.com/carv-ics-forth/frisbee/controllers/utils/lifecycle"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/validation"
 )
@@ -29,9 +32,10 @@ import (
 // 2. Ensures that there are no two actions with the same name.
 // 3. Ensure that dependencies point to a valid action.
 // 4. Ensure that macros point to a valid action.
-func ValidateDAG(list []v1alpha1.Action) error {
+func ValidateDAG(list []v1alpha1.Action, state lifecycle.ClassifierReader) error {
 	index := make(map[string]*v1alpha1.Action)
 
+	// prepare a dependency graph
 	for i, action := range list {
 		if errs := validation.IsQualifiedName(action.Name); len(errs) != 0 {
 			err := errors.New(strings.Join(errs, "; "))
@@ -64,12 +68,47 @@ func ValidateDAG(list []v1alpha1.Action) error {
 		return true
 	}
 
+	// validate dependencies and assertions
 	for _, action := range list {
 		if deps := action.DependsOn; deps != nil {
 			if !successOK(deps) || !runningOK(deps) {
 				return errors.Errorf("invalid dependency on action %s", action.Name)
 			}
 		}
+
+		if assert := action.Assert; !assert.IsZero() {
+			if action.Delete != nil {
+				return errors.Errorf("Delete job cannot have assertion")
+			}
+
+			if assert.HasStateExpr() {
+				_, _, err := expressions.FiredState(assert.State, state)
+				if err != nil {
+					return errors.Wrapf(err, "Invalid state expr for action %s", action.Name)
+				}
+			}
+
+			if assert.HasMetricsExpr() {
+				_, err := grafana.ParseAlertExpr(assert.Metrics)
+				if err != nil {
+					return errors.Wrapf(err, "Invalid metrics expr for action %s", action.Name)
+				}
+			}
+		}
+
+		if action.ActionType == "Delete" {
+			for _, job := range action.Delete.Jobs {
+				target, exists := index[job]
+				if !exists {
+					return errors.Errorf("job [%s] of action [%s] does not exist", job, action.Name)
+				}
+
+				if target.ActionType == "Delete" {
+					return errors.Errorf("cycle deletion. job [%s] of action [%s] is a deletion job", job, action.Name)
+				}
+			}
+		}
+
 	}
 
 	// TODO:

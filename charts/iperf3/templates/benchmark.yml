@@ -2,7 +2,7 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
-  name: iperf.server
+  name: iperf3.server
   labels:
     app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 spec:
@@ -12,7 +12,8 @@ spec:
       cpu: ""
   service:
     decorators:
-      telemetry: [ platform.telemetry.container ]
+      telemetry:
+        - platform.telemetry.container
       resources: # Resources
         cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
         memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
@@ -25,12 +26,11 @@ spec:
         args: [ "-s", "-f", "m" ]
 
 
-
 ---
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
-  name: iperf.client
+  name: iperf3.client
   labels:
     app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 spec:
@@ -42,7 +42,9 @@ spec:
       seconds: "60"
   service:
     decorators:
-      telemetry: [ platform.telemetry.container, iperfmon.client ]
+      telemetry:
+        - platform.telemetry.container
+        - iperf3.telemetry.client
       resources:
         memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
         cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}

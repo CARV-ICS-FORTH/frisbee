@@ -46,3 +46,7 @@ func (c *ConditionalExpr) HasMetricsExpr() bool {
 func (c *ConditionalExpr) HasStateExpr() bool {
 	return c != nil && c.State != ""
 }
+
+func (c *ConditionalExpr) IsZero() bool {
+	return c == nil || !c.HasStateExpr() || !c.HasMetricsExpr()
+}

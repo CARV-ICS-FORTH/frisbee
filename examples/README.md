@@ -1,6 +1,6 @@
 # Examples of Testplans
 
-
+We assume you have followed the installation [tutorial](/docs/tutorial.md).
 
 #### Hello Network
 
@@ -9,13 +9,9 @@ This tests creates an iperf server, and periodically adds new clients.
 To run it, you need the following dependencies:
 
 ```bash
+>> helm upgrade --install --wait my-frisbee frisbee/platform
+>> helm upgrade --install --wait my-i frisbee/iperf
 ```
-
-
-
-
-
-
 
 A **Test Plan** documents the strategy that will be used to verify a specific test for
 a [software](https://en.wikipedia.org/wiki/Software) product.
