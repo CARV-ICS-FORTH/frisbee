@@ -1,10 +1,6 @@
 # CockroachDB
 
-> [*CockroachDB*](https://github.com/cockroachdb/cockroach) is a distributed database with standard SQL for cloud applications. 
-
-
-
-
+> [*CockroachDB*](https://github.com/cockroachdb/cockroach) is a distributed database with standard SQL for cloud applications.
 
 ## TL;DR
 
@@ -62,9 +58,7 @@ To uninstall/delete the `my-cockroach` release:
 >> helm delete my-cockroach
 ```
 
-The command removes all the Kubernetes components associated with the chart and deletes the release. Use the option `--purge` to delete all history too.
-
-
-
+The command removes all the Kubernetes components associated with the chart and deletes the release. Use the
+option `--purge` to delete all history too.
 
 ## Parameters

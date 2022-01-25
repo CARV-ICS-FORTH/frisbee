@@ -1,0 +1,15 @@
+---
+apiVersion: frisbee.io/v1alpha1
+kind: Template
+metadata:
+  name: chaos.pod.kill
+  labels:
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+spec:
+  inputs:
+    parameters:
+      target: localhost
+  chaos:
+    type: kill
+    kill:
+      service: {{"{{.Inputs.Parameters.target}}" | quote}}

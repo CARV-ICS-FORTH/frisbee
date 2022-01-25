@@ -55,7 +55,7 @@ func (r *Controller) getJob(ctx context.Context, w *v1alpha1.Workflow, action v1
 }
 
 func (r *Controller) service(ctx context.Context, w *v1alpha1.Workflow, action v1alpha1.Action) (client.Object, error) {
-	if err := expandInput(ctx, r, w.GetNamespace(), &action.Service.Inputs); err != nil {
+	if err := expandInputs(ctx, r, w.GetNamespace(), &action.Service.Inputs); err != nil {
 		return nil, errors.Wrapf(err, "input error")
 	}
 
@@ -81,7 +81,7 @@ func (r *Controller) service(ctx context.Context, w *v1alpha1.Workflow, action v
 }
 
 func (r *Controller) cluster(ctx context.Context, w *v1alpha1.Workflow, action v1alpha1.Action) (client.Object, error) {
-	if err := expandInput(ctx, r, w.GetNamespace(), &action.Cluster.Inputs); err != nil {
+	if err := expandInputs(ctx, r, w.GetNamespace(), &action.Cluster.Inputs); err != nil {
 		return nil, errors.Wrapf(err, "input error")
 	}
 
@@ -97,7 +97,7 @@ func (r *Controller) cluster(ctx context.Context, w *v1alpha1.Workflow, action v
 }
 
 func (r *Controller) chaos(ctx context.Context, w *v1alpha1.Workflow, action v1alpha1.Action) (client.Object, error) {
-	if err := expandInput(ctx, r, w.GetNamespace(), &action.Chaos.Inputs); err != nil {
+	if err := expandInputs(ctx, r, w.GetNamespace(), &action.Chaos.Inputs); err != nil {
 		return nil, errors.Wrapf(err, "input error")
 	}
 
@@ -129,7 +129,7 @@ func (r *Controller) chaos(ctx context.Context, w *v1alpha1.Workflow, action v1a
 }
 
 func (r *Controller) cascade(ctx context.Context, w *v1alpha1.Workflow, action v1alpha1.Action) (client.Object, error) {
-	if err := expandInput(ctx, r, w.GetNamespace(), &action.Cascade.Inputs); err != nil {
+	if err := expandInputs(ctx, r, w.GetNamespace(), &action.Cascade.Inputs); err != nil {
 		return nil, errors.Wrapf(err, "input error")
 	}
 

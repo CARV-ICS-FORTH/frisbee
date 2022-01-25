@@ -1,0 +1,47 @@
+---
+apiVersion: frisbee.io/v1alpha1
+kind: Workflow
+metadata:
+  name: failure-toleration
+spec:
+  withTelemetry:
+    importDashboards:
+      - platform.telemetry.container
+      - iperf2.telemetry.client
+
+  actions:
+    # Create an iperf server
+    - action: Service
+      name: server
+      service:
+        templateRef: iperf2.server
+        inputs:
+          - { "cpu": "2", memory: "4Gi" }
+
+
+    # Create a cluster of iperf clients
+    - action: Cluster
+      name: clients
+      depends: { running: [ server ] }
+      cluster:
+        templateRef: iperf2.client
+        instances: 10
+        inputs:
+          - { server: .service.server.one, seconds: "600" }
+        tolerate: # Without this field, the cluster will fail immediately after the killing
+          failedServices: 3
+
+
+    # Periodically kill some nodes. Beware that in this case we use multiple inputs.
+    # Notice that we use fixed names, because any selecting macro may choose the same target twice, and stall the execution.
+    - action: Cascade
+      name: killer
+      depends: { running: [ clients ] }
+      cascade:
+        templateRef: chaos.pod.kill
+        inputs:
+          - { target: clients-4 }
+          - { target: clients-7 }
+          - { target: clients-3 }
+        schedule:
+          cron: "@every 1m"

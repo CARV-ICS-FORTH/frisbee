@@ -40,7 +40,7 @@ spec:
     # Inject a network failure when the client is created
     - action: Chaos
       name: partition0
-      depends: {  running: [ client ]}
+      depends: { running: [ client ] }
       chaos:
         templateRef: chaos.network.partition
         inputs:
@@ -50,6 +50,6 @@ spec:
     # Revoke the failure when the client is deleted
     - action: Delete
       name: delete-client
-      depends: { success: [client]}
+      depends: { success: [ client ] }
       delete:
         jobs: [ partition0 ]

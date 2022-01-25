@@ -59,11 +59,11 @@ To uninstall/delete the `my-tikv` release:
 >> helm delete my-tikv
 ```
 
-The command removes all the Kubernetes components associated with the chart and deletes the release. Use the option `--purge` to delete all history too.
+The command removes all the Kubernetes components associated with the chart and deletes the release. Use the
+option `--purge` to delete all history too.
 
 ## Sources
 
 https://docs.google.com/spreadsheets/d/1VjzC3IxCiqGQmSUgRxewgExE3c32YiZMUKNsKDuvrPg/edit#gid=1700439087
-
 
 ## Parameters

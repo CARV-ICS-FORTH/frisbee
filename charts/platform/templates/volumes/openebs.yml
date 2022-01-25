@@ -13,7 +13,7 @@ metadata:
       - name: StorageType
         value: hostpath
       - name: BasePath
-        value: "/mnt/local"
+        value: {{.Values.openebs.storagePath}}
 provisioner: openebs.io/local
 reclaimPolicy: Delete
 volumeBindingMode: WaitForFirstConsumer
