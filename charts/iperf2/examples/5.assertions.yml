@@ -24,7 +24,7 @@ spec:
       depends: { running: [ server ] }
       assert:
         state: '{{.NumFailedJobs}} >= 1'
-        metrics: 'avg() of query(wpFnYRwGk/2/bitrate, 5m, now) is below(1000)'
+        metrics: 'max() of query(wpFnYRwGk/2/bitrate, 5m, now) is below(1000)'
       service:
         templateRef: iperf2.client
         inputs:

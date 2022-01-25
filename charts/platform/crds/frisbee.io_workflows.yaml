@@ -208,10 +208,6 @@ spec:
                     cluster:
                       description: ClusterSpec defines the desired state of Cluster.
                       properties:
-                        domain:
-                          description: Domain specifies the location where Service
-                            will be placed.
-                          type: string
                         inputs:
                           description: Inputs are list of inputs passed to the objects.
                             Conditions used in conjunction with instances, if the
@@ -229,6 +225,29 @@ spec:
                             parameters of the template. Conditions used in conjunction
                             with Until, MaxInstances as a max bound.
                           type: integer
+                        placement:
+                          description: Placement defines rules for placing the containers
+                            across the available nodes.
+                          properties:
+                            collocate:
+                              description: Collocate will place all the services within
+                                the same node.
+                              type: boolean
+                            conflictsWith:
+                              description: ConflictsWith points to another cluster
+                                whose services cannot be located with this one. Used,
+                                for example, to place master nodes and slave nodes
+                                on different failures domains
+                              items:
+                                type: string
+                              type: array
+                            nodes:
+                              description: Nodes will place all the services within
+                                the same specific node.
+                              items:
+                                type: string
+                              type: array
+                          type: object
                         schedule:
                           description: Schedule defines the interval between the creation
                             of services within the group. Executed creation is not

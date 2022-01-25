@@ -66,10 +66,6 @@ type Resources struct {
 	Disk *Disk `json:"disk,omitempty"`
 }
 
-type Placement struct {
-	Domain []string `json:"domain,omitempty"`
-}
-
 type SetField struct {
 	// Field is the path to the field whose value will be replaced.
 	// Examples: Containers.0.Ports.0
@@ -97,10 +93,6 @@ type Decorators struct {
 	// +optional
 	Telemetry []string `json:"telemetry,omitempty"`
 
-	// Domain specifies the location where Service will be placed.
-	// +optional
-	Placement *Placement `json:"placement,omitempty"`
-
 	// Dashboard is dashboard payload that will be installed in Grafana.
 	// This option is only applicable to Agents.
 	// +optional
@@ -112,6 +104,9 @@ type Decorators struct {
 
 	// +optional
 	Annotations map[string]string `json:"annotations,omitempty"`
+
+	// +optional
+	Labels map[string]string `json:"labels,omitempty"`
 }
 
 // ServiceSpec defines the desired state of Service.

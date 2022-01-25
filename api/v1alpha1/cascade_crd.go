@@ -80,7 +80,7 @@ type Cascade struct {
 type CascadeList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Cluster `json:"items"`
+	Items           []Cascade `json:"items"`
 }
 
 func init() {

@@ -1,0 +1,55 @@
+---
+apiVersion: frisbee.io/v1alpha1
+kind: Workflow
+metadata:
+  name: metrics-driven-failure
+spec:
+  withTelemetry:
+    importDashboards:
+      - platform.telemetry.container
+      - iperf2.telemetry.client
+
+  actions:
+    # Create an iperf server
+    - action: Service
+      name: server
+      service:
+        templateRef: iperf2.server
+        inputs:
+          - { "cpu": "2", memory: "4Gi" }
+
+    # Create an iperf client to generate background noise
+    - action: Service
+      name: noise
+      depends: { running: [ server ] }
+      service:
+        templateRef: iperf2.client
+        inputs:
+          - { server: .service.server.one, seconds: "800" }
+
+    # Create a cluster of iperf clients
+    - action: Cluster
+      name: clients
+      depends: { running: [ server ] }
+      cluster:
+        templateRef: iperf2.client
+        instances: 20
+        inputs:
+          - { server: .service.server.one, seconds: "300" }
+        schedule:
+          cron: "@every 1m"
+        placement:
+          collocate: true
+
+    # Because we cannot set dependencies on dynamic events, we need
+    # another way to handle execution driven chaos.
+    - action: Cascade
+      name: partition0
+      depends: { running: [ server ] }
+      cascade:
+        templateRef: chaos.network.partition
+        inputs:
+          - { target: .service.noise.one,  duration: "2m"  }
+        schedule:
+          conditions:
+            metrics: "avg() of query(wpFnYRwGk/2/bitrate, 5m, now) is below(300)"
