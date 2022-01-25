@@ -17,12 +17,9 @@ limitations under the License.
 package chaos
 
 import (
-	"fmt"
-
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -85,7 +82,7 @@ type v1alpha1ChaosStatus struct {
 	Experiment ExperimentStatus
 }
 
-func (s v1alpha1ChaosStatus) Extract() (phase DesiredPhase, selected, injected, recovered, paused Condition) {
+func (s v1alpha1ChaosStatus) Extract() (phase DesiredPhase, selected, allInjected, allRecovered, paused Condition) {
 	phase = s.Experiment.DesiredPhase
 
 	for i, condition := range s.Conditions {
@@ -94,10 +91,10 @@ func (s v1alpha1ChaosStatus) Extract() (phase DesiredPhase, selected, injected, 
 			selected = s.Conditions[i]
 
 		case ConditionAllInjected:
-			injected = s.Conditions[i]
+			allInjected = s.Conditions[i]
 
 		case ConditionAllRecovered:
-			recovered = s.Conditions[i]
+			allRecovered = s.Conditions[i]
 
 		case ConditionPaused:
 			paused = s.Conditions[i]
@@ -149,7 +146,7 @@ func convertLifecycle(fault *Fault) v1alpha1.Lifecycle {
 		}
 	}
 
-	phase, selected, injected, recovered, paused := parsed.Extract()
+	phase, selected, allInjected, allRecovered, paused := parsed.Extract()
 
 	/*
 		There is a lot of duplication in our tests.
@@ -163,7 +160,7 @@ func convertLifecycle(fault *Fault) v1alpha1.Lifecycle {
 	}
 
 	tests := []test{
-		{
+		{ // The experiment is paused. No currently supported
 			condition: paused.True(),
 			outcome: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseFailed,
@@ -171,79 +168,83 @@ func convertLifecycle(fault *Fault) v1alpha1.Lifecycle {
 				Message: "chaos pausing is not yet supported",
 			},
 		},
+
 		{ // Starting the experiment
-			condition: phase.Run() && !selected.True() && !injected.True() && !recovered.True(),
+			condition: !selected.True() && !allInjected.True() && !allRecovered.True(),
 			outcome: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhasePending,
-				Reason:  "ChaosStarting",
+				Reason:  "ChaosReStarting",
 				Message: "Re-starting Chaos from clean slate",
 			},
 		},
+
 		{ // Starting the experiment
-			condition: phase.Run() && !selected.True() && injected.True() && recovered.True(),
+			condition: phase.Run() && !selected.True() && allInjected.True() && allRecovered.True(),
 			outcome: v1alpha1.Lifecycle{
-				Phase:   v1alpha1.PhaseRunning,
-				Reason:  "ChaosRunning",
+				Phase:   v1alpha1.PhasePending,
+				Reason:  "ChaosSelectingTargets",
 				Message: "Selecting the target pods",
 			},
 		},
-		{ // Targets are selected.
-			condition: phase.Run() && selected.True() && !injected.True() && recovered.True(),
-			outcome: v1alpha1.Lifecycle{
-				Phase:   v1alpha1.PhasePending,
-				Reason:  "ChaosPending",
-				Message: "not sure why this may happen. perhaps due to an experiment being deleted",
-			},
-		},
+
 		{ // Injecting faults into targets
-			condition: phase.Run() && selected.True() && !injected.True() && !recovered.True(),
+			condition: phase.Run() && selected.True() && !allInjected.True() && !allRecovered.True(),
 			outcome: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhasePending,
 				Reason:  "ChaosInjecting",
 				Message: "Chaos experiment is in the process of fault injection.",
 			},
 		},
-		{ // Faults are injected to all targets.
-			condition: phase.Run() && selected.True() && injected.True() && !recovered.True(),
+
+		{ // All Faults are injected to all targets.
+			condition: phase.Run() && selected.True() && allInjected.True() && !allRecovered.True(),
 			outcome: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseRunning,
 				Reason:  "ChaosRunning",
 				Message: "The faults have been successfully injected into all target pods",
 			},
 		},
-		{ // Target not found
-			condition: phase.Stop() && !selected.True() && injected.True() && recovered.True(),
-			outcome: v1alpha1.Lifecycle{
-				Phase:   v1alpha1.PhaseFailed,
-				Reason:  "TargetNotFound",
-				Message: fmt.Sprintf("%v", parsed),
-			},
-		},
+
 		{ // Stopping the experiment
-			condition: phase.Stop() && selected.True() && injected.True() && !recovered.True(),
+			condition: phase.Stop() && selected.True() && allInjected.True() && !allRecovered.True(),
 			outcome: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseRunning,
 				Reason:  "ChaosTearingDown",
-				Message: "removing the injected faults",
+				Message: "removing all the injected faults",
 			},
 		},
-		{ // Remove faults from targets
-			condition: phase.Stop() && selected.True() && !injected.True() && !recovered.True(),
+
+		{ // Faults are stopped but not yet recovered
+			condition: phase.Stop() && selected.True() && !allInjected.True() && !allRecovered.True(),
 			outcome: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseRunning,
 				Reason:  "ChaosTearingDown",
-				Message: "removing the injected faults",
+				Message: "all faults are removed",
 			},
 		},
-		{ // faults are removed from targets
-			condition: phase.Stop() && selected.True() && !injected.True() && recovered.True(),
+
+		{ // All faults are removed from all targets
+			condition: phase.Stop() && selected.True() && !allInjected.True() && allRecovered.True(),
 			outcome: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseSuccess,
 				Reason:  "ChaosFinished",
-				Message: "fault is recovered",
+				Message: "all faults are recovered",
 			},
 		},
 	}
+	/*
+		tests := []test{
+			{ // Target not found
+				condition: phase.Stop() && !selected.True() && allInjected.True() && allRecovered.True(),
+				outcome: v1alpha1.Lifecycle{
+					Phase:   v1alpha1.PhaseFailed,
+					Reason:  "TargetNotFound",
+					Message: fmt.Sprintf("%v", parsed),
+				},
+			},
+		}
+
+	*/
 
 	for _, testcase := range tests {
 		if testcase.condition {
@@ -251,10 +252,11 @@ func convertLifecycle(fault *Fault) v1alpha1.Lifecycle {
 		}
 	}
 
-	logrus.Warnf("Input / phase: %s selected:%v, injected:%v, recovered:%v",
-		phase, selected.True(), injected.True(), recovered.True())
-
-	logrus.Warn("RAW: ", fault)
-
-	panic("unhandled lifecycle conditions")
+	panic(errors.Errorf(`unhandled lifecycle conditions.
+		incoming: %v,
+        selected: %v,
+        allInjected: %v,
+        allRecovered: %v
+		raw: %v,
+`, phase, selected.True(), allInjected.True(), allRecovered.True(), fault))
 }

@@ -91,9 +91,9 @@ spec:
               storage: 15Gi
 
     decorators: # Decorators
-      telemetry: 
-          - platform.telemetry.container
-          - tikv.telemetry.worker
+      telemetry:
+        - platform.telemetry.container
+        - tikv.telemetry.worker
       resources: # Resources
         cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
         memory: {{"{{.Inputs.Parameters.memory}}" |quote}}

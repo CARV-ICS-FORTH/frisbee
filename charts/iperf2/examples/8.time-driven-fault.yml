@@ -30,7 +30,7 @@ spec:
     # After a while, inject a network failure
     - action: Chaos
       name: partition0
-      depends: {  running: [ server ], after: "3m" }
+      depends: { running: [ server ], after: "3m" }
       chaos:
         templateRef: chaos.network.partition
         inputs:

@@ -45,11 +45,11 @@ spec:
     # another way to handle execution driven chaos.
     - action: Cascade
       name: partition0
-      depends: { running: [ server ] }
+      depends: { running: [ server, noise ] }
       cascade:
         templateRef: chaos.network.partition
         inputs:
-          - { target: .service.noise.one,  duration: "2m"  }
+          - { target: .service.noise.one,  duration: "2m" }
         schedule:
           conditions:
-            metrics: "avg() of query(wpFnYRwGk/2/bitrate, 5m, now) is below(300)"
+            metrics: "avg() of query(wpFnYRwGk/2/bitrate, 5m, now) is below(500)"

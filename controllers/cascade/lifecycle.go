@@ -157,7 +157,7 @@ func calculateLifecycle(cascade *v1alpha1.Cascade, gs lifecycle.ClassifierReader
 			},
 		},
 		{ // All jobs are created, and at least one is still running
-			expression: gs.NumPendingJobs()+gs.NumRunningJobs()+gs.NumSuccessfulJobs() == queuedJobs,
+			expression: gs.NumRunningJobs()+gs.NumSuccessfulJobs() == queuedJobs,
 			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseRunning,
 				Reason:  "AllJobsRunning",
@@ -194,9 +194,9 @@ func calculateLifecycle(cascade *v1alpha1.Cascade, gs lifecycle.ClassifierReader
 	}
 
 	panic(errors.Errorf(`unhandled lifecycle conditions.
-		current: %v
+		current: %v,
 		total: %d,
-		activeJobs: %s,
+		pendingJobs: %s,
 		runningJobs: %s,
 		successfulJobs: %s,
 		failedJobs: %s

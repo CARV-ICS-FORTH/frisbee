@@ -59,55 +59,11 @@ func (in SList) GetNames() []string {
 	return names
 }
 
-func expandInput(ctx context.Context, s *Controller, nm string, inputs *[]map[string]string) error {
-	if inputs == nil || *inputs == nil {
-		return nil
-	}
-
-	// cache the results of macro as to avoid asking the Kubernetes API. This, however, is only applicable
-	// to the level of a cluster, because different groups may be created in different moments
-	// throughout the experiment,  thus yielding different results.
-	cache := make(map[string]SList)
-
-	// extend macros
-	for i, input := range *inputs {
-		for key, value := range input {
-			if isMacro(value) {
-				// use a cached value, if it exists
-				if services, ok := cache[value]; ok {
-					(*inputs)[i][key] = services.ToString()
-
-					continue
-				}
-
-				// otherwise, query the API
-				val := value
-
-				services, err := Select(ctx, s, nm, &v1alpha1.ServiceSelector{Macro: &val})
-				if err != nil {
-					return errors.Wrapf(err, "service selection error")
-				}
-
-				if len(services) == 0 {
-					// it is possible that some services exist, but they are not in the Running phase.
-					// In this case, we should retry getting the services.
-					return errors.Errorf("macro %s yields no services", value)
-				}
-
-				(*inputs)[i][key] = services.ToString()
-				cache[value] = services
-			}
-		}
-	}
-
-	return nil
-}
-
 func isMacro(macro string) bool {
 	return strings.HasPrefix(macro, ".")
 }
 
-func parseMacro(namespace string, ss *v1alpha1.ServiceSelector) {
+func parseMacro(namespace string, ss *v1alpha1.ServiceSelector) error {
 	fields := strings.Split(*ss.Macro, ".")
 
 	if len(fields) != 4 {
@@ -128,31 +84,63 @@ func parseMacro(namespace string, ss *v1alpha1.ServiceSelector) {
 		ss.Mode = v1alpha1.Convert(filter)
 
 	default:
-		panic(errors.Errorf("%v is not a valid macro", *ss.Macro))
+		return errors.Errorf("%v is not a valid macro", *ss.Macro)
 	}
+
+	return nil
 }
 
-func Select(ctx context.Context, s *Controller, nm string, ss *v1alpha1.ServiceSelector) (SList, error) {
-	if ss == nil {
-		return nil, errors.New("empty service selector")
+func expandInputs(ctx context.Context, s *Controller, nm string, inputs *[]map[string]string) error {
+	if inputs == nil || *inputs == nil {
+		return nil
 	}
 
-	if ss.Macro != nil {
-		parseMacro(nm, ss)
+	// cache the results of macro as to avoid asking the Kubernetes API. This, however, is only applicable
+	// to the level of a caller, because different groups may be created in different moments
+	// throughout the experiment, thus yielding different results.
+	cache := make(map[string]SList)
+
+	// extend macros
+	for i, input := range *inputs {
+		for key, value := range input {
+			if isMacro(value) {
+
+				val := value
+				ss := &v1alpha1.ServiceSelector{Macro: &val}
+
+				if err := parseMacro(nm, ss); err != nil {
+					return errors.Wrapf(err, "input [%d]", i)
+				}
+
+				services, exists := cache[value]
+				if !exists {
+					runningServices, err := selectServices(ctx, s, &ss.Match)
+					if err != nil {
+						return errors.Wrapf(err, "service selection error")
+					}
+
+					if len(runningServices) == 0 {
+						// it is possible that some services exist, but they are not in the Running phase.
+						// In this case, we should retry getting the services.
+						return errors.Errorf("macro %s yields no services", value)
+					}
+
+					services = runningServices
+					cache[value] = runningServices
+				}
+
+				// filter services based on the pods
+				filteredServices, err := filterByMode(services, ss.Mode, ss.Value)
+				if err != nil {
+					return errors.Wrapf(err, "filter by mode")
+				}
+
+				(*inputs)[i][key] = filteredServices.ToString()
+			}
+		}
 	}
 
-	runningServices, err := selectServices(ctx, s, &ss.Match)
-	if err != nil {
-		return nil, errors.Wrapf(err, "service selection error")
-	}
-
-	// filter services based on the pods
-	filteredServices, err := filterByMode(runningServices, ss.Mode, ss.Value)
-	if err != nil {
-		return nil, errors.Wrapf(err, "filter by mode")
-	}
-
-	return filteredServices, nil
+	return nil
 }
 
 func selectServices(ctx context.Context, r utils.Reconciler, ss *v1alpha1.MatchBy) (SList, error) {

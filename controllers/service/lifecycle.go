@@ -34,7 +34,7 @@ func updateLifecycle(cr *v1alpha1.Service, pod *corev1.Pod) {
 		cr.Status.Lifecycle = v1alpha1.Lifecycle{
 			Phase:   v1alpha1.PhaseFailed,
 			Reason:  "PodDeletion",
-			Message: "The Pod is empty but scheduled.",
+			Message: "The Pod is probably killed.",
 		}
 
 		return
