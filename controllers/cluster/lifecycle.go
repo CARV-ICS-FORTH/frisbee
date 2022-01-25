@@ -44,7 +44,7 @@ func calculateLifecycle(group *v1alpha1.Cluster, gs lifecycle.ClassifierReader) 
 		return status
 	}
 
-	// Step 2. Check if failures violate group's tolerations
+	// Step 2. Check if failures violate group's toleration.
 	if gs.NumFailedJobs() > group.Spec.Tolerate.FailedServices {
 		status.Lifecycle = v1alpha1.Lifecycle{
 			Phase:  v1alpha1.PhaseFailed,
@@ -172,7 +172,7 @@ func calculateLifecycle(group *v1alpha1.Cluster, gs lifecycle.ClassifierReader) 
 			},
 		},
 		{ // All jobs are created, and at least one is still running
-			expression: gs.NumPendingJobs()+gs.NumRunningJobs()+gs.NumSuccessfulJobs() == queuedJobs,
+			expression: gs.NumRunningJobs()+gs.NumSuccessfulJobs() == queuedJobs,
 			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseRunning,
 				Reason:  "AllJobsRunning",

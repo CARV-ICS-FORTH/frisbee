@@ -22,6 +22,9 @@ import (
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/pkg/errors"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 )
 
 // if there is only one instance, it will be named after the group. otherwise, the instances will be named
@@ -47,6 +50,8 @@ func getJob(group *v1alpha1.Cluster, i int) *v1alpha1.Service {
 	return &instance
 }
 
+const placementLabel = "placement"
+
 func (r *Controller) constructJobSpecList(ctx context.Context, cluster *v1alpha1.Cluster) ([]v1alpha1.ServiceSpec, error) {
 	if err := cluster.Spec.GenerateFromTemplate.Validate(true); err != nil {
 		return nil, errors.Wrapf(err, "template validation")
@@ -55,6 +60,84 @@ func (r *Controller) constructJobSpecList(ctx context.Context, cluster *v1alpha1
 	specs, err := r.serviceControl.GetServiceSpecList(ctx, cluster.GetNamespace(), cluster.Spec.GenerateFromTemplate)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot get specs")
+	}
+
+	/*
+		Pod affinity and anti-affinity allows placing pods to nodes as a function of the labels of other pods.
+		These Kubernetes features are useful in scenarios like: an application that consists of multiple services,
+		some of which may require that they be co-located on the same node for performance reasons; replicas of
+		critical services should not be placed onto the same node to avoid loss in the event of node failure.
+
+		See: https://www.cncf.io/blog/2021/07/27/advanced-kubernetes-pod-to-node-scheduling/
+	*/
+
+	if placement := cluster.Spec.Placement; placement != nil {
+		var affinity corev1.Affinity
+
+		if placement.Nodes != nil { // Match pods to a node
+			affinity.NodeAffinity = &corev1.NodeAffinity{
+				RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+					NodeSelectorTerms: []corev1.NodeSelectorTerm{
+						{
+							MatchExpressions: []corev1.NodeSelectorRequirement{
+								{
+									Key:      "kubernetes.io/hostname",
+									Operator: corev1.NodeSelectorOpIn,
+									Values:   placement.Nodes,
+								},
+							},
+						},
+					},
+				},
+			}
+		}
+
+		if placement.Collocate { // Place together all the Pods that belong to this cluster
+			affinity.PodAffinity = &corev1.PodAffinity{
+				RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
+					{
+						LabelSelector: &metav1.LabelSelector{
+							MatchExpressions: []metav1.LabelSelectorRequirement{
+								{
+									Key:      placementLabel,
+									Operator: metav1.LabelSelectorOperator(corev1.NodeSelectorOpIn),
+									Values:   []string{cluster.GetName()},
+								},
+							},
+						},
+						TopologyKey: "kubernetes.io/hostname",
+					},
+				},
+			}
+		}
+
+		if placement.ConflictsWith != nil { // Stay away from Pods that belong on  other clusters
+			affinity.PodAntiAffinity = &corev1.PodAntiAffinity{
+				RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
+					{
+						LabelSelector: &metav1.LabelSelector{
+							MatchExpressions: []metav1.LabelSelectorRequirement{
+								{
+									Key:      placementLabel,
+									Operator: metav1.LabelSelectorOperator(corev1.NodeSelectorOpIn),
+									Values:   placement.ConflictsWith,
+								},
+							},
+						},
+						TopologyKey: "kubernetes.io/hostname",
+					},
+				},
+			}
+		}
+
+		// apply affinity rules to all specs
+		for i := 0; i < len(specs); i++ {
+			specs[i].Decorators.Labels = labels.Merge(specs[i].Decorators.Labels, map[string]string{
+				placementLabel: cluster.GetName(),
+			})
+
+			specs[i].Affinity = &affinity
+		}
 	}
 
 	return specs, nil

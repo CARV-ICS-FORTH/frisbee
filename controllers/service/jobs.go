@@ -159,35 +159,16 @@ func decoratePod(ctx context.Context, r *Controller, cr *v1alpha1.Service) error
 		cr.SetAnnotations(labels.Merge(cr.GetAnnotations(), req))
 	}
 
+	// set labels
+	if req := cr.Spec.Decorators.Labels; req != nil {
+		cr.SetLabels(labels.Merge(cr.GetLabels(), req))
+	}
+
 	// set dynamically evaluated fields
 	if req := cr.Spec.Decorators.SetFields; req != nil {
 		for _, val := range req {
 			if err := setField(cr, val); err != nil {
 				return errors.Wrapf(err, "cannot set field [%v]", val)
-			}
-		}
-	}
-
-	// set placement policies
-	if req := cr.Spec.Decorators.Placement; req != nil {
-		// for the moment simply match domain to a specific node. this will change in the future
-		if len(req.Domain) > 0 {
-			cr.Spec.Affinity = &corev1.Affinity{
-				NodeAffinity: &corev1.NodeAffinity{ // Match pods to a node
-					RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
-						NodeSelectorTerms: []corev1.NodeSelectorTerm{
-							{
-								MatchExpressions: []corev1.NodeSelectorRequirement{
-									{
-										Key:      "kubernetes.io/hostname",
-										Operator: corev1.NodeSelectorOpIn,
-										Values:   req.Domain,
-									},
-								},
-							},
-						},
-					}, // Equally, for podAntiAffinity
-				},
 			}
 		}
 	}

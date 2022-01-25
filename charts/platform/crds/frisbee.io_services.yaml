@@ -2060,14 +2060,9 @@ spec:
                           "value". The requirements are ANDed.
                         type: object
                     type: object
-                  placement:
-                    description: Domain specifies the location where Service will
-                      be placed.
-                    properties:
-                      domain:
-                        items:
-                          type: string
-                        type: array
+                  labels:
+                    additionalProperties:
+                      type: string
                     type: object
                   resources:
                     description: Resources specifies limitations as to how the container

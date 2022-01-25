@@ -38,9 +38,28 @@ func (in TolerateSpec) String() string {
 	return fmt.Sprintf("FailedServices:%d", in.FailedServices)
 }
 
+type PlacementSpec struct {
+	// Collocate will place all the services within the same node.
+	// +optional
+	Collocate bool `json:"collocate"`
+
+	// ConflictsWith points to another cluster whose services cannot be located with this one.
+	// Used, for example, to place master nodes and slave nodes on different failures domains
+	ConflictsWith []string `json:"conflictsWith,omitempty"`
+
+	// Nodes will place all the services within the same specific node.
+	// +optional
+	Nodes []string `json:"nodes,omitempty"`
+}
+
 // ClusterSpec defines the desired state of Cluster.
 type ClusterSpec struct {
 	GenerateFromTemplate `json:",inline"`
+
+	// Tolerate specifies the conditions under which the cluster will fail. If left undefined, the cluster
+	// will fail immediately when a service has failed.
+	// +optional
+	Tolerate TolerateSpec `json:"tolerate,omitempty"`
 
 	// Schedule defines the interval between the creation of services within the group. Executed creation is not
 	// supported in collocated mode. Since Pods are intended to be disposable and replaceable, we cannot add a
@@ -48,14 +67,9 @@ type ClusterSpec struct {
 	// +optional
 	Schedule *SchedulerSpec `json:"schedule,omitempty"`
 
-	// Tolerate specifies the conditions under which the cluster will fail. If left undefined, the cluster
-	// will fail immediately when a service has failed.
+	// Placement defines rules for placing the containers across the available nodes.
 	// +optional
-	Tolerate TolerateSpec `json:"tolerate,omitempty"`
-
-	// Domain specifies the location where Service will be placed.
-	// +optional
-	Domain string `json:"domain,omitempty"`
+	Placement *PlacementSpec `json:"placement,omitempty"`
 
 	// Suspend flag tells the controller to suspend subsequent executions, it does
 	// not apply to already started executions.  Defaults to false.

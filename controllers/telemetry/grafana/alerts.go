@@ -211,7 +211,9 @@ const (
 const (
 	KeepState = "keep_state"
 	NoData    = "no_data"
-	OK        = "ok"
+
+	// OK is a resolve Message, sent when the alerting state returns to false.
+	OK = "ok"
 
 	Alerting = "alerting"
 )
@@ -250,7 +252,7 @@ func (c *Client) SetAlert(alert *Alert, name string, msg string) (uint, error) {
 					},
 				},
 				ExecutionErrorState: KeepState,
-				NoDataState:         NoData,
+				NoDataState:         KeepState,
 				Notifications:       nil,
 
 				Handler: 1, // Send to default notification channel (should be the controller)

@@ -1,0 +1,48 @@
+---
+apiVersion: frisbee.io/v1alpha1
+kind: Workflow
+metadata:
+  name: advanced-placement
+spec:
+  withTelemetry:
+    importDashboards:
+      - platform.telemetry.container
+      - iperf2.telemetry.client
+
+  actions:
+    # Create an iperf server. However, because Frisbee placement abstractions are only supported
+    # at the level of a cluster, we must use the Cluster instead of the Service CRD.
+    - action: Cluster
+      name: server
+      cluster:
+        templateRef: iperf2.server
+        inputs:
+          - { "cpu": "2", memory: "4Gi" }
+#        placement:
+#          nodes: [jedi8.cluster.ics.forth.gr]
+
+    # Create a cluster of iperf clients
+    - action: Cluster
+      name: clients-a
+      depends: { running: [ server ] }
+      cluster:
+        templateRef: iperf2.client
+        instances: 20
+        inputs:
+          - { server: .cluster.server.one, seconds: "120" }
+        placement:
+          collocate: true
+          conflictsWith: [server]
+
+    # Create another cluster of iperf clients
+    - action: Cluster
+      name: clients-b
+      depends: { running: [ server ] }
+      cluster:
+        templateRef: iperf2.client
+        instances: 20
+        inputs:
+          - { server: .cluster.server.one, seconds: "240" }
+        placement:
+          collocate: true
+          conflictsWith: [clients-a]
