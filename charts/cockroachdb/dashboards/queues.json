@@ -3,18 +3,84 @@
     "list": [
       {
         "builtIn": 1,
-        "datasource": "-- Grafana --",
-        "enable": true,
+        "datasource": "Prometheus",
+        "enable": false,
         "hide": true,
-        "iconColor": "rgba(0, 211, 255, 1)",
+        "iconColor": "dark-purple",
+        "limit": 100,
         "name": "Annotations & Alerts",
+        "showIn": 0,
         "target": {
           "limit": 100,
           "matchAny": false,
           "tags": [],
           "type": "dashboard"
         },
-        "type": "dashboard"
+        "type": "dashboard",
+        "useValueForTime": true
+      },
+      {
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": false,
+        "iconColor": "#5794F2",
+        "limit": 100,
+        "name": "run",
+        "showIn": 0,
+        "tags": [
+          "run"
+        ],
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [
+            "run"
+          ],
+          "type": "tags"
+        },
+        "type": "tags"
+      },
+      {
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": false,
+        "iconColor": "#FF9830",
+        "limit": 100,
+        "name": "exit",
+        "showIn": 0,
+        "tags": [
+          "exit"
+        ],
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [
+            "exit"
+          ],
+          "type": "tags"
+        },
+        "type": "tags"
+      },
+      {
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": false,
+        "iconColor": "rgba(255, 96, 96, 1)",
+        "limit": 100,
+        "name": "failure",
+        "showIn": 0,
+        "tags": [
+          "failure"
+        ],
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [
+            "failure"
+          ],
+          "type": "tags"
+        },
+        "type": "tags"
       }
     ]
   },
@@ -22,21 +88,19 @@
   "fiscalYearStartMonth": 0,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": 4,
-  "iteration": 1635534461387,
+  "id": 12,
   "links": [],
   "liveNow": false,
   "panels": [
     {
       "datasource": null,
-      "description": "Usage of disk space across all nodes\n\n**Capacity**: Maximum store size across all nodes. This value may be explicitly set per node using [--store](https://www.cockroachlabs.com/docs/v21.1/cockroach-start.html#store). If a store size has not been set, this metric displays the actual disk capacity.\n\n**Available**: Free disk space available to CockroachDB data across all nodes.\n\n**Used**: Disk space in use by CockroachDB data across all nodes. This excludes the Cockroach binary, operating system, and other system files.\n\n[How are these metrics calculated?](https://www.cockroachlabs.com/docs/v21.1/ui-storage-dashboard.html#capacity-metrics)",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
-            "axisLabel": "capacity",
+            "axisLabel": "failures",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
@@ -48,13 +112,13 @@
               "viz": false
             },
             "lineInterpolation": "linear",
-            "lineWidth": 2,
+            "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
             },
             "showPoints": "never",
-            "spanNulls": false,
+            "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -64,6 +128,7 @@
             }
           },
           "mappings": [],
+          "max": 1,
           "min": 0,
           "thresholds": {
             "mode": "absolute",
@@ -78,7 +143,7 @@
               }
             ]
           },
-          "unit": "bytes"
+          "unit": "short"
         },
         "overrides": []
       },
@@ -99,45 +164,87 @@
           "mode": "single"
         }
       },
-      "pluginVersion": "8.2.2",
+      "pluginVersion": "8.2.3",
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(sum(capacity{agent=\"cockroachdb\"}) by (instance))",
+          "expr": "sum(rate(queue_gc_process_failure{agent=\"cockroachdb\"}[$__rate_interval]))",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "GC",
+          "refId": "H"
+        },
+        {
+          "exemplar": true,
+          "expr": "sum(rate(queue_replicagc_process_failure{agent=\"cockroachdb\"}[$__rate_interval]))",
           "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "Max",
+          "legendFormat": "Replica GC",
+          "refId": "A"
+        },
+        {
+          "exemplar": true,
+          "expr": "sum(rate(queue_replicate_process_failure{agent=\"cockroachdb\"}[$__rate_interval]))",
+          "interval": "",
+          "intervalFactor": 2,
+          "legendFormat": "Replication",
           "refId": "B"
         },
         {
-          "expr": " sum(sum(capacity_available{agent=\"cockroachdb\"}) by (instance))",
+          "exemplar": true,
+          "expr": "sum(rate(queue_split_process_failure{agent=\"cockroachdb\"}[$__rate_interval]))",
           "interval": "",
-          "legendFormat": "Available",
+          "intervalFactor": 2,
+          "legendFormat": "Split",
           "refId": "C"
         },
         {
-          "expr": "sum(sum(capacity{agent=\"cockroachdb\"}) by (instance)) - sum(sum(capacity_available{agent=\"cockroachdb\"}) by (instance))",
+          "exemplar": true,
+          "expr": "sum(rate(queue_consistency_process_failure{agent=\"cockroachdb\"}[$__rate_interval]))",
           "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "Used",
-          "refId": "A"
+          "legendFormat": "Consistency",
+          "refId": "D"
+        },
+        {
+          "exemplar": true,
+          "expr": "sum(rate(queue_raftlog_process_failure{agent=\"cockroachdb\"}[$__rate_interval]))",
+          "interval": "",
+          "intervalFactor": 2,
+          "legendFormat": "Raft Log",
+          "refId": "E"
+        },
+        {
+          "exemplar": true,
+          "expr": "sum(rate(queue_raftsnapshot_process_failure{agent=\"cockroachdb\"}[$__rate_interval]))",
+          "interval": "",
+          "intervalFactor": 2,
+          "legendFormat": "Raft Snapshot",
+          "refId": "F"
+        },
+        {
+          "exemplar": true,
+          "expr": "sum(rate(queue_tsmaintenance_process_failure{agent=\"cockroachdb\"}[$__rate_interval]))",
+          "interval": "",
+          "intervalFactor": 2,
+          "legendFormat": "Time Series Maintenance",
+          "refId": "G"
         }
       ],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Capacity",
+      "title": "Queue Processing Failures",
       "type": "timeseries"
     },
     {
       "datasource": null,
-      "description": "Amount of data that can be read by applications and CockroachDB.\n\n**Live**: Number of logical bytes stored in live [key-value pairs](https://www.cockroachlabs.com/docs/v21.1/architecture/distribution-layer.html#table-data) across all nodes. Live data excludes historical and deleted data.\n\n**System**: Number of physical bytes stored in [system key-value pairs](https://www.cockroachlabs.com/docs/v21.1/architecture/distribution-layer.html#table-data).",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
-            "axisLabel": "live bytes",
+            "axisLabel": "processing time",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
@@ -149,7 +256,7 @@
               "viz": false
             },
             "lineInterpolation": "linear",
-            "lineWidth": 2,
+            "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
@@ -179,7 +286,7 @@
               }
             ]
           },
-          "unit": "bytes"
+          "unit": "ns"
         },
         "overrides": []
       },
@@ -200,38 +307,79 @@
           "mode": "single"
         }
       },
-      "pluginVersion": "8.2.2",
+      "pluginVersion": "8.2.3",
       "targets": [
         {
-          "expr": "sum(sum(livebytes{agent=\"cockroachdb\"}) by (instance))",
+          "exemplar": true,
+          "expr": "sum(rate(queue_gc_processingnanos{agent=\"cockroachdb\"}[$__rate_interval]))",
           "interval": "",
-          "intervalFactor": 2,
-          "legendFormat": "Live",
+          "legendFormat": "GC",
+          "refId": "G"
+        },
+        {
+          "exemplar": true,
+          "expr": "sum(rate(queue_replicagc_processingnanos{agent=\"cockroachdb\"}[$__rate_interval]))",
+          "interval": "",
+          "legendFormat": "Replica GC",
           "refId": "A"
         },
         {
-          "expr": "sum(sum(sysbytes{agent=\"cockroachdb\"}) by (instance))",
+          "exemplar": true,
+          "expr": "sum(rate(queue_replicate_processingnanos{agent=\"cockroachdb\"}[$__rate_interval]))",
           "interval": "",
-          "intervalFactor": 2,
-          "legendFormat": "System",
+          "legendFormat": "Replication",
+          "refId": "C"
+        },
+        {
+          "exemplar": true,
+          "expr": "sum(rate(queue_split_processingnanos{agent=\"cockroachdb\"}[$__rate_interval]))",
+          "interval": "",
+          "legendFormat": "Split",
           "refId": "B"
+        },
+        {
+          "exemplar": true,
+          "expr": "sum(rate(queue_consistency_processingnanos{agent=\"cockroachdb\"}[$__rate_interval]))",
+          "interval": "",
+          "legendFormat": "Consistency",
+          "refId": "D"
+        },
+        {
+          "exemplar": true,
+          "expr": "sum(rate(queue_raftlog_processingnanos{agent=\"cockroachdb\"}[$__rate_interval]))",
+          "interval": "",
+          "legendFormat": "Raft Log",
+          "refId": "E"
+        },
+        {
+          "exemplar": true,
+          "expr": "sum(rate(queue_raftsnapshot_processingnanos{agent=\"cockroachdb\"}[$__rate_interval]))",
+          "interval": "",
+          "legendFormat": "Raft Snapshot",
+          "refId": "F"
+        },
+        {
+          "exemplar": true,
+          "expr": "sum(rate(queue_tsmaintenance_processingnanos{agent=\"cockroachdb\"}[$__rate_interval]))",
+          "interval": "",
+          "legendFormat": "Time Series Maintenance",
+          "refId": "H"
         }
       ],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Live Bytes",
+      "title": "Queue Processing Times",
       "type": "timeseries"
     },
     {
       "datasource": null,
-      "description": "The 99th %ile latency for commits to the Raft Log. This measures essentially an fdatasync to the storage engine's write-ahead log.",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
-            "axisLabel": "latency",
+            "axisLabel": "actions",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
@@ -249,7 +397,7 @@
               "type": "linear"
             },
             "showPoints": "never",
-            "spanNulls": false,
+            "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -273,7 +421,7 @@
               }
             ]
           },
-          "unit": "ns"
+          "unit": "short"
         },
         "overrides": []
       },
@@ -294,293 +442,46 @@
           "mode": "single"
         }
       },
-      "pluginVersion": "8.2.2",
-      "targets": [
-        {
-          "expr": "histogram_quantile(0.99,rate(raft_process_logcommit_latency_bucket{agent=\"cockroachdb\"}[$__rate_interval]))",
-          "interval": "",
-          "intervalFactor": 2,
-          "legendFormat": "{{instance}}",
-          "refId": "A"
-        }
-      ],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "Log Commit Latency: 99th Percentile",
-      "type": "timeseries"
-    },
-    {
-      "datasource": null,
-      "description": "The 50th %ile latency for commits to the Raft Log. This measures essentially an fdatasync to the storage engine's write-ahead log.",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "latency",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "min": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "ns"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 24,
-        "x": 0,
-        "y": 24
-      },
-      "id": 8,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "single"
-        }
-      },
-      "pluginVersion": "8.2.2",
-      "targets": [
-        {
-          "expr": "histogram_quantile(0.50,rate(raft_process_logcommit_latency_bucket{agent=\"cockroachdb\"}[$__rate_interval]))",
-          "interval": "",
-          "intervalFactor": 2,
-          "legendFormat": "{{instance}}",
-          "refId": "A"
-        }
-      ],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "Log Commit Latency: 50th Percentile",
-      "type": "timeseries"
-    },
-    {
-      "datasource": null,
-      "description": "The 99th %ile latency for commits of Raft commands. This measures applying a batch to the storage engine (including writes to the write-ahead log), but no fsync.",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "latency",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "min": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "ns"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 24,
-        "x": 0,
-        "y": 30
-      },
-      "id": 10,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "single"
-        }
-      },
-      "pluginVersion": "8.2.2",
+      "pluginVersion": "8.2.3",
       "targets": [
         {
           "exemplar": true,
-          "expr": "histogram_quantile(0.99,rate(raft_process_commandcommit_latency_bucket{agent=\"cockroachdb\"}[$__rate_interval]))",
+          "expr": "sum(rate(queue_gc_info_transactionspangccommitted{agent=\"cockroachdb\"}[$__rate_interval]))",
           "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "{{instance}}",
+          "legendFormat": "Successful Actions / sec",
           "refId": "A"
-        }
-      ],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "Command Commit Latency: 99th Percentile ",
-      "type": "timeseries"
-    },
-    {
-      "datasource": null,
-      "description": "The 50th %ile latency for commits of Raft commands. This measures applying a batch to the storage engine (including writes to the write-ahead log), but no fsync.",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "latency",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": true,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "min": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "ns"
         },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 24,
-        "x": 0,
-        "y": 38
-      },
-      "id": 12,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "single"
-        }
-      },
-      "pluginVersion": "8.2.2",
-      "targets": [
         {
           "exemplar": true,
-          "expr": "histogram_quantile(0.50,rate(raft_process_commandcommit_latency_bucket{agent=\"cockroachdb\"}[$__rate_interval]))",
+          "expr": "sum(rate(queue_gc_info_transactionspangcpending{agent=\"cockroachdb\"}[$__rate_interval]))",
           "interval": "",
-          "legendFormat": "{{instance}}",
-          "refId": "A"
+          "intervalFactor": 2,
+          "legendFormat": "Pending Actions",
+          "refId": "B"
+        },
+        {
+          "exemplar": true,
+          "expr": "sum(rate(queue_replicate_removedeadreplica{agent=\"cockroachdb\"}[$__rate_interval]))",
+          "interval": "",
+          "legendFormat": "Replicas Removed / sec",
+          "refId": "C"
         }
       ],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Command Commit Latency: 50th percentile ",
+      "title": "Replica GC Queue",
       "type": "timeseries"
     },
     {
       "datasource": null,
-      "description": "The average number of real read operations executed per logical read operation.",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
-            "axisLabel": "factor",
+            "axisLabel": "actions",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
@@ -608,6 +509,7 @@
             }
           },
           "mappings": [],
+          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -629,7 +531,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 46
+        "y": 24
       },
       "id": 20,
       "options": {
@@ -642,30 +544,94 @@
           "mode": "single"
         }
       },
-      "pluginVersion": "8.2.2",
+      "pluginVersion": "8.2.3",
       "targets": [
         {
-          "expr": "avg(avg(rocksdb_read_amplification{agent=\"cockroachdb\"}) by (instance))",
+          "exemplar": true,
+          "expr": "sum(rate(queue_replicate_process_success{agent=\"cockroachdb\"}[$__rate_interval]))",
           "interval": "",
-          "legendFormat": "Read Amplification",
+          "legendFormat": "Successful Actions / sec",
           "refId": "A"
+        },
+        {
+          "exemplar": true,
+          "expr": "sum(rate(queue_replicate_pending{agent=\"cockroachdb\"}[$__rate_interval]))",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "Pending Actions",
+          "refId": "B"
+        },
+        {
+          "exemplar": true,
+          "expr": "sum(rate(queue_replicate_addreplica{agent=\"cockroachdb\"}[$__rate_interval]))",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "Replicas Added / sec",
+          "refId": "C"
+        },
+        {
+          "exemplar": true,
+          "expr": "sum(rate(queue_replicate_removereplica{agent=\"cockroachdb\"}[$__rate_interval]))",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "Replicas Removed / sec",
+          "refId": "D"
+        },
+        {
+          "exemplar": true,
+          "expr": "sum(rate(queue_replicate_removedeadreplica{agent=\"cockroachdb\"}[$__rate_interval]))",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "Dead Replicas Removed / sec",
+          "refId": "E"
+        },
+        {
+          "exemplar": true,
+          "expr": "sum(rate(queue_replicate_removelearnerreplica{agent=\"cockroachdb\"}[$__rate_interval]))",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "Learner Replicas Removed / sec",
+          "refId": "F"
+        },
+        {
+          "exemplar": true,
+          "expr": "sum(rate(queue_replicate_rebalancereplica{agent=\"cockroachdb\"}[$__rate_interval]))",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "Replicas Rebalanced / sec",
+          "refId": "G"
+        },
+        {
+          "exemplar": true,
+          "expr": "sum(rate(queue_replicate_transferlease{agent=\"cockroachdb\"}[$__rate_interval]))",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "Leases Transferred / sec",
+          "refId": "H"
+        },
+        {
+          "exemplar": true,
+          "expr": "sum(rate(queue_replicate_purgatory{agent=\"cockroachdb\"}[$__rate_interval]))",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "Replicas in Purgatory",
+          "refId": "I"
         }
       ],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Read Amplification",
+      "title": "Replication Queue",
       "type": "timeseries"
     },
     {
       "datasource": null,
-      "description": "The number of SSTables in use.",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
-            "axisLabel": "sstables",
+            "axisLabel": "actions",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
@@ -715,9 +681,9 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 54
+        "y": 32
       },
-      "id": 16,
+      "id": 8,
       "options": {
         "legend": {
           "calcs": [],
@@ -728,124 +694,37 @@
           "mode": "single"
         }
       },
-      "pluginVersion": "8.2.2",
+      "pluginVersion": "8.2.3",
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(rocksdb_num_sstables{agent=\"cockroachdb\"})",
+          "expr": "sum(rate(queue_split_process_success{agent=\"cockroachdb\"}[$__rate_interval]))",
           "interval": "",
-          "legendFormat": "SSTables",
-          "refId": "A"
-        }
-      ],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "SSTables",
-      "type": "timeseries"
-    },
-    {
-      "datasource": null,
-      "description": "The number of open file descriptors, compared with the file descriptor limit.",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "descriptors",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": true,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 24,
-        "x": 0,
-        "y": 62
-      },
-      "id": 14,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "single"
-        }
-      },
-      "pluginVersion": "8.2.2",
-      "targets": [
-        {
-          "expr": "sum(sum(sys_fd_open{agent=\"cockroachdb\"}) by (instance))",
-          "interval": "",
-          "intervalFactor": 2,
-          "legendFormat": "Open",
+          "legendFormat": "Successful Actions / sec",
           "refId": "A"
         },
         {
-          "expr": "sum(sum(sys_fd_softlimit{agent=\"cockroachdb\"}) by (instance))",
+          "exemplar": true,
+          "expr": "sum(rate(queue_split_pending{agent=\"cockroachdb\"}[$__rate_interval]))",
           "interval": "",
-          "intervalFactor": 2,
-          "legendFormat": "Limit",
+          "legendFormat": "Pending Actions",
           "refId": "B"
         }
       ],
       "timeFrom": null,
       "timeShift": null,
-      "title": "File Descriptors",
+      "title": "Split Queue",
       "type": "timeseries"
     },
     {
       "datasource": null,
-      "description": "The number of compactions and memtable flushes per second.",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
-            "axisLabel": "count",
+            "axisLabel": "actions",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
@@ -895,7 +774,100 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 70
+        "y": 40
+      },
+      "id": 17,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "pluginVersion": "8.2.3",
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "sum(rate(queue_merge_process_success{agent=\"cockroachdb\"}[$__rate_interval]))",
+          "interval": "",
+          "legendFormat": "Successful Actions / sec",
+          "refId": "A"
+        },
+        {
+          "exemplar": true,
+          "expr": "sum(rate(queue_merge_pending{agent=\"cockroachdb\"}[$__rate_interval]))",
+          "interval": "",
+          "legendFormat": "Pending Actions",
+          "refId": "B"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Merge Queue",
+      "type": "timeseries"
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "actions",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 48
       },
       "id": 18,
       "options": {
@@ -908,38 +880,37 @@
           "mode": "single"
         }
       },
-      "pluginVersion": "8.2.2",
+      "pluginVersion": "8.2.3",
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(rate(rocksdb_compactions{agent=\"cockroachdb\"}[$__rate_interval]))",
+          "expr": "sum(rate(queue_gc_process_success{agent=\"cockroachdb\"}[$__rate_interval]))",
           "interval": "",
-          "legendFormat": "Compactions",
+          "legendFormat": "Successful Actions / sec",
           "refId": "A"
         },
         {
           "exemplar": true,
-          "expr": "sum(rate(rocksdb_flushes{agent=\"cockroachdb\"}[$__rate_interval]))",
+          "expr": "sum(rate(queue_gc_pending{agent=\"cockroachdb\"}[$__rate_interval]))",
           "interval": "",
-          "legendFormat": "Flushes",
+          "legendFormat": "Pending Actions",
           "refId": "B"
         }
       ],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Compactions/Flushes",
+      "title": "GC Queue",
       "type": "timeseries"
     },
     {
       "datasource": null,
-      "description": "The number of successfully written time series samples, and number of errors attempting to write time series, per second.",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
-            "axisLabel": "count",
+            "axisLabel": "actions",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
@@ -989,9 +960,9 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 78
+        "y": 56
       },
-      "id": 24,
+      "id": 10,
       "options": {
         "legend": {
           "calcs": [],
@@ -1002,38 +973,37 @@
           "mode": "single"
         }
       },
-      "pluginVersion": "8.2.2",
+      "pluginVersion": "8.2.3",
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(rate(timeseries_write_samples{agent=\"cockroachdb\"}[$__rate_interval]))",
+          "expr": "sum(rate(queue_raftlog_process_success{agent=\"cockroachdb\"}[$__rate_interval]))",
           "interval": "",
-          "legendFormat": "Samples Written",
-          "refId": "A"
+          "legendFormat": "Successful Actions / sec",
+          "refId": "B"
         },
         {
           "exemplar": true,
-          "expr": "sum(rate(timeseries_write_errors{agent=\"cockroachdb\"}[$__rate_interval]))",
+          "expr": "sum(rate(queue_raftlog_pending{agent=\"cockroachdb\"}[$__rate_interval]))",
           "interval": "",
-          "legendFormat": "Errors",
-          "refId": "B"
+          "legendFormat": "Pending Actions",
+          "refId": "A"
         }
       ],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Time Series Writes",
+      "title": "Raft Log Queue",
       "type": "timeseries"
     },
     {
       "datasource": null,
-      "description": "The number of bytes written by the time series system per second.  \nNote that this does not reflect the rate at which disk space is consumed by time series; the data is highly compressed on disk. This rate is instead intended to indicate the amount of network traffic and disk activity generated by time series writes.\nSee the \"databases\" tab to find the current disk usage for time series data.",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
-            "axisLabel": "bytes",
+            "axisLabel": "actions",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
@@ -1075,7 +1045,7 @@
               }
             ]
           },
-          "unit": "bytes"
+          "unit": "short"
         },
         "overrides": []
       },
@@ -1083,9 +1053,9 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 86
+        "y": 64
       },
-      "id": 22,
+      "id": 12,
       "options": {
         "legend": {
           "calcs": [],
@@ -1096,164 +1066,229 @@
           "mode": "single"
         }
       },
-      "pluginVersion": "8.2.2",
+      "pluginVersion": "8.2.3",
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(rate(timeseries_write_bytes{agent=\"cockroachdb\"}[$__rate_interval]))",
+          "expr": "sum(rate(queue_raftsnapshot_process_success{agent=\"cockroachdb\"}[$__rate_interval]))",
           "interval": "",
-          "legendFormat": "Bytes Written",
+          "legendFormat": "Successful Actions / sec",
           "refId": "A"
+        },
+        {
+          "exemplar": true,
+          "expr": "sum(rate(queue_raftsnapshot_pending{agent=\"cockroachdb\"}[$__rate_interval]))",
+          "interval": "",
+          "legendFormat": "Pending Actions",
+          "refId": "B"
         }
       ],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Time Series Bytes Written",
+      "title": "Raft Snapshot Queue",
+      "type": "timeseries"
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "actions",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 72
+      },
+      "id": 14,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "pluginVersion": "8.2.3",
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "sum(rate(queue_consistency_process_success{agent=\"cockroachdb\"}[$__rate_interval]))",
+          "interval": "",
+          "legendFormat": "Successful Actions / sec",
+          "refId": "A"
+        },
+        {
+          "exemplar": true,
+          "expr": "sum(queue_consistency_pending{agent=\"cockroachdb\"})",
+          "interval": "",
+          "legendFormat": "Pending Actions",
+          "refId": "B"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Consistency Checker Queue",
+      "type": "timeseries"
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "actions",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 80
+      },
+      "id": 16,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "pluginVersion": "8.2.3",
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "sum(rate(queue_tsmaintenance_process_success{agent=\"cockroachdb\"}[$__rate_interval]))",
+          "interval": "",
+          "legendFormat": "Successful Actions / sec",
+          "refId": "A"
+        },
+        {
+          "exemplar": true,
+          "expr": "sum(rate(queue_tsmaintenance_pending{agent=\"cockroachdb\"}[$__rate_interval]))",
+          "interval": "",
+          "legendFormat": "Pending Actions",
+          "refId": "B"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Time Series Maintenance Queue",
       "type": "timeseries"
     }
   ],
+  "refresh": false,
   "schemaVersion": 31,
   "style": "dark",
   "tags": [],
   "templating": {
-    "list": [
-      {
-        "allValue": null,
-        "current": {
-          "isNone": true,
-          "selected": false,
-          "text": "None",
-          "value": ""
-        },
-        "datasource": "${DS_PROMETHEUS}",
-        "definition": "sys_uptime{job=\"cockroachdb\"}",
-        "description": null,
-        "error": null,
-        "hide": 0,
-        "includeAll": false,
-        "label": "Cluster",
-        "multi": false,
-        "name": "cluster",
-        "options": [],
-        "query": {
-          "query": "sys_uptime{job=\"cockroachdb\"}",
-          "refId": "Prometheus-cluster-Variable-Query"
-        },
-        "refresh": 1,
-        "regex": "/cluster=\"([^\"]+)\"/",
-        "skipUrlSync": false,
-        "sort": 1,
-        "tagValuesQuery": "",
-        "tagsQuery": "",
-        "type": "query",
-        "useTags": false
-      },
-      {
-        "allValue": "",
-        "current": {
-          "selected": false,
-          "text": "All",
-          "value": "$__all"
-        },
-        "datasource": "${DS_PROMETHEUS}",
-        "definition": "label_values(sys_uptime{job=\"cockroachdb\",cluster=\"$cluster\"},instance)",
-        "description": null,
-        "error": null,
-        "hide": 0,
-        "includeAll": true,
-        "label": "Node",
-        "multi": false,
-        "name": "node",
-        "options": [],
-        "query": {
-          "query": "label_values(sys_uptime{job=\"cockroachdb\",cluster=\"$cluster\"},instance)",
-          "refId": "Prometheus-node-Variable-Query"
-        },
-        "refresh": 1,
-        "regex": "",
-        "skipUrlSync": false,
-        "sort": 1,
-        "tagValuesQuery": "",
-        "tagsQuery": "",
-        "type": "query",
-        "useTags": false
-      },
-      {
-        "auto": false,
-        "auto_count": 30,
-        "auto_min": "10s",
-        "current": {
-          "selected": false,
-          "text": "30s",
-          "value": "30s"
-        },
-        "description": null,
-        "error": null,
-        "hide": 0,
-        "label": "Rate Interval",
-        "name": "rate_interval",
-        "options": [
-          {
-            "selected": true,
-            "text": "30s",
-            "value": "30s"
-          },
-          {
-            "selected": false,
-            "text": "1m",
-            "value": "1m"
-          },
-          {
-            "selected": false,
-            "text": "5m",
-            "value": "5m"
-          },
-          {
-            "selected": false,
-            "text": "10m",
-            "value": "10m"
-          },
-          {
-            "selected": false,
-            "text": "30m",
-            "value": "30m"
-          },
-          {
-            "selected": false,
-            "text": "1h",
-            "value": "1h"
-          },
-          {
-            "selected": false,
-            "text": "6h",
-            "value": "6h"
-          },
-          {
-            "selected": false,
-            "text": "12h",
-            "value": "12h"
-          },
-          {
-            "selected": false,
-            "text": "1d",
-            "value": "1d"
-          }
-        ],
-        "query": "30s,1m,5m,10m,30m,1h,6h,12h,1d",
-        "queryValue": "",
-        "refresh": 2,
-        "skipUrlSync": false,
-        "type": "interval"
-      }
-    ]
+    "list": []
   },
   "time": {
     "from": "now-1h",
     "to": "now"
   },
   "timepicker": {},
-  "timezone": "utc",
-  "title": "CRDB Console: Storage",
-  "uid": "crdb-console-storage",
-  "version": 1
+  "timezone": "browser",
+  "title": "CRDB Console: Queues",
+  "uid": "crdb-console-queues",
+  "version": 3
 }

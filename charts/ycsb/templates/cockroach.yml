@@ -2,19 +2,19 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
-  name: ycsb.tikv.loader
+  name: ycsb.cockroach.loader
   labels:
     app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 spec:
   inputs:
     parameters:
       server: localhost
-      port: "2379"
+      port: "26257"
       offset: "0"
       recordcount: "10000000"
       cpu: ""     # Example: 8
       memory: ""  # Example: 8Gi
-      threads: ""
+      threads: "1"
       workload: "workloada"
       dropdata: "false"
       delay: "0"
@@ -23,11 +23,9 @@ spec:
       telemetry:
         - platform.telemetry.container
         - ycsb.telemetry.client
-      resources:
+      resources: # Resources
         cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
         memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
-        #annotations:
-        #"grafana.frisbee.io/draw": "range"
 
     containers: # Container(s)
       - name: app
@@ -43,16 +41,19 @@ spec:
 
             echo "Loader: $addr <- {{"{{.Inputs.Parameters.recordcount}}"}}:{{"{{.Inputs.Parameters.offset}}"}}"
 
+            # Cockroach implements the same interface as postgresql
+
             sleep {{"{{.Inputs.Parameters.delay}}"}}
 
-            ./go-ycsb load tikv                                      \
+            ./go-ycsb load postgresql                                       \
                 -P workloads/{{"{{.Inputs.Parameters.workload}}"}}         \
                 -p dropdata={{"{{.Inputs.Parameters.dropdata}}"}}          \
                 -p recordcount={{"{{.Inputs.Parameters.recordcount}}"}}    \
                 -p insertstart={{"{{.Inputs.Parameters.offset}}"}}         \
                 -p threadcount={{"{{.Inputs.Parameters.threads}}"}}        \
-                -p tikv.pd=${addr}                                   \
-                -p tikv.type="raw"                                   \
+                -p pg.host={{"{{.Inputs.Parameters.server}}"}}             \
+                -p pg.port={{"{{.Inputs.Parameters.port}}"}}               \
+                -p pg.db="defaultdb"                                       \
             >> /dev/shm/pipe
 
 
@@ -60,19 +61,19 @@ spec:
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
-  name: ycsb.tikv.runner
+  name: ycsb.cockroach.runner
   labels:
     app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 spec:
   inputs:
     parameters:
       server: localhost
-      port: "2379"
+      port: "26257"
       workload: "workloada"
-      operationcount: "30000000"
-      cpu: ""
-      memory: ""
-      threads: ""
+      operationcount: "5000000"
+      cpu: "8"
+      memory: "8Gi"
+      threads: "1"
   service:
     decorators: # Decorators
       telemetry:
@@ -81,8 +82,6 @@ spec:
       resources: # Resources
         cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
         memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
-        #annotations:
-        #"grafana.frisbee.io/draw": "range"
 
     containers: # Container(s)
       - name: app
@@ -98,10 +97,13 @@ spec:
 
             echo "Runner: $addr <- {{"{{.Inputs.Parameters.workload}}"}}:{{"{{.Inputs.Parameters.operationcount}}"}}"
 
-            ./go-ycsb run tikv                                                                  \
-                  -P workloads/{{"{{.Inputs.Parameters.workload}}"}}                                  \
-                  -p operationcount={{"{{.Inputs.Parameters.operationcount}}"}}                       \
-                  -p threadcount={{"{{.Inputs.Parameters.threads}}"}}                                 \
-                  -p tikv.pd=${addr}                                                            \
-                  -p tikv.type="raw"                                                            \
+            # Cockroach implements the same interface as postgresql
+
+            ./go-ycsb run postgresql                                                          \
+                  -P workloads/{{"{{.Inputs.Parameters.workload}}"}}                                \
+                  -p operationcount={{"{{.Inputs.Parameters.operationcount}}"}}                     \
+                  -p threadcount={{"{{.Inputs.Parameters.threads}}"}}                               \
+                  -p pg.host={{"{{.Inputs.Parameters.server}}"}}                                    \
+                  -p pg.port={{"{{.Inputs.Parameters.port}}"}}                                      \
+                  -p pg.db="defaultdb"                                                        \
             >> /dev/shm/pipe

@@ -8,15 +8,17 @@ metadata:
 spec:
   service:
     decorators:
-      telemetry: [ platform.telemetry.container, cockroachmon/server ]
+      telemetry:
+        - platform.telemetry.container
+        - cockroach.telemetry.server
     containers:
       - name: app
-        image: cockroachdb/cockroach:latest
+        image: cockroachdb/cockroach:v21.2.4
         ports:
-          - name: to-clients
-            containerPort: 26257
-          - name: to-console
-            containerPort: 8080
+          - name: grpc
+            containerPort: {{.Values.port | int64}}
+          - name: http
+            containerPort: {{ .Values.httpPort | int64 }}
         command:
           - /bin/sh   # Run shell
           - -c        # Read from string
@@ -30,3 +32,18 @@ spec:
                 --store=$${HOSTNAME}                      \
                 --listen-addr=$${HOSTNAME}:26257          \
                 --http-addr=$${HOSTNAME}:8080
+
+        startupProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 5
+          failureThreshold: 30
+          periodSeconds: 10
+
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 5

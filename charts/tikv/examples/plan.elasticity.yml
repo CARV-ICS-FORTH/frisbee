@@ -17,7 +17,6 @@ spec:
     - action: Service
       name: master
       service:
-        
         templateRef: tikv.cluster.placement-driver
         inputs:
           - { cpu: "4", memory: "8Gi" }

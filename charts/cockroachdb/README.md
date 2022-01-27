@@ -40,7 +40,7 @@ To install the chart with the release name `my-release`:
 # Install Frisbee platform
 >> helm install my-frisbee frisbee/platform
 # Install dependent charts
->> helm install my-ycsb frisbee/ycs
+>> helm install my-ycsb frisbee/ycsb
 >> helm install my-cockroach frisbee/cockroachdb
 ```
 

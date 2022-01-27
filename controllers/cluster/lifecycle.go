@@ -81,6 +81,9 @@ func calculateLifecycle(cluster *v1alpha1.Cluster, gs lifecycle.ClassifierReader
 					Message: info,
 				})
 
+				suspend := true
+				cluster.Spec.Suspend = &suspend
+
 				return status
 			}
 		}
@@ -117,6 +120,9 @@ func calculateLifecycle(cluster *v1alpha1.Cluster, gs lifecycle.ClassifierReader
 					Reason:  "StateEventFired",
 					Message: info,
 				})
+
+				suspend := true
+				cluster.Spec.Suspend = &suspend
 
 				return status
 			}
@@ -160,6 +166,7 @@ func calculateLifecycle(cluster *v1alpha1.Cluster, gs lifecycle.ClassifierReader
 
 	// Step 4. Check if scheduling goes as expected.
 	queuedJobs := len(cluster.Status.QueuedJobs)
+
 	autotests := []test{
 		{ // All jobs are successfully completed
 			expression: gs.NumSuccessfulJobs() == queuedJobs,

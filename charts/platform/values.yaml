@@ -31,7 +31,7 @@ chaos:
     #chaosDaemon:
     # If you are using Kind or using containerd as CRI, you can use the
     # config below to use containerd as the runtime in chaos-daemon.
-    #runtime: containerd
+  #runtime: containerd
   #socketPath: /run/containerd/containerd.sock
 
 
@@ -49,7 +49,7 @@ sonarqube:
     #    value: "true"
     #    effect: "NoSchedule"
 
-    # nodeSelector:
+  # nodeSelector:
   #  sonarqube: "true"
 
   # SonarQube comes with a bundled Elasticsearch and, as Elasticsearch is stateful, so is SonarQube.
@@ -71,7 +71,7 @@ sonarqube:
       #   serviceName: sonarqube
       # servicePort: 9000
       #annotations:
-      #kubernetes.io/ingress.class: nginx
+    #kubernetes.io/ingress.class: nginx
     #nginx.ingress.kubernetes.io/proxy-body-size: "8m"
 
   # Currently, no cloud-native monitoring solutions play nicely with SonarQube or are supported by SonarSource.
