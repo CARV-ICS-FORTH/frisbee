@@ -1,1 +1,5 @@
----
+# CockroachDB's port to listen to inter-communications and client connections.
+port: 26257
+
+# CockroachDB's port to listen to HTTP requests.
+httpPort: 8080

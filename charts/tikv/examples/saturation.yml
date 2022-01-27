@@ -1,0 +1,87 @@
+---
+# This workflow mimic the official TikV evaluation workflow.
+# All the performance parameters (threads, hardware configuration) are copied from:
+# https://tikv.org/docs/5.1/deploy/performance/instructions/
+#
+# For a fixed number of TiKV, we perform experiments by changing the number of clients, for a given workload.
+apiVersion: frisbee.io/v1alpha1
+kind: Workflow
+metadata:
+  name: tikv-saturation
+spec:
+  withTelemetry:
+    importDashboards:
+      - platform.telemetry.container
+      - ycsb.telemetry.client
+      - tikv.telemetry.pd
+      - tikv.telemetry.worker
+
+
+  actions:
+    # Step 0: bootstrap.
+    # For TiKV, we must first create a placementDriver and then add the workers.
+    - action: Service
+      name: coordinator
+      service:
+        templateRef: tikv.cluster.placement-driver
+        inputs:
+          - { cpu: "4", memory: "8Gi" }
+
+    - action: Cluster
+      depends: { running: [ coordinator ] }
+      name: workers
+      cluster:
+        templateRef: tikv.cluster.worker
+        instances: 1
+        inputs:
+          - { placementDriver: .service.coordinator.one, cpu: "8", memory: "32Gi" }
+
+    # Step 1: Load a new dataset, using the parameters of workload A.
+    # We use no throttling to maximize this step and complete it soon.
+    - action: Service
+      depends: { running: [ workers ] }
+      name: loader
+      service:
+        templateRef: ycsb.tikv.loader
+        inputs:
+          - { server: .service.coordinator.one, workload: workloada, recordcount: "1000000", threads: "40" }
+
+
+
+    # Step 2: Run workload A, for various number of non-overlapping clients.
+
+    - action: Service
+      depends: { running: [ loader ] }
+      name: noise
+      service:
+        templateRef: ycsb.tikv.runner
+        inputs:
+          - { server: .service.coordinator.one, workload: workloada, operationcount: "1000000", threads: "10" }
+
+
+    # Run workload A, for 1 client
+    - action: Cluster
+      depends: { success: [ loader ] }
+      name: clients
+      cluster:
+        templateRef: ycsb.tikv.runner
+        instances: 30
+        inputs:
+          - { server: .service.coordinator.one, workload: workloada, operationcount: "10000000", threads: "10" }
+        schedule:
+          cron: "@every 1m"
+        until:
+          metrics: 'percent_diff() of query(A2EjFbsMk/86/Average, 5m, now) is below(5)'
+        tolerate:
+          failedServices: 1
+
+    # When the clients become running, it means tha Until limit is hit. We then need to remove one client
+    # in order to recover the performance.
+    # Delete the iperf client
+    - action: Cascade
+      name: killer
+      depends: { running: [ clients ] }
+      cascade:
+        templateRef: chaos.pod.kill
+        inputs:
+          - { target: clients-2 }

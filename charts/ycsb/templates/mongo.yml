@@ -2,19 +2,19 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
-  name: ycsb.tikv.loader
+  name: ycsb.mongo.loader
   labels:
     app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 spec:
   inputs:
     parameters:
       server: localhost
-      port: "2379"
+      port: "27017"
       offset: "0"
       recordcount: "10000000"
       cpu: ""     # Example: 8
       memory: ""  # Example: 8Gi
-      threads: ""
+      threads: "1"
       workload: "workloada"
       dropdata: "false"
       delay: "0"
@@ -25,9 +25,7 @@ spec:
         - ycsb.telemetry.client
       resources:
         cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
-        memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
-        #annotations:
-        #"grafana.frisbee.io/draw": "range"
+        memory: {{"{{.Inputs.Parameters.memory}}" |quote }}
 
     containers: # Container(s)
       - name: app
@@ -45,14 +43,13 @@ spec:
 
             sleep {{"{{.Inputs.Parameters.delay}}"}}
 
-            ./go-ycsb load tikv                                      \
+            ./go-ycsb load mongodb                                   \
                 -P workloads/{{"{{.Inputs.Parameters.workload}}"}}         \
                 -p dropdata={{"{{.Inputs.Parameters.dropdata}}"}}          \
                 -p recordcount={{"{{.Inputs.Parameters.recordcount}}"}}    \
                 -p insertstart={{"{{.Inputs.Parameters.offset}}"}}         \
                 -p threadcount={{"{{.Inputs.Parameters.threads}}"}}        \
-                -p tikv.pd=${addr}                                   \
-                -p tikv.type="raw"                                   \
+                -p mongodb.uri="mongodb://$addr"                     \
             >> /dev/shm/pipe
 
 
@@ -60,29 +57,24 @@ spec:
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
-  name: ycsb.tikv.runner
+  name: ycsb.mongo.runner
   labels:
     app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 spec:
   inputs:
     parameters:
       server: localhost
-      port: "2379"
+      port: "27017"
       workload: "workloada"
       operationcount: "30000000"
-      cpu: ""
-      memory: ""
-      threads: ""
+      cpu: "8"
+      memory: "8Gi"
+      threads: "1"
   service:
     decorators: # Decorators
       telemetry:
         - platform.telemetry.container
         - ycsb.telemetry.client
-      resources: # Resources
-        cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
-        memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
-        #annotations:
-        #"grafana.frisbee.io/draw": "range"
 
     containers: # Container(s)
       - name: app
@@ -98,10 +90,9 @@ spec:
 
             echo "Runner: $addr <- {{"{{.Inputs.Parameters.workload}}"}}:{{"{{.Inputs.Parameters.operationcount}}"}}"
 
-            ./go-ycsb run tikv                                                                  \
+            ./go-ycsb run mongodb                                                               \
                   -P workloads/{{"{{.Inputs.Parameters.workload}}"}}                                  \
                   -p operationcount={{"{{.Inputs.Parameters.operationcount}}"}}                       \
                   -p threadcount={{"{{.Inputs.Parameters.threads}}"}}                                 \
-                  -p tikv.pd=${addr}                                                            \
-                  -p tikv.type="raw"                                                            \
+                  -p mongodb.uri="mongodb://$addr"                                              \
             >> /dev/shm/pipe

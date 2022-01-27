@@ -19,7 +19,6 @@ spec:
     - action: Service
       name: master
       service:
-        
         templateRef: tikv.cluster.placement-driver
 
     - action: Cluster

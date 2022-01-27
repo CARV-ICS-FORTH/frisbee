@@ -1,0 +1,36 @@
+---
+apiVersion: frisbee.io/v1alpha1
+kind: Template
+metadata:
+  name: platform.tools.docker
+  labels:
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+spec:
+  service:
+    volumes:
+      - name: docker-sock
+        hostPath:
+          path: /var/run
+      - name: docker-graph-storage
+        emptyDir: { }
+    containers: # Container(s)
+      - name: app
+        image: 192.168.1.213:5000/docker:latest
+        securityContext:
+          privileged: true
+        volumeMounts:
+          - name: docker-sock
+            mountPath: /var/run
+          - name: docker-graph-storage
+            mountPath: /var/lib/docker
+        env:
+          - name: DOCKER_HOST
+            value: tcp://localhost:2375
+        command:
+          - /bin/sh   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
+            set -eum
+            trap "touch /dev/shm/stop" EXIT
+
+            tail -f /dev/null

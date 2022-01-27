@@ -3,18 +3,84 @@
     "list": [
       {
         "builtIn": 1,
-        "datasource": "-- Grafana --",
-        "enable": true,
+        "datasource": "Prometheus",
+        "enable": false,
         "hide": true,
-        "iconColor": "rgba(0, 211, 255, 1)",
+        "iconColor": "dark-purple",
+        "limit": 100,
         "name": "Annotations & Alerts",
+        "showIn": 0,
         "target": {
           "limit": 100,
           "matchAny": false,
           "tags": [],
           "type": "dashboard"
         },
-        "type": "dashboard"
+        "type": "dashboard",
+        "useValueForTime": true
+      },
+      {
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": false,
+        "iconColor": "#5794F2",
+        "limit": 100,
+        "name": "run",
+        "showIn": 0,
+        "tags": [
+          "run"
+        ],
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [
+            "run"
+          ],
+          "type": "tags"
+        },
+        "type": "tags"
+      },
+      {
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": false,
+        "iconColor": "#FF9830",
+        "limit": 100,
+        "name": "exit",
+        "showIn": 0,
+        "tags": [
+          "exit"
+        ],
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [
+            "exit"
+          ],
+          "type": "tags"
+        },
+        "type": "tags"
+      },
+      {
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": false,
+        "iconColor": "rgba(255, 96, 96, 1)",
+        "limit": 100,
+        "name": "failure",
+        "showIn": 0,
+        "tags": [
+          "failure"
+        ],
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [
+            "failure"
+          ],
+          "type": "tags"
+        },
+        "type": "tags"
       }
     ]
   },
@@ -22,129 +88,19 @@
   "fiscalYearStartMonth": 0,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": 2,
-  "iteration": 1635534710311,
+  "id": 7,
   "links": [],
   "liveNow": false,
   "panels": [
     {
       "datasource": null,
-      "description": "A ten-second moving average of the # of SELECT, INSERT, UPDATE, and DELETE statements successfully executed per second across all nodes.",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
-            "axisLabel": "queries",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": true,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "min": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 24,
-        "x": 0,
-        "y": 0
-      },
-      "id": 2,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "single"
-        }
-      },
-      "pluginVersion": "8.2.2",
-      "targets": [
-        {
-          "exemplar": true,
-          "expr": "sum(rate(sql_select_count{agent=\"cockroachdb\"}[$__rate_interval]))",
-          "interval": "",
-          "legendFormat": "Selects",
-          "refId": "A"
-        },
-        {
-          "exemplar": true,
-          "expr": "sum(rate(sql_update_count{agent=\"cockroachdb\"}[$__rate_interval]))",
-          "interval": "",
-          "legendFormat": "Updates",
-          "refId": "B"
-        },
-        {
-          "exemplar": true,
-          "expr": "sum(rate(sql_insert_count{agent=\"cockroachdb\"}[$__rate_interval]))",
-          "interval": "",
-          "legendFormat": "Inserts",
-          "refId": "C"
-        },
-        {
-          "exemplar": true,
-          "expr": "sum(rate(sql_delete_count{agent=\"cockroachdb\"}[$__rate_interval]))",
-          "interval": "",
-          "legendFormat": "Deletes",
-          "refId": "D"
-        }
-      ],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "SQL Queries",
-      "type": "timeseries"
-    },
-    {
-      "datasource": null,
-      "description": "Over the last minute, this node executed 99% of queries within this time. This time does not include network latency between the node and client.",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "latency",
+            "axisLabel": "time",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
@@ -194,9 +150,9 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 8
+        "y": 0
       },
-      "id": 4,
+      "id": 2,
       "options": {
         "legend": {
           "calcs": [],
@@ -207,31 +163,30 @@
           "mode": "single"
         }
       },
-      "pluginVersion": "8.2.2",
+      "pluginVersion": "8.2.3",
       "targets": [
         {
           "exemplar": true,
-          "expr": "histogram_quantile(0.99, rate(sql_service_latency_bucket{agent=\"cockroachdb\"}[$__rate_interval]))",
+          "expr": "sum(rate(changefeed_max_behind_nanos{agent=\"cockroachdb\"}[$__rate_interval]))",
           "interval": "",
-          "legendFormat": "{{instance}}",
+          "legendFormat": "Max Changefeed Latency",
           "refId": "A"
         }
       ],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Service Latency: SQL, 99th Percentile",
+      "title": "Max Changefeed Latency",
       "type": "timeseries"
     },
     {
       "datasource": null,
-      "description": "The number of range replicas stored on this node. Ranges are subsets of your data, which are replicated to ensure survivability.",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
-            "axisLabel": "replicas",
+            "axisLabel": "bytes",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
@@ -243,13 +198,101 @@
               "viz": false
             },
             "lineInterpolation": "linear",
-            "lineWidth": 2,
+            "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
             },
             "showPoints": "never",
-            "spanNulls": false,
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "max": 1,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 8
+      },
+      "id": 10,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "pluginVersion": "8.2.3",
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "sum(rate(changefeed_emitted_bytes{agent=\"cockroachdb\"}[$__rate_interval]))",
+          "interval": "",
+          "intervalFactor": 2,
+          "legendFormat": "Emitted Bytes",
+          "refId": "A"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Sink Byte Traffic",
+      "type": "timeseries"
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "actions",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -283,7 +326,7 @@
         "x": 0,
         "y": 16
       },
-      "id": 6,
+      "id": 4,
       "options": {
         "legend": {
           "calcs": [],
@@ -294,32 +337,37 @@
           "mode": "single"
         }
       },
-      "pluginVersion": "8.2.2",
+      "pluginVersion": "8.2.3",
       "targets": [
         {
           "exemplar": true,
-          "expr": "replicas{agent=\"cockroachdb\"}",
+          "expr": "sum(rate(changefeed_emitted_messages{agent=\"cockroachdb\"}[$__rate_interval]))",
           "interval": "",
-          "intervalFactor": 2,
-          "legendFormat": "{{instance}}",
+          "legendFormat": "Messages",
+          "refId": "B"
+        },
+        {
+          "exemplar": true,
+          "expr": "sum(rate(changefeed_flushes{agent=\"cockroachdb\"}[$__rate_interval]))",
+          "interval": "",
+          "legendFormat": "Flushes",
           "refId": "A"
         }
       ],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Replicas per Node",
+      "title": "Sink Counts",
       "type": "timeseries"
     },
     {
       "datasource": null,
-      "description": "Usage of disk space\n\n**Capacity**: Maximum store size across all nodes. This value may be explicitly set per node using [--store](https://www.cockroachlabs.com/docs/v21.1/cockroach-start.html#store). If a store size has not been set, this metric displays the actual disk capacity.\n\n**Available**: Free disk space available to CockroachDB data across all nodes.\n\n**Used**: Disk space in use by CockroachDB data across all nodes. This excludes the Cockroach binary, operating system, and other system files.\n\n[How are these metrics calculated?](https://www.cockroachlabs.com/docs/v21.1/ui-storage-dashboard.html#capacity-metrics)",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
-            "axisLabel": "capacity",
+            "axisLabel": "time",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
@@ -331,7 +379,7 @@
               "viz": false
             },
             "lineInterpolation": "linear",
-            "lineWidth": 2,
+            "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
@@ -361,7 +409,7 @@
               }
             ]
           },
-          "unit": "bytes"
+          "unit": "ns"
         },
         "overrides": []
       },
@@ -370,6 +418,99 @@
         "w": 24,
         "x": 0,
         "y": 24
+      },
+      "id": 6,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "pluginVersion": "8.2.3",
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "sum(rate(changefeed_emitted_messages{agent=\"cockroachdb\"}[$__rate_interval]))",
+          "interval": "",
+          "legendFormat": "Message Emit Time",
+          "refId": "B"
+        },
+        {
+          "exemplar": true,
+          "expr": "sum(rate(changefeed_flush_nanos{agent=\"cockroachdb\"}[$__rate_interval]))",
+          "interval": "",
+          "legendFormat": "Flush Time",
+          "refId": "A"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Sink Timings",
+      "type": "timeseries"
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "actions",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 32
       },
       "id": 8,
       "options": {
@@ -382,39 +523,22 @@
           "mode": "single"
         }
       },
-      "pluginVersion": "8.2.2",
+      "pluginVersion": "8.2.3",
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(sum(capacity{agent=\"cockroachdb\"}) by (instance))",
+          "expr": "sum(rate(jobs_changefeed_resume_retry_error{agent=\"cockroachdb\"}[$__rate_interval]))",
           "interval": "",
-          "intervalFactor": 2,
-          "legendFormat": "Max",
-          "refId": "B"
-        },
-        {
-          "exemplar": true,
-          "expr": "sum(sum(capacity_available{agent=\"cockroachdb\"}) by (instance))",
-          "interval": "",
-          "legendFormat": "Available",
-          "refId": "C"
-        },
-        {
-          "exemplar": true,
-          "expr": "sum(sum(capacity_used{agent=\"cockroachdb\"}) by (instance))",
-          "interval": "",
-          "intervalFactor": 2,
-          "legendFormat": "Used",
+          "legendFormat": "Retryable Errors",
           "refId": "A"
         }
       ],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Capacity",
+      "title": "Changefeed Restarts",
       "type": "timeseries"
     }
   ],
-  "refresh": false,
   "schemaVersion": 31,
   "style": "dark",
   "tags": [],
@@ -426,8 +550,8 @@
     "to": "now"
   },
   "timepicker": {},
-  "timezone": "",
-  "title": "CRDB Console: Overview",
-  "uid": "crdb-console",
-  "version": 1
+  "timezone": "browser",
+  "title": "CRDB Console: Changefeeds",
+  "uid": "crdb-console-changefeeds",
+  "version": 2
 }

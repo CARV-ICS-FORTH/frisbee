@@ -8,18 +8,21 @@ metadata:
 spec:
   inputs:
     parameters:
-      servers: "localhost:26257"
+      join: ""
   service:
     decorators:
-      telemetry: [ platform.telemetry.container, cockroach.telemetry.server ]
+      telemetry:
+        - platform.telemetry.container
+        - cockroach.telemetry.server
+
     containers:
       - name: app
         image: cockroachdb/cockroach:latest
         ports:
-          - name: to-clients
-            containerPort: 26257
-          - name: to-console
-            containerPort: 8080
+          - name: grpc
+            containerPort: {{.Values.port | int64}}
+          - name: http
+            containerPort: {{ .Values.httpPort | int64 }}
         command:
           - /bin/sh   # Run shell
           - -c        # Read from string
@@ -27,15 +30,29 @@ spec:
             set -eum
             trap "touch /dev/shm/stop" EXIT
 
-            echo "Start Cockroachdb: " {{"{{.Inputs.Parameters.servers}}"}}
 
-            cockroach start                               \
-                --insecure                                \
-                --store=$${HOSTNAME}                      \
-                --listen-addr=$${HOSTNAME}:26257          \
-                --http-addr=$${HOSTNAME}:8080             \
-                --join={{"{{.Inputs.Parameters.servers}}"}}
+              echo "Start Cockroachdb: {{"{{.Inputs.Parameters.join}}"}}"
 
+              cockroach start                                     \
+                --insecure                                        \
+                --store=$${HOSTNAME}                              \
+                --listen-addr=$${HOSTNAME}:{{.Values.port}}                  \
+                --http-addr=$${HOSTNAME}:{{.Values.httpPort}}                     \
+                --join={{"{{.Inputs.Parameters.join}}"}}
+
+
+        startupProbe:
+          httpGet:
+            path: /health
+            port: http
+          failureThreshold: 30
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 5
 
 
 ---
