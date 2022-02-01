@@ -20,10 +20,9 @@ $ helm install my-release frisbee/<chart>
 
 ### Setup a Kubernetes Cluster
 
-The quickest way to setup a Kubernetes cluster to install Frisbee Charts is following the "Frisbee Get Started" guides
-for the different services:
+The quickest way to setup a Kubernetes cluster to install Frisbee Charts is following the "Frisbee Get Started" tutorial
 
-- [Get Started with Frisbee Charts using MicroK8s](docs/get-started-microk8s/)
+- [Get Started with Frisbee](https://github.com/CARV-ICS-FORTH/frisbee/blob/main/docs/tutorial.md)
 
 For setting up Kubernetes on other cloud platforms or bare-metal servers refer to the
 Kubernetes [getting started guide](https://kubernetes.io/docs/getting-started-guides/).
