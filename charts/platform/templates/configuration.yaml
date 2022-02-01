@@ -12,6 +12,7 @@ data:
   {{ if .Values.operator.enabled }}
   PrometheusEndpoint: "http://prometheus:{{.Values.operator.prometheusPort}}"
   GrafanaEndpoint: "http://grafana:{{.Values.operator.grafanaPort}}"
+  AdvertisedHost: "frisbee-operator"
   {{ else }}
   # If the other runs outside the cluster, it will reach Grafana via the ingress.
   PrometheusEndpoint: "http://prometheus.{{.Values.global.ingress}}"

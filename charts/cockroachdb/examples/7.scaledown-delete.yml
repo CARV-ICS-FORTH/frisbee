@@ -2,7 +2,7 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Workflow
 metadata:
-  name: cockroach-cluster-elastic-scaledown
+  name: cockroach-scaledown-delete
 spec:
   withTelemetry:
     importDashboards:
@@ -42,26 +42,31 @@ spec:
           - { server: masters-0 , workload: workloada, recordcount: "100000000", threads: "4", delay: "15" }
 
 
-    # Periodically add new servers
+    # Add 5 new servers.
     - action: Cluster
-      name: more-servers
+      name: groupa
       depends: { running: [ loader ] }
       cluster:
         templateRef: cockroach.cluster.master
-        instances: 10
+        instances: 5
+        inputs:
+          - { join: "masters-0:26257" }
+
+    # Add 5 new servers.
+    - action: Cluster
+      name: groupb
+      depends: { running: [ groupa ] }
+      cluster:
+        templateRef: cockroach.cluster.master
+        instances: 5
         inputs:
           - { join: "masters-0:26257" }
 
 
-    # When all servers are up and running, stop some of them
-    - action: Stop
-      name: stop-servers
-      depends: { running: [ more-servers ] }
-      stop:
-        services:
-          - more-servers-2
-          - more-servers-5
-          - more-servers-8
-          - masters-2
-        schedule:
-          cron: "@every 1m"
+    # When all servers are up and running, delete some of them.
+    # Currently, deletion is supported only at the level of "Actions" -- you cannot delete services within a cluster.
+    - action: Delete
+      name: delete-client
+      depends: { after: "4m" }
+      delete:
+        jobs: [ groupa ]

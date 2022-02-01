@@ -36,6 +36,8 @@ type Configuration struct {
 	GrafanaEndpoint string
 
 	PrometheusEndpoint string
+
+	AdvertisedHost string
 }
 
 func UseDefaultPlatformConfiguration(ctx context.Context, r Reconciler, namespace string) error {

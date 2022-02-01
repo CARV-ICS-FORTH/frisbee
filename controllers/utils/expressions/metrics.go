@@ -33,6 +33,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/json"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -94,8 +95,13 @@ func SetAlert(job client.Object, slo v1alpha1.ExprMetrics) error {
 		job.GetObjectKind().GroupVersionKind(),
 		job.GetName())
 
-	// push the alert to grafana
-	if _, err := grafana.DefaultClient.SetAlert(alert, name, msg); err != nil {
+	// push the alert to grafana. Due to the distributed nature, the requested dashboard may not be in Grafana yet.
+	// If the dashboard is not found, retry a few times before failing.
+	// TODO: explicitly separate the NotFound from other types of errors.
+	if err := retry.OnError(retry.DefaultBackoff, func(error) bool { return true }, func() error {
+		_, err := grafana.DefaultClient.SetAlert(alert, name, msg)
+		return err
+	}); err != nil {
 		return errors.Wrapf(err, "cannot set the alarm")
 	}
 
@@ -198,10 +204,12 @@ func FiredAlert(job metav1.Object) (string, bool) {
 
 	if state == grafana.OK {
 		/*
-				This is the equivalent of revoking an alert. It happens when,after sending an Alert, decides
-			    that the latest evaluation no longer matches the given rule.
+		 This is the equivalent of revoking an alert. It happens when, after sending an Alert, decides
+		 that the latest evaluation no longer matches the given rule.
 		*/
-		logrus.Warn("Revoke alert ", alertName)
+		logrus.Warn("Reset alert ", alertName)
+
+		ResetAlert(job)
 
 		return "", false
 	}
@@ -211,6 +219,15 @@ func FiredAlert(job metav1.Object) (string, bool) {
 	return "", false
 }
 
+// ResetAlert removes the annotations from the target object. It does not remove the Alert from Grafana.
+func ResetAlert(obj metav1.Object) {
+	alertID, exists := obj.GetAnnotations()[jobHasAlert]
+	if exists {
+		grafana.DefaultClient.UnsetAlert(alertID)
+	}
+}
+
+// UnsetAlert removes the annotations from the target object, and removes the Alert from Grafana.
 func UnsetAlert(obj metav1.Object) {
 	alertID, exists := obj.GetAnnotations()[jobHasAlert]
 	if exists {

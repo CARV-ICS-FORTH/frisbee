@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/carv-ics-forth/frisbee/controllers/utils"
 	"github.com/carv-ics-forth/frisbee/pkg/netutils"
 	notifier "github.com/golanghelper/grafana-webhook"
 	"github.com/grafana-tools/sdk"
@@ -27,13 +28,24 @@ import (
 )
 
 func (c *Client) SetNotificationChannel(webhookPort string, cb func(b *notifier.Body)) error {
-	ip, err := netutils.GetPublicIP()
-	if err != nil {
-		return errors.Wrapf(err, "cannot get controller's public ip")
-	}
+	var addr string
 
-	addr := fmt.Sprintf("%s:%s", ip.String(), webhookPort)
-	url := fmt.Sprintf("http://%s", addr)
+	var url string
+
+	// If the controller runs within the Kubernetes cluster, we use the assigned name as the advertised host
+	// If the controller runs externally to the Kubernetes cluster, we use the public IP of the local machine.
+	if host := utils.DefaultConfiguration.AdvertisedHost; host != "" {
+		addr = fmt.Sprintf("%s:%s", host, webhookPort)
+		url = fmt.Sprintf("http://%s", addr)
+	} else {
+		ip, err := netutils.GetPublicIP()
+		if err != nil {
+			return errors.Wrapf(err, "cannot get controller's public ip")
+		}
+
+		addr = fmt.Sprintf("%s:%s", ip.String(), webhookPort)
+		url = fmt.Sprintf("http://%s", addr)
+	}
 
 	errCh := make(chan error, 1)
 
@@ -56,7 +68,7 @@ func (c *Client) SetNotificationChannel(webhookPort string, cb func(b *notifier.
 	default: // continue
 	}
 
-	c.logger.Info("Grafana webhook is listening on", "url", url)
+	c.logger.Info("Frisbee Controller is listening for Grafana alerts on", "url", url)
 
 	// use the webhook as notification channel for grafana
 	feedback := sdk.AlertNotification{
@@ -70,7 +82,7 @@ func (c *Client) SetNotificationChannel(webhookPort string, cb func(b *notifier.
 		},
 	}
 
-	_, err = c.Conn.CreateAlertNotification(c.ctx, feedback)
+	_, err := c.Conn.CreateAlertNotification(c.ctx, feedback)
 
 	return errors.Wrapf(err, "cannot create feedback notification channel")
 }

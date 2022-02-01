@@ -2,7 +2,7 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Workflow
 metadata:
-  name: cockroach-cluster-elastic-scaleup
+  name: cockroach-scaledown-stop
 spec:
   withTelemetry:
     importDashboards:
@@ -39,7 +39,7 @@ spec:
       service:
         templateRef: ycsb.cockroach.loader
         inputs:
-          - { server: masters-0 , workload: workloada, recordcount: "100000000", threads: "40", delay: "15" }
+          - { server: masters-0 , workload: workloada, recordcount: "100000000", threads: "4", delay: "15" }
 
 
     # Periodically add new servers
@@ -51,5 +51,17 @@ spec:
         instances: 10
         inputs:
           - { join: "masters-0:26257" }
+
+
+    # When all servers are up and running, stop some of them
+    - action: Stop
+      name: stop-servers
+      depends: { running: [ more-servers ] }
+      stop:
+        services:
+          - more-servers-2
+          - more-servers-5
+          - more-servers-8
+          - masters-2
         schedule:
-          cron: "@every 2m"
+          cron: "@every 1m"
