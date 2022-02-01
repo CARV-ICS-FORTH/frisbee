@@ -2175,6 +2175,26 @@ spec:
                               only "value". The requirements are ANDed.
                             type: object
                         type: object
+                      gracefulStop:
+                        description: GracefulStop allows you to define a command for
+                          stopping the containers that run in the Pod. Used by the
+                          Stop command.
+                        properties:
+                          command:
+                            description: Container specifies a command and arguments
+                              to stop the targeted container in an application-specific
+                              manner.
+                            items:
+                              type: string
+                            type: array
+                          container:
+                            description: Container specific the name of the container
+                              to which we will run the command
+                            type: string
+                        required:
+                        - command
+                        - container
+                        type: object
                       labels:
                         additionalProperties:
                           type: string

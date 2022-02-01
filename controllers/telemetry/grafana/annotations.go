@@ -29,6 +29,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const (
+	// DrawAs hints how to mark points on the Grafana dashboard.
+	DrawAs string = "grafana.frisbee.io/draw"
+	// DrawAsPoint will mark the creation and deletion of a service as distinct events.
+	DrawAsPoint string = "point"
+	// DrawAsRegion will draw a region starting from the creation of a service and ending to the deletion of the service.
+	DrawAsRegion string = "range"
+)
+
 // ///////////////////////////////////////////
 //		Grafana Annotations
 // ///////////////////////////////////////////
@@ -137,7 +146,7 @@ func (a *RangeAnnotation) Delete(obj client.Object, tags ...Tag) {
 //		Grafana Annotator
 // ///////////////////////////////////////////
 
-var AnnotationTimeout = 30 * time.Second
+var annotationTimeout = 30 * time.Second
 
 const (
 	statusAnnotationAdded = "Annotation added"
@@ -147,7 +156,7 @@ const (
 
 // SetAnnotation inserts a new annotation to Grafana.
 func (c *Client) SetAnnotation(ga sdk.CreateAnnotationRequest) (reqID uint) {
-	ctx, cancel := context.WithTimeout(c.ctx, AnnotationTimeout)
+	ctx, cancel := context.WithTimeout(c.ctx, annotationTimeout)
 	defer cancel()
 
 	// submit
@@ -170,7 +179,7 @@ func (c *Client) SetAnnotation(ga sdk.CreateAnnotationRequest) (reqID uint) {
 
 // PatchAnnotation updates an existing annotation to Grafana.
 func (c *Client) PatchAnnotation(reqID uint, ga sdk.PatchAnnotationRequest) {
-	ctx, cancel := context.WithTimeout(c.ctx, AnnotationTimeout)
+	ctx, cancel := context.WithTimeout(c.ctx, annotationTimeout)
 	defer cancel()
 
 	// submit

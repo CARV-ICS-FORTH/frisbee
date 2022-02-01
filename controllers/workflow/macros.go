@@ -90,7 +90,58 @@ func parseMacro(namespace string, ss *v1alpha1.ServiceSelector) error {
 	return nil
 }
 
-func expandInputs(ctx context.Context, s *Controller, nm string, inputs *[]map[string]string) error {
+func expandSliceInputs(ctx context.Context, s *Controller, nm string, inputs *[]string) error {
+	if inputs == nil || *inputs == nil {
+		return nil
+	}
+
+	// cache the results of macro as to avoid asking the Kubernetes API. This, however, is only applicable
+	// to the level of a caller, because different groups may be created in different moments
+	// throughout the experiment, thus yielding different results.
+	cache := make(map[string]SList)
+
+	// extend macros
+	for i, value := range *inputs {
+		if isMacro(value) {
+
+			val := value
+			ss := &v1alpha1.ServiceSelector{Macro: &val}
+
+			if err := parseMacro(nm, ss); err != nil {
+				return errors.Wrapf(err, "input [%d]", i)
+			}
+
+			services, exists := cache[value]
+			if !exists {
+				runningServices, err := selectServices(ctx, s, &ss.Match)
+				if err != nil {
+					return errors.Wrapf(err, "service selection error")
+				}
+
+				if len(runningServices) == 0 {
+					// it is possible that some services exist, but they are not in the Running phase.
+					// In this case, we should retry getting the services.
+					return errors.Errorf("macro %s yields no services", value)
+				}
+
+				services = runningServices
+				cache[value] = runningServices
+			}
+
+			// filter services based on the pods
+			filteredServices, err := filterByMode(services, ss.Mode, ss.Value)
+			if err != nil {
+				return errors.Wrapf(err, "filter by mode")
+			}
+
+			(*inputs)[i] = filteredServices.ToString()
+		}
+	}
+
+	return nil
+}
+
+func expandMapInputs(ctx context.Context, s *Controller, nm string, inputs *[]map[string]string) error {
 	if inputs == nil || *inputs == nil {
 		return nil
 	}

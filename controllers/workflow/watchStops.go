@@ -14,40 +14,30 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package service
+package workflow
 
 import (
 	"fmt"
 	"reflect"
 
-	"github.com/carv-ics-forth/frisbee/controllers/telemetry/grafana"
+	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/utils"
-	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
-	corev1 "k8s.io/api/core/v1"
 	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
-func printWrongType(logger logr.Logger, expected interface{}, got client.Object) {
-	logger.Error(errors.New("invalid type"), "invalid conversion",
-		"expected", reflect.TypeOf(expected),
-		"got", reflect.TypeOf(got),
-	)
-}
-
-func (r *Controller) Watchers() predicate.Funcs {
+func (r *Controller) WatchStopJobs() predicate.Funcs {
 	return predicate.Funcs{
-		CreateFunc:  r.create,
-		DeleteFunc:  r.delete,
-		UpdateFunc:  r.update,
-		GenericFunc: generic,
+		CreateFunc:  r.WatchStopJobsCreate,
+		DeleteFunc:  r.WatchStopJobsDelete,
+		UpdateFunc:  r.WatchStopJobsUpdate,
+		GenericFunc: r.WatchStopJobsGeneric,
 	}
 }
 
-func (r *Controller) create(e event.CreateEvent) bool {
+func (r *Controller) WatchStopJobsCreate(e event.CreateEvent) bool {
 	if !utils.IsManagedByThisController(e.Object, r.gvk) {
 		return false
 	}
@@ -65,20 +55,10 @@ func (r *Controller) create(e event.CreateEvent) bool {
 		"version", e.Object.GetResourceVersion(),
 	)
 
-	if e.Object.GetAnnotations()[grafana.DrawAs] == grafana.DrawAsRegion {
-		annotation := &grafana.RangeAnnotation{}
-		annotation.Add(e.Object)
-
-		r.regionAnnotations.Set(e.Object.GetName(), annotation)
-	} else {
-		annotation := &grafana.PointAnnotation{}
-		annotation.Add(e.Object)
-	}
-
-	return false
+	return true
 }
 
-func (r *Controller) update(e event.UpdateEvent) bool {
+func (r *Controller) WatchStopJobsUpdate(e event.UpdateEvent) bool {
 	if !utils.IsManagedByThisController(e.ObjectNew, r.gvk) {
 		return false
 	}
@@ -98,19 +78,9 @@ func (r *Controller) update(e event.UpdateEvent) bool {
 	}
 
 	// if the status is the same, there is no need to inform the service
-	prev, ok := e.ObjectOld.(*corev1.Pod)
-	if !ok {
-		printWrongType(r.Logger, corev1.Pod{}, e.ObjectOld)
+	prev := e.ObjectOld.(*v1alpha1.Stop)
 
-		return false
-	}
-
-	latest, ok := e.ObjectNew.(*corev1.Pod)
-	if !ok {
-		printWrongType(r.Logger, corev1.Pod{}, e.ObjectNew)
-
-		return false
-	}
+	latest := e.ObjectNew.(*v1alpha1.Stop)
 
 	if prev.Status.Phase == latest.Status.Phase {
 		// a controller never initiates a phase change, and so is never asleep waiting for the same.
@@ -129,12 +99,12 @@ func (r *Controller) update(e event.UpdateEvent) bool {
 	return true
 }
 
-func (r *Controller) delete(e event.DeleteEvent) bool {
+func (r *Controller) WatchStopJobsDelete(e event.DeleteEvent) bool {
 	if !utils.IsManagedByThisController(e.Object, r.gvk) {
 		return false
 	}
 
-	// An object was deleted but the watch deletion event was missed while disconnected from apiserver.
+	// an object was deleted but the watch deletion event was missed while disconnected from apiserver.
 	// In this case we don't know the final "resting" state of the object,
 	// so there's a chance the included `Obj` is stale.
 	if e.DeleteStateUnknown {
@@ -150,24 +120,9 @@ func (r *Controller) delete(e event.DeleteEvent) bool {
 		"version", e.Object.GetResourceVersion(),
 	)
 
-	if e.Object.GetAnnotations()[grafana.DrawAs] == grafana.DrawAsRegion {
-		annotation, ok := r.regionAnnotations.Get(e.Object.GetName())
-		if !ok {
-			// this is a stall condition that happens when the controller is restarted. just ignore it
-			return false
-		}
-
-		annotation.(*grafana.RangeAnnotation).Delete(e.Object)
-
-		r.regionAnnotations.Remove(e.Object.GetName())
-	} else {
-		annotation := &grafana.PointAnnotation{}
-		annotation.Delete(e.Object)
-	}
-
 	return true
 }
 
-func generic(event.GenericEvent) bool {
+func (r *Controller) WatchStopJobsGeneric(event.GenericEvent) bool {
 	return true
 }
