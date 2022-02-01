@@ -79,7 +79,7 @@
 
 
 
-### 6. Elastic Scale-down (Delete)
+### 7. Elastic Scale-down (Delete)
 
 1) Start a set of cockroach individual database servers
 2) Combine the individual servers into a cockroach cluster. 
@@ -95,7 +95,7 @@
 
 
 
-### 7. Elastic Scale-down (Stop)
+### 8. Elastic Scale-down (Stop)
 
 1) Start a set of cockroach individual database servers
 2) Combine the individual servers into a cockroach cluster. 
@@ -105,7 +105,7 @@
 
 #### **Observations**
 
-* With the present container it is difficult to terminate the cockroach process gracefully (lack of pidof, pkill, or ps)
+* With the present cockroach container it is difficult to terminate the cockroach process gracefully (lack of pidof, pkill, or ps)
 
 * The cockroach's native way is to drain the node, without stopping the process. Given that, the services appear as "live" to Kubernetes, but without producing any data for Grafana.
 * The experiment blocks randomly.
@@ -114,7 +114,7 @@
 
 
 
-### 6. Elastic Scale-down (Kill)
+### 9. Elastic Scale-down (Kill)
 
 1) Start a set of cockroach individual database servers
 2) Combine the individual servers into a cockroach cluster. 
