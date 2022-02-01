@@ -8,17 +8,37 @@
 
 The effort being put in automating tests should not take over delivering value to users. Frisbee makes it possible to:
 
-🏗️ Spin up entire dependency stack
-
 🎁 Setup initial dependency state – easily!
 
-🏭 Test against actual, close to production software
+🏭 Test against actual, close to production software - no mocks!
 
-⏳ Spend no time writing mocks
+⏳ Replay complex workloads writte in an intuitive DSL!
 
-🕹️ Test actual program behavior and side effects
+🏗️ Combine Chaos Engineering with large-scale performance testing!
+
+🕹️ Assert actual program behavior and side effects
+
+
 
 ## <div align="center">![releaser](https://github.com/carv-ics-forth/frisbee/actions/workflows/release.yml/badge.svg) [![Go Report Card](https://goreportcard.com/badge/github.com/carv-ics-forth/frisbee)](https://goreportcard.com/report/github.com/carv-ics-forth/frisbee) ![License: Apache-2.0](https://img.shields.io/github/license/carv-ics-forth/frisbee?color=blue) [![GitHub Repo stars](https://img.shields.io/github/stars/carv-ics-forth/frisbee)](https://github.com/carv-ics-forth/frisbee/stargazers)</div>
+
+## :compass: Scenarios
+
+* [Logical Dependencies](charts/iperf2/examples/0.server-client.yml)
+* [Scheduled Execution](charts/iperf2/examples/1.scheduled-clients.yml)
+* [Advanced Placement](charts/iperf2/examples/2.advanced-placement.yml )
+* [Conditional Loops](charts/iperf2/examples/3.create-until.yml)
+* [Conditional Execution](charts/iperf2/examples/4.create-when.yml)
+* [Runtime Assertions](charts/iperf2/examples/5.assertions.yml )
+* [Elastic Topologies](charts/iperf2/examples/6.deletions.yml )
+* [Recoverability Experiments](charts/iperf2/examples/7.failure-toleration.yml )
+* [Time-Driven Chaos Engineering](charts/iperf2/examples/8.time-driven-fault.yml )
+* [State-Driven Chaos Engineering](charts/iperf2/examples/9.state-driven-fault.yml)
+* [Metrics-Driven Chaos Engineering](charts/iperf2/examples/10.metrics-driven-fault.yml)
+* [App-Specific Graceful Shutdowns](charts/cockroach/examples/6.cluster-elastic-scaledown.yml )
+
+
+
 
 # TL;DR
 
@@ -65,22 +85,6 @@ Through these dashboards humans and controllers can examine to check things like
 #### Client-View (Redis-Dashboard)
 
 ![](docs/images/masterdashboard.png)
-
-
-## :compass: What you can do with Frisbee
-
-* [Logical Dependencies](charts/iperf2/examples/0.server-client.yml)
-* [Scheduled Execution](charts/iperf2/examples/1.scheduled-clients.yml)
-* [Advanced Placement](charts/iperf2/examples/2.advanced-placement.yml )
-* [Conditional Loops](charts/iperf2/examples/3.create-until.yml)
-* [Conditional Execution](charts/iperf2/examples/4.create-when.yml)
-* [Runtime Assertions](charts/iperf2/examples/5.assertions.yml )
-* [Elastic Topologies](charts/iperf2/examples/6.deletions.yml )
-* [Recoverability Experiments](charts/iperf2/examples/7.failure-toleration.yml )
-* [Time-Driven Chaos Engineering](charts/iperf2/examples/8.time-driven-fault.yml )
-* [State-Driven Chaos Engineering](charts/iperf2/examples/9.state-driven-fault.yml)
-* [Metrics-Driven Chaos Engineering](charts/iperf2/examples/10.metrics-driven-fault.yml)
-* [App-Specific Graceful Shutdowns](charts/cockroach/examples/6.cluster-elastic-scaledown.yml )
 
 
 
