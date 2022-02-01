@@ -73,14 +73,13 @@ type SetField struct {
 	Value string `json:"value"`
 }
 
-const (
-	// DrawAs hints how to mark points on the Grafana dashboard.
-	DrawAs string = "grafana.frisbee.io/draw"
-	// DrawAsPoint will mark the creation and deletion of a service as distinct events.
-	DrawAsPoint string = "point"
-	// DrawAsRegion will draw a region starting from the creation of a service and ending to the deletion of the service.
-	DrawAsRegion string = "range"
-)
+type GracefulStop struct {
+	// Container specific the name of the container to which we will run the command
+	Container string `json:"container"`
+
+	// Container specifies a command and arguments to stop the targeted container in an application-specific manner.
+	Command []string `json:"command"`
+}
 
 // Decorators takes in a PodSpec, add some functionality and returns it.
 type Decorators struct {
@@ -107,6 +106,11 @@ type Decorators struct {
 
 	// +optional
 	Labels map[string]string `json:"labels,omitempty"`
+
+	// GracefulStop allows you to define a command for stopping the containers that run in the Pod.
+	// Used by the Stop command.
+	// +optional
+	GracefulStop *GracefulStop `json:"gracefulStop,omitempty"`
 }
 
 // ServiceSpec defines the desired state of Service.

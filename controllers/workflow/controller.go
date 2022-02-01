@@ -29,6 +29,7 @@ import (
 	"github.com/carv-ics-forth/frisbee/controllers/utils/expressions"
 	"github.com/carv-ics-forth/frisbee/controllers/utils/lifecycle"
 	"github.com/go-logr/logr"
+	notifier "github.com/golanghelper/grafana-webhook"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -403,6 +404,26 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	return lifecycle.Pending(ctx, r, &cr, "some jobs are still pending")
 }
 
+func (r *Controller) ConnectToGrafana(ctx context.Context, cr *v1alpha1.Workflow) error {
+	endpoint := utils.DefaultConfiguration.GrafanaEndpoint
+
+	return grafana.NewGrafanaClient(ctx, r, endpoint,
+		// Set a callback that will be triggered when there is Grafana alert.
+		// Through this channel we can get informed for SLA violations.
+		grafana.WithNotifyOnAlert(func(b *notifier.Body) {
+			r.Logger.Info("Grafana Alert", "body", b)
+
+			// when Grafana fires an alert, this alert is captured by the Webhook.
+			// The webhook must someone notify the appropriate controller.
+			// To do that, it adds information of the fired alert to the object's metadata
+			// and updates (patches) the object.
+			if err := expressions.DispatchAlert(ctx, r, b); err != nil {
+				r.Logger.Error(err, "unable to inform CR for metrics alert", "cr", cr.GetName())
+			}
+		}),
+	)
+}
+
 /*
 ### Finalizers
 */
@@ -449,5 +470,6 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 		Owns(&v1alpha1.Chaos{}, builder.WithPredicates(r.WatchChaos())).                  // Watch Chaos
 		Owns(&v1alpha1.Telemetry{}, builder.WithPredicates(r.WatchTelemetry())).          // Watch Telemetry
 		Owns(&v1alpha1.VirtualObject{}, builder.WithPredicates(r.WatchVirtualObjects())). // Watch VirtualObjects
+		Owns(&v1alpha1.Stop{}, builder.WithPredicates(r.WatchStopJobs())).                // Watch StopJobs
 		Complete(r)
 }

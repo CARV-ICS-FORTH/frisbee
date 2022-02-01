@@ -72,6 +72,9 @@ type EmbedActions struct {
 
 	// +optional
 	Delete *DeleteSpec `json:"delete,omitempty"`
+
+	// +optional
+	Stop *StopSpec `json:"stop,omitempty"`
 }
 
 // WorkflowSpec defines the desired state of Workflow.

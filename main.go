@@ -21,6 +21,7 @@ import (
 	"os"
 
 	"github.com/carv-ics-forth/frisbee/controllers/cascade"
+	"github.com/carv-ics-forth/frisbee/controllers/stop"
 	"github.com/pkg/errors"
 
 	"github.com/carv-ics-forth/frisbee/controllers/chaos"
@@ -98,6 +99,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Add controllers
 	if err := template.NewController(mgr, setupLog); err != nil {
 		utilruntime.HandleError(errors.Wrapf(err, "unable to create Templates controller"))
 
@@ -136,6 +138,12 @@ func main() {
 
 	if err := cascade.NewController(mgr, setupLog); err != nil {
 		utilruntime.HandleError(errors.Wrapf(err, "unable to create Cascade controller"))
+
+		os.Exit(1)
+	}
+
+	if err := stop.NewController(mgr, setupLog); err != nil {
+		utilruntime.HandleError(errors.Wrapf(err, "unable to create Stop controller"))
 
 		os.Exit(1)
 	}

@@ -15,6 +15,14 @@ spec:
         - platform.telemetry.container
         - cockroach.telemetry.server
 
+      gracefulStop:
+        container: app
+        command:
+          - /bin/sh   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
+            cockroach node drain --insecure --host $(hostname)
+
     containers:
       - name: app
         image: cockroachdb/cockroach:latest
@@ -30,7 +38,6 @@ spec:
             set -eum
             trap "touch /dev/shm/stop" EXIT
 
-
               echo "Start Cockroachdb: {{"{{.Inputs.Parameters.join}}"}}"
 
               cockroach start                                     \
@@ -38,6 +45,7 @@ spec:
                 --store=$${HOSTNAME}                              \
                 --listen-addr=$${HOSTNAME}:{{.Values.port}}                  \
                 --http-addr=$${HOSTNAME}:{{.Values.httpPort}}                     \
+                --advertise-host=$${HOSTNAME}                     \
                 --join={{"{{.Inputs.Parameters.join}}"}}
 
 

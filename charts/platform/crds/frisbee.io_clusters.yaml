@@ -47,8 +47,8 @@ spec:
                 type: array
               instances:
                 description: MaxInstances dictate the number of objects to be created
-                  for the service. If no inputs are defined, then all instances will
-                  be initiated using the default parameters of the template. Conditions
+                  for the CR. If no inputs are defined, then all instances will be
+                  initiated using the default parameters of the template. Conditions
                   used in conjunction with Until, MaxInstances as a max bound.
                 type: integer
               placement:
@@ -133,9 +133,9 @@ spec:
                 - failedServices
                 type: object
               until:
-                description: Until defines the conditions under which the Cluster
-                  will stop spawning new services. If used in conjunction with inputs,
-                  it will loop over inputs until the conditions are met.
+                description: Until defines the conditions under which the CR will
+                  stop spawning new jobs. If used in conjunction with inputs, it will
+                  loop over inputs until the conditions are met.
                 properties:
                   metrics:
                     description: 'Metrics set a Grafana alert that will be triggered
@@ -2370,6 +2370,26 @@ spec:
                                 is "key", the operator is "In", and the values array
                                 contains only "value". The requirements are ANDed.
                               type: object
+                          type: object
+                        gracefulStop:
+                          description: GracefulStop allows you to define a command
+                            for stopping the containers that run in the Pod. Used
+                            by the Stop command.
+                          properties:
+                            command:
+                              description: Container specifies a command and arguments
+                                to stop the targeted container in an application-specific
+                                manner.
+                              items:
+                                type: string
+                              type: array
+                            container:
+                              description: Container specific the name of the container
+                                to which we will run the command
+                              type: string
+                          required:
+                          - command
+                          - container
                           type: object
                         labels:
                           additionalProperties:

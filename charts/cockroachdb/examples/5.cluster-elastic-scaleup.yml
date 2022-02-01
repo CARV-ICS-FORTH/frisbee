@@ -2,7 +2,7 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Workflow
 metadata:
-  name: cockroach-baseline-single
+  name: cockroach-cluster-elastic-scaleup
 spec:
   withTelemetry:
     importDashboards:
@@ -34,7 +34,7 @@ spec:
 
     # Step 2. Hammer the server with requests
     - action: Service
-      depends: { success: [boot] }
+      depends: { success: [ boot ] }
       name: loader
       service:
         templateRef: ycsb.cockroach.loader
@@ -45,9 +45,9 @@ spec:
     # Periodically add new servers
     - action: Cluster
       name: more-servers
-      depends: { running: [ loader ]}
+      depends: { running: [ loader ] }
       cluster:
-        templateRef:  cockroach.cluster.master
+        templateRef: cockroach.cluster.master
         instances: 10
         inputs:
           - { join: "masters-0:26257" }

@@ -44,7 +44,7 @@ type ClassifierReader interface {
 	SuccessfulJobs() []client.Object
 	FailedJobs() []client.Object
 
-	// Deletable returns true if a job is deletable: it is pending or running
+	// IsDeletable returns true if a job is deletable: it is pending or running
 	IsDeletable(jobName string) (client.Object, bool)
 }
 

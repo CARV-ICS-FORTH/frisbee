@@ -20,10 +20,6 @@ import (
 	"context"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	"github.com/carv-ics-forth/frisbee/controllers/telemetry/grafana"
-	"github.com/carv-ics-forth/frisbee/controllers/utils"
-	"github.com/carv-ics-forth/frisbee/controllers/utils/expressions"
-	notifier "github.com/golanghelper/grafana-webhook"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -49,13 +45,16 @@ func (r *Controller) getJob(ctx context.Context, w *v1alpha1.Workflow, action v1
 	case "Delete":
 		return r.delete(ctx, w, action)
 
+	case "Stop":
+		return r.stop(ctx, w, action)
+
 	default:
 		return nil, errors.Errorf("unknown action %s", action.ActionType)
 	}
 }
 
 func (r *Controller) service(ctx context.Context, w *v1alpha1.Workflow, action v1alpha1.Action) (client.Object, error) {
-	if err := expandInputs(ctx, r, w.GetNamespace(), &action.Service.Inputs); err != nil {
+	if err := expandMapInputs(ctx, r, w.GetNamespace(), &action.Service.Inputs); err != nil {
 		return nil, errors.Wrapf(err, "input error")
 	}
 
@@ -81,7 +80,7 @@ func (r *Controller) service(ctx context.Context, w *v1alpha1.Workflow, action v
 }
 
 func (r *Controller) cluster(ctx context.Context, w *v1alpha1.Workflow, action v1alpha1.Action) (client.Object, error) {
-	if err := expandInputs(ctx, r, w.GetNamespace(), &action.Cluster.Inputs); err != nil {
+	if err := expandMapInputs(ctx, r, w.GetNamespace(), &action.Cluster.Inputs); err != nil {
 		return nil, errors.Wrapf(err, "input error")
 	}
 
@@ -97,7 +96,7 @@ func (r *Controller) cluster(ctx context.Context, w *v1alpha1.Workflow, action v
 }
 
 func (r *Controller) chaos(ctx context.Context, w *v1alpha1.Workflow, action v1alpha1.Action) (client.Object, error) {
-	if err := expandInputs(ctx, r, w.GetNamespace(), &action.Chaos.Inputs); err != nil {
+	if err := expandMapInputs(ctx, r, w.GetNamespace(), &action.Chaos.Inputs); err != nil {
 		return nil, errors.Wrapf(err, "input error")
 	}
 
@@ -129,7 +128,7 @@ func (r *Controller) chaos(ctx context.Context, w *v1alpha1.Workflow, action v1a
 }
 
 func (r *Controller) cascade(ctx context.Context, w *v1alpha1.Workflow, action v1alpha1.Action) (client.Object, error) {
-	if err := expandInputs(ctx, r, w.GetNamespace(), &action.Cascade.Inputs); err != nil {
+	if err := expandMapInputs(ctx, r, w.GetNamespace(), &action.Cascade.Inputs); err != nil {
 		return nil, errors.Wrapf(err, "input error")
 	}
 
@@ -145,8 +144,8 @@ func (r *Controller) cascade(ctx context.Context, w *v1alpha1.Workflow, action v
 }
 
 func (r *Controller) delete(ctx context.Context, w *v1alpha1.Workflow, action v1alpha1.Action) (client.Object, error) {
-	// delete normally does not return anything. This however would break all the pipeline for
-	// managing sequences of job. For that, we return a dummy virtual object without dedicated controller.
+	// Delete normally does not return anything. This however would break all the pipeline for
+	// managing dependencies between jobs. For that, we return a dummy virtual object without dedicated controller.
 	var deletionJob v1alpha1.VirtualObject
 
 	deletionJob.SetGroupVersionKind(v1alpha1.GroupVersion.WithKind("VirtualObject"))
@@ -179,22 +178,20 @@ func (r *Controller) delete(ctx context.Context, w *v1alpha1.Workflow, action v1
 	return &deletionJob, nil
 }
 
-func (r *Controller) ConnectToGrafana(ctx context.Context, cr *v1alpha1.Workflow) error {
-	endpoint := utils.DefaultConfiguration.GrafanaEndpoint
+func (r *Controller) stop(ctx context.Context, w *v1alpha1.Workflow, action v1alpha1.Action) (client.Object, error) {
+	if err := expandSliceInputs(ctx, r, w.GetNamespace(), &action.Stop.Services); err != nil {
+		return nil, errors.Wrapf(err, "input error")
+	}
 
-	return grafana.NewGrafanaClient(ctx, r, endpoint,
-		// Set a callback that will be triggered when there is Grafana alert.
-		// Through this channel we can get informed for SLA violations.
-		grafana.WithNotifyOnAlert(func(b *notifier.Body) {
-			r.Logger.Info("Grafana Alert", "body", b)
+	var stop v1alpha1.Stop
 
-			// when Grafana fires an alert, this alert is captured by the Webhook.
-			// The webhook must someone notify the appropriate controller.
-			// To do that, it adds information of the fired alert to the object's metadata
-			// and updates (patches) the object.
-			if err := expressions.DispatchAlert(ctx, r, b); err != nil {
-				r.Logger.Error(err, "unable to inform CR for metrics alert", "cr", cr.GetName())
-			}
-		}),
-	)
+	stop.SetGroupVersionKind(v1alpha1.GroupVersion.WithKind("Stop"))
+	stop.SetNamespace(w.GetNamespace())
+	stop.SetName(action.Name)
+
+	action.Stop.DeepCopyInto(&stop.Spec)
+
+	logrus.Warn("STARTED STOP JOB")
+
+	return &stop, nil
 }

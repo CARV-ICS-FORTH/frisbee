@@ -43,6 +43,7 @@ type Result struct {
 
 // NewExecutor creates a new executor from a kube config.
 func NewExecutor(kubeConfig *rest.Config) Executor {
+
 	return Executor{
 		KubeConfig: kubeConfig,
 		KubeClient: kubernetes.NewForConfigOrDie(kubeConfig),

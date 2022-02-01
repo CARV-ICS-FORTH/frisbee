@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package cluster
+package stop
 
 import (
 	"context"
@@ -27,23 +27,22 @@ import (
 	"github.com/carv-ics-forth/frisbee/controllers/utils/expressions"
 	"github.com/carv-ics-forth/frisbee/controllers/utils/lifecycle"
 	"github.com/carv-ics-forth/frisbee/controllers/utils/scheduler"
+	"github.com/carv-ics-forth/frisbee/pkg/executor"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// +kubebuilder:rbac:groups=frisbee.io,resources=clusters,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=frisbee.io,resources=clusters/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=frisbee.io,resources=clusters/finalizers,verbs=update
+// +kubebuilder:rbac:groups=frisbee.io,resources=stops,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=frisbee.io,resources=stops/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=frisbee.io,resources=stops/finalizers,verbs=update
 
-const (
-	jobOwnerKey = ".metadata.controller"
-)
+// +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=core,resources=pods/status,verbs=get;list;watch
 
 // Controller reconciles a Cluster object.
 type Controller struct {
@@ -55,6 +54,9 @@ type Controller struct {
 	state lifecycle.Classifier
 
 	serviceControl serviceutils.ServiceControlInterface
+
+	// executor is used to run commands directly into containers
+	executor executor.Executor
 }
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
@@ -64,7 +66,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		1: Load CR by name.
 		------------------------------------------------------------------
 	*/
-	var cr v1alpha1.Cluster
+	var cr v1alpha1.Stop
 
 	var requeue bool
 	result, err := utils.Reconcile(ctx, r, req, &cr, &requeue)
@@ -105,7 +107,6 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	filters := []client.ListOption{
 		client.InNamespace(req.Namespace),
 		client.MatchingLabels{v1alpha1.LabelManagedBy: req.Name},
-		client.MatchingFields{jobOwnerKey: req.Name},
 	}
 
 	if err := r.GetClient().List(ctx, &childJobs, filters...); err != nil {
@@ -157,8 +158,8 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		pause runs to investigate the cluster, without deleting the object.
 	*/
 	if cr.Spec.Suspend != nil && *cr.Spec.Suspend {
-		r.Logger.Info("Cluster is suspended",
-			"cluster", cr.GetName(),
+		r.Logger.Info("Stopper is suspended",
+			"stopper", cr.GetName(),
 			"reason", cr.Status.Reason,
 			"message", cr.Status.Message,
 		)
@@ -175,10 +176,10 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	*/
 	if newStatus.Phase == v1alpha1.PhaseSuccess {
 		r.GetEventRecorderFor("").Event(&cr, corev1.EventTypeNormal,
-			newStatus.Reason, "cluster succeeded")
+			newStatus.Reason, "stop succeeded")
 
-		r.Logger.Info("Cleaning up cluster jobs",
-			"cluster", cr.GetName(),
+		r.Logger.Info("Cleaning up stop jobs",
+			"stop", cr.GetName(),
 			"successfulJobs", r.state.SuccessfulList(),
 		)
 
@@ -197,8 +198,8 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if newStatus.Phase == v1alpha1.PhaseFailed {
 		r.Logger.Error(errors.New(newStatus.Reason), newStatus.Message)
 
-		r.Logger.Info("Cleaning up cluster jobs",
-			"cluster", cr.GetName(),
+		r.Logger.Info("Cleaning up stop jobs",
+			"stop", cr.GetName(),
 			"successfulJobs", r.state.SuccessfulList(),
 			"runningJobs", r.state.RunningList(),
 			"pendingJobs", r.state.PendingList(),
@@ -282,12 +283,12 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		If all jobs are scheduled but are not in the Running phase, they may be in the Pending phase.
 		In both cases, we have nothing else to do but waiting for the next reconciliation cycle.
 	*/
-	nextExpectedJob := cr.Status.ScheduledJobs + 1
+	nextJobToStop := cr.Status.ScheduledJobs + 1
 
 	if newStatus.Phase == v1alpha1.PhaseRunning ||
-		(cr.Spec.Until == nil && (nextExpectedJob >= len(cr.Status.QueuedJobs))) {
+		(cr.Spec.Until == nil && (nextJobToStop >= len(cr.Status.QueuedJobs))) {
 		r.Logger.Info("All jobs are scheduled. Nothing else to do. Waiting for something to happen",
-			"cluster", cr.GetName(),
+			"stop", cr.GetName(),
 		)
 
 		return utils.Stop()
@@ -310,18 +311,19 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		8: Construct our desired job and create it on Kubernetes
 		------------------------------------------------------------------
 
-		We need to construct a job based on our Cluster's template. Since we have prepared these jobs at
-		initialization, all we need is to get a pointer to the next job.
+		Since we have prepared these jobs at initialization, all we need is to get a pointer to the next job.
+		We then use the Kubernetes client to exec the stopping command directly into the target container.
 	*/
-	nextJob := getJob(&cr, nextExpectedJob)
 
-	if err := utils.Create(ctx, r, &cr, nextJob); err != nil {
-		return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot create job"))
+	serviceName, stopCmd := getJob(&cr, nextJobToStop)
+
+	if err := r.stopJob(&cr, serviceName, stopCmd); err != nil {
+		return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "unable to stop service %s", serviceName))
 	}
 
-	r.Logger.Info("Create clustered job",
-		"cluster", cr.GetName(),
-		"service", nextJob.GetName(),
+	r.Logger.Info("Stop service",
+		"job", cr.GetName(),
+		"service", serviceName,
 	)
 
 	/*
@@ -334,7 +336,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		we might not see our own status update, and then post one again.
 		So, we need to use the job name as a lock to prevent us from making the job twice.
 	*/
-	cr.Status.ScheduledJobs = nextExpectedJob
+	cr.Status.ScheduledJobs = nextJobToStop
 	cr.Status.LastScheduleTime = &metav1.Time{Time: time.Now()}
 
 	return lifecycle.Pending(ctx, r, &cr, "some jobs are still pending")
@@ -346,7 +348,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 */
 
 func (r *Controller) Finalizer() string {
-	return "clusters.frisbee.io/finalizer"
+	return "stops.frisbee.io/finalizer"
 }
 
 func (r *Controller) Finalize(obj client.Object) error {
@@ -374,36 +376,16 @@ func (r *Controller) Finalize(obj client.Object) error {
 
 func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 	r := &Controller{
-		Manager: mgr,
-		Logger:  logger.WithName("cluster"),
-		gvk:     v1alpha1.GroupVersion.WithKind("Cluster"),
+		Manager:  mgr,
+		Logger:   logger.WithName("stop"),
+		gvk:      v1alpha1.GroupVersion.WithKind("Stop"),
+		executor: executor.NewExecutor(ctrl.GetConfigOrDie()),
 	}
 
 	r.serviceControl = serviceutils.NewServiceControl(r)
 
-	// FieldIndexer knows how to index over a particular "field" such that it
-	// can later be used by a field selector.
-	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &v1alpha1.Service{}, jobOwnerKey,
-		func(rawObj client.Object) []string {
-			// grab the job object, extract the owner...
-			job := rawObj.(*v1alpha1.Service)
-
-			if !utils.IsManagedByThisController(job, r.gvk) {
-				return nil
-			}
-
-			owner := metav1.GetControllerOf(job)
-
-			// ...and if so, return it
-			return []string{owner.Name}
-		}); err != nil {
-		return err
-	}
-
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1alpha1.Cluster{}).
-		Named("cluster").
-		// WithEventFilter(r.Filters()).
-		Owns(&v1alpha1.Service{}, builder.WithPredicates(r.WatchServices())).
+		For(&v1alpha1.Stop{}).
+		Named("stop").
 		Complete(r)
 }

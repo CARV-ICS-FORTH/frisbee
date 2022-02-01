@@ -29,8 +29,8 @@ chaos:
   enabled: true
 
     #chaosDaemon:
-    # If you are using Kind or using containerd as CRI, you can use the
-    # config below to use containerd as the runtime in chaos-daemon.
+  # If you are using Kind or using containerd as CRI, you can use the
+  # config below to use containerd as the runtime in chaos-daemon.
   #runtime: containerd
   #socketPath: /run/containerd/containerd.sock
 
@@ -46,8 +46,8 @@ sonarqube:
     #tolerations:
     #  - key: "sonarqube"
     #    operator: "Equal"
-    #    value: "true"
-    #    effect: "NoSchedule"
+  #    value: "true"
+  #    effect: "NoSchedule"
 
   # nodeSelector:
   #  sonarqube: "true"
@@ -69,8 +69,8 @@ sonarqube:
       #    path: /
       # For additional control over serviceName and servicePort
       #   serviceName: sonarqube
-      # servicePort: 9000
-      #annotations:
+    # servicePort: 9000
+    #annotations:
     #kubernetes.io/ingress.class: nginx
     #nginx.ingress.kubernetes.io/proxy-body-size: "8m"
 

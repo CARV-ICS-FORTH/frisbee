@@ -11,6 +11,15 @@ spec:
       telemetry:
         - platform.telemetry.container
         - cockroach.telemetry.server
+
+      gracefulStop:
+        container: app
+        command:
+          - /bin/sh   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
+            cockroach node drain --insecure --host $(hostname)
+
     containers:
       - name: app
         image: cockroachdb/cockroach:v21.2.4
