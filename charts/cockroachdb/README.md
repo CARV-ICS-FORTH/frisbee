@@ -9,14 +9,14 @@ Install the platform and dependent charts.
 ```bash
 >> helm repo add frisbee https://carv-ics-forth.github.io/frisbee/charts
 >> helm install my-frisbee frisbee/platform
->> helm install my-ycsb frisbee/ycsb
 >> helm install my-cockroach frisbee/cockroachdb
+>> helm install my-ycsb frisbee/ycsb
 ```
 
 Run any of the testing plans.
 
 ```bash
->> kubectl apply -f examples/plan.baseline.yml 
+>> kubectl apply -f examples/1.baseline-single.yml 
 ```
 
 ## Introduction

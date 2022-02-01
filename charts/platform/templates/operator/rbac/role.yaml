@@ -323,6 +323,32 @@ rules:
 - apiGroups:
   - frisbee.io
   resources:
+  - virtualobjects
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - frisbee.io
+  resources:
+  - virtualobjects/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - frisbee.io
+  resources:
+  - virtualobjects/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - frisbee.io
+  resources:
   - workflows
   verbs:
   - create
