@@ -55,7 +55,7 @@ func (c *Client) SetNotificationChannel(webhookPort string, cb func(b *notifier.
 			cb(b)
 		}, 0))
 
-		errCh <- http.ListenAndServe(addr, handler)
+		errCh <- http.ListenAndServe(":"+webhookPort, handler)
 	}()
 
 	select {

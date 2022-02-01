@@ -1,5 +1,17 @@
 {{- if .Values.operator.enabled }}
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frisbee-operator
+spec:
+  ports:
+    - port: 6666
+      protocol: TCP
+  selector:
+    control-plane: manager
+
+---
 # Deployment of the Frisbee controller.
 apiVersion: apps/v1
 kind: Deployment
@@ -27,10 +39,12 @@ spec:
         - name: manager
           image: icsforth/frisbee-operator:latest
           ports:
+            - containerPort: 6666
+              name: webhook-grafana
+            #  protocol: TCP
             - containerPort: 9443
-              name: webhook-server
+              name: webhook-admiss
               protocol: TCP
-
           command:
             - /bin/sh   # Run shell
             - -c        # Read from string
