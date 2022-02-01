@@ -337,7 +337,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			return utils.Stop()
 		}
 
-		if telemetryJob.Status.Phase.Is(v1alpha1.PhaseSuccess) {
+		if telemetryJob.Status.Phase.Is(v1alpha1.PhaseSuccess) || telemetryJob.Status.Phase.Is(v1alpha1.PhaseFailed) {
 			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "the telemetry stack has terminated"))
 		}
 

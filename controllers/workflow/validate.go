@@ -72,7 +72,7 @@ func ValidateDAG(list []v1alpha1.Action, state lifecycle.ClassifierReader) error
 	for _, action := range list {
 		if deps := action.DependsOn; deps != nil {
 			if !successOK(deps) || !runningOK(deps) {
-				return errors.Errorf("invalid dependency on action %s", action.Name)
+				return errors.Errorf("invalid dependency. action [%s] depends on [%s]", action.Name, deps)
 			}
 		}
 

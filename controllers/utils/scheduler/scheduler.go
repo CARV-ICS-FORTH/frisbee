@@ -117,7 +117,7 @@ func stateBased(ctx context.Context, r utils.Reconciler, cr client.Object, expr 
 	return false, ctrl.Result{}, nil
 }
 
-func metricsBased(r utils.Reconciler, cr client.Object) (bool, ctrl.Result, error) {
+func metricsBased(r utils.Reconciler, cr metav1.Object) (bool, ctrl.Result, error) {
 	info, fired := expressions.FiredAlert(cr)
 	if fired {
 		r.Info("Metrics-Event fired ", "msg", info)
