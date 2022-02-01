@@ -66,6 +66,25 @@ Through these dashboards humans and controllers can examine to check things like
 
 ![](docs/images/masterdashboard.png)
 
+
+## :compass: What you can do with Frisbee
+
+* [Logical Dependencies](charts/iperf2/examples/0.server-client.yml)
+* [Scheduled Execution](charts/iperf2/examples/1.scheduled-clients.yml)
+* [Advanced Placement](charts/iperf2/examples/2.advanced-placement.yml )
+* [Conditional Loops](charts/iperf2/examples/3.create-until.yml)
+* [Conditional Execution](charts/iperf2/examples/4.create-when.yml)
+* [Runtime Assertions](charts/iperf2/examples/5.assertions.yml )
+* [Elastic Topologies](charts/iperf2/examples/6.deletions.yml )
+* [Recoverability Experiments](charts/iperf2/examples/7.failure-toleration.yml )
+* [Time-Driven Chaos Engineering](charts/iperf2/examples/8.time-driven-fault.yml )
+* [State-Driven Chaos Engineering](charts/iperf2/examples/9.state-driven-fault.yml)
+* [Metrics-Driven Chaos Engineering](charts/iperf2/examples/10.metrics-driven-fault.yml)
+* [App-Specific Graceful Shutdowns](charts/cockroach/examples/6.cluster-elastic-scaledown.yml )
+
+
+
+
 ## 📙 Documentation
 
 Frisbee addresses the key pain points developers and QA engineers face when testing cloud-native applications in the
