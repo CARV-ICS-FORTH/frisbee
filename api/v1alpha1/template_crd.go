@@ -105,7 +105,7 @@ type GenerateFromTemplate struct {
 	Inputs []map[string]string `json:"inputs,omitempty"`
 }
 
-func (t *GenerateFromTemplate) Validate(allowMultipleInputs bool) error {
+func (t *GenerateFromTemplate) Prepare(allowMultipleInputs bool) error {
 	switch {
 	case t.TemplateRef == "":
 		return errors.New("empty templateRef")
@@ -155,16 +155,24 @@ func (t *GenerateFromTemplate) GetInput(i int) map[string]string {
 		return copied
 
 	default:
-		// safety is assumed by Iterate
+		// safety is assumed by IterateInputs
 		return t.Inputs[i]
 	}
 }
 
-func (t *GenerateFromTemplate) Iterate(cb func(in map[string]string) error) error {
-	for i := 0; i < t.MaxInstances; i++ {
-		// recursively iterate the input.
-		if err := cb(t.GetInput(i % len(t.Inputs))); err != nil {
-			return err
+func (t *GenerateFromTemplate) IterateInputs(cb func(in map[string]string) error) error {
+	if len(t.Inputs) == 0 {
+		for i := 0; i < t.MaxInstances; i++ {
+			if err := cb(nil); err != nil {
+				return err
+			}
+		}
+	} else {
+		for i := 0; i < t.MaxInstances; i++ {
+			// recursively iterate the input.
+			if err := cb(t.GetInput(i % len(t.Inputs))); err != nil {
+				return err
+			}
 		}
 	}
 

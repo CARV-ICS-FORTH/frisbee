@@ -53,7 +53,7 @@ func getJob(group *v1alpha1.Cluster, i int) *v1alpha1.Service {
 const placementLabel = "placement"
 
 func (r *Controller) constructJobSpecList(ctx context.Context, cluster *v1alpha1.Cluster) ([]v1alpha1.ServiceSpec, error) {
-	if err := cluster.Spec.GenerateFromTemplate.Validate(true); err != nil {
+	if err := cluster.Spec.GenerateFromTemplate.Prepare(true); err != nil {
 		return nil, errors.Wrapf(err, "template validation")
 	}
 

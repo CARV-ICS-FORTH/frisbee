@@ -1,6 +1,6 @@
-# Redis
+# Iperf2
 
-> [*Redis*](https://github.com/redis/redis) is an in-memory database that persists on disk.
+> [*Iperf2*](https://sourceforge.net/projects/iperf2/)  is a tool for network performance measurement and tuning.
 
 ## TL;DR
 
@@ -9,19 +9,18 @@ Install the platform and dependent charts.
 ```bash
 >> helm repo add frisbee https://carv-ics-forth.github.io/frisbee/charts
 >> helm install my-frisbee frisbee/platform
->> helm install my-redis frisbee/redis
->> helm install my-ycsb frisbee/ycsb
+>> helm install my-iperf2 frisbee/iperf2
 ```
 
 Run any of the testing plans.
 
 ```bash
->> kubectl apply -f examples/1.baseline-single.yml 
+>> kubectl apply -f examples/0.server-client.yml
 ```
 
 ## Introduction
 
-This chart bootstraps a Redis deployment on a [Kubernetes](http://kubernetes.io) cluster using
+This chart bootstraps an Iperf2 deployment on a [Kubernetes](http://kubernetes.io) cluster using
 the [Helm](https://helm.sh) package manager.
 
 ## Prerequisites
@@ -40,11 +39,10 @@ To install the chart with the release name `my-release`:
 # Install Frisbee platform
 >> helm install my-frisbee frisbee/platform
 # Install dependent charts
->> helm install my-ycsb frisbee/ycsb
->> helm install my-redis frisbee/redis
+>> helm install my-iperf2 frisbee/iperf2
 ```
 
-These commands deploy CockroachDB on the Kubernetes cluster in the default configuration.
+These commands deploy Iperf on the Kubernetes cluster in the default configuration.
 
 The [Parameters](#parameters) section lists the parameters that can be configured during installation.
 
@@ -52,10 +50,10 @@ The [Parameters](#parameters) section lists the parameters that can be configure
 
 ## Uninstalling the Chart
 
-To uninstall/delete the `my-redis` release:
+To uninstall/delete the `my-iperf2` release:
 
 ```bash
->> helm delete my-redis
+>> helm delete my-iperf2
 ```
 
 The command removes all the Kubernetes components associated with the chart and deletes the release. Use the

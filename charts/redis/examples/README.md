@@ -1,33 +1,106 @@
-# All six workloads have a data set which is similar. Workloads D and E insert records during the test run.
+# Examples
 
-# Thus, to keep the database size consistent, we apply the following sequence:
+### 1. Baseline Single
 
-#
+1) Start a standalone Redis database server
+2) Load the database with keys
+3) Run a sequence of YCSB workloads in the following order (A,B, C,F, D, E)
 
-# 1) Load the database, using workload A's parameter file (workloads/workloada) and the "-load" switch to the client.
+#### Observations
 
-# 2) Run workload A (using workloads/workloada and "-t") for a variety of throughputs.
+* The requests are served so fast that the telemetry agents can send only one sample before the workload is done.
+* The re-loader fails with an i/o timeout
 
-# 3) Run workload B (using workloads/workloadb and "-t") for a variety of throughputs.
+### 2. Baseline Cluster Deterministic
 
-# 4) Run workload C (using workloads/workloadc and "-t") for a variety of throughputs.
+1) Start a set of individual Redis servers
+2) Combine the individual servers into a Redis cluster.
+3) Run a sequence of YCSB workloads (A,B, C,F, D, E), sending traffic to masters-0
 
-# 5) Run workload F (using workloads/workloadf and "-t") for a variety of throughputs.
+#### Observations
 
-# 6) Run workload D (using workloads/workloadd and "-t") for a variety of throughputs.
+### 3. Baseline Cluster Deterministic-OutOfOrder
 
-# This workload inserts records, increasing the size of the database.
+1) Start a set of individual Redis servers
+2) Combine the individual servers into a Redis cluster.
+3) Run a sequence of YCSB workloads (A,B, C,F, D, E), sending traffic to masters-2
 
-# 7) Delete the data in the database. Otherwise, the remaining data of the cluster might affect the results
+#### Observations
 
-# of the following workload.
+### 4. Baseline Cluster Non-Deterministic
 
-# 8) Reload the database, using workload E's parameter file (workloads/workloade) and the "-load switch to the client.
+1) Start a set of individual Redis servers
+2) Combine the individual servers into a Redis cluster.
+3) Run a sequence of YCSB workloads (A,B, C,F, D, E), sending traffic to all servers.
 
-# 9) Run workload E (using workloads/workloadd and "-t") for a variety of throughputs.
+#### Observations
 
-# This workload inserts records, increasing the size of the database.
+### 5. Scale-up Scheduled
 
-#
+1) Start a set of individual Redis servers
+2) Combine the individual servers into a Redis cluster.
+3) Run workload A sending traffic to a random node
+4) Scale-up the topology by periodically adding new nodes
 
-# For the deletion, instead of destroying the cluster, we destroy and recreate the cluster.
+#### Observations
+
+* Redis does not support load distributed. The additional servers remain idle, albeit joining the cluster.
+
+### 6. Scale-up Conditional
+
+1) Start a set of individual Redis servers
+2) Combine the individual servers into a Redis cluster.
+3) Stress the topology by periodically adding new clients sending traffic to a random node
+4) Scale-up the topology when the tail-latency goes above a given threshold
+
+#### Observations
+
+* Redis does not support load distributed. The additional servers remain idle, albeit joining the cluster.
+
+### 7. Elastic Scale-down (Delete)
+
+1) Start a set of individual Redis servers
+2) Combine the individual servers into a Redis cluster.
+3) Run workload A sending traffic to a random node
+4) Scale-up the topology by adding 5 more services (group a).
+5) Scale-up the topology by adding 5 more services (group b).
+6) Scale-down the topology by **deleting** services in group a  (remove it from the Kubernetes API)
+
+#### Observations
+
+* Sometimes group B cannot join the cluster and fails.
+
+### 8. Elastic Scale-down (Stop)
+
+1) Start a set of individual Redis servers
+2) Combine the individual servers into a Redis cluster.
+3) Run workload A sending traffic to a random node
+4) Scale-up the topology by adding new nodes
+5) Scale-down the topology by periodically **stopping** some nodes (run command within target container to drain the
+   node)
+
+#### **Observations**
+
+### 9. Elastic Scale-down (Kill)
+
+1) Start a set of individual Redis servers
+2) Combine the individual servers into a Redis cluster.
+3) Run workload A sending traffic to a random node
+4) Scale-up the topology by adding new nodes
+5) Scale-down the topology by periodically **killing**  some nodes (use Chaos-Mesh to forcibly kill the container)
+
+#### Observations
+
+* Sometimes group "more-servers" cannot join the cluster and fails.
+
+### TODO
+
+#### Failure at hotspot
+
+This experiment configures a cluster of 3 Redis nodes and sends traffic to one of them.
+
+After 2 minutes, we inject a failure on the most used server.
+
+Observations
+
+* Not currently supported. We must change the macros to select services based on Grafana information.

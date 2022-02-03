@@ -2,34 +2,31 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Workflow
 metadata:
-  name: cockroach-scaleup-conditional
+  name: redis-scaleup-conditional
 spec:
   withTelemetry:
     importDashboards:
       - platform.telemetry.container
       - ycsb.telemetry.client
-      - cockroach.telemetry.server
+      - redis.telemetry.server
 
   actions:
 
-    # Step 0. Create individual cockroach servers
+    # Step 0. Create individual Redis servers
     - action: Cluster
       name: masters
       cluster:
-        templateRef: cockroach.cluster.master
+        templateRef: redis.cluster.master
         instances: 3
-        inputs:
-          - { join: "masters-0:26257,masters-1:26257,masters-2:26257" }
 
-
-    # Step 1. Create a cockroach cluster from the individual servers
+    # Step 1. Create a Redis cluster from the individual servers
     - action: Service
       name: boot
       depends: { running: [ masters ] }
       service:
-        templateRef: cockroach.cluster.bootstrap
+        templateRef: redis.cluster.bootstrap
         inputs:
-          - { server: .cluster.masters.one }
+          - { servers: .cluster.masters.all }
 
 
     # Step 3. Add new clients every two minutes to hammer the cluster with requests
@@ -37,10 +34,10 @@ spec:
       name: loaders
       depends: { success: [ boot ] }
       cluster:
-        templateRef: ycsb.cockroach.loader
+        templateRef: ycsb.redis.loader
         instances: 100
         inputs:
-          - { server: .cluster.masters.one, workload: workloada, recordcount: "100000000", threads: "40", delay: "15" }
+          - { server: .cluster.masters.one , workload: workloada, recordcount: "100000000", threads: "40", mode: "cluster" }
         schedule:
           cron: "@every 2m"
 
@@ -50,10 +47,10 @@ spec:
       name: more-servers
       depends: { success: [ boot ] }
       cluster:
-        templateRef: cockroach.cluster.master
+        templateRef: redis.cluster.master
         instances: 10
         inputs:
-          - { join: "masters-0:26257" }
+          - { join: .cluster.masters.one }
         schedule:
           conditions:
             metrics: 'max() of query(A2EjFbsMk/26/99Latency, 5m, now) is above(80000)'

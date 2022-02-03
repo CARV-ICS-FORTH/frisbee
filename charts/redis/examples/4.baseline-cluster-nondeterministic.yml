@@ -1,0 +1,104 @@
+---
+apiVersion: frisbee.io/v1alpha1
+kind: Workflow
+metadata:
+  name: redis-baseline-cluster-nondeterministic
+spec:
+  withTelemetry:
+    importDashboards:
+      - platform.telemetry.container
+      - ycsb.telemetry.client
+      - redis.telemetry.server
+
+  actions:
+    # Step 0. Create individual Redis servers
+    - action: Cluster
+      name: masters
+      cluster:
+        templateRef: redis.cluster.master
+        instances: 3
+
+    # Step 1. Create a Redis cluster from the individual servers
+    - action: Service
+      name: boot
+      depends: { running: [ masters ] }
+      service:
+        templateRef: redis.cluster.bootstrap
+        inputs:
+          - { server: .cluster.masters.all }
+
+
+    # Step 2. Preload the server with keys
+    - action: Service
+      depends: { success: [ boot ] }
+      name: loader
+      service:
+        templateRef: ycsb.redis.loader
+        inputs:
+          - { server: .cluster.masters.one, workload: workloada, recordcount: "1000000", threads: "40", mode: "cluster" }
+
+    # Step 2. Run YCSB workload A
+    - action: Service
+      depends: { success: [ loader ] }
+      name: workload-a
+      service:
+        templateRef: ycsb.redis.runner
+        inputs:
+          - { server: .cluster.masters.one, workload: workloada, operationcount: "1000000", threads: "40", mode: "cluster" }
+
+    # Step 3. Run YCSB workload B
+    - action: Service
+      depends: { success: [ workload-a ] }
+      name: workload-b
+      service:
+        templateRef: ycsb.redis.runner
+        inputs:
+          - { server: .cluster.masters.one, workload: workloadb, operationcount: "1000000", threads: "40", mode: "cluster" }
+
+    # Step 4. Run YCSB workload C
+    - action: Service
+      depends: { success: [ workload-b ] }
+      name: workload-c
+      service:
+        templateRef: ycsb.redis.runner
+        inputs:
+          - { server: .cluster.masters.one, workload: workloadc, operationcount: "1000000", threads: "40", mode: "cluster" }
+
+    # Step 5. Run YCSB workload F
+    - action: Service
+      depends: { success: [ workload-c ] }
+      name: workload-f
+      service:
+        templateRef: ycsb.redis.runner
+        inputs:
+          - { server: .cluster.masters.one, workload: workloadf, operationcount: "1000000", threads: "40", mode: "cluster" }
+
+    # Step 6. Run YCSB workload D
+    - action: Service
+      depends: { success: [ workload-f ] }
+      name: workload-d
+      service:
+        templateRef: ycsb.redis.runner
+        inputs:
+          - { server: .cluster.masters.one, workload: workloadd, operationcount: "1000000", threads: "40", mode: "cluster" }
+
+    # Step 7: Reload the data with parameters of workload E.
+    # Otherwise, the remaining data of the cluster might affect the results
+    # We use the dropdata field to remove all data before test.
+    - action: Service
+      depends: { success: [ workload-d ] }
+      name: reloader
+      service:
+        templateRef: ycsb.redis.loader
+        inputs:
+          - { server: .cluster.masters.one, workload: workloade, recordcount: "1000000", threads: "40", dropdata: "true", mode: "cluster" }
+
+
+    # Step 8: Run workload E
+    - action: Service
+      depends: { success: [ reloader ] }
+      name: workload-e
+      service:
+        templateRef: ycsb.redis.runner
+        inputs:
+          - { server: .cluster.masters.one, workload: workloade, operationcount: "1000000", threads: "40", mode: "cluster" }

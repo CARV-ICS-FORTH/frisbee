@@ -2,34 +2,31 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Workflow
 metadata:
-  name: cockroach-scaledown-delete
+  name: redis-scaledown-delete
 spec:
   withTelemetry:
     importDashboards:
       - platform.telemetry.container
       - ycsb.telemetry.client
-      - cockroach.telemetry.server
+      - redis.telemetry.server
 
   actions:
 
-    # Step 0. Create individual cockroach servers
+    # Step 0. Create individual Redis servers
     - action: Cluster
       name: masters
       cluster:
-        templateRef: cockroach.cluster.master
+        templateRef: redis.cluster.master
         instances: 3
-        inputs:
-          - { join: "masters-0:26257,masters-1:26257,masters-2:26257" }
 
-
-    # Step 1. Create a cockroach cluster from the individual servers
+    # Step 1. Create a Redis cluster from the individual servers
     - action: Service
       name: boot
       depends: { running: [ masters ] }
       service:
-        templateRef: cockroach.cluster.bootstrap
+        templateRef: redis.cluster.bootstrap
         inputs:
-          - { server: .cluster.masters.one }
+          - { servers: .cluster.masters.all }
 
 
     # Step 2. Hammer the server with requests
@@ -37,9 +34,9 @@ spec:
       depends: { success: [ boot ] }
       name: loader
       service:
-        templateRef: ycsb.cockroach.loader
+        templateRef: ycsb.redis.loader
         inputs:
-          - { server: .cluster.masters.one , workload: workloada, recordcount: "100000000", threads: "4", delay: "15" }
+          - { server: .cluster.masters.one , workload: workloada, recordcount: "100000000", threads: "40", mode: "cluster" }
 
 
     # Add 5 new servers.
@@ -47,20 +44,20 @@ spec:
       name: groupa
       depends: { running: [ loader ] }
       cluster:
-        templateRef: cockroach.cluster.master
+        templateRef: redis.cluster.master
         instances: 5
         inputs:
-          - { join: "masters-0:26257" }
+          - { join: .cluster.masters.one }
 
     # Add 5 new servers.
     - action: Cluster
       name: groupb
       depends: { running: [ groupa ] }
       cluster:
-        templateRef: cockroach.cluster.master
+        templateRef: redis.cluster.master
         instances: 5
         inputs:
-          - { join: "masters-0:26257" }
+          - { join: .cluster.masters.one }
 
 
     # When all servers are up and running, delete some of them.

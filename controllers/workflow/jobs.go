@@ -59,7 +59,7 @@ func (r *Controller) service(ctx context.Context, w *v1alpha1.Workflow, action v
 	}
 
 	// get the service template
-	if err := action.Service.Validate(false); err != nil {
+	if err := action.Service.Prepare(false); err != nil {
 		return nil, errors.Wrapf(err, "template validation")
 	}
 
@@ -101,7 +101,7 @@ func (r *Controller) chaos(ctx context.Context, w *v1alpha1.Workflow, action v1a
 	}
 
 	// get the service template
-	if err := action.Chaos.Validate(false); err != nil {
+	if err := action.Chaos.Prepare(false); err != nil {
 		return nil, errors.Wrapf(err, "template validation")
 	}
 
