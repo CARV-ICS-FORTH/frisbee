@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'charts/**/values.yaml'
+      - 'charts/*/values.yaml'
 
 jobs:
   generate-chart-readme:
