@@ -25,9 +25,12 @@ spec:
     parameters:
       memory: ""
       cpu: ""
+      join: ""
   service:
     decorators: # Decorators
-      telemetry: [ platform.telemetry.container, redis.telemetry.server ]
+      telemetry:
+        - platform.telemetry.container
+        - redis.telemetry.server
       resources:
         memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
         cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
@@ -45,13 +48,11 @@ spec:
               fieldRef:
                 fieldPath: status.podIP
         command:
-          - /bin/sh   # Run shell
-          - -c        # Read from string
-          - |         # Multi-line str
+          - /bin/bash   # Run shell
+          - -c          # Read from string
+          - |           # Multi-line str
             set -eum
             trap "touch /dev/shm/stop" EXIT
-
-            echo "Start master node at ${podIP}:6379"
 
             echo "Create Redis configuration"
             cat > redis.conf <<EOF
@@ -61,12 +62,31 @@ spec:
               cluster-config-file nodes.conf
               cluster-node-timeout 5000
 
-              cluster-announce-ip $podIP
+              cluster-announce-ip ${podIP}
               cluster-announce-port 6379
               cluster-announce-bus-port 16379
             EOF
 
-            redis-server redis.conf
+            echo "Starting Redis node at ${podIP}:6379"
+            redis-server redis.conf &
+
+            servers=( {{"{{.Inputs.Parameters.join}}"}} )
+            if [ ${#servers[@]} -gt 0 ]; then
+              echo "Join cluster by contacting ${servers[*]}"
+
+              ips=($(getent hosts ${servers[*]} | awk '{print $1}'))
+
+              all=()
+              for i in ${!ips[*]}; do
+                all[i]=$(echo ${ips[$i]} 6379)
+              done
+
+              echo "Connecting ${podIP}:6379 to ${all[*]}"
+              redis-cli -h ${podIP} -p 6379 CLUSTER MEET ${all[*]}
+            fi
+
+            echo "Listening for connections"
+            tail -f /dev/null
 
         livenessProbe:
           exec:
@@ -97,6 +117,7 @@ spec:
   inputs:
     parameters:
       servers: localhost
+      delay: "0"
   service:
     containers:
       - name: app
@@ -121,5 +142,6 @@ spec:
             echo "Create cluster from ${all[*]}"
 
             # Sleep a bit to compensate for Kubernetes delays.
-            sleep 10
+            sleep {{"{{.Inputs.Parameters.delay}}"}}
+
             redis-cli --cluster create --cluster-yes ${all[*]}

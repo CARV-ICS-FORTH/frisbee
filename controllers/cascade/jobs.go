@@ -48,7 +48,7 @@ func getJob(group *v1alpha1.Cascade, i int) *v1alpha1.Chaos {
 }
 
 func (r *Controller) constructJobSpecList(ctx context.Context, group *v1alpha1.Cascade) ([]v1alpha1.ChaosSpec, error) {
-	if err := group.Spec.GenerateFromTemplate.Validate(true); err != nil {
+	if err := group.Spec.GenerateFromTemplate.Prepare(true); err != nil {
 		return nil, errors.Wrapf(err, "template validation")
 	}
 

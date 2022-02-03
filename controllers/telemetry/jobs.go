@@ -52,7 +52,7 @@ func (r *Controller) installPrometheus(ctx context.Context, w *v1alpha1.Telemetr
 			Inputs:       nil,
 		}
 
-		if err := fromtemplate.Validate(false); err != nil {
+		if err := fromtemplate.Prepare(false); err != nil {
 			return errors.Wrapf(err, "template validation")
 		}
 
@@ -82,7 +82,7 @@ func (r *Controller) installGrafana(ctx context.Context, w *v1alpha1.Telemetry) 
 			Inputs:       nil,
 		}
 
-		if err := fromtemplate.Validate(false); err != nil {
+		if err := fromtemplate.Prepare(false); err != nil {
 			return errors.Wrapf(err, "template validation")
 		}
 

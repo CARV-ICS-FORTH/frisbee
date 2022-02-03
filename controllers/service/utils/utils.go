@@ -79,7 +79,7 @@ func (s *ServiceControl) GetServiceSpecList(ctx context.Context, namespace strin
 
 	specs := make([]v1alpha1.ServiceSpec, 0, fromTemplate.MaxInstances)
 
-	if err := fromTemplate.Iterate(func(userInputs map[string]string) error {
+	if err := fromTemplate.IterateInputs(func(userInputs map[string]string) error {
 		scheme := templateutils.Scheme{
 			Inputs: template.Spec.Inputs,
 			Spec:   string(serviceSpec),
@@ -124,7 +124,7 @@ func (s *ServiceControl) generateSpecFromScheme(scheme *templateutils.Scheme, us
 		for key, value := range userInputs {
 			_, exists := scheme.Inputs.Parameters[key]
 			if !exists {
-				return v1alpha1.ServiceSpec{}, errors.Errorf("parameteter [%s] does not exist", key)
+				return v1alpha1.ServiceSpec{}, errors.Errorf("parameter [%s] does not exist", key)
 			}
 
 			scheme.Inputs.Parameters[key] = value

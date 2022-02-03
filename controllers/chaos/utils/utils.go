@@ -78,7 +78,7 @@ func (s *ChaosControl) GetChaosSpecList(ctx context.Context, namespace string, f
 
 	specs := make([]v1alpha1.ChaosSpec, 0, fromTemplate.MaxInstances)
 
-	if err := fromTemplate.Iterate(func(userInputs map[string]string) error {
+	if err := fromTemplate.IterateInputs(func(userInputs map[string]string) error {
 		scheme := templateutils.Scheme{
 			Inputs: template.Spec.Inputs,
 			Spec:   string(chaosSpec),
@@ -123,7 +123,7 @@ func (s *ChaosControl) generateSpecFromScheme(scheme *templateutils.Scheme, user
 		for key, value := range userInputs {
 			_, exists := scheme.Inputs.Parameters[key]
 			if !exists {
-				return v1alpha1.ChaosSpec{}, errors.Errorf("parameteter [%s] does not exist", key)
+				return v1alpha1.ChaosSpec{}, errors.Errorf("parameter [%s] does not exist", key)
 			}
 
 			scheme.Inputs.Parameters[key] = value

@@ -16,7 +16,6 @@ spec:
     - action: Service
       name: master
       service:
-        
         templateRef: redis.single.master
 
     # Create a Slave node
@@ -24,7 +23,6 @@ spec:
       name: slave
       depends: { running: [ master ] }
       service:
-        
         templateRef: redis.single.slave
         inputs:
           - { master: .service.master.one }
@@ -35,7 +33,6 @@ spec:
       name: sentinel
       depends: { running: [ master, slave ] }
       service:
-        
         templateRef: redis.single.sentinel
         inputs:
           - { master: .service.master.one }

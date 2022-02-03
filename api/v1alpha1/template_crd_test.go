@@ -100,8 +100,8 @@ func TestFromTemplate_Validate(t1 *testing.T) {
 				MaxInstances: tt.fields.Instances,
 				Inputs:       tt.fields.Inputs,
 			}
-			if err := t.Validate(tt.args.allowMultipleInputs); (err != nil) != tt.wantErr {
-				t1.Errorf("Validate() error = %v, wantErr %v", err, tt.wantErr)
+			if err := t.Prepare(tt.args.allowMultipleInputs); (err != nil) != tt.wantErr {
+				t1.Errorf("Prepare() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

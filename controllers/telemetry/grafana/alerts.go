@@ -116,7 +116,7 @@ func ParseAlertExpr(query v1alpha1.ExprMetrics) (*Alert, error) {
 			4) avg() OF query(wpFnYRwGk/2/bitrate, 15m, now) IS WithinRange(4, 88) FOR (1m)
 			5) avg() OF query(wpFnYRwGk/2/bitrate, 15m, now) IS WithinRange(4, 88) FOR (1m) EVERY(1m)
 
-		Validate your expressions at: https://regex101.com/r/sIspYb/1/`, query)
+		Prepare your expressions at: https://regex101.com/r/sIspYb/1/`, query)
 	}
 
 	alert := Alert{
