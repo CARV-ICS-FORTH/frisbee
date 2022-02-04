@@ -88,7 +88,7 @@
   "fiscalYearStartMonth": 0,
   "gnetId": null,
   "graphTooltip": 1,
-  "id": 4,
+  "id": 1,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -607,121 +607,6 @@
               "tooltip": false,
               "viz": false
             },
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "always",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "reqps"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Average"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "orange",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.spanNulls",
-                "value": true
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 7,
-        "w": 24,
-        "x": 0,
-        "y": 16
-      },
-      "id": 86,
-      "links": [],
-      "options": {
-        "legend": {
-          "calcs": [
-            "mean",
-            "max",
-            "min"
-          ],
-          "displayMode": "table",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "single"
-        }
-      },
-      "pluginVersion": "8.1.3",
-      "targets": [
-        {
-          "exemplar": true,
-          "expr": "sum(max(ycsb_ops) by (instance))",
-          "hide": false,
-          "instant": false,
-          "interval": "",
-          "intervalFactor": 4,
-          "legendFormat": "Average",
-          "refId": "Average"
-        }
-      ],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "Total Throughput",
-      "transformations": [],
-      "transparent": true,
-      "type": "timeseries"
-    },
-    {
-      "datasource": "Prometheus",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -760,7 +645,7 @@
         "h": 7,
         "w": 24,
         "x": 0,
-        "y": 23
+        "y": 16
       },
       "id": 96,
       "links": [],
@@ -823,13 +708,243 @@
       "type": "timeseries"
     },
     {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "always",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "reqps"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Average"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.spanNulls",
+                "value": true
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 23
+      },
+      "id": 86,
+      "links": [],
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "max",
+            "min"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "pluginVersion": "8.1.3",
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "sum(max(ycsb_ops) by (instance))",
+          "hide": false,
+          "instant": false,
+          "interval": "",
+          "intervalFactor": 4,
+          "legendFormat": "Average",
+          "refId": "Average"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Total Throughput",
+      "transformations": [],
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "always",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "reqps"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Average"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.spanNulls",
+                "value": true
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 30
+      },
+      "id": 104,
+      "links": [],
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "max",
+            "min"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "pluginVersion": "8.1.3",
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "avg(ycsb_ops)",
+          "hide": false,
+          "instant": false,
+          "interval": "",
+          "intervalFactor": 4,
+          "legendFormat": "Average",
+          "refId": "Average"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Average Throughput",
+      "transformations": [],
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
       "collapsed": false,
       "datasource": null,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 30
+        "y": 37
       },
       "id": 78,
       "panels": [],
@@ -913,7 +1028,7 @@
         "h": 8,
         "w": 16,
         "x": 0,
-        "y": 31
+        "y": 38
       },
       "id": 97,
       "links": [],
@@ -1072,7 +1187,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 31
+        "y": 38
       },
       "id": 98,
       "links": [],
@@ -1188,7 +1303,7 @@
         "h": 7,
         "w": 8,
         "x": 0,
-        "y": 39
+        "y": 46
       },
       "id": 26,
       "links": [],
@@ -1304,7 +1419,7 @@
         "h": 7,
         "w": 8,
         "x": 8,
-        "y": 39
+        "y": 46
       },
       "id": 94,
       "links": [],
@@ -1421,7 +1536,7 @@
         "h": 7,
         "w": 8,
         "x": 16,
-        "y": 39
+        "y": 46
       },
       "id": 95,
       "links": [],
@@ -1467,7 +1582,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 46
+        "y": 53
       },
       "id": 80,
       "panels": [],
@@ -1551,7 +1666,7 @@
         "h": 8,
         "w": 15,
         "x": 0,
-        "y": 47
+        "y": 54
       },
       "id": 74,
       "links": [],
@@ -1582,6 +1697,15 @@
           "legendFormat": "{{operation}}",
           "refId": "QPS",
           "step": 10
+        },
+        {
+          "exemplar": true,
+          "expr": "avg(ycsb_ops)",
+          "hide": false,
+          "interval": "",
+          "intervalFactor": 4,
+          "legendFormat": "Average",
+          "refId": "A"
         }
       ],
       "thresholds": [
@@ -1718,7 +1842,7 @@
         "h": 8,
         "w": 9,
         "x": 15,
-        "y": 47
+        "y": 54
       },
       "id": 87,
       "links": [],
@@ -1834,7 +1958,7 @@
         "h": 7,
         "w": 8,
         "x": 0,
-        "y": 55
+        "y": 62
       },
       "id": 88,
       "links": [],
@@ -1950,7 +2074,7 @@
         "h": 7,
         "w": 8,
         "x": 8,
-        "y": 55
+        "y": 62
       },
       "id": 89,
       "links": [],
@@ -2066,7 +2190,7 @@
         "h": 7,
         "w": 8,
         "x": 16,
-        "y": 55
+        "y": 62
       },
       "id": 92,
       "links": [],
@@ -2105,7 +2229,7 @@
       "type": "timeseries"
     }
   ],
-  "refresh": "30s",
+  "refresh": false,
   "schemaVersion": 31,
   "style": "dark",
   "tags": [
@@ -2115,8 +2239,8 @@
     "list": []
   },
   "time": {
-    "from": "now-1h",
-    "to": "now"
+    "from": "2022-02-04T15:04:37.807Z",
+    "to": "2022-02-04T15:14:23.248Z"
   },
   "timepicker": {
     "refresh_intervals": [
@@ -2146,5 +2270,5 @@
   "timezone": "browser",
   "title": "YCSB Services",
   "uid": "A2EjFbsMk",
-  "version": 2
+  "version": 1
 }
