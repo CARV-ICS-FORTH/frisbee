@@ -16,7 +16,7 @@ spec:
               service:
                 name: prometheus
                 port:
-                  number: {{.Values.operator.prometheusPort}}
+                  number: {{.Values.telemetry.prometheusPort}}
 
     - host: grafana.{{.Values.global.ingress}}
       http:
@@ -27,4 +27,4 @@ spec:
               service:
                 name: grafana
                 port:
-                  number: {{.Values.operator.grafanaPort}}
+                  number: {{.Values.telemetry.grafanaPort}}

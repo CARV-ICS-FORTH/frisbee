@@ -73,19 +73,17 @@
   },
   "description": "Prometheus dashboard for Redis servers",
   "editable": true,
+  "fiscalYearStartMonth": 0,
   "gnetId": 4074,
   "graphTooltip": 0,
-  "id": 3,
-  "iteration": 1631287790210,
+  "id": 1,
+  "iteration": 1643915341624,
   "links": [],
+  "liveNow": false,
   "panels": [
     {
       "collapsed": false,
       "datasource": null,
-      "fieldConfig": {
-        "defaults": {},
-        "overrides": []
-      },
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -142,7 +140,7 @@
         "showUnfilled": true,
         "text": {}
       },
-      "pluginVersion": "8.1.3",
+      "pluginVersion": "8.2.3",
       "targets": [
         {
           "exemplar": true,
@@ -204,7 +202,7 @@
         "showUnfilled": true,
         "text": {}
       },
-      "pluginVersion": "8.1.3",
+      "pluginVersion": "8.2.3",
       "targets": [
         {
           "exemplar": true,
@@ -223,10 +221,6 @@
     {
       "collapsed": false,
       "datasource": null,
-      "fieldConfig": {
-        "defaults": {},
-        "overrides": []
-      },
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -238,6 +232,96 @@
       "repeat": null,
       "title": "Overview  $instance",
       "type": "row"
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "always",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 16
+      },
+      "id": 56,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "pluginVersion": "8.1.3",
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "max(redis_uptime{instance=\"$instance\"}) by (replication_role)",
+          "instant": false,
+          "interval": "",
+          "legendFormat": "{{replication_role}}",
+          "refId": "A"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Uptime per Role",
+      "transparent": true,
+      "type": "timeseries"
     },
     {
       "cacheTimeout": null,
@@ -261,7 +345,7 @@
         "h": 4,
         "w": 5,
         "x": 0,
-        "y": 16
+        "y": 22
       },
       "id": 20,
       "interval": null,
@@ -282,7 +366,7 @@
         "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "8.1.3",
+      "pluginVersion": "8.2.3",
       "targets": [
         {
           "expr": "max(redis_uptime{instance=\"$instance\"})",
@@ -375,7 +459,7 @@
         "h": 4,
         "w": 6,
         "x": 5,
-        "y": 16
+        "y": 22
       },
       "id": 33,
       "interval": null,
@@ -396,11 +480,11 @@
         "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "8.1.3",
+      "pluginVersion": "8.2.3",
       "targets": [
         {
           "exemplar": true,
-          "expr": "redis_keyspace_keys{instance=\"$instance\"}",
+          "expr": "max(redis_keyspace_keys{instance=\"$instance\"}) by (instance)",
           "groupBy": [
             {
               "params": [
@@ -416,7 +500,7 @@
             }
           ],
           "interval": "",
-          "legendFormat": "",
+          "legendFormat": "{{instance}}",
           "measurement": "redis",
           "orderByTime": "ASC",
           "policy": "default",
@@ -483,7 +567,7 @@
         "h": 4,
         "w": 3,
         "x": 11,
-        "y": 16
+        "y": 22
       },
       "id": 61,
       "options": {
@@ -501,7 +585,7 @@
         "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "8.1.3",
+      "pluginVersion": "8.2.3",
       "targets": [
         {
           "exemplar": true,
@@ -549,7 +633,7 @@
         "h": 4,
         "w": 3,
         "x": 14,
-        "y": 16
+        "y": 22
       },
       "id": 30,
       "interval": null,
@@ -570,7 +654,7 @@
         "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "8.1.3",
+      "pluginVersion": "8.2.3",
       "targets": [
         {
           "exemplar": true,
@@ -621,7 +705,7 @@
         "h": 4,
         "w": 4,
         "x": 17,
-        "y": 16
+        "y": 22
       },
       "id": 32,
       "interval": null,
@@ -642,7 +726,7 @@
         "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "8.1.3",
+      "pluginVersion": "8.2.3",
       "targets": [
         {
           "exemplar": true,
@@ -732,7 +816,7 @@
         "h": 4,
         "w": 3,
         "x": 21,
-        "y": 16
+        "y": 22
       },
       "id": 66,
       "interval": null,
@@ -753,7 +837,7 @@
         "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "8.1.3",
+      "pluginVersion": "8.2.3",
       "targets": [
         {
           "exemplar": true,
@@ -839,7 +923,7 @@
               "type": "linear"
             },
             "showPoints": "always",
-            "spanNulls": true,
+            "spanNulls": false,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -886,7 +970,7 @@
         "h": 8,
         "w": 10,
         "x": 0,
-        "y": 20
+        "y": 26
       },
       "id": 49,
       "links": [],
@@ -995,7 +1079,7 @@
               "type": "linear"
             },
             "showPoints": "always",
-            "spanNulls": true,
+            "spanNulls": false,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -1070,7 +1154,7 @@
         "h": 7,
         "w": 14,
         "x": 10,
-        "y": 20
+        "y": 26
       },
       "id": 26,
       "links": [],
@@ -1242,7 +1326,7 @@
         "h": 8,
         "w": 14,
         "x": 10,
-        "y": 27
+        "y": 33
       },
       "id": 47,
       "options": {
@@ -1295,7 +1379,7 @@
         "h": 8,
         "w": 10,
         "x": 0,
-        "y": 28
+        "y": 34
       },
       "hiddenSeries": false,
       "id": 14,
@@ -1318,7 +1402,7 @@
         "alertThreshold": false
       },
       "percentage": true,
-      "pluginVersion": "8.1.3",
+      "pluginVersion": "8.2.3",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -1539,7 +1623,7 @@
         "h": 8,
         "w": 14,
         "x": 10,
-        "y": 35
+        "y": 41
       },
       "id": 24,
       "links": [],
@@ -1642,24 +1726,6 @@
       "type": "timeseries"
     },
     {
-      "collapsed": true,
-      "datasource": null,
-      "fieldConfig": {
-        "defaults": {},
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 43
-      },
-      "id": 63,
-      "panels": [],
-      "title": "Replication",
-      "type": "row"
-    },
-    {
       "datasource": null,
       "fieldConfig": {
         "defaults": {
@@ -1686,9 +1752,9 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 3,
+        "w": 2,
         "x": 0,
-        "y": 44
+        "y": 42
       },
       "id": 64,
       "options": {
@@ -1706,7 +1772,7 @@
         "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "8.1.3",
+      "pluginVersion": "8.2.3",
       "targets": [
         {
           "exemplar": true,
@@ -1752,9 +1818,9 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 3,
-        "x": 3,
-        "y": 44
+        "w": 2,
+        "x": 2,
+        "y": 42
       },
       "id": 67,
       "options": {
@@ -1772,7 +1838,7 @@
         "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "8.1.3",
+      "pluginVersion": "8.2.3",
       "targets": [
         {
           "exemplar": true,
@@ -1819,8 +1885,8 @@
       "gridPos": {
         "h": 4,
         "w": 3,
-        "x": 6,
-        "y": 44
+        "x": 4,
+        "y": 42
       },
       "id": 68,
       "options": {
@@ -1838,7 +1904,7 @@
         "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "8.1.3",
+      "pluginVersion": "8.2.3",
       "targets": [
         {
           "exemplar": true,
@@ -1885,8 +1951,8 @@
       "gridPos": {
         "h": 4,
         "w": 3,
-        "x": 9,
-        "y": 44
+        "x": 7,
+        "y": 42
       },
       "id": 69,
       "options": {
@@ -1904,7 +1970,7 @@
         "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "8.1.3",
+      "pluginVersion": "8.2.3",
       "targets": [
         {
           "exemplar": true,
@@ -1923,104 +1989,27 @@
       "type": "stat"
     },
     {
+      "collapsed": true,
       "datasource": null,
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "always",
-            "spanNulls": true,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "s"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 24,
-        "x": 0,
-        "y": 48
-      },
-      "id": 56,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "single"
-        }
-      },
-      "pluginVersion": "8.1.3",
-      "targets": [
-        {
-          "exemplar": true,
-          "expr": "avg(redis_uptime{instance=\"$instance\"}) by (replication_role)",
-          "instant": false,
-          "interval": "",
-          "legendFormat": "{{replication_role}}",
-          "refId": "A"
-        }
-      ],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "Uptime per Role",
-      "transparent": true,
-      "type": "timeseries"
-    },
-    {
-      "collapsed": false,
-      "datasource": null,
-      "fieldConfig": {
-        "defaults": {},
-        "overrides": []
-      },
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 54
+        "y": 49
+      },
+      "id": 63,
+      "panels": [],
+      "title": "Replication",
+      "type": "row"
+    },
+    {
+      "collapsed": false,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 50
       },
       "id": 18,
       "panels": [],
@@ -2105,7 +2094,7 @@
         "h": 10,
         "w": 12,
         "x": 0,
-        "y": 55
+        "y": 51
       },
       "id": 39,
       "options": {
@@ -2196,7 +2185,7 @@
         "h": 10,
         "w": 6,
         "x": 12,
-        "y": 55
+        "y": 51
       },
       "id": 1,
       "links": [],
@@ -2260,7 +2249,7 @@
         "h": 10,
         "w": 6,
         "x": 18,
-        "y": 55
+        "y": 51
       },
       "hiddenSeries": false,
       "id": 13,
@@ -2281,7 +2270,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "8.1.3",
+      "pluginVersion": "8.2.3",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -2381,7 +2370,7 @@
         "h": 10,
         "w": 6,
         "x": 0,
-        "y": 65
+        "y": 61
       },
       "hiddenSeries": false,
       "id": 43,
@@ -2403,7 +2392,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "8.1.3",
+      "pluginVersion": "8.2.3",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -2490,7 +2479,7 @@
         "h": 10,
         "w": 12,
         "x": 6,
-        "y": 65
+        "y": 61
       },
       "hiddenSeries": false,
       "id": 41,
@@ -2510,7 +2499,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "8.1.3",
+      "pluginVersion": "8.2.3",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -2569,7 +2558,7 @@
     }
   ],
   "refresh": "30s",
-  "schemaVersion": 30,
+  "schemaVersion": 31,
   "style": "dark",
   "tags": [
     "prometheus",
@@ -2580,9 +2569,9 @@
       {
         "allValue": ".*",
         "current": {
-          "selected": false,
-          "text": "masters",
-          "value": "masters"
+          "selected": true,
+          "text": "master",
+          "value": "master"
         },
         "datasource": "Prometheus",
         "definition": "label_values(redis_uptime,instance)",
@@ -2611,8 +2600,8 @@
         "allValue": ".*",
         "current": {
           "selected": false,
-          "text": "jedi5.cluster.ics.forth.gr",
-          "value": "jedi5.cluster.ics.forth.gr"
+          "text": "master",
+          "value": "master"
         },
         "datasource": "Prometheus",
         "definition": "label_values(redis_uptime,host)",
@@ -2640,7 +2629,7 @@
     ]
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-15m",
     "to": "now"
   },
   "timepicker": {

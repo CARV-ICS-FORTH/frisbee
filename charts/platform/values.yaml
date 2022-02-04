@@ -1,7 +1,7 @@
 ## @section Global parameters
 ## Global Frisbee Platform parameters
 ## Please, note that this will override the image parameters, including dependencies, configured to use the global value
-## 
+##
 ## @param global.ingress DNS name for making Telemetry stack accessible outside the cluster.
 global:
   ## E.g.
@@ -13,14 +13,20 @@ global:
 
 ## @section Frisbee Operator parameters
 
-## @param operator.enabled Set it to false to run the controller outside the Kubernetes Cluster
-## @param operator.prometheusPort Listening port for Prometheus
-## @param operator.grafanaPort Listening port for Grafana
+## @param operator.enabled Set it to false for running the controller outside the Kubernetes Cluster
 operator:
   enabled: true
+
+
+## @section Frisbee Telemetry parameters
+
+## @param telemetry.honorTimestamp Use the timestamps of the metrics exposed by the agent (time-drifts)
+## @param telemetry.prometheusPort Listening port for Prometheus
+## @param telemetry.grafanaPort Listening port for Grafana
+telemetry:
+  honorTimestamp: false
   prometheusPort: 9090
   grafanaPort: 3000
-
 
 ## @section Chaos Injection Parameters
 
@@ -85,11 +91,11 @@ sonarqube:
   #      - pattern: ".*"
 
 
-## @section Provision of dynamic volumes 
+## @section Provision of dynamic volumes
 
 ## @param openebs.enabled Whether to enable OpenEBS
 ## @param openebs.storagePath The filesystem dir where volumes will be provisioned
-## @param openebs.ndm.enabled Whether to enable block devices as resources 
+## @param openebs.ndm.enabled Whether to enable block devices as resources
 ## @param openebs.ndmOperator.enabled Whether to automatically provision block devices
 openebs:
   enabled: true

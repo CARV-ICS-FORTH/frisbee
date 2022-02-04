@@ -93,6 +93,23 @@
 
 * Sometimes group "more-servers" cannot join the cluster and fails.
 
+
+### 10. Availability Failover (Single)
+
+1) Start a primary Redis database server
+2) Start a replicated Redis database server
+3) Start a failover manager
+4) Hammer the server with requests
+5) Cause partition A on the 3rd minute, lasting 2 minutes
+6) Cause partition B on the 6th minute, lasting 1 minute
+
+
+#### Observations
+
+* The client starts with a few INSERT_ERROR. It then goes into INSERT.
+* Albeit this is an indication of a race condition, the client retries the request and remains operational.
+* The INSERT_ERROR reappear when we inject the network failure.
+
 ### TODO
 
 #### Failure at hotspot

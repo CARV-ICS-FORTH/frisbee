@@ -2,23 +2,22 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Workflow
 metadata:
-  name: redis-availability-single
+  name: redis-availability-failover-single
 spec:
   withTelemetry:
     importDashboards:
       - platform.telemetry.container
-      - redis.telemetry.server
       - ycsb.telemetry.client
-
+      - redis.telemetry.server
 
   actions:
-    # Create a single Master node
+    # Step 1. Create a single Master node
     - action: Service
       name: master
       service:
         templateRef: redis.single.master
 
-    # Create a Slave node
+    # Step 2. Create a Slave node
     - action: Service
       name: slave
       depends: { running: [ master ] }
@@ -27,8 +26,7 @@ spec:
         inputs:
           - { master: .service.master.one }
 
-
-    # Create a failover manager
+    # Step 3. Create a failover manager
     - action: Service
       name: sentinel
       depends: { running: [ master, slave ] }
@@ -38,31 +36,30 @@ spec:
           - { master: .service.master.one }
 
 
-    # Ingest keys in parallel, into different ranges
+    # Step 4. Hammer the server with requests
     - action: Cluster
       name: "loaders"
       depends: { running: [ master ] }
       cluster:
         templateRef: ycsb.redis.loader
         inputs:
-          - { server: .service.master.one, recordcount: "100000000", offset: "0" }
+          - { server: master, workload: workloada, recordcount: "10000000", threads: "4", delay: "15", mode: "single" }
 
-    # Cause two partition failures with different duration
+    # Step 5. Cause partition A on the 3rd minute, lasting 2 minutes
     - action: Chaos
-      name: partition0
+      name: partition-a
       depends: { running: [ master, slave ], after: "3m" }
       chaos:
-        type: partition
-        partition:
-          selector:
-            macro: .service.master.one
-          duration: "2m"
+        templateRef: chaos.network.partition
+        inputs:
+          - { target: .service.master.one, duration: "2m" }
 
+
+    # Step 5. Cause partition B on the 6th minute, lasting 1 minute
     - action: Chaos
-      name: partition1
-      depends: { running: [ master, slave ], success: [ partition0 ], after: "6m" }
+      name: partition-b
+      depends: { running: [ master, slave ], success: [ partition-a ], after: "6m" }
       chaos:
-        type: partition
-        partition:
-          selector: { macro: .service.master.one }
-          duration: "1m"
+        templateRef: chaos.network.partition
+        inputs:
+          - { target: .service.master.one, duration: "1m" }
