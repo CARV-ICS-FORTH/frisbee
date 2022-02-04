@@ -24,7 +24,7 @@ operator:
 ## @param telemetry.prometheusPort Listening port for Prometheus
 ## @param telemetry.grafanaPort Listening port for Grafana
 telemetry:
-  honorTimestamp: false
+  honorTimestamp: true
   prometheusPort: 9090
   grafanaPort: 3000
 
