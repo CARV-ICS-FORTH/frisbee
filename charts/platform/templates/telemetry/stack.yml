@@ -93,7 +93,7 @@ data:
 
         honor_labels: true
         # Set it to false in order to avoid time drifts
-        honor_timestamps: false
+        honor_timestamps: {{.Values.telemetry.honorTimestamp}}
 
         scheme: http
 

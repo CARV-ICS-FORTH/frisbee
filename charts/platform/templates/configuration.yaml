@@ -10,8 +10,8 @@ metadata:
 data:
   # If the operator runs within the cluster, it will reach Grafana via the service.
   {{ if .Values.operator.enabled }}
-  PrometheusEndpoint: "http://prometheus:{{.Values.operator.prometheusPort}}"
-  GrafanaEndpoint: "http://grafana:{{.Values.operator.grafanaPort}}"
+  PrometheusEndpoint: "http://prometheus:{{.Values.telemetry.prometheusPort}}"
+  GrafanaEndpoint: "http://grafana:{{.Values.telemetry.grafanaPort}}"
   AdvertisedHost: "frisbee-operator"
   {{ else }}
   # If the other runs outside the cluster, it will reach Grafana via the ingress.
