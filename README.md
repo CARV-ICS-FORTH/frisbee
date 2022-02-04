@@ -36,6 +36,7 @@ The effort being put in automating tests should not take over delivering value t
 * [State-Driven Chaos Engineering](charts/iperf2/examples/9.state-driven-fault.yml)
 * [Metrics-Driven Chaos Engineering](charts/iperf2/examples/10.metrics-driven-fault.yml)
 * [App-Specific Graceful Shutdowns](charts/cockroach/examples/6.cluster-elastic-scaledown.yml )
+* [Failover](charts/redis/examples/10.availability-failover-single.yml )
 
 
 
