@@ -17,9 +17,9 @@ limitations under the License.
 package executor
 
 import (
-	"bytes"
 	"net/http"
 
+	"github.com/armon/circbuf"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -37,21 +37,25 @@ type Executor struct {
 
 // Result contains the outputs of the execution.
 type Result struct {
-	Stdout bytes.Buffer
-	Stderr bytes.Buffer
+	Stdout string
+	Stderr string
 }
 
 // NewExecutor creates a new executor from a kube config.
 func NewExecutor(kubeConfig *rest.Config) Executor {
-
 	return Executor{
 		KubeConfig: kubeConfig,
 		KubeClient: kubernetes.NewForConfigOrDie(kubeConfig),
 	}
 }
 
+const (
+	MaxStdoutLen = 3072
+	MaxStderrLen = 3072
+)
+
 // Exec runs an exec call on the container without a shell.
-func (e *Executor) Exec(pod types.NamespacedName, containerID string, command []string) (*Result, error) {
+func (e *Executor) Exec(pod types.NamespacedName, containerID string, command []string, blocking bool) (Result, error) {
 	request := e.KubeClient.
 		CoreV1().
 		RESTClient().
@@ -66,31 +70,37 @@ func (e *Executor) Exec(pod types.NamespacedName, containerID string, command []
 			// Stdin:     true, // needed for piped operations
 			Stdout: true,
 			Stderr: true,
-			// TTY:       true, // If TTY is enabled the call will be blocking
+			TTY:    blocking, // If TTY is enabled the call will be blocking
 		}, scheme.ParameterCodec)
-
-	result := new(Result)
 
 	// Prepare the API URL used to execute another process within the Pod.  In
 	// this case, we'll run a remote shell.
 	exec, err := remotecommand.NewSPDYExecutor(e.KubeConfig, http.MethodPost, request.URL())
 	if err != nil {
-		return result, errors.Wrapf(err, "Failed executing command %s on %v/%v", command, pod.Namespace, pod.Name)
+		return Result{}, errors.Wrapf(err, "Failed executing command %s on %v/%v", command, pod.Namespace, pod.Name)
 	}
 
-	/*
-		// Put the terminal into raw mode to prevent it echoing characters twice.
-		oldState, err := term.MakeRaw(0)
-		if err != nil {
-			panic(err)
-		}
-		defer term.Restore(0, oldState)
-
-	*/
+	stdoutBuffer, _ := circbuf.NewBuffer(4096)
+	stderrBuffer, _ := circbuf.NewBuffer(4096)
 
 	// Connect this process' std{in,out,err} to the remote shell process.
-	if err := exec.Stream(remotecommand.StreamOptions{Stdout: &result.Stdout, Stderr: &result.Stderr}); err != nil {
-		return result, errors.Wrapf(err, "streaming error on %v/%v", pod.Namespace, pod.Name)
+	if err := exec.Stream(remotecommand.StreamOptions{Stdout: stdoutBuffer, Stderr: stderrBuffer}); err != nil {
+		return Result{stdoutBuffer.String(), stderrBuffer.String()}, errors.Wrapf(err, "streaming error on %v/%v", pod.Namespace, pod.Name)
+	}
+
+	var result Result
+
+	if stdoutBuffer.TotalWritten() > MaxStdoutLen {
+		result.Stdout = "<... some data truncated by circular buffer; go to artifacts for details ...>\n" + stdoutBuffer.String()
+	} else {
+		result.Stdout = stdoutBuffer.String()
+	}
+
+	if stderrBuffer.TotalWritten() > MaxStderrLen {
+		result.Stderr = "<... some data truncated by circular buffer; go to artifacts for details ...>\n" + stderrBuffer.String()
+
+	} else {
+		result.Stderr = stderrBuffer.String()
 	}
 
 	return result, nil

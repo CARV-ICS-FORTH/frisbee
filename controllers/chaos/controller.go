@@ -30,7 +30,6 @@ import (
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/util/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -120,12 +119,10 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		be in conflict. We fix this issue by re-queueing the request.
 		We also suppress verbose error reporting as to avoid polluting the output.
 	*/
-	newStatus := calculateLifecycle(&cr, fault)
-	cr.Status.Lifecycle = newStatus
+	cr.SetReconcileStatus(calculateLifecycle(&cr, fault))
 
 	if err := utils.UpdateStatus(ctx, r, &cr); err != nil {
-		runtime.HandleError(err)
-
+		r.Info("update status error. retry", "object", cr.GetName(), "err", err)
 		return utils.RequeueAfter(time.Second)
 	}
 
@@ -136,16 +133,16 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		First, we'll try to clean up old jobs, so that we don't leave too many lying
 		around.
 	*/
-	if newStatus.Phase == v1alpha1.PhaseSuccess {
+	if cr.Status.Phase.Is(v1alpha1.PhaseSuccess) {
 		// Remove cr children once the cr is successfully complete.
 		// We should not remove the cr descriptor itself, as we need to maintain its
-		// status for higher-entities like the Workflow.
+		// status for higher-entities like the TestPlan.
 		utils.Delete(ctx, r, fault)
 
 		return utils.Stop()
 	}
 
-	if newStatus.Phase == v1alpha1.PhaseFailed {
+	if cr.Status.Phase.Is(v1alpha1.PhaseFailed) {
 		r.Logger.Error(errors.New(cr.Status.Lifecycle.Reason),
 			"chaos failed",
 			"chaos", cr.GetName())

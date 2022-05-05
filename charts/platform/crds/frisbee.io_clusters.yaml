@@ -82,7 +82,7 @@ spec:
                   conditions:
                     description: ConditionalExpr is a source of information about
                       whether the state of the workflow after a given time is correct
-                      or not. This is needed because some workflows may run in infinite-horizons.
+                      or not. This is needed because some test plans may run in infinite-horizons.
                     properties:
                       metrics:
                         description: 'Metrics set a Grafana alert that will be triggered
@@ -158,6 +158,8 @@ spec:
             description: ClusterStatus defines the observed state of Cluster.
             properties:
               conditions:
+                description: Conditions describe sequences of events that warrant
+                  the present Phase.
                 items:
                   description: "Condition contains details for one aspect of the current
                     state of this API Resource. --- This struct is intended for direct
@@ -1135,6 +1137,29 @@ spec:
                       description: AutomountServiceAccountToken indicates whether
                         a service account token should be automatically mounted.
                       type: boolean
+                    callables:
+                      additionalProperties:
+                        description: Callable is a script that is executed within
+                          the service container, and returns a value. For example,
+                          a callable can be a command for stopping the containers
+                          that run in the Pod.
+                        properties:
+                          command:
+                            description: Container specifies a command and arguments
+                              to stop the targeted container in an application-specific
+                              manner.
+                            items:
+                              type: string
+                            type: array
+                          container:
+                            description: Container specific the name of the container
+                              to which we will run the command
+                            type: string
+                        required:
+                        - command
+                        - container
+                        type: object
+                      type: object
                     containers:
                       description: List of containers belonging to the pod. Containers
                         cannot currently be added or removed. There must be at least
@@ -2370,26 +2395,6 @@ spec:
                                 is "key", the operator is "In", and the values array
                                 contains only "value". The requirements are ANDed.
                               type: object
-                          type: object
-                        gracefulStop:
-                          description: GracefulStop allows you to define a command
-                            for stopping the containers that run in the Pod. Used
-                            by the Stop command.
-                          properties:
-                            command:
-                              description: Container specifies a command and arguments
-                                to stop the targeted container in an application-specific
-                                manner.
-                              items:
-                                type: string
-                              type: array
-                            container:
-                              description: Container specific the name of the container
-                                to which we will run the command
-                              type: string
-                          required:
-                          - command
-                          - container
                           type: object
                         labels:
                           additionalProperties:

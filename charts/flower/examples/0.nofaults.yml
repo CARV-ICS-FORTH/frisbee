@@ -1,0 +1,24 @@
+---
+apiVersion: frisbee.io/v1alpha1
+kind: TestPlan
+metadata:
+  name: validate-fl
+spec:
+  withTelemetry:
+    importDashboards:
+      - platform.telemetry.container
+
+  actions:
+    # Download the dataset
+    - action: Service
+      name: downloader2
+      service:
+        templateRef: fl.quickstart.downloader
+
+
+    # Create a Flower server
+    - action: Service
+      depends: { success: [ downloader ] }
+      name: server
+      service:
+        templateRef: fl.quickstart.server

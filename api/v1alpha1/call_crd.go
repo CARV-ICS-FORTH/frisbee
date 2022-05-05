@@ -20,8 +20,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// StopSpec defines the desired state of Stop.
-type StopSpec struct {
+// CallSpec defines the desired state of Call.
+type CallSpec struct {
+	// Callable is the name of the endpoint that will be called
+	Callable string `json:"callable,omitempty"`
+
 	// Services is a list of services that will be stopped.
 	Services []string `json:"services"`
 
@@ -30,9 +33,7 @@ type StopSpec struct {
 	// +optional
 	Until *ConditionalExpr `json:"until,omitempty"`
 
-	// Schedule defines the interval between the creation of services within the group. Executed creation is not
-	// supported in collocated mode. Since Pods are intended to be disposable and replaceable, we cannot add a
-	// container to a Pod once it has been created
+	// Schedule defines the interval between the invocations of the callable.
 	// +optional
 	Schedule *SchedulerSpec `json:"schedule,omitempty"`
 
@@ -42,16 +43,13 @@ type StopSpec struct {
 	Suspend *bool `json:"suspend,omitempty"`
 }
 
-// StopStatus defines the observed state of Stop.
-type StopStatus struct {
+// CallStatus defines the observed state of Call.
+type CallStatus struct {
 	Lifecycle `json:",inline"`
-
-	// +optional
-	Conditions []metav1.Condition `json:"conditions,omitempty"`
 
 	// QueuedJobs is a list of services scheduled for stopping.
 	// +optional
-	QueuedJobs []*GracefulStop `json:"queuedJobs,omitempty"`
+	QueuedJobs []Callable `json:"queuedJobs,omitempty"`
 
 	// ScheduledJobs points to the next QueuedJobs.
 	ScheduledJobs int `json:"scheduledJobs,omitempty"`
@@ -60,35 +58,35 @@ type StopStatus struct {
 	LastScheduleTime *metav1.Time `json:"lastScheduleTime,omitempty"`
 }
 
-func (in *Stop) GetReconcileStatus() Lifecycle {
+func (in *Call) GetReconcileStatus() Lifecycle {
 	return in.Status.Lifecycle
 }
 
-func (in *Stop) SetReconcileStatus(lifecycle Lifecycle) {
+func (in *Call) SetReconcileStatus(lifecycle Lifecycle) {
 	in.Status.Lifecycle = lifecycle
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-// Stop is the Schema for the Stop API.
-type Stop struct {
+// Call is the Schema for the Call API.
+type Call struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   StopSpec   `json:"spec,omitempty"`
-	Status StopStatus `json:"status,omitempty"`
+	Spec   CallSpec   `json:"spec,omitempty"`
+	Status CallStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// StopList contains a list of Stop jobs.
-type StopList struct {
+// CallList contains a list of Call jobs.
+type CallList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Stop `json:"items"`
+	Items           []Call `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&Stop{}, &StopList{})
+	SchemeBuilder.Register(&Call{}, &CallList{})
 }

@@ -53,7 +53,7 @@ func Pending(ctx context.Context, r utils.Reconciler, obj client.Object, reason 
 		statusAware.SetReconcileStatus(status)
 
 		if err := utils.UpdateStatus(ctx, r, obj); err != nil {
-			r.Error(err, "unable to update status")
+			r.Info("Unable to set lifecycle to Pending. retry", "object", obj.GetName(), "err", err)
 
 			return utils.RequeueAfter(time.Second)
 		}
@@ -82,7 +82,7 @@ func Running(ctx context.Context, r utils.Reconciler, obj client.Object, reason 
 		statusAware.SetReconcileStatus(status)
 
 		if err := utils.UpdateStatus(ctx, r, obj); err != nil {
-			r.Error(err, "unable to update status")
+			r.Info("Unable to set lifecycle to Running. retry", "object", obj.GetName(), "err", err)
 
 			return utils.RequeueAfter(time.Second)
 		}
@@ -111,7 +111,7 @@ func Success(ctx context.Context, r utils.Reconciler, obj client.Object, reason 
 		statusAware.SetReconcileStatus(status)
 
 		if err := utils.UpdateStatus(ctx, r, obj); err != nil {
-			r.Error(err, "unable to update status")
+			r.Info("Unable to set lifecycle to Success. retry", "object", obj.GetName(), "err", err)
 
 			return utils.RequeueAfter(time.Second)
 		}
@@ -131,6 +131,8 @@ func Failed(ctx context.Context, r utils.Reconciler, obj client.Object, issue er
 		panic("invalid args")
 	}
 
+	// r.GetEventRecorderFor("").Event(&cr, corev1.EventTypeWarning, newStatus.Reason, newStatus.Message)
+
 	r.Error(issue, "object failed", "name", obj.GetName())
 
 	// r.GetRecorder().Event(obj, "Warning", "ProcessingError", issue.Error())
@@ -146,7 +148,7 @@ func Failed(ctx context.Context, r utils.Reconciler, obj client.Object, issue er
 		statusAware.SetReconcileStatus(status)
 
 		if err := utils.UpdateStatus(ctx, r, obj); err != nil {
-			r.Error(err, "unable to update status")
+			r.Info("Unable to set lifecycle to Failed. retry", "object", obj.GetName(), "err", err)
 
 			return utils.RequeueAfter(time.Second)
 		}

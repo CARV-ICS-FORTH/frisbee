@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package workflow
+package testplan
 
 import (
 	"fmt"
@@ -28,19 +28,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
-// controllerKind contains the schema.GroupVersionKind for this controller type.
-// var controllerKind = apps.SchemeGroupVersion.WithKind("Deployment")
-
-func (r *Controller) WatchServices() predicate.Funcs {
+func (r *Controller) WatchCallJobs() predicate.Funcs {
 	return predicate.Funcs{
-		CreateFunc:  r.watchServiceCreate,
-		DeleteFunc:  r.watchServiceDelete,
-		UpdateFunc:  r.watchServiceUpdate,
-		GenericFunc: r.watchServiceGeneric,
+		CreateFunc:  r.WatchCallJobsCreate,
+		DeleteFunc:  r.WatchCallJobsDelete,
+		UpdateFunc:  r.WatchCallJobsUpdate,
+		GenericFunc: r.WatchCallJobsGeneric,
 	}
 }
 
-func (r *Controller) watchServiceCreate(e event.CreateEvent) bool {
+func (r *Controller) WatchCallJobsCreate(e event.CreateEvent) bool {
 	if !utils.IsManagedByThisController(e.Object, r.gvk) {
 		return false
 	}
@@ -61,7 +58,7 @@ func (r *Controller) watchServiceCreate(e event.CreateEvent) bool {
 	return true
 }
 
-func (r *Controller) watchServiceUpdate(e event.UpdateEvent) bool {
+func (r *Controller) WatchCallJobsUpdate(e event.UpdateEvent) bool {
 	if !utils.IsManagedByThisController(e.ObjectNew, r.gvk) {
 		return false
 	}
@@ -81,8 +78,9 @@ func (r *Controller) watchServiceUpdate(e event.UpdateEvent) bool {
 	}
 
 	// if the status is the same, there is no need to inform the service
-	prev := e.ObjectOld.(*v1alpha1.Service)
-	latest := e.ObjectNew.(*v1alpha1.Service)
+	prev := e.ObjectOld.(*v1alpha1.Call)
+
+	latest := e.ObjectNew.(*v1alpha1.Call)
 
 	if prev.Status.Phase == latest.Status.Phase {
 		// a controller never initiates a phase change, and so is never asleep waiting for the same.
@@ -101,7 +99,7 @@ func (r *Controller) watchServiceUpdate(e event.UpdateEvent) bool {
 	return true
 }
 
-func (r *Controller) watchServiceDelete(e event.DeleteEvent) bool {
+func (r *Controller) WatchCallJobsDelete(e event.DeleteEvent) bool {
 	if !utils.IsManagedByThisController(e.Object, r.gvk) {
 		return false
 	}
@@ -125,6 +123,6 @@ func (r *Controller) watchServiceDelete(e event.DeleteEvent) bool {
 	return true
 }
 
-func (r *Controller) watchServiceGeneric(event.GenericEvent) bool {
+func (r *Controller) WatchCallJobsGeneric(event.GenericEvent) bool {
 	return true
 }

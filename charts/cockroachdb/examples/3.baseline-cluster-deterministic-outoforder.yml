@@ -1,6 +1,6 @@
 ---
 apiVersion: frisbee.io/v1alpha1
-kind: Workflow
+kind: TestPlan
 metadata:
   name: cockroach-baseline-cluster-deterministic-outoforder
 spec:
@@ -29,7 +29,6 @@ spec:
         templateRef: cockroach.cluster.bootstrap
         inputs:
           - { server: masters-2 }
-
 
     # Step 2. Preload the server with keys
     - action: Service

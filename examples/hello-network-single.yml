@@ -1,6 +1,6 @@
 ---
 apiVersion: frisbee.io/v1alpha1
-kind: Workflow
+kind: TestPlan
 metadata:
   name: hello-network-single
 spec:

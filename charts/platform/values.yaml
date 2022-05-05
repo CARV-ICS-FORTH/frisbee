@@ -31,15 +31,16 @@ telemetry:
 ## @section Chaos Injection Parameters
 
 ## @param chaos.enabled Whether or not to enable the Chaos controllers
-chaos:
-  enabled: true
-
-  #chaosDaemon:
+chaos-mesh:
   # If you are using Kind or using containerd as CRI, you can use the
   # config below to use containerd as the runtime in chaos-daemon.
-  #runtime: containerd
-  #socketPath: /run/containerd/containerd.sock
+  chaosDaemon:
+    runtime: containerd
+    socketPath: /var/snap/microk8s/common/run/containerd.sock
 
+
+chaos:
+  enabled: true
 
 ## @section Code Coverage Parameters
 
@@ -50,7 +51,7 @@ sonarqube:
 
     # Ignore  deployment taints, if any.
     #tolerations:
-    #  - key: "sonarqube"
+  #  - key: "sonarqube"
   #    operator: "Equal"
   #    value: "true"
   #    effect: "NoSchedule"
@@ -73,7 +74,7 @@ sonarqube:
       #  - name: sonarqube.{{.Values.global.ingress}}
       # Different clouds or configurations might need /* as the default path
       #    path: /
-      # For additional control over serviceName and servicePort
+    # For additional control over serviceName and servicePort
     #   serviceName: sonarqube
     # servicePort: 9000
     #annotations:

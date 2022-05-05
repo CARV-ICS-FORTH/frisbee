@@ -134,15 +134,10 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		subresource, we'll use the `Status` part of the client, with the `Update`
 		method.
 	*/
-	newStatus := calculateLifecycle(&cr, r.state)
-
-	cr.Status = newStatus
+	cr.SetReconcileStatus(calculateLifecycle(&cr, r.state))
 
 	if err := utils.UpdateStatus(ctx, r, &cr); err != nil {
-		// due to the multiple updates, it is possible for this function to
-		// be in conflict. We fix this issue by re-queueing the request.
-		// We also omit verbose error re
-		// porting as to avoid polluting the output.
+		r.Info("update status error. retry", "object", cr.GetName(), "err", err)
 		return utils.RequeueAfter(time.Second)
 	}
 
@@ -168,9 +163,9 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		First, we'll try to clean up old jobs, so that we don't leave too many lying
 		around.
 	*/
-	if newStatus.Phase == v1alpha1.PhaseSuccess {
+	if cr.Status.Phase.Is(v1alpha1.PhaseSuccess) {
 		r.GetEventRecorderFor("").Event(&cr, corev1.EventTypeNormal,
-			newStatus.Reason, "cascade succeeded")
+			cr.Status.Lifecycle.Reason, cr.Status.Lifecycle.Message)
 
 		r.Logger.Info("Cleaning up chaos jobs",
 			"cascade", cr.GetName(),
@@ -181,7 +176,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		/*
 			Remove cr children once the cr is successfully complete.
 			We should not remove the cr descriptor itself, as we need to maintain its
-			status for higher-entities like the Workflow.
+			status for higher-entities like the TestPlan.
 		*/
 		for _, job := range r.state.SuccessfulJobs() {
 			utils.Delete(ctx, r, job)
@@ -190,8 +185,8 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return utils.Stop()
 	}
 
-	if newStatus.Phase == v1alpha1.PhaseFailed {
-		r.Logger.Error(errors.New(newStatus.Reason), newStatus.Message)
+	if cr.Status.Phase.Is(v1alpha1.PhaseFailed) {
+		r.Logger.Error(errors.New(cr.Status.Lifecycle.Reason), cr.Status.Lifecycle.Message)
 
 		r.Logger.Info("Cleaning up chaos jobs",
 			"cascade", cr.GetName(),
@@ -234,7 +229,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		We may delete the service, add a pod, or wait for existing pod to change its status.
 	*/
-	if newStatus.Phase == v1alpha1.PhaseUninitialized {
+	if cr.Status.Phase.Is(v1alpha1.PhaseUninitialized) {
 		/*
 			We construct a list of job specifications based on the CR's template.
 			This list is used by the execution step to create the actual job.
@@ -246,7 +241,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		*/
 		jobList, err := r.constructJobSpecList(ctx, &cr)
 		if err != nil {
-			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "unable to construct job list"))
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot build joblist"))
 		}
 
 		cr.Status.QueuedJobs = jobList
@@ -279,7 +274,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	*/
 	nextExpectedJob := cr.Status.ScheduledJobs + 1
 
-	if newStatus.Phase == v1alpha1.PhaseRunning ||
+	if cr.Status.Phase.Is(v1alpha1.PhaseRunning) ||
 		(cr.Spec.Until == nil && (nextExpectedJob >= len(cr.Status.QueuedJobs))) {
 		r.Logger.Info("All jobs are scheduled. Nothing else to do. Waiting for something to happen",
 			"cascade", cr.GetName(),

@@ -6,20 +6,20 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.6.1
   creationTimestamp: null
-  name: workflows.frisbee.io
+  name: testplans.frisbee.io
 spec:
   group: frisbee.io
   names:
-    kind: Workflow
-    listKind: WorkflowList
-    plural: workflows
-    singular: workflow
+    kind: TestPlan
+    listKind: TestPlanList
+    plural: testplans
+    singular: testplan
   scope: Namespaced
   versions:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Workflow is the Schema for the workflows API.
+        description: TestPlan is the Schema for the TestPlans API.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -34,7 +34,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: WorkflowSpec defines the desired state of Workflow.
+            description: TestPlanSpec defines the desired state of TestPlan.
             properties:
               actions:
                 description: Actions are the tasks that will be taken.
@@ -44,7 +44,7 @@ spec:
                     action:
                       type: string
                     assert:
-                      description: Assert defines the conditions under which the workflow
+                      description: Assert defines the conditions under which the Plan
                         will terminate with a "passed" or "failed" message
                       properties:
                         metrics:
@@ -60,6 +60,89 @@ spec:
                             that are managed by the object.
                           nullable: true
                           type: string
+                      type: object
+                    call:
+                      description: CallSpec defines the desired state of Call.
+                      properties:
+                        callable:
+                          description: Callable is the name of the endpoint that will
+                            be called
+                          type: string
+                        schedule:
+                          description: Schedule defines the interval between the invocations
+                            of the callable.
+                          properties:
+                            conditions:
+                              description: ConditionalExpr is a source of information
+                                about whether the state of the workflow after a given
+                                time is correct or not. This is needed because some
+                                test plans may run in infinite-horizons.
+                              properties:
+                                metrics:
+                                  description: 'Metrics set a Grafana alert that will
+                                    be triggered once the condition is met. Parsing:
+                                    Grafana URL: http://grafana/d/A2EjFbsMk/ycsb-services?editPanel=86
+                                    metrics: A2EjFbsMk/86/Average (Panel/Dashboard/Metric)'
+                                  nullable: true
+                                  type: string
+                                state:
+                                  description: State describe the runtime condition
+                                    that should be met after the action has been executed
+                                    Shall be defined using .Lifecycle() methods. The
+                                    methods account only jobs that are managed by
+                                    the object.
+                                  nullable: true
+                                  type: string
+                              type: object
+                            cron:
+                              description: "Cron defines a cron job rule. \n Some
+                                rule examples: \"0 30 * * * *\" means to \"Every hour
+                                on the half hour\" \"@hourly\"      means to \"Every
+                                hour\" \"@every 1h30m\" means to \"Every hour thirty\"
+                                \n More rule info: https://godoc.org/github.com/robfig/cron"
+                              type: string
+                            startingDeadlineSeconds:
+                              description: StartingDeadlineSeconds is an optional
+                                deadline in seconds for starting the job if it misses
+                                scheduled time for any reason. if we miss this deadline,
+                                we'll just wait till the next scheduled time
+                              format: int64
+                              type: integer
+                          type: object
+                        services:
+                          description: Services is a list of services that will be
+                            stopped.
+                          items:
+                            type: string
+                          type: array
+                        suspend:
+                          description: Suspend flag tells the controller to suspend
+                            subsequent executions, it does not apply to already started
+                            executions.  Defaults to false.
+                          type: boolean
+                        until:
+                          description: Until defines the conditions under which the
+                            CR will stop spawning new jobs. If used in conjunction
+                            with inputs, it will loop over inputs until the conditions
+                            are met.
+                          properties:
+                            metrics:
+                              description: 'Metrics set a Grafana alert that will
+                                be triggered once the condition is met. Parsing: Grafana
+                                URL: http://grafana/d/A2EjFbsMk/ycsb-services?editPanel=86
+                                metrics: A2EjFbsMk/86/Average (Panel/Dashboard/Metric)'
+                              nullable: true
+                              type: string
+                            state:
+                              description: State describe the runtime condition that
+                                should be met after the action has been executed Shall
+                                be defined using .Lifecycle() methods. The methods
+                                account only jobs that are managed by the object.
+                              nullable: true
+                              type: string
+                          type: object
+                      required:
+                      - services
                       type: object
                     cascade:
                       description: CascadeSpec defines the desired state of Cascade.
@@ -92,7 +175,7 @@ spec:
                               description: ConditionalExpr is a source of information
                                 about whether the state of the workflow after a given
                                 time is correct or not. This is needed because some
-                                workflows may run in infinite-horizons.
+                                test plans may run in infinite-horizons.
                               properties:
                                 metrics:
                                   description: 'Metrics set a Grafana alert that will
@@ -259,7 +342,7 @@ spec:
                               description: ConditionalExpr is a source of information
                                 about whether the state of the workflow after a given
                                 time is correct or not. This is needed because some
-                                workflows may run in infinite-horizons.
+                                test plans may run in infinite-horizons.
                               properties:
                                 metrics:
                                   description: 'Metrics set a Grafana alert that will
@@ -417,88 +500,6 @@ spec:
                       required:
                       - templateRef
                       type: object
-                    stop:
-                      description: StopSpec defines the desired state of Stop.
-                      properties:
-                        schedule:
-                          description: Schedule defines the interval between the creation
-                            of services within the group. Executed creation is not
-                            supported in collocated mode. Since Pods are intended
-                            to be disposable and replaceable, we cannot add a container
-                            to a Pod once it has been created
-                          properties:
-                            conditions:
-                              description: ConditionalExpr is a source of information
-                                about whether the state of the workflow after a given
-                                time is correct or not. This is needed because some
-                                workflows may run in infinite-horizons.
-                              properties:
-                                metrics:
-                                  description: 'Metrics set a Grafana alert that will
-                                    be triggered once the condition is met. Parsing:
-                                    Grafana URL: http://grafana/d/A2EjFbsMk/ycsb-services?editPanel=86
-                                    metrics: A2EjFbsMk/86/Average (Panel/Dashboard/Metric)'
-                                  nullable: true
-                                  type: string
-                                state:
-                                  description: State describe the runtime condition
-                                    that should be met after the action has been executed
-                                    Shall be defined using .Lifecycle() methods. The
-                                    methods account only jobs that are managed by
-                                    the object.
-                                  nullable: true
-                                  type: string
-                              type: object
-                            cron:
-                              description: "Cron defines a cron job rule. \n Some
-                                rule examples: \"0 30 * * * *\" means to \"Every hour
-                                on the half hour\" \"@hourly\"      means to \"Every
-                                hour\" \"@every 1h30m\" means to \"Every hour thirty\"
-                                \n More rule info: https://godoc.org/github.com/robfig/cron"
-                              type: string
-                            startingDeadlineSeconds:
-                              description: StartingDeadlineSeconds is an optional
-                                deadline in seconds for starting the job if it misses
-                                scheduled time for any reason. if we miss this deadline,
-                                we'll just wait till the next scheduled time
-                              format: int64
-                              type: integer
-                          type: object
-                        services:
-                          description: Services is a list of services that will be
-                            stopped.
-                          items:
-                            type: string
-                          type: array
-                        suspend:
-                          description: Suspend flag tells the controller to suspend
-                            subsequent executions, it does not apply to already started
-                            executions.  Defaults to false.
-                          type: boolean
-                        until:
-                          description: Until defines the conditions under which the
-                            CR will stop spawning new jobs. If used in conjunction
-                            with inputs, it will loop over inputs until the conditions
-                            are met.
-                          properties:
-                            metrics:
-                              description: 'Metrics set a Grafana alert that will
-                                be triggered once the condition is met. Parsing: Grafana
-                                URL: http://grafana/d/A2EjFbsMk/ycsb-services?editPanel=86
-                                metrics: A2EjFbsMk/86/Average (Panel/Dashboard/Metric)'
-                              nullable: true
-                              type: string
-                            state:
-                              description: State describe the runtime condition that
-                                should be met after the action has been executed Shall
-                                be defined using .Lifecycle() methods. The methods
-                                account only jobs that are managed by the object.
-                              nullable: true
-                              type: string
-                          type: object
-                      required:
-                      - services
-                      type: object
                   required:
                   - action
                   - name
@@ -523,9 +524,11 @@ spec:
             - actions
             type: object
           status:
-            description: WorkflowStatus defines the observed state of Workflow.
+            description: TestPlanStatus defines the observed state of TestPlan.
             properties:
               conditions:
+                description: Conditions describe sequences of events that warrant
+                  the present Phase.
                 items:
                   description: "Condition contains details for one aspect of the current
                     state of this API Resource. --- This struct is intended for direct
@@ -598,7 +601,7 @@ spec:
                 additionalProperties:
                   description: ConditionalExpr is a source of information about whether
                     the state of the workflow after a given time is correct or not.
-                    This is needed because some workflows may run in infinite-horizons.
+                    This is needed because some test plans may run in infinite-horizons.
                   properties:
                     metrics:
                       description: 'Metrics set a Grafana alert that will be triggered

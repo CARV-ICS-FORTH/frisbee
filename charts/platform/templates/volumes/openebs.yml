@@ -1,5 +1,6 @@
 ---
 {{- if .Values.openebs.enabled }}
+---
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
@@ -17,4 +18,40 @@ metadata:
 provisioner: openebs.io/local
 reclaimPolicy: Delete
 volumeBindingMode: WaitForFirstConsumer
+
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: persistent-local-volume
+  labels:
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "false"
+    openebs.io/cas-type: local
+    cas.openebs.io/config: |
+      - name: StorageType
+        value: hostpath
+      - name: BasePath
+        value: {{.Values.openebs.storagePath}}
+provisioner: openebs.io/local
+reclaimPolicy: Retain
+volumeBindingMode: WaitForFirstConsumer
+
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: persistent-shared-volume
+  annotations:
+    cas.openebs.io/config: |
+      - name: NFSServerType
+        value: "kernel"
+      - name: BackendStorageClass
+        value: "ssd-storage"
+    openebs.io/cas-type: nfsrwx
+provisioner: openebs.io/nfsrwx
+reclaimPolicy: Retain
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
 {{- end }}

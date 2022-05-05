@@ -93,7 +93,6 @@
 
 * Sometimes group "more-servers" cannot join the cluster and fails.
 
-
 ### 10. Availability Failover (Single)
 
 1) Start a primary Redis database server
@@ -102,7 +101,6 @@
 4) Hammer the server with requests
 5) Cause partition A on the 3rd minute, lasting 2 minutes
 6) Cause partition B on the 6th minute, lasting 1 minute
-
 
 #### Observations
 

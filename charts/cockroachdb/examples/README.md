@@ -130,8 +130,14 @@ Observations
 
 * Not currently supported. We must change the macros to select services based on Grafana information.
 
+### 10. Bitrot
 
+Replicate roachtest from
+https://github.com/cockroachdb/cockroach/blob/master/pkg/cmd/roachtest/tests/sstable_corruption.go#L30
 
+#### Observations
 
-
-   
+1) Xargs is missing. We need to add it manually
+2) Some SSTs have peculiar names which cause dd to fail
+   \xb4\xb6"/0/1651588517.218867146,0#31483,SET]   
+   Corrupt \xb4\xb6"/0/1651588517.218867146,0#31483,SET].sst

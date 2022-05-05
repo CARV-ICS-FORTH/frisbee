@@ -20,17 +20,16 @@ import (
 	"flag"
 	"os"
 
+	"github.com/carv-ics-forth/frisbee/controllers/call"
 	"github.com/carv-ics-forth/frisbee/controllers/cascade"
-	"github.com/carv-ics-forth/frisbee/controllers/stop"
+	"github.com/carv-ics-forth/frisbee/controllers/telemetry"
+	"github.com/carv-ics-forth/frisbee/controllers/testplan"
 	"github.com/pkg/errors"
 
 	"github.com/carv-ics-forth/frisbee/controllers/chaos"
 	"github.com/carv-ics-forth/frisbee/controllers/cluster"
 	"github.com/carv-ics-forth/frisbee/controllers/service"
-	"github.com/carv-ics-forth/frisbee/controllers/telemetry"
 	"github.com/carv-ics-forth/frisbee/controllers/template"
-	"github.com/carv-ics-forth/frisbee/controllers/workflow"
-
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -118,18 +117,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := telemetry.NewController(mgr, setupLog); err != nil {
-		utilruntime.HandleError(errors.Wrapf(err, "unable to create Telemetry controller"))
-
-		os.Exit(1)
-	}
-
-	if err := workflow.NewController(mgr, setupLog); err != nil {
-		utilruntime.HandleError(errors.Wrapf(err, "unable to create Workflow controller"))
-
-		os.Exit(1)
-	}
-
 	if err := chaos.NewController(mgr, setupLog); err != nil {
 		utilruntime.HandleError(errors.Wrapf(err, "unable to create Chaos controller"))
 
@@ -142,20 +129,30 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := stop.NewController(mgr, setupLog); err != nil {
-		utilruntime.HandleError(errors.Wrapf(err, "unable to create Stop controller"))
+	if err := call.NewController(mgr, setupLog); err != nil {
+		utilruntime.HandleError(errors.Wrapf(err, "unable to create Call controller"))
 
 		os.Exit(1)
 	}
 
-	// +kubebuilder:docs-gen:collapse=existing setup
+	if err := telemetry.NewController(mgr, setupLog); err != nil {
+		utilruntime.HandleError(errors.Wrapf(err, "unable to create Telemetry controller"))
+
+		os.Exit(1)
+	}
+
+	if err := testplan.NewController(mgr, setupLog); err != nil {
+		utilruntime.HandleError(errors.Wrapf(err, "unable to create TestPlan controller"))
+
+		os.Exit(1)
+	}
 
 	/*
 		Our existing call to SetupWebhookWithManager registers our conversion webhooks with the manager, too.
 	*/
 	if os.Getenv("ENABLE_WEBHOOKS") == "true" {
-		if err = (&frisbeev1alpha1.Workflow{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "Workflow")
+		if err = (&frisbeev1alpha1.Template{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Template")
 			os.Exit(1)
 		}
 
@@ -174,13 +171,18 @@ func main() {
 			os.Exit(1)
 		}
 
-		if err = (&frisbeev1alpha1.Template{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "Group")
-			os.Exit(1)
-		}
+		/*
+			TODO: add webhooks for cascade, stop
+		*/
 
 		if err = (&frisbeev1alpha1.Telemetry{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Telemetry")
+			os.Exit(1)
+		}
+
+		if err = (&frisbeev1alpha1.TestPlan{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "TestPlan")
+
 			os.Exit(1)
 		}
 	}
@@ -213,6 +215,7 @@ func main() {
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "problem running manager")
+
 		os.Exit(1)
 	}
 }

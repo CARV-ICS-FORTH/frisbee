@@ -13,8 +13,6 @@ IMAGE_TAG_BASE ?= icsforth
 # You can use it as an arg. (E.g make bundle-build BUNDLE_IMG=<some-registry>/<project-name-bundle>:<tag>)
 IMG ?= $(IMAGE_TAG_BASE)/frisbee-operator:$(VERSION)
 
-
-
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.21
 
@@ -50,7 +48,7 @@ SHELL = /usr/bin/env bash -o pipefail
 
 CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
 controller-gen:
-	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.6.1)
+	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@latest)
 
 ENVTEST = $(shell pwd)/bin/setup-envtest
 envtest:
@@ -84,6 +82,7 @@ CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) paths="./..."  output:crd:artifacts:config=charts/platform/crds
+	#$(CONTROLLER_GEN) webhook paths="./..."  output:webhook:artifacts:config=charts/platform/templates/operator/webhook
 	$(CONTROLLER_GEN) rbac:roleName=manager-role paths="./..."  output:rbac:artifacts:config=charts/platform/templates/operator/rbac
 
 fmt: ## Run go fmt against code.

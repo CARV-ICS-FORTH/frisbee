@@ -14,15 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package stop
+package call
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"time"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	serviceutils "github.com/carv-ics-forth/frisbee/controllers/service/utils"
 	"github.com/carv-ics-forth/frisbee/controllers/utils"
 	"github.com/carv-ics-forth/frisbee/controllers/utils/expressions"
 	"github.com/carv-ics-forth/frisbee/controllers/utils/lifecycle"
@@ -30,16 +30,19 @@ import (
 	"github.com/carv-ics-forth/frisbee/pkg/executor"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// +kubebuilder:rbac:groups=frisbee.io,resources=stops,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=frisbee.io,resources=stops/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=frisbee.io,resources=stops/finalizers,verbs=update
+// +kubebuilder:rbac:groups=frisbee.io,resources=calls,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=frisbee.io,resources=calls/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=frisbee.io,resources=calls/finalizers,verbs=update
+
+// +kubebuilder:rbac:groups=frisbee.io,resources=virtualobjects,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=frisbee.io,resources=virtualobjects/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=frisbee.io,resources=virtualobjects/finalizers,verbs=update
 
 // +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,resources=pods/status,verbs=get;list;watch
@@ -53,8 +56,6 @@ type Controller struct {
 
 	state lifecycle.Classifier
 
-	serviceControl serviceutils.ServiceControlInterface
-
 	// executor is used to run commands directly into containers
 	executor executor.Executor
 }
@@ -66,7 +67,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		1: Load CR by name.
 		------------------------------------------------------------------
 	*/
-	var cr v1alpha1.Stop
+	var cr v1alpha1.Call
 
 	var requeue bool
 	result, err := utils.Reconcile(ctx, r, req, &cr, &requeue)
@@ -102,7 +103,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		A jobOwnerKey field is added to the cached job objects, which references the owning controller.
 		Check how we configure the manager to actually index this field.
 	*/
-	var childJobs v1alpha1.ServiceList
+	var childJobs v1alpha1.VirtualObjectList
 
 	filters := []client.ListOption{
 		client.InNamespace(req.Namespace),
@@ -140,15 +141,10 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		subresource, we'll use the `Status` part of the client, with the `Update`
 		method.
 	*/
-	newStatus := calculateLifecycle(&cr, r.state)
-
-	cr.Status = newStatus
+	cr.SetReconcileStatus(calculateLifecycle(&cr, r.state))
 
 	if err := utils.UpdateStatus(ctx, r, &cr); err != nil {
-		// due to the multiple updates, it is possible for this function to
-		// be in conflict. We fix this issue by re-queueing the request.
-		// We also omit verbose error re
-		// porting as to avoid polluting the output.
+		r.Info("update status error. retry", "object", cr.GetName(), "err", err)
 		return utils.RequeueAfter(time.Second)
 	}
 
@@ -158,8 +154,8 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		pause runs to investigate the cluster, without deleting the object.
 	*/
 	if cr.Spec.Suspend != nil && *cr.Spec.Suspend {
-		r.Logger.Info("Stopper is suspended",
-			"stopper", cr.GetName(),
+		r.Logger.Info("Caller is suspended",
+			"caller", cr.GetName(),
 			"reason", cr.Status.Reason,
 			"message", cr.Status.Message,
 		)
@@ -174,19 +170,16 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		First, we'll try to clean up old jobs, so that we don't leave too many lying
 		around.
 	*/
-	if newStatus.Phase == v1alpha1.PhaseSuccess {
-		r.GetEventRecorderFor("").Event(&cr, corev1.EventTypeNormal,
-			newStatus.Reason, "stop succeeded")
-
-		r.Logger.Info("Cleaning up stop jobs",
-			"stop", cr.GetName(),
+	if cr.Status.Phase.Is(v1alpha1.PhaseSuccess) {
+		r.Logger.Info("Cleaning up call jobs",
+			"call", cr.GetName(),
 			"successfulJobs", r.state.SuccessfulList(),
 		)
 
 		/*
 			Remove cr children once the cr is successfully complete.
 			We should not remove the cr descriptor itself, as we need to maintain its
-			status for higher-entities like the Workflow.
+			status for higher-entities like the TestPlan.
 		*/
 		for _, job := range r.state.SuccessfulJobs() {
 			utils.Delete(ctx, r, job)
@@ -195,11 +188,11 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return utils.Stop()
 	}
 
-	if newStatus.Phase == v1alpha1.PhaseFailed {
-		r.Logger.Error(errors.New(newStatus.Reason), newStatus.Message)
+	if cr.Status.Phase.Is(v1alpha1.PhaseFailed) {
+		r.Logger.Error(errors.New(cr.Status.Reason), cr.Status.Message)
 
-		r.Logger.Info("Cleaning up stop jobs",
-			"stop", cr.GetName(),
+		r.Logger.Info("Cleaning up caller jobs",
+			"caller", cr.GetName(),
 			"successfulJobs", r.state.SuccessfulList(),
 			"runningJobs", r.state.RunningList(),
 			"pendingJobs", r.state.PendingList(),
@@ -240,7 +233,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		We may delete the service, add a pod, or wait for existing pod to change its status.
 	*/
-	if newStatus.Phase == v1alpha1.PhaseUninitialized {
+	if cr.Status.Phase.Is(v1alpha1.PhaseUninitialized) {
 		/*
 			We construct a list of job specifications based on the CR's template.
 			This list is used by the execution step to create the actual job.
@@ -252,7 +245,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		*/
 		jobList, err := r.constructJobSpecList(ctx, &cr)
 		if err != nil {
-			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "unable to construct job list"))
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot build joblist"))
 		}
 
 		cr.Status.QueuedJobs = jobList
@@ -283,12 +276,12 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		If all jobs are scheduled but are not in the Running phase, they may be in the Pending phase.
 		In both cases, we have nothing else to do but waiting for the next reconciliation cycle.
 	*/
-	nextJobToStop := cr.Status.ScheduledJobs + 1
+	nextJob := cr.Status.ScheduledJobs + 1
 
-	if newStatus.Phase == v1alpha1.PhaseRunning ||
-		(cr.Spec.Until == nil && (nextJobToStop >= len(cr.Status.QueuedJobs))) {
+	if cr.Status.Phase.Is(v1alpha1.PhaseRunning) ||
+		(cr.Spec.Until == nil && (nextJob >= len(cr.Status.QueuedJobs))) {
 		r.Logger.Info("All jobs are scheduled. Nothing else to do. Waiting for something to happen",
-			"stop", cr.GetName(),
+			"call", cr.GetName(),
 		)
 
 		return utils.Stop()
@@ -314,17 +307,38 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		Since we have prepared these jobs at initialization, all we need is to get a pointer to the next job.
 		We then use the Kubernetes client to exec the stopping command directly into the target container.
 	*/
+	{
+		// Call normally does not return anything. This however would break all the pipeline for
+		// managing dependencies between jobs. For that, we return a dummy virtual object without dedicated controller.
+		// Delete normally does not return anything. This however would break all the pipeline for
+		// managing dependencies between jobs. For that, we return a dummy virtual object without dedicated controller.
+		// FIXME: if the call fails, this object will be re-created, and the call will failed with an "existing object" error.
+		var res v1alpha1.VirtualObject
 
-	serviceName, stopCmd := getJob(&cr, nextJobToStop)
+		res.SetGroupVersionKind(v1alpha1.GroupVersion.WithKind("VirtualObject"))
+		res.SetNamespace(cr.GetNamespace())
+		res.SetName(fmt.Sprintf("%s-%d", cr.GetName(), nextJob))
 
-	if err := r.stopJob(&cr, serviceName, stopCmd); err != nil {
-		return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "unable to stop service %s", serviceName))
+		if err := utils.Create(ctx, r, &cr, &res); err != nil {
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot create job"))
+		}
+
+		// perform the sub-call
+		if err := r.callJob(&cr, nextJob); err != nil {
+			return lifecycle.Failed(ctx, r, &res, errors.Wrapf(err, "call error"))
+		}
+
+		// update the sub-call status accordingly. The Call status will be updated by the lifecycle.
+		res.SetReconcileStatus(v1alpha1.Lifecycle{
+			Phase:   v1alpha1.PhaseSuccess,
+			Reason:  "AllJobsCalled",
+			Message: "Job is called ",
+		})
+
+		if err := utils.UpdateStatus(ctx, r, &res); err != nil {
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot update job status"))
+		}
 	}
-
-	r.Logger.Info("Stop service",
-		"job", cr.GetName(),
-		"service", serviceName,
-	)
 
 	/*
 		9: Avoid double actions
@@ -336,7 +350,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		we might not see our own status update, and then post one again.
 		So, we need to use the job name as a lock to prevent us from making the job twice.
 	*/
-	cr.Status.ScheduledJobs = nextJobToStop
+	cr.Status.ScheduledJobs = nextJob
 	cr.Status.LastScheduleTime = &metav1.Time{Time: time.Now()}
 
 	return lifecycle.Pending(ctx, r, &cr, "some jobs are still pending")
@@ -348,7 +362,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 */
 
 func (r *Controller) Finalizer() string {
-	return "stops.frisbee.io/finalizer"
+	return "calls.frisbee.io/finalizer"
 }
 
 func (r *Controller) Finalize(obj client.Object) error {
@@ -377,15 +391,13 @@ func (r *Controller) Finalize(obj client.Object) error {
 func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 	r := &Controller{
 		Manager:  mgr,
-		Logger:   logger.WithName("stop"),
-		gvk:      v1alpha1.GroupVersion.WithKind("Stop"),
+		Logger:   logger.WithName("call"),
+		gvk:      v1alpha1.GroupVersion.WithKind("Call"),
 		executor: executor.NewExecutor(ctrl.GetConfigOrDie()),
 	}
 
-	r.serviceControl = serviceutils.NewServiceControl(r)
-
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1alpha1.Stop{}).
-		Named("stop").
+		For(&v1alpha1.Call{}).
+		Named("call").
 		Complete(r)
 }

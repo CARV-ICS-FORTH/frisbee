@@ -12,7 +12,8 @@ spec:
         - platform.telemetry.container
         - cockroach.telemetry.server
 
-      gracefulStop:
+    callables:
+      drain:
         container: app
         command:
           - /bin/sh   # Run shell

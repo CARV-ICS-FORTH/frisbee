@@ -81,9 +81,6 @@ type ClusterSpec struct {
 type ClusterStatus struct {
 	Lifecycle `json:",inline"`
 
-	// +optional
-	Conditions []metav1.Condition `json:"conditions,omitempty"`
-
 	// QueuedJobs is a list of services scheduled for creation by the cluster.
 	// +optional
 	QueuedJobs []ServiceSpec `json:"queuedJobs,omitempty"`

@@ -31,7 +31,7 @@ type Action struct {
 	// +optional
 	DependsOn *WaitSpec `json:"depends,omitempty"`
 
-	// Assert defines the conditions under which the workflow will terminate with a "passed" or "failed" message
+	// Assert defines the conditions under which the Plan will terminate with a "passed" or "failed" message
 	// +optional
 	Assert *ConditionalExpr `json:"assert,omitempty"`
 
@@ -74,11 +74,11 @@ type EmbedActions struct {
 	Delete *DeleteSpec `json:"delete,omitempty"`
 
 	// +optional
-	Stop *StopSpec `json:"stop,omitempty"`
+	Call *CallSpec `json:"call,omitempty"`
 }
 
-// WorkflowSpec defines the desired state of Workflow.
-type WorkflowSpec struct {
+// TestPlanSpec defines the desired state of TestPlan.
+type TestPlanSpec struct {
 	WithTelemetry *TelemetrySpec `json:"withTelemetry,omitempty"`
 
 	// Actions are the tasks that will be taken.
@@ -90,47 +90,44 @@ type WorkflowSpec struct {
 	Suspend *bool `json:"suspend,omitempty"`
 }
 
-// WorkflowStatus defines the observed state of Workflow.
-type WorkflowStatus struct {
+// TestPlanStatus defines the observed state of TestPlan.
+type TestPlanStatus struct {
 	Lifecycle `json:",inline"`
-
-	// +optional
-	Conditions []metav1.Condition `json:"conditions"`
 
 	// Executed is a list of executed actions.
 	// +optional
 	Executed map[string]ConditionalExpr `json:"executed"`
 }
 
-func (in *Workflow) GetReconcileStatus() Lifecycle {
+func (in *TestPlan) GetReconcileStatus() Lifecycle {
 	return in.Status.Lifecycle
 }
 
-func (in *Workflow) SetReconcileStatus(lifecycle Lifecycle) {
+func (in *TestPlan) SetReconcileStatus(lifecycle Lifecycle) {
 	in.Status.Lifecycle = lifecycle
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-// Workflow is the Schema for the workflows API.
-type Workflow struct {
+// TestPlan is the Schema for the TestPlans API.
+type TestPlan struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   WorkflowSpec   `json:"spec,omitempty"`
-	Status WorkflowStatus `json:"status,omitempty"`
+	Spec   TestPlanSpec   `json:"spec,omitempty"`
+	Status TestPlanStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// WorkflowList contains a list of Workflow.
-type WorkflowList struct {
+// TestPlanList contains a list of TestPlan.
+type TestPlanList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Workflow `json:"items"`
+	Items           []TestPlan `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&Workflow{}, &WorkflowList{})
+	SchemeBuilder.Register(&TestPlan{}, &TestPlanList{})
 }

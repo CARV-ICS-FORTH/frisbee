@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package stop
+package call
 
 import (
 	"fmt"
@@ -34,14 +34,12 @@ type test struct {
 }
 
 // calculateLifecycle returns the update lifecycle of the cluster.
-func calculateLifecycle(cr *v1alpha1.Stop, gs lifecycle.ClassifierReader) v1alpha1.StopStatus {
-	status := cr.Status
+func calculateLifecycle(cr *v1alpha1.Call, gs lifecycle.ClassifierReader) v1alpha1.Lifecycle {
+	cycle := cr.Status.Lifecycle
 
 	// Step 1. Skip any CR which are already completed, or uninitialized.
-	if status.Phase == v1alpha1.PhaseUninitialized ||
-		status.Phase == v1alpha1.PhaseSuccess ||
-		status.Phase == v1alpha1.PhaseFailed {
-		return status
+	if cycle.Phase.Is(v1alpha1.PhaseUninitialized, v1alpha1.PhaseSuccess, v1alpha1.PhaseFailed) {
+		return cycle
 	}
 
 	// Step 3. Check if "Until" conditions are met.
@@ -49,13 +47,13 @@ func calculateLifecycle(cr *v1alpha1.Stop, gs lifecycle.ClassifierReader) v1alph
 		if until.HasMetricsExpr() {
 			info, fired := expressions.FiredAlert(cr)
 			if fired {
-				status.Lifecycle = v1alpha1.Lifecycle{
+				cycle = v1alpha1.Lifecycle{
 					Phase:   v1alpha1.PhaseRunning,
 					Reason:  "MetricsEventFired",
 					Message: info,
 				}
 
-				meta.SetStatusCondition(&status.Conditions, metav1.Condition{
+				meta.SetStatusCondition(&cycle.Conditions, metav1.Condition{
 					Type:    v1alpha1.ConditionAllJobsScheduled.String(),
 					Status:  metav1.ConditionTrue,
 					Reason:  "MetricsEventFired",
@@ -65,37 +63,37 @@ func calculateLifecycle(cr *v1alpha1.Stop, gs lifecycle.ClassifierReader) v1alph
 				suspend := true
 				cr.Spec.Suspend = &suspend
 
-				return status
+				return cycle
 			}
 		}
 
 		if until.HasStateExpr() {
 			info, fired, err := expressions.FiredState(until.State, gs)
 			if err != nil {
-				status.Lifecycle = v1alpha1.Lifecycle{
+				cycle = v1alpha1.Lifecycle{
 					Phase:   v1alpha1.PhaseFailed,
 					Reason:  "StateQueryError",
 					Message: err.Error(),
 				}
 
-				meta.SetStatusCondition(&status.Conditions, metav1.Condition{
+				meta.SetStatusCondition(&cycle.Conditions, metav1.Condition{
 					Type:    v1alpha1.ConditionJobFailed.String(),
 					Status:  metav1.ConditionTrue,
 					Reason:  "StateQueryError",
 					Message: err.Error(),
 				})
 
-				return status
+				return cycle
 			}
 
 			if fired {
-				status.Lifecycle = v1alpha1.Lifecycle{
+				cycle = v1alpha1.Lifecycle{
 					Phase:   v1alpha1.PhaseRunning,
 					Reason:  "StateEventFired",
 					Message: info,
 				}
 
-				meta.SetStatusCondition(&status.Conditions, metav1.Condition{
+				meta.SetStatusCondition(&cycle.Conditions, metav1.Condition{
 					Type:    v1alpha1.ConditionAllJobsScheduled.String(),
 					Status:  metav1.ConditionTrue,
 					Reason:  "StateEventFired",
@@ -105,7 +103,7 @@ func calculateLifecycle(cr *v1alpha1.Stop, gs lifecycle.ClassifierReader) v1alph
 				suspend := true
 				cr.Spec.Suspend = &suspend
 
-				return status
+				return cycle
 			}
 		}
 
@@ -117,32 +115,32 @@ func calculateLifecycle(cr *v1alpha1.Stop, gs lifecycle.ClassifierReader) v1alph
 			Abort the experiment as it too flaky to accept. `,
 				len(cr.Spec.Services), cr.GetName())
 
-			status.Lifecycle = v1alpha1.Lifecycle{
+			cycle = v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseFailed,
 				Reason:  "MaxInstancesReached",
 				Message: msg,
 			}
 
-			meta.SetStatusCondition(&status.Conditions, metav1.Condition{
+			meta.SetStatusCondition(&cycle.Conditions, metav1.Condition{
 				Type:    v1alpha1.ConditionJobFailed.String(),
 				Status:  metav1.ConditionTrue,
 				Reason:  "MaxInstancesReached",
 				Message: msg,
 			})
 
-			return status
+			return cycle
 		}
 
 		// A side effect of "Until" is that queued jobs will be reused,
 		// until the conditions are met. In that sense, they resemble mostly a pool of jobs
 		// rather than e queue.
-		status.Lifecycle = v1alpha1.Lifecycle{
+		cycle = v1alpha1.Lifecycle{
 			Phase:   v1alpha1.PhasePending,
 			Reason:  "SpawnUntilEvent",
 			Message: "Assertion is not yet satisfied.",
 		}
 
-		return status
+		return cycle
 	}
 
 	// Step 4. Check if scheduling goes as expected.
@@ -165,8 +163,8 @@ func calculateLifecycle(cr *v1alpha1.Stop, gs lifecycle.ClassifierReader) v1alph
 		},
 		{ // A job has been failed, but it is within the expected toleration.
 			// In this case, simply return the previous status.
-			expression: status.Phase == v1alpha1.PhaseRunning && gs.NumFailedJobs() > 0,
-			lifecycle:  status.Lifecycle,
+			expression: cycle.Phase == v1alpha1.PhaseRunning && gs.NumFailedJobs() > 0,
+			lifecycle:  cycle,
 		},
 		{ // All jobs are created, and at least one is still running
 			expression: gs.NumRunningJobs()+gs.NumSuccessfulJobs() == queuedJobs,
@@ -184,7 +182,7 @@ func calculateLifecycle(cr *v1alpha1.Stop, gs lifecycle.ClassifierReader) v1alph
 		},
 
 		{ // Not all Jobs are yet created
-			expression: status.Phase == v1alpha1.PhasePending,
+			expression: cycle.Phase == v1alpha1.PhasePending,
 			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhasePending,
 				Reason:  "JobIsPending",
@@ -195,13 +193,13 @@ func calculateLifecycle(cr *v1alpha1.Stop, gs lifecycle.ClassifierReader) v1alph
 
 	for _, testcase := range autotests {
 		if testcase.expression {
-			status.Lifecycle = testcase.lifecycle
+			cycle = testcase.lifecycle
 
 			if testcase.condition != (metav1.Condition{}) {
-				meta.SetStatusCondition(&status.Conditions, testcase.condition)
+				meta.SetStatusCondition(&cycle.Conditions, testcase.condition)
 			}
 
-			return status
+			return cycle
 		}
 	}
 
@@ -212,5 +210,5 @@ func calculateLifecycle(cr *v1alpha1.Stop, gs lifecycle.ClassifierReader) v1alph
 		runningJobs: %s,
 		successfulJobs: %s,
 		failedJobs: %s
-	`, status.Lifecycle, queuedJobs, gs.PendingList(), gs.RunningList(), gs.SuccessfulList(), gs.FailedList()))
+	`, cycle, queuedJobs, gs.PendingList(), gs.RunningList(), gs.SuccessfulList(), gs.FailedList()))
 }

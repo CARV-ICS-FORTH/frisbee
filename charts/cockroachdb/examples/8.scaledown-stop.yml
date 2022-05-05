@@ -1,6 +1,6 @@
 ---
 apiVersion: frisbee.io/v1alpha1
-kind: Workflow
+kind: TestPlan
 metadata:
   name: cockroach-scaledown-stop
 spec:
@@ -54,10 +54,11 @@ spec:
 
 
     # When all servers are up and running, stop some of them
-    - action: Stop
+    - action: Call
       name: stop-servers
       depends: { running: [ more-servers ] }
-      stop:
+      call:
+        callable: "drain"
         services:
           - more-servers-2
           - more-servers-5

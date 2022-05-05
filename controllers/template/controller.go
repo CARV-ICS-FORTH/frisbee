@@ -26,7 +26,6 @@ import (
 	"github.com/carv-ics-forth/frisbee/controllers/utils/lifecycle"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
-	"k8s.io/apimachinery/pkg/util/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -62,7 +61,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		------------------------------------------------------------------
 	*/
 	if err := utils.UpdateStatus(ctx, r, &cr); err != nil {
-		runtime.HandleError(err)
+		r.Info("update status error. retry", "object", cr.GetName(), "err", err)
 
 		return utils.RequeueAfter(time.Second)
 	}
@@ -78,11 +77,11 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		4: Make the world matching what we want in our spec
 		------------------------------------------------------------------
 	*/
-	if cr.Status.Lifecycle.Phase == v1alpha1.PhaseRunning {
+	if cr.Status.Lifecycle.Phase.Is(v1alpha1.PhaseRunning) {
 		return utils.Stop()
 	}
 
-	if cr.Status.Lifecycle.Phase == v1alpha1.PhaseUninitialized {
+	if cr.Status.Lifecycle.Phase.Is(v1alpha1.PhaseUninitialized) {
 		r.Logger.Info("Import Group",
 			"name", req.NamespacedName,
 		)
