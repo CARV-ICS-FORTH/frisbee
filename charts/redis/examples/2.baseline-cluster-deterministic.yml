@@ -1,6 +1,6 @@
 ---
 apiVersion: frisbee.io/v1alpha1
-kind: Workflow
+kind: TestPlan
 metadata:
   name: redis-baseline-cluster-deterministic
 spec:

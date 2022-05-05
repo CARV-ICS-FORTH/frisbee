@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package workflow
+package testplan
 
 import (
 	"fmt"
@@ -28,16 +28,19 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
-func (r *Controller) WatchStopJobs() predicate.Funcs {
+// controllerKind contains the schema.GroupVersionKind for this controller type.
+// var controllerKind = apps.SchemeGroupVersion.WithKind("Deployment")
+
+func (r *Controller) WatchTelemetry() predicate.Funcs {
 	return predicate.Funcs{
-		CreateFunc:  r.WatchStopJobsCreate,
-		DeleteFunc:  r.WatchStopJobsDelete,
-		UpdateFunc:  r.WatchStopJobsUpdate,
-		GenericFunc: r.WatchStopJobsGeneric,
+		CreateFunc:  r.watchTelemetryCreate,
+		DeleteFunc:  r.watchTelemetryDelete,
+		UpdateFunc:  r.watchTelemetryUpdate,
+		GenericFunc: r.watchTelemetryGeneric,
 	}
 }
 
-func (r *Controller) WatchStopJobsCreate(e event.CreateEvent) bool {
+func (r *Controller) watchTelemetryCreate(e event.CreateEvent) bool {
 	if !utils.IsManagedByThisController(e.Object, r.gvk) {
 		return false
 	}
@@ -58,7 +61,7 @@ func (r *Controller) WatchStopJobsCreate(e event.CreateEvent) bool {
 	return true
 }
 
-func (r *Controller) WatchStopJobsUpdate(e event.UpdateEvent) bool {
+func (r *Controller) watchTelemetryUpdate(e event.UpdateEvent) bool {
 	if !utils.IsManagedByThisController(e.ObjectNew, r.gvk) {
 		return false
 	}
@@ -78,9 +81,8 @@ func (r *Controller) WatchStopJobsUpdate(e event.UpdateEvent) bool {
 	}
 
 	// if the status is the same, there is no need to inform the service
-	prev := e.ObjectOld.(*v1alpha1.Stop)
-
-	latest := e.ObjectNew.(*v1alpha1.Stop)
+	prev := e.ObjectOld.(*v1alpha1.Telemetry)
+	latest := e.ObjectNew.(*v1alpha1.Telemetry)
 
 	if prev.Status.Phase == latest.Status.Phase {
 		// a controller never initiates a phase change, and so is never asleep waiting for the same.
@@ -99,7 +101,7 @@ func (r *Controller) WatchStopJobsUpdate(e event.UpdateEvent) bool {
 	return true
 }
 
-func (r *Controller) WatchStopJobsDelete(e event.DeleteEvent) bool {
+func (r *Controller) watchTelemetryDelete(e event.DeleteEvent) bool {
 	if !utils.IsManagedByThisController(e.Object, r.gvk) {
 		return false
 	}
@@ -123,6 +125,6 @@ func (r *Controller) WatchStopJobsDelete(e event.DeleteEvent) bool {
 	return true
 }
 
-func (r *Controller) WatchStopJobsGeneric(event.GenericEvent) bool {
+func (r *Controller) watchTelemetryGeneric(event.GenericEvent) bool {
 	return true
 }

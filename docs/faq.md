@@ -15,7 +15,7 @@ and so on. Given that, if the application seems fine, it is perhaps one of the s
 
 ##
 
-**Q:  I changed some templates, but the changes does not seem to affect the workflow.**
+**Q:  I changed some templates, but the changes does not seem to affect the Test Plan.**
 
 **A:** The changes are local and must be posted to the Kubernetes API. To update all templates use:
 

@@ -12,7 +12,7 @@ resources:
   controller: true
   domain: frisbee.io
   group: frisbee
-  kind: Workflow
+  kind: TestPlan
   path: github.com/carv-ics-forth/frisbee/api/v1alpha1
   version: v1alpha1
   webhooks:

@@ -9,19 +9,126 @@ spec:
   inputs:
     parameters:
       join: ""
+      storedir: "cockroach-data"
   service:
     decorators:
       telemetry:
         - platform.telemetry.container
         - cockroach.telemetry.server
 
-      gracefulStop:
+    callables:
+      boot:
         container: app
         command:
           - /bin/sh   # Run shell
           - -c        # Read from string
           - |         # Multi-line str
-            cockroach node drain --insecure --host $(hostname)
+            cockroach init --insecure
+
+      import-tpcc:
+        container: app
+        command:
+          - /bin/sh   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
+            set -eum
+            ./cockroach workload fixtures import tpcc --warehouses=100 --fks=false --checks=false
+
+      run-workload:
+        container: app
+        command:
+          - /bin/sh   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
+            set -eum
+            ./cockroach workload run tpcc --warehouses=100 --tolerate-errors
+
+      bitrot:
+        container: app
+        command:
+          - /bin/sh   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
+            set -eum
+
+            # Set local variables
+            store={{"{{.Inputs.Parameters.storedir}}"}}
+            nTables=6
+
+            # find 6 random SST files on each node (abort if node has fewer)
+            SSTs=($(ls -tr ${store}/MANIFEST-* | tail -n1 |  \
+            xargs ./cockroach debug pebble manifest dump |                                \
+            grep -v added | grep -v deleted | grep '/Table/' |                              \
+            shuf | tail -n ${nTables}))
+
+            # abort if we have less than 6
+            if (( ${#SSTs[@]} < ${nTables} )); then
+              echo "No sufficient SSTs found" >&2
+              # ... The rest of the debugging logic ...
+              exit -1
+            fi
+
+            # corrupt the SSts
+            for i in "${SSTs[@]}"
+            do
+              file=$(echo $i | cut -d ':' -f 1)
+              echo "Corrupt ${file}.sst"
+
+              dd if=/dev/urandom of=${file}.sst seek=256 count=128 bs=1 conv=notrunc
+            done
+
+            echo Corrupted "${SSTs[@]}" > /tmp/aa
+
+      test2-import-tpcc:
+        container: app
+        command:
+          - /bin/sh   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
+            set -eum
+            ./cockroach workload fixtures import tpcc --warehouses=1
+
+      test2-wait-for-3x-replication:
+        container: app
+        command:
+          - /bin/sh   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
+            set -eum
+
+            # WaitFor3XReplication waits until all ranges in the system are on at least three voters.
+            oldN=0
+            for (( ; ; ))
+            do
+              n=$(./cockroach sql --insecure --format=records \
+              --execute="SELECT count(1) FROM crdb_internal.ranges WHERE array_length(replicas, 1) < 3;"  \
+              | grep "count" | cut -d "|" -f 2)
+
+              if [ "${n}" -eq "0" ]
+              then
+                echo "All replicas are in place"
+                exit 0
+              fi
+
+              if [ oldN != ${n}  ]
+              then
+                echo "still waiting for full replication (${n} ranges left)"
+              fi
+
+              oldN=${n}
+
+              echo "Sleep"
+              sleep 2
+            done
+
+      test2-run-workload:
+        container: app
+        command:
+          - /bin/sh   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
+            set -eum
+            ./cockroach workload run tpcc --warehouses=1 --wait=false --histograms=/stats.json --duration=30m
 
     containers:
       - name: app
@@ -38,55 +145,19 @@ spec:
             set -eum
             trap "touch /dev/shm/stop" EXIT
 
-              echo "Start Cockroachdb: {{"{{.Inputs.Parameters.join}}"}}"
+            # Required for installing xargs
+            microdnf install findutils procps
 
-              cockroach start                                     \
-                --insecure                                        \
-                --store=$${HOSTNAME}                              \
-                --listen-addr=$${HOSTNAME}:{{.Values.port}}                  \
-                --http-addr=$${HOSTNAME}:{{.Values.httpPort}}                     \
-                --advertise-host=$${HOSTNAME}                     \
-                --join={{"{{.Inputs.Parameters.join}}"}}
+            # Set local variables
+            store={{"{{.Inputs.Parameters.storedir}}"}}
+            nodeList={{"{{.Inputs.Parameters.join}}"}}
 
+            echo "Start Cockroachdb: ${nodeList}"
 
-        startupProbe:
-          httpGet:
-            path: /health
-            port: http
-          failureThreshold: 30
-          periodSeconds: 10
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: http
-          initialDelaySeconds: 30
-          periodSeconds: 5
-
-
----
-apiVersion: frisbee.io/v1alpha1
-kind: Template
-metadata:
-  name: cockroach.cluster.bootstrap
-  labels:
-    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
-spec:
-  inputs:
-    parameters:
-      server: localhost
-      port: "26257"
-  service:
-    containers:
-      - name: app
-        image: cockroachdb/cockroach:latest
-        command:
-          - /bin/sh   # Run shell
-          - -c        # Read from string
-          - |         # Multi-line str
-            set -eum
-
-            addr={{"{{.Inputs.Parameters.server}}"}}:{{"{{.Inputs.Parameters.port}}"}}
-
-            echo "Initiate cluster using $addr"
-
-            cockroach init --insecure --host=$addr
+            COCKROACH_CRASH_ON_SPAN_USE_AFTER_FINISH=true cockroach start   \
+                --insecure                                      \
+                --store=${store}                                \
+                --listen-addr=:{{.Values.port}}                            \
+                --http-addr=$${HOSTNAME}:{{.Values.httpPort}}                   \
+                --advertise-addr=$${HOSTNAME}:{{.Values.port}}             \
+                --join=${nodeList}

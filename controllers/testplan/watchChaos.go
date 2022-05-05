@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package workflow
+package testplan
 
 import (
 	"fmt"
@@ -28,16 +28,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
-func (r *Controller) WatchClusters() predicate.Funcs {
+func (r *Controller) WatchChaos() predicate.Funcs {
 	return predicate.Funcs{
-		CreateFunc:  r.watchClusterCreate,
-		DeleteFunc:  r.watchClusterDelete,
-		UpdateFunc:  r.watchClusterUpdate,
-		GenericFunc: r.watchClusterGeneric,
+		CreateFunc:  r.watchChaosCreate,
+		DeleteFunc:  r.watchChaosDelete,
+		UpdateFunc:  r.watchChaosUpdate,
+		GenericFunc: r.watchChaosGeneric,
 	}
 }
 
-func (r *Controller) watchClusterCreate(e event.CreateEvent) bool {
+func (r *Controller) watchChaosCreate(e event.CreateEvent) bool {
 	if !utils.IsManagedByThisController(e.Object, r.gvk) {
 		return false
 	}
@@ -58,7 +58,7 @@ func (r *Controller) watchClusterCreate(e event.CreateEvent) bool {
 	return true
 }
 
-func (r *Controller) watchClusterUpdate(e event.UpdateEvent) bool {
+func (r *Controller) watchChaosUpdate(e event.UpdateEvent) bool {
 	if !utils.IsManagedByThisController(e.ObjectNew, r.gvk) {
 		return false
 	}
@@ -78,8 +78,8 @@ func (r *Controller) watchClusterUpdate(e event.UpdateEvent) bool {
 	}
 
 	// if the status is the same, there is no need to inform the service
-	prev := e.ObjectOld.(*v1alpha1.Cluster)
-	latest := e.ObjectNew.(*v1alpha1.Cluster)
+	prev := e.ObjectOld.(*v1alpha1.Chaos)
+	latest := e.ObjectNew.(*v1alpha1.Chaos)
 
 	if prev.Status.Phase == latest.Status.Phase {
 		// a controller never initiates a phase change, and so is never asleep waiting for the same.
@@ -98,7 +98,7 @@ func (r *Controller) watchClusterUpdate(e event.UpdateEvent) bool {
 	return true
 }
 
-func (r *Controller) watchClusterDelete(e event.DeleteEvent) bool {
+func (r *Controller) watchChaosDelete(e event.DeleteEvent) bool {
 	if !utils.IsManagedByThisController(e.Object, r.gvk) {
 		return false
 	}
@@ -122,6 +122,6 @@ func (r *Controller) watchClusterDelete(e event.DeleteEvent) bool {
 	return true
 }
 
-func (r *Controller) watchClusterGeneric(event.GenericEvent) bool {
+func (r *Controller) watchChaosGeneric(event.GenericEvent) bool {
 	return true
 }

@@ -97,7 +97,7 @@ func (h partitionHandler) Inject(ctx context.Context, r *Controller) error {
 				"mode":   "all",
 				"selector": map[string]interface{}{
 					"labelSelectors": map[string]string{
-						v1alpha1.BelongsToWorkflow: h.cr.GetLabels()[v1alpha1.BelongsToWorkflow],
+						v1alpha1.BelongsToTestPlan: h.cr.GetLabels()[v1alpha1.BelongsToTestPlan],
 					},
 				},
 				"direction": "both",

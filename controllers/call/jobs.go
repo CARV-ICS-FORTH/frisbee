@@ -14,25 +14,23 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package stop
+package call
 
 import (
 	"context"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
+	"github.com/carv-ics-forth/frisbee/pkg/structure"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func getJob(cr *v1alpha1.Stop, i int) (string, *v1alpha1.GracefulStop) {
-	return cr.Spec.Services[i], cr.Status.QueuedJobs[i]
-}
-
-func (r *Controller) constructJobSpecList(ctx context.Context, cr *v1alpha1.Stop) ([]*v1alpha1.GracefulStop, error) {
-	specs := make([]*v1alpha1.GracefulStop, 0, len(cr.Spec.Services))
+func (r *Controller) constructJobSpecList(ctx context.Context, cr *v1alpha1.Call) ([]v1alpha1.Callable, error) {
+	specs := make([]v1alpha1.Callable, 0, len(cr.Spec.Services))
 
 	for _, serviceName := range cr.Spec.Services {
+		// get service spec
 		var service v1alpha1.Service
 
 		key := client.ObjectKey{
@@ -44,26 +42,37 @@ func (r *Controller) constructJobSpecList(ctx context.Context, cr *v1alpha1.Stop
 			return nil, errors.Wrapf(err, "cannot get info for service %s", serviceName)
 		}
 
-		if service.Spec.Decorators == nil && service.Spec.Decorators.GracefulStop == nil {
-			return nil, errors.Errorf("service [%s] does not support graceful stopping", service.GetName())
+		// find callable
+		callable, ok := service.Spec.Callables[cr.Spec.Callable]
+		if !ok {
+			return nil, errors.Errorf("cannot find callable '%s' on service '%s'. Available: %s",
+				cr.Spec.Callable, serviceName, structure.MapKeys(service.Spec.Callables))
 		}
 
-		specs = append(specs, service.Spec.Decorators.GracefulStop)
+		specs = append(specs, callable)
 	}
 
 	return specs, nil
 }
 
-func (r *Controller) stopJob(cr *v1alpha1.Stop, serviceName string, stop *v1alpha1.GracefulStop) error {
+func (r *Controller) callJob(cr *v1alpha1.Call, i int) error {
+	serviceName := cr.Spec.Services[i]
+	callable := cr.Status.QueuedJobs[i]
+
+	r.Info("===> Synchronous call", "caller", cr.GetName(), "service", serviceName)
+	defer r.Info("<=== Synchronous call", "caller", cr.GetName(), "service", serviceName)
+
 	pod := types.NamespacedName{
 		Namespace: cr.GetNamespace(),
 		Name:      serviceName,
 	}
 
-	res, err := r.executor.Exec(pod, stop.Container, stop.Command)
+	res, err := r.executor.Exec(pod, callable.Container, callable.Command, true)
 	if err != nil {
-		return errors.Wrapf(err, "command execution failed. Out: %s, Err: %s", res.Stdout.String(), res.Stderr.String())
+		return errors.Wrapf(err, "command execution failed. Out: %s, Err: %s", res.Stdout, res.Stderr)
 	}
+
+	r.Logger.Info("Call Output", "stdout", res.Stdout, "stderr", res.Stderr)
 
 	return nil
 }

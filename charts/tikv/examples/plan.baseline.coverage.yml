@@ -63,7 +63,7 @@ spec:
 
 ---
 apiVersion: frisbee.io/v1alpha1
-kind: Workflow
+kind: TestPlan
 metadata:
   name: tikv-baseline
 spec:

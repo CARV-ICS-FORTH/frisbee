@@ -16,6 +16,10 @@ limitations under the License.
 
 package structure
 
+import (
+	"reflect"
+)
+
 // ContainsStrings searches a slice of strings for a case-sensitive match
 func ContainsStrings(slice []string, item string) bool {
 	for _, a := range slice {
@@ -24,4 +28,16 @@ func ContainsStrings(slice []string, item string) bool {
 		}
 	}
 	return false
+}
+
+func MapKeys(m interface{}) []string {
+	keyVals := reflect.ValueOf(m).MapKeys()
+
+	keys := make([]string, 0, len(keyVals))
+
+	for _, key := range keyVals {
+		keys = append(keys, key.String())
+	}
+
+	return keys
 }

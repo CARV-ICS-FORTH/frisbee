@@ -169,7 +169,7 @@ check [here](docs/singlenode-deployment.md).)
 ```yaml
 # Standard Kubernetes boilerplate
 apiVersion: frisbee.io/v1alpha1
-kind: Workflow
+kind: TestPlan
 metadata:
   name: redis-failover
 spec:

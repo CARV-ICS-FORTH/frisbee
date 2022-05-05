@@ -28,7 +28,6 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/util/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -158,13 +157,10 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		be in conflict. We fix this issue by re-queueing the request.
 		We also suppress verbose error reporting as to avoid polluting the output.
 	*/
-	newStatus := calculateLifecycle(&cr, r.state)
-
-	cr.Status = newStatus
+	cr.SetReconcileStatus(calculateLifecycle(&cr, r.state))
 
 	if err := utils.UpdateStatus(ctx, r, &cr); err != nil {
-		runtime.HandleError(err)
-
+		r.Info("update status error. retry", "object", cr.GetName(), "err", err)
 		return utils.RequeueAfter(time.Second)
 	}
 
@@ -177,7 +173,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		We may delete the service, add a pod, or wait for existing pod to change its status.
 	*/
-	if newStatus.Phase.Is(v1alpha1.PhaseUninitialized) {
+	if cr.Status.Phase.Is(v1alpha1.PhaseUninitialized) {
 		if err := r.installPrometheus(ctx, &cr); err != nil {
 			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "prometheus error"))
 		}

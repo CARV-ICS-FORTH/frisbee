@@ -18,15 +18,17 @@ package v1alpha1
 
 import (
 	"fmt"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
 	// LabelManagedBy binds an object  back to a specific controller.
 	LabelManagedBy = "frisbee-controller"
 
-	// BelongsToWorkflow is a label that is passed from parent to the child, in order to identify all
+	// BelongsToTestPlan is a label that is passed from parent to the child, in order to identify all
 	// the various objects that belong to a specific workflow.
-	BelongsToWorkflow = "frisbee-workflow"
+	BelongsToTestPlan = "frisbee-testplan"
 )
 
 // Phase is a simple, high-level summary of where the Object is in its lifecycle.
@@ -83,8 +85,14 @@ func (p Phase) Precedes(ref Phase) bool {
 	return p.toInt() < ref.toInt()
 }
 
-func (p Phase) Is(ref Phase) bool {
-	return p == ref
+func (p Phase) Is(refs ...Phase) bool {
+	for _, ref := range refs {
+		if p == ref {
+			return true
+		}
+	}
+
+	return false
 }
 
 type Lifecycle struct {
@@ -100,6 +108,10 @@ type Lifecycle struct {
 
 	// Message provides more details for understanding the Reason.
 	Message string `json:"message,omitempty"`
+
+	// Conditions describe sequences of events that warrant the present Phase.
+	// +optional
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
 func (in *Lifecycle) String() string {

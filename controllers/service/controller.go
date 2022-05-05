@@ -31,7 +31,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/util/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -121,12 +120,11 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		be in conflict. We fix this issue by re-queueing the request.
 		We also suppress verbose error reporting as to avoid polluting the output.
 	*/
-	updateLifecycle(&cr, &pod)
+	cr.SetReconcileStatus(updateLifecycle(&cr, &pod))
 
 	if err := utils.UpdateStatus(ctx, r, &cr); err != nil {
-		runtime.HandleError(err)
-
-		return utils.Requeue()
+		r.Info("update status error. retry", "object", cr.GetName(), "err", err)
+		return utils.RequeueAfter(time.Second)
 	}
 
 	/*

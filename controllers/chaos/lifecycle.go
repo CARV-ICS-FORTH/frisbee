@@ -17,6 +17,8 @@ limitations under the License.
 package chaos
 
 import (
+	"fmt"
+
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
@@ -49,6 +51,10 @@ type Condition struct {
 
 func (c Condition) True() bool {
 	return c.Status == corev1.ConditionTrue
+}
+
+func (c Condition) False() bool {
+	return c.Status == corev1.ConditionFalse
 }
 
 type DesiredPhase string
@@ -107,13 +113,9 @@ func (s v1alpha1ChaosStatus) Extract() (phase DesiredPhase, selected, allInjecte
 }
 
 func calculateLifecycle(cr *v1alpha1.Chaos, fault *Fault) v1alpha1.Lifecycle {
-	status := cr.Status
-
 	// Skip any CR which are already completed, or uninitialized.
-	if status.Phase == v1alpha1.PhaseUninitialized ||
-		status.Phase == v1alpha1.PhaseSuccess ||
-		status.Phase == v1alpha1.PhaseFailed {
-		return status.Lifecycle
+	if cr.Status.Phase.Is(v1alpha1.PhaseUninitialized, v1alpha1.PhaseSuccess, v1alpha1.PhaseFailed) {
+		return cr.Status.Lifecycle
 	}
 
 	return convertLifecycle(fault)
@@ -146,7 +148,13 @@ func convertLifecycle(fault *Fault) v1alpha1.Lifecycle {
 		}
 	}
 
-	phase, selected, allInjected, allRecovered, paused := parsed.Extract()
+	if parsed.Conditions == nil {
+		return v1alpha1.Lifecycle{
+			Phase:   v1alpha1.PhasePending,
+			Reason:  "ChaosStarted",
+			Message: "Chaos experiment has just started.",
+		}
+	}
 
 	/*
 		There is a lot of duplication in our tests.
@@ -154,12 +162,12 @@ func convertLifecycle(fault *Fault) v1alpha1.Lifecycle {
 		Everything else is boilerplate.
 		For this reason, we prefer table driven testing.
 	*/
-	type test struct {
+	phase, selected, allInjected, allRecovered, paused := parsed.Extract()
+
+	tests := []struct {
 		condition bool
 		outcome   v1alpha1.Lifecycle
-	}
-
-	tests := []test{
+	}{
 		{ // The experiment is paused. No currently supported
 			condition: paused.True(),
 			outcome: v1alpha1.Lifecycle{
@@ -170,7 +178,7 @@ func convertLifecycle(fault *Fault) v1alpha1.Lifecycle {
 		},
 
 		{ // Starting the experiment
-			condition: !selected.True() && !allInjected.True() && !allRecovered.True(),
+			condition: selected.False() && allInjected.False() && allRecovered.False(),
 			outcome: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhasePending,
 				Reason:  "ChaosReStarting",
@@ -179,7 +187,7 @@ func convertLifecycle(fault *Fault) v1alpha1.Lifecycle {
 		},
 
 		{ // Starting the experiment
-			condition: phase.Run() && !selected.True() && allInjected.True() && allRecovered.True(),
+			condition: phase.Run() && selected.False() && allInjected.True() && allRecovered.True(),
 			outcome: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhasePending,
 				Reason:  "ChaosSelectingTargets",
@@ -188,7 +196,7 @@ func convertLifecycle(fault *Fault) v1alpha1.Lifecycle {
 		},
 
 		{ // Injecting faults into targets
-			condition: phase.Run() && selected.True() && !allInjected.True() && !allRecovered.True(),
+			condition: phase.Run() && selected.True() && allInjected.False() && allRecovered.False(),
 			outcome: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhasePending,
 				Reason:  "ChaosInjecting",
@@ -197,7 +205,7 @@ func convertLifecycle(fault *Fault) v1alpha1.Lifecycle {
 		},
 
 		{ // All Faults are injected to all targets.
-			condition: phase.Run() && selected.True() && allInjected.True() && !allRecovered.True(),
+			condition: phase.Run() && selected.True() && allInjected.True() && allRecovered.False(),
 			outcome: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseRunning,
 				Reason:  "ChaosRunning",
@@ -206,7 +214,7 @@ func convertLifecycle(fault *Fault) v1alpha1.Lifecycle {
 		},
 
 		{ // Stopping the experiment
-			condition: phase.Stop() && selected.True() && allInjected.True() && !allRecovered.True(),
+			condition: phase.Stop() && selected.True() && allInjected.True() && allRecovered.False(),
 			outcome: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseRunning,
 				Reason:  "ChaosTearingDown",
@@ -215,7 +223,7 @@ func convertLifecycle(fault *Fault) v1alpha1.Lifecycle {
 		},
 
 		{ // Faults are stopped but not yet recovered
-			condition: phase.Stop() && selected.True() && !allInjected.True() && !allRecovered.True(),
+			condition: phase.Stop() && selected.True() && allInjected.False() && allRecovered.False(),
 			outcome: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseRunning,
 				Reason:  "ChaosTearingDown",
@@ -224,27 +232,23 @@ func convertLifecycle(fault *Fault) v1alpha1.Lifecycle {
 		},
 
 		{ // All faults are removed from all targets
-			condition: phase.Stop() && selected.True() && !allInjected.True() && allRecovered.True(),
+			condition: phase.Stop() && selected.True() && allInjected.False() && allRecovered.True(),
 			outcome: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseSuccess,
 				Reason:  "ChaosFinished",
 				Message: "all faults are recovered",
 			},
 		},
-	}
-	/*
-		tests := []test{
-			{ // Target not found
-				condition: phase.Stop() && !selected.True() && allInjected.True() && allRecovered.True(),
-				outcome: v1alpha1.Lifecycle{
-					Phase:   v1alpha1.PhaseFailed,
-					Reason:  "TargetNotFound",
-					Message: fmt.Sprintf("%v", parsed),
-				},
-			},
-		}
 
-	*/
+		{ // All faults are removed from all targets
+			condition: phase.Stop() && selected.False() && allInjected.True() && allRecovered.True(),
+			outcome: v1alpha1.Lifecycle{
+				Phase:   v1alpha1.PhaseFailed,
+				Reason:  "TargetNotFound",
+				Message: fmt.Sprintf("%v", parsed),
+			},
+		},
+	}
 
 	for _, testcase := range tests {
 		if testcase.condition {
@@ -252,11 +256,6 @@ func convertLifecycle(fault *Fault) v1alpha1.Lifecycle {
 		}
 	}
 
-	panic(errors.Errorf(`unhandled lifecycle conditions.
-		incoming: %v,
-        selected: %v,
-        allInjected: %v,
-        allRecovered: %v
-		raw: %v,
-`, phase, selected.True(), allInjected.True(), allRecovered.True(), fault))
+	panic(errors.Errorf("unhandled lifecycle conditions. \nincoming: %v, \n%v, \n%v, \n%v, \nraw: %v",
+		phase, selected, allInjected, allRecovered, fault))
 }

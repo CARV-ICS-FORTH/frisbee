@@ -1,7 +1,9 @@
 # TiKV
 
-> [TiKV](https://tikv.org/) provides both raw and ACID-compliant transactional key-value API, which is widely used in online serving services,
-> such as the metadata storage system for object storage service, the storage system for recommendation systems, the online feature store, etc.
+> [TiKV](https://tikv.org/) provides both raw and ACID-compliant transactional key-value API, which is widely used in
+> online serving services,
+> such as the metadata storage system for object storage service, the storage system for recommendation systems, the
+> online feature store, etc.
 
 ## TL;DR
 

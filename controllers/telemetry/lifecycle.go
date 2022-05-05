@@ -33,14 +33,12 @@ type test struct {
 	condition  metav1.Condition
 }
 
-func calculateLifecycle(t *v1alpha1.Telemetry, gs lifecycle.ClassifierReader) v1alpha1.TelemetryStatus {
-	status := t.Status
+func calculateLifecycle(t *v1alpha1.Telemetry, gs lifecycle.ClassifierReader) v1alpha1.Lifecycle {
+	cycle := t.Status.Lifecycle
 
 	// Skip any CR which are already completed, or uninitialized.
-	if status.Phase == v1alpha1.PhaseUninitialized ||
-		status.Phase == v1alpha1.PhaseSuccess ||
-		status.Phase == v1alpha1.PhaseFailed {
-		return status
+	if cycle.Phase.Is(v1alpha1.PhaseUninitialized, v1alpha1.PhaseSuccess, v1alpha1.PhaseFailed) {
+		return cycle
 	}
 
 	expectedJobs := len(telemetryServices)
@@ -75,7 +73,7 @@ func calculateLifecycle(t *v1alpha1.Telemetry, gs lifecycle.ClassifierReader) v1
 			},
 		},
 		{ // Not all Jobs are yet created
-			expression: status.Phase == v1alpha1.PhasePending,
+			expression: cycle.Phase == v1alpha1.PhasePending,
 			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhasePending,
 				Reason:  "JobIsPending",
@@ -86,20 +84,20 @@ func calculateLifecycle(t *v1alpha1.Telemetry, gs lifecycle.ClassifierReader) v1
 
 	for _, testcase := range autotests {
 		if testcase.expression {
-			status.Lifecycle = testcase.lifecycle
+			cycle = testcase.lifecycle
 
-			return status
+			return cycle
 		}
 	}
 
-	logrus.Warn("Workflow Debug info \n",
-		" current ", status.Lifecycle.Phase,
+	logrus.Warn("TestPlan Debug info \n",
+		" current ", cycle.Phase,
 		" expected: ", expectedJobs,
 		" activeJobs: ", gs.PendingList(),
 		" runningJobs: ", gs.RunningList(),
 		" successfulJobs: ", gs.SuccessfulList(),
 		" failedJobs: ", gs.FailedList(),
-		" cur status: ", status,
+		" cur status: ", cycle,
 	)
 
 	panic("unhandled lifecycle conditions")

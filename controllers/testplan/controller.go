@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package workflow
+package testplan
 
 import (
 	"context"
@@ -35,15 +35,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/util/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// +kubebuilder:rbac:groups=frisbee.io,resources=workflows,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=frisbee.io,resources=workflows/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=frisbee.io,resources=workflows/finalizers,verbs=update
+// +kubebuilder:rbac:groups=frisbee.io,resources=testplans,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=frisbee.io,resources=testplans/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=frisbee.io,resources=testplans/finalizers,verbs=update
 
 // +kubebuilder:rbac:groups=frisbee.io,resources=virtualobjects,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=frisbee.io,resources=virtualobjects/status,verbs=get;update;patch
@@ -70,7 +69,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		1: Load CR by name.
 		------------------------------------------------------------------
 	*/
-	var cr v1alpha1.Workflow
+	var cr v1alpha1.TestPlan
 
 	var requeue bool
 	result, err := utils.Reconcile(ctx, r, req, &cr, &requeue)
@@ -154,6 +153,12 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "unable to list child virtual Jobs"))
 	}
 
+	var callJobs v1alpha1.CallList
+
+	if err := r.GetClient().List(ctx, &callJobs, filters...); err != nil {
+		return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "unable to list child call Jobs"))
+	}
+
 	/*
 		3: Classify CR's components.
 		------------------------------------------------------------------
@@ -192,6 +197,10 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		r.state.Classify(job.GetName(), &virtualJobs.Items[i])
 	}
 
+	for i, job := range callJobs.Items {
+		r.state.Classify(job.GetName(), &callJobs.Items[i])
+	}
+
 	/*
 		4: Update the CR status using the data we've gathered
 		------------------------------------------------------------------
@@ -204,22 +213,21 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		be in conflict. We fix this issue by re-queueing the request.
 		We also suppress verbose error reporting as to avoid polluting the output.
 	*/
-	r.updateLifecycle(&cr)
+	cr.SetReconcileStatus(r.updateLifecycle(&cr))
 
 	if err := utils.UpdateStatus(ctx, r, &cr); err != nil {
-		runtime.HandleError(err)
-
+		r.Info("update status error. retry", "object", cr.GetName(), "err", err)
 		return utils.RequeueAfter(time.Second)
 	}
 
 	/*
-		If this object is suspended, we don't want to run any jobs, so we'll stop now.
+		If this object is suspended, we don't want to run any jobs, so we'll call now.
 		This is useful if something's broken with the job we're running, and we want to
 		pause runs to investigate or putz with the cluster, without deleting the object.
 	*/
 	if cr.Spec.Suspend != nil && *cr.Spec.Suspend {
-		r.Logger.Info("Workflow is suspended",
-			"workflow", cr.GetName(),
+		r.Logger.Info("TestPlan is suspended",
+			"testplan", cr.GetName(),
 			"reason", cr.Status.Reason,
 			"message", cr.Status.Message,
 		)
@@ -237,7 +245,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if cr.Status.Phase.Is(v1alpha1.PhaseSuccess) {
 		// Remove the testing components once the experiment is successfully complete.
 		// We maintain testbed components (e.g, prometheus and grafana) for getting back the test results.
-		// These components are removed by deleting the Workflow.
+		// These components are removed by deleting the TestPlan.
 		for _, job := range r.state.SuccessfulJobs() {
 			expressions.UnsetAlert(job)
 
@@ -289,15 +297,15 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// This label will be adopted by all children objects of this workflow.
 	// It is not persisted in order to avoid additional updates.
 	cr.SetLabels(labels.Merge(cr.GetLabels(), map[string]string{
-		v1alpha1.BelongsToWorkflow: cr.GetName(),
+		v1alpha1.BelongsToTestPlan: cr.GetName(),
 	}))
 
 	/*
 		initialize the CR.
 	*/
 	if cr.Status.Phase.Is(v1alpha1.PhaseUninitialized) {
-		if err := ValidateDAG(cr.Spec.Actions, r.state); err != nil {
-			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "invalid workflow graph"))
+		if err := r.Validate(&cr); err != nil {
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "invalid testplan"))
 		}
 
 		if err := utils.UseDefaultPlatformConfiguration(ctx, r, cr.GetNamespace()); err != nil {
@@ -317,22 +325,22 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		meta.SetStatusCondition(&cr.Status.Conditions, metav1.Condition{
 			Type:    v1alpha1.ConditionCRInitialized.String(),
 			Status:  metav1.ConditionTrue,
-			Reason:  "WorkflowInitialized",
-			Message: "The workflow has been initialized. Start running actions",
+			Reason:  "TestPlanInitialized",
+			Message: "The Test Plan has been initialized. Start running actions",
 		})
 
 		if cr.Status.Executed == nil {
 			cr.Status.Executed = make(map[string]v1alpha1.ConditionalExpr)
 		}
 
-		return lifecycle.Pending(ctx, r, &cr, "The Workflow is ready to start submitting jobs.")
+		return lifecycle.Pending(ctx, r, &cr, "The TestPlan is ready to start submitting jobs.")
 	}
 
 	/*
 		ensure that telemetry is running
 	*/
 	if cr.Spec.WithTelemetry != nil {
-		// Stop until the telemetry stack becomes ready.
+		// Call until the telemetry stack becomes ready.
 		if telemetryJob.Status.Phase.Is(v1alpha1.PhaseUninitialized) || telemetryJob.Status.Phase.Is(v1alpha1.PhasePending) {
 			return utils.Stop()
 		}
@@ -370,12 +378,8 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return utils.RequeueAfter(time.Until(nextRun))
 	}
 
+	endpoints := r.supportedActions()
 	for _, action := range actionList {
-		job, err := r.getJob(ctx, &cr, action)
-		if err != nil {
-			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "erroneous action [%s]", action.Name))
-		}
-
 		if action.Assert.HasMetricsExpr() {
 			// Assertions belong to the top-level workflow. Not to the job
 			if err := expressions.SetAlert(&cr, action.Assert.Metrics); err != nil {
@@ -383,8 +387,19 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			}
 		}
 
+		e, ok := endpoints[action.ActionType]
+		if !ok {
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "unknown type [%s] for action [%s]",
+				action.ActionType, action.Name))
+		}
+
+		job, err := e(ctx, &cr, action)
+		if err != nil {
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot run action [%s]", action.Name))
+		}
+
 		if err := utils.Create(ctx, r, &cr, job); err != nil {
-			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "action %s execution failed", action.Name))
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "execution error for action %s", action.Name))
 		}
 
 		/*
@@ -408,7 +423,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	return lifecycle.Pending(ctx, r, &cr, "some jobs are still pending")
 }
 
-func (r *Controller) ConnectToGrafana(ctx context.Context, cr *v1alpha1.Workflow) error {
+func (r *Controller) ConnectToGrafana(ctx context.Context, cr *v1alpha1.TestPlan) error {
 	endpoint := utils.DefaultConfiguration.GrafanaEndpoint
 
 	return grafana.NewGrafanaClient(ctx, r, endpoint,
@@ -433,7 +448,7 @@ func (r *Controller) ConnectToGrafana(ctx context.Context, cr *v1alpha1.Workflow
 */
 
 func (r *Controller) Finalizer() string {
-	return "workflows.frisbee.io/finalizer"
+	return "testplans.frisbee.io/finalizer"
 }
 
 func (r *Controller) Finalize(obj client.Object) error {
@@ -459,21 +474,21 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 	// instantiate the controller
 	r := &Controller{
 		Manager: mgr,
-		Logger:  logger.WithName("workflow"),
-		gvk:     v1alpha1.GroupVersion.WithKind("Workflow"),
+		Logger:  logger.WithName("testplan"),
+		gvk:     v1alpha1.GroupVersion.WithKind("TestPlan"),
 	}
 
 	r.serviceControl = serviceutils.NewServiceControl(r)
 	r.chaosControl = chaosutils.NewChaosControl(r)
 
 	return ctrl.NewControllerManagedBy(mgr).
-		Named("workflow").
-		For(&v1alpha1.Workflow{}).
+		Named("testplan").
+		For(&v1alpha1.TestPlan{}).
 		Owns(&v1alpha1.Service{}, builder.WithPredicates(r.WatchServices())).             // Watch Services
 		Owns(&v1alpha1.Cluster{}, builder.WithPredicates(r.WatchClusters())).             // Watch Cluster
 		Owns(&v1alpha1.Chaos{}, builder.WithPredicates(r.WatchChaos())).                  // Watch Chaos
 		Owns(&v1alpha1.Telemetry{}, builder.WithPredicates(r.WatchTelemetry())).          // Watch Telemetry
 		Owns(&v1alpha1.VirtualObject{}, builder.WithPredicates(r.WatchVirtualObjects())). // Watch VirtualObjects
-		Owns(&v1alpha1.Stop{}, builder.WithPredicates(r.WatchStopJobs())).                // Watch StopJobs
+		Owns(&v1alpha1.Call{}, builder.WithPredicates(r.WatchCallJobs())).                // Watch StopJobs
 		Complete(r)
 }

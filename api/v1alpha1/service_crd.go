@@ -73,14 +73,6 @@ type SetField struct {
 	Value string `json:"value"`
 }
 
-type GracefulStop struct {
-	// Container specific the name of the container to which we will run the command
-	Container string `json:"container"`
-
-	// Container specifies a command and arguments to stop the targeted container in an application-specific manner.
-	Command []string `json:"command"`
-}
-
 // Decorators takes in a PodSpec, add some functionality and returns it.
 type Decorators struct {
 	// Resources specifies limitations as to how the container will access host resources.
@@ -106,11 +98,16 @@ type Decorators struct {
 
 	// +optional
 	Labels map[string]string `json:"labels,omitempty"`
+}
 
-	// GracefulStop allows you to define a command for stopping the containers that run in the Pod.
-	// Used by the Stop command.
-	// +optional
-	GracefulStop *GracefulStop `json:"gracefulStop,omitempty"`
+// Callable is a script that is executed within the service container, and returns a value.
+// For example, a callable can be a command for stopping the containers that run in the Pod.
+type Callable struct {
+	// Container specific the name of the container to which we will run the command
+	Container string `json:"container"`
+
+	// Container specifies a command and arguments to stop the targeted container in an application-specific manner.
+	Command []string `json:"command"`
 }
 
 // ServiceSpec defines the desired state of Service.
@@ -120,6 +117,9 @@ type ServiceSpec struct {
 
 	// +optional
 	Decorators *Decorators `json:"decorators,omitempty"`
+
+	// +optional
+	Callables map[string]Callable `json:"callables,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// +optional

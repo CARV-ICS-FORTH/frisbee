@@ -155,7 +155,7 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 			r.Error(err, "resource deletion error")
 		}
 
-		// Stop reconciliation as the item is being deleted
+		// Call reconciliation as the item is being deleted
 		return Stop()
 	}
 
@@ -263,7 +263,7 @@ func SetOwner(r Reconciler, parent, child metav1.Object) {
 	// used to narrow down the scope of fault injection in a common namespace
 	child.SetLabels(labels.Merge(child.GetLabels(), map[string]string{
 		v1alpha1.LabelManagedBy:    parent.GetName(),
-		v1alpha1.BelongsToWorkflow: parent.GetLabels()[v1alpha1.BelongsToWorkflow],
+		v1alpha1.BelongsToTestPlan: parent.GetLabels()[v1alpha1.BelongsToTestPlan],
 	}))
 }
 

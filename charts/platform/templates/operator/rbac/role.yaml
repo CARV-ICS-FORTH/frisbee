@@ -141,6 +141,32 @@ rules:
 - apiGroups:
   - frisbee.io
   resources:
+  - calls
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - frisbee.io
+  resources:
+  - calls/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - frisbee.io
+  resources:
+  - calls/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - frisbee.io
+  resources:
   - cascades
   verbs:
   - create
@@ -245,32 +271,6 @@ rules:
 - apiGroups:
   - frisbee.io
   resources:
-  - stops
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - frisbee.io
-  resources:
-  - stops/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - frisbee.io
-  resources:
-  - stops/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - frisbee.io
-  resources:
   - telemetries
   verbs:
   - create
@@ -323,6 +323,32 @@ rules:
 - apiGroups:
   - frisbee.io
   resources:
+  - testplans
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - frisbee.io
+  resources:
+  - testplans/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - frisbee.io
+  resources:
+  - testplans/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - frisbee.io
+  resources:
   - virtualobjects
   verbs:
   - create
@@ -342,32 +368,6 @@ rules:
   - frisbee.io
   resources:
   - virtualobjects/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - frisbee.io
-  resources:
-  - workflows
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - frisbee.io
-  resources:
-  - workflows/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - frisbee.io
-  resources:
-  - workflows/status
   verbs:
   - get
   - patch

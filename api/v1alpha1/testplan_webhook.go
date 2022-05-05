@@ -24,9 +24,9 @@ import (
 )
 
 // log is for logging in this package.
-var workflowlog = logf.Log.WithName("workflow-resource")
+var testplanlog = logf.Log.WithName("testplan-resource")
 
-func (r *Workflow) SetupWebhookWithManager(mgr ctrl.Manager) error {
+func (r *TestPlan) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
 		Complete()
@@ -34,41 +34,41 @@ func (r *Workflow) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
-// +kubebuilder:webhook:path=/mutate-frisbee-frisbee-io-v1alpha1-workflow,mutating=true,failurePolicy=fail,sideEffects=None,groups=frisbee.frisbee.io,resources=workflows,verbs=create;update,versions=v1alpha1,name=mworkflow.kb.io,admissionReviewVersions={v1}
+// +kubebuilder:webhook:path=/mutate-testplan,mutating=true,failurePolicy=fail,sideEffects=None,groups=frisbee.io,resources=testplans,verbs=create;update,versions=v1alpha1,name=mtestplan.kb.io,admissionReviewVersions={v1,v1alpha1}
 
-var _ webhook.Defaulter = &Workflow{}
+var _ webhook.Defaulter = &TestPlan{}
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *Workflow) Default() {
-	workflowlog.Info("default", "name", r.Name)
+func (r *TestPlan) Default() {
+	testplanlog.Info("default", "name", r.Name)
 
 	// TODO(user): fill in your defaulting logic.
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// +kubebuilder:webhook:path=/validate-frisbee-frisbee-io-v1alpha1-workflow,mutating=false,failurePolicy=fail,sideEffects=None,groups=frisbee.frisbee.io,resources=workflows,verbs=create;update,versions=v1alpha1,name=vworkflow.kb.io,admissionReviewVersions={v1}
+// +kubebuilder:webhook:path=/validate-testplan,mutating=false,failurePolicy=fail,sideEffects=None,groups=frisbee.io,resources=testplans,verbs=create;update,versions=v1alpha1,name=vtestplan.kb.io,admissionReviewVersions={v1,v1alpha1}
 
-var _ webhook.Validator = &Workflow{}
+var _ webhook.Validator = &TestPlan{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *Workflow) ValidateCreate() error {
-	workflowlog.Info("validate create", "name", r.Name)
+func (r *TestPlan) ValidateCreate() error {
+	testplanlog.Info("validate create", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object creation.
 	return nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *Workflow) ValidateUpdate(old runtime.Object) error {
-	workflowlog.Info("validate update", "name", r.Name)
+func (r *TestPlan) ValidateUpdate(old runtime.Object) error {
+	testplanlog.Info("validate update", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object update.
 	return nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *Workflow) ValidateDelete() error {
-	workflowlog.Info("validate delete", "name", r.Name)
+func (r *TestPlan) ValidateDelete() error {
+	testplanlog.Info("validate delete", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.
 	return nil

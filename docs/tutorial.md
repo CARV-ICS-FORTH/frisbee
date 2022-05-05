@@ -97,7 +97,7 @@ If you use a non-local cluster, you can these the ingress via the  `global.ingre
 >> helm upgrade --install --wait my-tikv frisbee/tikv
 ```
 
-#### Step 5: Run the testing workflow
+#### Step 5: Run the Test Plan
 
 This url points
 to : https://raw.githubusercontent.com/CARV-ICS-FORTH/frisbee/main/charts/tikv/examples/plan.baseline.yml
@@ -113,12 +113,12 @@ After you have successfully run a test, the next question that comes is about it
 
 ```bash
 # View deployed plans
->> kubectl get workflows.frisbee.io
+>> kubectl get testplans.frisbee.io
 NAME            AGE
 tikv-baseline   1m
 
 # Inspect a plan
->> kubectl describe workflows.frisbee.io tikv-baseline
+>> kubectl describe testplans.frisbee.io tikv-baseline
 ```
 
 Describe will return a lot of information about the plan. We are interested in the fields `conditions`.
@@ -127,13 +127,13 @@ We can use these fields to wait until they become true -- thus saving us from ma
 
 ```bash
 # Wait until the test oracle is triggered.
->> kubectl  wait --for=condition=allActions workflows.frisbee.io/tikv-baseline 
-workflow.frisbee.io/tikv-baseline condition met
+>> kubectl  wait --for=condition=allActions testplans.frisbee.io/tikv-baseline 
+testplan.frisbee.io/tikv-baseline condition met
 ```
 
-####               
+####                
 
-#### Step 7: Destroy the testing workflow
+#### Step 7: Destroy the testing plan
 
 This url points
 to : https://raw.githubusercontent.com/CARV-ICS-FORTH/frisbee/main/charts/tikv/examples/plan.baseline.yml
@@ -165,7 +165,7 @@ Starting to serve on 127.0.0.1:8001
 http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/.
 ```
 
-###               
+###                
 
 If you use a microk8s installation of Kubernetes, then the procedure is slightly different.
 

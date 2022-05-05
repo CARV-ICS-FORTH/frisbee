@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package workflow
+package testplan
 
 import (
 	"time"
@@ -37,7 +37,7 @@ func isJobInScheduledList(name string, scheduledJobs map[string]v1alpha1.Conditi
 //
 // It is possible for the logical dependencies to be met, but the timeout not yet expired.
 // If at least one action exists, when the workflow is updated it will trigger another reconciliation cycle.
-// However, if there are no actions, the workflow will stop the reconciliation cycle, and we will miss the
+// However, if there are no actions, the workflow will call the reconciliation cycle, and we will miss the
 // next timeout. To handle this scenario, we have to requeue the request with the given duration.
 // In this case, the given duration is the nearest expected timeout.
 func GetNextLogicalJob(timebase metav1.Time, all []v1alpha1.Action, gs lifecycle.ClassifierReader, scheduled map[string]v1alpha1.ConditionalExpr) ([]v1alpha1.Action, time.Time) {

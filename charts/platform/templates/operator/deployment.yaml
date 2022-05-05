@@ -12,6 +12,21 @@ spec:
     control-plane: manager
 
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: webhook-service
+  labels:
+    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+spec:
+  ports:
+    - port: 443
+      protocol: TCP
+      targetPort: 9443
+  selector:
+    control-plane: manager
+
+---
 # Deployment of the Frisbee controller.
 apiVersion: apps/v1
 kind: Deployment
@@ -39,11 +54,10 @@ spec:
         - name: manager
           image: icsforth/frisbee-operator:latest
           ports:
-            - containerPort: 6666
+            - containerPort: 6666 # Receive alerts from Grafana
               name: webhook-grafana
-            #  protocol: TCP
-            - containerPort: 9443
-              name: webhook-admiss
+            - containerPort: 9443 # Admission Webhooks
+              name: webhook-service
               protocol: TCP
           command:
             - /bin/sh   # Run shell

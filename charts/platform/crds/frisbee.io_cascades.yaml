@@ -60,7 +60,7 @@ spec:
                   conditions:
                     description: ConditionalExpr is a source of information about
                       whether the state of the workflow after a given time is correct
-                      or not. This is needed because some workflows may run in infinite-horizons.
+                      or not. This is needed because some test plans may run in infinite-horizons.
                     properties:
                       metrics:
                         description: 'Metrics set a Grafana alert that will be triggered
@@ -124,6 +124,8 @@ spec:
             description: CascadeStatus defines the observed state of Cascade.
             properties:
               conditions:
+                description: Conditions describe sequences of events that warrant
+                  the present Phase.
                 items:
                   description: "Condition contains details for one aspect of the current
                     state of this API Resource. --- This struct is intended for direct

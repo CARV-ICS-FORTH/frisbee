@@ -21,7 +21,7 @@ type ExprMetrics string
 type ExprState string
 
 // ConditionalExpr is a source of information about whether the state of the workflow after a given time is correct or not.
-// This is needed because some workflows may run in infinite-horizons.
+// This is needed because some test plans may run in infinite-horizons.
 type ConditionalExpr struct {
 	// Metrics set a Grafana alert that will be triggered once the condition is met.
 	// Parsing:

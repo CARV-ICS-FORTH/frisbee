@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package workflow
+package testplan
 
 import (
 	"fmt"
@@ -28,19 +28,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
-// controllerKind contains the schema.GroupVersionKind for this controller type.
-// var controllerKind = apps.SchemeGroupVersion.WithKind("Deployment")
-
-func (r *Controller) WatchVirtualObjects() predicate.Funcs {
+func (r *Controller) WatchClusters() predicate.Funcs {
 	return predicate.Funcs{
-		CreateFunc:  r.WatchVirtualObjectsCreate,
-		DeleteFunc:  r.WatchVirtualObjectsDelete,
-		UpdateFunc:  r.WatchVirtualObjectsUpdate,
-		GenericFunc: r.WatchVirtualObjectsGeneric,
+		CreateFunc:  r.watchClusterCreate,
+		DeleteFunc:  r.watchClusterDelete,
+		UpdateFunc:  r.watchClusterUpdate,
+		GenericFunc: r.watchClusterGeneric,
 	}
 }
 
-func (r *Controller) WatchVirtualObjectsCreate(e event.CreateEvent) bool {
+func (r *Controller) watchClusterCreate(e event.CreateEvent) bool {
 	if !utils.IsManagedByThisController(e.Object, r.gvk) {
 		return false
 	}
@@ -61,12 +58,12 @@ func (r *Controller) WatchVirtualObjectsCreate(e event.CreateEvent) bool {
 	return true
 }
 
-func (r *Controller) WatchVirtualObjectsUpdate(e event.UpdateEvent) bool {
+func (r *Controller) watchClusterUpdate(e event.UpdateEvent) bool {
 	if !utils.IsManagedByThisController(e.ObjectNew, r.gvk) {
 		return false
 	}
 
-	if e.ObjectOld.GetResourceVersion() == e.ObjectNew.GetResourceVersion() {
+	if e.ObjectOld.GetResourceVersion() >= e.ObjectNew.GetResourceVersion() {
 		// Periodic resync will send update events for all known pods.
 		// Two different versions of the same pod will always have different RVs.
 		return false
@@ -81,9 +78,8 @@ func (r *Controller) WatchVirtualObjectsUpdate(e event.UpdateEvent) bool {
 	}
 
 	// if the status is the same, there is no need to inform the service
-	prev := e.ObjectOld.(*v1alpha1.VirtualObject)
-
-	latest := e.ObjectNew.(*v1alpha1.VirtualObject)
+	prev := e.ObjectOld.(*v1alpha1.Cluster)
+	latest := e.ObjectNew.(*v1alpha1.Cluster)
 
 	if prev.Status.Phase == latest.Status.Phase {
 		// a controller never initiates a phase change, and so is never asleep waiting for the same.
@@ -102,7 +98,7 @@ func (r *Controller) WatchVirtualObjectsUpdate(e event.UpdateEvent) bool {
 	return true
 }
 
-func (r *Controller) WatchVirtualObjectsDelete(e event.DeleteEvent) bool {
+func (r *Controller) watchClusterDelete(e event.DeleteEvent) bool {
 	if !utils.IsManagedByThisController(e.Object, r.gvk) {
 		return false
 	}
@@ -126,6 +122,6 @@ func (r *Controller) WatchVirtualObjectsDelete(e event.DeleteEvent) bool {
 	return true
 }
 
-func (r *Controller) WatchVirtualObjectsGeneric(event.GenericEvent) bool {
+func (r *Controller) watchClusterGeneric(event.GenericEvent) bool {
 	return true
 }

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package workflow
+package testplan
 
 import (
 	"strings"
@@ -22,7 +22,6 @@ import (
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/telemetry/grafana"
 	"github.com/carv-ics-forth/frisbee/controllers/utils/expressions"
-	"github.com/carv-ics-forth/frisbee/controllers/utils/lifecycle"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/validation"
 )
@@ -32,18 +31,26 @@ import (
 // 2. Ensures that there are no two actions with the same name.
 // 3. Ensure that dependencies point to a valid action.
 // 4. Ensure that macros point to a valid action.
-func ValidateDAG(list []v1alpha1.Action, state lifecycle.ClassifierReader) error {
+
+func (r *Controller) Validate(plan *v1alpha1.TestPlan) error {
+	actionList := plan.Spec.Actions
+	supportedActions := r.supportedActions()
+	state := r.state
 	index := make(map[string]*v1alpha1.Action)
 
 	// prepare a dependency graph
-	for i, action := range list {
+	for i, action := range actionList {
 		if errs := validation.IsQualifiedName(action.Name); len(errs) != 0 {
 			err := errors.New(strings.Join(errs, "; "))
 
 			return errors.Wrapf(err, "invalid actioname %s", action.Name)
 		}
 
-		index[action.Name] = &list[i]
+		if _, ok := supportedActions[action.ActionType]; !ok {
+			return errors.Errorf("unsupported type [%s] of action [%s]", action.ActionType, action.Name)
+		}
+
+		index[action.Name] = &actionList[i]
 	}
 
 	successOK := func(deps *v1alpha1.WaitSpec) bool {
@@ -69,7 +76,7 @@ func ValidateDAG(list []v1alpha1.Action, state lifecycle.ClassifierReader) error
 	}
 
 	// validate dependencies and assertions
-	for _, action := range list {
+	for _, action := range actionList {
 		if deps := action.DependsOn; deps != nil {
 			if !successOK(deps) || !runningOK(deps) {
 				return errors.Errorf("invalid dependency. action [%s] depends on [%s]", action.Name, deps)

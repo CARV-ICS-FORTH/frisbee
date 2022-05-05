@@ -13,7 +13,7 @@ A clear and concise description of what the bug is.
 Steps to reproduce the behavior:
 
 1. Attach the template specification.
-2. Attach the workflow specification.
+2. Attach the test plan specification.
 3. Attach the output log.
 4. Highlight the error
 

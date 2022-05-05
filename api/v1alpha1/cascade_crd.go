@@ -40,9 +40,6 @@ type CascadeSpec struct {
 type CascadeStatus struct {
 	Lifecycle `json:",inline"`
 
-	// +optional
-	Conditions []metav1.Condition `json:"conditions,omitempty"`
-
 	// QueuedJobs is a list of Chaos jobs scheduled for creation by the cascade.
 	// +optional
 	QueuedJobs []ChaosSpec `json:"queuedJobs,omitempty"`
