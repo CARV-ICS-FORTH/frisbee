@@ -4,11 +4,6 @@ kind: TestPlan
 metadata:
   name: server-client
 spec:
-  withTelemetry:
-    importDashboards:
-      - platform.telemetry.container
-      - iperf2.telemetry.client
-
   actions:
     # Create an iperf server
     - action: Service

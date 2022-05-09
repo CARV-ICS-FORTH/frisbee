@@ -17,6 +17,7 @@ limitations under the License.
 package testplan
 
 import (
+	"context"
 	"strings"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
@@ -26,28 +27,29 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation"
 )
 
-// ValidateDAG validates the execution workflow.
+// Validate validates the execution workflow.
 // 1. Ensures that action names are qualified (since they are used as generators to jobs)
 // 2. Ensures that there are no two actions with the same name.
 // 3. Ensure that dependencies point to a valid action.
 // 4. Ensure that macros point to a valid action.
-
 func (r *Controller) Validate(plan *v1alpha1.TestPlan) error {
 	actionList := plan.Spec.Actions
-	supportedActions := r.supportedActions()
 	state := r.state
 	index := make(map[string]*v1alpha1.Action)
 
 	// prepare a dependency graph
 	for i, action := range actionList {
+		// Ensure that the type of action is supported and is correctly set
+		if !action.IsSupported() {
+			return errors.Errorf("incorrent spec for type [%s] of action [%s]", action.ActionType, action.Name)
+		}
+
+		// Because the action name will be the "matrix" for generating addressable jobs,
+		// it must adhere to certain properties.
 		if errs := validation.IsQualifiedName(action.Name); len(errs) != 0 {
 			err := errors.New(strings.Join(errs, "; "))
 
 			return errors.Wrapf(err, "invalid actioname %s", action.Name)
-		}
-
-		if _, ok := supportedActions[action.ActionType]; !ok {
-			return errors.Errorf("unsupported type [%s] of action [%s]", action.ActionType, action.Name)
 		}
 
 		index[action.Name] = &actionList[i]
@@ -123,6 +125,46 @@ func (r *Controller) Validate(plan *v1alpha1.TestPlan) error {
 	// 2) make validation as webhook so to validate the experiment before it begins.
 
 	return nil
+}
+
+// HasTelemetry iterates the referenced services (directly via Service or indirectly via Cluster) and list
+// all telemetry dashboards that need to be imported
+func (r *Controller) HasTelemetry(ctx context.Context, plan *v1alpha1.TestPlan) ([]string, error) {
+	dedup := make(map[string]struct{})
+
+	var fromTemplate *v1alpha1.GenerateFromTemplate
+
+	for _, action := range plan.Spec.Actions {
+		fromTemplate = nil
+
+		if action.ActionType == v1alpha1.ActionService {
+			fromTemplate = action.Service
+		} else if action.ActionType == v1alpha1.ActionCluster {
+			fromTemplate = &action.Cluster.GenerateFromTemplate
+		} else {
+			continue
+		}
+
+		spec, err := r.serviceControl.GetServiceSpec(ctx, plan.GetNamespace(), *fromTemplate)
+		if err != nil {
+			return nil, errors.Wrapf(err, "cannot retrieve service spec")
+		}
+
+		// firstly store everything on a map to avoid duplicates
+		if spec.Decorators != nil {
+			for _, dashboard := range spec.Decorators.Telemetry {
+				dedup[dashboard] = struct{}{}
+			}
+		}
+	}
+
+	// secondly, return a deduped array
+	imports := make([]string, 0, len(dedup))
+	for dashboard, _ := range dedup {
+		imports = append(imports, dashboard)
+	}
+
+	return imports, nil
 }
 
 /*

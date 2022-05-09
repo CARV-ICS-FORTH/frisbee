@@ -31,7 +31,6 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -51,8 +50,6 @@ import (
 type Controller struct {
 	ctrl.Manager
 	logr.Logger
-
-	gvk schema.GroupVersionKind
 
 	state lifecycle.Classifier
 
@@ -392,7 +389,6 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 	r := &Controller{
 		Manager:  mgr,
 		Logger:   logger.WithName("call"),
-		gvk:      v1alpha1.GroupVersion.WithKind("Call"),
 		executor: executor.NewExecutor(ctrl.GetConfigOrDie()),
 	}
 

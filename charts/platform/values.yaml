@@ -28,16 +28,40 @@ telemetry:
   prometheusPort: 9090
   grafanaPort: 3000
 
+
+## @section Provision of dynamic volumes
+
+## @param openebs.enabled Whether to enable OpenEBS
+## @param openebs.storagePath The filesystem dir where volumes will be provisioned
+## @param openebs.ndm.enabled Whether to enable block devices as resources
+## @param openebs.ndmOperator.enabled Whether to automatically provision block devices
+openebs:
+  enabled: true
+
+  storagePath: /mnt/local
+
+  ndm:
+    enabled: false
+
+  ndmOperator:
+    enabled: false
+
+  nfs-provisioner:
+    enabled: true
+
+
 ## @section Chaos Injection Parameters
 
 ## @param chaos.enabled Whether or not to enable the Chaos controllers
 chaos-mesh:
+  controllerManager:
+    replicaCount: 1
+
   # If you are using Kind or using containerd as CRI, you can use the
   # config below to use containerd as the runtime in chaos-daemon.
   chaosDaemon:
     runtime: containerd
     socketPath: /var/snap/microk8s/common/run/containerd.sock
-
 
 chaos:
   enabled: true
@@ -92,20 +116,4 @@ sonarqube:
   #      - pattern: ".*"
 
 
-## @section Provision of dynamic volumes
-
-## @param openebs.enabled Whether to enable OpenEBS
-## @param openebs.storagePath The filesystem dir where volumes will be provisioned
-## @param openebs.ndm.enabled Whether to enable block devices as resources
-## @param openebs.ndmOperator.enabled Whether to automatically provision block devices
-openebs:
-  enabled: true
-
-  storagePath: /mnt/local
-
-  ndm:
-    enabled: false
-
-  ndmOperator:
-    enabled: false
 

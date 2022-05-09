@@ -4,12 +4,6 @@ kind: TestPlan
 metadata:
   name: cockroach-baseline-cluster-deterministic
 spec:
-  withTelemetry:
-    importDashboards:
-      - platform.telemetry.container
-      - ycsb.telemetry.client
-      - cockroach.telemetry.server
-
   actions:
     # Step 0. Create individual cockroach servers
     - action: Cluster

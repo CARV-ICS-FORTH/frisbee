@@ -4,7 +4,7 @@
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: ssd-storage
+  name: ephemeral-local-volume
   labels:
     app.kubernetes.io/managed-by: {{.Release.Service | quote}}
   annotations:
@@ -18,6 +18,7 @@ metadata:
 provisioner: openebs.io/local
 reclaimPolicy: Delete
 volumeBindingMode: WaitForFirstConsumer
+
 
 ---
 apiVersion: storage.k8s.io/v1
@@ -38,20 +39,40 @@ provisioner: openebs.io/local
 reclaimPolicy: Retain
 volumeBindingMode: WaitForFirstConsumer
 
+
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: ephemeral-shared-volume
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "false"
+    cas.openebs.io/config: |
+      - name: NFSServerType
+        value: "kernel"
+      - name: BackendStorageClass
+        value: "ephemeral-local-volume"
+    openebs.io/cas-type: nfsrwx
+provisioner: openebs.io/nfsrwx
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+allowVolumeExpansion: true
+
 ---
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: persistent-shared-volume
   annotations:
+    storageclass.kubernetes.io/is-default-class: "false"
     cas.openebs.io/config: |
       - name: NFSServerType
         value: "kernel"
       - name: BackendStorageClass
-        value: "ssd-storage"
+        value: "ephemeral-local-volume"
     openebs.io/cas-type: nfsrwx
 provisioner: openebs.io/nfsrwx
 reclaimPolicy: Retain
-volumeBindingMode: WaitForFirstConsumer
+volumeBindingMode: Immediate
 allowVolumeExpansion: true
 {{- end }}

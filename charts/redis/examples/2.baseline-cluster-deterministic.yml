@@ -4,12 +4,6 @@ kind: TestPlan
 metadata:
   name: redis-baseline-cluster-deterministic
 spec:
-  withTelemetry:
-    importDashboards:
-      - platform.telemetry.container
-      - ycsb.telemetry.client
-      - redis.telemetry.server
-
   actions:
     # Step 0. Create individual Redis servers
     - action: Cluster

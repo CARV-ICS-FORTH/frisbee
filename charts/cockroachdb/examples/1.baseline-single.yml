@@ -4,11 +4,6 @@ kind: TestPlan
 metadata:
   name: cockroach-baseline-single
 spec:
-  withTelemetry:
-    importDashboards:
-      - platform.telemetry.container
-      - ycsb.telemetry.client
-      - cockroach.telemetry.server
 
   actions:
     # Step 1. Create a cockroach server

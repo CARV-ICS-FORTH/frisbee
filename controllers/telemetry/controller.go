@@ -25,11 +25,10 @@ import (
 	serviceutils "github.com/carv-ics-forth/frisbee/controllers/service/utils"
 	"github.com/carv-ics-forth/frisbee/controllers/utils"
 	"github.com/carv-ics-forth/frisbee/controllers/utils/lifecycle"
+	"github.com/carv-ics-forth/frisbee/controllers/utils/watchers"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -47,8 +46,6 @@ import (
 type Controller struct {
 	ctrl.Manager
 	logr.Logger
-
-	gvk schema.GroupVersionKind
 
 	state lifecycle.Classifier
 
@@ -221,14 +218,14 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 	r := &Controller{
 		Manager: mgr,
 		Logger:  logger.WithName("Telemetry"),
-		gvk:     v1alpha1.GroupVersion.WithKind("Telemetry"),
 	}
 
 	r.serviceControl = serviceutils.NewServiceControl(r)
+	gvk := v1alpha1.GroupVersion.WithKind("Telemetry")
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named("Telemetry").
 		For(&v1alpha1.Telemetry{}).
-		Owns(&v1alpha1.Service{}, builder.WithPredicates(r.WatchServices())). // Watch Services
+		Owns(&v1alpha1.Service{}, watchers.WatchService(r, gvk)). // Watch Services
 		Complete(r)
 }

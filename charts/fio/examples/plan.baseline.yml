@@ -4,11 +4,6 @@ kind: TestPlan
 metadata:
   name: fio-baseline
 spec:
-  withTelemetry:
-    importDashboards:
-      - platform.telemetry.container
-      - fio.telemetry.server
-
   actions:
     - action: Service
       name: fio-jedi5

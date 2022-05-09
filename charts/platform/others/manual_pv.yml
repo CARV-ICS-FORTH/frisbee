@@ -15,7 +15,7 @@ spec:
     - ReadOnlyMany                        # Multiple nodes can mount the volume for reading
     - ReadWriteMany                       # Multiple nodes can mount the volume for both RW
   persistentVolumeReclaimPolicy: Retain   # Determines what happens with a PV claim is deleted
-  storageClassName: ssd-storage           # Use StorageClass to delay volume binding until Pod scheduling.
+  storageClassName: ephemeral-local-volume           # Use StorageClass to delay volume binding until Pod scheduling.
   local:
     path: /mnt/local
   # Tie volume to specific nodes and schedule Pods into it.
@@ -65,7 +65,7 @@ volumeBindingMode: "WaitForFirstConsumer"
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: ssd-storage
+  name: ephemeral-local-volume
   labels:
     app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 provisioner: "kubernetes.io/no-provisioner"
@@ -75,7 +75,7 @@ volumeBindingMode: "WaitForFirstConsumer"
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: shared-ssd-storage
+  name: shared-ephemeral-local-volume
   labels:
     app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 provisioner: "kubernetes.io/no-provisioner"

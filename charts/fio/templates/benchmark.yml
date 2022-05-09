@@ -20,7 +20,7 @@ spec:
       persistentVolumeClaim:
         name: local-storage
         spec:
-          storageClassName: ssd-storage
+          storageClassName: volatile-localvolume
           accessModes:
             - ReadWriteOnce
           resources:

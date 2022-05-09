@@ -27,13 +27,12 @@ import (
 	"github.com/carv-ics-forth/frisbee/controllers/utils/expressions"
 	"github.com/carv-ics-forth/frisbee/controllers/utils/lifecycle"
 	"github.com/carv-ics-forth/frisbee/controllers/utils/scheduler"
+	"github.com/carv-ics-forth/frisbee/controllers/utils/watchers"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -45,8 +44,6 @@ import (
 type Controller struct {
 	ctrl.Manager
 	logr.Logger
-
-	gvk schema.GroupVersionKind
 
 	state lifecycle.Classifier
 
@@ -362,14 +359,15 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 	r := &Controller{
 		Manager: mgr,
 		Logger:  logger.WithName("cascade"),
-		gvk:     v1alpha1.GroupVersion.WithKind("Cascade"),
 	}
 
 	r.chaosControl = chaosutils.NewChaosControl(r)
 
+	gvk := v1alpha1.GroupVersion.WithKind("Cascade")
+
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.Cascade{}).
 		Named("cascade").
-		Owns(&v1alpha1.Chaos{}, builder.WithPredicates(r.WatchChaos())).
+		Owns(&v1alpha1.Chaos{}, watchers.WatchChaos(r, gvk)).
 		Complete(r)
 }

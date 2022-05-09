@@ -4,20 +4,12 @@ kind: TestPlan
 metadata:
   name: state-driven
 spec:
-  withTelemetry:
-    importDashboards:
-      - platform.telemetry.container
-      - ycsb.telemetry.client
-      - tikv.telemetry.pd
-      - tikv.telemetry.worker
-
   actions:
     # Init: init victim
     - action: Service
       name: victim
       service:
         templateRef: platform.tools.debugger
-
 
     # Step 0: bootstrap.
     # For TiKV, we must first create a placementDriver and then add the workers.

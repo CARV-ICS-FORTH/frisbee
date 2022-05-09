@@ -4,10 +4,6 @@ kind: TestPlan
 metadata:
   name: tebis-baseline
 spec:
-  withTelemetry:
-    importDashboards:
-      - platform.telemetry.container
-
   actions:
     # Start a Zookeeper server
     - action: Service

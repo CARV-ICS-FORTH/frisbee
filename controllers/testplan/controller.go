@@ -28,15 +28,14 @@ import (
 	"github.com/carv-ics-forth/frisbee/controllers/utils"
 	"github.com/carv-ics-forth/frisbee/controllers/utils/expressions"
 	"github.com/carv-ics-forth/frisbee/controllers/utils/lifecycle"
+	"github.com/carv-ics-forth/frisbee/controllers/utils/watchers"
 	"github.com/go-logr/logr"
 	notifier "github.com/golanghelper/grafana-webhook"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -55,8 +54,6 @@ import (
 type Controller struct {
 	ctrl.Manager
 	logr.Logger
-
-	gvk schema.GroupVersionKind
 
 	state lifecycle.Classifier
 
@@ -312,14 +309,20 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot get platform configuration"))
 		}
 
-		if cr.Spec.WithTelemetry != nil {
-			telemetryJob.SetName("telemetry")
+		telemetry, err := r.HasTelemetry(ctx, &cr)
+		if err != nil {
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot extract imports"))
+		}
 
-			cr.Spec.WithTelemetry.DeepCopyInto(&telemetryJob.Spec)
+		if telemetry != nil {
+			telemetryJob.SetName("telemetry")
+			telemetryJob.Spec.ImportDashboards = telemetry
 
 			if err := utils.Create(ctx, r, &cr, &telemetryJob); err != nil {
 				return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot create the telemetry stack"))
 			}
+
+			cr.Status.WithTelemetry = true
 		}
 
 		meta.SetStatusCondition(&cr.Status.Conditions, metav1.Condition{
@@ -339,7 +342,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	/*
 		ensure that telemetry is running
 	*/
-	if cr.Spec.WithTelemetry != nil {
+	if cr.Status.WithTelemetry {
 		// Call until the telemetry stack becomes ready.
 		if telemetryJob.Status.Phase.Is(v1alpha1.PhaseUninitialized) || telemetryJob.Status.Phase.Is(v1alpha1.PhasePending) {
 			return utils.Stop()
@@ -475,20 +478,21 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 	r := &Controller{
 		Manager: mgr,
 		Logger:  logger.WithName("testplan"),
-		gvk:     v1alpha1.GroupVersion.WithKind("TestPlan"),
 	}
 
 	r.serviceControl = serviceutils.NewServiceControl(r)
 	r.chaosControl = chaosutils.NewChaosControl(r)
 
+	gvk := v1alpha1.GroupVersion.WithKind("TestPlan")
+
 	return ctrl.NewControllerManagedBy(mgr).
 		Named("testplan").
 		For(&v1alpha1.TestPlan{}).
-		Owns(&v1alpha1.Service{}, builder.WithPredicates(r.WatchServices())).             // Watch Services
-		Owns(&v1alpha1.Cluster{}, builder.WithPredicates(r.WatchClusters())).             // Watch Cluster
-		Owns(&v1alpha1.Chaos{}, builder.WithPredicates(r.WatchChaos())).                  // Watch Chaos
-		Owns(&v1alpha1.Telemetry{}, builder.WithPredicates(r.WatchTelemetry())).          // Watch Telemetry
-		Owns(&v1alpha1.VirtualObject{}, builder.WithPredicates(r.WatchVirtualObjects())). // Watch VirtualObjects
-		Owns(&v1alpha1.Call{}, builder.WithPredicates(r.WatchCallJobs())).                // Watch StopJobs
+		Owns(&v1alpha1.Service{}, watchers.WatchService(r, gvk)).             // Watch Services
+		Owns(&v1alpha1.Cluster{}, watchers.WatchCluster(r, gvk)).             // Watch Cluster
+		Owns(&v1alpha1.Chaos{}, watchers.WatchChaos(r, gvk)).                 // Watch Chaos
+		Owns(&v1alpha1.Telemetry{}, watchers.WatchTelemetry(r, gvk)).         // Watch Telemetry
+		Owns(&v1alpha1.VirtualObject{}, watchers.WatchVirtualObject(r, gvk)). // Watch VirtualObjects
+		Owns(&v1alpha1.Call{}, watchers.WatchCall(r, gvk)).                   // Watch Calls
 		Complete(r)
 }

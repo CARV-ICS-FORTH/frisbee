@@ -20,9 +20,21 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+type ActionType string
+
+// List of supported actions
+const (
+	ActionService ActionType = "Service"
+	ActionCluster ActionType = "Cluster"
+	ActionChaos   ActionType = "Chaos"
+	ActionCascade ActionType = "Cascade"
+	ActionDelete  ActionType = "Delete"
+	ActionCall    ActionType = "Call"
+)
+
 // Action delegates arguments to the proper action handler.
 type Action struct {
-	ActionType string `json:"action"`
+	ActionType ActionType `json:"action"`
 
 	// Name is a unique identifier of the action
 	Name string `json:"name"`
@@ -36,6 +48,29 @@ type Action struct {
 	Assert *ConditionalExpr `json:"assert,omitempty"`
 
 	*EmbedActions `json:",inline"`
+}
+
+func (act *Action) IsSupported() bool {
+	if act == nil || act.EmbedActions == nil {
+		return false
+	}
+
+	switch act.ActionType {
+	case ActionService:
+		return act.EmbedActions.Service != nil
+	case ActionCluster:
+		return act.EmbedActions.Cluster != nil
+	case ActionChaos:
+		return act.EmbedActions.Chaos != nil
+	case ActionCascade:
+		return act.EmbedActions.Cascade != nil
+	case ActionDelete:
+		return act.EmbedActions.Delete != nil
+	case ActionCall:
+		return act.EmbedActions.Call != nil
+	}
+
+	return false
 }
 
 type WaitSpec struct {
@@ -79,8 +114,6 @@ type EmbedActions struct {
 
 // TestPlanSpec defines the desired state of TestPlan.
 type TestPlanSpec struct {
-	WithTelemetry *TelemetrySpec `json:"withTelemetry,omitempty"`
-
 	// Actions are the tasks that will be taken.
 	Actions []Action `json:"actions"`
 
@@ -93,6 +126,8 @@ type TestPlanSpec struct {
 // TestPlanStatus defines the observed state of TestPlan.
 type TestPlanStatus struct {
 	Lifecycle `json:",inline"`
+
+	WithTelemetry bool `json:"withTelemetry"`
 
 	// Executed is a list of executed actions.
 	// +optional
