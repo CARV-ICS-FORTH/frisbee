@@ -4,13 +4,6 @@ kind: TestPlan
 metadata:
   name: state-driven
 spec:
-  withTelemetry:
-    importDashboards:
-      - platform.telemetry.container
-      - ycsb.telemetry.client
-      - tikv.telemetry.pd
-      - tikv.telemetry.worker
-
   actions:
     # Init: init victim
     - action: Service

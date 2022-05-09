@@ -4,11 +4,6 @@ kind: TestPlan
 metadata:
   name: validate-local
 spec:
-  withTelemetry:
-    importDashboards:
-      - platform.telemetry.container
-      - iperfmon.client
-
   actions:
     # Create an iperf server
     - action: Service

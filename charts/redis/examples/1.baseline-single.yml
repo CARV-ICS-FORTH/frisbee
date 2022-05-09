@@ -4,12 +4,6 @@ kind: TestPlan
 metadata:
   name: redis-baseline-single
 spec:
-  withTelemetry:
-    importDashboards:
-      - platform.telemetry.container
-      - ycsb.telemetry.client
-      - redis.telemetry.server
-
   actions:
     # Step 1. Create a Redis server
     - action: Service

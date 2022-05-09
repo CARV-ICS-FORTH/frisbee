@@ -4,12 +4,6 @@ kind: TestPlan
 metadata:
   name: mongo-baseline-replicated
 spec:
-  withTelemetry:
-    importDashboards:
-      - platform.telemetry.container
-      - ycsb.telemetry.client
-      - mongo.telemetry.server
-
   actions:
     # Step 0: bootstrap a replicated cluster.
     - action: Cluster

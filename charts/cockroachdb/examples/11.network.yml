@@ -4,11 +4,6 @@ kind: TestPlan
 metadata:
   name: cockroach-network
 spec:
-  withTelemetry:
-    importDashboards:
-      - platform.telemetry.container
-      - cockroach.telemetry.server
-
   actions:
     # Step 0. provision 4 individual servers
     - action: Cluster

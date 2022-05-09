@@ -4,11 +4,6 @@ kind: TestPlan
 metadata:
   name: advanced-placement
 spec:
-  withTelemetry:
-    importDashboards:
-      - platform.telemetry.container
-      - iperf2.telemetry.client
-
   actions:
     # Create an iperf server. However, because Frisbee placement abstractions are only supported
     # at the level of a cluster, we must use the Cluster instead of the Service CRD.

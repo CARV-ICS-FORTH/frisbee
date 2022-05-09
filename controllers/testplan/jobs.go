@@ -27,14 +27,14 @@ import (
 
 type endpoint func(context.Context, *v1alpha1.TestPlan, v1alpha1.Action) (client.Object, error)
 
-func (r *Controller) supportedActions() map[string]endpoint {
-	return map[string]endpoint{
-		"Service": r.service,
-		"Cluster": r.cluster,
-		"Chaos":   r.chaos,
-		"Cascade": r.cascade,
-		"Delete":  r.delete,
-		"Call":    r.call,
+func (r *Controller) supportedActions() map[v1alpha1.ActionType]endpoint {
+	return map[v1alpha1.ActionType]endpoint{
+		v1alpha1.ActionService: r.service,
+		v1alpha1.ActionCluster: r.cluster,
+		v1alpha1.ActionChaos:   r.chaos,
+		v1alpha1.ActionCascade: r.cascade,
+		v1alpha1.ActionDelete:  r.delete,
+		v1alpha1.ActionCall:    r.call,
 	}
 }
 

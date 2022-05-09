@@ -6,13 +6,6 @@ kind: TestPlan
 metadata:
   name: tikv-scaleout
 spec:
-  withTelemetry:
-    importDashboards:
-      - platform.telemetry.container
-      - ycsb.telemetry.client
-      - tikv.telemetry.pd
-      - tikv.telemetry.worker
-
   actions:
     # Step 0: bootstrap.
     # For TiKV, we must first create a placementDriver and then add the workers.

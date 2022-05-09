@@ -4,14 +4,7 @@ kind: TestPlan
 metadata:
   name: redis-scaledown-kill
 spec:
-  withTelemetry:
-    importDashboards:
-      - platform.telemetry.container
-      - ycsb.telemetry.client
-      - redis.telemetry.server
-
   actions:
-
     # Step 0. Create individual Redis servers
     - action: Cluster
       name: masters

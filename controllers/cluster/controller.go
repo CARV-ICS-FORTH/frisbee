@@ -27,13 +27,12 @@ import (
 	"github.com/carv-ics-forth/frisbee/controllers/utils/expressions"
 	"github.com/carv-ics-forth/frisbee/controllers/utils/lifecycle"
 	"github.com/carv-ics-forth/frisbee/controllers/utils/scheduler"
+	"github.com/carv-ics-forth/frisbee/controllers/utils/watchers"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -49,8 +48,6 @@ const (
 type Controller struct {
 	ctrl.Manager
 	logr.Logger
-
-	gvk schema.GroupVersionKind
 
 	state lifecycle.Classifier
 
@@ -376,10 +373,11 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 	r := &Controller{
 		Manager: mgr,
 		Logger:  logger.WithName("cluster"),
-		gvk:     v1alpha1.GroupVersion.WithKind("Cluster"),
 	}
 
 	r.serviceControl = serviceutils.NewServiceControl(r)
+
+	gvk := v1alpha1.GroupVersion.WithKind("Cluster")
 
 	// FieldIndexer knows how to index over a particular "field" such that it
 	// can later be used by a field selector.
@@ -388,7 +386,7 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 			// grab the job object, extract the owner...
 			job := rawObj.(*v1alpha1.Service)
 
-			if !utils.IsManagedByThisController(job, r.gvk) {
+			if !utils.IsManagedByThisController(job, gvk) {
 				return nil
 			}
 
@@ -404,6 +402,6 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 		For(&v1alpha1.Cluster{}).
 		Named("cluster").
 		// WithEventFilter(r.Filters()).
-		Owns(&v1alpha1.Service{}, builder.WithPredicates(r.WatchServices())).
+		Owns(&v1alpha1.Service{}, watchers.WatchService(r, gvk)).
 		Complete(r)
 }

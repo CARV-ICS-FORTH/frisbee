@@ -4,13 +4,6 @@ kind: TestPlan
 metadata:
   name: metrics-driven
 spec:
-  withTelemetry:
-    importDashboards:
-      - platform.telemetry.container
-      - ycsb.telemetry.client
-      - tikv.telemetry.pd
-      - tikv.telemetry.worker
-
   actions:
     # Init: init victim
     # For TiKV, we must first create a placementDriver and then add the workers.

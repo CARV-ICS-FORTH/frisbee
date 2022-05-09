@@ -4,16 +4,12 @@ kind: TestPlan
 metadata:
   name: validate-remote
 spec:
-  withTelemetry:
-    importDashboards:
-      - platform.telemetry.container
 
   actions:
     # Create a single Master node
     - action: Service
       name: master
       service:
-        
         templateRef: redis.single.master
 
     # Cause two partition failures with different duration

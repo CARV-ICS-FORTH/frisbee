@@ -17,7 +17,7 @@ spec:
       persistentVolumeClaim:
         name: datastore
         spec:
-          storageClassName: ssd-storage
+          storageClassName: ephemeral-local-volume
           accessModes:
             - ReadWriteOnce
           resources:
@@ -104,7 +104,7 @@ spec:
       persistentVolumeClaim:
         name: datastore
         spec:
-          storageClassName: ssd-storage
+          storageClassName: ephemeral-local-volume
           accessModes:
             - ReadWriteOnce
           resources:
