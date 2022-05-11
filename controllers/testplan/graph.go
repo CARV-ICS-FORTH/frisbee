@@ -23,6 +23,7 @@ import (
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/telemetry/grafana"
 	"github.com/carv-ics-forth/frisbee/controllers/utils/expressions"
+	"github.com/carv-ics-forth/frisbee/controllers/utils/lifecycle"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/validation"
 )
@@ -32,16 +33,69 @@ import (
 // 2. Ensures that there are no two actions with the same name.
 // 3. Ensure that dependencies point to a valid action.
 // 4. Ensure that macros point to a valid action.
-func (r *Controller) Validate(plan *v1alpha1.TestPlan) error {
-	actionList := plan.Spec.Actions
-	state := r.state
-	index := make(map[string]*v1alpha1.Action)
+func (r *Controller) Validate(ctx context.Context, plan *v1alpha1.TestPlan) error {
+	callIndex, err := PrepareDependencyGraph(plan.Spec.Actions)
+	if err != nil {
+		return errors.Wrapf(err, "invalid plan [%s]", plan.GetName())
+	}
+
+	for actionName, action := range callIndex {
+		if err := CheckDependencies(action, callIndex); err != nil {
+			return errors.Wrapf(err, "dependency error for action [%s]", actionName)
+		}
+
+		if err := CheckAssertions(action, r.state); err != nil {
+			return errors.Wrapf(err, "assertion error for action [%s]", actionName)
+		}
+
+		if err := r.CheckTemplateRef(ctx, plan.GetNamespace(), action); err != nil {
+			return errors.Wrapf(err, "template reference error for action [%s]", actionName)
+		}
+
+		if err := CheckJobRef(action, callIndex); err != nil {
+			return errors.Wrapf(err, "job reference error for action [%s]", actionName)
+		}
+	}
+
+	// TODO:
+	// 2) make validation as webhook so to validate the experiment before it begins.
+
+	return nil
+}
+
+type index map[string]*v1alpha1.Action
+
+func PrepareDependencyGraph(actionList []v1alpha1.Action) (index, error) {
+	callIndex := make(map[string]*v1alpha1.Action)
+
+	isSupported := func(act *v1alpha1.Action) bool {
+		if act == nil || act.EmbedActions == nil {
+			return false
+		}
+
+		switch act.ActionType {
+		case v1alpha1.ActionService:
+			return act.EmbedActions.Service != nil
+		case v1alpha1.ActionCluster:
+			return act.EmbedActions.Cluster != nil
+		case v1alpha1.ActionChaos:
+			return act.EmbedActions.Chaos != nil
+		case v1alpha1.ActionCascade:
+			return act.EmbedActions.Cascade != nil
+		case v1alpha1.ActionDelete:
+			return act.EmbedActions.Delete != nil
+		case v1alpha1.ActionCall:
+			return act.EmbedActions.Call != nil
+		}
+
+		return false
+	}
 
 	// prepare a dependency graph
 	for i, action := range actionList {
 		// Ensure that the type of action is supported and is correctly set
-		if !action.IsSupported() {
-			return errors.Errorf("incorrent spec for type [%s] of action [%s]", action.ActionType, action.Name)
+		if !isSupported(&action) {
+			return nil, errors.Errorf("incorrent spec for type [%s] of action [%s]", action.ActionType, action.Name)
 		}
 
 		// Because the action name will be the "matrix" for generating addressable jobs,
@@ -49,15 +103,19 @@ func (r *Controller) Validate(plan *v1alpha1.TestPlan) error {
 		if errs := validation.IsQualifiedName(action.Name); len(errs) != 0 {
 			err := errors.New(strings.Join(errs, "; "))
 
-			return errors.Wrapf(err, "invalid actioname %s", action.Name)
+			return nil, errors.Wrapf(err, "invalid actioname %s", action.Name)
 		}
 
-		index[action.Name] = &actionList[i]
+		callIndex[action.Name] = &actionList[i]
 	}
 
+	return callIndex, nil
+}
+
+func CheckDependencies(action *v1alpha1.Action, callIndex index) error {
 	successOK := func(deps *v1alpha1.WaitSpec) bool {
 		for _, dep := range deps.Success {
-			_, ok := index[dep]
+			_, ok := callIndex[dep]
 			if !ok {
 				return false
 			}
@@ -68,7 +126,7 @@ func (r *Controller) Validate(plan *v1alpha1.TestPlan) error {
 
 	runningOK := func(deps *v1alpha1.WaitSpec) bool {
 		for _, dep := range deps.Running {
-			_, ok := index[dep]
+			_, ok := callIndex[dep]
 			if !ok {
 				return false
 			}
@@ -77,52 +135,91 @@ func (r *Controller) Validate(plan *v1alpha1.TestPlan) error {
 		return true
 	}
 
-	// validate dependencies and assertions
-	for _, action := range actionList {
-		if deps := action.DependsOn; deps != nil {
-			if !successOK(deps) || !runningOK(deps) {
-				return errors.Errorf("invalid dependency. action [%s] depends on [%s]", action.Name, deps)
-			}
+	if deps := action.DependsOn; deps != nil {
+		if !successOK(deps) || !runningOK(deps) {
+			return errors.Errorf("invalid dependency. action [%s] depends on [%s]", action.Name, deps)
 		}
-
-		if assert := action.Assert; !assert.IsZero() {
-			if action.Delete != nil {
-				return errors.Errorf("Delete job cannot have assertion")
-			}
-
-			if assert.HasStateExpr() {
-				_, _, err := expressions.FiredState(assert.State, state)
-				if err != nil {
-					return errors.Wrapf(err, "Invalid state expr for action %s", action.Name)
-				}
-			}
-
-			if assert.HasMetricsExpr() {
-				_, err := grafana.ParseAlertExpr(assert.Metrics)
-				if err != nil {
-					return errors.Wrapf(err, "Invalid metrics expr for action %s", action.Name)
-				}
-			}
-		}
-
-		if action.ActionType == "Delete" {
-			for _, job := range action.Delete.Jobs {
-				target, exists := index[job]
-				if !exists {
-					return errors.Errorf("job [%s] of action [%s] does not exist", job, action.Name)
-				}
-
-				if target.ActionType == "Delete" {
-					return errors.Errorf("cycle deletion. job [%s] of action [%s] is a deletion job", job, action.Name)
-				}
-			}
-		}
-
 	}
 
-	// TODO:
-	// 1) add validation for templateRef
-	// 2) make validation as webhook so to validate the experiment before it begins.
+	return nil
+}
+
+func CheckAssertions(action *v1alpha1.Action, state lifecycle.Classifier) error {
+	if assert := action.Assert; !assert.IsZero() {
+		if action.Delete != nil {
+			return errors.Errorf("Delete job cannot have assertion")
+		}
+
+		if assert.HasStateExpr() {
+			_, _, err := expressions.FiredState(assert.State, state)
+			if err != nil {
+				return errors.Wrapf(err, "Invalid state expr for action %s", action.Name)
+			}
+		}
+
+		if assert.HasMetricsExpr() {
+			_, err := grafana.ParseAlertExpr(assert.Metrics)
+			if err != nil {
+				return errors.Wrapf(err, "Invalid metrics expr for action %s", action.Name)
+			}
+		}
+	}
+
+	return nil
+}
+
+func (r *Controller) CheckTemplateRef(ctx context.Context, nm string, action *v1alpha1.Action) error {
+	switch action.ActionType {
+	case v1alpha1.ActionService:
+		if _, err := r.serviceControl.GetServiceSpec(ctx, nm, *action.Service); err != nil {
+			return errors.Wrapf(err, "cannot retrieve service spec")
+		}
+	case v1alpha1.ActionCluster:
+		if _, err := r.serviceControl.GetServiceSpec(ctx, nm, action.Cluster.GenerateFromTemplate); err != nil {
+			return errors.Wrapf(err, "cannot retrieve cluster spec")
+		}
+
+	case v1alpha1.ActionChaos:
+		if _, err := r.chaosControl.GetChaosSpec(ctx, nm, *action.Chaos); err != nil {
+			return errors.Wrapf(err, "cannot retrieve chaos spec")
+		}
+
+	case v1alpha1.ActionCascade:
+		if _, err := r.chaosControl.GetChaosSpec(ctx, nm, action.Cascade.GenerateFromTemplate); err != nil {
+			return errors.Wrapf(err, "cannot retrieve cascade spec")
+		}
+	default:
+		return nil
+	}
+
+	return nil
+}
+
+func CheckJobRef(action *v1alpha1.Action, callIndex index) error {
+	switch action.ActionType {
+	case v1alpha1.ActionDelete:
+		// Check that references jobs exist and there are no cycle deletions
+
+		for _, job := range action.Delete.Jobs {
+			target, exists := callIndex[job]
+			if !exists {
+				return errors.Errorf("job [%s] of action [%s] does not exist", job, action.Name)
+			}
+
+			if target.ActionType == v1alpha1.ActionDelete {
+				return errors.Errorf("cycle deletion. job [%s] of action [%s] is a deletion job", job, action.Name)
+			}
+		}
+	}
+
+	/*
+		if spec.Type == v1alpha1.FaultKill {
+			if action.DependsOn.Success != nil {
+				return nil, errors.Errorf("kill is a inject-only chaos. it does not have success. only running")
+			}
+		}
+
+	*/
 
 	return nil
 }
@@ -166,13 +263,3 @@ func (r *Controller) HasTelemetry(ctx context.Context, plan *v1alpha1.TestPlan) 
 
 	return imports, nil
 }
-
-/*
-func GetPotentialFaults(list v1alpha1.ActionList) {
-	for _, action := range list {
-		action.Service
-	}
-
-}
-
-*/

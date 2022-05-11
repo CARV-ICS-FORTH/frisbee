@@ -23,40 +23,20 @@ import (
 type FaultType string
 
 const (
-	FaultPartition = FaultType("partition")
-	FaultKill      = FaultType("kill")
+	FaultRaw = FaultType("raw")
 )
 
-// PartitionSpec separate the given Pod from the rest of the network. This chaos typeis retractable
-// (either manually or after a duration) and can be waited at both Running and Pass Phase.
-// Running phase begins when the failure is injected. Pass begins when the failure is retracted.
-// If anything goes wrong in between, the chaos goes into Failed phase.
-type PartitionSpec struct {
-	Service string `json:"service,omitempty"`
-
-	// Duration is the time after which Frisbee will roll back the injected fault.
-	// +optional
-	Duration string `json:"duration,omitempty"`
-}
-
-// KillSpec terminates the selected Pod. Because this failure is permanent, it can only be waited in the
-// Running Phase. It does not go through Pass.
-type KillSpec struct {
-	Service string `json:"service,omitempty"`
-}
+type RawSpec string
 
 type EmbedFaultType struct {
 	// +optional
-	Partition *PartitionSpec `json:"partition,omitempty"`
-
-	// +optional
-	Kill *KillSpec `json:"kill,omitempty"`
+	Raw *RawSpec `json:"raw,omitempty"`
 }
 
 // ChaosSpec defines the desired state of Chaos.
 type ChaosSpec struct {
 	// Type indicate the type of the injected fault
-	// +kubebuilder:validation:Enum=partition;kill;
+	// +kubebuilder:validation:Enum=partition;kill;raw;
 	Type FaultType `json:"type"`
 
 	*EmbedFaultType `json:",inline"`

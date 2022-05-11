@@ -50,29 +50,6 @@ type Action struct {
 	*EmbedActions `json:",inline"`
 }
 
-func (act *Action) IsSupported() bool {
-	if act == nil || act.EmbedActions == nil {
-		return false
-	}
-
-	switch act.ActionType {
-	case ActionService:
-		return act.EmbedActions.Service != nil
-	case ActionCluster:
-		return act.EmbedActions.Cluster != nil
-	case ActionChaos:
-		return act.EmbedActions.Chaos != nil
-	case ActionCascade:
-		return act.EmbedActions.Cascade != nil
-	case ActionDelete:
-		return act.EmbedActions.Delete != nil
-	case ActionCall:
-		return act.EmbedActions.Call != nil
-	}
-
-	return false
-}
-
 type WaitSpec struct {
 	// Running waits for the given groups to be running
 	// +optional

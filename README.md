@@ -30,9 +30,9 @@ The effort being put in automating tests should not take over delivering value t
 * [Runtime Assertions](charts/iperf2/examples/5.assertions.yml )
 * [Elastic Topologies](charts/iperf2/examples/6.deletions.yml )
 * [Recoverability Experiments](charts/iperf2/examples/7.failure-toleration.yml )
-* [Time-Driven Chaos Engineering](charts/iperf2/examples/8.time-driven-fault.yml )
-* [State-Driven Chaos Engineering](charts/iperf2/examples/9.state-driven-fault.yml)
-* [Metrics-Driven Chaos Engineering](charts/iperf2/examples/10.metrics-driven-fault.yml)
+* [Time-Driven Chaos Engineering](charts/iperf2/examples/8.time-driven-partition.yml )
+* [State-Driven Chaos Engineering](charts/iperf2/examples/9.state-driven-partition.yml)
+* [Metrics-Driven Chaos Engineering](charts/iperf2/examples/10.metrics-driven-partition.yml)
 * [App-Specific Graceful Shutdowns](charts/cockroachdb/examples/8.scaledown-stop.yml )
 * [Failover](charts/redis/examples/10.availability-failover-single.yml )
 

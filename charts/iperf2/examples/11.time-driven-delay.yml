@@ -2,7 +2,7 @@
 apiVersion: frisbee.io/v1alpha1
 kind: TestPlan
 metadata:
-  name: time-driven-failure
+  name: time-driven-delay
 spec:
   actions:
     # Create an iperf server
@@ -27,6 +27,6 @@ spec:
       name: partition0
       depends: { running: [ server ], after: "3m" }
       chaos:
-        templateRef: chaos.network.partition
+        templateRef: chaos.network.delay
         inputs:
           - { target: .service.server.one, duration: "2m" }

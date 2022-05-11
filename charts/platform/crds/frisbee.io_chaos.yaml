@@ -36,34 +36,14 @@ spec:
           spec:
             description: ChaosSpec defines the desired state of Chaos.
             properties:
-              kill:
-                description: KillSpec terminates the selected Pod. Because this failure
-                  is permanent, it can only be waited in the Running Phase. It does
-                  not go through Pass.
-                properties:
-                  service:
-                    type: string
-                type: object
-              partition:
-                description: PartitionSpec separate the given Pod from the rest of
-                  the network. This chaos typeis retractable (either manually or after
-                  a duration) and can be waited at both Running and Pass Phase. Running
-                  phase begins when the failure is injected. Pass begins when the
-                  failure is retracted. If anything goes wrong in between, the chaos
-                  goes into Failed phase.
-                properties:
-                  duration:
-                    description: Duration is the time after which Frisbee will roll
-                      back the injected fault.
-                    type: string
-                  service:
-                    type: string
-                type: object
+              raw:
+                type: string
               type:
                 description: Type indicate the type of the injected fault
                 enum:
                 - partition
                 - kill
+                - raw
                 type: string
             required:
             - type
