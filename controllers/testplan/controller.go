@@ -301,7 +301,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		initialize the CR.
 	*/
 	if cr.Status.Phase.Is(v1alpha1.PhaseUninitialized) {
-		if err := r.Validate(&cr); err != nil {
+		if err := r.Validate(ctx, &cr); err != nil {
 			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "invalid testplan"))
 		}
 

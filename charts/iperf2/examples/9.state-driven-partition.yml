@@ -2,7 +2,7 @@
 apiVersion: frisbee.io/v1alpha1
 kind: TestPlan
 metadata:
-  name: state-driven-failure
+  name: state-driven-partition
 spec:
   actions:
     # Create an iperf server

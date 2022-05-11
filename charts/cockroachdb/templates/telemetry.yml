@@ -51,8 +51,6 @@ spec:
               sleep 10
             done
 
-
-
 ---
 apiVersion: v1
 kind: ConfigMap

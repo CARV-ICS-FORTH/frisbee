@@ -317,7 +317,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		res.SetName(fmt.Sprintf("%s-%d", cr.GetName(), nextJob))
 
 		if err := utils.Create(ctx, r, &cr, &res); err != nil {
-			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot create job"))
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot create virtual object"))
 		}
 
 		// perform the sub-call

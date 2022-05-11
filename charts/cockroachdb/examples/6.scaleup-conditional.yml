@@ -16,14 +16,12 @@ spec:
 
 
     # Step 1. Create a cockroach cluster from the individual servers
-    - action: Service
+    - action: Call
       name: boot
       depends: { running: [ masters ] }
-      service:
-        templateRef: cockroach.cluster.bootstrap
-        inputs:
-          - { server: .cluster.masters.one }
-
+      call:
+        callable: boot
+        services: [ masters-0 ]
 
     # Step 3. Add new clients every two minutes to hammer the cluster with requests
     - action: Cluster

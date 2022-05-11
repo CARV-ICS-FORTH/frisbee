@@ -16,13 +16,12 @@ spec:
 
 
     # Step 1. Create a cockroach cluster from the individual servers
-    - action: Service
+    - action: Call
       name: boot
       depends: { running: [ masters ] }
-      service:
-        templateRef: cockroach.cluster.bootstrap
-        inputs:
-          - { server: masters-0 }
+      call:
+        callable: boot
+        services: [ masters-0 ]
 
 
     # Step 2. Preload the server with keys

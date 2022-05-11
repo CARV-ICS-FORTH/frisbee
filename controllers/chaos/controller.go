@@ -102,7 +102,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	{
 		key := client.ObjectKeyFromObject(&cr)
 
-		if err := r.GetClient().Get(ctx, key, fault); client.IgnoreNotFound(err) != nil {
+		if err := r.GetClient().Get(ctx, key, &fault); client.IgnoreNotFound(err) != nil {
 			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "retrieve chaos"))
 		}
 	}
@@ -119,7 +119,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		be in conflict. We fix this issue by re-queueing the request.
 		We also suppress verbose error reporting as to avoid polluting the output.
 	*/
-	cr.SetReconcileStatus(calculateLifecycle(&cr, fault))
+	cr.SetReconcileStatus(calculateLifecycle(&cr, &fault))
 
 	if err := utils.UpdateStatus(ctx, r, &cr); err != nil {
 		r.Info("update status error. retry", "object", cr.GetName(), "err", err)
@@ -137,7 +137,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		// Remove cr children once the cr is successfully complete.
 		// We should not remove the cr descriptor itself, as we need to maintain its
 		// status for higher-entities like the TestPlan.
-		utils.Delete(ctx, r, fault)
+		utils.Delete(ctx, r, &fault)
 
 		return utils.Stop()
 	}
@@ -220,16 +220,32 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 
 	r.serviceControl = serviceutils.NewServiceControl(r)
 
-	var netChaos Fault
-	AsPartition(&netChaos)
+	var networkChaos Fault
+	networkChaos.SetGroupVersionKind(NetworkChaosGVK)
 
 	var podChaos Fault
-	AsKill(&podChaos)
+	podChaos.SetGroupVersionKind(PodChaosGVK)
+
+	// var blockChaos Fault
+	// blockChaos.SetGroupVersionKind(BlockChaosGVK)
+
+	var ioChaos Fault
+	ioChaos.SetGroupVersionKind(IOChaosGVK)
+
+	var kernelChaos Fault
+	kernelChaos.SetGroupVersionKind(KernelChaosGVK)
+
+	var timeChaos Fault
+	timeChaos.SetGroupVersionKind(TimeChaosGVK)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named("chaos").
 		For(&v1alpha1.Chaos{}).
-		Owns(&netChaos, builder.WithPredicates(r.Watchers())).
+		Owns(&networkChaos, builder.WithPredicates(r.Watchers())).
 		Owns(&podChaos, builder.WithPredicates(r.Watchers())).
+		// Owns(&blockChaos, builder.WithPredicates(r.Watchers())).
+		Owns(&ioChaos, builder.WithPredicates(r.Watchers())).
+		Owns(&kernelChaos, builder.WithPredicates(r.Watchers())).
+		Owns(&timeChaos, builder.WithPredicates(r.Watchers())).
 		Complete(r)
 }

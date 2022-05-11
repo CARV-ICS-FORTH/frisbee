@@ -22,152 +22,118 @@ import (
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/utils"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
 type Fault = unstructured.Unstructured
 
 type chaoHandler interface {
-	GetFault() *Fault
+	GetFault() Fault
 
 	Inject(ctx context.Context, r *Controller) error
 }
 
 func dispatch(chaos *v1alpha1.Chaos) chaoHandler {
 	switch chaos.Spec.Type {
-	case v1alpha1.FaultPartition:
-		return &partitionHandler{cr: chaos}
-
-	case v1alpha1.FaultKill:
-		return &killHandler{cr: chaos}
+	case v1alpha1.FaultRaw:
+		return &rawHandler{cr: chaos}
 	default:
 		panic("should never happen")
 	}
 }
 
-func AsPartition(fault *Fault) {
-	fault.SetGroupVersionKind(schema.GroupVersionKind{
+/*
+const (
+	TypeAWSChaos TemplateType = "AWSChaos"
+	TypeAzureChaos TemplateType = "AzureChaos"
+	TypeBlockChaos TemplateType = "BlockChaos"
+	TypeDNSChaos TemplateType = "DNSChaos"
+	TypeGCPChaos TemplateType = "GCPChaos"
+	TypeHTTPChaos TemplateType = "HTTPChaos"
+	TypeIOChaos TemplateType = "IOChaos"
+	TypeJVMChaos TemplateType = "JVMChaos"
+	TypeKernelChaos TemplateType = "KernelChaos"
+	TypeNetworkChaos TemplateType = "NetworkChaos"
+	TypePhysicalMachineChaos TemplateType = "PhysicalMachineChaos"
+	TypePodChaos TemplateType = "PodChaos"
+	TypeStressChaos TemplateType = "StressChaos"
+	TypeTimeChaos TemplateType = "TimeChaos"
+)
+
+*/
+
+var (
+	NetworkChaosGVK = schema.GroupVersionKind{
 		Group:   "chaos-mesh.org",
 		Version: "v1alpha1",
 		Kind:    "NetworkChaos",
-	})
-}
+	}
 
-func AsKill(fault *Fault) {
-	fault.SetGroupVersionKind(schema.GroupVersionKind{
+	PodChaosGVK = schema.GroupVersionKind{
 		Group:   "chaos-mesh.org",
 		Version: "v1alpha1",
 		Kind:    "PodChaos",
-	})
-}
+	}
+
+	/*
+		BlockChaosGVK = schema.GroupVersionKind{
+			Group:   "chaos-mesh.org",
+			Version: "v1alpha1",
+			Kind:    "BlockChaos",
+		}
+
+	*/
+
+	IOChaosGVK = schema.GroupVersionKind{
+		Group:   "chaos-mesh.org",
+		Version: "v1alpha1",
+		Kind:    "IOChaos",
+	}
+
+	KernelChaosGVK = schema.GroupVersionKind{
+		Group:   "chaos-mesh.org",
+		Version: "v1alpha1",
+		Kind:    "KernelChaos",
+	}
+
+	TimeChaosGVK = schema.GroupVersionKind{
+		Group:   "chaos-mesh.org",
+		Version: "v1alpha1",
+		Kind:    "TimeChaos",
+	}
+)
 
 /*
-	Network Partition Handler
+	Raw Fault Handler
 */
-
-type partitionHandler struct {
+type rawHandler struct {
 	cr *v1alpha1.Chaos
 }
 
-func (h partitionHandler) GetFault() *Fault {
+func (h rawHandler) GetFault() Fault {
+	var f map[string]interface{}
+
+	if err := yaml.Unmarshal([]byte(*h.cr.Spec.Raw), &f); err != nil {
+		panic(err)
+	}
+
 	var fault Fault
 
-	AsPartition(&fault)
+	fault.SetUnstructuredContent(f)
 
 	fault.SetName(h.cr.GetName())
 	fault.SetNamespace(h.cr.GetNamespace())
 
-	return &fault
+	return fault
 }
 
-func (h partitionHandler) Inject(ctx context.Context, r *Controller) error {
-	spec := h.cr.Spec.Partition
+func (h rawHandler) Inject(ctx context.Context, r *Controller) error {
+	fault := h.GetFault()
 
-	var fault Fault
-
-	affectedPods := map[string][]string{
-		h.cr.GetNamespace(): {spec.Service},
-	}
-
-	{ // spec
-		fault.SetUnstructuredContent(map[string]interface{}{
-			"spec": map[string]interface{}{
-				"action": "partition",
-				"mode":   "all",
-				"selector": map[string]interface{}{
-					"labelSelectors": map[string]string{
-						v1alpha1.BelongsToTestPlan: h.cr.GetLabels()[v1alpha1.BelongsToTestPlan],
-					},
-				},
-				"direction": "both",
-				"target": map[string]interface{}{
-					"mode": "all",
-					"selector": map[string]interface{}{
-						"pods": affectedPods,
-					},
-				},
-				"duration": spec.Duration,
-			},
-		})
-	}
-
-	AsPartition(&fault)
-
-	fault.SetName(h.cr.GetName())
-
-	if err := utils.Create(ctx, r, h.cr, &fault); err != nil {
-		return errors.Wrapf(err, "cannot inject fault")
-	}
-
-	return nil
-}
-
-/*
-	Service Killer
-*/
-
-type killHandler struct {
-	cr *v1alpha1.Chaos
-}
-
-func (h *killHandler) GetFault() *Fault {
-	var fault Fault
-
-	AsKill(&fault)
-
-	fault.SetName(h.cr.GetName())
-	fault.SetNamespace(h.cr.GetNamespace())
-
-	return &fault
-}
-
-func (h killHandler) Inject(ctx context.Context, r *Controller) error {
-	spec := h.cr.Spec.Kill
-
-	var fault Fault
-
-	affectedPods := map[string][]string{
-		h.cr.GetNamespace(): {spec.Service},
-	}
-
-	{ // spec
-		fault.SetUnstructuredContent(map[string]interface{}{
-			"spec": map[string]interface{}{
-				"action": "pod-kill",
-				"mode":   "all",
-				"selector": map[string]interface{}{
-					"pods": affectedPods,
-				},
-			},
-		})
-
-		r.Info("KILL", "pods", affectedPods)
-	}
-
-	AsKill(&fault)
-
-	fault.SetName(h.cr.GetName())
+	logrus.Warn("INJECT FAULT ", fault)
 
 	if err := utils.Create(ctx, r, h.cr, &fault); err != nil {
 		return errors.Wrapf(err, "cannot inject fault")

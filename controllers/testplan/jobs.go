@@ -95,12 +95,6 @@ func (r *Controller) chaos(ctx context.Context, t *v1alpha1.TestPlan, action v1a
 		return nil, errors.Wrapf(err, "service spec")
 	}
 
-	if spec.Type == v1alpha1.FaultKill {
-		if action.DependsOn.Success != nil {
-			return nil, errors.Errorf("kill is a inject-only chaos. it does not have success. only running")
-		}
-	}
-
 	var chaos v1alpha1.Chaos
 
 	chaos.SetGroupVersionKind(v1alpha1.GroupVersion.WithKind("Chaos"))
