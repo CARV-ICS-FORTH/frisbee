@@ -240,7 +240,7 @@ func selectServices(ctx context.Context, r utils.Reconciler, ss *v1alpha1.MatchB
 
 			var slist v1alpha1.ServiceList
 
-			err := r.GetClient().List(ctx, &slist, client.MatchingLabels{v1alpha1.LabelManagedBy: cluster.GetName()})
+			err := r.GetClient().List(ctx, &slist, client.MatchingLabels{v1alpha1.LabelCreatedBy: cluster.GetName()})
 			if err != nil {
 				return nil, errors.Wrapf(err, "cannot get services")
 			}

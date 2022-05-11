@@ -41,7 +41,7 @@ func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Service) error {
 		return errors.Wrapf(err, "decorator error")
 	}
 
-	discovery, discoveryLabels, err := constructDiscoveryService(cr)
+	discovery, err := constructDiscoveryService(cr)
 	if err != nil {
 		return errors.Wrapf(err, "DNS service error")
 	}
@@ -55,7 +55,7 @@ func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Service) error {
 
 	pod.SetName(cr.GetName())
 	pod.SetAnnotations(cr.GetAnnotations())
-	pod.SetLabels(labels.Merge(cr.GetLabels(), discoveryLabels))
+
 	cr.Spec.PodSpec.DeepCopyInto(&pod.Spec)
 
 	if err := utils.Create(ctx, r, cr, &pod); err != nil {
@@ -217,14 +217,14 @@ func decoratePod(ctx context.Context, r *Controller, cr *v1alpha1.Service) error
 	return nil
 }
 
-func constructDiscoveryService(cr *v1alpha1.Service) (*corev1.Service, labels.Set, error) {
+func constructDiscoveryService(cr *v1alpha1.Service) (*corev1.Service, error) {
 	// register ports from containers and sidecars
 	var allPorts []corev1.ServicePort
 
 	for ci, container := range cr.Spec.Containers {
 		for pi, port := range container.Ports {
 			if port.ContainerPort == 0 {
-				return nil, nil, errors.Errorf("port is 0 for container[%d].port[%d]", ci, pi)
+				return nil, errors.Errorf("port is 0 for container[%d].port[%d]", ci, pi)
 			}
 
 			allPorts = append(allPorts, corev1.ServicePort{
@@ -249,9 +249,7 @@ func constructDiscoveryService(cr *v1alpha1.Service) (*corev1.Service, labels.Se
 	kubeService.Spec.ClusterIP = clusterIP
 
 	// bind service to the pod
-	service2Pod := map[string]string{cr.GetName(): "discover"}
+	kubeService.Spec.Selector = map[string]string{v1alpha1.LabelCreatedBy: cr.GetName()}
 
-	kubeService.Spec.Selector = service2Pod
-
-	return &kubeService, service2Pod, nil
+	return &kubeService, nil
 }

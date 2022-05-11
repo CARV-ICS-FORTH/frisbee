@@ -50,8 +50,8 @@ spec:
     # Step5. partition node 1 from the rest of the nodes; node 1 can reach other nodes, but no other nodes can reach node 1
     - action: Chaos
       name: partition0
-      depends: { success: [ wait-for-3x-replication ], after: "6m" }
+      depends: { success: [ wait-for-3x-replication ], after: "2m" }
       chaos:
         templateRef: chaos.network.partition
         inputs:
-          - { target: masters-0, duration: 1m }
+          - { target: masters-0, duration: 5m , direction: "to", plan: "cockroach-network" }

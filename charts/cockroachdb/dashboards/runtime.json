@@ -88,7 +88,7 @@
   "fiscalYearStartMonth": 0,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": 12,
+  "id": 5,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -379,6 +379,15 @@
           "intervalFactor": 2,
           "legendFormat": "Goroutine Count",
           "refId": "A"
+        },
+        {
+          "exemplar": true,
+          "expr": "sum(sys_goroutines{agent=\"cockroachdb\"}) by (instance)",
+          "hide": false,
+          "interval": "",
+          "intervalFactor": 2,
+          "legendFormat": "{{instance}}",
+          "refId": "B"
         }
       ],
       "timeFrom": null,

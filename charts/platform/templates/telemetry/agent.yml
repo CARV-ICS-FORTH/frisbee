@@ -26,8 +26,12 @@ spec:
             set -eum
 
             # https://github.com/google/cadvisor/blob/master/docs/storage/prometheus.md
-            cadvisor -port=9442  &
+            cadvisor -port=9442   \
+            -docker_only=false     \
+            --housekeeping_interval=10s  \
+            &
             # -enable_metrics=diskIO,cpuLoad,hugetlb,memory,network
+
 
             while [ ! -f "/dev/shm/stop" ];
             do
@@ -43,4 +47,4 @@ metadata:
   labels:
     app.kubernetes.io/managed-by: {{.Release.Service | quote}}
     dashboard: sysmon
-data: {{(.Files.Glob "dashboards/syscontainer.json").AsConfig | nindent 2}}
+data: {{(.Files.Glob "dashboards/*.json").AsConfig | nindent 2}}

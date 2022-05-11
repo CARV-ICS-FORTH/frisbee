@@ -20,7 +20,6 @@ import (
 	"sort"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -244,20 +243,4 @@ func (in Classifier) IsDeletable(jobName string) (client.Object, bool) {
 	}
 
 	return nil, false
-}
-
-func WaitUntil(src <-chan *v1alpha1.Lifecycle, phase v1alpha1.Phase) error {
-	for lf := range src {
-		if lf.Phase.Is(v1alpha1.PhaseRunning) {
-			break
-		}
-
-		if lf.Phase.Precedes(v1alpha1.PhaseRunning) {
-			continue
-		}
-
-		return errors.Errorf("expected %s but got %s", phase, lf.Phase)
-	}
-
-	return nil
 }
