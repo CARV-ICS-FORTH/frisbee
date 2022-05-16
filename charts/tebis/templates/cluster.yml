@@ -3,8 +3,7 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: tebis.cluster.zookeeper
-  labels:
-    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+
 spec:
   service:
     containers:
@@ -28,8 +27,7 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: tebis.cluster.bootstrap
-  labels:
-    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+
 spec:
   inputs:
     parameters:
@@ -75,8 +73,7 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: tebis.cluster.master
-  labels:
-    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+
 spec:
   inputs:
     parameters:
@@ -126,8 +123,7 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: tebis.cluster.client
-  labels:
-    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+
 spec:
   inputs:
     parameters:

@@ -34,7 +34,6 @@ import (
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -104,7 +103,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	*/
 	filters := []client.ListOption{
 		client.InNamespace(req.Namespace),
-		client.MatchingLabels{v1alpha1.LabelManagedBy: req.Name},
+		client.MatchingLabels{v1alpha1.LabelCreatedBy: req.Name},
 		//	client.MatchingFields{jobOwnerKey: req.Name},
 	}
 
@@ -293,9 +292,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	// This label will be adopted by all children objects of this workflow.
 	// It is not persisted in order to avoid additional updates.
-	cr.SetLabels(labels.Merge(cr.GetLabels(), map[string]string{
-		v1alpha1.BelongsToTestPlan: cr.GetName(),
-	}))
+	utils.AppendLabel(&cr, v1alpha1.LabelPartOfPlan, cr.GetName())
 
 	/*
 		initialize the CR.
@@ -317,6 +314,9 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		if telemetry != nil {
 			telemetryJob.SetName("telemetry")
 			telemetryJob.Spec.ImportDashboards = telemetry
+
+			// mark the job as system specific in order to exclude it from chaos events
+			utils.AppendLabel(&cr, v1alpha1.LabelComponent, v1alpha1.ComponentSys)
 
 			if err := utils.Create(ctx, r, &cr, &telemetryJob); err != nil {
 				return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot create the telemetry stack"))

@@ -417,3 +417,7 @@ docker save frisbee:latest -o image.tar
 
 
 
+== Notes ==
+
+1) Cadvisor does not support for NFS mounts. 
+2) Check how we can use block devices

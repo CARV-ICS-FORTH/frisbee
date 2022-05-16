@@ -3,45 +3,35 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
-  name: fio.benchmark
-  labels:
-    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+  name: fio.benchmark.bind-fs
 spec:
   inputs:
     parameters:
-      device: "/mnt/fio-benchmark-exporter"
       size: "10M"
       direct: "0"
-      node: ""
-      cpu: ""
-      memory: ""
   service:
     requirements: # Requirements
       persistentVolumeClaim:
-        name: local-storage
+        name: bind-fs
         spec:
-          storageClassName: volatile-localvolume
+          storageClassName: local-volume
+          volumeMode: Filesystem
           accessModes:
             - ReadWriteOnce
           resources:
             requests:
-              storage: 15Gi
+              storage: 500Mi
     decorators: # decorators
-      telemetry: [ platform.telemetry.container, fiomon/server ]
-      placement:
-        domain: [{{"{{.Inputs.Parameters.node}}" | quote}}]
-
-      resources:
-        cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
-        memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
+      telemetry:
+        - platform.telemetry.container
+        - fio.telemetry.client
 
     containers: # Container
       - name: app
         image: xridge/fio
         volumeMounts:
-          - name: local-storage
-            mountPath: {{"{{.Inputs.Parameters.device}}" | quote}}
-
+          - name:  bind-fs
+            mountPath: /testdata
         command:
           - /bin/sh # Run shell
           - -c      # Read from string
@@ -49,7 +39,7 @@ spec:
             set -eum
             trap "touch /dev/shm/stop" EXIT
 
-            DEVICE={{"{{.Inputs.Parameters.device}}"}}
+            DEVICE=/testdata
             SIZE={{"{{.Inputs.Parameters.size}}"}}
             DIRECT={{"{{.Inputs.Parameters.direct}}"}}
 

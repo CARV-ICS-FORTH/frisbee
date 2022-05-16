@@ -2,9 +2,8 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
-  name: fio.telemetry.server
-  labels:
-    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+  name: fio.telemetry.client
+
 spec:
   service:
     decorators:
@@ -62,6 +61,5 @@ kind: ConfigMap
 metadata:
   name: grafana-fio-dashboard
   labels:
-    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
     dashboard: fio
 data: {{(.Files.Glob "dashboards/fio.json").AsConfig | nindent 2}}

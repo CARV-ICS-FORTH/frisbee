@@ -20,6 +20,7 @@ import (
 	"context"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
+	"github.com/carv-ics-forth/frisbee/controllers/utils"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -58,6 +59,7 @@ func (r *Controller) service(ctx context.Context, t *v1alpha1.TestPlan, action v
 	service.SetGroupVersionKind(v1alpha1.GroupVersion.WithKind("Service"))
 	service.SetNamespace(t.GetNamespace())
 	service.SetName(action.Name)
+	utils.AppendLabel(&service, v1alpha1.LabelComponent, v1alpha1.ComponentSUT)
 
 	spec.DeepCopyInto(&service.Spec)
 
@@ -74,6 +76,7 @@ func (r *Controller) cluster(ctx context.Context, t *v1alpha1.TestPlan, action v
 	cluster.SetGroupVersionKind(v1alpha1.GroupVersion.WithKind("Cluster"))
 	cluster.SetNamespace(t.GetNamespace())
 	cluster.SetName(action.Name)
+	utils.AppendLabel(&cluster, v1alpha1.LabelComponent, v1alpha1.ComponentSUT)
 
 	action.Cluster.DeepCopyInto(&cluster.Spec)
 
@@ -100,6 +103,7 @@ func (r *Controller) chaos(ctx context.Context, t *v1alpha1.TestPlan, action v1a
 	chaos.SetGroupVersionKind(v1alpha1.GroupVersion.WithKind("Chaos"))
 	chaos.SetNamespace(t.GetNamespace())
 	chaos.SetName(action.Name)
+	utils.AppendLabel(&chaos, v1alpha1.LabelComponent, v1alpha1.ComponentSUT)
 
 	spec.DeepCopyInto(&chaos.Spec)
 
@@ -116,6 +120,7 @@ func (r *Controller) cascade(ctx context.Context, t *v1alpha1.TestPlan, action v
 	cascade.SetGroupVersionKind(v1alpha1.GroupVersion.WithKind("Cascade"))
 	cascade.SetNamespace(t.GetNamespace())
 	cascade.SetName(action.Name)
+	utils.AppendLabel(&cascade, v1alpha1.LabelComponent, v1alpha1.ComponentSUT)
 
 	action.Cascade.DeepCopyInto(&cascade.Spec)
 
@@ -130,6 +135,7 @@ func (r *Controller) delete(ctx context.Context, t *v1alpha1.TestPlan, action v1
 	deletionJob.SetGroupVersionKind(v1alpha1.GroupVersion.WithKind("VirtualObject"))
 	deletionJob.SetNamespace(t.GetNamespace())
 	deletionJob.SetName(action.Name)
+	utils.AppendLabel(&deletionJob, v1alpha1.LabelComponent, v1alpha1.ComponentSUT)
 
 	deletionJob.SetReconcileStatus(v1alpha1.Lifecycle{
 		Phase:   v1alpha1.PhaseSuccess,
@@ -167,6 +173,7 @@ func (r *Controller) call(ctx context.Context, t *v1alpha1.TestPlan, action v1al
 	call.SetGroupVersionKind(v1alpha1.GroupVersion.WithKind("Call"))
 	call.SetNamespace(t.GetNamespace())
 	call.SetName(action.Name)
+	utils.AppendLabel(&call, v1alpha1.LabelComponent, v1alpha1.ComponentSUT)
 
 	action.Call.DeepCopyInto(&call.Spec)
 

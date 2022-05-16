@@ -23,12 +23,24 @@ import (
 )
 
 const (
-	// LabelManagedBy binds an object  back to a specific controller.
-	LabelManagedBy = "frisbee-controller"
+	// ComponentSys is a component that belongs to Frisbee. Such components can be excluded from Chaos events.
+	ComponentSys = "SYS"
 
-	// BelongsToTestPlan is a label that is passed from parent to the child, in order to identify all
-	// the various objects that belong to a specific workflow.
-	BelongsToTestPlan = "frisbee-testplan"
+	// ComponentSUT is a component that belongs to the system under testing
+	ComponentSUT = "SUT"
+)
+
+// https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/
+const (
+	// LabelCreatedBy points to the controller/user who created this resource
+	LabelCreatedBy = "app.kubernetes.io/created-by"
+
+	// LabelPartOfPlan points to the name of a higher level application this one is part of.
+	LabelPartOfPlan = "app.kubernetes.io/part-of"
+
+	// LabelComponent describes the role of the component within the architecture.
+	// It can be SUT (for system under service) or SYS (if it's a frisbee component like Grafana).
+	LabelComponent = "app.kubernetes.io/component"
 )
 
 // Phase is a simple, high-level summary of where the Object is in its lifecycle.
@@ -62,28 +74,6 @@ const (
 	// non-zero exit code or was stopped by the system).
 	PhaseFailed = Phase("Failed")
 )
-
-func (p Phase) toInt() int {
-	switch p {
-	case PhaseUninitialized:
-		return 0
-	case PhasePending:
-		return 1
-	case PhaseRunning:
-		return 2
-	case PhaseSuccess:
-		return 3
-	case PhaseFailed:
-		return 4
-	default:
-		panic("invalid phase")
-	}
-}
-
-// Precedes return true if the given phase precedes the reference phase.
-func (p Phase) Precedes(ref Phase) bool {
-	return p.toInt() < ref.toInt()
-}
 
 func (p Phase) Is(refs ...Phase) bool {
 	for _, ref := range refs {

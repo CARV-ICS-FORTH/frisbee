@@ -326,7 +326,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(max (container_fs_limit_bytes{device=~\"^/dev/[sv]d[a-z][1-9]$\",id=\"/\"}) by (node))",
+          "expr": "sum(max (container_fs_limit_bytes{device=~\"^overlay|/dev/[nsx][v][bdm][a-z].+$\",id=\"/\"}) by (node))",
           "format": "time_series",
           "instant": true,
           "interval": "",
@@ -630,7 +630,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(max (container_fs_usage_bytes{device=~\"^/dev/[sv]d[a-z][1-9]$\",id=\"/\"}) by (node))",
+          "expr": "sum(max (container_fs_usage_bytes{device=~\"^overlay|/dev/[nsx][v][bdm][a-z].+$\",id=\"/\"}) by (node))",
           "instant": true,
           "interval": "",
           "intervalFactor": 1,
@@ -1456,7 +1456,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum  by (device) (irate(container_fs_writes_total{device=~\"^/dev/[sv]d[a-z][1-9]$\",id=\"/\",node=\"$node\"}[1m]))",
+          "expr": "sum  by (device) (irate(container_fs_writes_total{device=~\"^overlay|/dev/[nsx][v][bdm][a-z].+$\",id=\"/\",node=\"$node\"}[1m]))",
           "hide": false,
           "instant": false,
           "interval": "",
@@ -1468,7 +1468,7 @@
         },
         {
           "exemplar": true,
-          "expr": "sum  by (device) (irate(container_fs_reads_total{device=~\"^/dev/[sv]d[a-z][1-9]$\",id=\"/\",node=\"$node\"}[1m]))",
+          "expr": "sum  by (device) (irate(container_fs_reads_total{device=~\"^overlay|/dev/[nsx][v][bdm][a-z].+$\",id=\"/\",node=\"$node\"}[1m]))",
           "hide": false,
           "instant": false,
           "interval": "",
@@ -1669,7 +1669,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum (container_fs_usage_bytes{device=~\"^/dev/[sv]d[a-z][1-9]$\",id=\"/\",node=\"$node\"}) / sum (container_fs_limit_bytes{device=~\"^/dev/[sv]d[a-z][1-9]$\",id=\"/\",node=\"$node\"}) * 100",
+          "expr": "sum (container_fs_usage_bytes{device=~\"^overlay|/dev/[nsx][v][bdm][a-z].+$\",id=\"/\",node=\"$node\"}) / sum (container_fs_limit_bytes{device=~\"^overlay|/dev/[nsx][v][bdm][a-z].+$\",id=\"/\",node=\"$node\"}) * 100",
           "interval": "10s",
           "intervalFactor": 1,
           "legendFormat": "FS Usage",

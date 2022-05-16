@@ -3,8 +3,7 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: redis.single.master
-  labels:
-    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+
 spec:
   inputs:
     parameters:
@@ -60,8 +59,7 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: redis.single.slave
-  labels:
-    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+
 spec:
   inputs:
     parameters:
@@ -115,8 +113,7 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: redis.single.sentinel
-  labels:
-    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+
 spec:
   inputs:
     parameters:

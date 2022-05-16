@@ -1,0 +1,22 @@
+---
+apiVersion: frisbee.io/v1alpha1
+kind: TestPlan
+metadata:
+  name: no-faults-standalone
+spec:
+  actions:
+    # Create a Flower server
+    - action: Service
+      name: server
+      service:
+        templateRef: fl.quickstart.server
+
+    # Create three Flower clients
+    - action: Cluster
+      depends: { running: [ server ] }
+      name: clients
+      cluster:
+        instances: 3
+        templateRef: fl.quickstart.client
+        inputs:
+          - { server: server }

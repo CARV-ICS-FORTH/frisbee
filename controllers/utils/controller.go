@@ -22,11 +22,11 @@ import (
 	"time"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
+	"github.com/carv-ics-forth/frisbee/pkg/debug"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	k8errors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -174,7 +174,7 @@ func Update(ctx context.Context, r Reconciler, obj client.Object) error {
 	r.Info("OO UpdtMeta",
 		"kind", reflect.TypeOf(obj),
 		"name", obj.GetName(),
-		"caller", GetCallerLine(),
+		"caller", debug.GetCallerLine(),
 		"version", obj.GetResourceVersion(),
 	)
 
@@ -190,7 +190,7 @@ func UpdateStatus(ctx context.Context, r Reconciler, obj client.Object) error {
 	r.Info("OO UpdtStatus",
 		"kind", reflect.TypeOf(obj),
 		"name", obj.GetName(),
-		"caller", GetCallerLine(),
+		"caller", debug.GetCallerLine(),
 		"version", obj.GetResourceVersion(),
 	)
 
@@ -201,18 +201,32 @@ func UpdateStatus(ctx context.Context, r Reconciler, obj client.Object) error {
 // if the next reconciliation cycle happens faster than the API update, it is possible to
 // reschedule the creation of a Job. To avoid that, get if the Job is already submitted.
 func Create(ctx context.Context, r Reconciler, parent, child client.Object) error {
-	SetOwner(r, parent, child)
+	// owner labels are used by the selectors.
+	// workflow labels are used to select only objects that belong to this experiment.
+	// used to narrow down the scope of fault injection in a common namespace
+	AppendLabels(child, parent.GetLabels())
+	AppendLabel(child, v1alpha1.LabelCreatedBy, parent.GetName())
+
+	child.SetNamespace(parent.GetNamespace())
+
+	// SetControllerReference sets owner as a Controller OwnerReference on controlled.
+	// This is used for garbage collection of the controlled object and for
+	// reconciling the owner object on changes to controlled (with a Watch + EnqueueRequestForOwner).
+	// Since only one OwnerReference can be a controller, it returns an error if
+	// there is another OwnerReference with Controller flag set.
+	if err := controllerutil.SetControllerReference(parent, child, r.GetClient().Scheme()); err != nil {
+		return errors.Wrapf(err, "set controller reference")
+	}
 
 	r.Info("++ Create",
 		"kind", reflect.TypeOf(child),
 		"name", child.GetName(),
-		"caller", GetCallerLine(),
+		"caller", debug.GetCallerLine(),
 		"version", child.GetResourceVersion(),
 	)
 
-	err := r.GetClient().Create(ctx, child)
-
 	// If err is nil, Wrapf returns nil.
+	err := r.GetClient().Create(ctx, child)
 	return errors.Wrapf(err, "creation failed")
 }
 
@@ -222,7 +236,7 @@ func Delete(ctx context.Context, r Reconciler, obj client.Object) {
 	r.Info("-- Delete",
 		"kind", reflect.TypeOf(obj),
 		"name", obj.GetName(),
-		"caller", GetCallerLine(),
+		"caller", debug.GetCallerLine(),
 		"version", obj.GetResourceVersion(),
 	)
 
@@ -235,36 +249,6 @@ func Delete(ctx context.Context, r Reconciler, obj client.Object) {
 	if err := r.GetClient().Delete(ctx, obj, &options); client.IgnoreNotFound(err) != nil {
 		r.Error(err, "unable to delete", "obj", obj)
 	}
-}
-
-// SetOwner is a helper method to make sure the given object contains an object reference to the object provided.
-// This behavior is instrumental to guarantee correct garbage collection of resources especially when resources
-// control other resources in a multilevel hierarchy (think deployment-> repilcaset->pod).
-func SetOwner(r Reconciler, parent, child metav1.Object) {
-	child.SetNamespace(parent.GetNamespace())
-
-	// SetControllerReference sets owner as a Controller OwnerReference on controlled.
-	// This is used for garbage collection of the controlled object and for
-	// reconciling the owner object on changes to controlled (with a Watch + EnqueueRequestForOwner).
-	// Since only one OwnerReference can be a controller, it returns an error if
-	// there is another OwnerReference with Controller flag set.
-	if err := controllerutil.SetControllerReference(parent, child, r.GetClient().Scheme()); err != nil {
-		panic(errors.Wrapf(err, "set controller reference"))
-	}
-
-	/*
-		if err := controllerutil.SetOwnerReference(parent, child, Globals.Client.Scheme()); err != nil {
-			panic(errors.Wrapf(err, "set owner reference"))
-		}
-	*/
-
-	// owner labels are used by the selectors.
-	// workflow labels are used to select only objects that belong to this experiment.
-	// used to narrow down the scope of fault injection in a common namespace
-	child.SetLabels(labels.Merge(child.GetLabels(), map[string]string{
-		v1alpha1.LabelManagedBy:    parent.GetName(),
-		v1alpha1.BelongsToTestPlan: parent.GetLabels()[v1alpha1.BelongsToTestPlan],
-	}))
 }
 
 // IsManagedByThisController returns true if the object is managed by the specified controller.

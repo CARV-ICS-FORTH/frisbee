@@ -22,7 +22,6 @@ import (
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/utils"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/yaml"
@@ -132,8 +131,6 @@ func (h rawHandler) GetFault() Fault {
 
 func (h rawHandler) Inject(ctx context.Context, r *Controller) error {
 	fault := h.GetFault()
-
-	logrus.Warn("INJECT FAULT ", fault)
 
 	if err := utils.Create(ctx, r, h.cr, &fault); err != nil {
 		return errors.Wrapf(err, "cannot inject fault")

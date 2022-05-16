@@ -5,8 +5,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: platform
-  labels:
-    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+
 data:
   # If the operator runs within the cluster, it will reach Grafana via the service.
   {{ if .Values.operator.enabled }}

@@ -1,0 +1,13 @@
+---
+apiVersion: frisbee.io/v1alpha1
+kind: TestPlan
+metadata:
+  name: bind-fs
+spec:
+  actions:
+    - action: Service
+      name: fio
+      service:
+        templateRef: fio.benchmark.bind-fs
+        inputs:
+          - { direct: "0"}

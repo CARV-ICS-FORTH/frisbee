@@ -1,0 +1,91 @@
+{{- if .Values.openebs.enabled }}
+---
+# Warning:
+# PV with BlockMode is not supported with StorageType hostpath
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: local-volume
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+    openebs.io/cas-type: local
+    cas.openebs.io/config: |
+      - name: StorageType
+        value: hostpath
+      - name: BasePath
+        value: {{.Values.openebs.backendDir}}
+provisioner: openebs.io/local
+reclaimPolicy: Delete
+volumeBindingMode:  WaitForFirstConsumer
+
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: network-volume
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "false"
+    openebs.io/cas-type: nfsrwx
+    cas.openebs.io/config: |
+      - name: NFSServerType
+        value: "kernel"
+      - name: BackendStorageClass
+        value: "local-volume"
+provisioner: openebs.io/nfsrwx
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: exclusive-device
+  annotations:
+    openebs.io/cas-type: local
+    cas.openebs.io/config: |
+      - name: StorageType
+        value: device
+provisioner: openebs.io/local
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+
+{{- end }}
+
+---
+# The idea here is to use a single file as the block device, using Linux’s loop, and create a volume based on it
+#
+# To use it for testing on a loopback device:
+# truncate -s 1024G /tmp/disk.img
+# sudo losetup -f /tmp/disk.img --show  (instead of loop0 use the returned value)
+# sudo pvcreate /dev/loop0
+# sudo vgcreate frisbee-vg /dev/loop0
+# sudo losetup -d /dev/loop8
+#
+# https://github.com/openebs/lvm-localpv/blob/develop/docs/storageclasses.md#thinprovision-optional
+#apiVersion: storage.k8s.io/v1
+#kind: StorageClass
+#metadata:
+#  name: ephemeral-disk-lala
+#  labels:
+#    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+#provisioner: local.csi.openebs.io
+#parameters:
+#  storage: "lvm"
+#  volgroup: "frisbee-vg"    ## The name of the volume group on nodes from which the volumes will be created
+#  shared: "no"              ## Shared among the multiple pods on the same node.
+#  thinProvision: "yes"      ## Occupy storage only on demand to save cost.
+#  fsType: "xfs"             ## Format, if not already formatted. (Supports: ext2, ext3, ext4, xfs & btrfs)
+#allowVolumeExpansion: true
+#reclaimPolicy: Delete
+#volumeBindingMode: Immediate
+
+
+#apiVersion: storage.k8s.io/v1
+#kind: StorageClass
+#metadata:
+#  name: ephemeral-local-device
+#provisioner: local.csi.openebs.io
+#  storage: "lvm"
+#  vgpattern: {{.Values.openebs.deviceTag}}
+##reclaimPolicy: Retain
+#volumeBindingMode: WaitForFirstConsumer

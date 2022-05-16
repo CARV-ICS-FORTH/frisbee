@@ -101,7 +101,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	filters := []client.ListOption{
 		client.InNamespace(req.Namespace),
-		client.MatchingLabels{v1alpha1.LabelManagedBy: req.Name},
+		client.MatchingLabels{v1alpha1.LabelCreatedBy: req.Name},
 		client.MatchingFields{jobOwnerKey: req.Name},
 	}
 

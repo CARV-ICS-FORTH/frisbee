@@ -5,8 +5,7 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: tikv.cluster.coverage.placement-driver
-  labels:
-    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+
 spec:
   inputs:
     parameters:
@@ -17,7 +16,7 @@ spec:
       persistentVolumeClaim:
         name: datastore
         spec:
-          storageClassName: ephemeral-local-volume
+          storageClassName: local-volume
           accessModes:
             - ReadWriteOnce
           resources:
@@ -91,8 +90,7 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: tikv.cluster.coverage.worker
-  labels:
-    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+
 spec:
   inputs:
     parameters:
@@ -104,7 +102,7 @@ spec:
       persistentVolumeClaim:
         name: datastore
         spec:
-          storageClassName: ephemeral-local-volume
+          storageClassName: local-volume
           accessModes:
             - ReadWriteOnce
           resources:
