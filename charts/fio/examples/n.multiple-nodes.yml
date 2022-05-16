@@ -2,7 +2,7 @@
 apiVersion: frisbee.io/v1alpha1
 kind: TestPlan
 metadata:
-  name: fio-baseline
+  name: multiple-nodes
 spec:
   actions:
     - action: Service

@@ -2,8 +2,7 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: redis.telemetry.server
-  labels:
-    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+
 spec:
   service:
     decorators:

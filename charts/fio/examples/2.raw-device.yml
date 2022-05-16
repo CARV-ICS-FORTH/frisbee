@@ -1,0 +1,13 @@
+---
+apiVersion: frisbee.io/v1alpha1
+kind: TestPlan
+metadata:
+  name: raw-device
+spec:
+  actions:
+    - action: Service
+      name: fio
+      service:
+        templateRef: fio.benchmark.raw-device
+        inputs:
+          - { direct: "0"}

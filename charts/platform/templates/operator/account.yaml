@@ -3,8 +3,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: frisbee-account
-  labels:
-    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+
 
 ---
 # Glue between the rbac role and the Frisbee Account.

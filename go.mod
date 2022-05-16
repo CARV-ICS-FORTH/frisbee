@@ -6,7 +6,6 @@ require (
 	github.com/Knetic/govaluate v3.0.0+incompatible
 	github.com/Masterminds/sprig/v3 v3.2.2
 	github.com/armon/circbuf v0.0.0-20150827004946-bbbad097214e
-	github.com/dustinkirkland/golang-petname v0.0.0-20191129215211-8e5a1ed0cff0
 	github.com/go-logr/logr v0.4.0
 	github.com/golanghelper/grafana-webhook v0.0.0-20180512191629-e0da26114467
 	github.com/grafana-tools/sdk v0.0.0-20211015115518-56cdea6a09d6

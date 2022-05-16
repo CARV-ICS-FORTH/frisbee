@@ -3,8 +3,7 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: ycsb.telemetry.client
-  labels:
-    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+
 spec:
   service:
     decorators: # Decorators
@@ -52,7 +51,6 @@ kind: ConfigMap
 metadata:
   name: ycsb-dashboard
   labels:
-    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
     dashboard: ycsb
 data:
 {{ (.Files.Glob "dashboards/*.json").AsConfig | indent 2 }}

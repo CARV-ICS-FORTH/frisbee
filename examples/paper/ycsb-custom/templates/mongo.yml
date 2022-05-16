@@ -3,8 +3,7 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: ycsb.mongo.loader
-  labels:
-    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+
 spec:
   inputs:
     parameters:
@@ -55,8 +54,7 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: ycsb.mongo.runner
-  labels:
-    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+
 spec:
   inputs:
     parameters:

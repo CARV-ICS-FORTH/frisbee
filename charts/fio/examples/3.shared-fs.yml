@@ -1,0 +1,28 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: fs
+spec:
+  storageClassName: network-volume
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 512Mi
+
+---
+apiVersion: frisbee.io/v1alpha1
+kind: TestPlan
+metadata:
+  name: shared-fs
+spec:
+  actions:
+    - action: Cluster
+      name: fio
+      cluster:
+        templateRef: fio.benchmark.shared-fs
+        instances: 2
+        inputs:
+          - { direct: "0", claimName: fs }

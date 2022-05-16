@@ -18,8 +18,7 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: redis.cluster.master
-  labels:
-    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+
 spec:
   inputs:
     parameters:
@@ -111,8 +110,7 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: redis.cluster.bootstrap
-  labels:
-    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+
 spec:
   inputs:
     parameters:

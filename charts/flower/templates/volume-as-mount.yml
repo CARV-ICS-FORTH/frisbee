@@ -1,24 +1,9 @@
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: shared-dataset
-spec:
-  storageClassName: ephemeral-shared-volume
-  resources:
-    requests:
-      storage: 12Gi
-  accessModes:
-    - ReadWriteOnce
-    - ReadOnlyMany
 
 ---
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
-  name: fl.quickstart.server
-  labels:
-    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+  name: fl.quickstart.server2
 spec:
   service:
     decorators:
@@ -43,9 +28,8 @@ spec:
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
-  name: fl.quickstart.downloader
-  labels:
-    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+  name: fl.quickstart.downloader2
+
 spec:
   service:
     volumes:
@@ -79,9 +63,8 @@ spec:
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
-  name: fl.quickstart.client
-  labels:
-    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+  name: fl.quickstart.client2
+
 spec:
   inputs:
     parameters:

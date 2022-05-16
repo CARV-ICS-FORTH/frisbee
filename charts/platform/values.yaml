@@ -38,16 +38,24 @@ telemetry:
 openebs:
   enabled: true
 
-  storagePath: /mnt/local
+  backendDir: /mnt/local
 
-  ndm:
-    enabled: false
+  backendDeviceTag: frisbee-vg
 
-  ndmOperator:
-    enabled: false
+  #- device (as block or mounted path)
+  #- hostpath (sub directory on OS or mounted path)
 
   nfs-provisioner:
     enabled: true
+
+  # NDM stands for Node device Manager as it manages the devices attached to the nodes.
+  # This is achieved with the help of /run/udev directory which gets mounted inside the pod.
+  ndm:
+    filters:
+      # use the specified block devices for creating the block device custom resource.
+      includePaths: "/dev/loop7"
+
+      excludePaths: "/dev/fd0,/dev/sr0,/dev/ram,/dev/dm-,/dev/md,/dev/rbd,/dev/zd"
 
 
 ## @section Chaos Injection Parameters
@@ -114,6 +122,3 @@ sonarqube:
   #  config:
   #    rules:
   #      - pattern: ".*"
-
-
-

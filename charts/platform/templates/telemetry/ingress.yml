@@ -3,8 +3,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: telemetry-ingress
-  labels:
-    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+
 spec:
   rules:
     - host: prometheus.{{.Values.global.ingress}}

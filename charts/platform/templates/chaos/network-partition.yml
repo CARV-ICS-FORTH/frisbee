@@ -4,8 +4,7 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: chaos.network.partition.namespace
-  labels:
-    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+
 spec:
   inputs:
     parameters:
@@ -43,8 +42,7 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: chaos.network.partition
-  labels:
-    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+
 spec:
   inputs:
     parameters:

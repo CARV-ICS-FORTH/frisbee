@@ -3,8 +3,7 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: mongodb.telemetry.server
-  labels:
-    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+
 spec:
   service:
     decorators:
@@ -58,8 +57,7 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: mongodb.telemetry.server2
-  labels:
-    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+
 spec:
   service:
     decorators:
@@ -97,6 +95,5 @@ kind: ConfigMap
 metadata:
   name: grafana-mongodb-dashboard
   labels:
-    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
     dashboard: mongo-telegraf
 data: {{(.Files.Glob "dashboards/mongodb.json").AsConfig | nindent 2}}

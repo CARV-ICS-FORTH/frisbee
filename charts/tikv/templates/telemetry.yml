@@ -3,8 +3,7 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: tikv.telemetry.pd
-  labels:
-    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+
 spec:
   service:
     decorators:
@@ -54,8 +53,7 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: tikv.telemetry.worker
-  labels:
-    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
+
 spec:
   service:
     decorators:
@@ -108,7 +106,6 @@ kind: ConfigMap
 metadata:
   name: grafana-tikv-summary
   labels:
-    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
     dashboard: tikv
     specificTo: worker
 data: {{(.Files.Glob "dashboards/tikv-summary.json").AsConfig | nindent 2}}
@@ -120,7 +117,6 @@ kind: ConfigMap
 metadata:
   name: grafana-tikv-pd
   labels:
-    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
     dashboard: tikv
     specificTo: pd
 data: {{(.Files.Glob "dashboards/tikv-pd.json").AsConfig | nindent 2}}
@@ -132,7 +128,6 @@ kind: ConfigMap
 metadata:
   name: grafana-tikv-raw
   labels:
-    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
     dashboard: tikv
     specificTo: worker
 data: {{(.Files.Glob "dashboards/tikv-raw.json").AsConfig | nindent 2}}
@@ -144,7 +139,6 @@ kind: ConfigMap
 metadata:
   name: grafana-tikv-troubleshooting
   labels:
-    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
     dashboard: tikv
     specificTo: worker
 data: {{(.Files.Glob "dashboards/tikv-troubleshooting.json").AsConfig | nindent 2}}
