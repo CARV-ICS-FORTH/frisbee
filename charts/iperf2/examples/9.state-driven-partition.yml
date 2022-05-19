@@ -39,7 +39,7 @@ spec:
       chaos:
         templateRef: chaos.network.partition
         inputs:
-          - { target: .service.server.one }
+          - { targets: .service.server.one }
 
 
     # Revoke the failure when the client is deleted

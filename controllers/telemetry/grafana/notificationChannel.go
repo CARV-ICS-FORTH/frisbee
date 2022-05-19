@@ -20,22 +20,21 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/carv-ics-forth/frisbee/controllers/utils"
 	"github.com/carv-ics-forth/frisbee/pkg/netutils"
 	notifier "github.com/golanghelper/grafana-webhook"
 	"github.com/grafana-tools/sdk"
 	"github.com/pkg/errors"
 )
 
-func (c *Client) SetNotificationChannel(webhookPort string, cb func(b *notifier.Body)) error {
+func (c *Client) SetNotificationChannel(advertisedHost string, webhookPort string, cb func(b *notifier.Body)) error {
 	var addr string
 
 	var url string
 
 	// If the controller runs within the Kubernetes cluster, we use the assigned name as the advertised host
 	// If the controller runs externally to the Kubernetes cluster, we use the public IP of the local machine.
-	if host := utils.DefaultConfiguration.AdvertisedHost; host != "" {
-		addr = fmt.Sprintf("%s:%s", host, webhookPort)
+	if advertisedHost != "" {
+		addr = fmt.Sprintf("%s:%s", advertisedHost, webhookPort)
 		url = fmt.Sprintf("http://%s", addr)
 	} else {
 		ip, err := netutils.GetPublicIP()

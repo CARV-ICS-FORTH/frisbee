@@ -587,6 +587,20 @@ spec:
                   - type
                   type: object
                 type: array
+              configuration:
+                description: Configuration is the programmatic equivalent of charts/platform/configuration
+                properties:
+                  advertisedHost:
+                    type: string
+                  grafanaEndpoint:
+                    type: string
+                  prometheusEndpoint:
+                    type: string
+                required:
+                - advertisedHost
+                - grafanaEndpoint
+                - prometheusEndpoint
+                type: object
               executed:
                 additionalProperties:
                   description: ConditionalExpr is a source of information about whether

@@ -28,3 +28,11 @@ func AppendLabel(cr client.Object, key string, value string) {
 func AppendLabels(cr client.Object, keyvals map[string]string) {
 	cr.SetLabels(labels.Merge(cr.GetLabels(), keyvals))
 }
+
+func AppendAnnotation(cr client.Object, key string, value string) {
+	cr.SetAnnotations(labels.Merge(cr.GetAnnotations(), map[string]string{key: value}))
+}
+
+func AppendAnnotations(cr client.Object, keyvals map[string]string) {
+	cr.SetAnnotations(labels.Merge(cr.GetAnnotations(), keyvals))
+}

@@ -58,12 +58,14 @@ func init() {
 }
 
 func main() {
-	var metricsAddr string
+	var (
+		//	namespace            string
+		metricsAddr          string
+		enableLeaderElection bool
+		probeAddr            string
+	)
 
-	var enableLeaderElection bool
-
-	var probeAddr string
-
+	// flag.StringVar(&namespace, "namespace", "default", "Restricts the manager's cache to watch objects in this namespace ")
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
@@ -85,7 +87,8 @@ func main() {
 	//
 	// Will log an error and exit if there is an error creating the rest.Config.
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:                 scheme,
+		Scheme: scheme,
+		// Namespace:              namespace,
 		MetricsBindAddress:     metricsAddr,
 		Host:                   "0.0.0.0",
 		Port:                   9443,

@@ -3,7 +3,6 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: cockroach.cluster.master
-
 spec:
   inputs:
     parameters:
@@ -33,31 +32,22 @@ spec:
             set -eum
             ./cockroach workload fixtures import tpcc --warehouses=100 --fks=false --checks=false
 
-      run-workload:
-        container: app
-        command:
-          - /bin/sh   # Run shell
-          - -c        # Read from string
-          - |         # Multi-line str
-            set -eum
-            ./cockroach workload run tpcc --warehouses=100 --tolerate-errors
-
       bitrot:
         container: app
         command:
           - /bin/sh   # Run shell
           - -c        # Read from string
           - |         # Multi-line str
-            set -eum
+            set -euo pipefail
 
             # Set local variables
-            store={{"{{.Inputs.Parameters.storedir}}"}}
+            storedir={{"{{.Inputs.Parameters.storedir}}"}}
             nTables=6
 
             # find 6 random SST files on each node (abort if node has fewer)
-            SSTs=($(ls -tr ${store}/MANIFEST-* | tail -n1 |  \
+            SSTs=($(ls -tr ${storedir}/MANIFEST-* | tail -n1 |                            \
             xargs ./cockroach debug pebble manifest dump |                                \
-            grep -v added | grep -v deleted | grep '/Table/' |                              \
+            grep -v added | grep -v deleted | grep '/Table/' |                            \
             shuf | tail -n ${nTables}))
 
             # abort if we have less than 6
@@ -67,16 +57,24 @@ spec:
               exit -1
             fi
 
-            # corrupt the SSts
+            # corrupt the SSTs
             for i in "${SSTs[@]}"
             do
-              file=$(echo $i | cut -d ':' -f 1)
-              echo "Corrupt ${file}.sst"
+              file=${storedir}/$(echo $i | cut -d ':' -f 1)
+              echo "Corrupting ${file}.sst"
 
               dd if=/dev/urandom of=${file}.sst seek=256 count=128 bs=1 conv=notrunc
             done
 
-            echo Corrupted "${SSTs[@]}" > /tmp/aa
+      run-workload:
+        container: app
+        command:
+          - /bin/sh   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
+            set -eum
+            ./cockroach workload run tpcc --warehouses=100 --tolerate-errors
+
 
       test2-import-tpcc:
         container: app
@@ -93,13 +91,13 @@ spec:
           - /bin/sh   # Run shell
           - -c        # Read from string
           - |         # Multi-line str
-            set -eum
+            set -euo pipefail
 
             # WaitFor3XReplication waits until all ranges in the system are on at least three voters.
             oldN=0
             for (( ; ; ))
             do
-              n=$(./cockroach sql --insecure --format=records \
+              n=$(./cockroach sql --insecure --format=records                                             \
               --execute="SELECT count(1) FROM crdb_internal.ranges WHERE array_length(replicas, 1) < 3;"  \
               | grep "count" | cut -d "|" -f 2)
 
@@ -127,6 +125,7 @@ spec:
           - -c        # Read from string
           - |         # Multi-line str
             set -eum
+
             ./cockroach workload run tpcc --warehouses=1 --wait=false --histograms=/stats.json --duration=30m
 
     containers:
@@ -145,17 +144,17 @@ spec:
             trap "touch /dev/shm/stop" EXIT
 
             # Required for installing xargs
-            microdnf install findutils procps
+            microdnf install findutils procps nc
 
             # Set local variables
-            store={{"{{.Inputs.Parameters.storedir}}"}}
+            storedir={{"{{.Inputs.Parameters.storedir}}"}}
             nodeList={{"{{.Inputs.Parameters.join}}"}}
 
             echo "Start Cockroachdb: ${nodeList}"
 
             COCKROACH_CRASH_ON_SPAN_USE_AFTER_FINISH=true cockroach start   \
                 --insecure                                      \
-                --store=${store}                                \
+                --store=${storedir}                             \
                 --listen-addr=:{{.Values.port}}                            \
                 --http-addr=$${HOSTNAME}:{{.Values.httpPort}}                   \
                 --advertise-addr=$${HOSTNAME}:{{.Values.port}}             \

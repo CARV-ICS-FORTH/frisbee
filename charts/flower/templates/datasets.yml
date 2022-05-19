@@ -1,0 +1,35 @@
+---
+apiVersion: frisbee.io/v1alpha1
+kind: Template
+metadata:
+  name: fl.quickstart.dataset.cifar
+spec:
+  inputs:
+    parameters:
+      claimName: ""
+  service:
+    volumes:
+      - name: dataset
+        persistentVolumeClaim:
+          claimName: {{".Inputs.Parameters.claimName" | quote}}
+    containers: # Container(s)
+      - name: app
+        image: busybox
+        volumeMounts:
+          - name: dataset
+            mountPath: /dataset
+        command:
+          - /bin/sh   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
+            set -eum
+
+            if [ -d "/dataset/cifar-10-batches-py" ]
+            then
+                echo "Directory /dataset/cifar-10-batches-py exists."
+            else
+              echo "Store Cifar10 at /dataset/cifar-10-batches-py"
+
+              wget https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz
+              tar -xzvf cifar-10-python.tar.gz -C /dataset/
+            fi

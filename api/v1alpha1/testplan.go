@@ -100,6 +100,15 @@ type TestPlanSpec struct {
 	Suspend *bool `json:"suspend,omitempty"`
 }
 
+// Configuration is the programmatic equivalent of charts/platform/configuration
+type Configuration struct {
+	GrafanaEndpoint string `json:"grafanaEndpoint"`
+
+	PrometheusEndpoint string `json:"prometheusEndpoint"`
+
+	AdvertisedHost string `json:"advertisedHost"`
+}
+
 // TestPlanStatus defines the observed state of TestPlan.
 type TestPlanStatus struct {
 	Lifecycle `json:",inline"`
@@ -109,6 +118,9 @@ type TestPlanStatus struct {
 	// Executed is a list of executed actions.
 	// +optional
 	Executed map[string]ConditionalExpr `json:"executed"`
+
+	// +optional
+	Configuration Configuration `json:"configuration,omitempty"`
 }
 
 func (in *TestPlan) GetReconcileStatus() Lifecycle {

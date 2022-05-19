@@ -16,7 +16,7 @@ metadata:
         value: {{.Values.openebs.backendDir}}
 provisioner: openebs.io/local
 reclaimPolicy: Delete
-volumeBindingMode:  WaitForFirstConsumer
+volumeBindingMode: WaitForFirstConsumer
 
 ---
 apiVersion: storage.k8s.io/v1
@@ -66,8 +66,6 @@ volumeBindingMode: WaitForFirstConsumer
 #kind: StorageClass
 #metadata:
 #  name: ephemeral-disk-lala
-#  labels:
-#    app.kubernetes.io/managed-by: {{.Release.Service | quote}}
 #provisioner: local.csi.openebs.io
 #parameters:
 #  storage: "lvm"
@@ -87,5 +85,5 @@ volumeBindingMode: WaitForFirstConsumer
 #provisioner: local.csi.openebs.io
 #  storage: "lvm"
 #  vgpattern: {{.Values.openebs.deviceTag}}
-##reclaimPolicy: Retain
-#volumeBindingMode: WaitForFirstConsumer
+  ##reclaimPolicy: Retain
+  #volumeBindingMode: WaitForFirstConsumer

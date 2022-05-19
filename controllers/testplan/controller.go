@@ -302,7 +302,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "invalid testplan"))
 		}
 
-		if err := utils.UseDefaultPlatformConfiguration(ctx, r, cr.GetNamespace()); err != nil {
+		if err := UsePlatformConfiguration(ctx, r, &cr); err != nil {
 			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot get platform configuration"))
 		}
 
@@ -427,9 +427,9 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 }
 
 func (r *Controller) ConnectToGrafana(ctx context.Context, cr *v1alpha1.TestPlan) error {
-	endpoint := utils.DefaultConfiguration.GrafanaEndpoint
+	conf := cr.Status.Configuration
 
-	return grafana.NewGrafanaClient(ctx, r, endpoint,
+	return grafana.NewGrafanaClient(ctx, r, conf.AdvertisedHost, conf.GrafanaEndpoint,
 		// Set a callback that will be triggered when there is Grafana alert.
 		// Through this channel we can get informed for SLA violations.
 		grafana.WithNotifyOnAlert(func(b *notifier.Body) {

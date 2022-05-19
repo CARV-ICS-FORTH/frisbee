@@ -15,7 +15,7 @@ spec:
     volumes:
       - name: shared-fs
         persistentVolumeClaim:
-          claimName: {{"{{.Inputs.Parameters.claimName}}" | quote}}
+          claimName: {{"{{.Inputs.Parameters.claimName}}"}}
 
     decorators: # decorators
       telemetry:
@@ -26,7 +26,7 @@ spec:
       - name: app
         image: xridge/fio
         volumeMounts:
-          - name:  shared-fs
+          - name: shared-fs
             mountPath: /testdata
         command:
           - /bin/sh # Run shell

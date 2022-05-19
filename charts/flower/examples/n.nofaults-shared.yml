@@ -50,4 +50,4 @@ spec:
       chaos:
         templateRef: chaos.network.partition
         inputs:
-          - { target: server, duration: 5m , direction: "to", plan: "validate-fl" }
+          - { targets: server, duration: 5m , direction: "to", plan: "validate-fl" }

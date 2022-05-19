@@ -14,8 +14,8 @@ spec:
       telemetry:
         - platform.telemetry.container
       resources: # Resources
-        cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
-        memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
+        cpu: {{"{{.Inputs.Parameters.cpu}}"}}
+        memory: {{"{{.Inputs.Parameters.memory}}"}}
     containers: # Container
       - name: app
         image: "networkstatic/iperf3"
@@ -44,8 +44,8 @@ spec:
         - platform.telemetry.container
         - iperf3.telemetry.client
       resources:
-        memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
-        cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
+        memory: {{"{{.Inputs.Parameters.memory}}"}}
+        cpu: {{"{{.Inputs.Parameters.cpu}}"}}
     containers:
       - name: app
         image: "networkstatic/iperf3"

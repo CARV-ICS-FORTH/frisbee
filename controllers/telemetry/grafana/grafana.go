@@ -48,7 +48,7 @@ func WithNotifyOnAlert(cb func(b *notifier.Body)) Option {
 	}
 }
 
-func NewGrafanaClient(ctx context.Context, r logr.Logger, apiURI string, setters ...Option) error {
+func NewGrafanaClient(ctx context.Context, r logr.Logger, controllerWebhook string, grafanaAPI string, setters ...Option) error {
 	// Default Options
 	args := &Options{
 		NotifyOnAlert: nil,
@@ -58,14 +58,14 @@ func NewGrafanaClient(ctx context.Context, r logr.Logger, apiURI string, setters
 		setter(args)
 	}
 
-	conn, err := sdk.NewClient(apiURI, "", sdk.DefaultHTTPClient)
+	conn, err := sdk.NewClient(grafanaAPI, "", sdk.DefaultHTTPClient)
 	if err != nil {
 		return errors.Wrapf(err, "conn error")
 	}
 
 	// retry until Grafana is ready to receive annotations.
 	err = retry.OnError(healthCheckTimeout, func(_ error) bool { return true }, func() error {
-		r.Info("Connecting to Grafana", "endpoint", apiURI)
+		r.Info("Connecting to Grafana", "endpoint", grafanaAPI)
 
 		_, err := conn.GetHealth(ctx)
 
@@ -82,13 +82,13 @@ func NewGrafanaClient(ctx context.Context, r logr.Logger, apiURI string, setters
 		Conn:   conn,
 	}
 
-	// Use this client as the default annotator
-	DefaultClient = client
-
 	// Set webhook for getting back grafana alerts
-	if err := client.SetNotificationChannel("6666", args.NotifyOnAlert); err != nil {
+	if err := client.SetNotificationChannel(controllerWebhook, "6666", args.NotifyOnAlert); err != nil {
 		return errors.Wrapf(err, "cannot run a notification webhook")
 	}
+
+	// Use this client as the default annotator
+	DefaultClient = client
 
 	return nil
 }

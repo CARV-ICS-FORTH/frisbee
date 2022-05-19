@@ -47,7 +47,7 @@ spec:
       chaos:
         templateRef: chaos.network.partition
         inputs:
-          - { target: .service.master.one, duration: "2m" }
+          - { targets: .service.master.one, duration: "2m" }
 
 
     # Step 5. Cause partition B on the 6th minute, lasting 1 minute
@@ -57,4 +57,4 @@ spec:
       chaos:
         templateRef: chaos.network.partition
         inputs:
-          - { target: .service.master.one, duration: "1m" }
+          - { targets: .service.master.one, duration: "1m" }

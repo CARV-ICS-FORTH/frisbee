@@ -10,4 +10,4 @@ spec:
       service:
         templateRef: fio.benchmark.bind-fs
         inputs:
-          - { direct: "0"}
+          - { direct: "0" }

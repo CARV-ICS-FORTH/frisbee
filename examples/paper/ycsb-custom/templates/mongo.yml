@@ -22,7 +22,7 @@ spec:
         - platform.telemetry.container
         - ycsb.telemetry.client
       resources:
-        cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
+        cpu: {{"{{.Inputs.Parameters.cpu}}"}}
         memory: {{"{{.Inputs.Parameters.memory}}" |quote }}
 
     containers: # Container(s)

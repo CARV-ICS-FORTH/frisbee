@@ -44,7 +44,7 @@ spec:
       cascade:
         templateRef: chaos.network.partition
         inputs:
-          - { target: .service.noise.one,  duration: "2m" }
+          - { targets: .service.noise.one,  duration: "2m" }
         schedule:
           conditions:
             metrics: "avg() of query(wpFnYRwGk/2/bitrate, 5m, now) is below(500)"

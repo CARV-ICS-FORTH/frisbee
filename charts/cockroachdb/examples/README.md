@@ -137,7 +137,161 @@ https://github.com/cockroachdb/cockroach/blob/master/pkg/cmd/roachtest/tests/sst
 
 #### Observations
 
-1) Xargs is missing. We need to add it manually
-2) Some SSTs have peculiar names which cause dd to fail
-   \xb4\xb6"/0/1651588517.218867146,0#31483,SET]   
-   Corrupt \xb4\xb6"/0/1651588517.218867146,0#31483,SET].sst
+1. Xargs is missing. We need to add it manually
+
+2. The import blocks unless all servers are started
+
+    1) The roachtest makes use of c.Start() and c.StartE().
+    2) But If I try to "init" the cluster twice I get an error message.
+
+3. Some SSTs have peculiar names which cause dd to fail
+
+   > \xb4\xb6"/0/1651588517.218867146,0#31483,SET]   
+   > Corrupt \xb4\xb6"/0/1651588517.218867146,0#31483,SET].sst
+
+![image-20220518160002401](README.assets/image-20220518160002401.png)
+
+4. Cockroach detects and bitrot and panics with error
+
+   > * ERROR: [n3] a panic has occurred!
+   >
+   > \* panic: must not be holding latches
+   >
+   > \* (1) attached stack trace
+   >
+   > ...
+   >
+   > \* Wraps: (2) forced error mark
+   >
+   > * | "pebble: corruption"
+
+### 11. Network
+
+Replicate roachtest from
+https://github.com/cockroachdb/cockroach/blob/release-21.2/pkg/cmd/roachtest/tests/network.go#L100
+
+#### Baseline
+
+***TO* network partition** (masters-0 -> masters-1, masters-2, masters-3)
+
+| TCP  (from / to) | masters-0  | masters-1      | masters-2      |
+| ---------------- | ---------- | -------------- | -------------- |
+| masters-0        | **Yes**    | **No** (stall) | **No** (stall) |
+| masters-1        | No (stall) | Yes            | Yes            |
+| masters-2        | No (stall) | Yes            | Yes            |
+
+| UDP  (from / to) | masters-0       | masters-1 | masters-2 |
+| ---------------- | --------------- | --------- | --------- |
+| masters-0        | **Yes**         | **YES**   | **Yes**   |
+| masters-1        | No (**denied**) | Yes       | Yes       |
+| masters-2        | No (**denied**) | Yes       | Yes       |
+
+1. Localhost is always reachable for both public and localhost IPs.
+2. Egress TCP from masters-0 is feasible, but the ACK is blocked from ingress rule, and the connection is stalled
+3. Normally the connections are stalled. However, UDP from masters-1/2 to masters-0 fails with a "permissioned denied"
+   error.
+
+***BOTH* network partition** (masters-0 -> masters-1, masters-2, masters-3)
+
+| TCP  (from / to) | masters-0  | masters-1  | masters-2  |
+| ---------------- | ---------- | ---------- | ---------- |
+| masters-0        | Yes        | No (stall) | No (stall) |
+| masters-1        | No (stall) | Yes        | Yes        |
+| masters-2        | No (stall) | Yes        | Yes        |
+
+| UDP  (from / to) | masters-0   | masters-1       | masters-2       |
+| ---------------- | ----------- | --------------- | --------------- |
+| masters-0        | **Yes**     | No (**denied**) | No (**denied**) |
+| masters-1        | No (denied) | Yes             | Yes             |
+| masters-2        | No (denied) | Yes             | Yes             |
+
+1. Like before, with the exception that UDP traffic does not go through
+
+#### Observations
+
+##### 1. PGURL
+
+There is an issue with the pgurl format. For the rest of the experiment we continue without it.
+
+> [root@masters-2 cockroach]# ./cockroach workload run tpcc --init --warehouses=1 --duration=1m {pgurl:2-4}
+> Error: parse "{pgurl:2-4}": first path segment in URL cannot contain colon
+
+##### 2. Live node account
+
+​ During the partition, the reported number of nodes is 0.
+
+* If the partition starts after the workload, it recovers when the partition is reparied
+* Otherwise, it remains 0
+
+![img](https://lh6.googleusercontent.com/X9rqdUvlJ2aFuiXfG3DtXherMy6KsnePLwoZxuJ8ZtOuvo1ioJylgC-ceL89ireRIVINj8-BbRhiD4VbAAJZQJ92E0yvtr-6WmwnWgh3Ef-PRkxQXLFZBg5eogUYeihf8-wNpPlxuzqXg3IxVmuvVA)
+
+![image-20220518232404304](README.assets/image-20220518232404304.png)
+
+##### 3. System failure
+
+**Sub-Scenario:** Connectivity when applying ***BOTH*** network partition **(workload -> sleep 3m -> partition)**
+
+1. For 3 minutes prior to partition everything works normal
+2. When the partition kicks-in the workload fails with the following messages
+
+> workload/pgx_helpers.go:72  [-] 492 pgx logger [error]: Exec logParams=map[args:[] err:ERROR: result is ambiguous (
+> error=rpc error: code
+> = Unavailable desc = error reading from server: EOF [propagate]) (SQLSTATE 40003) sql:RELEASE SAVEPOINT
+> cockroach_restart]\r\nI220518 19:21:15.045714 167 workload
+> /pgx_helpers.go:72  [-] 493 pgx logger [error]: Query logParams=map[args:[0 3 272] err:ERROR: restart transaction:
+> TransactionRetryWithProtoRefreshError: Transac
+> tionAbortedError(ABORT_REASON_CLIENT_REJECT): \"sql txn\
+
+##### 4. Scenario: Connectivity when applying ***TO*** network partition (workload -> sleep 3m -> partition)
+
+Overall routines
+
+![image-20220518214040510](README.assets/image-20220518214040510.png)
+
+Masters-0 (Isolated node)
+
+![image-20220518220001192](README.assets/image-20220518220001192.png)
+
+Masters-3 (Workload node)
+
+![image-20220518220031792](README.assets/image-20220518220031792.png)
+
+Masters-2 (Random replicated node)
+
+![image-20220518220211253](README.assets/image-20220518220211253.png)
+
+##### 5. Scenario: Connectivity when applying ***BOTH*** network partition (partition -> sleep 3m -> workload)
+
+Overall routines
+
+![image-20220518224009046](README.assets/image-20220518224009046.png)
+
+Masters-0 (Isolated node)
+
+![image-20220518224033734](README.assets/image-20220518224033734.png)
+
+Masters-3 (Workload node)
+
+![image-20220518224056253](README.assets/image-20220518224056253.png)
+
+Masters-2 (Random replicated node)
+
+![image-20220518224131608](README.assets/image-20220518224131608.png)
+
+##### 6. Scenario: Connectivity when applying ***TO*** network partition (partition -> sleep 3m -> workload)
+
+Overall routines
+
+![image-20220518232122549](README.assets/image-20220518232122549.png)
+
+Masters-0 (Isolated node)
+
+![image-20220518232148767](README.assets/image-20220518232148767.png)
+
+Masters-3 (Workload node)
+
+![image-20220518232314983](README.assets/image-20220518232314983.png)
+
+Masters-2 (Random replicated node)
+
+![image-20220518232341230](README.assets/image-20220518232341230.png)
