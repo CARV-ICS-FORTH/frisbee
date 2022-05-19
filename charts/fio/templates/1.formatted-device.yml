@@ -30,7 +30,7 @@ spec:
       - name: app
         image: xridge/fio
         volumeMounts:
-          - name:  local-fs
+          - name: local-fs
             mountPath: /testdata
         command:
           - /bin/sh # Run shell

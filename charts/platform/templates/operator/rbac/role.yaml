@@ -4,7 +4,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   creationTimestamp: null
-  name: manager-role
+  name: frisbee
 rules:
 - apiGroups:
   - chaos-mesh.org
@@ -368,6 +368,32 @@ rules:
   - frisbee.io
   resources:
   - virtualobjects/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - storage.k8s.io
+  resources:
+  - storageclasses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - storage.k8s.io
+  resources:
+  - storageclasses/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - storage.k8s.io
+  resources:
+  - storageclasses/status
   verbs:
   - get
   - patch

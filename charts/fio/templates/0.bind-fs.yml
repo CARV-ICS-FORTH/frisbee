@@ -30,7 +30,7 @@ spec:
       - name: app
         image: xridge/fio
         volumeMounts:
-          - name:  bind-fs
+          - name: bind-fs
             mountPath: /testdata
         command:
           - /bin/sh # Run shell

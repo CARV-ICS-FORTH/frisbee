@@ -30,7 +30,7 @@ spec:
         callable: import-tpcc
         services: [ masters-0 ]
 
-    # Step 3. find 6 random SST files on each node (abort if node has fewer)
+    # Step 3. corrupt 6 random SST files on each node (abort if node has fewer)
     - action: Call
       name: bitrot
       depends: { success: [ import-workload ] }

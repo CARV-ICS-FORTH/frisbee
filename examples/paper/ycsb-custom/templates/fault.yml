@@ -12,5 +12,5 @@ spec:
   chaos:
     type: partition
     partition:
-      service: {{"{{.Inputs.Parameters.target}}" | quote}}
-      duration: {{"{{.Inputs.Parameters.duration}}" | quote}}
+      service: {{"{{.Inputs.Parameters.target}}"}}
+      duration: {{"{{.Inputs.Parameters.duration}}"}}

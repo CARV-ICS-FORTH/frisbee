@@ -1,0 +1,54 @@
+---
+apiVersion: frisbee.io/v1alpha1
+kind: Template
+metadata:
+  name: fl.quickstart.client
+spec:
+  inputs:
+    parameters:
+      server: "127.0.0.1"
+      claimName: ""
+
+  service:
+    decorators:
+      telemetry:
+        - platform.telemetry.container
+
+    volumes:
+      - name: dataset
+        persistentVolumeClaim:
+          claimName: {{"{{.Inputs.Parameters.claimName}}" | quote}}
+
+    containers:
+      - name: app
+        image: icsforth/fl-demo:latest
+        volumeMounts:
+          - name: dataset
+            mountPath: /dataset
+            readOnly: true
+        command:
+          - /bin/sh # Run shell
+          - -c # Read from string
+          - |  # Multi-line str
+            set -eum
+            trap "touch /dev/shm/stop" EXIT
+
+            # Copy the media dataset into the local directory for processing. We use copy in order to avoid sending the
+            # I/O through the shared media.
+            sleep 3600
+
+            # cp -r /dataset
+
+
+            export FL_SERVER={{"{{.Inputs.Parameters.server}}"}}
+
+            # The clients are  supposed to be continuously running.
+            # If the training is stopped, the clients will report “Disconnect and shut down” on the logs,
+            # but they will keep running. To this end, we terminate the process upon the given message.
+
+            python3 client.py &> "/tmp/flower.log" &
+            processnumber=$!
+
+            tail -F "/tmp/flower.log" | awk  '/Disconnect and shut down/ { system("kill '$processnumber'") }'
+
+            sleep 3600

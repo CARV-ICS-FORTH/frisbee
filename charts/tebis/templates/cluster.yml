@@ -87,7 +87,7 @@ spec:
       telemetry: [ platform.telemetry.container ]
       setFields:
         - field: Containers.0.Ports.0.ContainerPort
-          value: {{"{{.Inputs.Parameters.port | int}}" | quote}}
+          value: {{"{{.Inputs.Parameters.port | int}}"}}
     containers:
       - name: app
         image: icsforth/tebis-node:latest

@@ -23,8 +23,8 @@ spec:
         - platform.telemetry.container
         - ycsb.telemetry.client
       resources:
-        cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
-        memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
+        cpu: {{"{{.Inputs.Parameters.cpu}}"}}
+        memory: {{"{{.Inputs.Parameters.memory}}"}}
         #annotations:
         #"grafana.frisbee.io/draw": "range"
 
@@ -77,8 +77,8 @@ spec:
         - platform.telemetry.container
         - ycsb.telemetry.client
       resources: # Resources
-        cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
-        memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
+        cpu: {{"{{.Inputs.Parameters.cpu}}"}}
+        memory: {{"{{.Inputs.Parameters.memory}}"}}
         #annotations:
         #"grafana.frisbee.io/draw": "range"
 

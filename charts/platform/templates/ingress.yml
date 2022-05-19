@@ -1,0 +1,65 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: insecure-ingress
+spec:
+  rules:
+    - host: prometheus-frisbee.{{.Values.global.ingress}}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: prometheus
+                port:
+                  number: {{.Values.telemetry.prometheusPort}}
+
+    - host: grafana-frisbee.{{.Values.global.ingress}}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: grafana
+                port:
+                  number: {{.Values.telemetry.grafanaPort}}
+
+    {{- if .Values.chaos.enabled }}
+    - host: chaos-frisbee.{{.Values.global.ingress}}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: chaos-dashboard
+                port:
+                  number: 2333
+    {{- end}}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: secure-ingress
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+spec:
+  rules:
+    {{- if .Values.dashboard.enabled}}
+    - host: dashboard-frisbee.{{.Values.global.ingress}}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{.Release.Name}}-kubernetes-dashboard
+                port:
+                  number: 443
+    {{- end}}

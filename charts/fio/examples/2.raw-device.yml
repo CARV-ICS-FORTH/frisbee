@@ -10,4 +10,4 @@ spec:
       service:
         templateRef: fio.benchmark.raw-device
         inputs:
-          - { direct: "0"}
+          - { direct: "0" }

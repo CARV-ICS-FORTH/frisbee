@@ -14,11 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package utils
+package testplan
 
 import (
 	"context"
 
+	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
+	"github.com/carv-ics-forth/frisbee/controllers/utils"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -27,45 +29,22 @@ import (
 
 const (
 	// PlatformConfiguration points to a configmap that maintain information about the installation.
-	PlatformConfiguration = "platform"
+	PlatformConfiguration = "configuration.frisbee.io"
 )
 
-var DefaultConfiguration Configuration
-
-type Configuration struct {
-	GrafanaEndpoint string
-
-	PrometheusEndpoint string
-
-	AdvertisedHost string
-}
-
-func UseDefaultPlatformConfiguration(ctx context.Context, r Reconciler, namespace string) error {
-	cfg, err := GetPlatformConfiguration(ctx, r, namespace)
-	if err != nil {
-		return err
-	}
-
-	DefaultConfiguration = cfg
-
-	return nil
-}
-
-// GetPlatformConfiguration loads the platform configuration.
+// UsePlatformConfiguration loads the platform configuration.
 // The configuration must be pre-installed in the platform-configuration config map. (see chart/platform).
-func GetPlatformConfiguration(ctx context.Context, r Reconciler, namespace string) (Configuration, error) {
+func UsePlatformConfiguration(ctx context.Context, r utils.Reconciler, plan *v1alpha1.TestPlan) error {
 	var config corev1.ConfigMap
 
 	key := client.ObjectKey{
-		Namespace: namespace,
+		Namespace: plan.GetNamespace(),
 		Name:      PlatformConfiguration,
 	}
 
 	if err := r.GetClient().Get(ctx, key, &config); err != nil {
-		return Configuration{}, errors.Wrapf(err, "cannot get configuration")
+		return errors.Wrapf(err, "cannot get configuration")
 	}
-
-	var cfg Configuration
 
 	decoderConfig := &mapstructure.DecoderConfig{
 		DecodeHook:       nil,
@@ -74,18 +53,28 @@ func GetPlatformConfiguration(ctx context.Context, r Reconciler, namespace strin
 		WeaklyTypedInput: true,
 		Squash:           false,
 		Metadata:         nil,
-		Result:           &cfg,
+		Result:           &plan.Status.Configuration,
 		TagName:          "",
 	}
 
 	decoder, err := mapstructure.NewDecoder(decoderConfig)
 	if err != nil {
-		return Configuration{}, errors.Wrapf(err, "cannot create decoder")
+		return errors.Wrapf(err, "cannot create decoder")
 	}
 
 	if err := decoder.Decode(config.Data); err != nil {
-		return Configuration{}, errors.Wrapf(err, "decoding error")
+		return errors.Wrapf(err, "decoding error")
 	}
 
-	return cfg, nil
+	/* Inherit the metadata of the configuration. This is used to automatically delete and remove the
+	resources if the configuration is deleted */
+	utils.AppendLabels(plan, config.GetLabels())
+	utils.AppendAnnotations(plan, config.GetAnnotations())
+
+	r.Info("Set configuration parameters",
+		"source", PlatformConfiguration,
+		"parameters", plan.Status.Configuration,
+	)
+
+	return nil
 }

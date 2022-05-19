@@ -2,7 +2,7 @@
 apiVersion: frisbee.io/v1alpha1
 kind: TestPlan
 metadata:
-  name: no-faults-standalone
+  name: scaled-baseline
 spec:
   actions:
     # Create a Flower server
@@ -16,7 +16,7 @@ spec:
       depends: { running: [ server ] }
       name: clients
       cluster:
-        instances: 3
+        instances: 10
         templateRef: fl.quickstart.client
         inputs:
           - { server: server }

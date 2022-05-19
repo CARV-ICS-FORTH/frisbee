@@ -4,10 +4,6 @@
 ##
 ## @param global.ingress DNS name for making Telemetry stack accessible outside the cluster.
 global:
-  ## E.g.
-  ## ingress:
-  ##   - localhost
-  ##   - platform.science-hangar.eu
   ingress: localhost
 
 
@@ -82,7 +78,7 @@ sonarqube:
   enabled: false
 
     # Ignore  deployment taints, if any.
-    #tolerations:
+  #tolerations:
   #  - key: "sonarqube"
   #    operator: "Equal"
   #    value: "true"
@@ -105,7 +101,7 @@ sonarqube:
       #hosts:
       #  - name: sonarqube.{{.Values.global.ingress}}
       # Different clouds or configurations might need /* as the default path
-      #    path: /
+    #    path: /
     # For additional control over serviceName and servicePort
     #   serviceName: sonarqube
     # servicePort: 9000
@@ -122,3 +118,7 @@ sonarqube:
   #  config:
   #    rules:
   #      - pattern: ".*"
+
+
+dashboard:
+  enabled: true

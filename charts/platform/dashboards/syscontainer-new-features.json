@@ -87,7 +87,7 @@
   "gnetId": 315,
   "graphTooltip": 0,
   "id": 1,
-  "iteration": 1652719487235,
+  "iteration": 1652975636976,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -253,7 +253,7 @@
           "interval": "",
           "intervalFactor": 1,
           "legendFormat": "",
-          "refId": "A",
+          "refId": "memory",
           "step": 10
         }
       ],
@@ -326,14 +326,14 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(max (container_fs_limit_bytes{device=~\"^(^$)|(overlay.*)|(/dev/[nsx][v][bdm][a-z].+)$\",id=\"/\"}) by (node))",
+          "expr": "sum(max (container_fs_limit_bytes{id=\"/\",device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[nsx][v][bdm][a-z].+)$\"}) by (node)) != 0",
           "format": "time_series",
           "hide": false,
           "instant": true,
           "interval": "",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "",
-          "refId": "A",
+          "refId": "total",
           "step": 10
         }
       ],
@@ -624,7 +624,7 @@
           "interval": "",
           "intervalFactor": 1,
           "legendFormat": "",
-          "refId": "A",
+          "refId": "cores",
           "step": 10
         }
       ],
@@ -699,7 +699,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(max (container_fs_usage_bytes{device=~\"^(^$)|(overlay.*)|(/dev/[nsx][v][bdm][a-z].+)$\",id=\"/\"}) by (node))",
+          "expr": "sum(max (container_fs_usage_bytes{id=\"/\",device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[nsx][v][bdm][a-z].+)$\"}) by (node))",
           "instant": true,
           "interval": "",
           "intervalFactor": 1,
@@ -742,7 +742,7 @@
       "targets": [
         {
           "exemplar": false,
-          "expr": "container_memory_usage_bytes{node=\"$node\"}",
+          "expr": "container_memory_usage_bytes{node=~\"$node\"}",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -753,7 +753,7 @@
         },
         {
           "exemplar": true,
-          "expr": "sum(container_spec_memory_limit_bytes{node=\"$node\"} - container_memory_usage_bytes{node=\"$node\"}) by (instance) ",
+          "expr": "sum(container_spec_memory_limit_bytes{node=~\"$node\"} - container_memory_usage_bytes{node=~\"$node\"}) by (instance) ",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -862,12 +862,12 @@
           "interval": "",
           "intervalFactor": 1,
           "legendFormat": "",
-          "refId": "Used"
+          "refId": "active"
         }
       ],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Placement Table",
+      "title": "Active Services",
       "transformations": [
         {
           "id": "organize",
@@ -898,41 +898,8 @@
       },
       "id": 56,
       "panels": [],
-      "repeat": "node",
       "title": "Node Overview ($node)",
       "type": "row"
-    },
-    {
-      "datasource": null,
-      "gridPos": {
-        "h": 2,
-        "w": 24,
-        "x": 0,
-        "y": 14
-      },
-      "id": 50,
-      "options": {
-        "content": "<h1><i><font color=#5991A7><b><center>Data for </font><font color=#e68a00>$node</font> <font color=#5991A7> </center></b></font></i></h1>",
-        "mode": "markdown"
-      },
-      "pluginVersion": "8.2.3",
-      "targets": [
-        {
-          "exemplar": false,
-          "expr": "max(container_memory_usage_bytes) by (node)",
-          "format": "time_series",
-          "hide": false,
-          "instant": true,
-          "interval": "",
-          "intervalFactor": 1,
-          "legendFormat": "{{node}}",
-          "refId": "Used"
-        }
-      ],
-      "timeFrom": null,
-      "timeShift": null,
-      "transformations": [],
-      "type": "text"
     },
     {
       "datasource": "Prometheus",
@@ -969,7 +936,7 @@
         "h": 6,
         "w": 6,
         "x": 0,
-        "y": 16
+        "y": 14
       },
       "id": 67,
       "links": [],
@@ -990,11 +957,11 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(process_resident_memory_bytes{node=~\"^$node$\"}) / sum(max (machine_memory_bytes{node=~\"^$node$\"})) * 100",
+          "expr": "sum(process_resident_memory_bytes{node=~\"$node\"}) / max (machine_memory_bytes{node=~\"$node\"}) * 100",
           "hide": false,
           "interval": "",
           "legendFormat": "",
-          "refId": "A"
+          "refId": "usage"
         }
       ],
       "timeFrom": null,
@@ -1037,7 +1004,7 @@
         "h": 6,
         "w": 6,
         "x": 6,
-        "y": 16
+        "y": 14
       },
       "id": 85,
       "links": [],
@@ -1058,16 +1025,16 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(rate(container_cpu_usage_seconds_total{node=~\"^$node$\", id=\"/\"}[$__rate_interval])) / sum(max (machine_cpu_cores{node=~\"^$node$\"})) * 100",
+          "expr": "sum(rate(container_cpu_usage_seconds_total{node=~\"$node\", id=\"/\"}[$__rate_interval])) / max (machine_cpu_cores{node=~\"$node\"}) * 100",
           "hide": false,
           "interval": "",
           "legendFormat": "",
-          "refId": "C"
+          "refId": "usage"
         }
       ],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Node CPU  usage ($__rate_interval average)",
+      "title": "Node CPU  usage ",
       "type": "gauge"
     },
     {
@@ -1105,7 +1072,7 @@
         "h": 6,
         "w": 6,
         "x": 12,
-        "y": 16
+        "y": 14
       },
       "id": 89,
       "links": [],
@@ -1126,7 +1093,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "max (container_fs_usage_bytes{device=~\"^(^$)|(overlay.*)|(/dev/[nsx][v][bdm][a-z].+)$\",id=\"/\",node=\"$node\"}) / max (container_fs_limit_bytes{device=~\"^(^$)|(overlay.*)|(/dev/[nsx][v][bdm][a-z].+)$\",id=\"/\",node=\"$node\"}) * 100",
+          "expr": "max (container_fs_usage_bytes{node=~\"$node\",id=\"/\",device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[nsx][v][bdm][a-z].+)$\"}) / max (container_fs_limit_bytes{node=~\"$node\",id=\"/\",device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[nsx][v][bdm][a-z].+)$\"}) * 100",
           "hide": false,
           "interval": "",
           "legendFormat": "",
@@ -1167,7 +1134,7 @@
         "h": 3,
         "w": 3,
         "x": 18,
-        "y": 16
+        "y": 14
       },
       "id": 86,
       "links": [],
@@ -1235,7 +1202,7 @@
         "h": 3,
         "w": 3,
         "x": 0,
-        "y": 22
+        "y": 20
       },
       "id": 92,
       "links": [],
@@ -1258,7 +1225,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(process_resident_memory_bytes{node=~\"^$node$\"})",
+          "expr": "sum(process_resident_memory_bytes{node=~\"$node\"})",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -1301,7 +1268,7 @@
         "h": 3,
         "w": 3,
         "x": 3,
-        "y": 22
+        "y": 20
       },
       "id": 84,
       "links": [],
@@ -1324,7 +1291,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(max (machine_memory_bytes{node=~\"^$node$\"}))",
+          "expr": "sum(max (machine_memory_bytes{node=~\"$node\"}))",
           "hide": false,
           "interval": "",
           "legendFormat": "",
@@ -1366,7 +1333,7 @@
         "h": 3,
         "w": 3,
         "x": 6,
-        "y": 22
+        "y": 20
       },
       "id": 87,
       "links": [],
@@ -1389,7 +1356,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(rate(container_cpu_usage_seconds_total{node=~\"^$node$\", id=\"/\"}[$__rate_interval]))",
+          "expr": "sum(rate(container_cpu_usage_seconds_total{node=~\"$node\", id=\"/\"}[$__rate_interval]))",
           "hide": false,
           "interval": "",
           "legendFormat": "",
@@ -1430,7 +1397,7 @@
         "h": 3,
         "w": 3,
         "x": 9,
-        "y": 22
+        "y": 20
       },
       "id": 88,
       "links": [],
@@ -1453,7 +1420,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(max (machine_cpu_cores{node=~\"^$node$\"}))",
+          "expr": "sum(max (machine_cpu_cores{node=~\"$node\"}))",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -1497,7 +1464,7 @@
         "h": 3,
         "w": 3,
         "x": 12,
-        "y": 22
+        "y": 20
       },
       "id": 90,
       "links": [],
@@ -1520,7 +1487,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(max(container_fs_usage_bytes{device=~\"^(^$)|(overlay.*)|(/dev/[nsx][v][bdm][a-z].+)$\",id=\"/\",node=\"$node\"}) by (instance))",
+          "expr": "sum(max(container_fs_usage_bytes{node=~\"$node\",id=\"/\",device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[nsx][v][bdm][a-z].+)$\"}) by (instance))",
           "hide": false,
           "interval": "",
           "legendFormat": "",
@@ -1562,7 +1529,7 @@
         "h": 3,
         "w": 3,
         "x": 15,
-        "y": 22
+        "y": 20
       },
       "id": 91,
       "links": [],
@@ -1585,7 +1552,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(max by (device) (container_fs_limit_bytes{device=~\"^(^$)|(overlay.*)|(/dev/[nsx][v][bdm][a-z].+)$\",id=\"/\",node=\"$node\"}))",
+          "expr": "sum(max by (device) (container_fs_limit_bytes{node=~\"$node\",id=\"/\",device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[nsx][v][bdm][a-z].+)$\"}))",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -1598,6 +1565,38 @@
       "timeShift": null,
       "title": "Total",
       "type": "stat"
+    },
+    {
+      "datasource": null,
+      "gridPos": {
+        "h": 2,
+        "w": 24,
+        "x": 0,
+        "y": 23
+      },
+      "id": 50,
+      "options": {
+        "content": "<h1><i><font color=#5991A7><b><center>CPU metrics for </font><font color=#e68a00>$node</font> <font color=#5991A7> </center></b></font></i></h1>",
+        "mode": "markdown"
+      },
+      "pluginVersion": "8.2.3",
+      "targets": [
+        {
+          "exemplar": false,
+          "expr": "max(container_memory_usage_bytes) by (node)",
+          "format": "time_series",
+          "hide": false,
+          "instant": true,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "{{node}}",
+          "refId": "Used"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "transformations": [],
+      "type": "text"
     },
     {
       "datasource": null,
@@ -1628,7 +1627,7 @@
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "always",
+            "showPoints": "auto",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -1680,7 +1679,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "rate(container_cpu_usage_seconds_total{node=~\"$node\", id=\"/\"}[$__rate_interval])",
+          "expr": "rate(container_cpu_usage_seconds_total{node=~\"$node\", id=\"/\", instance=~\"$instance\"}[$__rate_interval]) != 0",
           "hide": false,
           "interval": "",
           "legendFormat": "{{instance}}",
@@ -1721,7 +1720,7 @@
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "always",
+            "showPoints": "auto",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -1773,7 +1772,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "rate(container_cpu_system_seconds_total{node=~\"$node\", id=\"/\"}[$__rate_interval])",
+          "expr": "rate(container_cpu_system_seconds_total{node=~\"$node\", id=\"/\", instance=~\"$instance\"}[$__rate_interval]) != 0",
           "hide": false,
           "instant": false,
           "interval": "",
@@ -1782,12 +1781,12 @@
         },
         {
           "exemplar": true,
-          "expr": "rate(container_cpu_user_seconds_total{node=~\"$node\", id=\"/\"}[$__rate_interval])",
+          "expr": "rate(container_cpu_user_seconds_total{node=~\"$node\", id=\"/\", instance=~\"$instance\"}[$__rate_interval]) != 0",
           "hide": false,
           "instant": false,
           "interval": "",
           "legendFormat": "{{instance}} (Userspace)",
-          "refId": "A"
+          "refId": "userspace"
         }
       ],
       "timeFrom": null,
@@ -1796,8 +1795,40 @@
       "type": "timeseries"
     },
     {
+      "datasource": null,
+      "gridPos": {
+        "h": 2,
+        "w": 24,
+        "x": 0,
+        "y": 43
+      },
+      "id": 119,
+      "options": {
+        "content": "<h1><i><font color=#5991A7><b><center>Memory metrics for </font><font color=#e68a00>$node</font> <font color=#5991A7> </center></b></font></i></h1>",
+        "mode": "markdown"
+      },
+      "pluginVersion": "8.2.3",
+      "targets": [
+        {
+          "exemplar": false,
+          "expr": "max(container_memory_usage_bytes) by (node)",
+          "format": "time_series",
+          "hide": false,
+          "instant": true,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "{{node}}",
+          "refId": "Used"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "transformations": [],
+      "type": "text"
+    },
+    {
       "datasource": "Prometheus",
-      "description": "",
+      "description": "Current memory usage, this includes all memory regardless of when it was accessed.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1821,7 +1852,7 @@
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "always",
+            "showPoints": "auto",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -1853,7 +1884,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 43
+        "y": 45
       },
       "id": 109,
       "links": [],
@@ -1874,8 +1905,8 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum (container_spec_memory_limit_bytes{node=~\"^$node$\", id=\"/\"}) by (instance)",
-          "hide": false,
+          "expr": "sum (container_spec_memory_limit_bytes{node=~\"$node\", id=\"/\", instance=~\"$instance\"}) by (instance) != 0",
+          "hide": true,
           "instant": false,
           "interval": "",
           "legendFormat": "{{instance}} (Limit)",
@@ -1883,13 +1914,13 @@
         },
         {
           "exemplar": true,
-          "expr": "sum (container_memory_usage_bytes{node=~\"^$node$\", id=\"/\"}) by (instance)",
+          "expr": "sum (container_memory_usage_bytes{node=~\"$node\", id=\"/\", instance=~\"$instance\"}) by (instance) != 0",
           "hide": false,
           "instant": false,
           "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "{{instance}} (Total)",
-          "refId": "total"
+          "legendFormat": "{{instance}} (Used)",
+          "refId": "virtual"
         }
       ],
       "timeFrom": null,
@@ -1899,7 +1930,7 @@
     },
     {
       "datasource": "Prometheus",
-      "description": "",
+      "description": "hot:  The amount of working set memory, this includes recently accessed memory,  dirty memory, and kernel memory. \n\nswap: The amount of swap currently used by the processes in this cgroup\nmmap: \tThe amount of memory used for mapped files (includes tmpfs/shmem)\n\ncache:  Number of bytes of page cache memory.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1923,7 +1954,7 @@
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "always",
+            "showPoints": "auto",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -1955,7 +1986,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 51
+        "y": 53
       },
       "id": 112,
       "links": [],
@@ -1976,7 +2007,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": " sum (container_memory_working_set_bytes{node=~\"^$node$\", id=\"/\"}) by (instance)",
+          "expr": " sum (container_memory_working_set_bytes{node=~\"$node\", id=\"/\", instance=~\"$instance\"}) by (instance) != 0",
           "hide": false,
           "interval": "",
           "legendFormat": "{{instance}} (Hot)",
@@ -1984,7 +2015,7 @@
         },
         {
           "exemplar": true,
-          "expr": "sum (container_memory_mapped_file{node=~\"^$node$\", id=\"/\"}) by (instance)",
+          "expr": "sum (container_memory_mapped_file{node=~\"$node\", id=\"/\", instance=~\"$instance\"}) by (instance) != 0",
           "hide": false,
           "interval": "",
           "legendFormat": "{{instance}} (Mmap)",
@@ -1992,11 +2023,19 @@
         },
         {
           "exemplar": true,
-          "expr": "sum (container_memory_cache{node=~\"^$node$\", id=\"/\"}) by (instance) ",
+          "expr": "sum (container_memory_cache{node=~\"$node\", id=\"/\", instance=~\"$instance\"}) by (instance) != 0",
           "hide": false,
           "interval": "",
           "legendFormat": "{{instance}} (Cache)",
           "refId": "cache"
+        },
+        {
+          "exemplar": true,
+          "expr": "sum (container_memory_swap{node=~\"$node\", id=\"/\", instance=~\"$instance\"}) by (instance) != 0",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "{{instance}} (Swap)",
+          "refId": "swap"
         }
       ],
       "timeFrom": null,
@@ -2030,7 +2069,7 @@
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "always",
+            "showPoints": "auto",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -2062,7 +2101,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 59
+        "y": 61
       },
       "id": 106,
       "links": [],
@@ -2083,12 +2122,12 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum (rate(container_memory_failures_total{node=~\"^$node$\", id=\"/\", failure_type=\"pgfault\"}[$__rate_interval])) by (instance)",
+          "expr": "sum (rate(container_memory_failures_total{node=~\"^$node$\", id=\"/\", instance=~\"$instance\", failure_type=\"pgfault\"}[$__rate_interval])) by (instance) != 0",
           "hide": false,
           "interval": "",
-          "intervalFactor": 2,
-          "legendFormat": "{{instance}}",
-          "refId": "in-mem"
+          "intervalFactor": 1,
+          "legendFormat": "{{instance}} ",
+          "refId": "pgfaults"
         }
       ],
       "timeFrom": null,
@@ -2097,7 +2136,40 @@
       "type": "timeseries"
     },
     {
+      "datasource": null,
+      "gridPos": {
+        "h": 2,
+        "w": 24,
+        "x": 0,
+        "y": 69
+      },
+      "id": 120,
+      "options": {
+        "content": "<h1><i><font color=#5991A7><b><center>FS I/O metrics for </font><font color=#e68a00>$node</font> <font color=#5991A7> </center></b></font></i></h1>",
+        "mode": "markdown"
+      },
+      "pluginVersion": "8.2.3",
+      "targets": [
+        {
+          "exemplar": false,
+          "expr": "max(container_memory_usage_bytes) by (node)",
+          "format": "time_series",
+          "hide": false,
+          "instant": true,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "{{node}}",
+          "refId": "Used"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "transformations": [],
+      "type": "text"
+    },
+    {
       "datasource": "Prometheus",
+      "description": "This value counts the number of I/O requests that have been issued to the device driver but have not yet completed. It does not include I/O requests that are in the queue but not yet issued to the device driver",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2121,112 +2193,7 @@
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "always",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "decbytes"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 11,
-        "w": 24,
-        "x": 0,
-        "y": 67
-      },
-      "id": 114,
-      "links": [],
-      "options": {
-        "legend": {
-          "calcs": [
-            "mean",
-            "lastNotNull"
-          ],
-          "displayMode": "table",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "single"
-        }
-      },
-      "pluginVersion": "8.2.1",
-      "targets": [
-        {
-          "exemplar": true,
-          "expr": "sum(rate(container_fs_writes_bytes_total{device=~\"^(^$)|(overlay.*)|(/dev/[nsx][v][bdm][a-z].+)$\", node=\"$node\", id=\"/\"}[$__rate_interval])) by (instance) ",
-          "hide": false,
-          "interval": "",
-          "intervalFactor": 1,
-          "legendFormat": "{{instance}}  (Write)",
-          "refId": "write"
-        },
-        {
-          "exemplar": true,
-          "expr": "- sum(rate(container_fs_reads_bytes_total{device=~\"^(^$)|(overlay.*)|(/dev/[nsx][v][bdm][a-z].+)$\",node=\"$node\", id=\"/\"}[$__rate_interval])) by (instance) ",
-          "hide": false,
-          "instant": false,
-          "interval": "",
-          "intervalFactor": 1,
-          "legendFormat": "{{instance}} (Read)",
-          "refId": "read"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "FS Throughput",
-      "transformations": [],
-      "transparent": true,
-      "type": "timeseries"
-    },
-    {
-      "datasource": "Prometheus",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "log": 10,
-              "type": "log"
-            },
-            "showPoints": "always",
+            "showPoints": "auto",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -2258,7 +2225,555 @@
         "h": 11,
         "w": 24,
         "x": 0,
-        "y": 78
+        "y": 71
+      },
+      "id": 118,
+      "links": [],
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "pluginVersion": "8.2.1",
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "sum(rate(container_fs_io_current{ node=~\"$node\", id=\"/\", instance=~\"$instance\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[nsx][v][bdm][a-z].+)$\"}[$__rate_interval])) by (instance) != 0",
+          "hide": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "{{instance}}  (Write)",
+          "refId": "write"
+        },
+        {
+          "exemplar": true,
+          "expr": "- sum(rate(container_fs_io_current{node=~\"$node\", id=\"/\", instance=~\"$instance\",  device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[nsx][v][bdm][a-z].+)$\"}[$__rate_interval])) by (instance)  != 0",
+          "hide": false,
+          "instant": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "{{instance}} (Read)",
+          "refId": "read"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "IOPS In Progress",
+      "transformations": [],
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "io_time:\nThis value counts the number of milliseconds during which the device has had I/O requests queued.\n\nweighted_io_time:\nThis value counts the number of milliseconds that I/O requests have waited on this block device. If there are multiple I/O requests waiting, this value will increase as the product of the number of milliseconds times the number of requests waiting ",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 24,
+        "x": 0,
+        "y": 82
+      },
+      "id": 124,
+      "links": [],
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "pluginVersion": "8.2.1",
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "sum(rate(container_fs_io_time_seconds_total{ node=~\"$node\", id=\"/\", instance=~\"$instance\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[nsx][v][bdm][a-z].+)$\"}[$__rate_interval])) by (instance)  != 0",
+          "hide": true,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "{{instance}} (Rolling)",
+          "refId": "seconds"
+        },
+        {
+          "exemplar": true,
+          "expr": "sum(rate(container_fs_io_time_weighted_seconds_total{node=~\"$node\", id=\"/\", instance=~\"$instance\",  device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[nsx][v][bdm][a-z].+)$\"}[$__rate_interval])) by (instance)  != 0",
+          "hide": false,
+          "instant": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "{{instance}} (Weightened)",
+          "refId": "weightened"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "I/O Queue wait time",
+      "transformations": [],
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "read_time & write_time:\nThese values count the number of milliseconds that I/O requests have waited on this block device. If there are multiple I/O requests waiting, these values will increase at a rate greater than 1000/second; for example, if 60 read requests wait for an average of 30 ms, the read_time field will increase by 60*30 = 1800.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 24,
+        "x": 0,
+        "y": 93
+      },
+      "id": 121,
+      "links": [],
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "pluginVersion": "8.2.1",
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "sum(rate(container_fs_write_seconds_total{node=~\"$node\", id=\"/\", instance=~\"$instance\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[nsx][v][bdm][a-z].+)$\", }[$__rate_interval])) by (instance) != 0",
+          "hide": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "{{instance}}  (Write)",
+          "refId": "write"
+        },
+        {
+          "exemplar": true,
+          "expr": "- sum(rate(container_fs_read_seconds_total{node=~\"$node\", id=\"/\", instance=~\"$instance\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[nsx][v][bdm][a-z].+)$\",}[$__rate_interval])) by (instance)  != 0",
+          "hide": false,
+          "instant": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "{{instance}} (Read)",
+          "refId": "read"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "I/O Queue wait time Breakdown",
+      "transformations": [],
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "Reads and writes which are adjacent to each other may be merged for efficiency. Thus, two 4K reads may become one 8K read before it is ultimately handed to the disk, and so it will be counted (and queued) as only one I/O. These fields lets you know how often this was done.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": [
+          {
+            "__systemRef": "hideSeriesFrom",
+            "matcher": {
+              "id": "byNames",
+              "options": {
+                "mode": "exclude",
+                "names": [
+                  "clients-1  (Write)"
+                ],
+                "prefix": "All except:",
+                "readOnly": true
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": true
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 24,
+        "x": 0,
+        "y": 104
+      },
+      "id": 125,
+      "links": [],
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "pluginVersion": "8.2.1",
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "sum(rate(container_fs_writes_merged_total{node=~\"$node\", id=\"/\", instance=~\"$instance\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[nsx][v][bdm][a-z].+)$\", }[$__rate_interval])) by (instance) != 0",
+          "hide": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "{{instance}}  (Write)",
+          "refId": "write"
+        },
+        {
+          "exemplar": true,
+          "expr": "- sum(rate(container_fs_reads_merged_total{node=~\"$node\", id=\"/\", instance=~\"$instance\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[nsx][v][bdm][a-z].+)$\",}[$__rate_interval])) by (instance)  != 0",
+          "hide": false,
+          "instant": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "{{instance}} (Read)",
+          "refId": "read"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Merged I/O Operations",
+      "transformations": [],
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "decbytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 24,
+        "x": 0,
+        "y": 115
+      },
+      "id": 123,
+      "links": [],
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "pluginVersion": "8.2.1",
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "sum(rate(container_fs_writes_bytes_total{ node=~\"$node\", id=\"/\", instance=~\"$instance\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[nsx][v][bdm][a-z].+)$\"}[$__rate_interval])) by (instance) != 0",
+          "hide": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "{{instance}}  (Write)",
+          "refId": "write"
+        },
+        {
+          "exemplar": true,
+          "expr": "- sum(rate(container_fs_reads_bytes_total{node=~\"$node\", id=\"/\", instance=~\"$instance\",  device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[nsx][v][bdm][a-z].+)$\"}[$__rate_interval])) by (instance)  != 0",
+          "hide": false,
+          "instant": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "{{instance}} (Read)",
+          "refId": "read"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Accessed Bytes (Throughput)",
+      "transformations": [],
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 24,
+        "x": 0,
+        "y": 126
       },
       "id": 115,
       "links": [],
@@ -2279,7 +2794,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(rate(container_fs_writes_total{device=~\"^(^$)|(overlay.*)|(/dev/[nsx][v][bdm][a-z].+)$\", node=\"$node\", id=\"/\"}[$__rate_interval])) by (instance) ",
+          "expr": "sum(rate(container_fs_writes_total{node=~\"$node\", id=\"/\", instance=~\"$instance\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[nsx][v][bdm][a-z].+)$\"}[$__rate_interval])) by (instance) != 0",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -2289,7 +2804,7 @@
         },
         {
           "exemplar": true,
-          "expr": "sum(rate(container_fs_reads_total{device=~\"^(^$)|(overlay.*)|(/dev/[nsx][v][bdm][a-z].+)$\",node=\"$node\", id=\"/\"}[$__rate_interval])) by (instance) ",
+          "expr": "- sum(rate(container_fs_reads_total{node=~\"$node\", id=\"/\", instance=~\"$instance\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[nsx][v][bdm][a-z].+)$\"}[$__rate_interval])) by (instance) != 0",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -2302,7 +2817,112 @@
       "thresholds": [],
       "timeFrom": null,
       "timeShift": null,
-      "title": "FS Completed IOPS",
+      "title": "Completed Operations (IOPS)",
+      "transformations": [],
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "Contains the number of 512-bytes sectors read and written by the processes member of the cgroup, device by device. Reads and writes are merged in a single counter.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "decbytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 24,
+        "x": 0,
+        "y": 137
+      },
+      "id": 114,
+      "links": [],
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "pluginVersion": "8.2.1",
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "sum(rate(container_fs_sector_writes_total{node=~\"$node\", id=\"/\", instance=~\"$instance\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[nsx][v][bdm][a-z].+)$\", }[$__rate_interval])) by (instance)  != 0",
+          "hide": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "{{instance}}  (Write)",
+          "refId": "write"
+        },
+        {
+          "exemplar": true,
+          "expr": "- sum(rate(container_fs_sector_reads_total{node=~\"$node\", id=\"/\", instance=~\"$instance\", device=~\"^(^$)|(overlay.*)|(/dev/mapper.*)|(/dev/[nsx][v][bdm][a-z].+)$\",}[$__rate_interval])) by (instance)  != 0",
+          "hide": false,
+          "instant": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "{{instance}} (Read)",
+          "refId": "read"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Sectors",
       "transformations": [],
       "transparent": true,
       "type": "timeseries"
@@ -2328,7 +2948,7 @@
             },
             "lineInterpolation": "stepBefore",
             "lineWidth": 2,
-            "pointSize": 10,
+            "pointSize": 5,
             "scaleDistribution": {
               "log": 10,
               "type": "log"
@@ -2361,7 +2981,7 @@
         "h": 11,
         "w": 24,
         "x": 0,
-        "y": 89
+        "y": 148
       },
       "id": 117,
       "links": [],
@@ -2382,7 +3002,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(rate(container_fs_writes_bytes_total{device=~\"^(^$)|(overlay.*)|(/dev/[nsx][v][bdm][a-z].+)$\", node=\"$node\", id=\"/\"}[$__rate_interval])) by (instance)  / sum(rate(container_fs_writes_total{device=~\"^(^$)|(overlay.*)|(/dev/[nsx][v][bdm][a-z].+)$\", node=\"$node\", id=\"/\",}[$__rate_interval])) by (instance)",
+          "expr": "sum(rate(container_fs_writes_bytes_total{node=~\"$node\", id=\"/\", instance=~\"$instance\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[nsx][v][bdm][a-z].+)$\"}[$__rate_interval])) by (instance)  / sum(rate(container_fs_writes_total{node=~\"$node\", id=\"/\", instance=~\"$instance\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[nsx][v][bdm][a-z].+)$\"}[$__rate_interval])) by (instance) != 0",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -2392,7 +3012,7 @@
         },
         {
           "exemplar": true,
-          "expr": "sum(rate(container_fs_reads_bytes_total{device=~\"^(^$)|(overlay.*)|(/dev/[nsx][v][bdm][a-z].+)$\", node=\"$node\", id=\"/\"}[$__rate_interval])) by (instance)  / sum(rate(container_fs_reads_total{device=~\"^(^$)|(overlay.*)|(/dev/[nsx][v][bdm][a-z].+)$\", node=\"$node\", id=\"/\",}[$__rate_interval])) by (instance)",
+          "expr": "sum(rate(container_fs_reads_bytes_total{node=~\"$node\", id=\"/\", instance=~\"$instance\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[nsx][v][bdm][a-z].+)$\"}[$__rate_interval])) by (instance)  / sum(rate(container_fs_reads_total{node=~\"$node\", id=\"/\", instance=~\"$instance\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[nsx][v][bdm][a-z].+)$\"}[$__rate_interval])) by (instance) != 0",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -2405,10 +3025,42 @@
       "thresholds": [],
       "timeFrom": null,
       "timeShift": null,
-      "title": "FS Completed I/O Size (Avg)",
+      "title": "Completed I/O Size (Avg)",
       "transformations": [],
       "transparent": true,
       "type": "timeseries"
+    },
+    {
+      "datasource": null,
+      "gridPos": {
+        "h": 2,
+        "w": 24,
+        "x": 0,
+        "y": 159
+      },
+      "id": 122,
+      "options": {
+        "content": "<h1><i><font color=#5991A7><b><center>Block I/O metrics for </font><font color=#e68a00>$node</font> <font color=#5991A7> </center></b></font></i></h1>",
+        "mode": "markdown"
+      },
+      "pluginVersion": "8.2.3",
+      "targets": [
+        {
+          "exemplar": false,
+          "expr": "max(container_memory_usage_bytes) by (node)",
+          "format": "time_series",
+          "hide": false,
+          "instant": true,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "{{node}}",
+          "refId": "Used"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "transformations": [],
+      "type": "text"
     },
     {
       "datasource": "Prometheus",
@@ -2435,7 +3087,7 @@
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "always",
+            "showPoints": "auto",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -2467,7 +3119,7 @@
         "h": 11,
         "w": 24,
         "x": 0,
-        "y": 100
+        "y": 161
       },
       "id": 113,
       "links": [],
@@ -2488,7 +3140,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(rate(container_blkio_device_usage_total{device=~\"^(^$)|(overlay.*)|(/dev/[nsx][v][bdm][a-z].+)$\", node=\"$node\", id=\"/\", operation=\"Write\"}[$__rate_interval])) by (instance, operation) ",
+          "expr": "sum(rate(container_blkio_device_usage_total{node=~\"$node\", id=\"/\", instance=~\"$instance\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[nsx][v][bdm][a-z].+)$\", operation=\"Write\"}[$__rate_interval])) by (instance, operation) != 0",
           "hide": false,
           "interval": "",
           "intervalFactor": 1,
@@ -2497,7 +3149,7 @@
         },
         {
           "exemplar": true,
-          "expr": "- sum(rate(container_blkio_device_usage_total{device=~\"^(^$)|(overlay.*)|(/dev/[nsx][v][bdm][a-z].+)$\",node=\"$node\", id=\"/\", operation=\"Read\"}[$__rate_interval])) by (instance) ",
+          "expr": "- sum(rate(container_blkio_device_usage_total{node=~\"$node\", id=\"/\", instance=~\"$instance\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[nsx][v][bdm][a-z].+)$\", operation=\"Read\"}[$__rate_interval])) by (instance)  != 0",
           "hide": false,
           "interval": "",
           "intervalFactor": 1,
@@ -2538,7 +3190,7 @@
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "always",
+            "showPoints": "auto",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -2570,7 +3222,7 @@
         "h": 11,
         "w": 24,
         "x": 0,
-        "y": 111
+        "y": 172
       },
       "id": 97,
       "links": [],
@@ -2591,7 +3243,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": " sum(rate(container_network_transmit_bytes_total{node=~\"$node\", id=\"/\"}[$__rate_interval])) by (instance)",
+          "expr": " sum(rate(container_network_transmit_bytes_total{node=~\"$node\", id=\"/\", instance=~\"$instance\"}[$__rate_interval])) by (instance) != 0",
           "hide": false,
           "interval": "",
           "intervalFactor": 1,
@@ -2600,7 +3252,7 @@
         },
         {
           "exemplar": true,
-          "expr": "- sum(rate(container_network_receive_bytes_total{node=~\"$node\", id=\"/\"}[$__rate_interval])) by (instance)",
+          "expr": "- sum(rate(container_network_receive_bytes_total{node=~\"$node\", id=\"/\", instance=~\"$instance\"}[$__rate_interval])) by (instance) != 0",
           "hide": false,
           "instant": false,
           "interval": "",
@@ -2643,7 +3295,7 @@
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "always",
+            "showPoints": "auto",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -2675,7 +3327,7 @@
         "h": 11,
         "w": 24,
         "x": 0,
-        "y": 122
+        "y": 183
       },
       "id": 100,
       "links": [],
@@ -2696,7 +3348,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(rate(container_network_transmit_packets_dropped_total{node=~\"$node\", id=\"/\"}[$__rate_interval])) by (instance)",
+          "expr": "sum(rate(container_network_transmit_packets_dropped_total{node=~\"$node\", id=\"/\", instance=~\"$instance\"}[$__rate_interval])) by (instance) != 0",
           "hide": false,
           "interval": "",
           "intervalFactor": 1,
@@ -2705,7 +3357,7 @@
         },
         {
           "exemplar": true,
-          "expr": "- sum(rate(container_network_receive_packets_dropped_total{node=~\"$node\", id=\"/\"}[$__rate_interval])) by (instance )",
+          "expr": "- sum(rate(container_network_receive_packets_dropped_total{node=~\"$node\", id=\"/\", instance=~\"$instance\"}[$__rate_interval])) by (instance ) != 0",
           "hide": false,
           "instant": false,
           "interval": "",
@@ -2724,7 +3376,7 @@
       "type": "timeseries"
     }
   ],
-  "refresh": "30s",
+  "refresh": false,
   "schemaVersion": 31,
   "style": "dark",
   "tags": [
@@ -2736,22 +3388,60 @@
       {
         "allValue": ".*",
         "current": {
-          "selected": false,
-          "text": "moumia",
-          "value": "moumia"
+          "selected": true,
+          "text": [
+            "k8s-node1"
+          ],
+          "value": [
+            "k8s-node1"
+          ]
         },
         "datasource": null,
-        "definition": "label_values(up, node)",
+        "definition": "label_values(node)",
         "description": null,
         "error": null,
         "hide": 0,
-        "includeAll": false,
+        "includeAll": true,
         "label": null,
-        "multi": false,
+        "multi": true,
         "name": "node",
         "options": [],
         "query": {
-          "query": "label_values(up, node)",
+          "query": "label_values(node)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "tagValuesQuery": "",
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": null,
+        "definition": "label_values(instance)",
+        "description": null,
+        "error": null,
+        "hide": 0,
+        "includeAll": true,
+        "label": null,
+        "multi": true,
+        "name": "instance",
+        "options": [],
+        "query": {
+          "query": "label_values(instance)",
           "refId": "StandardVariableQuery"
         },
         "refresh": 1,
@@ -2766,7 +3456,7 @@
     ]
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-15m",
     "to": "now"
   },
   "timepicker": {
@@ -2797,5 +3487,5 @@
   "timezone": "",
   "title": "Kubernetes cluster monitoring (via Prometheus) New-Features",
   "uid": "R5y4AE8Ma",
-  "version": 4
+  "version": 1
 }

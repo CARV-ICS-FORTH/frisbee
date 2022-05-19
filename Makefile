@@ -83,7 +83,7 @@ generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) paths="./..."  output:crd:artifacts:config=charts/platform/crds
 	#$(CONTROLLER_GEN) webhook paths="./..."  output:webhook:artifacts:config=charts/platform/templates/operator/webhook
-	$(CONTROLLER_GEN) rbac:roleName=manager-role paths="./..."  output:rbac:artifacts:config=charts/platform/templates/operator/rbac
+	$(CONTROLLER_GEN) rbac:roleName=frisbee paths="./..."  output:rbac:artifacts:config=charts/platform/templates/operator/rbac
 
 fmt: ## Run go fmt against code.
 	go fmt ./...

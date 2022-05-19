@@ -33,14 +33,14 @@ const (
 // https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/
 const (
 	// LabelCreatedBy points to the controller/user who created this resource
-	LabelCreatedBy = "app.kubernetes.io/created-by"
+	LabelCreatedBy = "plan.frisbee.io/created-by"
 
 	// LabelPartOfPlan points to the name of a higher level application this one is part of.
-	LabelPartOfPlan = "app.kubernetes.io/part-of"
+	LabelPartOfPlan = "plan.frisbee.io/part-of"
 
 	// LabelComponent describes the role of the component within the architecture.
 	// It can be SUT (for system under service) or SYS (if it's a frisbee component like Grafana).
-	LabelComponent = "app.kubernetes.io/component"
+	LabelComponent = "plan.frisbee.io/component"
 )
 
 // Phase is a simple, high-level summary of where the Object is in its lifecycle.

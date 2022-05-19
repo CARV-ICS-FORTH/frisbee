@@ -15,14 +15,14 @@ spec:
     decorators:
       telemetry: [ platform.telemetry.container, mongo.telemetry.server ]
       resources:
-        cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
-        memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
+        cpu: {{"{{.Inputs.Parameters.cpu}}"}}
+        memory: {{"{{.Inputs.Parameters.memory}}"}}
     containers: # Container
       - name: app
         image: bitnami/mongodb
         ports:
           - name: to-clients
-            containerPort: {{"{{.Inputs.Parameters.port}}" | quote | int}}
+            containerPort: {{"{{.Inputs.Parameters.port}}"  | int}}
         command:
           - /bin/sh   # Run shell
           - -c        # Read from string
@@ -91,14 +91,14 @@ spec:
     decorators: # Decorators
       telemetry: [ platform.telemetry.container, mongo.telemetry.server/telegraf ]
       resources:
-        cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
-        memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
+        cpu: {{"{{.Inputs.Parameters.cpu}}"}}
+        memory: {{"{{.Inputs.Parameters.memory}}"}}
     containers: # Container
       - name: app
         image: bitnami/mongodb
         ports:
           - name: to-clients
-            containerPort: {{"{{.Inputs.Parameters.port}}"| quote | int}}
+            containerPort: {{"{{.Inputs.Parameters.port}}" | int}}
         command:
           - /bin/sh   # Run shell
           - -c        # Read from string
