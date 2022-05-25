@@ -330,15 +330,7 @@ Before anything else, we need to install the Frisbee platform and the Frisbee pa
 
 ```
 
-At this step we will deploy the Frisbee CRDs and its dependencies.
 
-Although HELM packages automate this task, for completeness we show the manual method.
-
-Firstly, we need to down the Frisbee source code.
-
-```bash
->> git clone https://github.com/CARV-ICS-FORTH/frisbee
-```
 
 Then you have to go install the Frisbee system.
 
@@ -419,3 +411,162 @@ docker save frisbee:latest -o image.tar
 
 1) Cadvisor does not support for NFS mounts.
 2) Check how we can use block devices
+
+
+
+
+
+
+## Run a test
+
+#### Step 1:  Install Dependencies
+
+Make sure that [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/)
+and  are installed on your system, and that you have access to a Kubernetes
+installation.
+
+* **Local Installation** If you want a local installation you can use
+
+
+
+* **Remote Installation**: Set  `~/.kube/config` appropriately, and create tunnel for sending requests to Kubernetes
+  API.
+
+```bash
+# Create tunnel for sending requests to Kubernetes API.
+>> ssh -L 6443:192.168.1.213:6443 [USER@]SSH_SERVER
+```
+
+
+
+
+
+
+
+#### Step 2: Update Helm repo
+
+
+
+#### Step 3:
+
+#### This step will install the following components:
+
+* Frisbee CRDS
+* Frisbee Controller
+* Frisbee Dependency stack (e.g, Chaos toolkits, dynamic volume provisioning, observability stack)
+* Ingress for making the observability stack accessible from outside the Kubernetes
+
+By default the platform sets the Ingress to `localhost`.
+
+If you use a non-local cluster, you can these the ingress via the  `global.ingress` flag.
+
+```bash
+# Install the platform with non-local ingress
+>> helm upgrade --install --wait my-frisbee frisbee/platform --set global.ingress=platform.science-hangar.eu 
+```
+
+#### Step 4:  Install the testing components
+
+```bash
+
+```
+
+#### Step 5: Run the Test Plan
+
+This url points
+to : https://raw.githubusercontent.com/CARV-ICS-FORTH/frisbee/main/charts/tikv/examples/plan.baseline.yml
+
+```bash
+# Create a plan
+>> curl -sSL https://tinyurl.com/t3xrtmny | kubectl -f - apply
+```
+
+
+
+
+
+# Observe a Testplan
+
+### Kubernetes Dashboard
+
+
+
+
+
+
+
+If you use a microk8s installation of Kubernetes, then the procedure is slightly different.
+
+```bash
+# Deploy the dashboard
+>> microk8s dashboard-proxy
+
+# Start the dashboard
+>> microk8s dashboard-proxy
+
+# Now access Dashboard at:
+https://localhost:10443
+```
+
+#### Controller Logs
+
+The logs of the controller are accessible by the terminal on which the controller is running.
+
+### Grafana Dashboard & Alerts
+
+Grafana is a multi-platform open source analytics and interactive visualization web application.
+
+To access it, use the format `http://grafana.${INGRESS}` where `Ingress` is the value you defined in step 3.
+
+For example,
+
+```bash
+# Access Grafana via your browser
+http://grafana.platform.science-hangar.eu 
+```
+
+
+
+
+
+
+
+
+
+Optionally, validate that everything works.
+
+```bash
+# Deploy a hello world
+>>  kubectl create deployment hello-node --image=k8s.gcr.io/echoserver:1.4
+deployment.apps/hello-node created
+
+# Verify that a hell-node deployment exists
+>> kubectl get deployments
+NAME         READY   UP-TO-DATE   AVAILABLE   AGE
+hello-node   1/1     1            1           36s
+
+# Delete the deployment
+>> kubectl delete deployments hello-node
+deployment.apps "hello-node" deleted
+```
+
+
+
+
+
+This step will install the Frisbee CRDs and all the necessary tools.
+
+```bash
+# Update Helm repo
+>> helm repo add frisbee https://carv-ics-forth.github.io/frisbee/charts
+
+# Install the platform with local ingress
+>> helm upgrade --install --wait my-frisbee frisbee/platform
+```
+
+
+
+
+
+
+

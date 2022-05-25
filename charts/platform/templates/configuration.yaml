@@ -13,6 +13,6 @@ data:
   AdvertisedHost: "frisbee-operator"
   {{ else }}
   # If the operator runs outside the cluster, it will reach Grafana via the ingress.
-  PrometheusEndpoint: http://prometheus-frisbee.{{.Values.global.ingress}}
-  GrafanaEndpoint: http://grafana-frisbee.{{.Values.global.ingress}}
+  PrometheusEndpoint: http://prometheus-frisbee.{{.Values.global.domainName}}
+  GrafanaEndpoint: http://grafana-frisbee.{{.Values.global.domainName}}
   {{ end }}

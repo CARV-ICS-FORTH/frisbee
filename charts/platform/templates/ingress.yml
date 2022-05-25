@@ -5,7 +5,7 @@ metadata:
   name: insecure-ingress
 spec:
   rules:
-    - host: prometheus-frisbee.{{.Values.global.ingress}}
+    - host: prometheus-frisbee.{{.Values.global.domainName}}
       http:
         paths:
           - path: /
@@ -16,7 +16,7 @@ spec:
                 port:
                   number: {{.Values.telemetry.prometheusPort}}
 
-    - host: grafana-frisbee.{{.Values.global.ingress}}
+    - host: grafana-frisbee.{{.Values.global.domainName}}
       http:
         paths:
           - path: /
@@ -28,7 +28,7 @@ spec:
                   number: {{.Values.telemetry.grafanaPort}}
 
     {{- if .Values.chaos.enabled }}
-    - host: chaos-frisbee.{{.Values.global.ingress}}
+    - host: chaos-frisbee.{{.Values.global.domainName}}
       http:
         paths:
           - path: /
@@ -40,19 +40,21 @@ spec:
                   number: 2333
     {{- end}}
 ---
+# https://stackoverflow.com/questions/54506269/simple-ingress-from-host-with-microk8s
+# https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/annotations/
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: secure-ingress
   annotations:
-    kubernetes.io/ingress.class: "nginx"
-    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+      kubernetes.io/ingress.class: {{.Values.telemetry.ingressClass}}
+      nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+      nginx.ingress.kubernetes.io/ssl-passthrough: "true"
 spec:
   rules:
     {{- if .Values.dashboard.enabled}}
-    - host: dashboard-frisbee.{{.Values.global.ingress}}
+    - host: dashboard-frisbee.{{.Values.global.domainName}}
       http:
         paths:
           - path: /

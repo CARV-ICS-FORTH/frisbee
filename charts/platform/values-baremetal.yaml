@@ -36,8 +36,6 @@ openebs:
 
   backendDir: /mnt/local
 
-  backendDeviceTag: frisbee-vg
-
   #- device (as block or mounted path)
   #- hostpath (sub directory on OS or mounted path)
 
@@ -99,7 +97,7 @@ sonarqube:
       #enabled: true
       # Used to create an Ingress record.
       #hosts:
-      #  - name: sonarqube.{{.Values.global.ingress}}
+      #  - name: sonarqube.{{.Values.global.domainName}}
       # Different clouds or configurations might need /* as the default path
     #    path: /
     # For additional control over serviceName and servicePort
