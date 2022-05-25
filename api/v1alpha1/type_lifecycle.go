@@ -126,7 +126,7 @@ func (t ConditionType) String() string {
 // These are valid conditions of pod.
 const (
 	// ConditionCRInitialized indicates whether the workflow has been initialized
-	ConditionCRInitialized = ConditionType("initialized")
+	ConditionCRInitialized = ConditionType("Initialized")
 
 	// ConditionAllJobsAreScheduled indicates that all jobs have been successfully scheduled.
 	// Jobs may refer to actions of a plan, services of a cluster, chaos events of a cascade, etc.
@@ -141,5 +141,5 @@ const (
 	ConditionJobUnexpectedTermination = ConditionType("UnexpectedTermination")
 
 	// ConditionTerminated indicates the user-defined conditions are met.
-	ConditionTerminated = ConditionType("terminated")
+	ConditionTerminated = ConditionType("Terminated")
 )

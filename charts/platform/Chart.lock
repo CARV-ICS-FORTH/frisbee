@@ -5,11 +5,8 @@ dependencies:
 - name: chaos-mesh
   repository: https://charts.chaos-mesh.org
   version: 2.1.2
-- name: sonarqube
-  repository: https://SonarSource.github.io/helm-chart-sonarqube
-  version: 1.2.1+162
 - name: kubernetes-dashboard
   repository: https://kubernetes.github.io/dashboard
   version: 5.4.1
-digest: sha256:ef55baa2691369dbc9eb60a41250e439d17313fecfd3ff41969f7c0224e7e053
-generated: "2022-05-17T13:50:20.916190596+03:00"
+digest: sha256:4b5d32d095b8358b7cb7df6eba62f269609b0bd0e00bd5fd357d1d052d9ae09a
+generated: "2022-05-25T13:49:07.882553633+03:00"

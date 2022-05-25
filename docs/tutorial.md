@@ -1,212 +1,283 @@
 # Tutorial
 
-This tutorial describes how to deploy Frisbee and start running tests.
 
-## Run a test
 
-#### Step 1:  Install Dependencies
+This tutorial will guide you through deploying and running Frisbee on a local Kubernetes installation.
 
-Make sure that [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/)
-and  [Helm](https://helm.sh/docs/intro/install/) are installed on your system, and that you have access to a Kubernetes
-installation.
 
-* **Local Installation** If you want a local installation you can use [Microk8s](https://microk8s.io/docs) that runs
-  entirely on your workstation or edge device.
+
+# Install Dependencies
+
+#### microk8s
+
+ [Microk8s](https://microk8s.io/docs)  is the simplest production-grade conformant K8s.  **It runs entirely on your workstation or edge device.**
 
 ```bash
-# Install microk8s v.1.21
->> sudo snap install microk8s --classic --channel=1.21/stable
-
-# Create alias 
->> sudo snap alias microk8s.kubectl kubectl
+# Install microk8s v.1.22
+>> sudo snap install microk8s --classic --channel=1.22/stable
 
 # Enable Dependencies
->> microk8s enable dns ingress helm3
-
-# Use microk8s config as the default kubernetes config
->> microk8s config > ~/.kube/config
+>> microk8s enable dns ingress
 
 # Start microk8s
 >> microk8s start
 ```
 
-* **Remote Installation**: Set  `~/.kube/config` appropriately, and create tunnel for sending requests to Kubernetes
-  API.
+
+
+Configure `kubectl ` to point on microk8s.
 
 ```bash
-# Create tunnel for sending requests to Kubernetes API.
->> ssh -L 6443:192.168.1.213:6443 [USER@]SSH_SERVER
+# Create alias 
+>> sudo snap alias microk8s.kubectl kubectl
+
+# Use microk8s config as the default kubernetes config
+>> microk8s config > ~/.kube/config
 ```
 
-And then validate that everything works.
+
+
+#### Helm
+
+[Helm](https://helm.sh/docs/intro/install/)  is a package manager for Kubernetes. Helm uses **a packaging format called charts**. 
+
+A chart is a collection of files that describe a related set of Kubernetes resources.
 
 ```bash
-# Deploy a hello world
->>  kubectl create deployment hello-node --image=k8s.gcr.io/echoserver:1.4
-deployment.apps/hello-node created
-
-# Verify that a hell-node deployment exists
->> kubectl get deployments
-NAME         READY   UP-TO-DATE   AVAILABLE   AGE
-hello-node   1/1     1            1           36s
-
-# Delete the deployment
->> kubectl delete deployments hello-node
-deployment.apps "hello-node" deleted
+>> sudo snap install helm --classic
 ```
 
-#### Step 2: Update Helm repo
+
+
+#### Frisbee platform
+
+Although Frisbee can be installed directly from a Helm repository, for demonstration purposes we favor the git-based method.
 
 ```bash
-# Install Helm3
->> curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+# Download the source code
+>> git clone git@github.com:CARV-ICS-FORTH/frisbee.git
 
-# Update Helm repo
->> helm repo add frisbee https://carv-ics-forth.github.io/frisbee/charts
+# Move to the Frisbee project
+>> cd frisbee
+
+# Have a look at the installation configuration
+>> less charts/platform/values.yaml 
 ```
 
-#### Step 3: Install Frisbee platform
+> **Note:** Make sure that the dir "/mnt/local" exists.
+
+
+
+Now, it's time to deploy the platform
 
 ```bash
-# Install the platform with local ingress
->> helm upgrade --install --wait my-frisbee frisbee/platform
+# Wait until the installation is complete
+>> helm  upgrade --install --wait my-frisbee ./charts/platform/ --debug
+
+# Make sure that every is ok
+>> helm list
 ```
 
-This step will install the following components:
 
-* Frisbee CRDS
-* Frisbee Controller
-* Frisbee Dependency stack (e.g, Chaos toolkits, dynamic volume provisioning, observability stack)
-* Ingress for making the observability stack accessible from outside the Kubernetes
 
-By default the platform sets the Ingress to `localhost`.
+If everything works normally, you should be able to access the following **dashboards**:
 
-If you use a non-local cluster, you can these the ingress via the  `global.ingress` flag.
+* [Dashboard](https://dashboard-frisbee.localhost) is a web-based Kubernetes user interface. You can use Dashboard to deploy containerized applications to a
+  Kubernetes cluster, troubleshoot your containerized application, and manage the cluster resources.
+* [Chaos Dashboard](http://chaos-frisbee.localhost)  is a one-step web UI for managing, designing, and monitoring chaos experiments on *Chaos Mesh*.
+
+> **Note:** Both dashboards will ask for config or token. In that case, copy the token from .kube/config file.
 
 ```bash
-# Install the platform with non-local ingress
->> helm upgrade --install --wait my-frisbee frisbee/platform --set global.ingress=platform.science-hangar.eu 
+>> grep token  ~/.kube/config
 ```
 
-#### Step 4:  Install the testing components
+
+
+Now are ready to deploy the tests.
+
+
+
+## Testing a System
+
+Before running any test, but install the System Under Testing (SUT) in Frisbee.
+
+We will use the Frisbee chart for [CockroachDB](https://github.com/CARV-ICS-FORTH/frisbee/tree/main/charts/cockroachdb)
+
+> [*CockroachDB*](https://github.com/cockroachdb/cockroach) is a distributed database with standard SQL for cloud applications.
+
+
+
+#### Deploy the SUT
+
+The commands are to be executed from the *Frisbee* directory.
 
 ```bash
-# Install the package for monitoring YCSB output
->> helm upgrade --install --wait my-ycsb frisbee/ycsb
-# Install TiKV store
->> helm upgrade --install --wait my-tikv frisbee/tikv
+# Install Cockroach servers
+>> helm upgrade --install --wait my-cockroach ./charts/cockroachdb --debug
+
+# Install YCSB for creating workload
+>> helm upgrade --install --wait my-ycsb ./charts/ycsb --debug
 ```
 
-#### Step 5: Run the Test Plan
 
-This url points
-to : https://raw.githubusercontent.com/CARV-ICS-FORTH/frisbee/main/charts/tikv/examples/plan.baseline.yml
+
+Then you can verify that all the packages are successfully installed
 
 ```bash
-# Create a plan
->> curl -sSL https://tinyurl.com/t3xrtmny | kubectl -f - apply
+>> helm list
+NAME            NAMESPACE       REVISION        UPDATED                                         STATUS          CHART             
+my-cockroach    default         2               2022-05-25 16:15:58.682969153 +0300 EEST        deployed        cockroachdb-0.0.0 
+my-frisbee      default         1               2022-05-25 15:46:54.4600888 +0300 EEST          deployed        platform-0.0.0  
+my-ycsb         default         1               2022-05-25 16:16:13.364123735 +0300 EEST        deployed        ycsb-0.0.0      
 ```
 
-#### Step 6: Wait for completion
 
-After you have successfully run a test, the next question that comes is about its completion.
+
+#### Run a Test
+
+You now select which scenario you wish to run. 
 
 ```bash
-# View deployed plans
->> kubectl get testplans.frisbee.io
-NAME            AGE
-tikv-baseline   1m
-
-# Inspect a plan
->> kubectl describe testplans.frisbee.io tikv-baseline
+>> ls ./charts/cockroachdb/examples/
+...
+10.bitrot.yml
+11.network.yml
+12.withlogs.yml
+1.baseline-single.yml
+2.baseline-cluster-deterministic.yml
+3.baseline-cluster-deterministic-outoforder.yml
+4.baseline-cluster-nondeterministic.yml
+5.scaleup-scheduled.yml
+6.scaleup-conditional.yml
+7.scaledown-delete.yml
+8.scaledown-stop.yml
+9.scaledown-kill.yml
 ```
 
-Describe will return a lot of information about the plan. We are interested in the fields `conditions`.
 
-We can use these fields to wait until they become true -- thus saving us from manual inspection.
+
+Let's run a **bitrot** scenario.
 
 ```bash
-# Wait until the test oracle is triggered.
->> kubectl  wait --for=condition=allActions testplans.frisbee.io/tikv-baseline 
-testplan.frisbee.io/tikv-baseline condition met
+>> kubectl -f ./charts/cockroachdb/examples/10.bitrot.yml apply
+testplan.frisbee.io/cockroach-bitrot created
 ```
 
-####                 
 
-#### Step 7: Destroy the testing plan
 
-This url points
-to : https://raw.githubusercontent.com/CARV-ICS-FORTH/frisbee/main/charts/tikv/examples/plan.baseline.yml
+#### Observe a Test
+
+*Frisbee* provides two methods for observing the progress of a test.
+
+* **State-based:** Consumes information from the Kubernetes API 
+
+  * [Dashboard](https://dashboard-frisbee.localhost) 
+  * [Chaos Dashboard](http://chaos-frisbee.localhost) 
+
+* **Metrics-based:** Consumes information from distributed performance metrics.
+
+  * [Prometheus](http://prometheus-frisbee.localhost)
+
+  * [Grafana](http://grafana-frisbee.localhost)
+
+    
+
+The above tools are for understanding the behavior of a system, but do not help with test automation.
+
+Besides the visual information, we need something that can be used in external scripts.
+
+
+
+We will use `kubectl` since is the most common CLI interface between Kubernetes API and third-party applications.
+
+Firstly, let's inspect the test plan.
 
 ```bash
-# Destroy a plan
->> curl -sSL https://tinyurl.com/t3xrtmny | kubectl -f - delete --cascade=foreground
+>> kubectl describe testplan.frisbee.io/cockroach-bitrot
+```
+
+
+
+> Status:
+>   Conditions:
+>     Last Transition Time:  2022-05-25T13:20:52Z
+>     Message:               failed jobs: [masters]
+>     Reason:                JobHasFailed
+>     Status:                True
+>     Type:                  UnexpectedTermination
+>   Configuration:
+>     Advertised Host:      frisbee-operator
+>     Grafana Endpoint:     http://grafana:3000
+>     Prometheus Endpoint:  http://prometheus:9090
+>   Executed:
+>     Bitrot:
+>     Boot:
+>     Import - Workload:
+>     Masters:
+>     Run - Workload:
+>   Message:         failed jobs: [masters]
+>   Phase:           Failed
+>   Reason:          JobHasFailed
+>   With Telemetry:  true
+
+
+
+We are interested in the `Phase` and `Conditions` fields that provides information about the present status of a test.
+
+* **Phase** describes the lifecycle of a Test. 
+  * **""**:  the request is not yet accepted by the controller
+  * **"Pending"**:  the request has been accepted by the Kubernetes cluster, but one of the child jobs has not been created. This includes the time waiting for logical dependencies, Ports discovery,  data rewiring, and placement of Pods.
+  * **"Running"**: all the child jobs  have been created, and at least one job is still running.
+  * **"Success"**: all jobs have voluntarily exited.
+  * **"Failed"**:  at least one job of the CR has terminated in a failure (exited with a  non-zero exit code or was stopped by the system).
+* The **Phase** is a top-level description calculated based on some **Conditions**. The **Conditions** describe the various stages the Test has been through.
+  * **"Initialized"**:  the workflow has been initialized
+  * **"AllJobsAreScheduled"** : all jobs have been successfully scheduled.
+  * **"AllJobsAreCompleted"**:  all jobs have been successfully completed.
+  * **"UnexpectedTermination"** : a least job that has been unexpectedly terminated.
+
+
+
+#### Pass/Fail a Test
+
+To avoid continuous inspection via polling, we use the `wait` function of `kubectl`.
+
+In the specific **bitrot** scenario,  the test will pass only it has reached an **UnexpectedTermination** within 10 minutes of execution.
+
+```bash
+>> kubectl wait --for=condition=UnexpectedTermination --timeout=10m testplan.frisbee.io/cockroach-bitrot
+testplan.frisbee.io/cockroach-bitrot condition met
+```
+
+
+
+Indeed, the condition is met, meaning that the test has failed. We can visually verify it from the [Dashboard](https://dashboard-frisbee.localhost) .
+
+
+
+![image-20220525170302089](tutorial.assets/image-20220525170302089.png)
+
+
+
+To reduce the noise when debugging a failed test, *Frisbee* automatically deletes all the jobs, expect for the failed one (masters-1), and the telemetry stack (grafana/prometheus). 
+
+
+
+> If the condition is not met within the specified timeout, `kubectl` will exit with failure code (1) and the following error message:
+>
+> "error: timed out waiting for the condition on testplans/cockroach-bitrot"
+
+
+
+#### Delete a Test
+
+The deletion is as simple as the creation of a test.
+
+```bash
+>> kubectl -f ./charts/cockroachdb/examples/10.bitrot.yml delete --cascade=foreground
+testplan.frisbee.io "cockroach-bitrot" deleted
 ```
 
 The flag `cascade=foreground` will wait until the experiment is actually deleted. Without this flag, the deletion will
-happen in the background. Use this flag if you want to run multiple tests, without interference.
-
-# Observe a Testplan
-
-### Kubernetes Dashboard
-
-Dashboard is a web-based Kubernetes user interface. You can use Dashboard to deploy containerized applications to a
-Kubernetes cluster, troubleshoot your containerized application, and manage the cluster resources.
-
-```bash
-# Deploy the dashboard
->>  curl -sSL https://raw.githubusercontent.com/kubernetes/dashboard/v2.3.1/aio/deploy/recommended.yaml | kubectl -f - apply
-
-# To access Dashboard from your local workstation you must create a secure channel to your Kubernetes cluster
->> kubectl proxy
-Starting to serve on 127.0.0.1:8001
-
-# Now access Dashboard at:
-http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/.
-```
-
-###                 
-
-If you use a microk8s installation of Kubernetes, then the procedure is slightly different.
-
-```bash
-# Deploy the dashboard
->> microk8s dashboard-proxy
-
-# Start the dashboard
->> microk8s dashboard-proxy
-
-# Now access Dashboard at:
-https://localhost:10443
-```
-
-#### Controller Logs
-
-The logs of the controller are accessible by the terminal on which the controller is running.
-
-### Chaos Dashboard
-
-The Chaos *Dashboard* is a one-step web UI for managing, designing, and monitoring chaos experiments on *Chaos Mesh*.
-
-The Chaos Dashboard is installed automatically when you deploy the Chaos-Mesh into your Cluster.
-
-```bash
-# Forward port
->> kubectl port-forward svc/chaos-dashboard 2333:2333
-
-# Now access Dashboard at:
-http://localhost:2333/dashboard
-```
-
-### Grafana Dashboard & Alerts
-
-Grafana is a multi-platform open source analytics and interactive visualization web application.
-
-To access it, use the format `http://grafana.${INGRESS}` where `Ingress` is the value you defined in step 3.
-
-For example,
-
-```bash
-# Access Grafana via your browser
-http://grafana.platform.science-hangar.eu 
-```
+happen in the background. Use this flag if you want to run sequential tests, without interference.
