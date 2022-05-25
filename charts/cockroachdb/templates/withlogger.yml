@@ -2,21 +2,31 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
-  name: cockroach.cluster.master
+  name: cockroach.cluster.master-with-logger
 spec:
   inputs:
     parameters:
       join: ""
       storedir: "cockroach-data"
+      logVolumeName: ""
+
   service:
     decorators:
       telemetry:
         - platform.telemetry.container
         - cockroach.telemetry.server
 
+    volumes:    # Match the pod to the log volume
+      - name: logs
+        persistentVolumeClaim:
+          claimName: {{"{{.Inputs.Parameters.logVolumeName}}" | quote}}
+
     containers:
       - name: app
         image: cockroachdb/cockroach:latest
+        volumeMounts: # Mount the log volume
+          - name: logs
+            mountPath: /logs
         ports:
           - name: grpc
             containerPort: {{.Values.port | int64}}
@@ -36,35 +46,41 @@ spec:
             storedir={{"{{.Inputs.Parameters.storedir}}"}}
             nodeList={{"{{.Inputs.Parameters.join}}"}}
 
+            # Because the log volume is shared with other services,
+            # we use the name of the pod as prefix
+            logdir=/logs/${HOSTNAME}
+
             echo "Start Cockroachdb: ${nodeList}"
 
             COCKROACH_CRASH_ON_SPAN_USE_AFTER_FINISH=true cockroach start   \
                 --insecure                                      \
                 --store=${storedir}                             \
+                --logdir=${logdir}                              \
                 --listen-addr=:{{.Values.port}}                            \
                 --http-addr=$${HOSTNAME}:{{.Values.httpPort}}                   \
                 --advertise-addr=$${HOSTNAME}:{{.Values.port}}             \
                 --join=${nodeList}
 
+        # Give a headstart for the logs volume to be created
+        startupProbe:
+          httpGet:
+            path: "/health?ready=1"
+            port: http
+          initialDelaySeconds: 100
+          periodSeconds: 5
+          failureThreshold: 2
 
-
+    # Albeit it is possible to log the callables, the Pod name is not available at this level,
+    # and therefore it is difficult to place them into the proper log hierarchy. Instead, the output
+    # of the callables should be available by the controller who calls them.
     callables:
       boot:
         container: app
         command:
-          - /bin/sh   # Run shell
-          - -c        # Read from string
-          - |         # Multi-line str
+          - /bin/sh
+          - -c
+          - |
             cockroach init --insecure
-
-      import-tpcc:
-        container: app
-        command:
-          - /bin/sh   # Run shell
-          - -c        # Read from string
-          - |         # Multi-line str
-            set -eum
-            ./cockroach workload fixtures import tpcc --warehouses=100 --fks=false --checks=false
 
       bitrot:
         container: app
@@ -108,56 +124,3 @@ spec:
           - |         # Multi-line str
             set -eum
             ./cockroach workload run tpcc --warehouses=100 --tolerate-errors
-
-
-      test2-import-tpcc:
-        container: app
-        command:
-          - /bin/sh   # Run shell
-          - -c        # Read from string
-          - |         # Multi-line str
-            set -eum
-            ./cockroach workload fixtures import tpcc --warehouses=1
-
-      test2-wait-for-3x-replication:
-        container: app
-        command:
-          - /bin/sh   # Run shell
-          - -c        # Read from string
-          - |         # Multi-line str
-            set -euo pipefail
-
-            # WaitFor3XReplication waits until all ranges in the system are on at least three voters.
-            oldN=0
-            for (( ; ; ))
-            do
-              n=$(./cockroach sql --insecure --format=records                                             \
-              --execute="SELECT count(1) FROM crdb_internal.ranges WHERE array_length(replicas, 1) < 3;"  \
-              | grep "count" | cut -d "|" -f 2)
-
-              if [ "${n}" -eq "0" ]
-              then
-                echo "All replicas are in place"
-                exit 0
-              fi
-
-              if [ oldN != ${n}  ]
-              then
-                echo "still waiting for full replication (${n} ranges left)"
-              fi
-
-              oldN=${n}
-
-              echo "Sleep"
-              sleep 2
-            done
-
-      test2-run-workload:
-        container: app
-        command:
-          - /bin/sh   # Run shell
-          - -c        # Read from string
-          - |         # Multi-line str
-            set -eum
-
-            ./cockroach workload run tpcc --warehouses=1 --wait=false --histograms=/stats.json --duration=30m

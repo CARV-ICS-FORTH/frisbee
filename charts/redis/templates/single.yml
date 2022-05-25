@@ -14,7 +14,7 @@ spec:
       telemetry: [ platform.telemetry.container, redis.telemetry.server ]
       resources:
         memory: {{"{{.Inputs.Parameters.memory}}" |quote}}
-        cpu: {{"{{.Inputs.Parameters.cpu}}"}}
+        cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
     containers:
       - name: app
         image: redis

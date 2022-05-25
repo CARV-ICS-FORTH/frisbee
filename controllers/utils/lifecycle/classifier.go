@@ -30,21 +30,24 @@ type ClassifierReader interface {
 	IsRunning(name string) bool
 	IsSuccessful(name string) bool
 	IsFailed(name string) bool
-	NumPendingJobs() int
-	NumRunningJobs() int
-	NumSuccessfulJobs() int
-	NumFailedJobs() int
-	PendingList() []string
-	RunningList() []string
-	SuccessfulList() []string
-	FailedList() []string
+
+	// IsDeletable returns true if a job is deletable: it is pending or running
+	IsDeletable(jobName string) (client.Object, bool)
+
 	PendingJobs() []client.Object
 	RunningJobs() []client.Object
 	SuccessfulJobs() []client.Object
 	FailedJobs() []client.Object
 
-	// IsDeletable returns true if a job is deletable: it is pending or running
-	IsDeletable(jobName string) (client.Object, bool)
+	PendingJobsNum() int
+	RunningJobsNum() int
+	SuccessfulJobsNum() int
+	FailedJobsNum() int
+
+	PendingJobsList() []string
+	RunningJobsList() []string
+	SuccessfulJobsList() []string
+	FailedJobsList() []string
 }
 
 type Classifier struct {
@@ -129,23 +132,23 @@ func (in Classifier) IsFailed(name string) bool {
 	return ok
 }
 
-func (in Classifier) NumPendingJobs() int {
+func (in Classifier) PendingJobsNum() int {
 	return len(in.pendingJobs)
 }
 
-func (in Classifier) NumRunningJobs() int {
+func (in Classifier) RunningJobsNum() int {
 	return len(in.runningJobs)
 }
 
-func (in Classifier) NumSuccessfulJobs() int {
+func (in Classifier) SuccessfulJobsNum() int {
 	return len(in.successfulJobs)
 }
 
-func (in Classifier) NumFailedJobs() int {
+func (in Classifier) FailedJobsNum() int {
 	return len(in.failedJobs)
 }
 
-func (in Classifier) PendingList() []string {
+func (in Classifier) PendingJobsList() []string {
 	list := make([]string, 0, len(in.pendingJobs))
 
 	for jobName := range in.pendingJobs {
@@ -157,7 +160,7 @@ func (in Classifier) PendingList() []string {
 	return list
 }
 
-func (in Classifier) RunningList() []string {
+func (in Classifier) RunningJobsList() []string {
 	list := make([]string, 0, len(in.runningJobs))
 
 	for jobName := range in.runningJobs {
@@ -169,7 +172,7 @@ func (in Classifier) RunningList() []string {
 	return list
 }
 
-func (in Classifier) SuccessfulList() []string {
+func (in Classifier) SuccessfulJobsList() []string {
 	list := make([]string, 0, len(in.successfulJobs))
 
 	for jobName := range in.successfulJobs {
@@ -181,7 +184,7 @@ func (in Classifier) SuccessfulList() []string {
 	return list
 }
 
-func (in Classifier) FailedList() []string {
+func (in Classifier) FailedJobsList() []string {
 	list := make([]string, 0, len(in.failedJobs))
 
 	for jobName := range in.failedJobs {

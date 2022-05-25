@@ -1,0 +1,62 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: distributed-logs
+spec:
+  storageClassName: network-volume
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 2Gi
+
+
+---
+apiVersion: frisbee.io/v1alpha1
+kind: TestPlan
+metadata:
+  name: cockroach-withlogs
+spec:
+  actions:
+    # Step 0. provision 3 individual servers
+    - action: Cluster
+      name: masters
+      cluster:
+        templateRef: cockroach.cluster.master-with-logger
+        instances: 3
+        inputs:
+          - { join: "masters-0:26257,masters-1:26257,masters-2:26257", logVolumeName: distributed-logs }
+
+    # Step 1. Create a cockroach cluster from the individual servers
+    - action: Call
+      name: boot
+      depends: { running: [ masters ] }
+      call:
+        callable: boot
+        services: [ masters-0 ]
+
+    # Step 2. import TPC-C data from the workload node (node 1)
+    - action: Call
+      name: import-workload
+      depends: { success: [ boot ] }
+      call:
+        callable: import-tpcc
+        services: [ masters-0 ]
+
+    # Step 3. corrupt 6 random SST files on each node (abort if node has fewer)
+    - action: Call
+      name: bitrot
+      depends: { success: [ import-workload ] }
+      call:
+        callable: bitrot
+        services: [ masters-0, masters-1, masters-2 ]
+
+    # Step 4. run TPC-C workload for up-to 10 mins (node1)
+    - action: Call
+      name: run-workload
+      depends: { success: [ bitrot ] }
+      call:
+        callable: run-workload
+        services: [ masters-0 ]

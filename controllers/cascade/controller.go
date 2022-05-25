@@ -166,8 +166,8 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		r.Logger.Info("Cleaning up chaos jobs",
 			"cascade", cr.GetName(),
-			"activeJobs", r.state.PendingList(),
-			"successfulJobs", r.state.SuccessfulList(),
+			"activeJobs", r.state.PendingJobsList(),
+			"successfulJobs", r.state.SuccessfulJobsList(),
 		)
 
 		/*
@@ -187,8 +187,8 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		r.Logger.Info("Cleaning up chaos jobs",
 			"cascade", cr.GetName(),
-			"successfulJobs", r.state.SuccessfulList(),
-			"activeJobs", r.state.PendingList(),
+			"successfulJobs", r.state.SuccessfulJobsList(),
+			"activeJobs", r.state.PendingJobsList(),
 		)
 
 		// Remove the non-failed components. Leave the failed jobs and system jobs for postmortem analysis.

@@ -45,3 +45,12 @@ resolution to 1/1.
 the same resolution everywhere.
 
 ##
+
+**Q: I see empty plots on Grafana**
+
+**A:** Kubernetes v.1.22 drops support of cgroups v1 in favor of cgroup v2 API. If you run Kubernetes 1.22 make
+sure that you have set `systemd.unified_cgroup_hierarchy=1` in the grub configuration. 
+https://rootlesscontaine.rs/getting-started/common/cgroup2/
+
+
+##

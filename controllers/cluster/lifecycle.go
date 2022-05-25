@@ -43,19 +43,19 @@ func calculateLifecycle(cluster *v1alpha1.Cluster, gs lifecycle.ClassifierReader
 	}
 
 	// Step 2. Check if failures violate cluster's toleration.
-	if gs.NumFailedJobs() > cluster.Spec.Tolerate.FailedServices {
+	if gs.FailedJobsNum() > cluster.Spec.Tolerate.FailedServices {
 		cycle = v1alpha1.Lifecycle{
 			Phase:  v1alpha1.PhaseFailed,
 			Reason: "TolerateFailuresExceeded",
 			Message: fmt.Sprintf("tolerate: %s. failed jobs: %s",
-				cluster.Spec.Tolerate.String(), gs.FailedList()),
+				cluster.Spec.Tolerate.String(), gs.FailedJobsList()),
 		}
 
 		meta.SetStatusCondition(&cycle.Conditions, metav1.Condition{
-			Type:    v1alpha1.ConditionJobFailed.String(),
+			Type:    v1alpha1.ConditionJobUnexpectedTermination.String(),
 			Status:  metav1.ConditionTrue,
 			Reason:  "JobHasFailed",
-			Message: fmt.Sprintf("failed jobs: %s", gs.FailedList()),
+			Message: fmt.Sprintf("failed jobs: %s", gs.FailedJobsList()),
 		})
 
 		return cycle
@@ -73,7 +73,7 @@ func calculateLifecycle(cluster *v1alpha1.Cluster, gs lifecycle.ClassifierReader
 				}
 
 				meta.SetStatusCondition(&cycle.Conditions, metav1.Condition{
-					Type:    v1alpha1.ConditionAllJobsScheduled.String(),
+					Type:    v1alpha1.ConditionAllJobsAreScheduled.String(),
 					Status:  metav1.ConditionTrue,
 					Reason:  "MetricsEventFired",
 					Message: info,
@@ -96,7 +96,7 @@ func calculateLifecycle(cluster *v1alpha1.Cluster, gs lifecycle.ClassifierReader
 				}
 
 				meta.SetStatusCondition(&cycle.Conditions, metav1.Condition{
-					Type:    v1alpha1.ConditionJobFailed.String(),
+					Type:    v1alpha1.ConditionJobUnexpectedTermination.String(),
 					Status:  metav1.ConditionTrue,
 					Reason:  "StateQueryError",
 					Message: err.Error(),
@@ -113,7 +113,7 @@ func calculateLifecycle(cluster *v1alpha1.Cluster, gs lifecycle.ClassifierReader
 				}
 
 				meta.SetStatusCondition(&cycle.Conditions, metav1.Condition{
-					Type:    v1alpha1.ConditionAllJobsScheduled.String(),
+					Type:    v1alpha1.ConditionAllJobsAreScheduled.String(),
 					Status:  metav1.ConditionTrue,
 					Reason:  "StateEventFired",
 					Message: info,
@@ -141,7 +141,7 @@ func calculateLifecycle(cluster *v1alpha1.Cluster, gs lifecycle.ClassifierReader
 			}
 
 			meta.SetStatusCondition(&cycle.Conditions, metav1.Condition{
-				Type:    v1alpha1.ConditionJobFailed.String(),
+				Type:    v1alpha1.ConditionJobUnexpectedTermination.String(),
 				Status:  metav1.ConditionTrue,
 				Reason:  "MaxInstancesReached",
 				Message: msg,
@@ -167,36 +167,36 @@ func calculateLifecycle(cluster *v1alpha1.Cluster, gs lifecycle.ClassifierReader
 
 	autotests := []test{
 		{ // All jobs are successfully completed
-			expression: gs.NumSuccessfulJobs() == queuedJobs,
+			expression: gs.SuccessfulJobsNum() == queuedJobs,
 			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseSuccess,
 				Reason:  "AllJobsCompleted",
-				Message: fmt.Sprintf("successful jobs: %s", gs.SuccessfulList()),
+				Message: fmt.Sprintf("successful jobs: %s", gs.SuccessfulJobsList()),
 			},
 			condition: metav1.Condition{
-				Type:    v1alpha1.ConditionAllJobsCompleted.String(),
+				Type:    v1alpha1.ConditionAllJobsAreCompleted.String(),
 				Status:  metav1.ConditionTrue,
 				Reason:  "AllJobsCompleted",
-				Message: fmt.Sprintf("successful jobs: %s", gs.SuccessfulList()),
+				Message: fmt.Sprintf("successful jobs: %s", gs.SuccessfulJobsList()),
 			},
 		},
 		{ // A job has been failed, but it is within the expected toleration.
 			// In this case, simply return the previous status.
-			expression: cycle.Phase == v1alpha1.PhaseRunning && gs.NumFailedJobs() > 0,
+			expression: cycle.Phase == v1alpha1.PhaseRunning && gs.FailedJobsNum() > 0,
 			lifecycle:  cycle,
 		},
 		{ // All jobs are created, and at least one is still running
-			expression: gs.NumRunningJobs()+gs.NumSuccessfulJobs() == queuedJobs,
+			expression: gs.RunningJobsNum()+gs.SuccessfulJobsNum() == queuedJobs,
 			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseRunning,
 				Reason:  "AllJobsRunning",
-				Message: fmt.Sprintf("running jobs: %s", gs.RunningList()),
+				Message: fmt.Sprintf("running jobs: %s", gs.RunningJobsList()),
 			},
 			condition: metav1.Condition{
-				Type:    v1alpha1.ConditionAllJobsScheduled.String(),
+				Type:    v1alpha1.ConditionAllJobsAreScheduled.String(),
 				Status:  metav1.ConditionTrue,
 				Reason:  "AllJobsRunning",
-				Message: fmt.Sprintf("running jobs: %s", gs.RunningList()),
+				Message: fmt.Sprintf("running jobs: %s", gs.RunningJobsList()),
 			},
 		},
 
@@ -229,5 +229,5 @@ func calculateLifecycle(cluster *v1alpha1.Cluster, gs lifecycle.ClassifierReader
 		runningJobs: %s,
 		successfulJobs: %s,
 		failedJobs: %s
-	`, cycle, queuedJobs, gs.PendingList(), gs.RunningList(), gs.SuccessfulList(), gs.FailedList()))
+	`, cycle, queuedJobs, gs.PendingJobsList(), gs.RunningJobsList(), gs.SuccessfulJobsList(), gs.FailedJobsList()))
 }

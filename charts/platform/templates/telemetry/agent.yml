@@ -3,7 +3,6 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: platform.telemetry.container
-
 spec:
   service:
     decorators:
@@ -17,6 +16,9 @@ spec:
           - name: mon-system
             containerPort: 9442
         securityContext:
+          #runAsNonRoot: true
+          #readOnlyRootFilesystem: false
+          #allowPrivilegeEscalation: false
           privileged: true
         command:
           - /bin/sh # Run shell
@@ -24,13 +26,19 @@ spec:
           - |  # Multi-line str
             set -eum
 
+            # https://grafana.com/docs/agent/latest/configuration/integrations/cadvisor-config/
             # https://github.com/google/cadvisor/blob/master/docs/storage/prometheus.md
+
             cadvisor --port=9442                  \
-            --docker_only=false                   \
+            --docker_only=true                   \
+            --store_container_labels=false        \
+            --log_cadvisor_usage=false            \
+            --profiling=false                     \
             --allow_dynamic_housekeeping=true     \
-            --housekeeping_interval=10s           \
-            --disable_metrics=advtcp,cpuLoad,cpu_topology,cpuset,hugetlb,memory_numa,process,referenced_memory,resctrl,sched,tcp,udp,percpu,process,perf_event,oom_event  \
-            --enable_metrics=accelerator,cpu,memory,disk,diskIO,network,app \
+            --housekeeping_interval=2s            \
+            --disable_root_cgroup_stats=false     \
+            --disable_metrics=advtcp,cpuLoad,cpu_topology,cpuset,hugetlb,memory_numa,process,referenced_memory,resctrl,sched,percpu,process,perf_event,tcp,udp  \
+            --enable_metrics=cpu,memory,disk,diskIO,network,accelerator,oom_event \
             &
 
 

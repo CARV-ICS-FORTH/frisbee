@@ -109,31 +109,31 @@ func (r *Controller) updateLifecycle(t *v1alpha1.TestPlan) v1alpha1.Lifecycle {
 
 	selftests := []test{
 		{ // A job has failed during execution.
-			expression: r.state.NumFailedJobs() > 0,
+			expression: r.state.FailedJobsNum() > 0,
 			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseFailed,
 				Reason:  "JobHasFailed",
-				Message: fmt.Sprintf("failed jobs: %s", r.state.FailedList()),
+				Message: fmt.Sprintf("failed jobs: %s", r.state.FailedJobsList()),
 			},
 			condition: metav1.Condition{
-				Type:    v1alpha1.ConditionJobFailed.String(),
+				Type:    v1alpha1.ConditionJobUnexpectedTermination.String(),
 				Status:  metav1.ConditionTrue,
 				Reason:  "JobHasFailed",
-				Message: fmt.Sprintf("failed jobs: %s", r.state.FailedList()),
+				Message: fmt.Sprintf("failed jobs: %s", r.state.FailedJobsList()),
 			},
 		},
 		{ // All jobs are created, and completed successfully
-			expression: r.state.NumSuccessfulJobs() == expectedJobs,
+			expression: r.state.SuccessfulJobsNum() == expectedJobs,
 			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseSuccess,
 				Reason:  "AllJobsCompleted",
-				Message: fmt.Sprintf("successful jobs: %s", r.state.SuccessfulList()),
+				Message: fmt.Sprintf("successful jobs: %s", r.state.SuccessfulJobsList()),
 			},
 			condition: metav1.Condition{
-				Type:    v1alpha1.ConditionAllJobsCompleted.String(),
+				Type:    v1alpha1.ConditionAllJobsAreCompleted.String(),
 				Status:  metav1.ConditionTrue,
 				Reason:  "AllJobsCompleted",
-				Message: fmt.Sprintf("successful jobs: %s", r.state.SuccessfulList()),
+				Message: fmt.Sprintf("successful jobs: %s", r.state.SuccessfulJobsList()),
 			},
 		},
 		{ // All jobs are created, and at least one is still running
@@ -141,13 +141,13 @@ func (r *Controller) updateLifecycle(t *v1alpha1.TestPlan) v1alpha1.Lifecycle {
 			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseRunning,
 				Reason:  "JobIsRunning",
-				Message: fmt.Sprintf("running jobs: %s", r.state.RunningList()),
+				Message: fmt.Sprintf("running jobs: %s", r.state.RunningJobsList()),
 			},
 			condition: metav1.Condition{
-				Type:    v1alpha1.ConditionAllJobsScheduled.String(),
+				Type:    v1alpha1.ConditionAllJobsAreScheduled.String(),
 				Status:  metav1.ConditionTrue,
 				Reason:  "AllJobsRunning",
-				Message: fmt.Sprintf("running jobs: %s", r.state.RunningList()),
+				Message: fmt.Sprintf("running jobs: %s", r.state.RunningJobsList()),
 			},
 		},
 		{ // Not all Jobs are yet created
@@ -176,10 +176,10 @@ func (r *Controller) updateLifecycle(t *v1alpha1.TestPlan) v1alpha1.Lifecycle {
 		" phase ", cycle.Phase,
 		" actions: ", expectedJobs,
 		" executed: ", len(t.Status.Executed),
-		" pending: ", r.state.PendingList(),
-		" running: ", r.state.RunningList(),
-		" successfulJobs: ", r.state.SuccessfulList(),
-		" failedJobs: ", r.state.FailedList(),
+		" pending: ", r.state.PendingJobsList(),
+		" running: ", r.state.RunningJobsList(),
+		" successfulJobs: ", r.state.SuccessfulJobsList(),
+		" failedJobs: ", r.state.FailedJobsList(),
 		" cur status: ", t.Status,
 	)
 

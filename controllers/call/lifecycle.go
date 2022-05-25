@@ -54,7 +54,7 @@ func calculateLifecycle(cr *v1alpha1.Call, gs lifecycle.ClassifierReader) v1alph
 				}
 
 				meta.SetStatusCondition(&cycle.Conditions, metav1.Condition{
-					Type:    v1alpha1.ConditionAllJobsScheduled.String(),
+					Type:    v1alpha1.ConditionAllJobsAreScheduled.String(),
 					Status:  metav1.ConditionTrue,
 					Reason:  "MetricsEventFired",
 					Message: info,
@@ -77,7 +77,7 @@ func calculateLifecycle(cr *v1alpha1.Call, gs lifecycle.ClassifierReader) v1alph
 				}
 
 				meta.SetStatusCondition(&cycle.Conditions, metav1.Condition{
-					Type:    v1alpha1.ConditionJobFailed.String(),
+					Type:    v1alpha1.ConditionJobUnexpectedTermination.String(),
 					Status:  metav1.ConditionTrue,
 					Reason:  "StateQueryError",
 					Message: err.Error(),
@@ -94,7 +94,7 @@ func calculateLifecycle(cr *v1alpha1.Call, gs lifecycle.ClassifierReader) v1alph
 				}
 
 				meta.SetStatusCondition(&cycle.Conditions, metav1.Condition{
-					Type:    v1alpha1.ConditionAllJobsScheduled.String(),
+					Type:    v1alpha1.ConditionAllJobsAreScheduled.String(),
 					Status:  metav1.ConditionTrue,
 					Reason:  "StateEventFired",
 					Message: info,
@@ -122,7 +122,7 @@ func calculateLifecycle(cr *v1alpha1.Call, gs lifecycle.ClassifierReader) v1alph
 			}
 
 			meta.SetStatusCondition(&cycle.Conditions, metav1.Condition{
-				Type:    v1alpha1.ConditionJobFailed.String(),
+				Type:    v1alpha1.ConditionJobUnexpectedTermination.String(),
 				Status:  metav1.ConditionTrue,
 				Reason:  "MaxInstancesReached",
 				Message: msg,
@@ -148,36 +148,36 @@ func calculateLifecycle(cr *v1alpha1.Call, gs lifecycle.ClassifierReader) v1alph
 
 	autotests := []test{
 		{ // All jobs are successfully completed
-			expression: gs.NumSuccessfulJobs() == queuedJobs,
+			expression: gs.SuccessfulJobsNum() == queuedJobs,
 			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseSuccess,
 				Reason:  "AllJobsCompleted",
-				Message: fmt.Sprintf("successful jobs: %s", gs.SuccessfulList()),
+				Message: fmt.Sprintf("successful jobs: %s", gs.SuccessfulJobsList()),
 			},
 			condition: metav1.Condition{
-				Type:    v1alpha1.ConditionAllJobsCompleted.String(),
+				Type:    v1alpha1.ConditionAllJobsAreCompleted.String(),
 				Status:  metav1.ConditionTrue,
 				Reason:  "AllJobsCompleted",
-				Message: fmt.Sprintf("successful jobs: %s", gs.SuccessfulList()),
+				Message: fmt.Sprintf("successful jobs: %s", gs.SuccessfulJobsList()),
 			},
 		},
 		{ // A job has been failed, but it is within the expected toleration.
 			// In this case, simply return the previous status.
-			expression: cycle.Phase == v1alpha1.PhaseRunning && gs.NumFailedJobs() > 0,
+			expression: cycle.Phase == v1alpha1.PhaseRunning && gs.FailedJobsNum() > 0,
 			lifecycle:  cycle,
 		},
 		{ // All jobs are created, and at least one is still running
-			expression: gs.NumRunningJobs()+gs.NumSuccessfulJobs() == queuedJobs,
+			expression: gs.RunningJobsNum()+gs.SuccessfulJobsNum() == queuedJobs,
 			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseRunning,
 				Reason:  "AllJobsRunning",
-				Message: fmt.Sprintf("running jobs: %s", gs.RunningList()),
+				Message: fmt.Sprintf("running jobs: %s", gs.RunningJobsList()),
 			},
 			condition: metav1.Condition{
-				Type:    v1alpha1.ConditionAllJobsScheduled.String(),
+				Type:    v1alpha1.ConditionAllJobsAreScheduled.String(),
 				Status:  metav1.ConditionTrue,
 				Reason:  "AllJobsRunning",
-				Message: fmt.Sprintf("running jobs: %s", gs.RunningList()),
+				Message: fmt.Sprintf("running jobs: %s", gs.RunningJobsList()),
 			},
 		},
 
@@ -210,5 +210,5 @@ func calculateLifecycle(cr *v1alpha1.Call, gs lifecycle.ClassifierReader) v1alph
 		runningJobs: %s,
 		successfulJobs: %s,
 		failedJobs: %s
-	`, cycle, queuedJobs, gs.PendingList(), gs.RunningList(), gs.SuccessfulList(), gs.FailedList()))
+	`, cycle, queuedJobs, gs.PendingJobsList(), gs.RunningJobsList(), gs.SuccessfulJobsList(), gs.FailedJobsList()))
 }

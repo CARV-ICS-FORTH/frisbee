@@ -64,7 +64,6 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: prometheus-config
-
 data:
   prometheus.yml: |
     # For all the confusing Prometheus configuration and
@@ -79,6 +78,7 @@ data:
     global:
       # Can be overridden
       scrape_interval: 15s
+      evaluation_interval: 15s
 
     # A scrape configuration containing exactly one endpoint to scrape:
     # Here it's Prometheus itself.
@@ -143,7 +143,6 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: grafana-config
-
 data:
   dashboard.yml: |
     apiVersion: 1
@@ -178,7 +177,6 @@ data:
 
     [auth.basic]
     enabled = false
-
 
     [auth.anonymous]
     # enable anonymous access
