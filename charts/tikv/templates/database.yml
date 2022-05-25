@@ -28,8 +28,8 @@ spec:
         - platform.telemetry.container
         - tikv.telemetry.pd
       resources: # Resources
-        cpu: {{"{{.Inputs.Parameters.cpu}}"}}
-        memory: {{"{{.Inputs.Parameters.memory}}"}}
+        cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
+        memory: {{"{{.Inputs.Parameters.memory}}" |quote}}
 
     containers: # Container
       - name: app
@@ -93,8 +93,8 @@ spec:
         - platform.telemetry.container
         - tikv.telemetry.worker
       resources: # Resources
-        cpu: {{"{{.Inputs.Parameters.cpu}}"}}
-        memory: {{"{{.Inputs.Parameters.memory}}" |quote}}
+        cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
+        memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
 
     containers: # Container
       - name: app

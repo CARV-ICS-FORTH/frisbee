@@ -18,7 +18,6 @@ spec:
       - name: dataset
         persistentVolumeClaim:
           claimName: {{"{{.Inputs.Parameters.claimName}}" | quote}}
-
     containers:
       - name: app
         image: icsforth/fl-demo:latest
@@ -27,28 +26,27 @@ spec:
             mountPath: /dataset
             readOnly: true
         command:
-          - /bin/sh # Run shell
+          - /bin/bash # Run shell
           - -c # Read from string
           - |  # Multi-line str
-            set -eum
+            set -eumo  pipefail
             trap "touch /dev/shm/stop" EXIT
+
+            # Install basic utils
+            apt-get update && apt-get install -y procps
 
             # Copy the media dataset into the local directory for processing. We use copy in order to avoid sending the
             # I/O through the shared media.
-            sleep 3600
-
-            # cp -r /dataset
-
-
-            export FL_SERVER={{"{{.Inputs.Parameters.server}}"}}
+            cp -r /dataset ./data
 
             # The clients are  supposed to be continuously running.
             # If the training is stopped, the clients will report “Disconnect and shut down” on the logs,
             # but they will keep running. To this end, we terminate the process upon the given message.
+            export FL_SERVER={{"{{.Inputs.Parameters.server}}"}}
 
-            python3 client.py &> "/tmp/flower.log" &
+            python3 client.py &> /tmp/flower.log &
             processnumber=$!
 
-            tail -F "/tmp/flower.log" | awk  '/Disconnect and shut down/ { system("kill '$processnumber'") }'
+            tail -F /tmp/flower.log | awk  '/Disconnect and shut down/ { system("kill '$processnumber'") }'
 
-            sleep 3600
+            #sleep 3600

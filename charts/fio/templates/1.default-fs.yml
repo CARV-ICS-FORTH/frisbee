@@ -3,37 +3,28 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
-  name: fio.benchmark.shared-fs
-
+  name: fio.benchmark.default-fs
 spec:
   inputs:
     parameters:
-      claimName: ""
       size: "10M"
       direct: "0"
   service:
-    volumes:
-      - name: shared-fs
-        persistentVolumeClaim:
-          claimName: {{"{{.Inputs.Parameters.claimName}}"}}
-
     decorators: # decorators
       telemetry:
         - platform.telemetry.container
-        - fio.telemetry.client
 
     containers: # Container
       - name: app
         image: xridge/fio
-        volumeMounts:
-          - name: shared-fs
-            mountPath: /testdata
         command:
           - /bin/sh # Run shell
           - -c      # Read from string
           - |       # Multi-line str
             set -eum
             trap "touch /dev/shm/stop" EXIT
+
+            mkdir /testdata
 
             DEVICE=/testdata
             SIZE={{"{{.Inputs.Parameters.size}}"}}

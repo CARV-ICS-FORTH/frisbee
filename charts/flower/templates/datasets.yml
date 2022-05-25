@@ -8,10 +8,13 @@ spec:
     parameters:
       claimName: ""
   service:
+    decorators:
+      telemetry:
+        - platform.telemetry.container
     volumes:
       - name: dataset
         persistentVolumeClaim:
-          claimName: {{".Inputs.Parameters.claimName" | quote}}
+          claimName: {{"{{.Inputs.Parameters.claimName}}" | quote}}
     containers: # Container(s)
       - name: app
         image: busybox
@@ -23,13 +26,16 @@ spec:
           - -c        # Read from string
           - |         # Multi-line str
             set -eum
+            trap "touch /dev/shm/stop" EXIT
+
 
             if [ -d "/dataset/cifar-10-batches-py" ]
             then
                 echo "Directory /dataset/cifar-10-batches-py exists."
             else
-              echo "Store Cifar10 at /dataset/cifar-10-batches-py"
-
+              echo "Downlaod CIFAR10"
               wget https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz
+
+              echo "Extract Cifar10 at /dataset/cifar-10-batches-py"
               tar -xzvf cifar-10-python.tar.gz -C /dataset/
             fi

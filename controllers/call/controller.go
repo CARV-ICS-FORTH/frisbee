@@ -170,7 +170,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if cr.Status.Phase.Is(v1alpha1.PhaseSuccess) {
 		r.Logger.Info("Cleaning up call jobs",
 			"call", cr.GetName(),
-			"successfulJobs", r.state.SuccessfulList(),
+			"successfulJobs", r.state.SuccessfulJobsList(),
 		)
 
 		/*
@@ -190,9 +190,9 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		r.Logger.Info("Cleaning up caller jobs",
 			"caller", cr.GetName(),
-			"successfulJobs", r.state.SuccessfulList(),
-			"runningJobs", r.state.RunningList(),
-			"pendingJobs", r.state.PendingList(),
+			"successfulJobs", r.state.SuccessfulJobsList(),
+			"runningJobs", r.state.RunningJobsList(),
+			"pendingJobs", r.state.PendingJobsList(),
 		)
 
 		// Remove the non-failed components. Leave the failed jobs and system jobs for postmortem analysis.

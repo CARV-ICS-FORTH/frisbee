@@ -128,13 +128,17 @@ const (
 	// ConditionCRInitialized indicates whether the workflow has been initialized
 	ConditionCRInitialized = ConditionType("initialized")
 
-	ConditionJobFailed = ConditionType("hasFailedJobs")
+	// ConditionAllJobsAreScheduled indicates that all jobs have been successfully scheduled.
+	// Jobs may refer to actions of a plan, services of a cluster, chaos events of a cascade, etc.
+	ConditionAllJobsAreScheduled = ConditionType("AllJobsAreScheduled")
 
-	// ConditionAllJobsScheduled indicates whether all actions in the workflow have been executed.
-	ConditionAllJobsScheduled = ConditionType("AllJobsAreScheduled")
+	// ConditionAllJobsAreCompleted indicates that all jobs have been successfully completed.
+	// Jobs may refer to actions of a plan, services of a cluster, chaos events of a cascade, etc.
+	ConditionAllJobsAreCompleted = ConditionType("AllJobsAreCompleted")
 
-	// ConditionAllJobsCompleted indicates whether all actions in the workflow have been completed.
-	ConditionAllJobsCompleted = ConditionType("complete")
+	// ConditionJobUnexpectedTermination is used for a job that has been unexpectedly terminated.
+	// The termination refers to both Success and Fail.
+	ConditionJobUnexpectedTermination = ConditionType("UnexpectedTermination")
 
 	// ConditionTerminated indicates the user-defined conditions are met.
 	ConditionTerminated = ConditionType("terminated")

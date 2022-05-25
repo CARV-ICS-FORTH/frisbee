@@ -45,33 +45,48 @@ func calculateLifecycle(t *v1alpha1.Telemetry, gs lifecycle.ClassifierReader) v1
 
 	autotests := []test{
 		{ // A job has failed during execution.
-			expression: gs.NumFailedJobs() > 0,
+			expression: gs.FailedJobsNum() > 0,
 			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseFailed,
 				Reason:  "JobHasFailed",
-				Message: fmt.Sprintf("failed jobs: %s", gs.FailedList()),
+				Message: fmt.Sprintf("failed jobs: %s", gs.FailedJobsList()),
 			},
 			condition: metav1.Condition{
-				Type:    v1alpha1.ConditionJobFailed.String(),
+				Type:    v1alpha1.ConditionJobUnexpectedTermination.String(),
 				Status:  metav1.ConditionTrue,
 				Reason:  "JobHasFailed",
-				Message: fmt.Sprintf("failed jobs: %s", gs.FailedList()),
+				Message: fmt.Sprintf("failed jobs: %s", gs.FailedJobsList()),
 			},
 		},
 		{ // All jobs are running
-			expression: gs.NumRunningJobs() == expectedJobs,
+			expression: gs.RunningJobsNum() == expectedJobs,
 			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseRunning,
 				Reason:  "JobIsRunning",
-				Message: fmt.Sprintf("running jobs: %s", gs.RunningList()),
+				Message: fmt.Sprintf("running jobs: %s", gs.RunningJobsList()),
 			},
 			condition: metav1.Condition{
-				Type:    v1alpha1.ConditionAllJobsScheduled.String(),
+				Type:    v1alpha1.ConditionAllJobsAreScheduled.String(),
 				Status:  metav1.ConditionTrue,
 				Reason:  "AllJobsRunning",
-				Message: fmt.Sprintf("active jobs: %s", gs.PendingList()),
+				Message: fmt.Sprintf("active jobs: %s", gs.PendingJobsList()),
 			},
 		},
+		{ // At least one job has ended. This is unexpected since all telemetry services are excepted to run forever.
+			expression: gs.SuccessfulJobsNum() > 0,
+			lifecycle: v1alpha1.Lifecycle{
+				Phase:   v1alpha1.PhaseFailed,
+				Reason:  "JobTerminate",
+				Message: "at least one jobs has been terminated unexpectedly",
+			},
+			condition: metav1.Condition{
+				Type:    v1alpha1.ConditionJobUnexpectedTermination.String(),
+				Status:  metav1.ConditionTrue,
+				Reason:  "JobTerminatedUnexpectedly",
+				Message: fmt.Sprintf("Terminated jobs [%s]", gs.SuccessfulJobsList()),
+			},
+		},
+
 		{ // Not all Jobs are yet created
 			expression: cycle.Phase == v1alpha1.PhasePending,
 			lifecycle: v1alpha1.Lifecycle{
@@ -92,14 +107,13 @@ func calculateLifecycle(t *v1alpha1.Telemetry, gs lifecycle.ClassifierReader) v1
 
 	logrus.Warn("TestPlan Debug info \n",
 		" current ", cycle.Phase,
+		" conditions: ", cycle.Conditions,
 		" expected: ", expectedJobs,
-		" activeJobs: ", gs.PendingList(),
-		" runningJobs: ", gs.RunningList(),
-		" successfulJobs: ", gs.SuccessfulList(),
-		" failedJobs: ", gs.FailedList(),
-		" cur status: ", cycle,
+		" pendingJobs: ", gs.PendingJobsList(),
+		" runningJobs: ", gs.RunningJobsList(),
+		" successfulJobs: ", gs.SuccessfulJobsList(),
+		" failedJobs: ", gs.FailedJobsList(),
 	)
 
-	panic("unhandled lifecycle conditions")
-
+	panic("invalid or unhandled state transition")
 }

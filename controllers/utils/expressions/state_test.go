@@ -129,7 +129,7 @@ func TestFiredState(t *testing.T) {
 		{
 			name: "valid numeric comparison",
 			args: args{
-				expr:  `{{.NumRunningJobs}} == 2`,
+				expr:  `{{.RunningJobsNum}} == 2`,
 				state: state,
 			},
 			wantErr:  false,
