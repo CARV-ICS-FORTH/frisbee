@@ -12,7 +12,7 @@ spec:
   service:
     decorators: # decorators
       telemetry:
-        - platform.telemetry.container
+        - telemetry.agent
 
     containers: # Container
       - name: app

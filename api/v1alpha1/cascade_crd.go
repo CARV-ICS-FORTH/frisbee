@@ -24,7 +24,7 @@ import (
 type CascadeSpec struct {
 	GenerateFromTemplate `json:",inline"`
 
-	// Schedule defines the interval between the creation of services within the group. Executed creation is not
+	// Schedule defines the interval between the creation of services within the group. ExecutedActions creation is not
 	// supported in collocated mode. Since Pods are intended to be disposable and replaceable, we cannot add a
 	// container to a Pod once it has been created
 	// +optional

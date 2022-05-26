@@ -12,7 +12,7 @@ spec:
   service:
     decorators:
       telemetry:
-        - platform.telemetry.container
+        - telemetry.agent
       resources:
         cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
         memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
@@ -48,7 +48,7 @@ spec:
   service:
     decorators:
       telemetry:
-        - platform.telemetry.container
+        - telemetry.agent
         - iperf2.telemetry.client
       resources:
         memory: {{"{{.Inputs.Parameters.memory}}" | quote}}

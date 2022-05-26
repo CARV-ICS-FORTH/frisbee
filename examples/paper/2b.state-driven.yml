@@ -9,7 +9,7 @@ spec:
     - action: Service
       name: victim
       service:
-        templateRef: platform.tools.debugger
+        templateRef: tools.debuger
 
     # Step 0: bootstrap.
     # For TiKV, we must first create a placementDriver and then add the workers.

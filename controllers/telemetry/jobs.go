@@ -33,8 +33,8 @@ import (
 const (
 	// grafana specific.
 	grafanaDashboards  = "/etc/grafana/provisioning/dashboards"
-	prometheusTemplate = "prometheus"
-	grafanaTemplate    = "grafana"
+	prometheusTemplate = "telemetry.prometheus"
+	grafanaTemplate    = "telemetry.grafana"
 )
 
 func (r *Controller) installPrometheus(ctx context.Context, w *v1alpha1.Telemetry) error {

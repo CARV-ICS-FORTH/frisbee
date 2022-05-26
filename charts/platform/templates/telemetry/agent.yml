@@ -2,7 +2,7 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
-  name: platform.telemetry.container
+  name: telemetry.agent
 spec:
   service:
     decorators:

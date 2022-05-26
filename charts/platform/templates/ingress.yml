@@ -4,6 +4,7 @@ kind: Ingress
 metadata:
   name: insecure-ingress
 spec:
+  ingressClassName: {{.Values.telemetry.ingressClass}}
   rules:
     - host: prometheus-frisbee.{{.Values.global.domainName}}
       http:
@@ -47,11 +48,11 @@ kind: Ingress
 metadata:
   name: secure-ingress
   annotations:
-      kubernetes.io/ingress.class: {{.Values.telemetry.ingressClass}}
-      nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
-      nginx.ingress.kubernetes.io/ssl-redirect: "true"
-      nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/ssl-passthrough: "true"
 spec:
+  ingressClassName: {{.Values.telemetry.ingressClass}}
   rules:
     {{- if .Values.dashboard.enabled}}
     - host: dashboard-frisbee.{{.Values.global.domainName}}

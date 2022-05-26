@@ -13,7 +13,7 @@ spec:
       cpu: ""
   service:
     decorators:
-      telemetry: [ platform.telemetry.container, mongo.telemetry.server ]
+      telemetry: [ telemetry.agent, mongo.telemetry.server ]
       resources:
         cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
         memory: {{"{{.Inputs.Parameters.memory}}" |quote}}
@@ -89,7 +89,7 @@ spec:
       cpu: ""
   service:
     decorators: # Decorators
-      telemetry: [ platform.telemetry.container, mongo.telemetry.server/telegraf ]
+      telemetry: [ telemetry.agent, mongo.telemetry.server/telegraf ]
       resources:
         cpu: {{"{{.Inputs.Parameters.cpu}}" |quote}}
         memory: {{"{{.Inputs.Parameters.memory}}" |quote}}

@@ -113,11 +113,11 @@ type Configuration struct {
 type TestPlanStatus struct {
 	Lifecycle `json:",inline"`
 
-	WithTelemetry bool `json:"withTelemetry"`
+	TelemetryEnabled bool `json:"telemetryEnabled"`
 
-	// Executed is a list of executed actions.
+	// ExecutedActions is a list of executed actions.
 	// +optional
-	Executed map[string]ConditionalExpr `json:"executed"`
+	ExecutedActions map[string]ConditionalExpr `json:"executedActions"`
 
 	// +optional
 	Configuration Configuration `json:"configuration,omitempty"`

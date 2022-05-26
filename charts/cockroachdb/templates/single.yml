@@ -8,7 +8,7 @@ spec:
   service:
     decorators:
       telemetry:
-        - platform.telemetry.container
+        - telemetry.agent
         - cockroach.telemetry.server
 
     callables:

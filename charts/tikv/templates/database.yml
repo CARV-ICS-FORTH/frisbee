@@ -25,7 +25,7 @@ spec:
 
     decorators: # Decorators
       telemetry:
-        - platform.telemetry.container
+        - telemetry.agent
         - tikv.telemetry.pd
       resources: # Resources
         cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
@@ -90,7 +90,7 @@ spec:
 
     decorators: # Decorators
       telemetry:
-        - platform.telemetry.container
+        - telemetry.agent
         - tikv.telemetry.worker
       resources: # Resources
         cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}

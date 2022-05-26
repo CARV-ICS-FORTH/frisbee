@@ -25,7 +25,7 @@ import (
 	"github.com/carv-ics-forth/frisbee/controllers/utils"
 	"github.com/carv-ics-forth/frisbee/controllers/utils/lifecycle"
 	"github.com/go-logr/logr"
-	"github.com/pkg/errors"
+	k8errors "k8s.io/apimachinery/pkg/api/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -49,11 +49,19 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	*/
 	var cr v1alpha1.Template
 
-	var requeue bool
-	result, err := utils.Reconcile(ctx, r, req, &cr, &requeue)
+	// Use a slightly different approach than other controllers, since we do not need finalizers.
+	if err := r.GetClient().Get(ctx, req.NamespacedName, &cr); err != nil {
+		// Request object not found, could have been deleted after reconcile request.
+		// We'll ignore not-found errors, since they can't be fixed by an immediate
+		// requeue (we'll need to wait for a new notification), and we can get them
+		// on added / deleted requests.
+		if k8errors.IsNotFound(err) {
+			return utils.Stop()
+		}
 
-	if requeue {
-		return result, errors.Wrapf(err, "initialization error")
+		r.Error(err, "obj retrieval")
+
+		return utils.RequeueAfter(time.Second)
 	}
 
 	/*
@@ -97,7 +105,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 */
 
 func (r *Controller) Finalizer() string {
-	return "templates.frisbee.io/finalizer"
+	return ""
 }
 
 func (r *Controller) Finalize(obj client.Object) error {

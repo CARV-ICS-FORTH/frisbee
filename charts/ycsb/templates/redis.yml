@@ -21,7 +21,7 @@ spec:
   service:
     decorators: # Decorators
       telemetry:
-        - platform.telemetry.container
+        - telemetry.agent
         - ycsb.telemetry.client
       resources: # Resources
         cpu: {{"{{.Inputs.Parameters.cpu}}" |quote}}
@@ -73,7 +73,7 @@ spec:
   service:
     decorators: # Decorators
       telemetry:
-        - platform.telemetry.container
+        - telemetry.agent
         - ycsb.telemetry.client
       resources: # Resources
         cpu: {{"{{.Inputs.Parameters.cpu}}" |quote}}

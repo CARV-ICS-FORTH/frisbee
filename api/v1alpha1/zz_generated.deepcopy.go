@@ -1404,8 +1404,8 @@ func (in *TestPlanSpec) DeepCopy() *TestPlanSpec {
 func (in *TestPlanStatus) DeepCopyInto(out *TestPlanStatus) {
 	*out = *in
 	in.Lifecycle.DeepCopyInto(&out.Lifecycle)
-	if in.Executed != nil {
-		in, out := &in.Executed, &out.Executed
+	if in.ExecutedActions != nil {
+		in, out := &in.ExecutedActions, &out.ExecutedActions
 		*out = make(map[string]ConditionalExpr, len(*in))
 		for key, val := range *in {
 			(*out)[key] = val
