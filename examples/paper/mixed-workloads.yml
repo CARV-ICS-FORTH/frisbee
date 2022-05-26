@@ -5,7 +5,7 @@ metadata:
   name: redis-mixed-workloads
 spec:
   importDashboards:
-    - telemetry.agent
+    - default.telemetry.agent
     - redis.telemetry.server
     - ycsb.telemetry.client
 

@@ -21,11 +21,26 @@ import (
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 func Test_setField(t *testing.T) {
+
 	cr := v1alpha1.Service{
 		Spec: v1alpha1.ServiceSpec{
+			Requirements: &v1alpha1.Requirements{
+				PVC: &v1alpha1.PVC{
+					Name: "bind",
+					Spec: corev1.PersistentVolumeClaimSpec{
+						AccessModes: nil,
+						Selector:    nil,
+						Resources: corev1.ResourceRequirements{
+							Requests: map[corev1.ResourceName]resource.Quantity{"storage": resource.MustParse("1Gi")},
+						},
+					},
+				},
+			},
+
 			PodSpec: corev1.PodSpec{
 				Containers: []corev1.Container{
 					{
@@ -53,12 +68,23 @@ func Test_setField(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "a",
+			name: "test-port",
 			args: args{
 				cr: &cr,
 				val: v1alpha1.SetField{
-					Field: "Containers.0.Ports.0.ContainerPort",
+					Field: "PodSpec.Containers.0.Ports.0.ContainerPort",
 					Value: "66",
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "test-requirement",
+			args: args{
+				cr: &cr,
+				val: v1alpha1.SetField{
+					Field: "Requirements.PVC.Spec.Resources.Requests.storage",
+					Value: "3Gi",
 				},
 			},
 			wantErr: false,

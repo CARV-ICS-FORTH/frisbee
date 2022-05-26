@@ -28,6 +28,18 @@ spec:
                 port:
                   number: {{.Values.telemetry.grafanaPort}}
 
+
+    - host: logviewer-frisbee.{{.Values.global.domainName}}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: logviewer
+                port:
+                  number: 80
+
     {{- if .Values.chaos.enabled }}
     - host: chaos-frisbee.{{.Values.global.domainName}}
       http:

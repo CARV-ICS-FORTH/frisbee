@@ -3,7 +3,6 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: tikv.telemetry.pd
-
 spec:
   service:
     decorators:
@@ -53,7 +52,6 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: tikv.telemetry.worker
-
 spec:
   service:
     decorators:

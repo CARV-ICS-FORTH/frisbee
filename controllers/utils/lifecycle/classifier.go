@@ -20,6 +20,7 @@ import (
 	"sort"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
+	"github.com/carv-ics-forth/frisbee/controllers/utils"
 	"github.com/sirupsen/logrus"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -95,7 +96,7 @@ func (in *Classifier) Classify(name string, obj client.Object) {
 }
 
 // Exclude registers a system service.
-// Services classified by this function are not accounted, unless they have failed.
+// Services classified by this function are not accounted in the lifecycle, unless they have failed.
 func (in *Classifier) Exclude(name string, obj client.Object) {
 	if statusAware, getStatus := obj.(ReconcileStatusAware); getStatus {
 		status := statusAware.GetReconcileStatus()
@@ -236,13 +237,18 @@ func (in Classifier) FailedJobs() []client.Object {
 	return list
 }
 
+// IsDeletable returns if a service can be deleted or not.
+// Deletable  are only pending or running services, which belong to the SUT (not on the system(
 func (in Classifier) IsDeletable(jobName string) (client.Object, bool) {
 	if job, exists := in.pendingJobs[jobName]; exists {
 		return job, true
 	}
 
 	if job, exists := in.runningJobs[jobName]; exists {
-		return job, true
+		// A system service is not deletabled
+		if !utils.IsSystemService(job) {
+			return job, true
+		}
 	}
 
 	return nil, false

@@ -3,7 +3,6 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: ycsb.cockroach.loader
-
 spec:
   inputs:
     parameters:
@@ -20,7 +19,7 @@ spec:
   service:
     decorators: # Decorators
       telemetry:
-        - telemetry.agent
+        - default.telemetry.agent
         - ycsb.telemetry.client
       resources: # Resources
         cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
@@ -61,7 +60,6 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: ycsb.cockroach.runner
-
 spec:
   inputs:
     parameters:
@@ -75,7 +73,7 @@ spec:
   service:
     decorators: # Decorators
       telemetry:
-        - telemetry.agent
+        - default.telemetry.agent
         - ycsb.telemetry.client
       resources: # Resources
         cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}

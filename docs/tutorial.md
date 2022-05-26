@@ -64,11 +64,11 @@ Although Frisbee can be installed directly from a Helm repository, for demonstra
 
 
 
-Now, it's time to deploy the platform
+Now, it's time to deploy the platform, on the **default** namespace.
 
 ```bash
 # Wait until the installation is complete
->> helm  upgrade --install --wait my-frisbee ./charts/platform/ --debug
+>> helm  upgrade --install --wait my-frisbee ./charts/platform/ --debug -n default
 ```
 
 
@@ -107,10 +107,10 @@ The commands are to be executed from the *Frisbee* directory.
 
 ```bash
 # Install Cockroach servers
->> helm upgrade --install --wait my-cockroach ./charts/cockroachdb --debug
+>> helm upgrade --install --wait my-cockroach ./charts/cockroachdb --debug -n default
 
 # Install YCSB for creating workload
->> helm upgrade --install --wait my-ycsb ./charts/ycsb --debug
+>> helm upgrade --install --wait my-ycsb ./charts/ycsb --debug -n default
 ```
 
 
@@ -124,6 +124,10 @@ my-cockroach    default         2               2022-05-25 16:15:58.682969153 +0
 my-frisbee      default         1               2022-05-25 15:46:54.4600888 +0300 EEST          deployed        platform-0.0.0  
 my-ycsb         default         1               2022-05-25 16:16:13.364123735 +0300 EEST        deployed        ycsb-0.0.0      
 ```
+
+
+
+> **Note:** you must re-install the chart if you change the templates. examples can be modified without re-installation.
 
 
 
@@ -153,7 +157,7 @@ You now select which scenario you wish to run.
 Let's run a **bitrot** scenario.
 
 ```bash
->> kubectl -f ./charts/cockroachdb/examples/10.bitrot.yml apply
+>> kubectl -f ./charts/cockroachdb/examples/10.bitrot.yml apply -n default
 
 testplan.frisbee.io/cockroach-bitrot created
 ```
@@ -188,7 +192,7 @@ We will use `kubectl` since is the most common CLI interface between Kubernetes 
 Firstly, let's inspect the test plan.
 
 ```bash
->> kubectl describe testplan.frisbee.io/cockroach-bitrot
+>> kubectl describe testplan.frisbee.io/cockroach-bitrot -n default
 
 ...
 Status:
@@ -246,7 +250,7 @@ To avoid continuous inspection via polling, we use the `wait` function of `kubec
 In the specific **bitrot** scenario,  the test will pass only it has reached an **UnexpectedTermination** within 10 minutes of execution.
 
 ```bash
->> kubectl wait --for=condition=UnexpectedTermination --timeout=10m testplan.frisbee.io/cockroach-bitrot 
+>> kubectl wait --for=condition=UnexpectedTermination --timeout=10m testplan.frisbee.io/cockroach-bitrot -n default
 
 testplan.frisbee.io/cockroach-bitrot condition met
 ```
@@ -276,10 +280,39 @@ To reduce the noise when debugging a failed test, *Frisbee* automatically delete
 The deletion is as simple as the creation of a test.
 
 ```bash
->> kubectl -f ./charts/cockroachdb/examples/10.bitrot.yml delete --cascade=foreground
+>> kubectl -f ./charts/cockroachdb/examples/10.bitrot.yml delete --cascade=foreground -n default
 
 testplan.frisbee.io "cockroach-bitrot" deleted
 ```
 
 The flag `cascade=foreground` will wait until the experiment is actually deleted. Without this flag, the deletion will
 happen in the background. Use this flag if you want to run sequential tests, without interference.
+
+
+
+
+
+## Distributed Logs
+
+
+
+Collecting logs from distributed services is somewhat tricky. For the moment, we create a shared NFS filesystem and every service write its logs under the path `/shared/${HOSTNAME}`.  This however, requires some instrumentation as shown in the [example](https://github.com/CARV-ICS-FORTH/frisbee/blob/main/charts/cockroachdb/examples/12.withlogs.yml). It also takes some to create the volume and sync it.
+
+Once done, the logs are available via a web-based file browser.
+
+* [Logviewer](logviewer-frisbee.localhost) (admin/admin)
+
+The lifecycle of the volume is bind to that of the test. If the test is deleted, the volume will be garbage collected automatically.
+
+
+
+
+
+## Parallel Tests. 
+
+For the time being, the safest to run multiple experiments is to run each test on a **dedicated namespace**. 
+
+To do so, you have to repeat this tutorial, replacing the `-n` flag with a unique namespace. 
+
+
+

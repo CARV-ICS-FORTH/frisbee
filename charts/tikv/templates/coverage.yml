@@ -5,7 +5,6 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: tikv.cluster.coverage.placement-driver
-
 spec:
   inputs:
     parameters:
@@ -25,7 +24,7 @@ spec:
 
     decorators: # Decorators
       telemetry:
-        - telemetry.agent
+        - default.telemetry.agent
         - tikv.telemetry.pd
       resources:
         cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
@@ -90,7 +89,6 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: tikv.cluster.coverage.worker
-
 spec:
   inputs:
     parameters:
@@ -110,7 +108,7 @@ spec:
               storage: 15Gi
 
     decorators: # Decorators
-      telemetry: [ telemetry.agent, tikv.telemetry.worker ]
+      telemetry: [ default.telemetry.agent, tikv.telemetry.worker ]
       resources: # Resources
         cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
         memory: {{"{{.Inputs.Parameters.memory}}" |quote}}

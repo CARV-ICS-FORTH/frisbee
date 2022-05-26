@@ -25,6 +25,7 @@ import (
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/utils"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/labels"
@@ -109,24 +110,29 @@ func setField(cr *v1alpha1.Service, val v1alpha1.SetField) (err error) {
 		}
 	}()
 
-	v := reflect.ValueOf(&cr.Spec.PodSpec).Elem()
+	fieldRef := reflect.ValueOf(&cr.Spec).Elem()
 
 	index := func(v reflect.Value, idx string) reflect.Value {
 		if i, err := strconv.Atoi(idx); err == nil {
 			return v.Index(i)
 		}
 
-		return v.FieldByName(idx)
+		// reflect.Value.FieldByName cannot be used on map Value
+		if v.Kind() == reflect.Map {
+			return reflect.Indirect(v)
+		}
+
+		return reflect.Indirect(v).FieldByName(idx)
 	}
 
 	for _, s := range strings.Split(val.Field, ".") {
-		v = index(v, s)
+		fieldRef = index(fieldRef, s)
 	}
 
 	var conv interface{} = val.Value
 
 	// Convert src value to something that may fit to the dst.
-	switch v.Kind() {
+	switch fieldRef.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		toInt, err := strconv.Atoi(val.Value)
 		if err != nil {
@@ -142,9 +148,17 @@ func setField(cr *v1alpha1.Service, val v1alpha1.SetField) (err error) {
 		}
 
 		conv = toBool
+
+	case reflect.Map:
+		// TODO: Needs to be improved because the map can be of various types
+		logrus.Warn("THIS FUNCTION IS NOT WORKING, BUT WE DO NOT WANT TO FAIL EITHER")
+		return nil
+
+	default:
+		conv = val.Value
 	}
 
-	v.Set(reflect.ValueOf(conv).Convert(v.Type()))
+	fieldRef.Set(reflect.ValueOf(conv).Convert(fieldRef.Type()))
 
 	return nil
 }

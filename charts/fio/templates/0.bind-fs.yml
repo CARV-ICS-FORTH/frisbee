@@ -23,7 +23,7 @@ spec:
               storage: 500Mi
     decorators: # decorators
       telemetry:
-        - telemetry.agent
+        - default.telemetry.agent
 #        - fio.telemetry.client
 
     containers: # Container

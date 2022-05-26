@@ -3,7 +3,6 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: mongodb.telemetry.server
-
 spec:
   service:
     decorators:
@@ -57,7 +56,6 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: mongodb.telemetry.server2
-
 spec:
   service:
     decorators:

@@ -1,8 +1,10 @@
 ---
+# In order to have shared logs, we must first create a network volume.
+# This volume will then be mounted across the various containers.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: distributed-logs
+  name: shared-dir
 spec:
   storageClassName: network-volume
   volumeMode: Filesystem
@@ -17,17 +19,26 @@ spec:
 apiVersion: frisbee.io/v1alpha1
 kind: TestPlan
 metadata:
-  name: cockroach-withlogs
+  name: cockroach-with-logs
 spec:
   actions:
+    # Step 0. Enable the log viewer
+    - action: Service
+      name: logviewer
+      service:
+        templateRef: default.telemetry.logviewer
+        inputs:
+          - { logVolumeName: shared-dir }
+
     # Step 0. provision 3 individual servers
     - action: Cluster
       name: masters
+      depends: { running: [ logviewer ] }
       cluster:
         templateRef: cockroach.cluster.master-with-logger
         instances: 3
         inputs:
-          - { join: "masters-0:26257,masters-1:26257,masters-2:26257", logVolumeName: distributed-logs }
+          - { join: "masters-0:26257,masters-1:26257,masters-2:26257", logVolumeName: shared-dir }
 
     # Step 1. Create a cockroach cluster from the individual servers
     - action: Call

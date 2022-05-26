@@ -5,7 +5,6 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: tikv.cluster.placement-driver
-
 spec:
   inputs:
     parameters:
@@ -25,7 +24,7 @@ spec:
 
     decorators: # Decorators
       telemetry:
-        - telemetry.agent
+        - default.telemetry.agent
         - tikv.telemetry.pd
       resources: # Resources
         cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
@@ -69,7 +68,6 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: tikv.cluster.worker
-
 spec:
   inputs:
     parameters:
@@ -90,7 +88,7 @@ spec:
 
     decorators: # Decorators
       telemetry:
-        - telemetry.agent
+        - default.telemetry.agent
         - tikv.telemetry.worker
       resources: # Resources
         cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}

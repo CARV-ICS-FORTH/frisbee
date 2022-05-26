@@ -30,7 +30,6 @@ import (
 	"github.com/carv-ics-forth/frisbee/controllers/utils/watchers"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -171,9 +170,6 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		around.
 	*/
 	if latestLF.Phase == v1alpha1.PhaseSuccess {
-		r.GetEventRecorderFor("").Event(&cr, corev1.EventTypeNormal,
-			latestLF.Reason, "cluster succeeded")
-
 		r.Logger.Info("Cleaning up cluster jobs",
 			"cluster", cr.GetName(),
 			"successfulJobs", r.state.SuccessfulJobsList(),

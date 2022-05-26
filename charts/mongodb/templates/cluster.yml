@@ -3,7 +3,6 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: mongodb.cluster.master
-
 spec:
   inputs:
     parameters:
@@ -13,7 +12,7 @@ spec:
       cpu: ""
   service:
     decorators:
-      telemetry: [ telemetry.agent, mongo.telemetry.server ]
+      telemetry: [ default.telemetry.agent, mongo.telemetry.server ]
       resources:
         cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
         memory: {{"{{.Inputs.Parameters.memory}}" |quote}}
@@ -80,7 +79,6 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: mongodb.cluster.slave
-
 spec:
   inputs:
     parameters:
@@ -89,7 +87,7 @@ spec:
       cpu: ""
   service:
     decorators: # Decorators
-      telemetry: [ telemetry.agent, mongo.telemetry.server/telegraf ]
+      telemetry: [ default.telemetry.agent, mongo.telemetry.server/telegraf ]
       resources:
         cpu: {{"{{.Inputs.Parameters.cpu}}" |quote}}
         memory: {{"{{.Inputs.Parameters.memory}}" |quote}}
