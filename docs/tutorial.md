@@ -8,7 +8,7 @@ This tutorial will guide you through deploying and running Frisbee on a local Ku
 
 # Install Dependencies
 
-#### microk8s
+#### 1. microk8s
 
  [Microk8s](https://microk8s.io/docs)  is the simplest production-grade conformant K8s.  **It runs entirely on your workstation or edge device.**
 
@@ -16,28 +16,22 @@ This tutorial will guide you through deploying and running Frisbee on a local Ku
 # Install microk8s v.1.22
 >> sudo snap install microk8s --classic --channel=1.22/stable
 
-# Enable Dependencies
->> microk8s enable dns ingress
-
 # Start microk8s
 >> microk8s start
-```
 
-
-
-Configure `kubectl ` to point on microk8s.
-
-```bash
-# Create alias 
+# Create kubectl alias 
 >> sudo snap alias microk8s.kubectl kubectl
 
 # Use microk8s config as the default kubernetes config
 >> microk8s config > ~/.kube/config
+
+# Enable Dependencies
+>> microk8s enable dns ingress helm3
 ```
 
 
 
-#### Helm
+#### 2. Helm
 
 [Helm](https://helm.sh/docs/intro/install/)  is a package manager for Kubernetes. Helm uses **a packaging format called charts**. 
 
@@ -49,7 +43,7 @@ A chart is a collection of files that describe a related set of Kubernetes resou
 
 
 
-#### Frisbee platform
+#### 3. Frisbee platform
 
 Although Frisbee can be installed directly from a Helm repository, for demonstration purposes we favor the git-based method.
 
@@ -64,7 +58,9 @@ Although Frisbee can be installed directly from a Helm repository, for demonstra
 >> less charts/platform/values.yaml 
 ```
 
-> **Note:** Make sure that the dir "/mnt/local" exists.
+
+
+> **Note:** Make sure that the dir "/mnt/local" exists. The error will not appear until the execution of the test.
 
 
 
@@ -73,9 +69,6 @@ Now, it's time to deploy the platform
 ```bash
 # Wait until the installation is complete
 >> helm  upgrade --install --wait my-frisbee ./charts/platform/ --debug
-
-# Make sure that every is ok
->> helm list
 ```
 
 
@@ -161,6 +154,7 @@ Let's run a **bitrot** scenario.
 
 ```bash
 >> kubectl -f ./charts/cockroachdb/examples/10.bitrot.yml apply
+
 testplan.frisbee.io/cockroach-bitrot created
 ```
 
@@ -172,8 +166,8 @@ testplan.frisbee.io/cockroach-bitrot created
 
 * **State-based:** Consumes information from the Kubernetes API 
 
-  * [Dashboard](https://dashboard-frisbee.localhost) 
-  * [Chaos Dashboard](http://chaos-frisbee.localhost) 
+  * [Dashboard](https://dashboard-frisbee.localhost/#/pod?namespace=default) 
+  * [Chaos Dashboard](http://chaos-frisbee.localhost/experiments) 
 
 * **Metrics-based:** Consumes information from distributed performance metrics.
 
@@ -195,58 +189,65 @@ Firstly, let's inspect the test plan.
 
 ```bash
 >> kubectl describe testplan.frisbee.io/cockroach-bitrot
+
+...
+Status:
+Conditions:
+ Last Transition Time:  2022-05-25T13:20:52Z
+ Message:               failed jobs: [masters]
+ Reason:                JobHasFailed
+ Status:                True
+ Type:                  UnexpectedTermination
+Configuration:
+ Advertised Host:      frisbee-operator
+ Grafana Endpoint:     http://grafana:3000
+ Prometheus Endpoint:  http://prometheus:9090
+Executed Actions:
+ Bitrot:
+ Boot:
+ Import - Workload:
+ Masters:
+ Run - Workload:
+Message:         failed jobs: [masters]
+Phase:           Failed
+Reason:          JobHasFailed
+Telemetry Enabled:  true
 ```
 
 
 
-> Status:
->   Conditions:
->     Last Transition Time:  2022-05-25T13:20:52Z
->     Message:               failed jobs: [masters]
->     Reason:                JobHasFailed
->     Status:                True
->     Type:                  UnexpectedTermination
->   Configuration:
->     Advertised Host:      frisbee-operator
->     Grafana Endpoint:     http://grafana:3000
->     Prometheus Endpoint:  http://prometheus:9090
->   Executed:
->     Bitrot:
->     Boot:
->     Import - Workload:
->     Masters:
->     Run - Workload:
->   Message:         failed jobs: [masters]
->   Phase:           Failed
->   Reason:          JobHasFailed
->   With Telemetry:  true
+We are interested in the `Phase` and `Conditions` fields that provides information about the present status of a test. The **Phase** describes the lifecycle of a Test.  
 
-
-
-We are interested in the `Phase` and `Conditions` fields that provides information about the present status of a test.
-
-* **Phase** describes the lifecycle of a Test. 
-  * **""**:  the request is not yet accepted by the controller
-  * **"Pending"**:  the request has been accepted by the Kubernetes cluster, but one of the child jobs has not been created. This includes the time waiting for logical dependencies, Ports discovery,  data rewiring, and placement of Pods.
-  * **"Running"**: all the child jobs  have been created, and at least one job is still running.
-  * **"Success"**: all jobs have voluntarily exited.
-  * **"Failed"**:  at least one job of the CR has terminated in a failure (exited with a  non-zero exit code or was stopped by the system).
-* The **Phase** is a top-level description calculated based on some **Conditions**. The **Conditions** describe the various stages the Test has been through.
-  * **"Initialized"**:  the workflow has been initialized
-  * **"AllJobsAreScheduled"** : all jobs have been successfully scheduled.
-  * **"AllJobsAreCompleted"**:  all jobs have been successfully completed.
-  * **"UnexpectedTermination"** : a least job that has been unexpectedly terminated.
+|  Phase  |                         Description                          |
+| :-----: | :----------------------------------------------------------: |
+|   ""    |      The request is not yet accepted by the controller       |
+| Pending | The request has been accepted by the Kubernetes cluster, but one of the child jobs has not been created. This includes the time waiting for logical dependencies, Ports discovery,  data rewiring, and placement of Pods. |
+| Running | All the child jobs  have been created, and at least one job is still running. |
+| Success |              All jobs have voluntarily exited.               |
+| Failed  | At least one job of the CR has terminated in a failure (exited with a  non-zero exit code or was stopped by the system). |
 
 
 
 #### Pass/Fail a Test
+
+The **Phase** is a top-level description calculated based on some **Conditions**. The **Conditions** describe the various stages the Test has been through.
+
+
+
+|       Condition       |                     Description                     |
+| :-------------------: | :-------------------------------------------------: |
+|      Initialized      |          The workflow has been initialized          |
+|  AllJobsAreScheduled  |     All jobs have been successfully scheduled.      |
+|  AllJobsAreCompleted  |     All jobs have been successfully completed.      |
+| UnexpectedTermination | At least job that has been unexpectedly terminated. |
 
 To avoid continuous inspection via polling, we use the `wait` function of `kubectl`.
 
 In the specific **bitrot** scenario,  the test will pass only it has reached an **UnexpectedTermination** within 10 minutes of execution.
 
 ```bash
->> kubectl wait --for=condition=UnexpectedTermination --timeout=10m testplan.frisbee.io/cockroach-bitrot
+>> kubectl wait --for=condition=UnexpectedTermination --timeout=10m testplan.frisbee.io/cockroach-bitrot 
+
 testplan.frisbee.io/cockroach-bitrot condition met
 ```
 
@@ -276,6 +277,7 @@ The deletion is as simple as the creation of a test.
 
 ```bash
 >> kubectl -f ./charts/cockroachdb/examples/10.bitrot.yml delete --cascade=foreground
+
 testplan.frisbee.io "cockroach-bitrot" deleted
 ```
 

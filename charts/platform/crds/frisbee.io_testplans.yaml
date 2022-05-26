@@ -166,8 +166,8 @@ spec:
                           type: integer
                         schedule:
                           description: Schedule defines the interval between the creation
-                            of services within the group. Executed creation is not
-                            supported in collocated mode. Since Pods are intended
+                            of services within the group. ExecutedActions creation
+                            is not supported in collocated mode. Since Pods are intended
                             to be disposable and replaceable, we cannot add a container
                             to a Pod once it has been created
                           properties:
@@ -333,8 +333,8 @@ spec:
                           type: object
                         schedule:
                           description: Schedule defines the interval between the creation
-                            of services within the group. Executed creation is not
-                            supported in collocated mode. Since Pods are intended
+                            of services within the group. ExecutedActions creation
+                            is not supported in collocated mode. Since Pods are intended
                             to be disposable and replaceable, we cannot add a container
                             to a Pod once it has been created
                           properties:
@@ -601,7 +601,7 @@ spec:
                 - grafanaEndpoint
                 - prometheusEndpoint
                 type: object
-              executed:
+              executedActions:
                 additionalProperties:
                   description: ConditionalExpr is a source of information about whether
                     the state of the workflow after a given time is correct or not.
@@ -621,7 +621,7 @@ spec:
                       nullable: true
                       type: string
                   type: object
-                description: Executed is a list of executed actions.
+                description: ExecutedActions is a list of executed actions.
                 type: object
               message:
                 description: Message provides more details for understanding the Reason.
@@ -636,10 +636,10 @@ spec:
                 description: Reason is A brief CamelCase message indicating details
                   about why the service is in this Phase. e.g. 'Evicted'
                 type: string
-              withTelemetry:
+              telemetryEnabled:
                 type: boolean
             required:
-            - withTelemetry
+            - telemetryEnabled
             type: object
         type: object
     served: true

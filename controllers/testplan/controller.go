@@ -322,7 +322,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 				return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot create the telemetry stack"))
 			}
 
-			cr.Status.WithTelemetry = true
+			cr.Status.TelemetryEnabled = true
 		}
 
 		meta.SetStatusCondition(&cr.Status.Conditions, metav1.Condition{
@@ -332,8 +332,8 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			Message: "The Test Plan has been initialized. Start running actions",
 		})
 
-		if cr.Status.Executed == nil {
-			cr.Status.Executed = make(map[string]v1alpha1.ConditionalExpr)
+		if cr.Status.ExecutedActions == nil {
+			cr.Status.ExecutedActions = make(map[string]v1alpha1.ConditionalExpr)
 		}
 
 		return lifecycle.Pending(ctx, r, &cr, "The TestPlan is ready to start submitting jobs.")
@@ -342,7 +342,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	/*
 		ensure that telemetry is running
 	*/
-	if cr.Status.WithTelemetry {
+	if cr.Status.TelemetryEnabled {
 		// Call until the telemetry stack becomes ready.
 		if telemetryJob.Status.Phase.Is(v1alpha1.PhaseUninitialized) || telemetryJob.Status.Phase.Is(v1alpha1.PhasePending) {
 			return utils.Stop()
@@ -368,7 +368,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return utils.Stop()
 	}
 
-	actionList, nextRun := GetNextLogicalJob(cr.GetCreationTimestamp(), cr.Spec.Actions, r.state, cr.Status.Executed)
+	actionList, nextRun := GetNextLogicalJob(cr.GetCreationTimestamp(), cr.Spec.Actions, r.state, cr.Status.ExecutedActions)
 
 	if len(actionList) == 0 {
 		if nextRun.IsZero() {
@@ -417,9 +417,9 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		*/
 
 		if action.Assert.IsZero() {
-			cr.Status.Executed[action.Name] = v1alpha1.ConditionalExpr{}
+			cr.Status.ExecutedActions[action.Name] = v1alpha1.ConditionalExpr{}
 		} else {
-			cr.Status.Executed[action.Name] = *action.Assert
+			cr.Status.ExecutedActions[action.Name] = *action.Assert
 		}
 	}
 

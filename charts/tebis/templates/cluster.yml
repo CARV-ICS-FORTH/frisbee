@@ -84,7 +84,7 @@ spec:
     decorators:
       annotations:
         k8s.v1.cni.cncf.io/networks: macvlan-rdma
-      telemetry: [ platform.telemetry.container ]
+      telemetry: [ telemetry.agent ]
       setFields:
         - field: Containers.0.Ports.0.ContainerPort
           value: {{"{{.Inputs.Parameters.port | int}}" | quote}}
@@ -135,7 +135,7 @@ spec:
     decorators:
       annotations:
         k8s.v1.cni.cncf.io/networks: macvlan-rdma
-      telemetry: [ platform.telemetry.container ]
+      telemetry: [ telemetry.agent ]
     containers:
       - name: app
         image: icsforth/tebis-client:latest

@@ -10,7 +10,7 @@ spec:
   service:
     decorators:
       telemetry:
-        - platform.telemetry.container
+        - telemetry.agent
     volumes:
       - name: dataset
         persistentVolumeClaim:

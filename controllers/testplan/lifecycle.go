@@ -61,7 +61,7 @@ func (r *Controller) updateLifecycle(t *v1alpha1.TestPlan) v1alpha1.Lifecycle {
 	}
 
 	// Step 3. Check if state-driven assertions are fired
-	for _, assertion := range t.Status.Executed {
+	for _, assertion := range t.Status.ExecutedActions {
 		if assertion.IsZero() {
 			continue
 		}
@@ -137,7 +137,7 @@ func (r *Controller) updateLifecycle(t *v1alpha1.TestPlan) v1alpha1.Lifecycle {
 			},
 		},
 		{ // All jobs are created, and at least one is still running
-			expression: len(t.Status.Executed) == expectedJobs,
+			expression: len(t.Status.ExecutedActions) == expectedJobs,
 			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseRunning,
 				Reason:  "JobIsRunning",
@@ -151,7 +151,7 @@ func (r *Controller) updateLifecycle(t *v1alpha1.TestPlan) v1alpha1.Lifecycle {
 			},
 		},
 		{ // Not all Jobs are yet created
-			expression: len(t.Status.Executed) < expectedJobs,
+			expression: len(t.Status.ExecutedActions) < expectedJobs,
 			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhasePending,
 				Reason:  "JobIsPending",
@@ -175,7 +175,7 @@ func (r *Controller) updateLifecycle(t *v1alpha1.TestPlan) v1alpha1.Lifecycle {
 	logrus.Warn("TestPlan Debug info \n",
 		" phase ", cycle.Phase,
 		" actions: ", expectedJobs,
-		" executed: ", len(t.Status.Executed),
+		" executed: ", len(t.Status.ExecutedActions),
 		" pending: ", r.state.PendingJobsList(),
 		" running: ", r.state.RunningJobsList(),
 		" successfulJobs: ", r.state.SuccessfulJobsList(),
