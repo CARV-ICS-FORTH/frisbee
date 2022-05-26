@@ -294,13 +294,11 @@ happen in the background. Use this flag if you want to run sequential tests, wit
 
 ## Distributed Logs
 
+Collecting logs from distributed services is somewhat tricky and does not work out-of-the-box. It needs some instrumentation, as shown in the [example](/charts/cockroachdb/examples/12.withlogs.yml).
 
+For the moment, we create a shared NFS filesystem and every service write its logs under the path `/shared/${HOSTNAME}`, and the logs are available via a web-based file browser.
 
-Collecting logs from distributed services is somewhat tricky. For the moment, we create a shared NFS filesystem and every service write its logs under the path `/shared/${HOSTNAME}`.  This however, requires some instrumentation as shown in the [example](https://github.com/CARV-ICS-FORTH/frisbee/blob/main/charts/cockroachdb/examples/12.withlogs.yml). It also takes some to create the volume and sync it.
-
-Once done, the logs are available via a web-based file browser.
-
-* [Logviewer](logviewer-frisbee.localhost) (admin/admin)
+* [Logviewer](http://logviewer-frisbee.localhost) (admin/admin)
 
 The lifecycle of the volume is bind to that of the test. If the test is deleted, the volume will be garbage collected automatically.
 
