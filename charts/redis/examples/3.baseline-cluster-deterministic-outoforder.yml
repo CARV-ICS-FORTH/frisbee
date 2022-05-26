@@ -6,7 +6,7 @@ metadata:
 spec:
   withTelemetry:
     importDashboards:
-      - telemetry.agent
+      - default.telemetry.agent
       - ycsb.telemetry.client
       - redis.telemetry.server
 

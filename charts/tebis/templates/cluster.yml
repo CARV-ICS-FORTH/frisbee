@@ -3,7 +3,6 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: tebis.cluster.zookeeper
-
 spec:
   service:
     containers:
@@ -27,7 +26,6 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: tebis.cluster.bootstrap
-
 spec:
   inputs:
     parameters:
@@ -73,7 +71,6 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: tebis.cluster.master
-
 spec:
   inputs:
     parameters:
@@ -84,9 +81,9 @@ spec:
     decorators:
       annotations:
         k8s.v1.cni.cncf.io/networks: macvlan-rdma
-      telemetry: [ telemetry.agent ]
+      telemetry: [ default.telemetry.agent ]
       setFields:
-        - field: Containers.0.Ports.0.ContainerPort
+        - field: PodSpec.Containers.0.Ports.0.ContainerPort
           value: {{"{{.Inputs.Parameters.port | int}}" | quote}}
     containers:
       - name: app
@@ -123,7 +120,6 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: tebis.cluster.client
-
 spec:
   inputs:
     parameters:
@@ -135,7 +131,7 @@ spec:
     decorators:
       annotations:
         k8s.v1.cni.cncf.io/networks: macvlan-rdma
-      telemetry: [ telemetry.agent ]
+      telemetry: [ default.telemetry.agent ]
     containers:
       - name: app
         image: icsforth/tebis-client:latest

@@ -13,13 +13,21 @@ spec:
   service:
     decorators:
       telemetry:
-        - telemetry.agent
+        - default.telemetry.agent
         - cockroach.telemetry.server
 
     volumes:    # Match the pod to the log volume
       - name: logs
         persistentVolumeClaim:
           claimName: {{"{{.Inputs.Parameters.logVolumeName}}" | quote}}
+
+    initContainers:
+      - name: wait-for-sync
+        image: busybox
+        volumeMounts: # Mount the log volume
+          - name: logs
+            mountPath: /logs
+        command: ["ls", "/logs"]
 
     containers:
       - name: app
@@ -46,29 +54,18 @@ spec:
             storedir={{"{{.Inputs.Parameters.storedir}}"}}
             nodeList={{"{{.Inputs.Parameters.join}}"}}
 
+            echo "Start Cockroachdb: ${nodeList}"
             # Because the log volume is shared with other services,
             # we use the name of the pod as prefix
-            logdir=/logs/${HOSTNAME}
-
-            echo "Start Cockroachdb: ${nodeList}"
 
             COCKROACH_CRASH_ON_SPAN_USE_AFTER_FINISH=true cockroach start   \
                 --insecure                                      \
                 --store=${storedir}                             \
-                --logdir=${logdir}                              \
                 --listen-addr=:{{.Values.port}}                            \
                 --http-addr=$${HOSTNAME}:{{.Values.httpPort}}                   \
                 --advertise-addr=$${HOSTNAME}:{{.Values.port}}             \
-                --join=${nodeList}
+                --join=${nodeList} &> /logs/${HOSTNAME}
 
-        # Give a headstart for the logs volume to be created
-        startupProbe:
-          httpGet:
-            path: "/health?ready=1"
-            port: http
-          initialDelaySeconds: 100
-          periodSeconds: 5
-          failureThreshold: 2
 
     # Albeit it is possible to log the callables, the Pod name is not available at this level,
     # and therefore it is difficult to place them into the proper log hierarchy. Instead, the output
@@ -80,7 +77,21 @@ spec:
           - /bin/sh
           - -c
           - |
-            cockroach init --insecure
+            # Use a retry logic here
+            for i in {1..3}; do
+              echo "(re)try to boot the cluster";
+
+              cockroach init --insecure && break || sleep 15;
+            done
+
+      import-tpcc:
+        container: app
+        command:
+          - /bin/sh   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
+            set -eum
+            ./cockroach workload fixtures import tpcc --warehouses=100 --fks=false --checks=false
 
       bitrot:
         container: app

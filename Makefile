@@ -103,7 +103,7 @@ run: generate fmt vet ## Run a controller from your host.
 	# mkdir -p /tmp/k8s-webhook-server/serving-certs/
 	# openssl req -new -newkey rsa:4096 -x509 -sha256 -days 365 -nodes -out tls.crt -keyout tls.key
 
-	go run ./main.go
+	go run -race ./main.go
 
 docker-build: test ## Build docker image for the Frisbee controller.
 	docker build -t ${IMG} .

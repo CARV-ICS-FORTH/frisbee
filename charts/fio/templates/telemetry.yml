@@ -3,7 +3,6 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: fio.telemetry.client
-
 spec:
   service:
     decorators:

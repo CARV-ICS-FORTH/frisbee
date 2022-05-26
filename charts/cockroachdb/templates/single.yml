@@ -3,12 +3,11 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: cockroach.single.master
-
 spec:
   service:
     decorators:
       telemetry:
-        - telemetry.agent
+        - default.telemetry.agent
         - cockroach.telemetry.server
 
     callables:

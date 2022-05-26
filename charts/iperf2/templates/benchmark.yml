@@ -3,7 +3,6 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: iperf2.server
-
 spec:
   inputs:
     parameters:
@@ -12,7 +11,7 @@ spec:
   service:
     decorators:
       telemetry:
-        - telemetry.agent
+        - default.telemetry.agent
       resources:
         cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
         memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
@@ -37,7 +36,6 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: iperf2.client
-
 spec:
   inputs:
     parameters:
@@ -48,7 +46,7 @@ spec:
   service:
     decorators:
       telemetry:
-        - telemetry.agent
+        - default.telemetry.agent
         - iperf2.telemetry.client
       resources:
         memory: {{"{{.Inputs.Parameters.memory}}" | quote}}

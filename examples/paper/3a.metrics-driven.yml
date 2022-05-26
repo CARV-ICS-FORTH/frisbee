@@ -10,7 +10,7 @@ spec:
     - action: Service
       name: victim
       service:
-        templateRef: tools.debuger
+        templateRef: default.tools.debugger
 
 
     # Step 0: bootstrap.

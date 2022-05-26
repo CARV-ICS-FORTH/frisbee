@@ -3,7 +3,6 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: paper.partition.fault
-
 spec:
   inputs:
     parameters:

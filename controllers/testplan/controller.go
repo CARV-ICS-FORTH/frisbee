@@ -32,6 +32,7 @@ import (
 	"github.com/go-logr/logr"
 	notifier "github.com/golanghelper/grafana-webhook"
 	"github.com/pkg/errors"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -255,15 +256,26 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		r.Logger.Error(errors.New(cr.Status.Reason), cr.Status.Message)
 
 		// Remove the non-failed components. Leave the failed jobs and system jobs for postmortem analysis.
-		for _, job := range r.state.SuccessfulJobs() {
-			utils.Delete(ctx, r, job)
-		}
-
 		for _, job := range r.state.PendingJobs() {
+			r.GetEventRecorderFor("").Event(job, corev1.EventTypeWarning, "Terminating", cr.Status.Message)
+
 			utils.Delete(ctx, r, job)
 		}
 
 		for _, job := range r.state.RunningJobs() {
+			// exclude any service that has been marked as Sys.
+			if utils.IsSystemService(job) {
+				continue
+			}
+
+			r.GetEventRecorderFor("").Event(job, corev1.EventTypeWarning, "Terminating", cr.Status.Message)
+
+			utils.Delete(ctx, r, job)
+		}
+
+		for _, job := range r.state.SuccessfulJobs() {
+			r.GetEventRecorderFor("").Event(job, corev1.EventTypeWarning, "Terminating", cr.Status.Message)
+
 			utils.Delete(ctx, r, job)
 		}
 

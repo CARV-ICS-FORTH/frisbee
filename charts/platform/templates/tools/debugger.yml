@@ -2,7 +2,7 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
-  name: tools.debuger
+  name: default.tools.debugger
 spec:
   service:
     containers: # Container(s)

@@ -3,7 +3,6 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: redis.single.master
-
 spec:
   inputs:
     parameters:
@@ -11,7 +10,7 @@ spec:
       cpu: ""
   service:
     decorators: # Decorators
-      telemetry: [ telemetry.agent, redis.telemetry.server ]
+      telemetry: [ default.telemetry.agent, redis.telemetry.server ]
       resources:
         memory: {{"{{.Inputs.Parameters.memory}}" |quote}}
         cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
@@ -59,14 +58,13 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: redis.single.slave
-
 spec:
   inputs:
     parameters:
       master: localhost
   service:
     decorators:
-      telemetry: [ telemetry.agent, redis.telemetry.server ]
+      telemetry: [ default.telemetry.agent, redis.telemetry.server ]
     containers:
       - name: app
         image: redis
@@ -113,7 +111,6 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: redis.single.sentinel
-
 spec:
   inputs:
     parameters:

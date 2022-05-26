@@ -4,7 +4,6 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: fio.benchmark.shared-fs
-
 spec:
   inputs:
     parameters:
@@ -19,7 +18,7 @@ spec:
 
     decorators: # decorators
       telemetry:
-        - telemetry.agent
+        - default.telemetry.agent
         - fio.telemetry.client
 
     containers: # Container

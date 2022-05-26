@@ -2,7 +2,7 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
-  name: telemetry.prometheus
+  name: default.telemetry.prometheus
 spec:
   service:
     volumes:
@@ -25,7 +25,7 @@ spec:
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
-  name: telemetry.grafana
+  name: default.telemetry.grafana
 spec:
   service:
     volumes:

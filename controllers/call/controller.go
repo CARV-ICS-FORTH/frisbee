@@ -389,7 +389,7 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 	r := &Controller{
 		Manager:  mgr,
 		Logger:   logger.WithName("call"),
-		executor: executor.NewExecutor(ctrl.GetConfigOrDie()),
+		executor: executor.NewExecutor(mgr.GetConfig()),
 	}
 
 	return ctrl.NewControllerManagedBy(mgr).

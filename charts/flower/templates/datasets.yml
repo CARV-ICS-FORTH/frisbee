@@ -10,7 +10,7 @@ spec:
   service:
     decorators:
       telemetry:
-        - telemetry.agent
+        - default.telemetry.agent
     volumes:
       - name: dataset
         persistentVolumeClaim:

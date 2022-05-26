@@ -18,7 +18,6 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: redis.cluster.master
-
 spec:
   inputs:
     parameters:
@@ -28,7 +27,7 @@ spec:
   service:
     decorators: # Decorators
       telemetry:
-        - telemetry.agent
+        - default.telemetry.agent
         - redis.telemetry.server
       resources:
         memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
@@ -110,7 +109,6 @@ apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
   name: redis.cluster.bootstrap
-
 spec:
   inputs:
     parameters:
