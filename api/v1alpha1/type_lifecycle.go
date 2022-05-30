@@ -22,27 +22,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const (
-	// ComponentSys is a component that belongs to Frisbee. Such components can be excluded from Chaos events.
-	ComponentSys = "SYS"
-
-	// ComponentSUT is a component that belongs to the system under testing
-	ComponentSUT = "SUT"
-)
-
-// https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/
-const (
-	// LabelCreatedBy points to the controller/user who created this resource
-	LabelCreatedBy = "plan.frisbee.io/created-by"
-
-	// LabelPartOfPlan points to the name of a higher level application this one is part of.
-	LabelPartOfPlan = "plan.frisbee.io/part-of"
-
-	// LabelComponent describes the role of the component within the architecture.
-	// It can be SUT (for system under service) or SYS (if it's a frisbee component like Grafana).
-	LabelComponent = "plan.frisbee.io/component"
-)
-
 // Phase is a simple, high-level summary of where the Object is in its lifecycle.
 type Phase string
 

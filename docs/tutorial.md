@@ -93,24 +93,38 @@ Now are ready to deploy the tests.
 
 ## Testing a System
 
-Before running any test, but install the System Under Testing (SUT) in Frisbee.
+Before running any test, we need to install the System Under Testing (SUT). 
 
-We will use the Frisbee chart for [CockroachDB](https://github.com/CARV-ICS-FORTH/frisbee/tree/main/charts/cockroachdb)
+As a reference, we will use the Frisbee chart for [CockroachDB](https://github.com/CARV-ICS-FORTH/frisbee/tree/main/charts/cockroachdb)
 
 > [*CockroachDB*](https://github.com/cockroachdb/cockroach) is a distributed database with standard SQL for cloud applications.
 
 
 
-#### Deploy the SUT
+#### 1. Create a namespace
+
+Firstly, we need to create a dedicated namespace for the test. 
+
+The different namespaces allows us to run multiple tests in parallel
+
+```bash
+>> kubectl create namespace mytest
+
+namespace/mytest created
+```
+
+
+
+#### 2. Deploy the SUT
 
 The commands are to be executed from the *Frisbee* directory.
 
 ```bash
 # Install Cockroach servers
->> helm upgrade --install --wait my-cockroach ./charts/cockroachdb --debug -n default
+>> helm upgrade --install --wait my-cockroach ./charts/cockroachdb --debug -n mytest
 
 # Install YCSB for creating workload
->> helm upgrade --install --wait my-ycsb ./charts/ycsb --debug -n default
+>> helm upgrade --install --wait my-ycsb ./charts/ycsb --debug -n mytest
 ```
 
 
@@ -121,13 +135,16 @@ Then you can verify that all the packages are successfully installed
 >> helm list
 NAME            NAMESPACE       REVISION        UPDATED                                         STATUS          CHART             
 my-cockroach    default         2               2022-05-25 16:15:58.682969153 +0300 EEST        deployed        cockroachdb-0.0.0 
-my-frisbee      default         1               2022-05-25 15:46:54.4600888 +0300 EEST          deployed        platform-0.0.0  
-my-ycsb         default         1               2022-05-25 16:16:13.364123735 +0300 EEST        deployed        ycsb-0.0.0      
+
+>> helm list -n mytest
+NAME            NAMESPACE       REVISION        UPDATED                                         STATUS          CHART                   APP VERSION
+my-cockroach    mytest          1               2022-05-27 13:51:07.332866308 +0300 EEST        deployed        cockroachdb-0.0.0 
+my-ycsb         mytest          1               2022-05-27 13:51:19.429409791 +0300 EEST        deployed        ycsb-0.0.0       
 ```
 
 
 
-> **Note:** you must re-install the chart if you change the templates. examples can be modified without re-installation.
+> **Note:** if you modify the templates of a chart you must re-install it.  examples can be modified without re-installation.
 
 
 
@@ -136,7 +153,7 @@ my-ycsb         default         1               2022-05-25 16:16:13.364123735 +0
 You now select which scenario you wish to run. 
 
 ```bash
->> ls ./charts/cockroachdb/examples/
+>> ls -1a ./charts/cockroachdb/examples/
 ...
 10.bitrot.yml
 11.network.yml
@@ -157,7 +174,7 @@ You now select which scenario you wish to run.
 Let's run a **bitrot** scenario.
 
 ```bash
->> kubectl -f ./charts/cockroachdb/examples/10.bitrot.yml apply -n default
+>> kubectl -f ./charts/cockroachdb/examples/10.bitrot.yml apply -n mytest
 
 testplan.frisbee.io/cockroach-bitrot created
 ```
@@ -192,7 +209,7 @@ We will use `kubectl` since is the most common CLI interface between Kubernetes 
 Firstly, let's inspect the test plan.
 
 ```bash
->> kubectl describe testplan.frisbee.io/cockroach-bitrot -n default
+>> kubectl describe testplan.frisbee.io/cockroach-bitrot -n mytest
 
 ...
 Status:
@@ -294,11 +311,13 @@ happen in the background. Use this flag if you want to run sequential tests, wit
 
 ## Distributed Logs
 
-Collecting logs from distributed services is somewhat tricky and does not work out-of-the-box. It needs some instrumentation, as shown in the [example](/charts/cockroachdb/examples/12.withlogs.yml).
 
-For the moment, we create a shared NFS filesystem and every service write its logs under the path `/shared/${HOSTNAME}`, and the logs are available via a web-based file browser.
 
-* [Logviewer](http://logviewer-frisbee.localhost) (admin/admin)
+Collecting logs from distributed services is somewhat tricky. For the moment, we create a shared NFS filesystem and every service write its logs under the path `/shared/${HOSTNAME}`.  This however, requires some instrumentation as shown in the [example](https://github.com/CARV-ICS-FORTH/frisbee/blob/main/charts/cockroachdb/examples/12.withlogs.yml). It also takes some to create the volume and sync it.
+
+Once done, the logs are available via a web-based file browser.
+
+* [Logviewer](logviewer-frisbee.localhost) (admin/admin)
 
 The lifecycle of the volume is bind to that of the test. If the test is deleted, the volume will be garbage collected automatically.
 

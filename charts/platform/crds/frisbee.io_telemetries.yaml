@@ -36,9 +36,9 @@ spec:
           spec:
             description: TelemetrySpec defines the desired state of Telemetry
             properties:
-              importDashboards:
-                description: ImportDashboards are references to monitoring packages
-                  that will be used in the monitoring stack.
+              import:
+                description: Import are references to monitoring packages that will
+                  be used in the monitoring stack.
                 items:
                   type: string
                 type: array
@@ -117,6 +117,8 @@ spec:
                   - type
                   type: object
                 type: array
+              grafanaEndpoint:
+                type: string
               message:
                 description: Message provides more details for understanding the Reason.
                 type: string
@@ -126,10 +128,15 @@ spec:
                   fields, and the individual container status arrays contain more
                   detail about the pod's status.
                 type: string
+              prometheusEndpoint:
+                type: string
               reason:
                 description: Reason is A brief CamelCase message indicating details
                   about why the service is in this Phase. e.g. 'Evicted'
                 type: string
+            required:
+            - grafanaEndpoint
+            - prometheusEndpoint
             type: object
         type: object
     served: true

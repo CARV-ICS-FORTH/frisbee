@@ -22,14 +22,18 @@ import (
 
 // TelemetrySpec defines the desired state of Telemetry
 type TelemetrySpec struct {
-	// ImportDashboards are references to monitoring packages that will be used in the monitoring stack.
+	// Import are references to monitoring packages that will be used in the monitoring stack.
 	// +optional
-	ImportDashboards []string `json:"importDashboards,omitempty"`
+	Import []string `json:"import,omitempty"`
 }
 
 // TelemetryStatus defines the observed state of Telemetry
 type TelemetryStatus struct {
 	Lifecycle `json:",inline"`
+
+	GrafanaEndpoint string `json:"grafanaEndpoint"`
+
+	PrometheusEndpoint string `json:"prometheusEndpoint"`
 }
 
 func (in *Telemetry) GetReconcileStatus() Lifecycle {

@@ -5,11 +5,6 @@ metadata:
   name: mongodb.telemetry.server
 spec:
   service:
-    decorators:
-      dashboards:
-        matchLabels:
-          dashboard: mongo-telegraf
-
     containers:
       - name: telegraf
         image: telegraf:1.20.3
@@ -58,11 +53,6 @@ metadata:
   name: mongodb.telemetry.server2
 spec:
   service:
-    decorators:
-      dashboards:
-        matchLabels:
-          dashboard: mongo-exporter
-
     containers:
       - name: exporter
         image: bitnami/mongodb-exporter:latest
@@ -91,7 +81,5 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: grafana-mongodb-dashboard
-  labels:
-    dashboard: mongo-telegraf
+  name: mongodb.telemetry.server.config
 data: {{(.Files.Glob "dashboards/mongodb.json").AsConfig | nindent 2}}

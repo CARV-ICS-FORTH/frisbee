@@ -5,11 +5,6 @@ metadata:
   name: cockroach.telemetry.server
 spec:
   service:
-    decorators:
-      dashboards:
-        matchLabels:
-          dashboard: cockroach
-
     containers:
       - name: cockroachdb
         image: telegraf:1.20.3
@@ -53,7 +48,5 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: grafana-cockroach-cockroach
-  labels:
-    dashboard: cockroach
+  name: cockroach.telemetry.server.config
 data: {{(.Files.Glob "dashboards/*.json").AsConfig | nindent 2}}

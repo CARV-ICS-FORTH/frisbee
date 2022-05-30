@@ -84,11 +84,6 @@ type Decorators struct {
 	// +optional
 	Telemetry []string `json:"telemetry,omitempty"`
 
-	// Dashboard is dashboard payload that will be installed in Grafana.
-	// This option is only applicable to Agents.
-	// +optional
-	Dashboards metav1.LabelSelector `json:"dashboards,omitempty"`
-
 	// SetFields is used to populate fields. Used for dynamic assignment based templated inputs.
 	// +optional
 	SetFields []SetField `json:"setFields,omitempty"`

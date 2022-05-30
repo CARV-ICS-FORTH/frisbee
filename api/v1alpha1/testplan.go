@@ -102,11 +102,19 @@ type TestPlanSpec struct {
 
 // Configuration is the programmatic equivalent of charts/platform/configuration
 type Configuration struct {
-	GrafanaEndpoint string `json:"grafanaEndpoint"`
+	DeveloperMode bool `json:"developerMode"`
 
-	PrometheusEndpoint string `json:"prometheusEndpoint"`
+	Namespace string `json:"namespace"`
+
+	DomainName string `json:"domainName"`
+
+	IngressClassName string `json:"ingressClassName"`
 
 	AdvertisedHost string `json:"advertisedHost"`
+
+	PrometheusPort int64 `json:"prometheusPort"`
+
+	GrafanaPort int64 `json:"grafanaPort"`
 }
 
 // TestPlanStatus defines the observed state of TestPlan.
@@ -118,9 +126,6 @@ type TestPlanStatus struct {
 	// ExecutedActions is a list of executed actions.
 	// +optional
 	ExecutedActions map[string]ConditionalExpr `json:"executedActions"`
-
-	// +optional
-	Configuration Configuration `json:"configuration,omitempty"`
 }
 
 func (in *TestPlan) GetReconcileStatus() Lifecycle {

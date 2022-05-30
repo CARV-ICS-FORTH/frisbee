@@ -244,7 +244,7 @@ spec:
 
   # Here we declare the Grafana dashboards that Workflow will make use of.
   withTelemetry:
-    importDashboards: [ "default.telemetry.agent", "ycsb.telemetry.client",  "redis.telemetry.server" ]
+    importDashboards: [ "system.telemetry.agent", "ycsb.telemetry.client",  "redis.telemetry.server" ]
 
 ```
 

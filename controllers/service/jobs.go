@@ -24,6 +24,7 @@ import (
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/utils"
+	"github.com/carv-ics-forth/frisbee/controllers/utils/configuration"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
@@ -211,9 +212,19 @@ func decoratePod(ctx context.Context, r *Controller, cr *v1alpha1.Service) error
 
 	// import telemetry agents
 	if req := cr.Spec.Decorators.Telemetry; req != nil {
+		var namespace string
+
 		// import monitoring agents to the service
 		for _, monRef := range req {
-			monSpec, err := r.serviceControl.GetServiceSpec(ctx, cr.GetNamespace(), v1alpha1.GenerateFromTemplate{TemplateRef: monRef})
+
+			switch monRef {
+			case configuration.AgentTemplate:
+				namespace = configuration.Global.Namespace
+			default:
+				namespace = cr.GetNamespace()
+			}
+
+			monSpec, err := r.serviceControl.GetServiceSpec(ctx, namespace, v1alpha1.GenerateFromTemplate{TemplateRef: monRef})
 			if err != nil {
 				return errors.Wrapf(err, "cannot get monitor")
 			}

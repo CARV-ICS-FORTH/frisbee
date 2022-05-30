@@ -11,7 +11,7 @@ spec:
   service:
     decorators:
       telemetry:
-        - default.telemetry.agent
+        - system.telemetry.agent
         - cockroach.telemetry.server
 
     containers:

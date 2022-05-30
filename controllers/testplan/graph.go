@@ -199,7 +199,6 @@ func CheckJobRef(action *v1alpha1.Action, callIndex index) error {
 	switch action.ActionType {
 	case v1alpha1.ActionDelete:
 		// Check that references jobs exist and there are no cycle deletions
-
 		for _, job := range action.Delete.Jobs {
 			target, exists := callIndex[job]
 			if !exists {
@@ -224,9 +223,9 @@ func CheckJobRef(action *v1alpha1.Action, callIndex index) error {
 	return nil
 }
 
-// HasTelemetry iterates the referenced services (directly via Service or indirectly via Cluster) and list
+// ImportTelemetryDashboards iterates the referenced services (directly via Service or indirectly via Cluster) and list
 // all telemetry dashboards that need to be imported
-func (r *Controller) HasTelemetry(ctx context.Context, plan *v1alpha1.TestPlan) ([]string, error) {
+func (r *Controller) ImportTelemetryDashboards(ctx context.Context, plan *v1alpha1.TestPlan) ([]string, error) {
 	dedup := make(map[string]struct{})
 
 	var fromTemplate *v1alpha1.GenerateFromTemplate
@@ -234,11 +233,12 @@ func (r *Controller) HasTelemetry(ctx context.Context, plan *v1alpha1.TestPlan) 
 	for _, action := range plan.Spec.Actions {
 		fromTemplate = nil
 
-		if action.ActionType == v1alpha1.ActionService {
+		switch action.ActionType {
+		case v1alpha1.ActionService:
 			fromTemplate = action.Service
-		} else if action.ActionType == v1alpha1.ActionCluster {
+		case v1alpha1.ActionCluster:
 			fromTemplate = &action.Cluster.GenerateFromTemplate
-		} else {
+		default:
 			continue
 		}
 

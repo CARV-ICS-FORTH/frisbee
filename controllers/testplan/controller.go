@@ -26,6 +26,7 @@ import (
 	serviceutils "github.com/carv-ics-forth/frisbee/controllers/service/utils"
 	"github.com/carv-ics-forth/frisbee/controllers/telemetry/grafana"
 	"github.com/carv-ics-forth/frisbee/controllers/utils"
+	"github.com/carv-ics-forth/frisbee/controllers/utils/configuration"
 	"github.com/carv-ics-forth/frisbee/controllers/utils/expressions"
 	"github.com/carv-ics-forth/frisbee/controllers/utils/lifecycle"
 	"github.com/carv-ics-forth/frisbee/controllers/utils/watchers"
@@ -314,18 +315,29 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "invalid testplan"))
 		}
 
-		if err := UsePlatformConfiguration(ctx, r, &cr); err != nil {
-			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot get platform configuration"))
+		/* Clone system configuration, needed to retrieve the telemetry templates */
+		sysconf, err := configuration.Get(ctx, r.GetClient(), r.Logger)
+		if err != nil {
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot get system configuration"))
 		}
 
-		telemetry, err := r.HasTelemetry(ctx, &cr)
+		/* FIXME: we set the configuration be global here. is there any better way ? */
+		configuration.SetGlobal(sysconf)
+
+		/* Inherit the metadata of the configuration. This is used to automatically delete and remove the
+		resources if the configuration is deleted */
+		// cr.Status.Configuration = sysconf
+		// utils.AppendLabels(&cr, configuration.PlatformConfigurationMetadata.GetLabels())
+		// utils.AppendLabels(&cr, configuration.PlatformConfigurationMetadata.GetAnnotations())
+
+		dashboards, err := r.ImportTelemetryDashboards(ctx, &cr)
 		if err != nil {
 			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot extract imports"))
 		}
 
-		if telemetry != nil {
+		if dashboards != nil {
 			telemetryJob.SetName("telemetry")
-			telemetryJob.Spec.ImportDashboards = telemetry
+			telemetryJob.Spec.Import = dashboards
 
 			// mark the job as system specific in order to exclude it from chaos events
 			utils.AppendLabel(&cr, v1alpha1.LabelComponent, v1alpha1.ComponentSys)
@@ -366,7 +378,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		// this should normally happen when the telemetry is running
 		if grafana.DefaultClient == nil {
-			if err := r.ConnectToGrafana(ctx, &cr); err != nil {
+			if err := r.ConnectToGrafana(ctx, &cr, &telemetryJob); err != nil {
 				return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot communicate with the telemetry stack"))
 			}
 		}
@@ -438,10 +450,11 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	return lifecycle.Pending(ctx, r, &cr, "some jobs are still pending")
 }
 
-func (r *Controller) ConnectToGrafana(ctx context.Context, cr *v1alpha1.TestPlan) error {
-	conf := cr.Status.Configuration
+func (r *Controller) ConnectToGrafana(ctx context.Context, cr *v1alpha1.TestPlan, telemetry *v1alpha1.Telemetry) error {
+	advertisedHost := configuration.Global.AdvertisedHost
+	grafanaEndpoint := telemetry.Status.GrafanaEndpoint
 
-	return grafana.NewGrafanaClient(ctx, r, conf.AdvertisedHost, conf.GrafanaEndpoint,
+	return grafana.NewGrafanaClient(ctx, r, advertisedHost, grafanaEndpoint,
 		// Set a callback that will be triggered when there is Grafana alert.
 		// Through this channel we can get informed for SLA violations.
 		grafana.WithNotifyOnAlert(func(b *notifier.Body) {

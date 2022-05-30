@@ -95,14 +95,14 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	*/
 
 	// validate
-	if len(cr.Spec.ImportDashboards) == 0 {
+	if len(cr.Spec.Import) == 0 {
 		return utils.Stop()
 	}
 
 	var prometheus v1alpha1.Service
 	{
 		key := client.ObjectKey{
-			Name:      "prometheus",
+			Name:      notRandomPrometheusName,
 			Namespace: req.Namespace,
 		}
 
@@ -114,7 +114,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	var grafana v1alpha1.Service
 	{
 		key := client.ObjectKey{
-			Name:      "grafana",
+			Name:      notRandomGrafanaName,
 			Namespace: req.Namespace,
 		}
 
@@ -141,6 +141,8 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	r.state.Classify(prometheus.GetName(), &prometheus)
 
 	r.state.Classify(grafana.GetName(), &grafana)
+
+	// Note: the agent should not be accounted here as it will run on the namespace of the test plan.
 
 	/*
 		4: Update the CR status using the data we've gathered
@@ -171,12 +173,20 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		We may delete the service, add a pod, or wait for existing pod to change its status.
 	*/
 	if cr.Status.Phase.Is(v1alpha1.PhaseUninitialized) {
+		if err := r.prepareEnvironment(ctx, &cr); err != nil {
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "environment error"))
+		}
+
 		if err := r.installPrometheus(ctx, &cr); err != nil {
 			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "prometheus error"))
 		}
 
 		if err := r.installGrafana(ctx, &cr); err != nil {
 			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "grafana error"))
+		}
+
+		if err := r.createIngress(ctx, &cr); err != nil {
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "ingress error"))
 		}
 
 		return lifecycle.Pending(ctx, r, &cr, "some jobs are still pending")

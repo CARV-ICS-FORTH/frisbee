@@ -4,15 +4,18 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: configuration.frisbee.io
+  name: system.controller.configuration
+  labels:
+      discover.frisbee.io/name: system.controller.configuration
 data:
-  # If the operator runs within the cluster, it will reach Grafana via the service.
-  {{ if .Values.operator.enabled }}
-  PrometheusEndpoint: "http://prometheus:{{.Values.telemetry.prometheusPort}}"
-  GrafanaEndpoint: "http://grafana:{{.Values.telemetry.grafanaPort}}"
-  AdvertisedHost: "frisbee-operator"
-  {{ else }}
-  # If the operator runs outside the cluster, it will reach Grafana via the ingress.
-  PrometheusEndpoint: http://prometheus-frisbee.{{.Values.global.domainName}}
-  GrafanaEndpoint: http://grafana-frisbee.{{.Values.global.domainName}}
-  {{ end }}
+  DeveloperMode: {{.Values.operator.enabled | quote}}
+
+  Namespace: {{.Release.Namespace}}
+
+  DomainName: {{.Values.global.domainName}}
+
+  IngressClassName: {{.Values.global.ingressClass}}
+
+  PrometheusPort: {{.Values.telemetry.prometheusPort | int64 | quote}}
+
+  GrafanaPort: {{.Values.telemetry.grafanaPort | int64 | quote}}
