@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	"github.com/carv-ics-forth/frisbee/controllers/utils"
+	"github.com/carv-ics-forth/frisbee/controllers/common"
 	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -38,7 +38,7 @@ type ReconcileStatusAware interface {
 /******************************************************/
 
 // Pending is a wrapper that sets Phase to Pending and does not requeue the request.
-func Pending(ctx context.Context, r utils.Reconciler, obj client.Object, reason string) (reconcile.Result, error) {
+func Pending(ctx context.Context, r common.Reconciler, obj client.Object, reason string) (reconcile.Result, error) {
 	if ctx == nil || obj == nil || reason == "" {
 		panic("invalid args")
 	}
@@ -52,10 +52,10 @@ func Pending(ctx context.Context, r utils.Reconciler, obj client.Object, reason 
 	if statusAware, updateStatus := obj.(ReconcileStatusAware); updateStatus {
 		statusAware.SetReconcileStatus(status)
 
-		if err := utils.UpdateStatus(ctx, r, obj); err != nil {
+		if err := common.UpdateStatus(ctx, r, obj); err != nil {
 			r.Info("Unable to set lifecycle to Pending. retry", "object", obj.GetName(), "err", err)
 
-			return utils.RequeueAfter(time.Second)
+			return common.RequeueAfter(time.Second)
 		}
 	} else {
 		r.Info("Object does not support RecocileStatusAware interface. Not setting status",
@@ -63,11 +63,11 @@ func Pending(ctx context.Context, r utils.Reconciler, obj client.Object, reason 
 		)
 	}
 
-	return utils.Stop()
+	return common.Stop()
 }
 
 // Running is a wrapper that sets Phase to Running and does not requeue the request.
-func Running(ctx context.Context, r utils.Reconciler, obj client.Object, reason string) (reconcile.Result, error) {
+func Running(ctx context.Context, r common.Reconciler, obj client.Object, reason string) (reconcile.Result, error) {
 	if ctx == nil || obj == nil || reason == "" {
 		panic("invalid args")
 	}
@@ -81,10 +81,10 @@ func Running(ctx context.Context, r utils.Reconciler, obj client.Object, reason 
 	if statusAware, updateStatus := obj.(ReconcileStatusAware); updateStatus {
 		statusAware.SetReconcileStatus(status)
 
-		if err := utils.UpdateStatus(ctx, r, obj); err != nil {
+		if err := common.UpdateStatus(ctx, r, obj); err != nil {
 			r.Info("Unable to set lifecycle to Running. retry", "object", obj.GetName(), "err", err)
 
-			return utils.RequeueAfter(time.Second)
+			return common.RequeueAfter(time.Second)
 		}
 	} else {
 		r.Info("Object does not support RecocileStatusAware interface. Not setting status",
@@ -92,11 +92,11 @@ func Running(ctx context.Context, r utils.Reconciler, obj client.Object, reason 
 		)
 	}
 
-	return utils.Stop()
+	return common.Stop()
 }
 
 // Success is a wrapper that sets Phase to Success and does not requeue the request.
-func Success(ctx context.Context, r utils.Reconciler, obj client.Object, reason string) (reconcile.Result, error) {
+func Success(ctx context.Context, r common.Reconciler, obj client.Object, reason string) (reconcile.Result, error) {
 	if ctx == nil || obj == nil || reason == "" {
 		panic("invalid args")
 	}
@@ -110,10 +110,10 @@ func Success(ctx context.Context, r utils.Reconciler, obj client.Object, reason 
 	if statusAware, updateStatus := obj.(ReconcileStatusAware); updateStatus {
 		statusAware.SetReconcileStatus(status)
 
-		if err := utils.UpdateStatus(ctx, r, obj); err != nil {
+		if err := common.UpdateStatus(ctx, r, obj); err != nil {
 			r.Info("Unable to set lifecycle to Success. retry", "object", obj.GetName(), "err", err)
 
-			return utils.RequeueAfter(time.Second)
+			return common.RequeueAfter(time.Second)
 		}
 	} else {
 		r.Info("Object does not support RecocileStatusAware interface. Not setting status",
@@ -122,11 +122,11 @@ func Success(ctx context.Context, r utils.Reconciler, obj client.Object, reason 
 		)
 	}
 
-	return utils.Stop()
+	return common.Stop()
 }
 
 // Failed is a wrap that logs the error, updates the status, and does not requeue the request.
-func Failed(ctx context.Context, r utils.Reconciler, obj client.Object, issue error) (reconcile.Result, error) {
+func Failed(ctx context.Context, r common.Reconciler, obj client.Object, issue error) (reconcile.Result, error) {
 	if ctx == nil || obj == nil || issue == nil {
 		panic("invalid args")
 	}
@@ -147,10 +147,10 @@ func Failed(ctx context.Context, r utils.Reconciler, obj client.Object, issue er
 	if statusAware, updateStatus := obj.(ReconcileStatusAware); updateStatus {
 		statusAware.SetReconcileStatus(status)
 
-		if err := utils.UpdateStatus(ctx, r, obj); err != nil {
+		if err := common.UpdateStatus(ctx, r, obj); err != nil {
 			r.Info("Unable to set lifecycle to Failed. retry", "object", obj.GetName(), "err", err)
 
-			return utils.RequeueAfter(time.Second)
+			return common.RequeueAfter(time.Second)
 		}
 	} else {
 		r.Info("Object does not support RecocileStatusAware interface. Not setting status",
@@ -158,5 +158,5 @@ func Failed(ctx context.Context, r utils.Reconciler, obj client.Object, issue er
 		)
 	}
 
-	return utils.Stop()
+	return common.Stop()
 }

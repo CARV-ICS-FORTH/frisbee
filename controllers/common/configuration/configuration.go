@@ -20,13 +20,26 @@ import (
 	"context"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	"github.com/carv-ics-forth/frisbee/controllers/utils"
 	"github.com/go-logr/logr"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+// Discover discovers a resource across different namespaces
+func Discover(ctx context.Context, c client.Client, crList client.ObjectList, id string) error {
+	// find the platform configuration (which may reside on a different namespace)
+	filters := []client.ListOption{
+		client.MatchingLabels{v1alpha1.ResourceDiscoveryLabel: id},
+	}
+
+	if err := c.List(ctx, crList, filters...); err != nil {
+		return errors.Wrapf(err, "cannot list resources")
+	}
+
+	return nil
+}
 
 func namesOfItems(list corev1.ConfigMapList) []string {
 	names := make([]string, 0, len(list.Items))
@@ -43,7 +56,7 @@ func Get(ctx context.Context, c client.Client, logger logr.Logger) (v1alpha1.Con
 	// 1. Discovery the configuration across the various namespaces.
 	var list corev1.ConfigMapList
 
-	if err := utils.Discover(ctx, c, &list, PlatformConfigurationName); err != nil {
+	if err := Discover(ctx, c, &list, PlatformConfigurationName); err != nil {
 		return v1alpha1.Configuration{}, errors.Wrapf(err, "cannot discover '%s'", PlatformConfigurationName)
 	}
 

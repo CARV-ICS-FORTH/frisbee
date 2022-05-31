@@ -23,8 +23,8 @@ import (
 	"strings"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
+	"github.com/carv-ics-forth/frisbee/controllers/common"
 	"github.com/carv-ics-forth/frisbee/controllers/testplan/grafana"
-	"github.com/carv-ics-forth/frisbee/controllers/utils"
 	notifier "github.com/golanghelper/grafana-webhook"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -116,7 +116,7 @@ func SetAlert(job client.Object, slo v1alpha1.ExprMetrics) error {
 }
 
 // DispatchAlert informs an object about the fired alert by updating the metadata of that object.
-func DispatchAlert(ctx context.Context, r utils.Reconciler, b *notifier.Body) error {
+func DispatchAlert(ctx context.Context, r common.Reconciler, b *notifier.Body) error {
 	// Step 1. create the patch
 
 	// For more examples see:

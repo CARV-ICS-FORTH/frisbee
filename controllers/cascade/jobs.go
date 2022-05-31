@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
+	chaosutils "github.com/carv-ics-forth/frisbee/controllers/chaos/utils"
 	"github.com/pkg/errors"
 )
 
@@ -52,7 +53,7 @@ func (r *Controller) constructJobSpecList(ctx context.Context, group *v1alpha1.C
 		return nil, errors.Wrapf(err, "template validation")
 	}
 
-	specs, err := r.chaosControl.GetChaosSpecList(ctx, group.GetNamespace(), group.Spec.GenerateFromTemplate)
+	specs, err := chaosutils.GetChaosSpecList(ctx, r, group.GetNamespace(), group.Spec.GenerateFromTemplate)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot get specs")
 	}

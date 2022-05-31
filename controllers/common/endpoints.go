@@ -14,12 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package utils
+package common
 
 import (
 	"fmt"
 
-	"github.com/carv-ics-forth/frisbee/controllers/utils/configuration"
+	"github.com/carv-ics-forth/frisbee/controllers/common/configuration"
 )
 
 // GenerateEndpoint creates an endpoint for accessing the service.

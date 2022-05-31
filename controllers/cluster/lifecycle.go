@@ -20,8 +20,8 @@ import (
 	"fmt"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	"github.com/carv-ics-forth/frisbee/controllers/utils/expressions"
-	"github.com/carv-ics-forth/frisbee/controllers/utils/lifecycle"
+	"github.com/carv-ics-forth/frisbee/controllers/common/expressions"
+	"github.com/carv-ics-forth/frisbee/controllers/common/lifecycle"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

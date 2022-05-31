@@ -29,18 +29,20 @@ var sprigFuncMap = sprig.TxtFuncMap() // a singleton for better performance
 
 type GenericSpec string
 
+type RawBody string
+
 type Scheme struct {
 	// Inputs are dynamic fields that populate the spec.
 	// +optional
 	Inputs *v1alpha1.Inputs `json:"inputs,omitempty"`
 
-	// Spec is the Service specification whose values will be replaced by parameters.
-	Spec string `json:"spec"`
+	// Spec is the specification whose values will be replaced by parameters.
+	Spec []byte `json:"spec"`
 }
 
 // Evaluate parses a given scheme and returns the respective ServiceSpec.
-func Evaluate(tspec *Scheme) (GenericSpec, error) {
-	if tspec == nil {
+func Evaluate(scheme *Scheme) (GenericSpec, error) {
+	if scheme == nil {
 		return "", errors.Errorf("empty scheme")
 	}
 
@@ -48,7 +50,7 @@ func Evaluate(tspec *Scheme) (GenericSpec, error) {
 	t, err := template.New("").
 		Funcs(sprigFuncMap).
 		Option("missingkey=error").
-		Parse(tspec.Spec)
+		Parse(string(scheme.Spec))
 
 	if err != nil {
 		return "", errors.Wrapf(err, "parsing error")
@@ -56,7 +58,7 @@ func Evaluate(tspec *Scheme) (GenericSpec, error) {
 
 	var out strings.Builder
 
-	if err := t.Execute(&out, tspec); err != nil {
+	if err := t.Execute(&out, scheme); err != nil {
 		return "", errors.Wrapf(err, "template execution error")
 	}
 

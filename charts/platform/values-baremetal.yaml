@@ -34,7 +34,7 @@ telemetry:
 openebs:
   enabled: true
 
-  backendDir: /mnt/local
+  storagePath: /mnt/local
 
   #- device (as block or mounted path)
   #- hostpath (sub directory on OS or mounted path)

@@ -3,7 +3,7 @@
 ## Please, note that this will override the image parameters, including dependencies, configured to use the global value
 ##
 ## @param global.domainName DNS name for making Telemetry stack accessible outside the cluster.
-## @param telemetry.ingressClass Type of ingres for making Telemetry stack accessible outside the cluster.
+## @param global.ingressClass Type of ingres for making Telemetry stack accessible outside the cluster.
 global:
   domainName: localhost
 
@@ -21,7 +21,6 @@ operator:
 ## @param telemetry.honorTimestamp Use the timestamps of the metrics exposed by the agent (time-drifts)
 ## @param telemetry.prometheusPort Listening port for Prometheus
 ## @param telemetry.grafanaPort Listening port for Grafana
-
 telemetry:
   honorTimestamp: true
   prometheusPort: 9090
@@ -33,12 +32,13 @@ telemetry:
 
 ## @param openebs.enabled Whether to enable OpenEBS
 ## @param openebs.storagePath The filesystem dir where volumes will be provisioned
-## @param openebs.ndm.enabled Whether to enable block devices as resources
-## @param openebs.ndmOperator.enabled Whether to automatically provision block devices
+## @param openebs.nfs-provisioner.enabled Will enable dynamic NFS servers
+## @param openebs.ndm.filters.includePaths Include block devices for dynamic block provisioning
+## @param openebs.ndm.filters.excludePaths Exclude block devices for dynamic block provisioning
 openebs:
   enabled: true
 
-  backendDir: /mnt/local
+  storagePath: /mnt/local
 
   nfs-provisioner:
     enabled: true
@@ -55,10 +55,13 @@ openebs:
 
 ## @section Chaos Injection Parameters
 
-## @param chaos.enabled Whether or not to enable the Chaos controllers
+## @param chaos.enabled Whether to enable the Chaos controllers
 chaos:
   enabled: true
 
+## @param chaos-mesh.controllerManager.replicaCount Number of Chaos-Mesh controller replicas
+## @param chaos-mesh.chaosDaemon.runtime Specifies which container runtime to use.
+## @param chaos-mesh.chaosDaemon.socketPath Specifies the container runtime socket.
 chaos-mesh:
   controllerManager:
     replicaCount: 1

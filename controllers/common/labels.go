@@ -14,11 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package utils
+package common
 
 import (
-	"context"
-
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -65,18 +63,4 @@ func ExtractPartOfLabel(obj metav1.Object) (string, error) {
 	}
 
 	return plan, nil
-}
-
-// Discover discovers a resource across different namespaces
-func Discover(ctx context.Context, c client.Client, crList client.ObjectList, id string) error {
-	// find the platform configuration (which may reside on a different namespace)
-	filters := []client.ListOption{
-		client.MatchingLabels{v1alpha1.ResourceDiscoveryLabel: id},
-	}
-
-	if err := c.List(ctx, crList, filters...); err != nil {
-		return errors.Wrapf(err, "cannot list resources")
-	}
-
-	return nil
 }

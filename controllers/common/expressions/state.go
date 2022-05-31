@@ -23,7 +23,7 @@ import (
 	"github.com/Knetic/govaluate"
 	"github.com/Masterminds/sprig/v3"
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	"github.com/carv-ics-forth/frisbee/controllers/utils/lifecycle"
+	"github.com/carv-ics-forth/frisbee/controllers/common/lifecycle"
 	"github.com/pkg/errors"
 )
 

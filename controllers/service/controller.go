@@ -22,9 +22,8 @@ import (
 	"time"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	serviceutils "github.com/carv-ics-forth/frisbee/controllers/service/utils"
-	"github.com/carv-ics-forth/frisbee/controllers/utils"
-	"github.com/carv-ics-forth/frisbee/controllers/utils/lifecycle"
+	"github.com/carv-ics-forth/frisbee/controllers/common"
+	"github.com/carv-ics-forth/frisbee/controllers/common/lifecycle"
 	"github.com/go-logr/logr"
 	cmap "github.com/orcaman/concurrent-map"
 	"github.com/pkg/errors"
@@ -62,8 +61,6 @@ type Controller struct {
 
 	// because the range annotator has state (uid), we need to save in the controller's store.
 	regionAnnotations cmap.ConcurrentMap
-
-	serviceControl serviceutils.ServiceControlInterface
 }
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
@@ -76,7 +73,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	var cr v1alpha1.Service
 
 	var requeue bool
-	result, err := utils.Reconcile(ctx, r, req, &cr, &requeue)
+	result, err := common.Reconcile(ctx, r, req, &cr, &requeue)
 
 	if requeue {
 		return result, errors.Wrapf(err, "initialization error")
@@ -128,9 +125,9 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	*/
 	cr.SetReconcileStatus(updateLifecycle(&cr, &pod))
 
-	if err := utils.UpdateStatus(ctx, r, &cr); err != nil {
+	if err := common.UpdateStatus(ctx, r, &cr); err != nil {
 		r.Info("update status error. retry", "object", cr.GetName(), "err", err)
-		return utils.RequeueAfter(time.Second)
+		return common.RequeueAfter(time.Second)
 	}
 
 	/*
@@ -143,18 +140,18 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if cr.Status.Phase == v1alpha1.PhaseSuccess {
 		// FIXME: dummy workaround that could be avoided by using the classified (see workflow).
 		if !pod.CreationTimestamp.IsZero() {
-			utils.Delete(ctx, r, &pod)
+			common.Delete(ctx, r, &pod)
 		}
 
 		// TODO: remove dns service.
 
-		return utils.Stop()
+		return common.Stop()
 	}
 
 	if cr.Status.Phase == v1alpha1.PhaseFailed {
 		r.Logger.Error(errors.New(cr.Status.Reason), cr.Status.Message)
 
-		return utils.Stop()
+		return common.Stop()
 	}
 
 	/*
@@ -168,7 +165,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	*/
 	if cr.Status.LastScheduleTime != nil {
 		// next reconciliation cycle will be trigger by the watchers
-		return utils.Stop()
+		return common.Stop()
 	}
 
 	if err := r.runJob(ctx, &cr); err != nil {
@@ -226,8 +223,6 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 		gvk:               v1alpha1.GroupVersion.WithKind("Service"),
 		regionAnnotations: cmap.New(),
 	}
-
-	r.serviceControl = serviceutils.NewServiceControl(r)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named("service").

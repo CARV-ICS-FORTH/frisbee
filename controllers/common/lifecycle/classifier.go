@@ -20,7 +20,7 @@ import (
 	"sort"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	"github.com/carv-ics-forth/frisbee/controllers/utils"
+	"github.com/carv-ics-forth/frisbee/controllers/common"
 	"github.com/sirupsen/logrus"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -246,7 +246,7 @@ func (in Classifier) IsDeletable(jobName string) (client.Object, bool) {
 
 	if job, exists := in.runningJobs[jobName]; exists {
 		// A system service is not deletabled
-		if !utils.IsSystemService(job) {
+		if !common.IsSystemService(job) {
 			return job, true
 		}
 	}

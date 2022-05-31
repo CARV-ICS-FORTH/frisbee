@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	"github.com/carv-ics-forth/frisbee/controllers/utils/lifecycle"
+	"github.com/carv-ics-forth/frisbee/controllers/common/lifecycle"
 )
 
 func setJobs(state *lifecycle.Classifier) {

@@ -21,7 +21,7 @@ import (
 	"reflect"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	"github.com/carv-ics-forth/frisbee/controllers/utils"
+	"github.com/carv-ics-forth/frisbee/controllers/common"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"
@@ -30,7 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
-func WatchCall(r utils.Reconciler, gvk schema.GroupVersionKind) builder.Predicates {
+func WatchCall(r common.Reconciler, gvk schema.GroupVersionKind) builder.Predicates {
 	return builder.WithPredicates(predicate.Funcs{
 		CreateFunc:  watchCallCreate(r, gvk),
 		DeleteFunc:  watchCallDelete(r, gvk),
@@ -39,9 +39,9 @@ func WatchCall(r utils.Reconciler, gvk schema.GroupVersionKind) builder.Predicat
 	})
 }
 
-func watchCallCreate(r utils.Reconciler, gvk schema.GroupVersionKind) CreateFunc {
+func watchCallCreate(r common.Reconciler, gvk schema.GroupVersionKind) CreateFunc {
 	return func(e event.CreateEvent) bool {
-		if !utils.IsManagedByThisController(e.Object, gvk) {
+		if !common.IsManagedByThisController(e.Object, gvk) {
 			return false
 		}
 
@@ -62,9 +62,9 @@ func watchCallCreate(r utils.Reconciler, gvk schema.GroupVersionKind) CreateFunc
 	}
 }
 
-func watchCallUpdate(r utils.Reconciler, gvk schema.GroupVersionKind) UpdateFunc {
+func watchCallUpdate(r common.Reconciler, gvk schema.GroupVersionKind) UpdateFunc {
 	return func(e event.UpdateEvent) bool {
-		if !utils.IsManagedByThisController(e.ObjectNew, gvk) {
+		if !common.IsManagedByThisController(e.ObjectNew, gvk) {
 			return false
 		}
 
@@ -104,9 +104,9 @@ func watchCallUpdate(r utils.Reconciler, gvk schema.GroupVersionKind) UpdateFunc
 	}
 }
 
-func watchCallDelete(r utils.Reconciler, gvk schema.GroupVersionKind) DeleteFunc {
+func watchCallDelete(r common.Reconciler, gvk schema.GroupVersionKind) DeleteFunc {
 	return func(e event.DeleteEvent) bool {
-		if !utils.IsManagedByThisController(e.Object, gvk) {
+		if !common.IsManagedByThisController(e.Object, gvk) {
 			return false
 		}
 
@@ -130,7 +130,7 @@ func watchCallDelete(r utils.Reconciler, gvk schema.GroupVersionKind) DeleteFunc
 	}
 }
 
-func watchCallGeneric(r utils.Reconciler, gvk schema.GroupVersionKind) GenericFunc {
+func watchCallGeneric(r common.Reconciler, gvk schema.GroupVersionKind) GenericFunc {
 	return func(e event.GenericEvent) bool {
 		return true
 	}

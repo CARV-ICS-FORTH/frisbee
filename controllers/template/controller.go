@@ -22,8 +22,8 @@ import (
 	"time"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	"github.com/carv-ics-forth/frisbee/controllers/utils"
-	"github.com/carv-ics-forth/frisbee/controllers/utils/lifecycle"
+	"github.com/carv-ics-forth/frisbee/controllers/common"
+	"github.com/carv-ics-forth/frisbee/controllers/common/lifecycle"
 	"github.com/go-logr/logr"
 	k8errors "k8s.io/apimachinery/pkg/api/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -56,22 +56,22 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		// requeue (we'll need to wait for a new notification), and we can get them
 		// on added / deleted requests.
 		if k8errors.IsNotFound(err) {
-			return utils.Stop()
+			return common.Stop()
 		}
 
 		r.Error(err, "obj retrieval")
 
-		return utils.RequeueAfter(time.Second)
+		return common.RequeueAfter(time.Second)
 	}
 
 	/*
 		2: Update the CR status using the data we've gathered
 		------------------------------------------------------------------
 	*/
-	if err := utils.UpdateStatus(ctx, r, &cr); err != nil {
+	if err := common.UpdateStatus(ctx, r, &cr); err != nil {
 		r.Info("update status error. retry", "object", cr.GetName(), "err", err)
 
-		return utils.RequeueAfter(time.Second)
+		return common.RequeueAfter(time.Second)
 	}
 
 	/*
@@ -86,7 +86,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		------------------------------------------------------------------
 	*/
 	if cr.Status.Lifecycle.Phase.Is(v1alpha1.PhaseRunning) {
-		return utils.Stop()
+		return common.Stop()
 	}
 
 	if cr.Status.Lifecycle.Phase.Is(v1alpha1.PhaseUninitialized) {
@@ -97,7 +97,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return lifecycle.Running(ctx, r, &cr, "all templates are loaded")
 	}
 
-	return utils.Stop()
+	return common.Stop()
 }
 
 /*

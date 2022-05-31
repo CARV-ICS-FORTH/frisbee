@@ -23,7 +23,8 @@ import (
 	"strings"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	"github.com/carv-ics-forth/frisbee/controllers/utils"
+	"github.com/carv-ics-forth/frisbee/controllers/common"
+	serviceutils "github.com/carv-ics-forth/frisbee/controllers/service/utils"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
@@ -47,7 +48,7 @@ func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Service) error {
 		return errors.Wrapf(err, "DNS service error")
 	}
 
-	if err := utils.Create(ctx, r, cr, discovery); err != nil {
+	if err := common.Create(ctx, r, cr, discovery); err != nil {
 		return errors.Wrapf(err, "cannot create discovery service")
 	}
 
@@ -59,7 +60,7 @@ func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Service) error {
 
 	cr.Spec.PodSpec.DeepCopyInto(&pod.Spec)
 
-	if err := utils.Create(ctx, r, cr, &pod); err != nil {
+	if err := common.Create(ctx, r, cr, &pod); err != nil {
 		return errors.Wrapf(err, "cannot create pod")
 	}
 
@@ -82,7 +83,7 @@ func handleRequirements(ctx context.Context, r *Controller, cr *v1alpha1.Service
 		pvc.SetName(cr.GetName())
 		req.Spec.DeepCopyInto(&pvc.Spec)
 
-		if err := utils.Create(ctx, r, cr, &pvc); err != nil {
+		if err := common.Create(ctx, r, cr, &pvc); err != nil {
 			return errors.Wrapf(err, "cannot create pvc")
 		}
 
@@ -213,7 +214,7 @@ func decoratePod(ctx context.Context, r *Controller, cr *v1alpha1.Service) error
 	if req := cr.Spec.Decorators.Telemetry; req != nil {
 		// import monitoring agents to the service
 		for _, monRef := range req {
-			monSpec, err := r.serviceControl.GetServiceSpec(ctx, cr.GetNamespace(), v1alpha1.GenerateFromTemplate{TemplateRef: monRef})
+			monSpec, err := serviceutils.GetServiceSpec(ctx, r, cr.GetNamespace(), v1alpha1.GenerateFromTemplate{TemplateRef: monRef})
 			if err != nil {
 				return errors.Wrapf(err, "cannot get monitor")
 			}

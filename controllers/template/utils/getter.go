@@ -20,8 +20,8 @@ import (
 	"context"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	"github.com/carv-ics-forth/frisbee/controllers/utils"
-	"github.com/carv-ics-forth/frisbee/controllers/utils/configuration"
+	"github.com/carv-ics-forth/frisbee/controllers/common"
+	"github.com/carv-ics-forth/frisbee/controllers/common/configuration"
 	"github.com/pkg/errors"
 	k8errors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/yaml"
@@ -30,18 +30,18 @@ import (
 
 // GetTemplate searches Frisbee for the given reference. By default, it searches the given namespace. If it is not found,
 // then it searches the installation namespace.
-func GetTemplate(ctx context.Context, r utils.Reconciler, defaultNamespace string, ref string) (*v1alpha1.Template, error) {
+func GetTemplate(ctx context.Context, r common.Reconciler, testplanNamespace string, ref string) (*v1alpha1.Template, error) {
 	var template v1alpha1.Template
 
 	key := client.ObjectKey{
-		Namespace: defaultNamespace,
+		Namespace: testplanNamespace,
 		Name:      ref,
 	}
 
 	err := r.GetClient().Get(ctx, key, &template)
 	switch {
 	case k8errors.IsNotFound(err):
-		if defaultNamespace == configuration.Global.Namespace {
+		if testplanNamespace == configuration.Global.Namespace {
 			return nil, errors.Wrapf(err, "cannot find template [%s]", key.String())
 		}
 
@@ -49,8 +49,8 @@ func GetTemplate(ctx context.Context, r utils.Reconciler, defaultNamespace strin
 		key.Namespace = configuration.Global.Namespace
 
 		if err := r.GetClient().Get(ctx, key, &template); err != nil {
-			return nil, errors.Wrapf(err, "failed to discover '%s' at both user '%s' and installation '%s' namespaces",
-				ref, defaultNamespace, configuration.Global.Namespace)
+			return nil, errors.Wrapf(err, "failed to discover '%s' at both test '%s' and installation '%s' namespaces",
+				ref, testplanNamespace, configuration.Global.Namespace)
 		}
 	case err != nil:
 		return nil, errors.Wrapf(err, "cannot retrieve template [%s]", key.String())
@@ -75,12 +75,12 @@ func GenerateFromScheme(spec interface{}, scheme *Scheme, userInputs map[string]
 		}
 	}
 
-	genericSpec, err := Evaluate(scheme)
+	expandedSpecBody, err := Evaluate(scheme)
 	if err != nil {
 		return errors.Wrapf(err, "cannot convert scheme to spec")
 	}
 
-	if err := yaml.Unmarshal([]byte(genericSpec), spec); err != nil {
+	if err := yaml.Unmarshal([]byte(expandedSpecBody), spec); err != nil {
 		return errors.Wrapf(err, "decoding error")
 	}
 

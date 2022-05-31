@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/carv-ics-forth/frisbee/controllers/common"
 	"github.com/carv-ics-forth/frisbee/controllers/testplan/grafana"
-	"github.com/carv-ics-forth/frisbee/controllers/utils"
 	"github.com/pkg/errors"
 	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -38,7 +38,7 @@ func (r *Controller) Watchers() predicate.Funcs {
 }
 
 func (r *Controller) create(e event.CreateEvent) bool {
-	if !utils.IsManagedByThisController(e.Object, r.gvk) {
+	if !common.IsManagedByThisController(e.Object, r.gvk) {
 		return false
 	}
 
@@ -65,7 +65,7 @@ func (r *Controller) create(e event.CreateEvent) bool {
 }
 
 func (r *Controller) update(e event.UpdateEvent) bool {
-	if !utils.IsManagedByThisController(e.ObjectNew, r.gvk) {
+	if !common.IsManagedByThisController(e.ObjectNew, r.gvk) {
 		return false
 	}
 
@@ -94,7 +94,7 @@ func (r *Controller) update(e event.UpdateEvent) bool {
 }
 
 func (r *Controller) delete(e event.DeleteEvent) bool {
-	if !utils.IsManagedByThisController(e.Object, r.gvk) {
+	if !common.IsManagedByThisController(e.Object, r.gvk) {
 		return false
 	}
 

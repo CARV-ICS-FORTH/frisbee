@@ -23,10 +23,11 @@ import (
 	"path/filepath"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
+	"github.com/carv-ics-forth/frisbee/controllers/common"
+	"github.com/carv-ics-forth/frisbee/controllers/common/configuration"
+	"github.com/carv-ics-forth/frisbee/controllers/common/expressions"
+	serviceutils "github.com/carv-ics-forth/frisbee/controllers/service/utils"
 	"github.com/carv-ics-forth/frisbee/controllers/testplan/grafana"
-	"github.com/carv-ics-forth/frisbee/controllers/utils"
-	"github.com/carv-ics-forth/frisbee/controllers/utils/configuration"
-	"github.com/carv-ics-forth/frisbee/controllers/utils/expressions"
 	"github.com/carv-ics-forth/frisbee/pkg/netutils"
 	"github.com/dustinkirkland/golang-petname"
 	notifier "github.com/golanghelper/grafana-webhook"
@@ -118,7 +119,7 @@ func (r *Controller) copyEnvironment(ctx context.Context, t *v1alpha1.TestPlan) 
 		config.SetResourceVersion("")
 		config.SetNamespace(t.GetNamespace())
 
-		if err := utils.Create(ctx, r, t, &config); err != nil {
+		if err := common.Create(ctx, r, t, &config); err != nil {
 			return errors.Wrapf(err, "cannot create config '%s'", name)
 		}
 
@@ -162,7 +163,7 @@ func (r *Controller) installPrometheus(ctx context.Context, t *v1alpha1.TestPlan
 			return errors.Wrapf(err, "template validation")
 		}
 
-		spec, err := r.serviceControl.GetServiceSpec(ctx, installationNamespace, *fromtemplate)
+		spec, err := serviceutils.GetServiceSpec(ctx, r, installationNamespace, *fromtemplate)
 		if err != nil {
 			return errors.Wrapf(err, "cannot get spec")
 		}
@@ -170,11 +171,11 @@ func (r *Controller) installPrometheus(ctx context.Context, t *v1alpha1.TestPlan
 		spec.DeepCopyInto(&prometheus.Spec)
 	}
 
-	if err := utils.Create(ctx, r, t, &prometheus); err != nil {
+	if err := common.Create(ctx, r, t, &prometheus); err != nil {
 		return errors.Wrapf(err, "cannot create %s", prometheus.GetName())
 	}
 
-	t.Status.PrometheusEndpoint = utils.GenerateEndpoint(notRandomPrometheusName, t.GetName(), configuration.Global.PrometheusPort)
+	t.Status.PrometheusEndpoint = common.GenerateEndpoint(notRandomPrometheusName, t.GetName(), configuration.Global.PrometheusPort)
 
 	return nil
 }
@@ -198,7 +199,7 @@ func (r *Controller) installGrafana(ctx context.Context, t *v1alpha1.TestPlan, t
 			return errors.Wrapf(err, "template validation")
 		}
 
-		spec, err := r.serviceControl.GetServiceSpec(ctx, installationNamespace, *fromtemplate)
+		spec, err := serviceutils.GetServiceSpec(ctx, r, installationNamespace, *fromtemplate)
 		if err != nil {
 			return errors.Wrapf(err, "cannot get spec")
 		}
@@ -210,11 +211,11 @@ func (r *Controller) installGrafana(ctx context.Context, t *v1alpha1.TestPlan, t
 		}
 	}
 
-	if err := utils.Create(ctx, r, t, &grafana); err != nil {
+	if err := common.Create(ctx, r, t, &grafana); err != nil {
 		return errors.Wrapf(err, "cannot create %s", grafana.GetName())
 	}
 
-	t.Status.GrafanaEndpoint = utils.GenerateEndpoint(notRandomGrafanaName, t.GetName(), configuration.Global.GrafanaPort)
+	t.Status.GrafanaEndpoint = common.GenerateEndpoint(notRandomGrafanaName, t.GetName(), configuration.Global.GrafanaPort)
 
 	return nil
 }
@@ -341,7 +342,7 @@ func (r *Controller) createIngress(ctx context.Context, t *v1alpha1.TestPlan) er
 			},
 
 			{ // Create a placeholder for the logviewer.
-				Host: utils.GenerateEndpoint(notRandomLogViewerName, t.GetName(), configuration.Global.LogviewerPort),
+				Host: common.GenerateEndpoint(notRandomLogViewerName, t.GetName(), configuration.Global.LogviewerPort),
 				IngressRuleValue: netv1.IngressRuleValue{
 					HTTP: &netv1.HTTPIngressRuleValue{
 						Paths: []netv1.HTTPIngressPath{
@@ -364,7 +365,7 @@ func (r *Controller) createIngress(ctx context.Context, t *v1alpha1.TestPlan) er
 		},
 	}
 
-	if err := utils.Create(ctx, r, t, &ingress); err != nil {
+	if err := common.Create(ctx, r, t, &ingress); err != nil {
 		return errors.Wrapf(err, "cannot create ingress")
 	}
 
@@ -390,7 +391,7 @@ func (r *Controller) ImportTelemetryDashboards(ctx context.Context, plan *v1alph
 			continue
 		}
 
-		spec, err := r.serviceControl.GetServiceSpec(ctx, plan.GetNamespace(), *fromTemplate)
+		spec, err := serviceutils.GetServiceSpec(ctx, r, plan.GetNamespace(), *fromTemplate)
 		if err != nil {
 			return nil, errors.Wrapf(err, "cannot retrieve service spec")
 		}

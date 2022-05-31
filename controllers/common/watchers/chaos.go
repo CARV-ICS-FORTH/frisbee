@@ -1,5 +1,5 @@
 /*
-Copyright 2021 ICS-FORTH.
+Copyright 2022 ICS-FORTH.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import (
 	"reflect"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	"github.com/carv-ics-forth/frisbee/controllers/utils"
+	"github.com/carv-ics-forth/frisbee/controllers/common"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"
@@ -30,18 +30,18 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
-func WatchService(r utils.Reconciler, gvk schema.GroupVersionKind) builder.Predicates {
+func WatchChaos(r common.Reconciler, gvk schema.GroupVersionKind) builder.Predicates {
 	return builder.WithPredicates(predicate.Funcs{
-		CreateFunc:  watchServiceCreate(r, gvk),
-		DeleteFunc:  watchServiceDelete(r, gvk),
-		UpdateFunc:  watchServiceUpdate(r, gvk),
-		GenericFunc: watchServiceGeneric(r, gvk),
+		CreateFunc:  watchChaosCreate(r, gvk),
+		DeleteFunc:  watchChaosDelete(r, gvk),
+		UpdateFunc:  watchChaosUpdate(r, gvk),
+		GenericFunc: watchChaosGeneric(r, gvk),
 	})
 }
 
-func watchServiceCreate(r utils.Reconciler, gvk schema.GroupVersionKind) CreateFunc {
+func watchChaosCreate(r common.Reconciler, gvk schema.GroupVersionKind) CreateFunc {
 	return func(e event.CreateEvent) bool {
-		if !utils.IsManagedByThisController(e.Object, gvk) {
+		if !common.IsManagedByThisController(e.Object, gvk) {
 			return false
 		}
 
@@ -62,9 +62,9 @@ func watchServiceCreate(r utils.Reconciler, gvk schema.GroupVersionKind) CreateF
 	}
 }
 
-func watchServiceUpdate(r utils.Reconciler, gvk schema.GroupVersionKind) UpdateFunc {
+func watchChaosUpdate(r common.Reconciler, gvk schema.GroupVersionKind) UpdateFunc {
 	return func(e event.UpdateEvent) bool {
-		if !utils.IsManagedByThisController(e.ObjectNew, gvk) {
+		if !common.IsManagedByThisController(e.ObjectNew, gvk) {
 			return false
 		}
 
@@ -83,8 +83,8 @@ func watchServiceUpdate(r utils.Reconciler, gvk schema.GroupVersionKind) UpdateF
 		}
 
 		// if the status is the same, there is no need to inform the service
-		prev := e.ObjectOld.(*v1alpha1.Service)
-		latest := e.ObjectNew.(*v1alpha1.Service)
+		prev := e.ObjectOld.(*v1alpha1.Chaos)
+		latest := e.ObjectNew.(*v1alpha1.Chaos)
 
 		if prev.Status.Phase == latest.Status.Phase {
 			// a controller never initiates a phase change, and so is never asleep waiting for the same.
@@ -104,9 +104,9 @@ func watchServiceUpdate(r utils.Reconciler, gvk schema.GroupVersionKind) UpdateF
 	}
 }
 
-func watchServiceDelete(r utils.Reconciler, gvk schema.GroupVersionKind) DeleteFunc {
+func watchChaosDelete(r common.Reconciler, gvk schema.GroupVersionKind) DeleteFunc {
 	return func(e event.DeleteEvent) bool {
-		if !utils.IsManagedByThisController(e.Object, gvk) {
+		if !common.IsManagedByThisController(e.Object, gvk) {
 			return false
 		}
 
@@ -130,7 +130,7 @@ func watchServiceDelete(r utils.Reconciler, gvk schema.GroupVersionKind) DeleteF
 	}
 }
 
-func watchServiceGeneric(r utils.Reconciler, gvk schema.GroupVersionKind) GenericFunc {
+func watchChaosGeneric(r common.Reconciler, gvk schema.GroupVersionKind) GenericFunc {
 	return func(e event.GenericEvent) bool {
 		return true
 	}

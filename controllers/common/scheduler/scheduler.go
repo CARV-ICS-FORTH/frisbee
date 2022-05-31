@@ -21,9 +21,9 @@ import (
 	"time"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	"github.com/carv-ics-forth/frisbee/controllers/utils"
-	"github.com/carv-ics-forth/frisbee/controllers/utils/expressions"
-	"github.com/carv-ics-forth/frisbee/controllers/utils/lifecycle"
+	"github.com/carv-ics-forth/frisbee/controllers/common"
+	"github.com/carv-ics-forth/frisbee/controllers/common/expressions"
+	"github.com/carv-ics-forth/frisbee/controllers/common/lifecycle"
 	"github.com/pkg/errors"
 	"github.com/robfig/cron/v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -31,7 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func Schedule(ctx context.Context, r utils.Reconciler, cr client.Object, schedule *v1alpha1.SchedulerSpec,
+func Schedule(ctx context.Context, r common.Reconciler, cr client.Object, schedule *v1alpha1.SchedulerSpec,
 	lastSchedule *metav1.Time,
 	state lifecycle.ClassifierReader) (bool, ctrl.Result, error) {
 	if schedule == nil {
@@ -56,7 +56,7 @@ func Schedule(ctx context.Context, r utils.Reconciler, cr client.Object, schedul
 	return true, ctrl.Result{}, nil
 }
 
-func timeBased(ctx context.Context, r utils.Reconciler, cr client.Object, schedule *v1alpha1.SchedulerSpec, lastSchedule *metav1.Time) (bool, ctrl.Result, error) {
+func timeBased(ctx context.Context, r common.Reconciler, cr client.Object, schedule *v1alpha1.SchedulerSpec, lastSchedule *metav1.Time) (bool, ctrl.Result, error) {
 	missedRun, nextRun, err := getNextScheduleTime(cr, schedule, lastSchedule)
 	if err != nil {
 		/*
@@ -100,7 +100,7 @@ func timeBased(ctx context.Context, r utils.Reconciler, cr client.Object, schedu
 	return true, ctrl.Result{}, nil
 }
 
-func stateBased(ctx context.Context, r utils.Reconciler, cr client.Object, expr v1alpha1.ExprState, state lifecycle.ClassifierReader) (bool, ctrl.Result, error) {
+func stateBased(ctx context.Context, r common.Reconciler, cr client.Object, expr v1alpha1.ExprState, state lifecycle.ClassifierReader) (bool, ctrl.Result, error) {
 	info, fired, err := expressions.FiredState(expr, state)
 	if err != nil {
 		ret, err := lifecycle.Failed(ctx, r, cr, errors.Wrapf(err, "state-driven erro [%s]", info))
@@ -117,7 +117,7 @@ func stateBased(ctx context.Context, r utils.Reconciler, cr client.Object, expr 
 	return false, ctrl.Result{}, nil
 }
 
-func metricsBased(r utils.Reconciler, cr metav1.Object) (bool, ctrl.Result, error) {
+func metricsBased(r common.Reconciler, cr metav1.Object) (bool, ctrl.Result, error) {
 	info, fired := expressions.FiredAlert(cr)
 	if fired {
 		r.Info("Metrics-Event fired ", "msg", info)

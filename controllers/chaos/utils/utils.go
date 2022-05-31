@@ -20,30 +20,14 @@ import (
 	"context"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
+	"github.com/carv-ics-forth/frisbee/controllers/common"
 	templateutils "github.com/carv-ics-forth/frisbee/controllers/template/utils"
-	"github.com/carv-ics-forth/frisbee/controllers/utils"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/json"
 )
 
-type ChaosControlInterface interface {
-	GetChaosSpec(ctx context.Context, namespace string, fromTemplate v1alpha1.GenerateFromTemplate) (v1alpha1.ChaosSpec, error)
-
-	GetChaosSpecList(ctx context.Context, namespace string, fromTemplate v1alpha1.GenerateFromTemplate) ([]v1alpha1.ChaosSpec, error)
-}
-
-type ChaosControl struct {
-	utils.Reconciler
-}
-
-func NewChaosControl(r utils.Reconciler) *ChaosControl {
-	return &ChaosControl{
-		Reconciler: r,
-	}
-}
-
-func (s *ChaosControl) GetChaosSpec(ctx context.Context, namespace string, fromTemplate v1alpha1.GenerateFromTemplate) (v1alpha1.ChaosSpec, error) {
-	template, err := templateutils.GetTemplate(ctx, s, namespace, fromTemplate.TemplateRef)
+func GetChaosSpec(ctx context.Context, r common.Reconciler, namespace string, fromTemplate v1alpha1.GenerateFromTemplate) (v1alpha1.ChaosSpec, error) {
+	template, err := templateutils.GetTemplate(ctx, r, namespace, fromTemplate.TemplateRef)
 	if err != nil {
 		return v1alpha1.ChaosSpec{}, errors.Wrapf(err, "getTemplate error")
 	}
@@ -56,7 +40,7 @@ func (s *ChaosControl) GetChaosSpec(ctx context.Context, namespace string, fromT
 
 	scheme := templateutils.Scheme{
 		Inputs: template.Spec.Inputs,
-		Spec:   string(specBody),
+		Spec:   specBody,
 	}
 
 	var spec v1alpha1.ChaosSpec
@@ -68,8 +52,8 @@ func (s *ChaosControl) GetChaosSpec(ctx context.Context, namespace string, fromT
 	return spec, nil
 }
 
-func (s *ChaosControl) GetChaosSpecList(ctx context.Context, namespace string, fromTemplate v1alpha1.GenerateFromTemplate) ([]v1alpha1.ChaosSpec, error) {
-	template, err := templateutils.GetTemplate(ctx, s, namespace, fromTemplate.TemplateRef)
+func GetChaosSpecList(ctx context.Context, r common.Reconciler, namespace string, fromTemplate v1alpha1.GenerateFromTemplate) ([]v1alpha1.ChaosSpec, error) {
+	template, err := templateutils.GetTemplate(ctx, r, namespace, fromTemplate.TemplateRef)
 	if err != nil {
 		return nil, errors.Wrapf(err, "template %s error", fromTemplate.TemplateRef)
 	}
@@ -85,7 +69,7 @@ func (s *ChaosControl) GetChaosSpecList(ctx context.Context, namespace string, f
 	if err := fromTemplate.IterateInputs(func(userInputs map[string]string) error {
 		scheme := templateutils.Scheme{
 			Inputs: template.Spec.Inputs,
-			Spec:   string(specBody),
+			Spec:   specBody,
 		}
 
 		var spec v1alpha1.ChaosSpec
