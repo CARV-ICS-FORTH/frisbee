@@ -136,18 +136,6 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		around.
 	*/
 
-	if cr.Status.Phase.Is(v1alpha1.PhaseUninitialized) {
-		if err := r.Initialize(ctx, &cr); err != nil {
-			lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot initialize"))
-		}
-
-		return lifecycle.Pending(ctx, r, &cr, "The TestPlan is ready to start submitting jobs.")
-	}
-
-	if cr.Status.Phase.Is(v1alpha1.PhaseRunning) {
-		return utils.Stop()
-	}
-
 	if cr.Status.Phase.Is(v1alpha1.PhaseSuccess) {
 		// Remove the testing components once the experiment is successfully complete.
 		// We maintain testbed components (e.g, prometheus and grafana) for getting back the test results.
@@ -169,6 +157,22 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return utils.Stop()
 	}
 
+	if cr.Status.Phase.Is(v1alpha1.PhaseRunning) {
+		return utils.Stop()
+	}
+
+	if cr.Status.Phase.Is(v1alpha1.PhaseUninitialized) {
+		if err := r.Initialize(ctx, &cr); err != nil {
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot initialize"))
+		}
+
+		if err := r.ConnectToGrafana(ctx, &cr); err != nil {
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot communicate with the telemetry stack"))
+		}
+
+		return lifecycle.Pending(ctx, r, &cr, "The TestPlan is ready to start submitting jobs.")
+	}
+
 	/*
 		6: Make the world matching what we want in our spec
 		------------------------------------------------------------------
@@ -178,13 +182,6 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		We may delete the service, add a pod, or wait for existing pod to change its status.
 	*/
-
-	/*
-		ensure that telemetry is running
-	*/
-	if err := r.ConnectToGrafana(ctx, &cr); err != nil {
-		return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot communicate with the telemetry stack"))
-	}
 
 	/*
 		7: Get the next logical run
@@ -212,7 +209,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 func (r *Controller) Initialize(ctx context.Context, t *v1alpha1.TestPlan) error {
 	/* Clone system configuration, needed to retrieve telemetry, chaos, etc  */
-	sysconf, configMeta, err := configuration.Get(ctx, r.GetClient(), r.Logger)
+	sysconf, err := configuration.Get(ctx, r.GetClient(), r.Logger)
 	if err != nil {
 		return errors.Wrapf(err, "cannot get system configuration")
 	}
@@ -228,8 +225,8 @@ func (r *Controller) Initialize(ctx context.Context, t *v1alpha1.TestPlan) error
 	{ // Initialize metadata
 		/* Inherit the metadata of the configuration. This is used to automatically delete and remove the
 		resources if the configuration is deleted */
-		utils.AppendLabels(t, configMeta.GetLabels())
-		utils.AppendLabels(t, configMeta.GetAnnotations())
+		// utils.AppendLabels(t, configMeta.GetLabels())
+		// utils.AppendLabels(t, configMeta.GetAnnotations())
 
 		/* Inherit the metadata of the test plan. This label will be adopted by all children objects of this workflow.
 		 */
@@ -284,8 +281,8 @@ func (r *Controller) GetClusterView(ctx context.Context, t *v1alpha1.TestPlan) e
 		}
 
 		for i, job := range serviceJobs.Items {
+			// Do not account telemetry jobs, unless they have failed.
 			if job.GetName() == notRandomGrafanaName || job.GetName() == notRandomPrometheusName {
-				// Do not account telemetry jobs, unless they have failed.
 				r.clusterView.Exclude(job.GetName(), &serviceJobs.Items[i])
 			} else {
 				r.clusterView.Classify(job.GetName(), &serviceJobs.Items[i])
@@ -482,6 +479,10 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 	r.chaosControl = chaosutils.NewChaosControl(r)
 
 	gvk := v1alpha1.GroupVersion.WithKind("TestPlan")
+
+	if err := r.CreateWebhookServer(context.Background()); err != nil {
+		return errors.Wrapf(err, "cannot create grafana webhook")
+	}
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named("testplan").

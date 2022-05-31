@@ -20,41 +20,37 @@ import (
 	"context"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
+	"github.com/carv-ics-forth/frisbee/controllers/utils"
 	"github.com/go-logr/logr"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// Discover discovers a resource across different namespaces
-func Discover(ctx context.Context, c client.Client, crList client.ObjectList, id string) error {
-	// find the platform configuration (which may reside on a different namespace)
-	filters := []client.ListOption{
-		client.MatchingLabels{v1alpha1.ResourceDiscoveryLabel: id},
+func namesOfItems(list corev1.ConfigMapList) []string {
+	names := make([]string, 0, len(list.Items))
+
+	for _, obj := range list.Items {
+		names = append(names, obj.GetName())
 	}
 
-	if err := c.List(ctx, crList, filters...); err != nil {
-		return errors.Wrapf(err, "cannot list resources")
-	}
-
-	return nil
+	return names
 }
 
 // Get returns the system configuration
-func Get(ctx context.Context, c client.Client, logger logr.Logger) (v1alpha1.Configuration, metav1.ObjectMeta, error) {
+func Get(ctx context.Context, c client.Client, logger logr.Logger) (v1alpha1.Configuration, error) {
 	// 1. Discovery the configuration across the various namespaces.
 	var list corev1.ConfigMapList
 
-	if err := Discover(ctx, c, &list, PlatformConfigurationName); err != nil {
-		return v1alpha1.Configuration{}, metav1.ObjectMeta{}, errors.Wrapf(err, "cannot discover '%s'", PlatformConfigurationName)
+	if err := utils.Discover(ctx, c, &list, PlatformConfigurationName); err != nil {
+		return v1alpha1.Configuration{}, errors.Wrapf(err, "cannot discover '%s'", PlatformConfigurationName)
 	}
 
 	// ensure that we have spotted only one configuration
 	if len(list.Items) != 1 {
-		return v1alpha1.Configuration{}, metav1.ObjectMeta{}, errors.Errorf("Expected a single resource for '%s' but got #%d",
-			PlatformConfigurationName, len(list.Items))
+		return v1alpha1.Configuration{}, errors.Errorf("Expected a single resource for '%s' but got #%s",
+			PlatformConfigurationName, namesOfItems(list))
 	}
 
 	config := list.Items[0]
@@ -75,11 +71,11 @@ func Get(ctx context.Context, c client.Client, logger logr.Logger) (v1alpha1.Con
 
 	decoder, err := mapstructure.NewDecoder(decoderConfig)
 	if err != nil {
-		return v1alpha1.Configuration{}, metav1.ObjectMeta{}, errors.Wrapf(err, "cannot create decoder")
+		return v1alpha1.Configuration{}, errors.Wrapf(err, "cannot create decoder")
 	}
 
 	if err := decoder.Decode(config.Data); err != nil {
-		return v1alpha1.Configuration{}, metav1.ObjectMeta{}, errors.Wrapf(err, "decoding error")
+		return v1alpha1.Configuration{}, errors.Wrapf(err, "decoding error")
 	}
 
 	logger.Info("Set configuration parameters",
@@ -87,7 +83,7 @@ func Get(ctx context.Context, c client.Client, logger logr.Logger) (v1alpha1.Con
 		"parameters", sysConf,
 	)
 
-	return sysConf, config.ObjectMeta, nil
+	return sysConf, nil
 }
 
 func SetGlobal(conf v1alpha1.Configuration) {

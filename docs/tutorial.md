@@ -238,7 +238,7 @@ In the specific **bitrot** scenario, the test will pass only it has reached an *
 minutes of execution.
 
 ```bash
->> kubectl wait --for=condition=UnexpectedTermination --timeout=10m testplan.frisbee.io/cockroach-bitrot -n default
+>> kubectl wait --for=condition=UnexpectedTermination --timeout=10m testplan.frisbee.io/cockroach-bitrot -n mytest
 
 testplan.frisbee.io/cockroach-bitrot condition met
 ```
@@ -263,7 +263,7 @@ one (masters-1), and the telemetry stack (grafana/prometheus).
 The deletion is as simple as the creation of a test.
 
 ```bash
->> kubectl -f ./charts/cockroachdb/examples/10.bitrot.yml delete --cascade=foreground -n default
+>> kubectl -f ./charts/cockroachdb/examples/10.bitrot.yml delete --cascade=foreground -n mytest
 
 testplan.frisbee.io "cockroach-bitrot" deleted
 ```
@@ -290,6 +290,3 @@ automatically.
 For the time being, the safest to run multiple experiments is to run each test on a **dedicated namespace**.
 
 To do so, you have to repeat this tutorial, replacing the `-n` flag with a unique namespace. 
-
-
-

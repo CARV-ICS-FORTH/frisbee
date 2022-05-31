@@ -107,7 +107,7 @@ data:
           # Condition 2. Filter the telemetry containers (ports with name "telemetry")
           - source_labels: [ __meta_kubernetes_pod_container_port_name ]
             separator: ;
-            regex: telemetry
+            regex: tel-(.*)
             action: keep
 
           # Extract information about the target container

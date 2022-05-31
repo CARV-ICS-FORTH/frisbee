@@ -18,6 +18,8 @@ package testplan
 
 import (
 	"context"
+	"fmt"
+	"net/http"
 	"path/filepath"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
@@ -25,9 +27,11 @@ import (
 	"github.com/carv-ics-forth/frisbee/controllers/utils"
 	"github.com/carv-ics-forth/frisbee/controllers/utils/configuration"
 	"github.com/carv-ics-forth/frisbee/controllers/utils/expressions"
+	"github.com/carv-ics-forth/frisbee/pkg/netutils"
 	"github.com/dustinkirkland/golang-petname"
 	notifier "github.com/golanghelper/grafana-webhook"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 	netv1 "k8s.io/api/networking/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -77,8 +81,6 @@ func (r *Controller) StartTelemetry(ctx context.Context, t *v1alpha1.TestPlan) e
 	if err := r.createIngress(ctx, t); err != nil {
 		return errors.Wrapf(err, "ingress error")
 	}
-
-	t.Status.TelemetryEnabled = true
 
 	return nil
 }
@@ -411,34 +413,50 @@ func (r *Controller) ImportTelemetryDashboards(ctx context.Context, plan *v1alph
 }
 
 func (r *Controller) ConnectToGrafana(ctx context.Context, t *v1alpha1.TestPlan) error {
-	if !t.Status.TelemetryEnabled {
-		r.Logger.Info("Start without telemetry.", "plan", t.GetName())
-
+	if grafana.ClientExistsFor(t) {
 		return nil
 	}
 
-	// The grafana client already exists.
-	// It's global because it is also used by service and chaos to push annotations to grafana.
-	if grafana.DefaultClient != nil {
-		return nil
-	}
-
-	advertisedHost := configuration.Global.AdvertisedHost
-	grafanaEndpoint := t.Status.GrafanaEndpoint
-
-	return grafana.NewGrafanaClient(ctx, r, advertisedHost, grafanaEndpoint,
-		// Set a callback that will be triggered when there is Grafana alert.
-		// Through this channel we can get informed for SLA violations.
-		grafana.WithNotifyOnAlert(func(b *notifier.Body) {
-			r.Logger.Info("Grafana Alert", "body", b)
-
-			// when Grafana fires an alert, this alert is captured by the Webhook.
-			// The webhook must someone notify the appropriate controller.
-			// To do that, it adds information of the fired alert to the object's metadata
-			// and updates (patches) the object.
-			if err := expressions.DispatchAlert(ctx, r, b); err != nil {
-				r.Logger.Error(err, "unable to inform CR for metrics alert", "cr", t.GetName())
-			}
-		}),
+	return grafana.New(ctx,
+		grafana.WithHTTP(t.Status.GrafanaEndpoint), // Connect to ...
+		grafana.WithRegisterFor(t),                 // Used by grafana.GetClient(), grafana.ClientExistsFor(), ...
+		grafana.WithLogger(r),                      // Log info
+		grafana.WithNotifications(WebhookURL),
 	)
+}
+
+var WebhookURL string
+
+var WebhookPort = "6666"
+
+// CreateWebhookServer  creates a Webhook for listening for events from Grafana *
+func (r *Controller) CreateWebhookServer(ctx context.Context) error {
+	webhook := http.DefaultServeMux
+
+	webhook.Handle("/", notifier.HandleWebhook(func(w http.ResponseWriter, b *notifier.Body) {
+		r.Logger.Info("Grafana Alert", "body", b)
+
+		if err := expressions.DispatchAlert(context.Background(), r, b); err != nil {
+			r.Logger.Error(err, "unable to process metrics alert", b)
+		}
+	}, 0))
+
+	// If the controller runs within the Kubernetes cluster, we use the assigned name as the advertised host
+	// If the controller runs externally to the Kubernetes cluster, we use the public IP of the local machine.
+	if configuration.Global.AdvertisedHost == "" {
+		ip, err := netutils.GetPublicIP()
+		if err != nil {
+			return errors.Wrapf(err, "cannot get controller's public ip")
+		}
+
+		WebhookURL = fmt.Sprintf("http://%s:%s", ip.String(), WebhookPort)
+	} else {
+		WebhookURL = fmt.Sprintf("http://%s:%s", configuration.Global.AdvertisedHost, WebhookPort)
+	}
+
+	logrus.Warn("START WEBHOOK AT ", WebhookURL)
+
+	go http.ListenAndServe(":"+WebhookPort, webhook)
+
+	return nil
 }

@@ -9,7 +9,7 @@ spec:
       - name: telegraf
         image: telegraf:1.20.3
         ports:
-          - name: telemetry
+          - name: tel-mongo
             containerPort: 9443
         command:
           - /bin/sh # Run shell
@@ -57,7 +57,7 @@ spec:
       - name: exporter
         image: bitnami/mongodb-exporter:latest
         ports:
-          - name: telemetry
+          - name: tel-mongo
             containerPort: 9443
         command:
           - /bin/sh # Run shell

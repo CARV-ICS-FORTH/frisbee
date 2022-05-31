@@ -71,8 +71,8 @@ func (a *PointAnnotation) Add(obj client.Object) {
 		Text:    fmt.Sprintf("Job added. Kind:%s Name:%s", reflect.TypeOf(obj), obj.GetName()),
 	}
 
-	if v := DefaultClient; v != nil {
-		_ = v.SetAnnotation(ga)
+	if ClientExistsFor(obj) {
+		_ = GetClientFor(obj).SetAnnotation(ga)
 	}
 }
 
@@ -84,8 +84,8 @@ func (a *PointAnnotation) Delete(obj client.Object) {
 		Text:    fmt.Sprintf("Job Deleted. Kind:%s Name:%s", reflect.TypeOf(obj), obj.GetName()),
 	}
 
-	if v := DefaultClient; v != nil {
-		_ = v.SetAnnotation(ga)
+	if ClientExistsFor(obj) {
+		_ = GetClientFor(obj).SetAnnotation(ga)
 	}
 }
 
@@ -111,8 +111,8 @@ func (a *RangeAnnotation) Add(obj client.Object, tags ...Tag) {
 		Text:    fmt.Sprintf("Job Added. Kind:%s Name:%s", reflect.TypeOf(obj), obj.GetName()),
 	}
 
-	if v := DefaultClient; v != nil {
-		a.reqID = v.SetAnnotation(ga)
+	if ClientExistsFor(obj) {
+		a.reqID = GetClientFor(obj).SetAnnotation(ga)
 	}
 }
 
@@ -137,8 +137,8 @@ func (a *RangeAnnotation) Delete(obj client.Object, tags ...Tag) {
 		Text:    fmt.Sprintf("Job Deleted. Kind:%s Name:%s", reflect.TypeOf(obj), obj.GetName()),
 	}
 
-	if v := DefaultClient; v != nil {
-		v.PatchAnnotation(a.reqID, ga)
+	if ClientExistsFor(obj) {
+		GetClientFor(obj).PatchAnnotation(a.reqID, ga)
 	}
 }
 
