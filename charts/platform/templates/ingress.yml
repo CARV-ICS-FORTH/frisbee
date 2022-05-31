@@ -6,40 +6,6 @@ metadata:
 spec:
   ingressClassName: {{.Values.telemetry.ingressClass}}
   rules:
-    - host: prometheus-frisbee.{{.Values.global.domainName}}
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: prometheus
-                port:
-                  number: {{.Values.telemetry.prometheusPort}}
-
-    - host: grafana-frisbee.{{.Values.global.domainName}}
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: grafana
-                port:
-                  number: {{.Values.telemetry.grafanaPort}}
-
-
-    - host: logviewer-frisbee.{{.Values.global.domainName}}
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: logviewer
-                port:
-                  number: 80
-
     {{- if .Values.chaos.enabled }}
     - host: chaos-frisbee.{{.Values.global.domainName}}
       http:
@@ -64,7 +30,7 @@ metadata:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/ssl-passthrough: "true"
 spec:
-  ingressClassName: {{.Values.telemetry.ingressClass}}
+  ingressClassName: {{.Values.global.ingressClass}}
   rules:
     {{- if .Values.dashboard.enabled}}
     - host: dashboard-frisbee.{{.Values.global.domainName}}

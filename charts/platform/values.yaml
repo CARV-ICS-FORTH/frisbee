@@ -2,9 +2,12 @@
 ## Global Frisbee Platform parameters
 ## Please, note that this will override the image parameters, including dependencies, configured to use the global value
 ##
-## @param global.ingress DNS name for making Telemetry stack accessible outside the cluster.
+## @param global.domainName DNS name for making Telemetry stack accessible outside the cluster.
+## @param telemetry.ingressClass Type of ingres for making Telemetry stack accessible outside the cluster.
 global:
   domainName: localhost
+
+  ingressClass: public
 
 ## @section Frisbee Operator parameters
 
@@ -18,13 +21,13 @@ operator:
 ## @param telemetry.honorTimestamp Use the timestamps of the metrics exposed by the agent (time-drifts)
 ## @param telemetry.prometheusPort Listening port for Prometheus
 ## @param telemetry.grafanaPort Listening port for Grafana
-## @param telemetry.ingressClass Type of ingres for making Telemetry stack accessible outside the cluster.
+
 telemetry:
   honorTimestamp: true
   prometheusPort: 9090
   grafanaPort: 3000
+  logviewerPort: 80
 
-  ingressClass: public
 
 ## @section Provision of dynamic volumes
 

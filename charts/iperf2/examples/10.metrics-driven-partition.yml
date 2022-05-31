@@ -42,7 +42,7 @@ spec:
       name: partition0
       depends: { running: [ server, noise ] }
       cascade:
-        templateRef: chaos.network.partition
+        templateRef: system.chaos.network.partition
         inputs:
           - { targets: .service.noise.one,  duration: "2m" }
         schedule:

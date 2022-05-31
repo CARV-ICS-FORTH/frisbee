@@ -24,7 +24,7 @@ spec:
 
     decorators: # Decorators
       telemetry:
-        - default.telemetry.agent
+        - system.telemetry.agent
         - tikv.telemetry.pd
       resources:
         cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
@@ -108,7 +108,7 @@ spec:
               storage: 15Gi
 
     decorators: # Decorators
-      telemetry: [ default.telemetry.agent, tikv.telemetry.worker ]
+      telemetry: [ system.telemetry.agent, tikv.telemetry.worker ]
       resources: # Resources
         cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
         memory: {{"{{.Inputs.Parameters.memory}}" |quote}}

@@ -6,7 +6,7 @@
 
   # Periodically kill some nodes.
     - action: Cascade name: killer depends: { running: [ clients ] } cascade:
-      templateRef: chaos.pod.kill instances: 3 inputs:
+      templateRef: system.chaos.pod.kill instances: 3 inputs:
         - { target: .cluster.clients.one }
 
 This can be wrong because Frisbee selects a single client -- and will be used 3 times, without error. Instead, we must

@@ -2,18 +2,14 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
-  name: default.telemetry.agent
+  name: system.telemetry.agent
 spec:
   service:
-    decorators:
-      dashboards:
-        matchLabels:
-          dashboard: sysmon
     containers:
       - name: cadvisor
         image: gcr.io/cadvisor/cadvisor:v0.44.0
         ports:
-          - name: mon-system
+          - name: tel-sys
             containerPort: 9442
         securityContext:
           #runAsNonRoot: true
@@ -52,7 +48,5 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: grafana-system-container
-  labels:
-    dashboard: sysmon
+  name: system.telemetry.agent.config
 data: {{(.Files.Glob "dashboards/*.json").AsConfig | nindent 2}}

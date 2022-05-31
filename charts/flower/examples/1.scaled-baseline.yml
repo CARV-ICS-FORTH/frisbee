@@ -35,7 +35,7 @@ spec:
 
     # Create three Flower clients
     - action: Cluster
-      depends: { running: [ server ], success: [downloader] }
+      depends: { running: [ server ], success: [ downloader ] }
       name: clients
       cluster:
         instances: 10

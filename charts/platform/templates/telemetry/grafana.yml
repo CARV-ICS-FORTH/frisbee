@@ -1,0 +1,91 @@
+---
+apiVersion: frisbee.io/v1alpha1
+kind: Template
+metadata:
+  name: system.telemetry.grafana.template
+spec:
+  service:
+    decorators:
+      labels:
+        plan.frisbee.io/component: SYS
+
+    volumes:
+      - name: config
+        namespace:
+        configMap:
+          name: system.telemetry.grafana.config
+    containers:
+      - name: grafana
+        image: "grafana/grafana-oss:8.2.3"
+        ports:
+          - name: http
+            containerPort: 3000
+        resources:
+          requests:
+            memory: "4Gi"
+            cpu: "1"
+        volumeMounts:
+          - name: config
+            mountPath: /etc/grafana/grafana.ini
+            subPath: grafana.ini
+            readOnly: true
+
+          - name: config
+            mountPath: /etc/grafana/provisioning/dashboards/dashboard.yml
+            subPath: dashboard.yml
+            readOnly: true
+
+          - name: config
+            mountPath: /etc/grafana/provisioning/datasources/prometheus.yml
+            subPath: prometheus.yml
+            readOnly: true
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: system.telemetry.grafana.config
+data:
+  dashboard.yml: |
+    apiVersion: 1
+
+    providers:
+      - name: 'Prometheus'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        editable: true
+        allowUiUpdates: true
+        options:
+          path: /etc/grafana/provisioning/dashboards
+
+  prometheus.yml: |
+    apiVersion: 1
+
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        access: proxy
+        orgId: 1
+        url: http://prometheus:9090
+        basicAuth: false
+        isDefault: true
+        editable: true
+
+  grafana.ini: |
+    [auth]
+    disable_login_form = true
+
+    [auth.basic]
+    enabled = false
+
+    [auth.anonymous]
+    # enable anonymous access
+    enabled = true
+
+    # specify organization name that should be used for unauthenticated users
+    #org_name = frisbee-benchmark
+
+    # specify role for unauthenticated users (other roles Viewer, Editor, Admin)
+    org_role = Admin

@@ -27,7 +27,7 @@ spec:
   service:
     decorators: # Decorators
       telemetry:
-        - default.telemetry.agent
+        - system.telemetry.agent
         - redis.telemetry.server
       resources:
         memory: {{"{{.Inputs.Parameters.memory}}" | quote}}

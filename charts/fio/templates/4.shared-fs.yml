@@ -18,7 +18,7 @@ spec:
 
     decorators: # decorators
       telemetry:
-        - default.telemetry.agent
+        - system.telemetry.agent
         - fio.telemetry.client
 
     containers: # Container

@@ -23,7 +23,7 @@ import (
 	"strings"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	"github.com/carv-ics-forth/frisbee/controllers/telemetry/grafana"
+	"github.com/carv-ics-forth/frisbee/controllers/testplan/grafana"
 	"github.com/carv-ics-forth/frisbee/controllers/utils"
 	notifier "github.com/golanghelper/grafana-webhook"
 	"github.com/pkg/errors"
@@ -99,7 +99,7 @@ func SetAlert(job client.Object, slo v1alpha1.ExprMetrics) error {
 	// If the dashboard is not found, retry a few times before failing.
 	// TODO: explicitly separate the NotFound from other types of errors.
 	if err := retry.OnError(retry.DefaultBackoff, func(error) bool { return true }, func() error {
-		_, err := grafana.DefaultClient.SetAlert(alert, name, msg)
+		_, err := grafana.GetClientFor(job).SetAlert(alert, name, msg)
 		return err
 	}); err != nil {
 		return errors.Wrapf(err, "cannot set the alarm")
@@ -223,7 +223,7 @@ func FiredAlert(job metav1.Object) (string, bool) {
 func ResetAlert(obj metav1.Object) {
 	alertID, exists := obj.GetAnnotations()[jobHasAlert]
 	if exists {
-		grafana.DefaultClient.UnsetAlert(alertID)
+		grafana.GetClientFor(obj).UnsetAlert(alertID)
 	}
 }
 
@@ -231,6 +231,6 @@ func ResetAlert(obj metav1.Object) {
 func UnsetAlert(obj metav1.Object) {
 	alertID, exists := obj.GetAnnotations()[jobHasAlert]
 	if exists {
-		grafana.DefaultClient.UnsetAlert(alertID)
+		grafana.GetClientFor(obj).UnsetAlert(alertID)
 	}
 }

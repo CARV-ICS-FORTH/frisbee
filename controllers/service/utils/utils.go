@@ -24,8 +24,6 @@ import (
 	"github.com/carv-ics-forth/frisbee/controllers/utils"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/json"
-	"k8s.io/apimachinery/pkg/util/yaml"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type ServiceControlInterface interface {
@@ -45,33 +43,39 @@ func NewServiceControl(r utils.Reconciler) *ServiceControl {
 }
 
 func (s *ServiceControl) GetServiceSpec(ctx context.Context, namespace string, fromTemplate v1alpha1.GenerateFromTemplate) (v1alpha1.ServiceSpec, error) {
-	template, err := s.getTemplate(ctx, namespace, fromTemplate.TemplateRef)
+	template, err := templateutils.GetTemplate(ctx, s, namespace, fromTemplate.TemplateRef)
 	if err != nil {
 		return v1alpha1.ServiceSpec{}, errors.Wrapf(err, "getTemplate error")
 	}
 
 	// convert the service to a json and then expand templated values.
-	serviceSpec, err := json.Marshal(template.Spec.Service)
+	specBody, err := json.Marshal(template.Spec.Service)
 	if err != nil {
 		return v1alpha1.ServiceSpec{}, errors.Errorf("cannot marshal service of %s", fromTemplate.TemplateRef)
 	}
 
 	scheme := templateutils.Scheme{
 		Inputs: template.Spec.Inputs,
-		Spec:   string(serviceSpec),
+		Spec:   string(specBody),
 	}
 
-	return s.generateSpecFromScheme(&scheme, fromTemplate.GetInput(0))
+	var spec v1alpha1.ServiceSpec
+
+	if err := templateutils.GenerateFromScheme(&spec, &scheme, fromTemplate.GetInput(0)); err != nil {
+		return v1alpha1.ServiceSpec{}, errors.Wrapf(err, "cannot create spec")
+	}
+
+	return spec, nil
 }
 
 func (s *ServiceControl) GetServiceSpecList(ctx context.Context, namespace string, fromTemplate v1alpha1.GenerateFromTemplate) ([]v1alpha1.ServiceSpec, error) {
-	template, err := s.getTemplate(ctx, namespace, fromTemplate.TemplateRef)
+	template, err := templateutils.GetTemplate(ctx, s, namespace, fromTemplate.TemplateRef)
 	if err != nil {
 		return nil, errors.Wrapf(err, "template %s error", fromTemplate.TemplateRef)
 	}
 
 	// convert the service to a json and then expand templated values.
-	serviceSpec, err := json.Marshal(template.Spec.Service)
+	specBody, err := json.Marshal(template.Spec.Service)
 	if err != nil {
 		return nil, errors.Errorf("cannot marshal service of %s", fromTemplate.TemplateRef)
 
@@ -82,11 +86,12 @@ func (s *ServiceControl) GetServiceSpecList(ctx context.Context, namespace strin
 	if err := fromTemplate.IterateInputs(func(userInputs map[string]string) error {
 		scheme := templateutils.Scheme{
 			Inputs: template.Spec.Inputs,
-			Spec:   string(serviceSpec),
+			Spec:   string(specBody),
 		}
 
-		spec, err := s.generateSpecFromScheme(&scheme, userInputs)
-		if err != nil {
+		var spec v1alpha1.ServiceSpec
+
+		if err := templateutils.GenerateFromScheme(&spec, &scheme, userInputs); err != nil {
 			return errors.Wrapf(err, "macro expansion failed")
 		}
 
@@ -98,49 +103,4 @@ func (s *ServiceControl) GetServiceSpecList(ctx context.Context, namespace strin
 	}
 
 	return specs, nil
-}
-
-func (s *ServiceControl) getTemplate(ctx context.Context, namespace string, ref string) (*v1alpha1.Template, error) {
-	var template v1alpha1.Template
-
-	key := client.ObjectKey{
-		Namespace: namespace,
-		Name:      ref,
-	}
-
-	if err := s.GetClient().Get(ctx, key, &template); err != nil {
-		return nil, errors.Wrapf(err, "cannot find template [%s]", key.String())
-	}
-
-	return &template, nil
-}
-
-func (s *ServiceControl) generateSpecFromScheme(scheme *templateutils.Scheme, userInputs map[string]string) (v1alpha1.ServiceSpec, error) {
-	if userInputs != nil {
-		if scheme.Inputs == nil || scheme.Inputs.Parameters == nil {
-			return v1alpha1.ServiceSpec{}, errors.New("template is not parameterizable")
-		}
-
-		for key, value := range userInputs {
-			_, exists := scheme.Inputs.Parameters[key]
-			if !exists {
-				return v1alpha1.ServiceSpec{}, errors.Errorf("parameter [%s] does not exist", key)
-			}
-
-			scheme.Inputs.Parameters[key] = value
-		}
-	}
-
-	genericSpec, err := templateutils.Evaluate(scheme)
-	if err != nil {
-		return v1alpha1.ServiceSpec{}, errors.Wrapf(err, "cannot convert scheme to spec")
-	}
-
-	var spec v1alpha1.ServiceSpec
-
-	if err := yaml.Unmarshal([]byte(genericSpec), &spec); err != nil {
-		return v1alpha1.ServiceSpec{}, errors.Wrapf(err, "decoding error")
-	}
-
-	return spec, nil
 }

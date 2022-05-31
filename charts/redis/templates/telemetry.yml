@@ -4,16 +4,11 @@ metadata:
   name: redis.telemetry.server
 spec:
   service:
-    decorators:
-      dashboards:
-        matchLabels:
-          dashboard: redis
-
     containers:
       - name: telegraf
         image: telegraf:1.20.3
         ports:
-          - name: mon-redis
+          - name: tel-red
             containerPort: 9443
         command:
           - /bin/bash # Run shell
@@ -47,7 +42,5 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: grafana-redis-dashboard
-  labels:
-    dashboard: redis
+  name: redis.telemetry.server.config
 data: {{(.Files.Glob "dashboards/redis.json").AsConfig | nindent 2}}

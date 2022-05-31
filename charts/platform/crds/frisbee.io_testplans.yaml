@@ -587,20 +587,6 @@ spec:
                   - type
                   type: object
                 type: array
-              configuration:
-                description: Configuration is the programmatic equivalent of charts/platform/configuration
-                properties:
-                  advertisedHost:
-                    type: string
-                  grafanaEndpoint:
-                    type: string
-                  prometheusEndpoint:
-                    type: string
-                required:
-                - advertisedHost
-                - grafanaEndpoint
-                - prometheusEndpoint
-                type: object
               executedActions:
                 additionalProperties:
                   description: ConditionalExpr is a source of information about whether
@@ -623,6 +609,9 @@ spec:
                   type: object
                 description: ExecutedActions is a list of executed actions.
                 type: object
+              grafanaEndpoint:
+                description: GrafanaEndpoint points to the local Grafana instance
+                type: string
               message:
                 description: Message provides more details for understanding the Reason.
                 type: string
@@ -632,14 +621,13 @@ spec:
                   fields, and the individual container status arrays contain more
                   detail about the pod's status.
                 type: string
+              prometheusEndpoint:
+                description: PrometheusEndpoint points to the local Prometheus instance
+                type: string
               reason:
                 description: Reason is A brief CamelCase message indicating details
                   about why the service is in this Phase. e.g. 'Evicted'
                 type: string
-              telemetryEnabled:
-                type: boolean
-            required:
-            - telemetryEnabled
             type: object
         type: object
     served: true

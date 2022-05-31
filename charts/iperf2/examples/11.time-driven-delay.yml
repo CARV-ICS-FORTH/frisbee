@@ -27,6 +27,6 @@ spec:
       name: partition0
       depends: { running: [ server ], after: "3m" }
       chaos:
-        templateRef: chaos.network.delay
+        templateRef: system.chaos.network.delay
         inputs:
           - { target: .service.server.one, duration: "2m" }

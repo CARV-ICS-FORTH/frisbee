@@ -48,6 +48,6 @@ spec:
       name: partition0
       depends: { running: [ clients ], after: "8m" }
       chaos:
-        templateRef: chaos.network.partition
+        templateRef: system.chaos.network.partition
         inputs:
           - { targets: server, duration: 5m , direction: "to", plan: "validate-fl" }

@@ -34,7 +34,7 @@ import (
 func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Service) error {
 	setDefaultValues(cr)
 
-	if err := prepareRequirements(ctx, r, cr); err != nil {
+	if err := handleRequirements(ctx, r, cr); err != nil {
 		return errors.Wrapf(err, "requirements error")
 	}
 
@@ -70,7 +70,7 @@ func setDefaultValues(cr *v1alpha1.Service) {
 	cr.Spec.RestartPolicy = corev1.RestartPolicyNever
 }
 
-func prepareRequirements(ctx context.Context, r *Controller, cr *v1alpha1.Service) error {
+func handleRequirements(ctx context.Context, r *Controller, cr *v1alpha1.Service) error {
 	if cr.Spec.Requirements == nil {
 		return nil
 	}
@@ -168,14 +168,14 @@ func decoratePod(ctx context.Context, r *Controller, cr *v1alpha1.Service) error
 		return nil
 	}
 
-	// set annotations
-	if req := cr.Spec.Decorators.Annotations; req != nil {
-		cr.SetAnnotations(labels.Merge(cr.GetAnnotations(), req))
-	}
-
 	// set labels
 	if req := cr.Spec.Decorators.Labels; req != nil {
 		cr.SetLabels(labels.Merge(cr.GetLabels(), req))
+	}
+
+	// set annotations
+	if req := cr.Spec.Decorators.Annotations; req != nil {
+		cr.SetAnnotations(labels.Merge(cr.GetAnnotations(), req))
 	}
 
 	// set dynamically evaluated fields
@@ -267,3 +267,29 @@ func constructDiscoveryService(cr *v1alpha1.Service) (*corev1.Service, error) {
 
 	return &kubeService, nil
 }
+
+/*
+   - host: logviewer-frisbee.{{.Values.global.domainName}}
+     http:
+       paths:
+         - path: /
+           pathType: Prefix
+           backend:
+             service:
+               name: logviewer
+               port:
+                 number: 80
+
+   {{- if .Values.chaos.enabled }}
+   - host: chaos-frisbee.{{.Values.global.domainName}}
+     http:
+       paths:
+         - path: /
+           pathType: Prefix
+           backend:
+             service:
+               name: chaos-dashboard
+               port:
+                 number: 2333
+   {{- end}}
+*/

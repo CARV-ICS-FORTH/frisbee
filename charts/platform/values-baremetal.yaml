@@ -75,7 +75,7 @@ chaos:
 sonarqube:
   enabled: false
 
-    # Ignore  deployment taints, if any.
+  # Ignore  deployment taints, if any.
   #tolerations:
   #  - key: "sonarqube"
   #    operator: "Equal"
@@ -97,8 +97,8 @@ sonarqube:
       #enabled: true
       # Used to create an Ingress record.
       #hosts:
-      #  - name: sonarqube.{{.Values.global.domainName}}
-      # Different clouds or configurations might need /* as the default path
+    #  - name: sonarqube.{{.Values.global.domainName}}
+    # Different clouds or configurations might need /* as the default path
     #    path: /
     # For additional control over serviceName and servicePort
     #   serviceName: sonarqube

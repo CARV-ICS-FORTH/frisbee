@@ -22,7 +22,6 @@ import (
 
 	"github.com/carv-ics-forth/frisbee/controllers/call"
 	"github.com/carv-ics-forth/frisbee/controllers/cascade"
-	"github.com/carv-ics-forth/frisbee/controllers/telemetry"
 	"github.com/carv-ics-forth/frisbee/controllers/testplan"
 	"github.com/pkg/errors"
 
@@ -138,12 +137,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := telemetry.NewController(mgr, setupLog); err != nil {
-		utilruntime.HandleError(errors.Wrapf(err, "unable to create Telemetry controller"))
-
-		os.Exit(1)
-	}
-
 	if err := testplan.NewController(mgr, setupLog); err != nil {
 		utilruntime.HandleError(errors.Wrapf(err, "unable to create TestPlan controller"))
 
@@ -177,11 +170,6 @@ func main() {
 		/*
 			TODO: add webhooks for cascade, stop
 		*/
-
-		if err = (&frisbeev1alpha1.Telemetry{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "Telemetry")
-			os.Exit(1)
-		}
 
 		if err = (&frisbeev1alpha1.TestPlan{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "TestPlan")

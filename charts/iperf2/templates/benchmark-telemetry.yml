@@ -5,15 +5,11 @@ metadata:
   name: iperf2.telemetry.client
 spec:
   service:
-    decorators:
-      dashboards:
-        matchLabels:
-          dashboard: iperf2
     containers:
       - name: telegraf
         image: telegraf:1.20.3
         ports:
-          - name: mon-iperf
+          - name: tel-iperf
             containerPort: 9443
         command:
           - /bin/sh # Run shell
@@ -53,7 +49,5 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: grafana-iperf-dashboard
-  labels:
-    dashboard: iperf2
+  name: iperf2.telemetry.client.config
 data: {{(.Files.Glob "dashboards/iperf.json").AsConfig | nindent 2}}

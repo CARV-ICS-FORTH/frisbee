@@ -1,12 +1,12 @@
 ---
-# chaos.network.partition will separate the target service from every other service that exists in the given plan,
+# system.chaos.network.partition will separate the target service from every other service that exists in the given plan,
 # and it is not a core frisbee service (e.g, telemetry)
 #
 # https://chaos-mesh.org/docs/1.0.3/user_guides/experiment_scope/
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
-  name: chaos.network.partition
+  name: system.chaos.network.partition
 spec:
   inputs:
     parameters:
@@ -37,13 +37,13 @@ spec:
               {{.Release.Namespace}}: [{{"{{.Inputs.Parameters.targets}}"}}]
 
 ---
-# chaos.network.partition.namespace will separate the target service from every other service in the namespace,
+# system.chaos.network.partition.namespace will separate the target service from every other service in the namespace,
 # including the monitoring stack and other services irrelevant to frisbee. If the namespace is not specified, the
 # installation namespace will be used.
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
-  name: chaos.network.partition.namespace
+  name: system.chaos.network.partition.namespace
 spec:
   inputs:
     parameters:
@@ -73,12 +73,12 @@ spec:
                 - {{"{{.Inputs.Parameters.target}}"}}
 
 ---
-# chaos.network.partition.pods will separate the target service from the specified pods.
+# system.chaos.network.partition.pods will separate the target service from the specified pods.
 # If the namespace is not specified, the installation namespace will be used.
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
-  name: chaos.network.partition.partial
+  name: system.chaos.network.partition.partial
 spec:
   inputs:
     parameters:

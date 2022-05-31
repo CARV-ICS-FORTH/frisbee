@@ -7,7 +7,7 @@ spec:
   service:
     decorators:
       telemetry:
-        - default.telemetry.agent
+        - system.telemetry.agent
     containers: # Container
       - name: app
         image: icsforth/fl-demo:latest

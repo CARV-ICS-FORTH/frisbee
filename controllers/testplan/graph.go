@@ -21,7 +21,7 @@ import (
 	"strings"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	"github.com/carv-ics-forth/frisbee/controllers/telemetry/grafana"
+	"github.com/carv-ics-forth/frisbee/controllers/testplan/grafana"
 	"github.com/carv-ics-forth/frisbee/controllers/utils/expressions"
 	"github.com/carv-ics-forth/frisbee/controllers/utils/lifecycle"
 	"github.com/pkg/errors"
@@ -33,7 +33,7 @@ import (
 // 2. Ensures that there are no two actions with the same name.
 // 3. Ensure that dependencies point to a valid action.
 // 4. Ensure that macros point to a valid action.
-func (r *Controller) Validate(ctx context.Context, plan *v1alpha1.TestPlan) error {
+func (r *Controller) Validate(ctx context.Context, plan *v1alpha1.TestPlan, clusterView lifecycle.ClassifierReader) error {
 	callIndex, err := PrepareDependencyGraph(plan.Spec.Actions)
 	if err != nil {
 		return errors.Wrapf(err, "invalid plan [%s]", plan.GetName())
@@ -44,7 +44,7 @@ func (r *Controller) Validate(ctx context.Context, plan *v1alpha1.TestPlan) erro
 			return errors.Wrapf(err, "dependency error for action [%s]", actionName)
 		}
 
-		if err := CheckAssertions(action, r.state); err != nil {
+		if err := CheckAssertions(action, clusterView); err != nil {
 			return errors.Wrapf(err, "assertion error for action [%s]", actionName)
 		}
 
@@ -144,7 +144,7 @@ func CheckDependencies(action *v1alpha1.Action, callIndex index) error {
 	return nil
 }
 
-func CheckAssertions(action *v1alpha1.Action, state lifecycle.Classifier) error {
+func CheckAssertions(action *v1alpha1.Action, state lifecycle.ClassifierReader) error {
 	if assert := action.Assert; !assert.IsZero() {
 		if action.Delete != nil {
 			return errors.Errorf("Delete job cannot have assertion")
@@ -199,7 +199,6 @@ func CheckJobRef(action *v1alpha1.Action, callIndex index) error {
 	switch action.ActionType {
 	case v1alpha1.ActionDelete:
 		// Check that references jobs exist and there are no cycle deletions
-
 		for _, job := range action.Delete.Jobs {
 			target, exists := callIndex[job]
 			if !exists {
@@ -222,44 +221,4 @@ func CheckJobRef(action *v1alpha1.Action, callIndex index) error {
 	*/
 
 	return nil
-}
-
-// HasTelemetry iterates the referenced services (directly via Service or indirectly via Cluster) and list
-// all telemetry dashboards that need to be imported
-func (r *Controller) HasTelemetry(ctx context.Context, plan *v1alpha1.TestPlan) ([]string, error) {
-	dedup := make(map[string]struct{})
-
-	var fromTemplate *v1alpha1.GenerateFromTemplate
-
-	for _, action := range plan.Spec.Actions {
-		fromTemplate = nil
-
-		if action.ActionType == v1alpha1.ActionService {
-			fromTemplate = action.Service
-		} else if action.ActionType == v1alpha1.ActionCluster {
-			fromTemplate = &action.Cluster.GenerateFromTemplate
-		} else {
-			continue
-		}
-
-		spec, err := r.serviceControl.GetServiceSpec(ctx, plan.GetNamespace(), *fromTemplate)
-		if err != nil {
-			return nil, errors.Wrapf(err, "cannot retrieve service spec")
-		}
-
-		// firstly store everything on a map to avoid duplicates
-		if spec.Decorators != nil {
-			for _, dashboard := range spec.Decorators.Telemetry {
-				dedup[dashboard] = struct{}{}
-			}
-		}
-	}
-
-	// secondly, return a deduped array
-	imports := make([]string, 0, len(dedup))
-	for dashboard, _ := range dedup {
-		imports = append(imports, dashboard)
-	}
-
-	return imports, nil
 }

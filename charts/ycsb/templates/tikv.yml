@@ -19,7 +19,7 @@ spec:
   service:
     decorators: # Decorators
       telemetry:
-        - default.telemetry.agent
+        - system.telemetry.agent
         - ycsb.telemetry.client
       resources:
         cpu: {{"{{.Inputs.Parameters.cpu}}" |quote}}
@@ -72,7 +72,7 @@ spec:
   service:
     decorators: # Decorators
       telemetry:
-        - default.telemetry.agent
+        - system.telemetry.agent
         - ycsb.telemetry.client
       resources: # Resources
         cpu: {{"{{.Inputs.Parameters.cpu}}" |quote}}

@@ -45,7 +45,7 @@ spec:
       name: partition-a
       depends: { running: [ master, slave ], after: "3m" }
       chaos:
-        templateRef: chaos.network.partition
+        templateRef: system.chaos.network.partition
         inputs:
           - { targets: .service.master.one, duration: "2m" }
 
@@ -55,6 +55,6 @@ spec:
       name: partition-b
       depends: { running: [ master, slave ], success: [ partition-a ], after: "6m" }
       chaos:
-        templateRef: chaos.network.partition
+        templateRef: system.chaos.network.partition
         inputs:
           - { targets: .service.master.one, duration: "1m" }

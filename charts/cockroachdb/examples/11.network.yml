@@ -42,7 +42,7 @@ spec:
     # Step 4. run TPC-C workload from the workload node (node 4)
     - action: Call
       name: run-workload
-      depends: { success: [ wait-for-3x-replication ]}
+      depends: { success: [ wait-for-3x-replication ] }
       call:
         callable: test2-run-workload
         services: [ masters-3 ]
@@ -50,8 +50,8 @@ spec:
     # Step5. partition node 1 from the rest of the nodes; node 1 can reach other nodes, but no other nodes can reach node 1
     - action: Chaos
       name: partition0
-      depends: { success: [ wait-for-3x-replication ], after: "3m"  } # give tpcc a head start
+      depends: { success: [ wait-for-3x-replication ], after: "3m" } # give tpcc a head start
       chaos:
-        templateRef: chaos.network.partition.partial
+        templateRef: system.chaos.network.partition.partial
         inputs:
           - { source: masters-0, duration: 10m , direction: "to", dst: "masters-1, masters-2, masters-3" }

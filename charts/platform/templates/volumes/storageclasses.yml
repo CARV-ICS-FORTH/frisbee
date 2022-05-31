@@ -85,5 +85,5 @@ volumeBindingMode: WaitForFirstConsumer
 #provisioner: local.csi.openebs.io
 #  storage: "lvm"
 #  vgpattern: {{.Values.openebs.deviceTag}}
-  ##reclaimPolicy: Retain
+##reclaimPolicy: Retain
   #volumeBindingMode: WaitForFirstConsumer

@@ -160,7 +160,7 @@ func (r *Controller) delete(ctx context.Context, t *v1alpha1.TestPlan, action v1
 	}
 
 	for _, name := range action.Delete.Jobs {
-		job, deletable := r.state.IsDeletable(name)
+		job, deletable := r.clusterView.IsDeletable(name)
 		if !deletable {
 			return nil, errors.Errorf("job %s is not currently deletable", name)
 		}
