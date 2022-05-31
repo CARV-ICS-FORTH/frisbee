@@ -33,7 +33,7 @@ spec:
       name: killer
       depends: { running: [ clients ] }
       cascade:
-        templateRef: chaos.pod.kill
+        templateRef: system.chaos.pod.kill
         inputs:
           - { target: clients-4 }
           - { target: clients-7 }

@@ -14,17 +14,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package telemetry
+package testplan
 
 import (
 	"context"
-	"fmt"
 	"path/filepath"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
+	"github.com/carv-ics-forth/frisbee/controllers/testplan/grafana"
 	"github.com/carv-ics-forth/frisbee/controllers/utils"
 	"github.com/carv-ics-forth/frisbee/controllers/utils/configuration"
+	"github.com/carv-ics-forth/frisbee/controllers/utils/expressions"
 	"github.com/dustinkirkland/golang-petname"
+	notifier "github.com/golanghelper/grafana-webhook"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	netv1 "k8s.io/api/networking/v1"
@@ -43,10 +45,45 @@ const (
 	// Otherwise, we should find a way to replace the value.
 	notRandomPrometheusName = "prometheus"
 
-	notRandomGrafanaName = "grafanaaaa"
+	notRandomGrafanaName = "grafana"
+
+	notRandomLogViewerName = "logviewer"
 )
 
-func (r *Controller) prepareEnvironment(ctx context.Context, t *v1alpha1.Telemetry) error {
+var pathType = netv1.PathTypePrefix
+
+func (r *Controller) StartTelemetry(ctx context.Context, t *v1alpha1.TestPlan) error {
+	telemetryAgents, err := r.ImportTelemetryDashboards(ctx, t)
+	if err != nil {
+		return errors.Wrapf(err, "errors with importing dashboards")
+	}
+
+	if len(telemetryAgents) == 0 { // there is no need to import the stack of the is no dashboard.
+		return nil
+	}
+
+	if err := r.copyEnvironment(ctx, t); err != nil {
+		return errors.Wrapf(err, "environment error")
+	}
+
+	if err := r.installPrometheus(ctx, t); err != nil {
+		return errors.Wrapf(err, "prometheus error")
+	}
+
+	if err := r.installGrafana(ctx, t, telemetryAgents); err != nil {
+		return errors.Wrapf(err, "grafana error")
+	}
+
+	if err := r.createIngress(ctx, t); err != nil {
+		return errors.Wrapf(err, "ingress error")
+	}
+
+	t.Status.TelemetryEnabled = true
+
+	return nil
+}
+
+func (r *Controller) copyEnvironment(ctx context.Context, t *v1alpha1.TestPlan) error {
 	/*
 		For the telemetry we must differentiate between the installation namespace (which holds the templates and
 		configuration files for Prometheus, Grafana, and agents, and the testing namespace on which the respective
@@ -58,6 +95,11 @@ func (r *Controller) prepareEnvironment(ctx context.Context, t *v1alpha1.Telemet
 		The same is for ingress. Every different testplan must have its own ingress that points to the create services.
 	*/
 	installationNamespace := configuration.Global.Namespace
+
+	// nothing to do. the test runs on the default installation namespace.
+	if t.GetNamespace() == installationNamespace {
+		return nil
+	}
 
 	copyConfigMap := func(name string) error {
 		var config corev1.ConfigMap
@@ -99,19 +141,7 @@ func (r *Controller) prepareEnvironment(ctx context.Context, t *v1alpha1.Telemet
 	return nil
 }
 
-func createEndpoint(name string, port int64) string {
-	/* If the operator runs within the cluster, it will reach Grafana via the service */
-
-	/* If in developer mode, the operator runs outside the cluster, and will reach Grafana via the ingress */
-	if configuration.Global.DeveloperMode {
-		return fmt.Sprintf("http://%s:%d", name, port)
-	}
-
-	// If the operator runs outside the cluster, it will reach Grafana via the ingress.
-	return fmt.Sprintf("http://%s.%s", name, configuration.Global.DomainName)
-}
-
-func (r *Controller) installPrometheus(ctx context.Context, t *v1alpha1.Telemetry) error {
+func (r *Controller) installPrometheus(ctx context.Context, t *v1alpha1.TestPlan) error {
 	installationNamespace := configuration.Global.Namespace
 
 	var prometheus v1alpha1.Service
@@ -142,12 +172,12 @@ func (r *Controller) installPrometheus(ctx context.Context, t *v1alpha1.Telemetr
 		return errors.Wrapf(err, "cannot create %s", prometheus.GetName())
 	}
 
-	t.Status.PrometheusEndpoint = createEndpoint(prometheus.GetName(), configuration.Global.PrometheusPort)
+	t.Status.PrometheusEndpoint = utils.GenerateEndpoint(notRandomPrometheusName, t.GetName(), configuration.Global.PrometheusPort)
 
 	return nil
 }
 
-func (r *Controller) installGrafana(ctx context.Context, t *v1alpha1.Telemetry) error {
+func (r *Controller) installGrafana(ctx context.Context, t *v1alpha1.TestPlan, telemetryAgents []string) error {
 	installationNamespace := configuration.Global.Namespace
 
 	var grafana v1alpha1.Service
@@ -173,8 +203,8 @@ func (r *Controller) installGrafana(ctx context.Context, t *v1alpha1.Telemetry) 
 
 		spec.DeepCopyInto(&grafana.Spec)
 
-		if err := r.importDashboards(ctx, t, &grafana.Spec); err != nil {
-			return errors.Wrapf(err, "import dashboards")
+		if err := r.importDashboards(ctx, t, &grafana.Spec, telemetryAgents); err != nil {
+			return errors.Wrapf(err, "import telemetryAgents")
 		}
 	}
 
@@ -182,17 +212,18 @@ func (r *Controller) installGrafana(ctx context.Context, t *v1alpha1.Telemetry) 
 		return errors.Wrapf(err, "cannot create %s", grafana.GetName())
 	}
 
-	t.Status.GrafanaEndpoint = createEndpoint(grafana.GetName(), configuration.Global.GrafanaPort)
+	t.Status.GrafanaEndpoint = utils.GenerateEndpoint(notRandomGrafanaName, t.GetName(), configuration.Global.GrafanaPort)
+
 	return nil
 }
 
-func (r *Controller) importDashboards(ctx context.Context, t *v1alpha1.Telemetry, spec *v1alpha1.ServiceSpec) error {
+func (r *Controller) importDashboards(ctx context.Context, t *v1alpha1.TestPlan, spec *v1alpha1.ServiceSpec, telemetryAgents []string) error {
 	imported := make(map[string]struct{})
 
 	var namespace string
 
 	// iterate monitoring services
-	for _, agentRef := range t.Spec.Import {
+	for _, agentRef := range telemetryAgents {
 		// search for the agent
 		if agentRef == configuration.AgentTemplate {
 			namespace = configuration.Global.Namespace
@@ -210,7 +241,7 @@ func (r *Controller) importDashboards(ctx context.Context, t *v1alpha1.Telemetry
 		}
 
 		if err := r.GetClient().Get(ctx, key, &dashboards); err != nil {
-			return errors.Wrapf(err, "cannot find configmap with dashboards '%s'", key)
+			return errors.Wrapf(err, "cannot find configmap with telemetryAgents '%s'", key)
 		}
 
 		// avoid duplicates that may be caused when multiple agents share the same dashboard
@@ -253,9 +284,8 @@ func (r *Controller) importDashboards(ctx context.Context, t *v1alpha1.Telemetry
 	return nil
 }
 
-func (r *Controller) createIngress(ctx context.Context, t *v1alpha1.Telemetry) error {
+func (r *Controller) createIngress(ctx context.Context, t *v1alpha1.TestPlan) error {
 	ingressClassName := configuration.Global.IngressClassName
-	pathType := netv1.PathTypePrefix
 
 	var ingress netv1.Ingress
 
@@ -266,7 +296,7 @@ func (r *Controller) createIngress(ctx context.Context, t *v1alpha1.Telemetry) e
 		IngressClassName: &ingressClassName,
 		Rules: []netv1.IngressRule{
 			{
-				Host: fmt.Sprintf("%s.%s", notRandomPrometheusName, configuration.Global.DomainName),
+				Host: t.Status.PrometheusEndpoint,
 				IngressRuleValue: netv1.IngressRuleValue{
 					HTTP: &netv1.HTTPIngressRuleValue{
 						Paths: []netv1.HTTPIngressPath{
@@ -287,7 +317,7 @@ func (r *Controller) createIngress(ctx context.Context, t *v1alpha1.Telemetry) e
 				},
 			},
 			{
-				Host: fmt.Sprintf("%s.%s", notRandomGrafanaName, configuration.Global.DomainName),
+				Host: t.Status.GrafanaEndpoint,
 				IngressRuleValue: netv1.IngressRuleValue{
 					HTTP: &netv1.HTTPIngressRuleValue{
 						Paths: []netv1.HTTPIngressPath{
@@ -297,6 +327,28 @@ func (r *Controller) createIngress(ctx context.Context, t *v1alpha1.Telemetry) e
 								Backend: netv1.IngressBackend{
 									Service: &netv1.IngressServiceBackend{
 										Name: notRandomGrafanaName,
+										Port: netv1.ServiceBackendPort{
+											Name: "http",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+
+			{ // Create a placeholder for the logviewer.
+				Host: utils.GenerateEndpoint(notRandomLogViewerName, t.GetName(), configuration.Global.LogviewerPort),
+				IngressRuleValue: netv1.IngressRuleValue{
+					HTTP: &netv1.HTTPIngressRuleValue{
+						Paths: []netv1.HTTPIngressPath{
+							{
+								Path:     "/",
+								PathType: &pathType,
+								Backend: netv1.IngressBackend{
+									Service: &netv1.IngressServiceBackend{
+										Name: notRandomLogViewerName,
 										Port: netv1.ServiceBackendPort{
 											Name: "http",
 										},
@@ -317,28 +369,76 @@ func (r *Controller) createIngress(ctx context.Context, t *v1alpha1.Telemetry) e
 	return nil
 }
 
-/*
-   - host: logviewer-frisbee.{{.Values.global.domainName}}
-     http:
-       paths:
-         - path: /
-           pathType: Prefix
-           backend:
-             service:
-               name: logviewer
-               port:
-                 number: 80
+// ImportTelemetryDashboards iterates the referenced services (directly via Service or indirectly via Cluster) and list
+// all telemetry dashboards that need to be imported
+func (r *Controller) ImportTelemetryDashboards(ctx context.Context, plan *v1alpha1.TestPlan) ([]string, error) {
+	dedup := make(map[string]struct{})
 
-   {{- if .Values.chaos.enabled }}
-   - host: chaos-frisbee.{{.Values.global.domainName}}
-     http:
-       paths:
-         - path: /
-           pathType: Prefix
-           backend:
-             service:
-               name: chaos-dashboard
-               port:
-                 number: 2333
-   {{- end}}
-*/
+	var fromTemplate *v1alpha1.GenerateFromTemplate
+
+	for _, action := range plan.Spec.Actions {
+		fromTemplate = nil
+
+		switch action.ActionType {
+		case v1alpha1.ActionService:
+			fromTemplate = action.Service
+		case v1alpha1.ActionCluster:
+			fromTemplate = &action.Cluster.GenerateFromTemplate
+		default:
+			continue
+		}
+
+		spec, err := r.serviceControl.GetServiceSpec(ctx, plan.GetNamespace(), *fromTemplate)
+		if err != nil {
+			return nil, errors.Wrapf(err, "cannot retrieve service spec")
+		}
+
+		// firstly store everything on a map to avoid duplicates
+		if spec.Decorators != nil {
+			for _, dashboard := range spec.Decorators.Telemetry {
+				dedup[dashboard] = struct{}{}
+			}
+		}
+	}
+
+	// secondly, return a deduped array
+	imports := make([]string, 0, len(dedup))
+	for dashboard, _ := range dedup {
+		imports = append(imports, dashboard)
+	}
+
+	return imports, nil
+}
+
+func (r *Controller) ConnectToGrafana(ctx context.Context, t *v1alpha1.TestPlan) error {
+	if !t.Status.TelemetryEnabled {
+		r.Logger.Info("Start without telemetry.", "plan", t.GetName())
+
+		return nil
+	}
+
+	// The grafana client already exists.
+	// It's global because it is also used by service and chaos to push annotations to grafana.
+	if grafana.DefaultClient != nil {
+		return nil
+	}
+
+	advertisedHost := configuration.Global.AdvertisedHost
+	grafanaEndpoint := t.Status.GrafanaEndpoint
+
+	return grafana.NewGrafanaClient(ctx, r, advertisedHost, grafanaEndpoint,
+		// Set a callback that will be triggered when there is Grafana alert.
+		// Through this channel we can get informed for SLA violations.
+		grafana.WithNotifyOnAlert(func(b *notifier.Body) {
+			r.Logger.Info("Grafana Alert", "body", b)
+
+			// when Grafana fires an alert, this alert is captured by the Webhook.
+			// The webhook must someone notify the appropriate controller.
+			// To do that, it adds information of the fired alert to the object's metadata
+			// and updates (patches) the object.
+			if err := expressions.DispatchAlert(ctx, r, b); err != nil {
+				r.Logger.Error(err, "unable to inform CR for metrics alert", "cr", t.GetName())
+			}
+		}),
+	)
+}

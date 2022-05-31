@@ -9,7 +9,7 @@ spec:
       - name: cockroachdb
         image: telegraf:1.20.3
         ports:
-          - name: mon-cockroach
+          - name: telemetry
             containerPort: 9443
         command:
           - /bin/sh # Run shell

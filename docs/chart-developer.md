@@ -412,21 +412,15 @@ docker save frisbee:latest -o image.tar
 1) Cadvisor does not support for NFS mounts.
 2) Check how we can use block devices
 
-
-
-
-
-
 ## Run a test
 
 #### Step 1:  Install Dependencies
 
 Make sure that [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/)
-and  are installed on your system, and that you have access to a Kubernetes
+and are installed on your system, and that you have access to a Kubernetes
 installation.
 
 * **Local Installation** If you want a local installation you can use
-
 
 
 * **Remote Installation**: Set  `~/.kube/config` appropriately, and create tunnel for sending requests to Kubernetes
@@ -437,15 +431,7 @@ installation.
 >> ssh -L 6443:192.168.1.213:6443 [USER@]SSH_SERVER
 ```
 
-
-
-
-
-
-
 #### Step 2: Update Helm repo
-
-
 
 #### Step 3:
 
@@ -481,19 +467,9 @@ to : https://raw.githubusercontent.com/CARV-ICS-FORTH/frisbee/main/charts/tikv/e
 >> curl -sSL https://tinyurl.com/t3xrtmny | kubectl -f - apply
 ```
 
-
-
-
-
 # Observe a Testplan
 
 ### Kubernetes Dashboard
-
-
-
-
-
-
 
 If you use a microk8s installation of Kubernetes, then the procedure is slightly different.
 
@@ -525,14 +501,6 @@ For example,
 http://grafana.platform.science-hangar.eu 
 ```
 
-
-
-
-
-
-
-
-
 Optionally, validate that everything works.
 
 ```bash
@@ -549,10 +517,6 @@ hello-node   1/1     1            1           36s
 >> kubectl delete deployments hello-node
 deployment.apps "hello-node" deleted
 ```
-
-
-
-
 
 This step will install the Frisbee CRDs and all the necessary tools.
 

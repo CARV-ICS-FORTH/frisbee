@@ -75,6 +75,16 @@ type SetField struct {
 
 // Decorators takes in a PodSpec, add some functionality and returns it.
 type Decorators struct {
+	// +optional
+	Labels map[string]string `json:"labels,omitempty"`
+
+	// +optional
+	Annotations map[string]string `json:"annotations,omitempty"`
+
+	// SetFields is used to populate fields. Used for dynamic assignment based templated inputs.
+	// +optional
+	SetFields []SetField `json:"setFields,omitempty"`
+
 	// Resources specifies limitations as to how the container will access host resources.
 	// +optional
 	Resources *Resources `json:"resources,omitempty"`
@@ -83,16 +93,6 @@ type Decorators struct {
 	// Agents are sidecar services will be deployed in the same Pod as the Service container.
 	// +optional
 	Telemetry []string `json:"telemetry,omitempty"`
-
-	// SetFields is used to populate fields. Used for dynamic assignment based templated inputs.
-	// +optional
-	SetFields []SetField `json:"setFields,omitempty"`
-
-	// +optional
-	Annotations map[string]string `json:"annotations,omitempty"`
-
-	// +optional
-	Labels map[string]string `json:"labels,omitempty"`
 }
 
 // Callable is a script that is executed within the service container, and returns a value.

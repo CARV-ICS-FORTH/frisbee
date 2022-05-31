@@ -20,26 +20,40 @@ import (
 	"context"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	"github.com/carv-ics-forth/frisbee/controllers/utils"
 	"github.com/go-logr/logr"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// Discover discovers a resource across different namespaces
+func Discover(ctx context.Context, c client.Client, crList client.ObjectList, id string) error {
+	// find the platform configuration (which may reside on a different namespace)
+	filters := []client.ListOption{
+		client.MatchingLabels{v1alpha1.ResourceDiscoveryLabel: id},
+	}
+
+	if err := c.List(ctx, crList, filters...); err != nil {
+		return errors.Wrapf(err, "cannot list resources")
+	}
+
+	return nil
+}
+
 // Get returns the system configuration
-func Get(ctx context.Context, c client.Client, logger logr.Logger) (v1alpha1.Configuration, error) {
+func Get(ctx context.Context, c client.Client, logger logr.Logger) (v1alpha1.Configuration, metav1.ObjectMeta, error) {
 	// 1. Discovery the configuration across the various namespaces.
 	var list corev1.ConfigMapList
 
-	if err := utils.Discover(ctx, c, &list, PlatformConfigurationName); err != nil {
-		return v1alpha1.Configuration{}, errors.Wrapf(err, "cannot discover '%s'", PlatformConfigurationName)
+	if err := Discover(ctx, c, &list, PlatformConfigurationName); err != nil {
+		return v1alpha1.Configuration{}, metav1.ObjectMeta{}, errors.Wrapf(err, "cannot discover '%s'", PlatformConfigurationName)
 	}
 
 	// ensure that we have spotted only one configuration
 	if len(list.Items) != 1 {
-		return v1alpha1.Configuration{}, errors.Errorf("Expected a single resource for '%s' but got #%d",
+		return v1alpha1.Configuration{}, metav1.ObjectMeta{}, errors.Errorf("Expected a single resource for '%s' but got #%d",
 			PlatformConfigurationName, len(list.Items))
 	}
 
@@ -61,11 +75,11 @@ func Get(ctx context.Context, c client.Client, logger logr.Logger) (v1alpha1.Con
 
 	decoder, err := mapstructure.NewDecoder(decoderConfig)
 	if err != nil {
-		return v1alpha1.Configuration{}, errors.Wrapf(err, "cannot create decoder")
+		return v1alpha1.Configuration{}, metav1.ObjectMeta{}, errors.Wrapf(err, "cannot create decoder")
 	}
 
 	if err := decoder.Decode(config.Data); err != nil {
-		return v1alpha1.Configuration{}, errors.Wrapf(err, "decoding error")
+		return v1alpha1.Configuration{}, metav1.ObjectMeta{}, errors.Wrapf(err, "decoding error")
 	}
 
 	logger.Info("Set configuration parameters",
@@ -73,7 +87,7 @@ func Get(ctx context.Context, c client.Client, logger logr.Logger) (v1alpha1.Con
 		"parameters", sysConf,
 	)
 
-	return sysConf, nil
+	return sysConf, config.ObjectMeta, nil
 }
 
 func SetGlobal(conf v1alpha1.Configuration) {
@@ -81,56 +95,3 @@ func SetGlobal(conf v1alpha1.Configuration) {
 }
 
 var Global v1alpha1.Configuration
-
-// var PlatformConfigurationMetadata metav1.ObjectMeta
-/*
-// UpdateSystemConfiguration  loads the platform configuration.
-// The configuration must be pre-installed in the platform-configuration config map. (see chart/platform).
-func UpdateSystemConfiguration(ctx context.Context, mgr manager.Manager) error {
-	// 1. Discovery the configuration across the various namespaces.
-	var list corev1.ConfigMapList
-
-	if err := utils.Discover(ctx, mgr.GetClient(), &list, PlatformConfigurationName); err != nil {
-		return errors.Wrapf(err, "cannot discover '%s'", PlatformConfigurationName)
-	}
-
-	// ensure that we have spotted only one configuration
-	if len(list.Items) != 1 {
-		return errors.Errorf("Expected a single resource for '%s' but got #%d",
-			PlatformConfigurationName, len(list.Items))
-	}
-
-	config := list.Items[0]
-
-	// 2. Parse the configuration
-	decoderConfig := &mapstructure.DecoderConfig{
-		DecodeHook:       nil,
-		ErrorUnused:      true,
-		ZeroFields:       true,
-		WeaklyTypedInput: true,
-		Squash:           false,
-		Metadata:         nil,
-		Result:           &PlatformConfiguration,
-		TagName:          "",
-	}
-
-	decoder, err := mapstructure.NewDecoder(decoderConfig)
-	if err != nil {
-		return errors.Wrapf(err, "cannot create decoder")
-	}
-
-	if err := decoder.Decode(config.Data); err != nil {
-		return errors.Wrapf(err, "decoding error")
-	}
-
-	PlatformConfigurationMetadata = config.ObjectMeta
-
-	mgr.GetLogger().Info("Set configuration parameters",
-		"source", PlatformConfigurationName,
-		"meta", config.ObjectMeta,
-		"parameters", PlatformConfiguration,
-	)
-
-	return nil
-}
-*/

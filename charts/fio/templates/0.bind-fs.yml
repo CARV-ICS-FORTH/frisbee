@@ -12,7 +12,7 @@ spec:
   service:
     requirements: # Requirements
       persistentVolumeClaim:
-        name: bind-fs
+        name: scratch-volume
         spec:
           storageClassName: local-volume
           volumeMode: Filesystem
@@ -21,16 +21,17 @@ spec:
           resources:
             requests:
               storage: 500Mi
+
     decorators: # decorators
       telemetry:
         - system.telemetry.agent
-#        - fio.telemetry.client
+    #        - fio.telemetry.client
 
     containers: # Container
       - name: app
         image: xridge/fio
         volumeMounts:
-          - name: bind-fs
+          - name: scratch-volume
             mountPath: /testdata
         command:
           - /bin/sh # Run shell

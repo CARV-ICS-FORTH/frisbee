@@ -50,7 +50,7 @@ spec:
       name: killer
       depends: { running: [ more-servers ] }
       cascade:
-        templateRef: chaos.pod.kill
+        templateRef: system.chaos.pod.kill
         inputs:
           - { target: more-servers-4 }
           - { target: more-servers-7 }

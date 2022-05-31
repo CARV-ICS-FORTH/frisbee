@@ -18,6 +18,7 @@ package grafana
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -48,7 +49,7 @@ func WithNotifyOnAlert(cb func(b *notifier.Body)) Option {
 	}
 }
 
-func NewGrafanaClient(ctx context.Context, r logr.Logger, controllerWebhook string, grafanaAPI string, setters ...Option) error {
+func NewGrafanaClient(ctx context.Context, r logr.Logger, controllerWebhook string, grafanaEndpoint string, setters ...Option) error {
 	// Default Options
 	args := &Options{
 		NotifyOnAlert: nil,
@@ -57,6 +58,8 @@ func NewGrafanaClient(ctx context.Context, r logr.Logger, controllerWebhook stri
 	for _, setter := range setters {
 		setter(args)
 	}
+
+	grafanaAPI := fmt.Sprintf("http://%s", grafanaEndpoint)
 
 	conn, err := sdk.NewClient(grafanaAPI, "", sdk.DefaultHTTPClient)
 	if err != nil {

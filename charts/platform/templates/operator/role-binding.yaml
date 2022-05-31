@@ -34,5 +34,5 @@ subjects:
 #    namespace: {{.Release.Namespace}}
 #roleRef:
 #  apiGroup: rbac.authorization.k8s.io
-  #  kind: ClusterRole
+#  kind: ClusterRole
   #  name: view

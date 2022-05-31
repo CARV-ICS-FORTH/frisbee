@@ -16,7 +16,7 @@ spec:
         - system.telemetry.agent
         - cockroach.telemetry.server
 
-    volumes:    # Match the pod to the log volume
+    volumes: # Match the pod to the log volume
       - name: logs
         persistentVolumeClaim:
           claimName: {{"{{.Inputs.Parameters.logVolumeName}}" | quote}}
@@ -27,7 +27,7 @@ spec:
         volumeMounts: # Mount the log volume
           - name: logs
             mountPath: /logs
-        command: ["ls", "/logs"]
+        command: [ "ls", "/logs" ]
 
     containers:
       - name: app

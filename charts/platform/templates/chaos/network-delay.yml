@@ -2,7 +2,7 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
-  name: chaos.network.delay
+  name: system.chaos.network.delay
 spec:
   inputs:
     parameters:

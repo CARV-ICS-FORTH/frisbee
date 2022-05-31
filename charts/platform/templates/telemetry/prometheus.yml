@@ -5,10 +5,26 @@ metadata:
   name: system.telemetry.prometheus.template
 spec:
   service:
+    decorators:
+      labels:
+        plan.frisbee.io/component: SYS
+
     volumes:
-      - name: config
+      - name: podinfo # Provide reflective information for the service
+        downwardAPI:
+          items:
+            - path: namespace
+              fieldRef:
+                fieldPath: metadata.namespace
+
+            - path: labels
+              fieldRef:
+                fieldPath: metadata.labels
+
+      - name: config # Parameterized config using the reflective information
         configMap:
           name: system.telemetry.prometheus.config
+
     containers:
       - name: prometheus
         image: "prom/prometheus"
@@ -16,10 +32,26 @@ spec:
           - name: http
             containerPort: 9090
         volumeMounts:
+          - name: podinfo
+            mountPath: /etc/podinfo
           - name: config
             mountPath: /etc/prometheus/prometheus.yml
             subPath: prometheus.yml
-            readOnly: true
+        command:
+          - /bin/sh   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
+            # Create local envs that will be used to substitute the configuration placeholders
+            export NAMESPACE=$(cat /etc/podinfo/namespace)
+            export TESTPLAN=$(awk -F= '/plan.frisbee.io\/part-of/{print $NF}' /etc/podinfo/labels | tr -d \")
+
+            # Use envsubst to replace ${var} or $var according to the values of the current environment variables.
+            wget https://github.com/a8m/envsubst/releases/download/v1.2.0/envsubst-Linux-x86_64
+            chmod +x envsubst-Linux-x86_64
+
+            # Run Prometheus with the new modified configuration
+            ./envsubst-Linux-x86_64 -i /etc/prometheus/prometheus.yml -o ./prometheus.yml
+            /bin/prometheus --config.file=./prometheus.yml
 
 
 ---
@@ -28,7 +60,7 @@ kind: ConfigMap
 metadata:
   name: system.telemetry.prometheus.config
 data:
-  prometheus.yml: |
+  prometheus.yml: |-
     # For all the confusing Prometheus configuration and
     # regular expressions,
     # explained in examples.
@@ -55,45 +87,43 @@ data:
 
         scheme: http
 
-        # Use Kubernetes Service Discovery
+        # The pod role discovers all pods and exposes their containers as targets.
+        # Optional namespace discovery. If omitted, all namespaces are used.
+        # The vars ${NAMESPACE} and ${TESTPLAN} will be replaced by envst on the pod.
+        # For more info check https://prometheus.io/docs/prometheus/latest/configuration/configuration/
         kubernetes_sd_configs:
-          - role: endpoints
+          - role: pod
+            namespaces:
+              names:
+                - ${NAMESPACE}
 
         relabel_configs:
-          # Condition 1. Monitor only the ports with name "mon-*". The * is used as type to the dashboard
+          # Condition 1. Filter services that belong to the same plan as this Prometheus instance.
+          - source_labels: [ __meta_kubernetes_pod_label_plan_frisbee_io_part_of ]
+            separator: ;
+            regex: ${TESTPLAN}
+            action: keep
+
+          # Condition 2. Filter the telemetry containers (ports with name "telemetry")
           - source_labels: [ __meta_kubernetes_pod_container_port_name ]
             separator: ;
-            regex: mon-(.*)
+            regex: telemetry
             action: keep
+
+          # Extract information about the target container
+          - source_labels: [ __meta_kubernetes_pod_name ]
+            separator: ;
+            target_label: instance
+            action: replace
+
+          # Extract information about the host where container is running
+          - source_labels: [ __meta_kubernetes_pod_node_name ]
+            separator: ;
+            target_label: node
+            action: replace
 
           # Extract hints for the dashboard
           - source_labels: [ __meta_kubernetes_pod_container_name ]
             separator: ;
-            regex: (.*)
             target_label: agent
-            replacement: ${1}
             action: replace
-
-          # Extract information about the target container
-          - source_labels: [ __meta_kubernetes_endpoint_address_target_name ]
-            separator: ;
-            regex: (.*)
-            target_label: instance
-            replacement: ${1}
-            action: replace
-
-          # Extract information about the host where container is running
-          - source_labels: [ __meta_kubernetes_endpoint_node_name ]
-            separator: ;
-            regex: (.*)
-            target_label: node
-            replacement: ${1}
-            action: replace
-
-          # Replace All kubernetes flags with the normal counterparts
-          # all __meta_kubernetes_service_label_(.+) will be changed to the (.+)
-          # e.g. __meta_kubernetes_service_label_app='armada-api' to app='armada-api'
-          # - action: labelmap
-          #   replacement: $1
-          #   regex: __meta_kubernetes_service_label_(.+)
-

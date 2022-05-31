@@ -6,7 +6,7 @@ kind: ConfigMap
 metadata:
   name: system.controller.configuration
   labels:
-      discover.frisbee.io/name: system.controller.configuration
+    discover.frisbee.io/name: system.controller.configuration
 data:
   DeveloperMode: {{.Values.operator.enabled | quote}}
 
@@ -19,3 +19,5 @@ data:
   PrometheusPort: {{.Values.telemetry.prometheusPort | int64 | quote}}
 
   GrafanaPort: {{.Values.telemetry.grafanaPort | int64 | quote}}
+
+  LogViewerPort: {{.Values.telemetry.grafanaPort | int64 | quote}}

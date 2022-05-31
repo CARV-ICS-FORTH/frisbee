@@ -26,6 +26,7 @@ telemetry:
   honorTimestamp: true
   prometheusPort: 9090
   grafanaPort: 3000
+  logviewerPort: 80
 
 
 ## @section Provision of dynamic volumes

@@ -2,7 +2,7 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
-  name: chaos.network.duplicate
+  name: system.chaos.network.duplicate
 spec:
   inputs:
     parameters:

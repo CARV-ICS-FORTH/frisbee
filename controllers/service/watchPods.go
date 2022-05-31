@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/carv-ics-forth/frisbee/controllers/telemetry/grafana"
+	"github.com/carv-ics-forth/frisbee/controllers/testplan/grafana"
 	"github.com/carv-ics-forth/frisbee/controllers/utils"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"

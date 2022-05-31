@@ -51,14 +51,16 @@ the same resolution everywhere.
 **Q: I see dead plots ... on Grafana**
 
 **A:** Kubernetes v.1.22 drops support of cgroups v1 in favor of cgroup v2 API. If you run Kubernetes 1.22 make
-sure that you have set `systemd.unified_cgroup_hierarchy=1` in the grub configuration. 
+sure that you have set `systemd.unified_cgroup_hierarchy=1` in the grub configuration.
 https://rootlesscontaine.rs/getting-started/common/cgroup2/
 
 ##
 
-**Q: When trying to install a Chart, I get `helm.go:81: [debug] found in Chart.yaml, but missing in charts/ directory:`**
+**Q: When trying to install a Chart, I
+get `helm.go:81: [debug] found in Chart.yaml, but missing in charts/ directory:`**
 
-**A:** This may happen if the dependencies of a chart (aka subcharts) are not installed. To fixed it, simply update the chart. for the chart `platform` (aka Frisbee), do the following
+**A:** This may happen if the dependencies of a chart (aka subcharts) are not installed. To fixed it, simply update the
+chart. for the chart `platform` (aka Frisbee), do the following
 
 ```bash
 >> helm dependency update charts/platform/

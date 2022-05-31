@@ -37,7 +37,7 @@ spec:
       name: partition0
       depends: { running: [ client ] }
       chaos:
-        templateRef: chaos.network.partition
+        templateRef: system.chaos.network.partition
         inputs:
           - { targets: .service.server.one }
 

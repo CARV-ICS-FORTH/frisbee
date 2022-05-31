@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/carv-ics-forth/frisbee/controllers/telemetry/grafana"
+	"github.com/carv-ics-forth/frisbee/controllers/testplan/grafana"
 	"github.com/carv-ics-forth/frisbee/controllers/utils"
 	"github.com/pkg/errors"
 	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"

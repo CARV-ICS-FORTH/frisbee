@@ -1,16 +1,13 @@
 # Tutorial
 
-
-
 This tutorial will guide you through deploying and running Frisbee on a local Kubernetes installation.
-
-
 
 # Install Dependencies
 
 #### 1. microk8s
 
- [Microk8s](https://microk8s.io/docs)  is the simplest production-grade conformant K8s.  **It runs entirely on your workstation or edge device.**
+[Microk8s](https://microk8s.io/docs)  is the simplest production-grade conformant K8s.  **It runs entirely on your
+workstation or edge device.**
 
 ```bash
 # Install microk8s v.1.22
@@ -29,11 +26,10 @@ This tutorial will guide you through deploying and running Frisbee on a local Ku
 >> microk8s enable dns ingress helm3
 ```
 
-
-
 #### 2. Helm
 
-[Helm](https://helm.sh/docs/intro/install/)  is a package manager for Kubernetes. Helm uses **a packaging format called charts**. 
+[Helm](https://helm.sh/docs/intro/install/)  is a package manager for Kubernetes. Helm uses **a packaging format called
+charts**.
 
 A chart is a collection of files that describe a related set of Kubernetes resources.
 
@@ -41,11 +37,10 @@ A chart is a collection of files that describe a related set of Kubernetes resou
 >> sudo snap install helm --classic
 ```
 
-
-
 #### 3. Frisbee platform
 
-Although Frisbee can be installed directly from a Helm repository, for demonstration purposes we favor the git-based method.
+Although Frisbee can be installed directly from a Helm repository, for demonstration purposes we favor the git-based
+method.
 
 ```bash
 # Download the source code
@@ -58,8 +53,6 @@ Although Frisbee can be installed directly from a Helm repository, for demonstra
 >> less charts/platform/values.yaml 
 ```
 
-
-
 > **Note:** Make sure that the dir "/mnt/local" exists. The error will not appear until the execution of the test.
 
 
@@ -71,13 +64,13 @@ Now, it's time to deploy the platform, on the **default** namespace.
 >> helm  upgrade --install --wait my-frisbee ./charts/platform/ --debug -n default
 ```
 
-
-
 If everything works normally, you should be able to access the following **dashboards**:
 
-* [Dashboard](https://dashboard-frisbee.localhost) is a web-based Kubernetes user interface. You can use Dashboard to deploy containerized applications to a
+* [Dashboard](https://dashboard-frisbee.localhost) is a web-based Kubernetes user interface. You can use Dashboard to
+  deploy containerized applications to a
   Kubernetes cluster, troubleshoot your containerized application, and manage the cluster resources.
-* [Chaos Dashboard](http://chaos-frisbee.localhost)  is a one-step web UI for managing, designing, and monitoring chaos experiments on *Chaos Mesh*.
+* [Chaos Dashboard](http://chaos-frisbee.localhost)  is a one-step web UI for managing, designing, and monitoring chaos
+  experiments on *Chaos Mesh*.
 
 > **Note:** Both dashboards will ask for config or token. In that case, copy the token from .kube/config file.
 
@@ -85,25 +78,21 @@ If everything works normally, you should be able to access the following **dashb
 >> grep token  ~/.kube/config
 ```
 
-
-
 Now are ready to deploy the tests.
-
-
 
 ## Testing a System
 
-Before running any test, we need to install the System Under Testing (SUT). 
+Before running any test, we need to install the System Under Testing (SUT).
 
-As a reference, we will use the Frisbee chart for [CockroachDB](https://github.com/CARV-ICS-FORTH/frisbee/tree/main/charts/cockroachdb)
+As a reference, we will use the Frisbee chart
+for [CockroachDB](https://github.com/CARV-ICS-FORTH/frisbee/tree/main/charts/cockroachdb)
 
-> [*CockroachDB*](https://github.com/cockroachdb/cockroach) is a distributed database with standard SQL for cloud applications.
-
-
+> [*CockroachDB*](https://github.com/cockroachdb/cockroach) is a distributed database with standard SQL for cloud
+> applications.
 
 #### 1. Create a namespace
 
-Firstly, we need to create a dedicated namespace for the test. 
+Firstly, we need to create a dedicated namespace for the test.
 
 The different namespaces allows us to run multiple tests in parallel
 
@@ -112,8 +101,6 @@ The different namespaces allows us to run multiple tests in parallel
 
 namespace/mytest created
 ```
-
-
 
 #### 2. Deploy the SUT
 
@@ -126,8 +113,6 @@ The commands are to be executed from the *Frisbee* directory.
 # Install YCSB for creating workload
 >> helm upgrade --install --wait my-ycsb ./charts/ycsb --debug -n mytest
 ```
-
-
 
 Then you can verify that all the packages are successfully installed
 
@@ -142,15 +127,12 @@ my-cockroach    mytest          1               2022-05-27 13:51:07.332866308 +0
 my-ycsb         mytest          1               2022-05-27 13:51:19.429409791 +0300 EEST        deployed        ycsb-0.0.0       
 ```
 
-
-
-> **Note:** if you modify the templates of a chart you must re-install it.  examples can be modified without re-installation.
-
-
+> **Note:** if you modify the templates of a chart you must re-install it. examples can be modified without
+> re-installation.
 
 #### Run a Test
 
-You now select which scenario you wish to run. 
+You now select which scenario you wish to run.
 
 ```bash
 >> ls -1a ./charts/cockroachdb/examples/
@@ -169,8 +151,6 @@ You now select which scenario you wish to run.
 9.scaledown-kill.yml
 ```
 
-
-
 Let's run a **bitrot** scenario.
 
 ```bash
@@ -179,30 +159,24 @@ Let's run a **bitrot** scenario.
 testplan.frisbee.io/cockroach-bitrot created
 ```
 
-
-
 #### Observe a Test
 
 *Frisbee* provides two methods for observing the progress of a test.
 
-* **State-based:** Consumes information from the Kubernetes API 
+* **State-based:** Consumes information from the Kubernetes API
 
-  * [Dashboard](https://dashboard-frisbee.localhost/#/pod?namespace=default) 
-  * [Chaos Dashboard](http://chaos-frisbee.localhost/experiments) 
+    * [Dashboard](https://dashboard-frisbee.localhost/#/pod?namespace=default)
+    * [Chaos Dashboard](http://chaos-frisbee.localhost/experiments)
 
 * **Metrics-based:** Consumes information from distributed performance metrics.
 
-  * [Prometheus](http://prometheus-frisbee.localhost)
+    * [Prometheus](http://prometheus-frisbee.localhost)
 
-  * [Grafana](http://grafana-frisbee.localhost)
-
-    
+    * [Grafana](http://grafana-frisbee.localhost)
 
 The above tools are for understanding the behavior of a system, but do not help with test automation.
 
 Besides the visual information, we need something that can be used in external scripts.
-
-
 
 We will use `kubectl` since is the most common CLI interface between Kubernetes API and third-party applications.
 
@@ -235,25 +209,21 @@ Reason:          JobHasFailed
 Telemetry Enabled:  true
 ```
 
-
-
-We are interested in the `Phase` and `Conditions` fields that provides information about the present status of a test. The **Phase** describes the lifecycle of a Test.  
+We are interested in the `Phase` and `Conditions` fields that provides information about the present status of a test.
+The **Phase** describes the lifecycle of a Test.
 
 |  Phase  |                         Description                          |
 | :-----: | :----------------------------------------------------------: |
 |   ""    |      The request is not yet accepted by the controller       |
-| Pending | The request has been accepted by the Kubernetes cluster, but one of the child jobs has not been created. This includes the time waiting for logical dependencies, Ports discovery,  data rewiring, and placement of Pods. |
+| Pending | The request has been accepted by the Kubernetes cluster, but one of the child jobs has not been created. This includes the time waiting for logical dependencies, Ports discovery, data rewiring, and placement of Pods. |
 | Running | All the child jobs  have been created, and at least one job is still running. |
 | Success |              All jobs have voluntarily exited.               |
 | Failed  | At least one job of the CR has terminated in a failure (exited with a  non-zero exit code or was stopped by the system). |
 
-
-
 #### Pass/Fail a Test
 
-The **Phase** is a top-level description calculated based on some **Conditions**. The **Conditions** describe the various stages the Test has been through.
-
-
+The **Phase** is a top-level description calculated based on some **Conditions**. The **Conditions** describe the
+various stages the Test has been through.
 
 |       Condition       |                     Description                     |
 | :-------------------: | :-------------------------------------------------: |
@@ -264,7 +234,8 @@ The **Phase** is a top-level description calculated based on some **Conditions**
 
 To avoid continuous inspection via polling, we use the `wait` function of `kubectl`.
 
-In the specific **bitrot** scenario,  the test will pass only it has reached an **UnexpectedTermination** within 10 minutes of execution.
+In the specific **bitrot** scenario, the test will pass only it has reached an **UnexpectedTermination** within 10
+minutes of execution.
 
 ```bash
 >> kubectl wait --for=condition=UnexpectedTermination --timeout=10m testplan.frisbee.io/cockroach-bitrot -n default
@@ -272,25 +243,20 @@ In the specific **bitrot** scenario,  the test will pass only it has reached an 
 testplan.frisbee.io/cockroach-bitrot condition met
 ```
 
-
-
-Indeed, the condition is met, meaning that the test has failed. We can visually verify it from the [Dashboard](https://dashboard-frisbee.localhost) .
-
-
+Indeed, the condition is met, meaning that the test has failed. We can visually verify it from
+the [Dashboard](https://dashboard-frisbee.localhost) .
 
 ![image-20220525170302089](tutorial.assets/image-20220525170302089.png)
 
+To reduce the noise when debugging a failed test, *Frisbee* automatically deletes all the jobs, expect for the failed
+one (masters-1), and the telemetry stack (grafana/prometheus).
 
 
-To reduce the noise when debugging a failed test, *Frisbee* automatically deletes all the jobs, expect for the failed one (masters-1), and the telemetry stack (grafana/prometheus). 
 
-
-
-> If the condition is not met within the specified timeout, `kubectl` will exit with failure code (1) and the following error message:
+> If the condition is not met within the specified timeout, `kubectl` will exit with failure code (1) and the following
+> error message:
 >
 > "error: timed out waiting for the condition on testplans/cockroach-bitrot"
-
-
 
 #### Delete a Test
 
@@ -305,29 +271,23 @@ testplan.frisbee.io "cockroach-bitrot" deleted
 The flag `cascade=foreground` will wait until the experiment is actually deleted. Without this flag, the deletion will
 happen in the background. Use this flag if you want to run sequential tests, without interference.
 
-
-
-
-
 ## Distributed Logs
 
-
-
-Collecting logs from distributed services is somewhat tricky. For the moment, we create a shared NFS filesystem and every service write its logs under the path `/shared/${HOSTNAME}`.  This however, requires some instrumentation as shown in the [example](https://github.com/CARV-ICS-FORTH/frisbee/blob/main/charts/cockroachdb/examples/12.withlogs.yml). It also takes some to create the volume and sync it.
+Collecting logs from distributed services is somewhat tricky. For the moment, we create a shared NFS filesystem and
+every service write its logs under the path `/shared/${HOSTNAME}`. This however, requires some instrumentation as shown
+in the [example](https://github.com/CARV-ICS-FORTH/frisbee/blob/main/charts/cockroachdb/examples/12.withlogs.yml). It
+also takes some to create the volume and sync it.
 
 Once done, the logs are available via a web-based file browser.
 
 * [Logviewer](logviewer-frisbee.localhost) (admin/admin)
 
-The lifecycle of the volume is bind to that of the test. If the test is deleted, the volume will be garbage collected automatically.
+The lifecycle of the volume is bind to that of the test. If the test is deleted, the volume will be garbage collected
+automatically.
 
+## Parallel Tests.
 
-
-
-
-## Parallel Tests. 
-
-For the time being, the safest to run multiple experiments is to run each test on a **dedicated namespace**. 
+For the time being, the safest to run multiple experiments is to run each test on a **dedicated namespace**.
 
 To do so, you have to repeat this tutorial, replacing the `-n` flag with a unique namespace. 
 

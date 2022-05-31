@@ -115,6 +115,8 @@ type Configuration struct {
 	PrometheusPort int64 `json:"prometheusPort"`
 
 	GrafanaPort int64 `json:"grafanaPort"`
+
+	LogviewerPort int64 `json:"logviewerPort"`
 }
 
 // TestPlanStatus defines the observed state of TestPlan.
@@ -126,6 +128,12 @@ type TestPlanStatus struct {
 	// ExecutedActions is a list of executed actions.
 	// +optional
 	ExecutedActions map[string]ConditionalExpr `json:"executedActions"`
+
+	// GrafanaEndpoint points to the local Grafana instance
+	GrafanaEndpoint string `json:"grafanaEndpoint,omitempty"`
+
+	// PrometheusEndpoint points to the local Prometheus instance
+	PrometheusEndpoint string `json:"prometheusEndpoint,omitempty"`
 }
 
 func (in *TestPlan) GetReconcileStatus() Lifecycle {
