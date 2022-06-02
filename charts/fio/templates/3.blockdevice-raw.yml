@@ -1,0 +1,90 @@
+# Add monitoring # https://github.com/fritchie/fio_benchmark_exporter
+---
+apiVersion: frisbee.io/v1alpha1
+kind: Template
+metadata:
+  name: fio.benchmark.raw-device
+spec:
+  inputs:
+    parameters:
+      size: "10M"
+      direct: "0"
+  service:
+    requirements: # Requirements
+      persistentVolumeClaim:
+        name: local-block
+        spec:
+          storageClassName: exclusive-device
+          volumeMode: Block
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 500Mi
+    decorators: # decorators
+      telemetry:
+        - system.telemetry.agent
+        - fio.telemetry.client
+
+    containers: # Container
+      - name: app
+        image: xridge/fio
+        volumeDevices:
+          - name: local-block
+            devicePath: /testdata
+        command:
+          - /bin/sh # Run shell
+          - -c      # Read from string
+          - |       # Multi-line str
+            set -eum
+            cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
+            trap "touch /dev/shm/stop" EXIT # Sidecar: use it to terminate itself when this container has exit.
+
+            # https://docs.oracle.com/en-us/iaas/Content/Block/References/samplefiocommandslinux.htm
+
+            DEVICE=/testdata
+            SIZE={{"{{.Inputs.Parameters.size}}"}}
+            DIRECT={{"{{.Inputs.Parameters.direct}}"}}
+
+            echo "USING DEVICE: $DEVICE"
+
+            cat > fio.conf <<EOF
+            [global]
+            filename=$DEVICE
+            size=$SIZE
+            direct=$DIRECT
+            gtod_reduce=1
+            time_based=1
+            runtime=1m
+            group_reporting=1
+
+            [file1]
+            ioengine=libaio
+            EOF
+
+            for rw in randread randwrite; do
+                for numjobs in 1 4 8 16; do
+                    for iodepth in 1 4 32 128; do
+                        cmd="fio --rw=$$rw --bs=4K --numjobs=$$numjobs --iodepth=$$iodepth fio.conf"
+                        echo $$cmd
+                        $$cmd >> /dev/shm/pipe
+
+                        echo
+                        echo
+                        echo
+                    done
+                done
+            done
+            for rw in read write; do
+                for numjobs in 1; do
+                    for iodepth in 1 4 32 128 256; do
+                        cmd="fio --rw=$$rw --bs=1M --numjobs=$$numjobs --iodepth=$$iodepth fio.conf"
+                        echo $$cmd
+                        $$cmd >> /dev/shm/pipe
+
+                        echo
+                        echo
+                        echo
+                    done
+                done
+            done

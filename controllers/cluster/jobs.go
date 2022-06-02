@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
+	serviceutils "github.com/carv-ics-forth/frisbee/controllers/service/utils"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -57,7 +58,7 @@ func (r *Controller) constructJobSpecList(ctx context.Context, cluster *v1alpha1
 		return nil, errors.Wrapf(err, "template validation")
 	}
 
-	specs, err := r.serviceControl.GetServiceSpecList(ctx, cluster.GetNamespace(), cluster.Spec.GenerateFromTemplate)
+	specs, err := serviceutils.GetServiceSpecList(ctx, r, cluster, cluster.Spec.GenerateFromTemplate)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot get specs")
 	}

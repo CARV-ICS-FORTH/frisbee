@@ -25,7 +25,7 @@ import (
 	"strings"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	"github.com/carv-ics-forth/frisbee/controllers/utils"
+	"github.com/carv-ics-forth/frisbee/controllers/common"
 	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -194,7 +194,7 @@ func expandMapInputs(ctx context.Context, s *Controller, nm string, inputs *[]ma
 	return nil
 }
 
-func selectServices(ctx context.Context, r utils.Reconciler, ss *v1alpha1.MatchBy) (SList, error) {
+func selectServices(ctx context.Context, r common.Reconciler, ss *v1alpha1.MatchBy) (SList, error) {
 	if ss == nil {
 		return nil, nil
 	}

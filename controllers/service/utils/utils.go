@@ -20,30 +20,15 @@ import (
 	"context"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
+	"github.com/carv-ics-forth/frisbee/controllers/common"
 	templateutils "github.com/carv-ics-forth/frisbee/controllers/template/utils"
-	"github.com/carv-ics-forth/frisbee/controllers/utils"
 	"github.com/pkg/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/json"
 )
 
-type ServiceControlInterface interface {
-	GetServiceSpec(ctx context.Context, namespace string, fromTemplate v1alpha1.GenerateFromTemplate) (v1alpha1.ServiceSpec, error)
-
-	GetServiceSpecList(ctx context.Context, namespace string, fromTemplate v1alpha1.GenerateFromTemplate) ([]v1alpha1.ServiceSpec, error)
-}
-
-type ServiceControl struct {
-	utils.Reconciler
-}
-
-func NewServiceControl(r utils.Reconciler) *ServiceControl {
-	return &ServiceControl{
-		Reconciler: r,
-	}
-}
-
-func (s *ServiceControl) GetServiceSpec(ctx context.Context, namespace string, fromTemplate v1alpha1.GenerateFromTemplate) (v1alpha1.ServiceSpec, error) {
-	template, err := templateutils.GetTemplate(ctx, s, namespace, fromTemplate.TemplateRef)
+func GetServiceSpec(ctx context.Context, r common.Reconciler, who metav1.Object, fromTemplate v1alpha1.GenerateFromTemplate) (v1alpha1.ServiceSpec, error) {
+	template, err := templateutils.GetTemplate(ctx, r, who, fromTemplate.TemplateRef)
 	if err != nil {
 		return v1alpha1.ServiceSpec{}, errors.Wrapf(err, "getTemplate error")
 	}
@@ -56,7 +41,7 @@ func (s *ServiceControl) GetServiceSpec(ctx context.Context, namespace string, f
 
 	scheme := templateutils.Scheme{
 		Inputs: template.Spec.Inputs,
-		Spec:   string(specBody),
+		Spec:   specBody,
 	}
 
 	var spec v1alpha1.ServiceSpec
@@ -68,8 +53,8 @@ func (s *ServiceControl) GetServiceSpec(ctx context.Context, namespace string, f
 	return spec, nil
 }
 
-func (s *ServiceControl) GetServiceSpecList(ctx context.Context, namespace string, fromTemplate v1alpha1.GenerateFromTemplate) ([]v1alpha1.ServiceSpec, error) {
-	template, err := templateutils.GetTemplate(ctx, s, namespace, fromTemplate.TemplateRef)
+func GetServiceSpecList(ctx context.Context, r common.Reconciler, who metav1.Object, fromTemplate v1alpha1.GenerateFromTemplate) ([]v1alpha1.ServiceSpec, error) {
+	template, err := templateutils.GetTemplate(ctx, r, who, fromTemplate.TemplateRef)
 	if err != nil {
 		return nil, errors.Wrapf(err, "template %s error", fromTemplate.TemplateRef)
 	}
@@ -86,7 +71,7 @@ func (s *ServiceControl) GetServiceSpecList(ctx context.Context, namespace strin
 	if err := fromTemplate.IterateInputs(func(userInputs map[string]string) error {
 		scheme := templateutils.Scheme{
 			Inputs: template.Spec.Inputs,
-			Spec:   string(specBody),
+			Spec:   specBody,
 		}
 
 		var spec v1alpha1.ServiceSpec

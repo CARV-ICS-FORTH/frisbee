@@ -22,13 +22,11 @@ import (
 	"time"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	chaosutils "github.com/carv-ics-forth/frisbee/controllers/chaos/utils"
-	serviceutils "github.com/carv-ics-forth/frisbee/controllers/service/utils"
-	"github.com/carv-ics-forth/frisbee/controllers/utils"
-	"github.com/carv-ics-forth/frisbee/controllers/utils/configuration"
-	"github.com/carv-ics-forth/frisbee/controllers/utils/expressions"
-	"github.com/carv-ics-forth/frisbee/controllers/utils/lifecycle"
-	"github.com/carv-ics-forth/frisbee/controllers/utils/watchers"
+	"github.com/carv-ics-forth/frisbee/controllers/common"
+	"github.com/carv-ics-forth/frisbee/controllers/common/configuration"
+	"github.com/carv-ics-forth/frisbee/controllers/common/expressions"
+	"github.com/carv-ics-forth/frisbee/controllers/common/lifecycle"
+	"github.com/carv-ics-forth/frisbee/controllers/common/watchers"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -55,9 +53,6 @@ type Controller struct {
 	logr.Logger
 
 	clusterView lifecycle.Classifier
-
-	serviceControl serviceutils.ServiceControlInterface
-	chaosControl   chaosutils.ChaosControlInterface
 }
 
 func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -68,7 +63,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	var cr v1alpha1.TestPlan
 
 	var requeue bool
-	result, err := utils.Reconcile(ctx, r, req, &cr, &requeue)
+	result, err := common.Reconcile(ctx, r, req, &cr, &requeue)
 
 	if requeue {
 		return result, errors.Wrapf(err, "initialization error")
@@ -108,9 +103,9 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	*/
 	cr.SetReconcileStatus(r.updateLifecycle(&cr, r.clusterView))
 
-	if err := utils.UpdateStatus(ctx, r, &cr); err != nil {
+	if err := common.UpdateStatus(ctx, r, &cr); err != nil {
 		r.Info("update status error. retry", "object", cr.GetName(), "err", err)
-		return utils.RequeueAfter(time.Second)
+		return common.RequeueAfter(time.Second)
 	}
 
 	/*
@@ -125,7 +120,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			"message", cr.Status.Message,
 		)
 
-		return utils.Stop()
+		return common.Stop()
 	}
 
 	/*
@@ -143,22 +138,22 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		for _, job := range r.clusterView.SuccessfulJobs() {
 			expressions.UnsetAlert(job)
 
-			utils.Delete(ctx, r, job)
+			common.Delete(ctx, r, job)
 		}
 
-		return utils.Stop()
+		return common.Stop()
 	}
 
 	if cr.Status.Phase.Is(v1alpha1.PhaseFailed) {
 		if err := r.HasFailed(ctx, &cr, r.clusterView); err != nil {
-			return utils.RequeueAfter(time.Second)
+			return common.RequeueAfter(time.Second)
 		}
 
-		return utils.Stop()
+		return common.Stop()
 	}
 
 	if cr.Status.Phase.Is(v1alpha1.PhaseRunning) {
-		return utils.Stop()
+		return common.Stop()
 	}
 
 	if cr.Status.Phase.Is(v1alpha1.PhaseUninitialized) {
@@ -192,12 +187,12 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if len(actionList) == 0 {
 		if nextRun.IsZero() {
 			// nothing to do on this cycle. wait the next cycle trigger by watchers.
-			return utils.Stop()
+			return common.Stop()
 		}
 
 		r.Logger.Info("no upcoming logical execution, sleeping until", "next", nextRun)
 
-		return utils.RequeueAfter(time.Until(nextRun))
+		return common.RequeueAfter(time.Until(nextRun))
 	}
 
 	if err := r.RunActions(ctx, &cr, actionList); err != nil {
@@ -230,9 +225,9 @@ func (r *Controller) Initialize(ctx context.Context, t *v1alpha1.TestPlan) error
 
 		/* Inherit the metadata of the test plan. This label will be adopted by all children objects of this workflow.
 		 */
-		utils.AppendLabel(t, v1alpha1.LabelPartOfPlan, t.GetName())
+		common.AppendLabel(t, v1alpha1.LabelPartOfPlan, t.GetName())
 
-		if err := utils.Update(ctx, r, t); err != nil {
+		if err := common.Update(ctx, r, t); err != nil {
 			return errors.Wrap(err, "cannot update metadata")
 		}
 	}
@@ -353,40 +348,40 @@ func (r *Controller) HasFailed(ctx context.Context, t *v1alpha1.TestPlan, cluste
 
 	// Remove the non-failed components. Leave the failed jobs and system jobs for postmortem analysis.
 	for _, job := range clusterView.PendingJobs() {
-		if utils.IsSystemService(job) {
+		if common.IsSystemService(job) {
 			continue // System jobs should not be deleted
 		}
 
 		r.GetEventRecorderFor("").Event(job, corev1.EventTypeWarning, "Terminating", t.Status.Message)
 
-		utils.Delete(ctx, r, job)
+		common.Delete(ctx, r, job)
 	}
 
 	for _, job := range clusterView.RunningJobs() {
-		if utils.IsSystemService(job) {
+		if common.IsSystemService(job) {
 			continue // System jobs should not be deleted
 		}
 
 		r.GetEventRecorderFor("").Event(job, corev1.EventTypeWarning, "Terminating", t.Status.Message)
 
-		utils.Delete(ctx, r, job)
+		common.Delete(ctx, r, job)
 	}
 
 	for _, job := range clusterView.SuccessfulJobs() {
-		if utils.IsSystemService(job) {
+		if common.IsSystemService(job) {
 			continue // System jobs should not be deleted
 		}
 
 		r.GetEventRecorderFor("").Event(job, corev1.EventTypeWarning, "Terminating", t.Status.Message)
 
-		utils.Delete(ctx, r, job)
+		common.Delete(ctx, r, job)
 	}
 
 	// Suspend the workflow from creating new job.
 	suspend := true
 	t.Spec.Suspend = &suspend
 
-	if err := utils.Update(ctx, r, t); err != nil {
+	if err := common.Update(ctx, r, t); err != nil {
 		return errors.Wrapf(err, "unable to suspend execution for '%s'", t.GetName())
 	}
 
@@ -413,7 +408,7 @@ func (r *Controller) RunActions(ctx context.Context, t *v1alpha1.TestPlan, actio
 			return errors.Wrapf(err, "cannot run action [%s]", action.Name)
 		}
 
-		if err := utils.Create(ctx, r, t, job); err != nil {
+		if err := common.Create(ctx, r, t, job); err != nil {
 			return errors.Wrapf(err, "execution error for action %s", action.Name)
 		}
 
@@ -474,9 +469,6 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 		Manager: mgr,
 		Logger:  logger.WithName("testplan"),
 	}
-
-	r.serviceControl = serviceutils.NewServiceControl(r)
-	r.chaosControl = chaosutils.NewChaosControl(r)
 
 	gvk := v1alpha1.GroupVersion.WithKind("TestPlan")
 

@@ -90,16 +90,20 @@ for [CockroachDB](https://github.com/CARV-ICS-FORTH/frisbee/tree/main/charts/coc
 > [*CockroachDB*](https://github.com/cockroachdb/cockroach) is a distributed database with standard SQL for cloud
 > applications.
 
-#### 1. Create a namespace
+#### 1. Prepare a namespace for the SUT
 
 Firstly, we need to create a dedicated namespace for the test.
 
-The different namespaces allows us to run multiple tests in parallel
+The different namespaces allows us to run multiple tests in parallel.
+
+However, because templates are isolated to the namespace they are installed to, we must install the system templates to
+the testing namespace.
+
+We combine the creation of the namespace and the installation of system templates (e.g, telemetry, chaos) in one
+command.
 
 ```bash
->> kubectl create namespace mytest
-
-namespace/mytest created
+>> helm upgrade --install --wait my-system ./charts/system --debug -n mytest --create-namespace
 ```
 
 #### 2. Deploy the SUT
@@ -289,4 +293,6 @@ automatically.
 
 For the time being, the safest to run multiple experiments is to run each test on a **dedicated namespace**.
 
-To do so, you have to repeat this tutorial, replacing the `-n` flag with a unique namespace. 
+To do so, you have to repeat this tutorial, replacing the  `-n ....`  flag with a different namespace.
+
+## Bare-Metal Deployment

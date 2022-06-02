@@ -21,10 +21,13 @@ import (
 	"strings"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
+	chaosutils "github.com/carv-ics-forth/frisbee/controllers/chaos/utils"
+	"github.com/carv-ics-forth/frisbee/controllers/common/expressions"
+	"github.com/carv-ics-forth/frisbee/controllers/common/lifecycle"
+	serviceutils "github.com/carv-ics-forth/frisbee/controllers/service/utils"
 	"github.com/carv-ics-forth/frisbee/controllers/testplan/grafana"
-	"github.com/carv-ics-forth/frisbee/controllers/utils/expressions"
-	"github.com/carv-ics-forth/frisbee/controllers/utils/lifecycle"
 	"github.com/pkg/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/validation"
 )
 
@@ -48,7 +51,7 @@ func (r *Controller) Validate(ctx context.Context, plan *v1alpha1.TestPlan, clus
 			return errors.Wrapf(err, "assertion error for action [%s]", actionName)
 		}
 
-		if err := r.CheckTemplateRef(ctx, plan.GetNamespace(), action); err != nil {
+		if err := r.CheckTemplateRef(ctx, plan, action); err != nil {
 			return errors.Wrapf(err, "template reference error for action [%s]", actionName)
 		}
 
@@ -168,24 +171,24 @@ func CheckAssertions(action *v1alpha1.Action, state lifecycle.ClassifierReader) 
 	return nil
 }
 
-func (r *Controller) CheckTemplateRef(ctx context.Context, nm string, action *v1alpha1.Action) error {
+func (r *Controller) CheckTemplateRef(ctx context.Context, who metav1.Object, action *v1alpha1.Action) error {
 	switch action.ActionType {
 	case v1alpha1.ActionService:
-		if _, err := r.serviceControl.GetServiceSpec(ctx, nm, *action.Service); err != nil {
+		if _, err := serviceutils.GetServiceSpec(ctx, r, who, *action.Service); err != nil {
 			return errors.Wrapf(err, "cannot retrieve service spec")
 		}
 	case v1alpha1.ActionCluster:
-		if _, err := r.serviceControl.GetServiceSpec(ctx, nm, action.Cluster.GenerateFromTemplate); err != nil {
+		if _, err := serviceutils.GetServiceSpec(ctx, r, who, action.Cluster.GenerateFromTemplate); err != nil {
 			return errors.Wrapf(err, "cannot retrieve cluster spec")
 		}
 
 	case v1alpha1.ActionChaos:
-		if _, err := r.chaosControl.GetChaosSpec(ctx, nm, *action.Chaos); err != nil {
+		if _, err := chaosutils.GetChaosSpec(ctx, r, who, *action.Chaos); err != nil {
 			return errors.Wrapf(err, "cannot retrieve chaos spec")
 		}
 
 	case v1alpha1.ActionCascade:
-		if _, err := r.chaosControl.GetChaosSpec(ctx, nm, action.Cascade.GenerateFromTemplate); err != nil {
+		if _, err := chaosutils.GetChaosSpec(ctx, r, who, action.Cascade.GenerateFromTemplate); err != nil {
 			return errors.Wrapf(err, "cannot retrieve cascade spec")
 		}
 	default:

@@ -23,15 +23,15 @@ import (
 	"path/filepath"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
+	"github.com/carv-ics-forth/frisbee/controllers/common"
+	"github.com/carv-ics-forth/frisbee/controllers/common/configuration"
+	"github.com/carv-ics-forth/frisbee/controllers/common/expressions"
+	serviceutils "github.com/carv-ics-forth/frisbee/controllers/service/utils"
 	"github.com/carv-ics-forth/frisbee/controllers/testplan/grafana"
-	"github.com/carv-ics-forth/frisbee/controllers/utils"
-	"github.com/carv-ics-forth/frisbee/controllers/utils/configuration"
-	"github.com/carv-ics-forth/frisbee/controllers/utils/expressions"
 	"github.com/carv-ics-forth/frisbee/pkg/netutils"
 	"github.com/dustinkirkland/golang-petname"
 	notifier "github.com/golanghelper/grafana-webhook"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 	netv1 "k8s.io/api/networking/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -54,6 +54,14 @@ const (
 	notRandomLogViewerName = "logviewer"
 )
 
+var (
+	PrometheusPort = int64(9090)
+
+	GrafanaPort = int64(3000)
+
+	LogviewerPort = int64(80)
+)
+
 var pathType = netv1.PathTypePrefix
 
 func (r *Controller) StartTelemetry(ctx context.Context, t *v1alpha1.TestPlan) error {
@@ -64,10 +72,6 @@ func (r *Controller) StartTelemetry(ctx context.Context, t *v1alpha1.TestPlan) e
 
 	if len(telemetryAgents) == 0 { // there is no need to import the stack of the is no dashboard.
 		return nil
-	}
-
-	if err := r.copyEnvironment(ctx, t); err != nil {
-		return errors.Wrapf(err, "environment error")
 	}
 
 	if err := r.installPrometheus(ctx, t); err != nil {
@@ -85,67 +89,7 @@ func (r *Controller) StartTelemetry(ctx context.Context, t *v1alpha1.TestPlan) e
 	return nil
 }
 
-func (r *Controller) copyEnvironment(ctx context.Context, t *v1alpha1.TestPlan) error {
-	/*
-		For the telemetry we must differentiate between the installation namespace (which holds the templates and
-		configuration files for Prometheus, Grafana, and agents, and the testing namespace on which the respective
-		objects will be created.
-
-		Importantly, the configurations cannot be shared among different namespaces. Therefore, the only way
-		is to copy them from the installation namespace to the testing namespace.
-
-		The same is for ingress. Every different testplan must have its own ingress that points to the create services.
-	*/
-	installationNamespace := configuration.Global.Namespace
-
-	// nothing to do. the test runs on the default installation namespace.
-	if t.GetNamespace() == installationNamespace {
-		return nil
-	}
-
-	copyConfigMap := func(name string) error {
-		var config corev1.ConfigMap
-
-		key := client.ObjectKey{
-			Namespace: installationNamespace,
-			Name:      name,
-		}
-
-		if err := r.GetClient().Get(ctx, key, &config); err != nil {
-			return errors.Wrapf(err, "cannot get config '%s'", name)
-		}
-
-		config.SetResourceVersion("")
-		config.SetNamespace(t.GetNamespace())
-
-		if err := utils.Create(ctx, r, t, &config); err != nil {
-			return errors.Wrapf(err, "cannot create config '%s'", name)
-		}
-
-		return nil
-	}
-
-	if err := copyConfigMap(configuration.PrometheusConfig); err != nil {
-		return errors.Wrapf(err, "cannot copy config '%s' from '%s' to '%s'", configuration.PrometheusConfig,
-			installationNamespace, t.GetNamespace())
-	}
-
-	if err := copyConfigMap(configuration.GrafanaConfig); err != nil {
-		return errors.Wrapf(err, "cannot copy config '%s' from '%s' to '%s'", configuration.GrafanaConfig,
-			installationNamespace, t.GetNamespace())
-	}
-
-	if err := copyConfigMap(configuration.AgentConfig); err != nil {
-		return errors.Wrapf(err, "cannot copy config '%s' from '%s' to '%s'", configuration.AgentConfig,
-			installationNamespace, t.GetNamespace())
-	}
-
-	return nil
-}
-
 func (r *Controller) installPrometheus(ctx context.Context, t *v1alpha1.TestPlan) error {
-	installationNamespace := configuration.Global.Namespace
-
 	var prometheus v1alpha1.Service
 
 	prometheus.SetName(notRandomPrometheusName)
@@ -162,7 +106,7 @@ func (r *Controller) installPrometheus(ctx context.Context, t *v1alpha1.TestPlan
 			return errors.Wrapf(err, "template validation")
 		}
 
-		spec, err := r.serviceControl.GetServiceSpec(ctx, installationNamespace, *fromtemplate)
+		spec, err := serviceutils.GetServiceSpec(ctx, r, t, *fromtemplate)
 		if err != nil {
 			return errors.Wrapf(err, "cannot get spec")
 		}
@@ -170,18 +114,16 @@ func (r *Controller) installPrometheus(ctx context.Context, t *v1alpha1.TestPlan
 		spec.DeepCopyInto(&prometheus.Spec)
 	}
 
-	if err := utils.Create(ctx, r, t, &prometheus); err != nil {
+	if err := common.Create(ctx, r, t, &prometheus); err != nil {
 		return errors.Wrapf(err, "cannot create %s", prometheus.GetName())
 	}
 
-	t.Status.PrometheusEndpoint = utils.GenerateEndpoint(notRandomPrometheusName, t.GetName(), configuration.Global.PrometheusPort)
+	t.Status.PrometheusEndpoint = common.GenerateEndpoint(notRandomPrometheusName, t.GetNamespace(), PrometheusPort)
 
 	return nil
 }
 
-func (r *Controller) installGrafana(ctx context.Context, t *v1alpha1.TestPlan, telemetryAgents []string) error {
-	installationNamespace := configuration.Global.Namespace
-
+func (r *Controller) installGrafana(ctx context.Context, t *v1alpha1.TestPlan, agentRefs []string) error {
 	var grafana v1alpha1.Service
 
 	grafana.SetName(notRandomGrafanaName)
@@ -198,23 +140,23 @@ func (r *Controller) installGrafana(ctx context.Context, t *v1alpha1.TestPlan, t
 			return errors.Wrapf(err, "template validation")
 		}
 
-		spec, err := r.serviceControl.GetServiceSpec(ctx, installationNamespace, *fromtemplate)
+		spec, err := serviceutils.GetServiceSpec(ctx, r, t, *fromtemplate)
 		if err != nil {
 			return errors.Wrapf(err, "cannot get spec")
 		}
 
 		spec.DeepCopyInto(&grafana.Spec)
 
-		if err := r.importDashboards(ctx, t, &grafana.Spec, telemetryAgents); err != nil {
-			return errors.Wrapf(err, "import telemetryAgents")
+		if err := r.importDashboards(ctx, t, &grafana.Spec, agentRefs); err != nil {
+			return errors.Wrapf(err, "import dashboards")
 		}
 	}
 
-	if err := utils.Create(ctx, r, t, &grafana); err != nil {
+	if err := common.Create(ctx, r, t, &grafana); err != nil {
 		return errors.Wrapf(err, "cannot create %s", grafana.GetName())
 	}
 
-	t.Status.GrafanaEndpoint = utils.GenerateEndpoint(notRandomGrafanaName, t.GetName(), configuration.Global.GrafanaPort)
+	t.Status.GrafanaEndpoint = common.GenerateEndpoint(notRandomGrafanaName, t.GetNamespace(), GrafanaPort)
 
 	return nil
 }
@@ -222,28 +164,18 @@ func (r *Controller) installGrafana(ctx context.Context, t *v1alpha1.TestPlan, t
 func (r *Controller) importDashboards(ctx context.Context, t *v1alpha1.TestPlan, spec *v1alpha1.ServiceSpec, telemetryAgents []string) error {
 	imported := make(map[string]struct{})
 
-	var namespace string
-
 	// iterate monitoring services
 	for _, agentRef := range telemetryAgents {
-		// search for the agent
-		if agentRef == configuration.AgentTemplate {
-			namespace = configuration.Global.Namespace
-		} else {
-			namespace = t.GetNamespace()
-		}
-
-		// the configuration name is expected to be in the form `agent.config'
 
 		var dashboards corev1.ConfigMap
 
 		key := client.ObjectKey{
-			Namespace: namespace,
+			Namespace: t.GetNamespace(),
 			Name:      agentRef + ".config",
 		}
 
 		if err := r.GetClient().Get(ctx, key, &dashboards); err != nil {
-			return errors.Wrapf(err, "cannot find configmap with telemetryAgents '%s'", key)
+			return errors.Wrapf(err, "cannot find configmap with telemetry agents '%s'", key)
 		}
 
 		// avoid duplicates that may be caused when multiple agents share the same dashboard
@@ -291,7 +223,7 @@ func (r *Controller) createIngress(ctx context.Context, t *v1alpha1.TestPlan) er
 
 	var ingress netv1.Ingress
 
-	ingress.SetName("ingress")
+	ingress.SetName(t.GetName())
 	ingress.SetNamespace(t.GetNamespace())
 
 	ingress.Spec = netv1.IngressSpec{
@@ -341,7 +273,7 @@ func (r *Controller) createIngress(ctx context.Context, t *v1alpha1.TestPlan) er
 			},
 
 			{ // Create a placeholder for the logviewer.
-				Host: utils.GenerateEndpoint(notRandomLogViewerName, t.GetName(), configuration.Global.LogviewerPort),
+				Host: common.GenerateEndpoint(notRandomLogViewerName, t.GetNamespace(), LogviewerPort),
 				IngressRuleValue: netv1.IngressRuleValue{
 					HTTP: &netv1.HTTPIngressRuleValue{
 						Paths: []netv1.HTTPIngressPath{
@@ -364,7 +296,7 @@ func (r *Controller) createIngress(ctx context.Context, t *v1alpha1.TestPlan) er
 		},
 	}
 
-	if err := utils.Create(ctx, r, t, &ingress); err != nil {
+	if err := common.Create(ctx, r, t, &ingress); err != nil {
 		return errors.Wrapf(err, "cannot create ingress")
 	}
 
@@ -390,7 +322,7 @@ func (r *Controller) ImportTelemetryDashboards(ctx context.Context, plan *v1alph
 			continue
 		}
 
-		spec, err := r.serviceControl.GetServiceSpec(ctx, plan.GetNamespace(), *fromTemplate)
+		spec, err := serviceutils.GetServiceSpec(ctx, r, plan, *fromTemplate)
 		if err != nil {
 			return nil, errors.Wrapf(err, "cannot retrieve service spec")
 		}
@@ -427,8 +359,6 @@ func (r *Controller) ConnectToGrafana(ctx context.Context, t *v1alpha1.TestPlan)
 
 var WebhookURL string
 
-var WebhookPort = "6666"
-
 // CreateWebhookServer  creates a Webhook for listening for events from Grafana *
 func (r *Controller) CreateWebhookServer(ctx context.Context) error {
 	webhook := http.DefaultServeMux
@@ -443,20 +373,47 @@ func (r *Controller) CreateWebhookServer(ctx context.Context) error {
 
 	// If the controller runs within the Kubernetes cluster, we use the assigned name as the advertised host
 	// If the controller runs externally to the Kubernetes cluster, we use the public IP of the local machine.
-	if configuration.Global.AdvertisedHost == "" {
+	if configuration.Global.DeveloperMode {
 		ip, err := netutils.GetPublicIP()
 		if err != nil {
 			return errors.Wrapf(err, "cannot get controller's public ip")
 		}
 
-		WebhookURL = fmt.Sprintf("http://%s:%s", ip.String(), WebhookPort)
+		WebhookURL = fmt.Sprintf("http://%s:%d", ip.String(), configuration.Global.WebhookPort)
 	} else {
-		WebhookURL = fmt.Sprintf("http://%s:%s", configuration.Global.AdvertisedHost, WebhookPort)
+		WebhookURL = fmt.Sprintf("http://%s:%d", configuration.Global.ControllerName, configuration.Global.WebhookPort)
 	}
 
-	logrus.Warn("START WEBHOOK AT ", WebhookURL)
+	// Start the server
+	srv := &http.Server{
+		Addr:    fmt.Sprintf(":%d", configuration.Global.WebhookPort),
+		Handler: webhook,
+	}
 
-	go http.ListenAndServe(":"+WebhookPort, webhook)
+	idleConnsClosed := make(chan error)
+
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			idleConnsClosed <- err
+		}
+	}()
+
+	go func() {
+		select {
+		case <-ctx.Done():
+			r.Logger.Info("shutting down webhook server")
+
+		case err := <-idleConnsClosed:
+			r.Logger.Error(err, "error on webhook server")
+		}
+
+		// TODO: use a context with reasonable timeout
+		if err := srv.Shutdown(ctx); err != nil {
+			// Error from closing listeners, or context timeout
+			r.Logger.Error(err, "error shutting down the HTTP server")
+		}
+		close(idleConnsClosed)
+	}()
 
 	return nil
 }

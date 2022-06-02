@@ -4,7 +4,7 @@ kind: Ingress
 metadata:
   name: insecure-ingress
 spec:
-  ingressClassName: {{.Values.telemetry.ingressClass}}
+  ingressClassName: {{.Values.global.ingressClass}}
   rules:
     {{- if .Values.chaos.enabled }}
     - host: chaos-frisbee.{{.Values.global.domainName}}

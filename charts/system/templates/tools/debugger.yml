@@ -1,0 +1,21 @@
+---
+apiVersion: frisbee.io/v1alpha1
+kind: Template
+metadata:
+  name: default.tools.debugger
+spec:
+  service:
+    containers: # Container(s)
+      - name: app
+        image: busybox
+        securityContext:
+          privileged: true
+        command:
+          - /bin/sh   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
+            set -eum
+            cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
+            trap "touch /dev/shm/stop" EXIT # Sidecar: use it to terminate itself when this container has exit.
+
+            tail -f /dev/null

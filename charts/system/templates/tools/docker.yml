@@ -1,0 +1,35 @@
+---
+apiVersion: frisbee.io/v1alpha1
+kind: Template
+metadata:
+  name: tools.docker
+spec:
+  service:
+    volumes:
+      - name: docker-sock
+        hostPath:
+          path: /var/run
+      - name: docker-graph-storage
+        emptyDir: { }
+    containers: # Container(s)
+      - name: app
+        image: 192.168.1.213:5000/docker:latest
+        securityContext:
+          privileged: true
+        volumeMounts:
+          - name: docker-sock
+            mountPath: /var/run
+          - name: docker-graph-storage
+            mountPath: /var/lib/docker
+        env:
+          - name: DOCKER_HOST
+            value: tcp://localhost:2375
+        command:
+          - /bin/sh   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
+            set -eum
+            cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
+            trap "touch /dev/shm/stop" EXIT # Sidecar: use it to terminate itself when this container has exit.
+
+            tail -f /dev/null

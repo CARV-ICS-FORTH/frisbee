@@ -32,31 +32,31 @@ func TestGenerateSpecFromScheme(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    templateutils.GenericSpec
+		want    templateutils.ExpandedSpecBody
 		wantErr bool
 	}{
 		{
 			name: "single",
 			args: args{tspec: &templateutils.Scheme{
 				Inputs: &v1alpha1.Inputs{Parameters: map[string]string{"slaves": "slave0"}},
-				Spec:   `{{.Inputs.Parameters.slaves}}`,
+				Spec:   []byte(`{{.Inputs.Parameters.slaves}}`),
 			}},
-			want:    templateutils.GenericSpec("slave0"),
+			want:    templateutils.ExpandedSpecBody("slave0"),
 			wantErr: false,
 		},
 		{
 			name: "space-newlines",
 			args: args{tspec: &templateutils.Scheme{
 				Inputs: &v1alpha1.Inputs{Parameters: map[string]string{"slaves": "slave0 slave1 slave2"}},
-				Spec: `
+				Spec: []byte(`
 cat > test.yml <<EOF
 	{{- range splitList " " .Inputs.Parameters.slaves}}
 	rs.Add( {{.}} )
 	{{- end}}
 EOF
-`,
+`),
 			}},
-			want: templateutils.GenericSpec(
+			want: templateutils.ExpandedSpecBody(
 				`
 cat > test.yml <<EOF
 	rs.Add( slave0 )
@@ -70,9 +70,9 @@ EOF
 			name: "comma-nonewlines",
 			args: args{tspec: &templateutils.Scheme{
 				Inputs: &v1alpha1.Inputs{Parameters: map[string]string{"slaves": "slave0,slave1,slave2"}},
-				Spec:   `{{range splitList "," .Inputs.Parameters.slaves -}}{{.}}{{- end -}}`,
+				Spec:   []byte(`{{range splitList "," .Inputs.Parameters.slaves -}}{{.}}{{- end -}}`),
 			}},
-			want:    templateutils.GenericSpec("slave0slave1slave2"),
+			want:    templateutils.ExpandedSpecBody("slave0slave1slave2"),
 			wantErr: false,
 		},
 	}

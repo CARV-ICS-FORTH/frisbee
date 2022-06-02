@@ -22,12 +22,11 @@ import (
 	"time"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	chaosutils "github.com/carv-ics-forth/frisbee/controllers/chaos/utils"
-	"github.com/carv-ics-forth/frisbee/controllers/utils"
-	"github.com/carv-ics-forth/frisbee/controllers/utils/expressions"
-	"github.com/carv-ics-forth/frisbee/controllers/utils/lifecycle"
-	"github.com/carv-ics-forth/frisbee/controllers/utils/scheduler"
-	"github.com/carv-ics-forth/frisbee/controllers/utils/watchers"
+	"github.com/carv-ics-forth/frisbee/controllers/common"
+	"github.com/carv-ics-forth/frisbee/controllers/common/expressions"
+	"github.com/carv-ics-forth/frisbee/controllers/common/lifecycle"
+	"github.com/carv-ics-forth/frisbee/controllers/common/scheduler"
+	"github.com/carv-ics-forth/frisbee/controllers/common/watchers"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -46,8 +45,6 @@ type Controller struct {
 	logr.Logger
 
 	state lifecycle.Classifier
-
-	chaosControl chaosutils.ChaosControlInterface
 }
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
@@ -60,7 +57,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	var cr v1alpha1.Cascade
 
 	var requeue bool
-	result, err := utils.Reconcile(ctx, r, req, &cr, &requeue)
+	result, err := common.Reconcile(ctx, r, req, &cr, &requeue)
 
 	if requeue {
 		return result, errors.Wrapf(err, "initialization error")
@@ -133,9 +130,9 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	*/
 	cr.SetReconcileStatus(calculateLifecycle(&cr, r.state))
 
-	if err := utils.UpdateStatus(ctx, r, &cr); err != nil {
+	if err := common.UpdateStatus(ctx, r, &cr); err != nil {
 		r.Info("update status error. retry", "object", cr.GetName(), "err", err)
-		return utils.RequeueAfter(time.Second)
+		return common.RequeueAfter(time.Second)
 	}
 
 	/*
@@ -150,7 +147,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			"message", cr.Status.Message,
 		)
 
-		return utils.Stop()
+		return common.Stop()
 	}
 
 	/*
@@ -176,10 +173,10 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			status for higher-entities like the TestPlan.
 		*/
 		for _, job := range r.state.SuccessfulJobs() {
-			utils.Delete(ctx, r, job)
+			common.Delete(ctx, r, job)
 		}
 
-		return utils.Stop()
+		return common.Stop()
 	}
 
 	if cr.Status.Phase.Is(v1alpha1.PhaseFailed) {
@@ -193,28 +190,28 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		// Remove the non-failed components. Leave the failed jobs and system jobs for postmortem analysis.
 		for _, job := range r.state.PendingJobs() {
-			utils.Delete(ctx, r, job)
+			common.Delete(ctx, r, job)
 		}
 
 		for _, job := range r.state.RunningJobs() {
-			utils.Delete(ctx, r, job)
+			common.Delete(ctx, r, job)
 		}
 
 		for _, job := range r.state.SuccessfulJobs() {
-			utils.Delete(ctx, r, job)
+			common.Delete(ctx, r, job)
 		}
 
 		// Block from creating further jobs
 		suspend := true
 		cr.Spec.Suspend = &suspend
 
-		if err := utils.Update(ctx, r, &cr); err != nil {
+		if err := common.Update(ctx, r, &cr); err != nil {
 			r.Error(err, "unable to suspend execution", "instance", cr.GetName())
 
-			return utils.RequeueAfter(time.Second)
+			return common.RequeueAfter(time.Second)
 		}
 
-		return utils.Stop()
+		return common.Stop()
 	}
 
 	/*
@@ -261,7 +258,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "status update"))
 		}
 
-		return utils.Stop()
+		return common.Stop()
 	}
 
 	/*
@@ -277,7 +274,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			"cascade", cr.GetName(),
 		)
 
-		return utils.Stop()
+		return common.Stop()
 	}
 
 	/*
@@ -302,7 +299,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	*/
 	nextJob := getJob(&cr, nextExpectedJob)
 
-	if err := utils.Create(ctx, r, &cr, nextJob); err != nil {
+	if err := common.Create(ctx, r, &cr, nextJob); err != nil {
 		return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot create job"))
 	}
 
@@ -360,8 +357,6 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 		Manager: mgr,
 		Logger:  logger.WithName("cascade"),
 	}
-
-	r.chaosControl = chaosutils.NewChaosControl(r)
 
 	gvk := v1alpha1.GroupVersion.WithKind("Cascade")
 

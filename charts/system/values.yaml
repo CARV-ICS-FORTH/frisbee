@@ -1,0 +1,10 @@
+## @section Frisbee Telemetry parameters
+
+## @param telemetry.honorTimestamp Use the timestamps of the metrics exposed by the agent (time-drifts)
+## @param telemetry.prometheusPort Listening port for Prometheus
+## @param telemetry.grafanaPort Listening port for Grafana
+telemetry:
+  honorTimestamp: true
+  prometheusPort: 9090
+  grafanaPort: 3000
+  logviewerPort: 80
