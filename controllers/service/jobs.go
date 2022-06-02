@@ -210,17 +210,24 @@ func decoratePod(ctx context.Context, r *Controller, cr *v1alpha1.Service) error
 		}
 	}
 
+	if len(cr.Spec.Decorators.Telemetry) > 0 {
+		//  The sidecar makes use of the shareProcessNamespace option to access the host cgroup metrics.
+		share := true
+		cr.Spec.ShareProcessNamespace = &share
+	}
+
 	// import telemetry agents
 	if req := cr.Spec.Decorators.Telemetry; req != nil {
-		// import monitoring agents to the service
+		// import dashboards for monitoring agents to the service
 		for _, monRef := range req {
-			monSpec, err := serviceutils.GetServiceSpec(ctx, r, cr.GetNamespace(), v1alpha1.GenerateFromTemplate{TemplateRef: monRef})
+			monSpec, err := serviceutils.GetServiceSpec(ctx, r, cr, v1alpha1.GenerateFromTemplate{TemplateRef: monRef})
 			if err != nil {
 				return errors.Wrapf(err, "cannot get monitor")
 			}
 
 			if len(monSpec.Containers) != 1 {
-				return errors.Wrapf(err, "invalid agent %s", monRef)
+				return errors.Wrapf(err, "telemetry sidecar '%s' expected 1 container but got %d",
+					monRef, len(monSpec.Containers))
 			}
 
 			cr.Spec.Containers = append(cr.Spec.Containers, monSpec.Containers[0])

@@ -16,8 +16,6 @@ data:
 
   IngressClassName: {{.Values.global.ingressClass}}
 
-  PrometheusPort: {{.Values.telemetry.prometheusPort | int64 | quote}}
+  WebhookPort: {{.Values.operator.webhookPort | quote}}
 
-  GrafanaPort: {{.Values.telemetry.grafanaPort | int64 | quote}}
-
-  LogViewerPort: {{.Values.telemetry.grafanaPort | int64 | quote}}
+  ControllerName: {{.Values.operator.controllerName}}

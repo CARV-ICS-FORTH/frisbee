@@ -9,10 +9,10 @@ metadata:
 apiVersion: v1
 kind: Service
 metadata:
-  name: frisbee-operator
+  name: {{.Values.operator.controllerName}}
 spec:
   ports:
-    - port: 6666
+    - port: {{.Values.operator.webhookPort |quote}}
       protocol: TCP
   selector:
     control-plane: manager
@@ -36,7 +36,7 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: frisbee-operator
+  name: {{.Values.operator.controllerName}}
 spec:
   replicas: 1
   selector:
@@ -57,7 +57,7 @@ spec:
         - name: manager
           image: icsforth/frisbee-operator:latest
           ports:
-            - containerPort: 6666 # Receive alerts from Grafana
+            - containerPort: {{.Values.operator.webhookPort | int64}} # Receive alerts from Grafana
               name: webhook-grafana
             - containerPort: 9443 # Admission Webhooks
               name: webhook-service

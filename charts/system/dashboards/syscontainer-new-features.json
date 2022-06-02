@@ -87,7 +87,7 @@
   "gnetId": 315,
   "graphTooltip": 0,
   "id": 1,
-  "iteration": 1653408536849,
+  "iteration": 1654197827682,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -248,7 +248,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(max (machine_memory_bytes) by (node))",
+          "expr": "sum(machine_memory_bytes)",
           "instant": true,
           "interval": "",
           "intervalFactor": 1,
@@ -326,7 +326,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(max (container_fs_limit_bytes{id=\"/\",device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[a-zA-Z0-9]+)$\"}) by (node)) != 0",
+          "expr": "sum(container_fs_limit_bytes{id=\"/\",device=~\"^(^$)|(overlay_.*)|(/dev/[a-zA-Z0-9]+)$\"}) ",
           "format": "time_series",
           "hide": false,
           "instant": true,
@@ -699,12 +699,12 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(max (container_fs_usage_bytes{id=\"/\",device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[a-zA-Z0-9]+)$\"}) by (node))",
+          "expr": "sum(container_fs_usage_bytes{id=\"/\",device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[a-zA-Z0-9]+)$\"})",
           "instant": true,
           "interval": "",
           "intervalFactor": 1,
           "legendFormat": "",
-          "refId": "A",
+          "refId": "Used",
           "step": 10
         }
       ],
@@ -989,7 +989,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(process_resident_memory_bytes{node=~\"$node\"}) / max (machine_memory_bytes{node=~\"$node\"}) * 100",
+          "expr": "sum(container_memory_working_set_bytes{node=~\"$node\"}) / max (machine_memory_bytes{node=~\"$node\"}) * 100",
           "hide": false,
           "interval": "",
           "legendFormat": "",
@@ -1193,7 +1193,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "max(container_fs_limit_bytes{node=~\"$node\",id=\"/\",device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[a-zA-Z0-9]+)$\"}) by (device)",
+          "expr": "max(container_fs_limit_bytes{node=~\"$node\",id=\"/\",device=~\"^(^$)|(overlay_.*)|(/dev/[a-zA-Z0-9]+)$\"}) by (device)",
           "hide": false,
           "interval": "",
           "legendFormat": "{{device}}",
@@ -1723,7 +1723,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "rate(container_cpu_usage_seconds_total{node=~\"$node\", id=\"/\", instance=~\"$instance\"}[$interval]) * 100 != 0",
+          "expr": "rate(container_cpu_usage_seconds_total{node=~\"$node\", id=\"/\", instance=~\"$instance\"}[$interval]) != 0",
           "hide": false,
           "interval": "",
           "legendFormat": "{{instance}}",
@@ -1816,7 +1816,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(rate(container_cpu_system_seconds_total{node=~\"$node\", id=\"/\", instance=~\"$instance\"}[$interval])) by (instance) * 100  != 0 ",
+          "expr": "sum(rate(container_cpu_system_seconds_total{node=~\"$node\", id=\"/\", instance=~\"$instance\"}[$interval])) by (instance)   != 0 ",
           "hide": false,
           "instant": false,
           "interval": "",
@@ -1825,7 +1825,7 @@
         },
         {
           "exemplar": true,
-          "expr": "sum(rate(container_cpu_user_seconds_total{node=~\"$node\", id=\"/\", instance=~\"$instance\"}[$interval])) by (instance) * 100  != 0  ",
+          "expr": "sum(rate(container_cpu_user_seconds_total{node=~\"$node\", id=\"/\", instance=~\"$instance\"}[$interval])) by (instance)   != 0  ",
           "hide": false,
           "instant": false,
           "interval": "",
@@ -2015,7 +2015,7 @@
         },
         {
           "exemplar": true,
-          "expr": "max_over_time(container_memory_usage_bytes{node=~\"$node\", id=\"/\", instance=~\"$instance\"}[$interval])  != 0",
+          "expr": "sum_over_time(container_memory_usage_bytes{node=~\"$node\", id=\"/\", instance=~\"$instance\"}[$interval])  != 0",
           "hide": false,
           "instant": false,
           "interval": "",
@@ -2081,32 +2081,7 @@
           },
           "unit": "decbytes"
         },
-        "overrides": [
-          {
-            "__systemRef": "hideSeriesFrom",
-            "matcher": {
-              "id": "byNames",
-              "options": {
-                "mode": "exclude",
-                "names": [
-                  "fio (Hot)"
-                ],
-                "prefix": "All except:",
-                "readOnly": true
-              }
-            },
-            "properties": [
-              {
-                "id": "custom.hideFrom",
-                "value": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": true
-                }
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 8,
@@ -2477,21 +2452,21 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(rate(container_fs_writes_bytes_total{ node=~\"$node\", id=\"/\", instance=~\"$instance\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[a-zA-Z0-9]+)$\"}[$interval])) by (instance) != 0",
+          "expr": "sum(rate(container_fs_writes_bytes_total{ node=~\"$node\", id=\"/\", instance=~\"$instance\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[a-zA-Z0-9]+)$\"}[$interval])) by (instance,device) != 0",
           "hide": false,
           "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "{{instance}}  (Write)",
+          "legendFormat": "{{instance}}:{{device}}  (Write)",
           "refId": "write"
         },
         {
           "exemplar": true,
-          "expr": "- sum(rate(container_fs_reads_bytes_total{node=~\"$node\", id=\"/\", instance=~\"$instance\",  device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[a-zA-Z0-9]+)$\"}[$interval])) by (instance)  != 0",
+          "expr": "sum(rate(container_fs_reads_bytes_total{node=~\"$node\", id=\"/\", instance=~\"$instance\",  device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[a-zA-Z0-9]+)$\"}[$interval])) by (instance, device)  != 0",
           "hide": false,
           "instant": false,
           "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "{{instance}} (Read)",
+          "legendFormat": "{{instance}}:{{device}}  (Read)",
           "refId": "read"
         }
       ],
@@ -2505,7 +2480,6 @@
     },
     {
       "datasource": "Prometheus",
-      "description": "This value counts the number of I/O requests that have been issued to the device driver but have not yet completed. It does not include I/O requests that are in the queue but not yet issued to the device driver",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2553,7 +2527,7 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "decbytes"
         },
         "overrides": []
       },
@@ -2563,15 +2537,13 @@
         "x": 0,
         "y": 95
       },
-      "id": 118,
+      "id": 113,
       "links": [],
       "options": {
         "legend": {
           "calcs": [
-            "min",
-            "max",
             "mean",
-            "count"
+            "lastNotNull"
           ],
           "displayMode": "table",
           "placement": "bottom"
@@ -2580,22 +2552,22 @@
           "mode": "single"
         }
       },
-      "pluginVersion": "8.2.3",
+      "pluginVersion": "8.2.1",
       "targets": [
         {
           "exemplar": true,
-          "expr": "container_fs_io_current{node=~\"$node\", id=\"/\", instance=~\"$instance\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[a-zA-Z0-9]+)$\"} != 0",
-          "format": "time_series",
+          "expr": "sum(rate(container_blkio_device_usage_total{node=~\"$node\", id=\"/\", instance=~\"$instance\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[a-zA-Z0-9]+)$\"}[$interval])) by (instance, device, operation) != 0",
           "hide": false,
           "interval": "",
-          "legendFormat": "{{instance}}",
-          "refId": "current"
+          "intervalFactor": 1,
+          "legendFormat": "{{instance}}:{{device}}  ({{operation}})",
+          "refId": "ops"
         }
       ],
       "thresholds": [],
       "timeFrom": null,
       "timeShift": null,
-      "title": "IOPS In Progress ",
+      "title": "Disk Throughput (avg $interval)",
       "transformations": [],
       "transparent": true,
       "type": "timeseries"
@@ -2683,23 +2655,23 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(rate(container_fs_writes_total{node=~\"$node\", id=\"/\", instance=~\"$instance\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[a-zA-Z0-9]+)$\"}[$interval])) by (instance)  != 0",
+          "expr": "sum(rate(container_fs_writes_total{node=~\"$node\", id=\"/\", instance=~\"$instance\", device=~\"^(^$)|(overlay_.*)|(/dev/mappper/.*)|(/dev/[a-zA-Z0-9]+)$\"}[$interval])) by (instance,device)  != 0",
           "format": "time_series",
           "hide": false,
           "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "{{instance}}  (Write)",
+          "legendFormat": "{{instance}}:{{device}}  (Write)",
           "refId": "write"
         },
         {
           "exemplar": true,
-          "expr": "sum(rate(container_fs_reads_total{node=~\"$node\", id=\"/\", instance=~\"$instance\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[a-zA-Z0-9]+)$\"}[$interval])) by (instance)  != 0",
+          "expr": "sum(rate(container_fs_reads_total{node=~\"$node\", id=\"/\", instance=~\"$instance\", device=~\"^(^$)|(overlay_.*)|(/dev/mappper/.*)|(/dev/[a-zA-Z0-9]+)$\"}[$interval])) by (instance,device)  != 0",
           "format": "time_series",
           "hide": false,
           "instant": false,
           "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "{{instance}} (Read)",
+          "legendFormat": "{{instance}}:{{device}} (Read)",
           "refId": "read"
         }
       ],
@@ -2707,6 +2679,104 @@
       "timeFrom": null,
       "timeShift": null,
       "title": "Completed IOPS (avg $interval)",
+      "transformations": [],
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "This value counts the number of I/O requests that have been issued to the device driver but have not yet completed. It does not include I/O requests that are in the queue but not yet issued to the device driver",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 24,
+        "x": 0,
+        "y": 117
+      },
+      "id": 118,
+      "links": [],
+      "options": {
+        "legend": {
+          "calcs": [
+            "min",
+            "max",
+            "mean",
+            "count"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "pluginVersion": "8.2.3",
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "container_fs_io_current{node=~\"$node\", id=\"/\", instance=~\"$instance\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[a-zA-Z0-9]+)$\"} != 0",
+          "format": "time_series",
+          "hide": false,
+          "instant": false,
+          "interval": "",
+          "legendFormat": "{{instance}}:{{device}}",
+          "refId": "current"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "IOPS In Progress ",
       "transformations": [],
       "transparent": true,
       "type": "timeseries"
@@ -2769,7 +2839,7 @@
         "h": 11,
         "w": 24,
         "x": 0,
-        "y": 117
+        "y": 128
       },
       "id": 114,
       "links": [],
@@ -2790,21 +2860,21 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(rate(container_fs_sector_writes_total{node=~\"$node\", id=\"/\", instance=~\"$instance\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[a-zA-Z0-9]+)$\", }[$interval])) by (instance)  != 0",
+          "expr": "sum(rate(container_fs_sector_writes_total{node=~\"$node\", id=\"/\", instance=~\"$instance\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[a-zA-Z0-9]+)$\", }[$interval])) by (instance,device)  != 0",
           "hide": false,
           "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "{{instance}}  (Write)",
+          "legendFormat": "{{instance}}:{{device}} (Write)",
           "refId": "write"
         },
         {
           "exemplar": true,
-          "expr": "sum(rate(container_fs_sector_reads_total{node=~\"$node\", id=\"/\", instance=~\"$instance\", device=~\"^(^$)|(overlay.*)|(/dev/mapper.*)|(/dev/[a-zA-Z0-9]+)$\",}[$interval])) by (instance)  != 0",
+          "expr": "sum(rate(container_fs_sector_reads_total{node=~\"$node\", id=\"/\", instance=~\"$instance\", device=~\"^(^$)|(overlay.*)|(/dev/mapper.*)|(/dev/[a-zA-Z0-9]+)$\",}[$interval])) by (instance, device)  != 0",
           "hide": false,
           "instant": false,
           "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "{{instance}} (Read)",
+          "legendFormat": "{{instance}}:{{device}} (Read)",
           "refId": "read"
         }
       ],
@@ -2874,7 +2944,7 @@
         "h": 11,
         "w": 24,
         "x": 0,
-        "y": 128
+        "y": 139
       },
       "id": 124,
       "links": [],
@@ -2895,21 +2965,21 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(rate(container_fs_io_time_seconds_total{ node=~\"$node\", id=\"/\", instance=~\"$instance\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[a-zA-Z0-9]+)$\"}[$interval])) by (instance)  != 0",
+          "expr": "sum(rate(container_fs_io_time_seconds_total{ node=~\"$node\", id=\"/\", instance=~\"$instance\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[a-zA-Z0-9]+)$\"}[$interval])) by (instance,device)  != 0",
           "hide": true,
           "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "{{instance}} (Rolling)",
+          "legendFormat": "{{instance}}:{{device}} (Rolling)",
           "refId": "seconds"
         },
         {
           "exemplar": true,
-          "expr": "sum(rate(container_fs_io_time_weighted_seconds_total{node=~\"$node\", id=\"/\", instance=~\"$instance\",  device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[a-zA-Z0-9]+)$\"}[$interval])) by (instance)  != 0",
+          "expr": "sum(rate(container_fs_io_time_weighted_seconds_total{node=~\"$node\", id=\"/\", instance=~\"$instance\",  device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[a-zA-Z0-9]+)$\"}[$interval])) by (instance, device)  != 0",
           "hide": false,
           "instant": false,
           "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "{{instance}} ",
+          "legendFormat": "{{instance}}:{{device}} ",
           "refId": "weightened"
         }
       ],
@@ -2979,7 +3049,7 @@
         "h": 11,
         "w": 24,
         "x": 0,
-        "y": 139
+        "y": 150
       },
       "id": 121,
       "links": [],
@@ -3109,7 +3179,7 @@
         "h": 11,
         "w": 24,
         "x": 0,
-        "y": 150
+        "y": 161
       },
       "id": 125,
       "links": [],
@@ -3130,21 +3200,21 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(rate(container_fs_writes_merged_total{node=~\"$node\", id=\"/\", instance=~\"$instance\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[a-zA-Z0-9]+)$\", }[$interval])) by (instance) != 0",
+          "expr": "sum(rate(container_fs_writes_merged_total{node=~\"$node\", id=\"/\", instance=~\"$instance\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[a-zA-Z0-9]+)$\", }[$interval])) by (instance, device) != 0",
           "hide": false,
           "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "{{instance}}  (Write)",
+          "legendFormat": "{{instance}}:{{device}}  (Write)",
           "refId": "write"
         },
         {
           "exemplar": true,
-          "expr": "- sum(rate(container_fs_reads_merged_total{node=~\"$node\", id=\"/\", instance=~\"$instance\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[a-zA-Z0-9]+)$\",}[$interval])) by (instance)  != 0",
+          "expr": "- sum(rate(container_fs_reads_merged_total{node=~\"$node\", id=\"/\", instance=~\"$instance\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[a-zA-Z0-9]+)$\",}[$interval])) by (instance,device)  != 0",
           "hide": false,
           "instant": false,
           "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "{{instance}} (Read)",
+          "legendFormat": "{{instance}}:{{device}} (Read)",
           "refId": "read"
         }
       ],
@@ -3210,7 +3280,7 @@
         "h": 11,
         "w": 24,
         "x": 0,
-        "y": 161
+        "y": 172
       },
       "id": 117,
       "links": [],
@@ -3241,7 +3311,7 @@
         },
         {
           "exemplar": true,
-          "expr": "sum(rate(container_fs_reads_bytes_total{node=~\"$node\", id=\"/\", instance=~\"$instance\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[a-zA-Z0-9]+)$\"}[$interval])) by (instance)  / sum(rate(container_fs_reads_total{node=~\"$node\", id=\"/\", instance=~\"$instance\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[a-zA-Z0-9]+)$\"}[$interval])) by (instance) != 0",
+          "expr": "sum(rate(container_fs_reads_bytes_total{node=~\"$node\", id=\"/\", instance=~\"$instance\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[a-zA-Z0-9]+)$\"}[$interval])) by (instance)  / sum(rate(container_fs_reads_total{node=~\"$node\", id=\"/\", instance=~\"$instance\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[a-zA-Z0-9]+)$\"}[$interval])) by (instance, device) != 0",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -3255,100 +3325,6 @@
       "timeFrom": null,
       "timeShift": null,
       "title": "Completed I/O Size (avg $interval)",
-      "transformations": [],
-      "transparent": true,
-      "type": "timeseries"
-    },
-    {
-      "datasource": "Prometheus",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "decbytes"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 11,
-        "w": 24,
-        "x": 0,
-        "y": 172
-      },
-      "id": 113,
-      "links": [],
-      "options": {
-        "legend": {
-          "calcs": [
-            "mean",
-            "lastNotNull"
-          ],
-          "displayMode": "table",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "single"
-        }
-      },
-      "pluginVersion": "8.2.1",
-      "targets": [
-        {
-          "exemplar": true,
-          "expr": "sum(rate(container_blkio_device_usage_total{node=~\"$node\", id=\"/\", instance=~\"$instance\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)|(/dev/[a-zA-Z0-9]+)$\"}[$interval])) by (instance, operation) != 0",
-          "hide": false,
-          "interval": "",
-          "intervalFactor": 1,
-          "legendFormat": "{{instance}}  ({{operation}})",
-          "refId": "ops"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "Disk Throughput (avg $interval)",
       "transformations": [],
       "transparent": true,
       "type": "timeseries"

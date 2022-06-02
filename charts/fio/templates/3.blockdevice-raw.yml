@@ -3,28 +3,44 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
-  name: fio.benchmark.default-fs
+  name: fio.benchmark.raw-device
 spec:
   inputs:
     parameters:
       size: "10M"
       direct: "0"
   service:
+    requirements: # Requirements
+      persistentVolumeClaim:
+        name: local-block
+        spec:
+          storageClassName: exclusive-device
+          volumeMode: Block
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 500Mi
     decorators: # decorators
       telemetry:
         - system.telemetry.agent
+        - fio.telemetry.client
 
     containers: # Container
       - name: app
         image: xridge/fio
+        volumeDevices:
+          - name: local-block
+            devicePath: /testdata
         command:
           - /bin/sh # Run shell
           - -c      # Read from string
           - |       # Multi-line str
             set -eum
-            trap "touch /dev/shm/stop" EXIT
+            cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
+            trap "touch /dev/shm/stop" EXIT # Sidecar: use it to terminate itself when this container has exit.
 
-            mkdir /testdata
+            # https://docs.oracle.com/en-us/iaas/Content/Block/References/samplefiocommandslinux.htm
 
             DEVICE=/testdata
             SIZE={{"{{.Inputs.Parameters.size}}"}}
@@ -34,7 +50,7 @@ spec:
 
             cat > fio.conf <<EOF
             [global]
-            directory=$DEVICE
+            filename=$DEVICE
             size=$SIZE
             direct=$DIRECT
             gtod_reduce=1

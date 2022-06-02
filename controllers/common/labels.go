@@ -55,7 +55,8 @@ func SpecForSystemService(spec *v1alpha1.ServiceSpec) bool {
 	return false
 }
 
-func ExtractPartOfLabel(obj metav1.Object) (string, error) {
+// IsPartOfPlan returns the name of the test plan the object belongs to.
+func IsPartOfPlan(obj metav1.Object) (string, error) {
 	plan, ok := obj.GetLabels()[v1alpha1.LabelPartOfPlan]
 	if !ok {
 		return "", errors.Errorf("Cannot extract label '%s' from resource '%s'. Labels: %s",

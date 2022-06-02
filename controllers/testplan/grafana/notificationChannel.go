@@ -17,6 +17,7 @@ limitations under the License.
 package grafana
 
 import (
+	"github.com/carv-ics-forth/frisbee/controllers/common/configuration"
 	"github.com/grafana-tools/sdk"
 	"github.com/pkg/errors"
 )
@@ -24,7 +25,7 @@ import (
 func (c *Client) SetNotificationChannel(webhookURL string) error {
 	// use the webhook as notification channel for grafana
 	feedback := sdk.AlertNotification{
-		Name:                  "to-frisbee-controller",
+		Name:                  configuration.Global.ControllerName,
 		Type:                  "webhook",
 		IsDefault:             true,
 		DisableResolveMessage: false,
@@ -36,5 +37,5 @@ func (c *Client) SetNotificationChannel(webhookURL string) error {
 
 	_, err := c.Conn.CreateAlertNotification(c.ctx, feedback)
 
-	return errors.Wrapf(err, "cannot create feedback notification channel")
+	return errors.Wrapf(err, "cannot create notification channel at '%s'", webhookURL)
 }

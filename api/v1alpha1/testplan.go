@@ -100,25 +100,6 @@ type TestPlanSpec struct {
 	Suspend *bool `json:"suspend,omitempty"`
 }
 
-// Configuration is the programmatic equivalent of charts/platform/configuration
-type Configuration struct {
-	DeveloperMode bool `json:"developerMode"`
-
-	Namespace string `json:"namespace"`
-
-	DomainName string `json:"domainName"`
-
-	IngressClassName string `json:"ingressClassName"`
-
-	AdvertisedHost string `json:"advertisedHost"`
-
-	PrometheusPort int64 `json:"prometheusPort"`
-
-	GrafanaPort int64 `json:"grafanaPort"`
-
-	LogviewerPort int64 `json:"logviewerPort"`
-}
-
 // TestPlanStatus defines the observed state of TestPlan.
 type TestPlanStatus struct {
 	Lifecycle `json:",inline"`

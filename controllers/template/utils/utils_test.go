@@ -32,7 +32,7 @@ func TestGenerateSpecFromScheme(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    templateutils.GenericSpec
+		want    templateutils.ExpandedSpecBody
 		wantErr bool
 	}{
 		{
@@ -41,7 +41,7 @@ func TestGenerateSpecFromScheme(t *testing.T) {
 				Inputs: &v1alpha1.Inputs{Parameters: map[string]string{"slaves": "slave0"}},
 				Spec:   []byte(`{{.Inputs.Parameters.slaves}}`),
 			}},
-			want:    templateutils.GenericSpec("slave0"),
+			want:    templateutils.ExpandedSpecBody("slave0"),
 			wantErr: false,
 		},
 		{
@@ -56,7 +56,7 @@ cat > test.yml <<EOF
 EOF
 `),
 			}},
-			want: templateutils.GenericSpec(
+			want: templateutils.ExpandedSpecBody(
 				`
 cat > test.yml <<EOF
 	rs.Add( slave0 )
@@ -72,7 +72,7 @@ EOF
 				Inputs: &v1alpha1.Inputs{Parameters: map[string]string{"slaves": "slave0,slave1,slave2"}},
 				Spec:   []byte(`{{range splitList "," .Inputs.Parameters.slaves -}}{{.}}{{- end -}}`),
 			}},
-			want:    templateutils.GenericSpec("slave0slave1slave2"),
+			want:    templateutils.ExpandedSpecBody("slave0slave1slave2"),
 			wantErr: false,
 		},
 	}

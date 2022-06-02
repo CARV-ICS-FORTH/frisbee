@@ -27,6 +27,21 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// Configuration is the programmatic equivalent of charts/platform/configuration
+type Configuration struct {
+	DeveloperMode bool `json:"developerMode"`
+
+	Namespace string `json:"namespace"`
+
+	DomainName string `json:"domainName"`
+
+	IngressClassName string `json:"ingressClassName"`
+
+	WebhookPort int64 `json:"webhookPort"`
+
+	ControllerName string `json:"controllerName"`
+}
+
 // Discover discovers a resource across different namespaces
 func Discover(ctx context.Context, c client.Client, crList client.ObjectList, id string) error {
 	// find the platform configuration (which may reside on a different namespace)
@@ -52,23 +67,23 @@ func namesOfItems(list corev1.ConfigMapList) []string {
 }
 
 // Get returns the system configuration
-func Get(ctx context.Context, c client.Client, logger logr.Logger) (v1alpha1.Configuration, error) {
+func Get(ctx context.Context, c client.Client, logger logr.Logger) (Configuration, error) {
 	// 1. Discovery the configuration across the various namespaces.
 	var list corev1.ConfigMapList
 
 	if err := Discover(ctx, c, &list, PlatformConfigurationName); err != nil {
-		return v1alpha1.Configuration{}, errors.Wrapf(err, "cannot discover '%s'", PlatformConfigurationName)
+		return Configuration{}, errors.Wrapf(err, "cannot discover '%s'", PlatformConfigurationName)
 	}
 
 	// ensure that we have spotted only one configuration
 	if len(list.Items) != 1 {
-		return v1alpha1.Configuration{}, errors.Errorf("Expected a single resource for '%s' but got #%s",
+		return Configuration{}, errors.Errorf("Expected a single resource for '%s' but got #%s",
 			PlatformConfigurationName, namesOfItems(list))
 	}
 
 	config := list.Items[0]
 
-	var sysConf v1alpha1.Configuration
+	var sysConf Configuration
 
 	// 2. Parse the configuration
 	decoderConfig := &mapstructure.DecoderConfig{
@@ -84,11 +99,11 @@ func Get(ctx context.Context, c client.Client, logger logr.Logger) (v1alpha1.Con
 
 	decoder, err := mapstructure.NewDecoder(decoderConfig)
 	if err != nil {
-		return v1alpha1.Configuration{}, errors.Wrapf(err, "cannot create decoder")
+		return Configuration{}, errors.Wrapf(err, "cannot create decoder")
 	}
 
 	if err := decoder.Decode(config.Data); err != nil {
-		return v1alpha1.Configuration{}, errors.Wrapf(err, "decoding error")
+		return Configuration{}, errors.Wrapf(err, "decoding error")
 	}
 
 	logger.Info("Set configuration parameters",
@@ -99,8 +114,8 @@ func Get(ctx context.Context, c client.Client, logger logr.Logger) (v1alpha1.Con
 	return sysConf, nil
 }
 
-func SetGlobal(conf v1alpha1.Configuration) {
+func SetGlobal(conf Configuration) {
 	Global = conf
 }
 
-var Global v1alpha1.Configuration
+var Global Configuration

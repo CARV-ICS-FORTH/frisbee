@@ -27,9 +27,7 @@ import (
 
 var sprigFuncMap = sprig.TxtFuncMap() // a singleton for better performance
 
-type GenericSpec string
-
-type RawBody string
+type ExpandedSpecBody string
 
 type Scheme struct {
 	// Inputs are dynamic fields that populate the spec.
@@ -41,12 +39,11 @@ type Scheme struct {
 }
 
 // Evaluate parses a given scheme and returns the respective ServiceSpec.
-func Evaluate(scheme *Scheme) (GenericSpec, error) {
+func Evaluate(scheme *Scheme) (ExpandedSpecBody, error) {
 	if scheme == nil {
 		return "", errors.Errorf("empty scheme")
 	}
 
-	// replaced templated expression with actual values
 	t, err := template.New("").
 		Funcs(sprigFuncMap).
 		Option("missingkey=error").
@@ -58,9 +55,10 @@ func Evaluate(scheme *Scheme) (GenericSpec, error) {
 
 	var out strings.Builder
 
+	// replace templated expression with actual values.
 	if err := t.Execute(&out, scheme); err != nil {
 		return "", errors.Wrapf(err, "template execution error")
 	}
 
-	return GenericSpec(out.String()), nil
+	return ExpandedSpecBody(out.String()), nil
 }

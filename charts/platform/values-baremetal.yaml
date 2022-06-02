@@ -2,59 +2,57 @@
 ## Global Frisbee Platform parameters
 ## Please, note that this will override the image parameters, including dependencies, configured to use the global value
 ##
-## @param global.ingress DNS name for making Telemetry stack accessible outside the cluster.
+## @param global.domainName DNS name for making Telemetry stack accessible outside the cluster.
+## @param global.ingressClass Type of ingres for making Telemetry stack accessible outside the cluster.
 global:
-  ingress: platform.science-hangar.eu
+  domainName: platform.science-hangar.eu
 
+  ingressClass: nginx
 
 ## @section Frisbee Operator parameters
 
 ## @param operator.enabled Set it to false for running the controller outside the Kubernetes Cluster
+## @param operator.controllerName Defines the name of the controller
+## @param operator.webhookPort Defines the telemetry webhook for receiving events from Grafana.
 operator:
   enabled: true
 
-
-## @section Frisbee Telemetry parameters
-
-## @param telemetry.honorTimestamp Use the timestamps of the metrics exposed by the agent (time-drifts)
-## @param telemetry.prometheusPort Listening port for Prometheus
-## @param telemetry.grafanaPort Listening port for Grafana
-telemetry:
-  honorTimestamp: true
-  prometheusPort: 9090
-  grafanaPort: 3000
+  controllerName: "frisbee-controller"
+  webhookPort: 6666
 
 
 ## @section Provision of dynamic volumes
 
 ## @param openebs.enabled Whether to enable OpenEBS
 ## @param openebs.storagePath The filesystem dir where volumes will be provisioned
-## @param openebs.ndm.enabled Whether to enable block devices as resources
-## @param openebs.ndmOperator.enabled Whether to automatically provision block devices
+## @param openebs.nfs-provisioner.enabled Will enable dynamic NFS servers
+## @param openebs.ndm.enabled Whether to enable block device management
+## @param openebs.ndm.filters.includePaths Include block devices for dynamic block provisioning
+## @param openebs.ndm.filters.excludePaths Exclude block devices for dynamic block provisioning
 openebs:
   enabled: true
 
   storagePath: /mnt/local
 
-  #- device (as block or mounted path)
-  #- hostpath (sub directory on OS or mounted path)
-
   nfs-provisioner:
     enabled: true
 
-  # NDM stands for Node device Manager as it manages the devices attached to the nodes.
-  # This is achieved with the help of /run/udev directory which gets mounted inside the pod.
   ndm:
+    enabled: false
     filters:
-      # use the specified block devices for creating the block device custom resource.
-      includePaths: "/dev/loop7"
-
+      includePaths: "" # example /dev/loop7
       excludePaths: "/dev/fd0,/dev/sr0,/dev/ram,/dev/dm-,/dev/md,/dev/rbd,/dev/zd"
 
 
 ## @section Chaos Injection Parameters
 
-## @param chaos.enabled Whether or not to enable the Chaos controllers
+## @param chaos.enabled Whether to enable the Chaos controllers
+chaos:
+  enabled: true
+
+## @param chaos-mesh.controllerManager.replicaCount Number of Chaos-Mesh controller replicas
+## @param chaos-mesh.chaosDaemon.runtime Specifies which container runtime to use.
+## @param chaos-mesh.chaosDaemon.socketPath Specifies the container runtime socket.
 chaos-mesh:
   controllerManager:
     replicaCount: 1
@@ -65,60 +63,9 @@ chaos-mesh:
     runtime: docker
     socketPath: /var/run/docker.sock
 
-chaos:
-  enabled: true
 
-## @section Code Coverage Parameters
+## @section General purpose, web-based UI for Kubernetes clusters
 
-## @param sonarqube.enabled Whether or not to enable SonarQube
-## @param sonarqube.persistence.enabled Whether to persist the collected coverage metrics
-sonarqube:
-  enabled: false
-
-  # Ignore  deployment taints, if any.
-  #tolerations:
-  #  - key: "sonarqube"
-  #    operator: "Equal"
-  #    value: "true"
-  #    effect: "NoSchedule"
-
-  # nodeSelector:
-  #  sonarqube: "true"
-
-  # SonarQube comes with a bundled Elasticsearch and, as Elasticsearch is stateful, so is SonarQube.
-  # There is an option to persist the Elasticsearch indexes in a Persistent Volume, but with regular
-  # killing operations by the Kubernetes Cluster, these indexes can be corrupted.
-  # By default, persistency is disabled in the Helm chart.
-  persistence:
-    enabled: false
-
-      # make the SonarQube service accessible from outside of your cluster,
-      #ingress:
-      #enabled: true
-      # Used to create an Ingress record.
-      #hosts:
-    #  - name: sonarqube.{{.Values.global.domainName}}
-    # Different clouds or configurations might need /* as the default path
-    #    path: /
-    # For additional control over serviceName and servicePort
-    #   serviceName: sonarqube
-    # servicePort: 9000
-    #annotations:
-    #kubernetes.io/ingress.class: nginx
-    #nginx.ingress.kubernetes.io/proxy-body-size: "8m"
-
-  # Currently, no cloud-native monitoring solutions play nicely with SonarQube or are supported by SonarSource.
-  # It is, however, possible to expose at least the JMX metrics to Prometheus with the help of the Prometheus
-  # JMX exporter for the Application Nodes.
-  # If enabled, it downloads the Prometheus JMX exporter agent and adds it to the startup options of SonarQube.
-  # prometheusExporter:
-  #  enabled: false
-  #  config:
-  #    rules:
-  #      - pattern: ".*"
-
-
+## @param dashboard.enabled Whether to enable Dashboard
 dashboard:
   enabled: true
-
-

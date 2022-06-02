@@ -23,11 +23,12 @@ import (
 	"github.com/carv-ics-forth/frisbee/controllers/common"
 	templateutils "github.com/carv-ics-forth/frisbee/controllers/template/utils"
 	"github.com/pkg/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/json"
 )
 
-func GetServiceSpec(ctx context.Context, r common.Reconciler, namespace string, fromTemplate v1alpha1.GenerateFromTemplate) (v1alpha1.ServiceSpec, error) {
-	template, err := templateutils.GetTemplate(ctx, r, namespace, fromTemplate.TemplateRef)
+func GetServiceSpec(ctx context.Context, r common.Reconciler, who metav1.Object, fromTemplate v1alpha1.GenerateFromTemplate) (v1alpha1.ServiceSpec, error) {
+	template, err := templateutils.GetTemplate(ctx, r, who, fromTemplate.TemplateRef)
 	if err != nil {
 		return v1alpha1.ServiceSpec{}, errors.Wrapf(err, "getTemplate error")
 	}
@@ -52,8 +53,8 @@ func GetServiceSpec(ctx context.Context, r common.Reconciler, namespace string, 
 	return spec, nil
 }
 
-func GetServiceSpecList(ctx context.Context, r common.Reconciler, namespace string, fromTemplate v1alpha1.GenerateFromTemplate) ([]v1alpha1.ServiceSpec, error) {
-	template, err := templateutils.GetTemplate(ctx, r, namespace, fromTemplate.TemplateRef)
+func GetServiceSpecList(ctx context.Context, r common.Reconciler, who metav1.Object, fromTemplate v1alpha1.GenerateFromTemplate) ([]v1alpha1.ServiceSpec, error) {
+	template, err := templateutils.GetTemplate(ctx, r, who, fromTemplate.TemplateRef)
 	if err != nil {
 		return nil, errors.Wrapf(err, "template %s error", fromTemplate.TemplateRef)
 	}

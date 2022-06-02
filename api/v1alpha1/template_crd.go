@@ -105,6 +105,9 @@ type GenerateFromTemplate struct {
 	Inputs []map[string]string `json:"inputs,omitempty"`
 }
 
+// Prepare automatically fills missing values from the template, according to the following rules:
+// * Without inputs and without instances, there is 1 instance with default values.
+// * Without instances, the number of instances is inferred by the number of inputs.
 func (t *GenerateFromTemplate) Prepare(allowMultipleInputs bool) error {
 	switch {
 	case t.TemplateRef == "":

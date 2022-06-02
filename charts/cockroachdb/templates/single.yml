@@ -32,7 +32,8 @@ spec:
           - -c        # Read from string
           - |         # Multi-line str
             set -eum
-            trap "touch /dev/shm/stop" EXIT
+            cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
+            trap "touch /dev/shm/stop" EXIT # Sidecar: use it to terminate itself when this container has exit.
 
             echo "Start Cockroachdb"
             cockroach start-single-node                   \

@@ -130,7 +130,7 @@ func New(ctx context.Context, setters ...Option) error {
 
 	// Register the client. It will be used by GetClient(), ClientExistsFor()...
 	if args.RegisterFor != nil {
-		name, err := common.ExtractPartOfLabel(args.RegisterFor)
+		name, err := common.IsPartOfPlan(args.RegisterFor)
 		if err != nil {
 			return errors.Wrapf(err, "cannot register client")
 		}
@@ -157,7 +157,7 @@ type Client struct {
 
 // ClientExistsFor check if a client is registered for the given name. It panics if it cannot parse the object's metadata.
 func ClientExistsFor(obj metav1.Object) bool {
-	name, err := common.ExtractPartOfLabel(obj)
+	name, err := common.IsPartOfPlan(obj)
 	if err != nil {
 		panic(err)
 	}
@@ -170,7 +170,7 @@ func ClientExistsFor(obj metav1.Object) bool {
 // GetClientFor returns the client with the given name. It panics if it cannot parse the object's metadata,
 // if the client does not exist or if the client is empty.
 func GetClientFor(obj metav1.Object) *Client {
-	name, err := common.ExtractPartOfLabel(obj)
+	name, err := common.IsPartOfPlan(obj)
 	if err != nil {
 		panic(err)
 	}

@@ -10,4 +10,4 @@ spec:
       service:
         templateRef: fio.benchmark.formatted-device
         inputs:
-          - { direct: "1" }
+          - { direct: "0" }

@@ -1,4 +1,10 @@
 ---
+# The problem of running cadvisor as a sidecar is that the sidecar gets its own cgroup.
+# https://d2iq.com/blog/running-kind-inside-a-kubernetes-cluster-for-continuous-integration
+
+
+# https://grafana.com/docs/agent/latest/configuration/integrations/cadvisor-config/
+# https://github.com/google/cadvisor/blob/master/docs/storage/prometheus.md
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
@@ -12,18 +18,35 @@ spec:
           - name: tel-sys
             containerPort: 9442
         securityContext:
+          privileged: true
+          capabilities:
+            add: [ "SYS_ADMIN" ]
           #runAsNonRoot: true
           #readOnlyRootFilesystem: false
           #allowPrivilegeEscalation: false
-          privileged: true
+
         command:
           - /bin/sh # Run shell
           - -c # Read from string
           - |  # Multi-line str
             set -eum
 
-            # https://grafana.com/docs/agent/latest/configuration/integrations/cadvisor-config/
-            # https://github.com/google/cadvisor/blob/master/docs/storage/prometheus.md
+            # Add a newer version of nsenter that supports cgroup
+            apk add util-linux
+
+            # Wait a bit to obtain the PID of the main container
+            while [ ! -f "/dev/shm/app" ];
+            do
+              sleep 3
+            done
+
+            # Unmount the local cgroup
+            umount /sys/fs/cgroup
+
+            # Tap into the cgroup of the main container, and mount it locally
+            nsenter -t $(cat /dev/shm/app) -C -- mount -t cgroup2 none /sys/fs/cgroup
+
+
 
             cadvisor --port=9442                  \
             --docker_only=true                   \
