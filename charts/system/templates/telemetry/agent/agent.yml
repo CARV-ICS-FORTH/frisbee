@@ -19,8 +19,8 @@ spec:
             containerPort: 9442
         securityContext:
           privileged: true
-          capabilities:
-            add: [ "SYS_ADMIN" ]
+          #capabilities:
+          #  add: [ SYS_ADMIN, SYS_CHROOT ]
           #runAsNonRoot: true
           #readOnlyRootFilesystem: false
           #allowPrivilegeEscalation: false
@@ -45,7 +45,6 @@ spec:
 
             # Tap into the cgroup of the main container, and mount it locally
             nsenter -t $(cat /dev/shm/app) -C -- mount -t cgroup2 none /sys/fs/cgroup
-
 
 
             cadvisor --port=9442                  \

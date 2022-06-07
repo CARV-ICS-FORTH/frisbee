@@ -77,8 +77,13 @@ func (a *PointAnnotation) Add(obj client.Object) {
 }
 
 func (a *PointAnnotation) Delete(obj client.Object) {
+	delTime := obj.GetDeletionTimestamp()
+	if delTime == nil {
+		delTime = &metav1.Time{Time: time.Now()}
+	}
+
 	ga := sdk.CreateAnnotationRequest{
-		Time:    obj.GetDeletionTimestamp().UnixMilli(),
+		Time:    delTime.UnixMilli(),
 		TimeEnd: 0,
 		Tags:    []string{TagExit},
 		Text:    fmt.Sprintf("Job Deleted. Kind:%s Name:%s", reflect.TypeOf(obj), obj.GetName()),

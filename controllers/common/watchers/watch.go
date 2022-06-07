@@ -1,5 +1,5 @@
 /*
-Copyright 2022 ICS-FORTH.
+Copyright 2021 ICS-FORTH.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
+	"github.com/carv-ics-forth/frisbee/controllers/common/lifecycle"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"
@@ -30,16 +30,25 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
-func WatchChaos(r common.Reconciler, gvk schema.GroupVersionKind) builder.Predicates {
+func Watch(r common.Reconciler, gvk schema.GroupVersionKind) builder.Predicates {
+	w := simpleWatch{}
+
+	return w.Watch(r, gvk)
+
+}
+
+type simpleWatch struct{}
+
+func (w *simpleWatch) Watch(r common.Reconciler, gvk schema.GroupVersionKind) builder.Predicates {
 	return builder.WithPredicates(predicate.Funcs{
-		CreateFunc:  watchChaosCreate(r, gvk),
-		DeleteFunc:  watchChaosDelete(r, gvk),
-		UpdateFunc:  watchChaosUpdate(r, gvk),
-		GenericFunc: watchChaosGeneric(r, gvk),
+		CreateFunc:  w.watchCreate(r, gvk),
+		DeleteFunc:  w.watchDelete(r, gvk),
+		UpdateFunc:  w.watchUpdate(r, gvk),
+		GenericFunc: w.watchGeneric(r, gvk),
 	})
 }
 
-func watchChaosCreate(r common.Reconciler, gvk schema.GroupVersionKind) CreateFunc {
+func (w *simpleWatch) watchCreate(r common.Reconciler, gvk schema.GroupVersionKind) CreateFunc {
 	return func(e event.CreateEvent) bool {
 		if !common.IsManagedByThisController(e.Object, gvk) {
 			return false
@@ -62,7 +71,7 @@ func watchChaosCreate(r common.Reconciler, gvk schema.GroupVersionKind) CreateFu
 	}
 }
 
-func watchChaosUpdate(r common.Reconciler, gvk schema.GroupVersionKind) UpdateFunc {
+func (w *simpleWatch) watchUpdate(r common.Reconciler, gvk schema.GroupVersionKind) UpdateFunc {
 	return func(e event.UpdateEvent) bool {
 		if !common.IsManagedByThisController(e.ObjectNew, gvk) {
 			return false
@@ -83,10 +92,10 @@ func watchChaosUpdate(r common.Reconciler, gvk schema.GroupVersionKind) UpdateFu
 		}
 
 		// if the status is the same, there is no need to inform the service
-		prev := e.ObjectOld.(*v1alpha1.Chaos)
-		latest := e.ObjectNew.(*v1alpha1.Chaos)
+		prev := e.ObjectOld.(lifecycle.ReconcileStatusAware)
+		latest := e.ObjectNew.(lifecycle.ReconcileStatusAware)
 
-		if prev.Status.Phase == latest.Status.Phase {
+		if prev.GetReconcileStatus().Phase == latest.GetReconcileStatus().Phase {
 			// a controller never initiates a phase change, and so is never asleep waiting for the same.
 			return false
 		}
@@ -95,8 +104,8 @@ func watchChaosUpdate(r common.Reconciler, gvk schema.GroupVersionKind) UpdateFu
 			"Request", "Update",
 			"kind", reflect.TypeOf(e.ObjectNew),
 			"name", e.ObjectNew.GetName(),
-			"from", prev.Status.Phase,
-			"to", latest.Status.Phase,
+			"from", prev.GetReconcileStatus().Phase,
+			"to", latest.GetReconcileStatus().Phase,
 			"version", fmt.Sprintf("%s -> %s", prev.GetResourceVersion(), latest.GetResourceVersion()),
 		)
 
@@ -104,17 +113,17 @@ func watchChaosUpdate(r common.Reconciler, gvk schema.GroupVersionKind) UpdateFu
 	}
 }
 
-func watchChaosDelete(r common.Reconciler, gvk schema.GroupVersionKind) DeleteFunc {
+func (w *simpleWatch) watchDelete(r common.Reconciler, gvk schema.GroupVersionKind) DeleteFunc {
 	return func(e event.DeleteEvent) bool {
 		if !common.IsManagedByThisController(e.Object, gvk) {
 			return false
 		}
 
 		// an object was deleted but the watch deletion event was missed while disconnected from apiserver.
-		// In this case we don't know the final "resting" state of the object,
+		// In this case we don'w know the final "resting" state of the object,
 		// so there's a chance the included `Obj` is stale.
 		if e.DeleteStateUnknown {
-			runtimeutil.HandleError(errors.Errorf("couldn't get object from tombstone %+v", e.Object))
+			runtimeutil.HandleError(errors.Errorf("couldn'w get object from tombstone %+v", e.Object))
 
 			return false
 		}
@@ -130,7 +139,7 @@ func watchChaosDelete(r common.Reconciler, gvk schema.GroupVersionKind) DeleteFu
 	}
 }
 
-func watchChaosGeneric(r common.Reconciler, gvk schema.GroupVersionKind) GenericFunc {
+func (w *simpleWatch) watchGeneric(r common.Reconciler, gvk schema.GroupVersionKind) GenericFunc {
 	return func(e event.GenericEvent) bool {
 		return true
 	}

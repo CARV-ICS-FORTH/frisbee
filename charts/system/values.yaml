@@ -1,10 +1,30 @@
-## @section Frisbee Telemetry parameters
+## @section Grafana
 
-## @param telemetry.honorTimestamp Use the timestamps of the metrics exposed by the agent (time-drifts)
-## @param telemetry.prometheusPort Listening port for Prometheus
-## @param telemetry.grafanaPort Listening port for Grafana
-telemetry:
+## @param prometheus.honorTimestamp Use the timestamps of the metrics exposed by the agent (time-drifts)
+## @param prometheus.Port Listening port for Prometheus
+## @param grafana.port Listening port for Grafana
+grafana:
+  port: 3000
+
+
+## @section Prometheus
+
+## @param prometheus.Port Listening port for Prometheus
+## @param prometheus.honorTimestamp Use the timestamps of the metrics exposed by the agent (time-drifts)
+## @param prometheus.queryLookbackDelta The maximum duration for retrieving metrics for considering the source as stale.
+prometheus:
+  name: prometheus
+  port: 9090
+
   honorTimestamp: true
-  prometheusPort: 9090
-  grafanaPort: 3000
-  logviewerPort: 80
+
+  queryLookbackDelta: 1m
+
+
+
+## @section Logviewer
+
+## @param logviewer.port Listening port for Logviewer
+logviewer:
+  port: 80
+

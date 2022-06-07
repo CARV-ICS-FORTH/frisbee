@@ -6,7 +6,7 @@ metadata:
 spec:
   inputs:
     parameters:
-      claimName: ""
+      dataClaimName: ""
   service:
     decorators:
       telemetry:
@@ -14,7 +14,7 @@ spec:
     volumes:
       - name: dataset
         persistentVolumeClaim:
-          claimName: {{"{{.Inputs.Parameters.claimName}}" | quote}}
+          claimName: {{"{{.Inputs.Parameters.dataClaimName}}" | quote}}
     containers: # Container(s)
       - name: app
         image: busybox

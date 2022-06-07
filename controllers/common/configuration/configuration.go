@@ -19,7 +19,7 @@ package configuration
 import (
 	"context"
 
-	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
+	"github.com/carv-ics-forth/frisbee/controllers/common/labelling"
 	"github.com/go-logr/logr"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
@@ -46,7 +46,7 @@ type Configuration struct {
 func Discover(ctx context.Context, c client.Client, crList client.ObjectList, id string) error {
 	// find the platform configuration (which may reside on a different namespace)
 	filters := []client.ListOption{
-		client.MatchingLabels{v1alpha1.ResourceDiscoveryLabel: id},
+		client.MatchingLabels{labelling.ResourceDiscoveryLabel: id},
 	}
 
 	if err := c.List(ctx, crList, filters...); err != nil {

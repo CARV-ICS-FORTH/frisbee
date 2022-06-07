@@ -7,17 +7,23 @@ spec:
   inputs:
     parameters:
       server: "127.0.0.1"
-      claimName: ""
+      dataClaimName: ""
 
+      memory: ""
+      cpu: ""
   service:
     decorators:
       telemetry:
         - system.telemetry.agent
 
+      resources:
+        memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
+        cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
+
     volumes:
       - name: dataset
         persistentVolumeClaim:
-          claimName: {{"{{.Inputs.Parameters.claimName}}" | quote}}
+          claimName: {{"{{.Inputs.Parameters.dataClaimName}}" | quote}}
     containers:
       - name: app
         image: icsforth/fl-demo:latest
@@ -33,9 +39,6 @@ spec:
             cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
             trap "touch /dev/shm/stop" EXIT # Sidecar: use it to terminate itself when this container has exit.
 
-            # Install basic utils
-            apt-get update && apt-get install -y procps
-
             # Copy the media dataset into the local directory for processing. We use copy in order to avoid sending the
             # I/O through the shared media.
             cp -r /dataset ./data
@@ -45,9 +48,9 @@ spec:
             # but they will keep running. To this end, we terminate the process upon the given message.
             export FL_SERVER={{"{{.Inputs.Parameters.server}}"}}
 
-            python3 client.py &> /tmp/flower.log &
-            processnumber=$!
+            export logFile=/tmp/${HOSTNAME}
 
-            tail -F /tmp/flower.log | awk  '/Disconnect and shut down/ { system("kill '$processnumber'") }'
+            python3 client.py &> ${logFile} &
 
-            #sleep 3600
+            # Exit the client if it disconnects
+            tail -f ${logFile} | awk -W interactive '/Disconnect and shut down/;END{print $0}'

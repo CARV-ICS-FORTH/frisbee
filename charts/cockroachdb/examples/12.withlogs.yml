@@ -28,7 +28,7 @@ spec:
       service:
         templateRef: default.telemetry.logviewer
         inputs:
-          - { logVolumeName: shared-dir }
+          - { logClaimName: shared-dir }
 
     # Step 0. provision 3 individual servers
     - action: Cluster
@@ -38,7 +38,7 @@ spec:
         templateRef: cockroach.cluster.master-with-logger
         instances: 3
         inputs:
-          - { join: "masters-0:26257,masters-1:26257,masters-2:26257", logVolumeName: shared-dir }
+          - { join: "masters-0:26257,masters-1:26257,masters-2:26257", logClaimName: shared-dir }
 
     # Step 1. Create a cockroach cluster from the individual servers
     - action: Call

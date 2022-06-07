@@ -21,13 +21,15 @@ import (
 	"fmt"
 	"net/http"
 	"path/filepath"
+	"time"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
 	"github.com/carv-ics-forth/frisbee/controllers/common/configuration"
 	"github.com/carv-ics-forth/frisbee/controllers/common/expressions"
+	"github.com/carv-ics-forth/frisbee/controllers/common/grafana"
+	"github.com/carv-ics-forth/frisbee/controllers/common/labelling"
 	serviceutils "github.com/carv-ics-forth/frisbee/controllers/service/utils"
-	"github.com/carv-ics-forth/frisbee/controllers/testplan/grafana"
 	"github.com/carv-ics-forth/frisbee/pkg/netutils"
 	"github.com/dustinkirkland/golang-petname"
 	notifier "github.com/golanghelper/grafana-webhook"
@@ -90,10 +92,14 @@ func (r *Controller) StartTelemetry(ctx context.Context, t *v1alpha1.TestPlan) e
 }
 
 func (r *Controller) installPrometheus(ctx context.Context, t *v1alpha1.TestPlan) error {
-	var prometheus v1alpha1.Service
+	var job v1alpha1.Service
 
-	prometheus.SetName(notRandomPrometheusName)
-	prometheus.SetNamespace(t.GetNamespace())
+	job.SetName(notRandomPrometheusName)
+
+	// set labels
+	labelling.SetPlan(&job.ObjectMeta, t.GetName())
+	labelling.SetPartOf(&job.ObjectMeta, job.GetName())
+	labelling.SetComponent(&job.ObjectMeta, labelling.ComponentSys)
 
 	{ // spec
 		fromtemplate := &v1alpha1.GenerateFromTemplate{
@@ -111,11 +117,11 @@ func (r *Controller) installPrometheus(ctx context.Context, t *v1alpha1.TestPlan
 			return errors.Wrapf(err, "cannot get spec")
 		}
 
-		spec.DeepCopyInto(&prometheus.Spec)
+		spec.DeepCopyInto(&job.Spec)
 	}
 
-	if err := common.Create(ctx, r, t, &prometheus); err != nil {
-		return errors.Wrapf(err, "cannot create %s", prometheus.GetName())
+	if err := common.Create(ctx, r, t, &job); err != nil {
+		return errors.Wrapf(err, "cannot create %s", job.GetName())
 	}
 
 	t.Status.PrometheusEndpoint = common.GenerateEndpoint(notRandomPrometheusName, t.GetNamespace(), PrometheusPort)
@@ -124,10 +130,13 @@ func (r *Controller) installPrometheus(ctx context.Context, t *v1alpha1.TestPlan
 }
 
 func (r *Controller) installGrafana(ctx context.Context, t *v1alpha1.TestPlan, agentRefs []string) error {
-	var grafana v1alpha1.Service
+	var job v1alpha1.Service
 
-	grafana.SetName(notRandomGrafanaName)
-	grafana.SetNamespace(t.GetNamespace())
+	job.SetName(notRandomGrafanaName)
+
+	labelling.SetPlan(&job.ObjectMeta, t.GetName())
+	labelling.SetPartOf(&job.ObjectMeta, job.GetName())
+	labelling.SetComponent(&job.ObjectMeta, labelling.ComponentSys)
 
 	{ // spec
 		fromtemplate := &v1alpha1.GenerateFromTemplate{
@@ -145,15 +154,15 @@ func (r *Controller) installGrafana(ctx context.Context, t *v1alpha1.TestPlan, a
 			return errors.Wrapf(err, "cannot get spec")
 		}
 
-		spec.DeepCopyInto(&grafana.Spec)
+		spec.DeepCopyInto(&job.Spec)
 
-		if err := r.importDashboards(ctx, t, &grafana.Spec, agentRefs); err != nil {
+		if err := r.importDashboards(ctx, t, &job.Spec, agentRefs); err != nil {
 			return errors.Wrapf(err, "import dashboards")
 		}
 	}
 
-	if err := common.Create(ctx, r, t, &grafana); err != nil {
-		return errors.Wrapf(err, "cannot create %s", grafana.GetName())
+	if err := common.Create(ctx, r, t, &job); err != nil {
+		return errors.Wrapf(err, "cannot create %s", job.GetName())
 	}
 
 	t.Status.GrafanaEndpoint = common.GenerateEndpoint(notRandomGrafanaName, t.GetNamespace(), GrafanaPort)
@@ -224,7 +233,6 @@ func (r *Controller) createIngress(ctx context.Context, t *v1alpha1.TestPlan) er
 	var ingress netv1.Ingress
 
 	ingress.SetName(t.GetName())
-	ingress.SetNamespace(t.GetNamespace())
 
 	ingress.Spec = netv1.IngressSpec{
 		IngressClassName: &ingressClassName,
@@ -357,6 +365,8 @@ func (r *Controller) ConnectToGrafana(ctx context.Context, t *v1alpha1.TestPlan)
 	)
 }
 
+var gracefulShutDown = 30 * time.Second
+
 var WebhookURL string
 
 // CreateWebhookServer  creates a Webhook for listening for events from Grafana *
@@ -366,7 +376,7 @@ func (r *Controller) CreateWebhookServer(ctx context.Context) error {
 	webhook.Handle("/", notifier.HandleWebhook(func(w http.ResponseWriter, b *notifier.Body) {
 		r.Logger.Info("Grafana Alert", "body", b)
 
-		if err := expressions.DispatchAlert(context.Background(), r, b); err != nil {
+		if err := expressions.DispatchAlert(ctx, r, b); err != nil {
 			r.Logger.Error(err, "unable to process metrics alert", b)
 		}
 	}, 0))
@@ -401,16 +411,18 @@ func (r *Controller) CreateWebhookServer(ctx context.Context) error {
 	go func() {
 		select {
 		case <-ctx.Done():
-			r.Logger.Info("shutting down webhook server")
+			r.Logger.Info("Shutdown signal received, waiting for webhook server to finish")
 
 		case err := <-idleConnsClosed:
-			r.Logger.Error(err, "error on webhook server")
+			r.Logger.Error(err, "Error received. Shutting down the webhook server")
 		}
 
-		// TODO: use a context with reasonable timeout
-		if err := srv.Shutdown(ctx); err != nil {
-			// Error from closing listeners, or context timeout
-			r.Logger.Error(err, "error shutting down the HTTP server")
+		// need a new background context for the graceful shutdown. the ctx is already cancelled.
+		gracefulTimeout, cancel := context.WithTimeout(context.Background(), gracefulShutDown)
+		defer cancel()
+
+		if err := srv.Shutdown(gracefulTimeout); err != nil {
+			r.Logger.Error(err, "error shutting down the webhook server")
 		}
 		close(idleConnsClosed)
 	}()

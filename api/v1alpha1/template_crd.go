@@ -23,7 +23,7 @@ import (
 )
 
 type Inputs struct {
-	// Parameters define dynamically valued fields. The values are given by higher level entities, such as the workflow.
+	// Parameters are user-set values that are dynamically evaluated
 	Parameters map[string]string `json:"parameters,omitempty"`
 }
 

@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
+	"github.com/carv-ics-forth/frisbee/controllers/common/labelling"
 	serviceutils "github.com/carv-ics-forth/frisbee/controllers/service/utils"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -42,6 +43,10 @@ func getJob(group *v1alpha1.Cluster, i int) *v1alpha1.Service {
 	var instance v1alpha1.Service
 
 	instance.SetName(generateName(group, i))
+
+	labelling.SetPlan(&instance.ObjectMeta, labelling.GetPlan(group))
+	labelling.SetPartOf(&instance.ObjectMeta, labelling.GetPartOf(group))
+	labelling.SetComponent(&instance.ObjectMeta, labelling.GetComponent(group))
 
 	// modulo is needed to re-iterate the job list, required for the implementation of "Until".
 	jobSpec := group.Status.QueuedJobs[i%len(group.Status.QueuedJobs)]

@@ -17,6 +17,8 @@ limitations under the License.
 package service
 
 import (
+	"fmt"
+
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
@@ -32,8 +34,8 @@ func updateLifecycle(cr *v1alpha1.Service, pod *corev1.Pod) v1alpha1.Lifecycle {
 	if pod.CreationTimestamp.IsZero() {
 		return v1alpha1.Lifecycle{
 			Phase:   v1alpha1.PhaseFailed,
-			Reason:  "PodDeletion",
-			Message: "The Pod is probably killed.",
+			Reason:  "PodDeleted",
+			Message: fmt.Sprintf("Pod %s is probably killed.", pod.GetLabels()),
 		}
 	}
 

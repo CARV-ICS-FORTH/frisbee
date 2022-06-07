@@ -112,7 +112,7 @@ func (s v1alpha1ChaosStatus) Extract() (phase DesiredPhase, selected, allInjecte
 	return
 }
 
-func calculateLifecycle(cr *v1alpha1.Chaos, fault *Fault) v1alpha1.Lifecycle {
+func calculateLifecycle(cr *v1alpha1.Chaos, fault *GenericFault) v1alpha1.Lifecycle {
 	// Skip any CR which are already completed, or uninitialized.
 	if cr.Status.Phase.Is(v1alpha1.PhaseUninitialized, v1alpha1.PhaseSuccess, v1alpha1.PhaseFailed) {
 		return cr.Status.Lifecycle
@@ -137,7 +137,7 @@ In Chaos Mesh, the life cycle of a chaos experiment is divided into four steps, 
 	* Finished: if the duration parameter of the experiment is configured, and when the experiment runs it up,
 	Chaos Mesh restores the injected faults from all target pods, which indicates that the experiment is finished.
 */
-func convertLifecycle(fault *Fault) v1alpha1.Lifecycle {
+func convertLifecycle(fault *GenericFault) v1alpha1.Lifecycle {
 	var parsed v1alpha1ChaosStatus
 
 	if err := mapstructure.Decode(fault.Object["status"], &parsed); err != nil {

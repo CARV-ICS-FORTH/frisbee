@@ -10,17 +10,6 @@ spec:
         plan.frisbee.io/component: SYS
 
     volumes:
-      - name: podinfo # Provide reflective information for the service
-        downwardAPI:
-          items:
-            - path: namespace
-              fieldRef:
-                fieldPath: metadata.namespace
-
-            - path: labels
-              fieldRef:
-                fieldPath: metadata.labels
-
       - name: config # Parameterized config using the reflective information
         configMap:
           name: system.telemetry.prometheus.config
@@ -32,8 +21,6 @@ spec:
           - name: http
             containerPort: 9090
         volumeMounts:
-          - name: podinfo
-            mountPath: /etc/podinfo
           - name: config
             mountPath: /etc/prometheus/prometheus.yml
             subPath: prometheus.yml
@@ -42,8 +29,8 @@ spec:
           - -c        # Read from string
           - |         # Multi-line str
             # Create local envs that will be used to substitute the configuration placeholders
-            export NAMESPACE=$(cat /etc/podinfo/namespace)
-            export TESTPLAN=$(awk -F= '/plan.frisbee.io\/part-of/{print $NF}' /etc/podinfo/labels | tr -d \")
+            export NAMESPACE={{"{{.Namespace}}"}}
+            export TESTPLAN={{"{{.Plan}}"}}
 
             # Use envsubst to replace ${var} or $var according to the values of the current environment variables.
             wget https://github.com/a8m/envsubst/releases/download/v1.2.0/envsubst-Linux-x86_64
@@ -51,7 +38,7 @@ spec:
 
             # Run Prometheus with the new modified configuration
             ./envsubst-Linux-x86_64 -i /etc/prometheus/prometheus.yml -o ./prometheus.yml
-            /bin/prometheus --config.file=./prometheus.yml
+            /bin/prometheus --config.file=./prometheus.yml --query.lookback-delta={{.Values.prometheus.queryLookbackDelta}}
 
 
 ---
@@ -83,7 +70,7 @@ data:
 
         honor_labels: true
         # Set it to false in order to avoid time drifts
-        honor_timestamps: {{.Values.telemetry.honorTimestamp}}
+        honor_timestamps: {{.Values.prometheus.honorTimestamp}}
 
         scheme: http
 
@@ -99,7 +86,7 @@ data:
 
         relabel_configs:
           # Condition 1. Filter services that belong to the same plan as this Prometheus instance.
-          - source_labels: [ __meta_kubernetes_pod_label_plan_frisbee_io_part_of ]
+          - source_labels: [ __meta_kubernetes_pod_label_plan_frisbee_io_name ]
             separator: ;
             regex: ${TESTPLAN}
             action: keep

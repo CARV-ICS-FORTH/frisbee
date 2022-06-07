@@ -23,9 +23,9 @@ import (
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	chaosutils "github.com/carv-ics-forth/frisbee/controllers/chaos/utils"
 	"github.com/carv-ics-forth/frisbee/controllers/common/expressions"
+	"github.com/carv-ics-forth/frisbee/controllers/common/grafana"
 	"github.com/carv-ics-forth/frisbee/controllers/common/lifecycle"
 	serviceutils "github.com/carv-ics-forth/frisbee/controllers/service/utils"
-	"github.com/carv-ics-forth/frisbee/controllers/testplan/grafana"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/validation"
@@ -107,6 +107,11 @@ func PrepareDependencyGraph(actionList []v1alpha1.Action) (index, error) {
 			err := errors.New(strings.Join(errs, "; "))
 
 			return nil, errors.Wrapf(err, "invalid actioname %s", action.Name)
+		}
+
+		_, ok := callIndex[action.Name]
+		if ok {
+			return nil, errors.Errorf("Duplicate action '%s'", action.Name)
 		}
 
 		callIndex[action.Name] = &actionList[i]

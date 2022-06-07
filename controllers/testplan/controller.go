@@ -25,6 +25,7 @@ import (
 	"github.com/carv-ics-forth/frisbee/controllers/common"
 	"github.com/carv-ics-forth/frisbee/controllers/common/configuration"
 	"github.com/carv-ics-forth/frisbee/controllers/common/expressions"
+	"github.com/carv-ics-forth/frisbee/controllers/common/labelling"
 	"github.com/carv-ics-forth/frisbee/controllers/common/lifecycle"
 	"github.com/carv-ics-forth/frisbee/controllers/common/watchers"
 	"github.com/go-logr/logr"
@@ -32,6 +33,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -85,8 +87,8 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		)
 	}()
 
-	if err := r.GetClusterView(ctx, &cr); err != nil {
-		return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot get the cluster view"))
+	if err := r.GetClusterView(ctx, req.NamespacedName); err != nil {
+		return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot get the cluster view for '%s'", req))
 	}
 
 	/*
@@ -101,7 +103,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		be in conflict. We fix this issue by re-queueing the request.
 		We also suppress verbose error reporting as to avoid polluting the output.
 	*/
-	cr.SetReconcileStatus(r.updateLifecycle(&cr, r.clusterView))
+	cr.SetReconcileStatus(r.updateLifecycle(&cr))
 
 	if err := common.UpdateStatus(ctx, r, &cr); err != nil {
 		r.Info("update status error. retry", "object", cr.GetName(), "err", err)
@@ -136,16 +138,18 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		// We maintain testbed components (e.g, prometheus and grafana) for getting back the test results.
 		// These components are removed by deleting the TestPlan.
 		for _, job := range r.clusterView.SuccessfulJobs() {
-			expressions.UnsetAlert(job)
+			if labelling.GetComponent(job) == labelling.ComponentSUT { // System services should not be removed
+				expressions.UnsetAlert(job)
 
-			common.Delete(ctx, r, job)
+				common.Delete(ctx, r, job)
+			}
 		}
 
 		return common.Stop()
 	}
 
 	if cr.Status.Phase.Is(v1alpha1.PhaseFailed) {
-		if err := r.HasFailed(ctx, &cr, r.clusterView); err != nil {
+		if err := r.HasFailed(ctx, &cr); err != nil {
 			return common.RequeueAfter(time.Second)
 		}
 
@@ -202,77 +206,21 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	return lifecycle.Pending(ctx, r, &cr, "some jobs are still pending")
 }
 
-func (r *Controller) Initialize(ctx context.Context, t *v1alpha1.TestPlan) error {
-	/* Clone system configuration, needed to retrieve telemetry, chaos, etc  */
-	sysconf, err := configuration.Get(ctx, r.GetClient(), r.Logger)
-	if err != nil {
-		return errors.Wrapf(err, "cannot get system configuration")
-	}
-
-	/* FIXME: we set the configuration be global here. is there any better way ? */
-	configuration.SetGlobal(sysconf)
-
-	/* Ensure that the plan is OK */
-	if err := r.Validate(ctx, t, r.clusterView); err != nil {
-		return errors.Wrapf(err, "invalid testplan")
-	}
-
-	{ // Initialize metadata
-		/* Inherit the metadata of the configuration. This is used to automatically delete and remove the
-		resources if the configuration is deleted */
-		// utils.AppendLabels(t, configMeta.GetLabels())
-		// utils.AppendLabels(t, configMeta.GetAnnotations())
-
-		/* Inherit the metadata of the test plan. This label will be adopted by all children objects of this workflow.
-		 */
-		common.AppendLabel(t, v1alpha1.LabelPartOfPlan, t.GetName())
-
-		if err := common.Update(ctx, r, t); err != nil {
-			return errors.Wrap(err, "cannot update metadata")
-		}
-	}
-
-	if err := r.StartTelemetry(ctx, t); err != nil {
-		return errors.Wrapf(err, "cannot create the telemetry stack")
-	}
-
-	meta.SetStatusCondition(&t.Status.Conditions, metav1.Condition{
-		Type:    v1alpha1.ConditionCRInitialized.String(),
-		Status:  metav1.ConditionTrue,
-		Reason:  "TestPlanInitialized",
-		Message: "The Test Plan has been initialized. Start running actions",
-	})
-
-	return nil
-}
-
 /*
 	GetClusterView list all child objects in this namespace that belong to this plan, and split them into
 	active, successful, and failed jobs.
 */
-func (r *Controller) GetClusterView(ctx context.Context, t *v1alpha1.TestPlan) error {
+func (r *Controller) GetClusterView(ctx context.Context, req types.NamespacedName) error {
 	/*
 		to relief garbage collector, we use a common state that is reset at every reconciliation cycle.
-		fixme: this approach may fail if we run multiple  reconciliation loops simultaneously.
+		Be careful since this approach may fail if we run multiple  reconciliation loops simultaneously.
 	*/
 	r.clusterView.Reset()
 
-	/*
-		As our number of services increases, looking these up can become quite slow as we have to filter through all
-		of them. For a more efficient lookup, these services will be indexed locally on the controller's name.
-		A jobOwnerKey field is added to the cached job objects, which references the owning controller.
-		Check how we configure the manager to actually index this field.
-	*/
-	filters := []client.ListOption{
-		client.InNamespace(t.GetNamespace()),
-		client.MatchingLabels{v1alpha1.LabelCreatedBy: t.GetName()},
-		//	client.MatchingFields{jobOwnerKey: req.Name},
-	}
-
 	var serviceJobs v1alpha1.ServiceList
 	{
-		if err := r.GetClient().List(ctx, &serviceJobs, filters...); err != nil {
-			return errors.Wrapf(err, "unable to list child serviceJobs")
+		if err := common.ListChildren(ctx, r, &serviceJobs, req); err != nil {
+			return errors.Wrapf(err, "unable to list child services for '%s'", req)
 		}
 
 		for i, job := range serviceJobs.Items {
@@ -287,8 +235,8 @@ func (r *Controller) GetClusterView(ctx context.Context, t *v1alpha1.TestPlan) e
 
 	var clusterJobs v1alpha1.ClusterList
 	{
-		if err := r.GetClient().List(ctx, &clusterJobs, filters...); err != nil {
-			return errors.Wrapf(err, "unable to list child clusterJobs")
+		if err := common.ListChildren(ctx, r, &clusterJobs, req); err != nil {
+			return errors.Wrapf(err, "unable to list child clusters for '%s'", req)
 		}
 
 		for i, job := range clusterJobs.Items {
@@ -298,8 +246,8 @@ func (r *Controller) GetClusterView(ctx context.Context, t *v1alpha1.TestPlan) e
 
 	var chaosJobs v1alpha1.ChaosList
 	{
-		if err := r.GetClient().List(ctx, &chaosJobs, filters...); err != nil {
-			return errors.Wrapf(err, "unable to list child chaosJobs")
+		if err := common.ListChildren(ctx, r, &chaosJobs, req); err != nil {
+			return errors.Wrapf(err, "unable to list child chaos for '%s'", req)
 		}
 
 		for i, job := range chaosJobs.Items {
@@ -309,8 +257,8 @@ func (r *Controller) GetClusterView(ctx context.Context, t *v1alpha1.TestPlan) e
 
 	var cascadeJobs v1alpha1.CascadeList
 	{
-		if err := r.GetClient().List(ctx, &cascadeJobs, filters...); err != nil {
-			return errors.Wrapf(err, "unable to list child cascadeJobs")
+		if err := common.ListChildren(ctx, r, &cascadeJobs, req); err != nil {
+			return errors.Wrapf(err, "unable to list child cascades for '%s'", req)
 		}
 
 		for i, job := range cascadeJobs.Items {
@@ -320,8 +268,8 @@ func (r *Controller) GetClusterView(ctx context.Context, t *v1alpha1.TestPlan) e
 
 	var virtualJobs v1alpha1.VirtualObjectList
 	{
-		if err := r.GetClient().List(ctx, &virtualJobs, filters...); err != nil {
-			return errors.Wrapf(err, "unable to list child virtual Jobs")
+		if err := common.ListChildren(ctx, r, &virtualJobs, req); err != nil {
+			return errors.Wrapf(err, "unable to list child virtualobjects for '%s'", req)
 		}
 
 		for i, job := range virtualJobs.Items {
@@ -331,8 +279,8 @@ func (r *Controller) GetClusterView(ctx context.Context, t *v1alpha1.TestPlan) e
 
 	var callJobs v1alpha1.CallList
 	{
-		if err := r.GetClient().List(ctx, &callJobs, filters...); err != nil {
-			return errors.Wrapf(err, "unable to list child call Jobs")
+		if err := common.ListChildren(ctx, r, &callJobs, req); err != nil {
+			return errors.Wrapf(err, "unable to list child calls for '%s'", req)
 		}
 
 		for i, job := range callJobs.Items {
@@ -343,38 +291,77 @@ func (r *Controller) GetClusterView(ctx context.Context, t *v1alpha1.TestPlan) e
 	return nil
 }
 
-func (r *Controller) HasFailed(ctx context.Context, t *v1alpha1.TestPlan, clusterView lifecycle.ClassifierReader) error {
+func (r *Controller) Initialize(ctx context.Context, t *v1alpha1.TestPlan) error {
+	/* Clone system configuration, needed to retrieve telemetry, chaos, etc  */
+	sysconf, err := configuration.Get(ctx, r.GetClient(), r.Logger)
+	if err != nil {
+		return errors.Wrapf(err, "cannot get system configuration")
+	}
+
+	/* FIXME: we set the configuration be global here. is there any better way ? */
+	configuration.SetGlobal(sysconf)
+
+	{ // Initialize metadata
+		/* Inherit the metadata of the configuration. This is used to automatically delete and remove the
+		resources if the configuration is deleted */
+		// utils.AppendLabels(t, configMeta.GetLabels())
+		// utils.AppendLabels(t, configMeta.GetAnnotations())
+
+		/* Inherit the metadata of the test plan. This label will be adopted by all children objects of this workflow.
+		 */
+		labelling.SetPlan(&t.ObjectMeta, t.GetName())
+	}
+
+	/* Ensure that the plan is OK */
+	if err := r.Validate(ctx, t, r.clusterView); err != nil {
+		return errors.Wrapf(err, "invalid testplan")
+	}
+
+	if err := r.StartTelemetry(ctx, t); err != nil {
+		return errors.Wrapf(err, "cannot create the telemetry stack")
+	}
+
+	meta.SetStatusCondition(&t.Status.Conditions, metav1.Condition{
+		Type:    v1alpha1.ConditionCRInitialized.String(),
+		Status:  metav1.ConditionTrue,
+		Reason:  "TestPlanInitialized",
+		Message: "The Test Plan has been initialized. Start running actions",
+	})
+
+	// Update() is different than UpdateStatus(). Update() is used to update the metadata (e.g, labels).
+	if err := common.Update(ctx, r, t); err != nil {
+		return errors.Wrap(err, "cannot update metadata")
+	}
+
+	return nil
+}
+
+func (r *Controller) HasFailed(ctx context.Context, t *v1alpha1.TestPlan) error {
 	r.Logger.Error(errors.New(t.Status.Reason), t.Status.Message)
 
 	// Remove the non-failed components. Leave the failed jobs and system jobs for postmortem analysis.
-	for _, job := range clusterView.PendingJobs() {
-		if common.IsSystemService(job) {
-			continue // System jobs should not be deleted
+	for _, job := range r.clusterView.PendingJobs() {
+		if labelling.GetComponent(job) == labelling.ComponentSUT { // System jobs should not be deleted
+			r.GetEventRecorderFor("").Event(job, corev1.EventTypeWarning, "Terminating", t.Status.Message)
+
+			common.Delete(ctx, r, job)
 		}
-
-		r.GetEventRecorderFor("").Event(job, corev1.EventTypeWarning, "Terminating", t.Status.Message)
-
-		common.Delete(ctx, r, job)
 	}
 
-	for _, job := range clusterView.RunningJobs() {
-		if common.IsSystemService(job) {
-			continue // System jobs should not be deleted
+	for _, job := range r.clusterView.RunningJobs() {
+		if labelling.GetComponent(job) == labelling.ComponentSUT { // System jobs should not be deleted
+			r.GetEventRecorderFor("").Event(job, corev1.EventTypeWarning, "Terminating", t.Status.Message)
+
+			common.Delete(ctx, r, job)
 		}
-
-		r.GetEventRecorderFor("").Event(job, corev1.EventTypeWarning, "Terminating", t.Status.Message)
-
-		common.Delete(ctx, r, job)
 	}
 
-	for _, job := range clusterView.SuccessfulJobs() {
-		if common.IsSystemService(job) {
-			continue // System jobs should not be deleted
+	for _, job := range r.clusterView.SuccessfulJobs() { // System jobs should not be deleted
+		if labelling.GetComponent(job) == labelling.ComponentSUT {
+			r.GetEventRecorderFor("").Event(job, corev1.EventTypeWarning, "Terminating", t.Status.Message)
+
+			common.Delete(ctx, r, job)
 		}
-
-		r.GetEventRecorderFor("").Event(job, corev1.EventTypeWarning, "Terminating", t.Status.Message)
-
-		common.Delete(ctx, r, job)
 	}
 
 	// Suspend the workflow from creating new job.
@@ -393,7 +380,7 @@ func (r *Controller) RunActions(ctx context.Context, t *v1alpha1.TestPlan, actio
 	for _, action := range actionList {
 		if action.Assert.HasMetricsExpr() {
 			// Assertions belong to the top-level workflow. Not to the job
-			if err := expressions.SetAlert(t, action.Assert.Metrics); err != nil {
+			if err := expressions.SetAlert(ctx, t, action.Assert.Metrics); err != nil {
 				return errors.Wrapf(err, "assertion error")
 			}
 		}
@@ -463,7 +450,7 @@ func (r *Controller) Finalize(obj client.Object) error {
 	deleted, etc.
 */
 
-func NewController(mgr ctrl.Manager, logger logr.Logger) error {
+func NewController(ctx context.Context, mgr ctrl.Manager, logger logr.Logger) error {
 	// instantiate the controller
 	r := &Controller{
 		Manager: mgr,
@@ -472,17 +459,18 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 
 	gvk := v1alpha1.GroupVersion.WithKind("TestPlan")
 
-	if err := r.CreateWebhookServer(context.Background()); err != nil {
+	if err := r.CreateWebhookServer(ctx); err != nil {
 		return errors.Wrapf(err, "cannot create grafana webhook")
 	}
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named("testplan").
 		For(&v1alpha1.TestPlan{}).
-		Owns(&v1alpha1.Service{}, watchers.WatchService(r, gvk)).             // Watch Services
-		Owns(&v1alpha1.Cluster{}, watchers.WatchCluster(r, gvk)).             // Watch Cluster
-		Owns(&v1alpha1.Chaos{}, watchers.WatchChaos(r, gvk)).                 // Watch Chaos
-		Owns(&v1alpha1.VirtualObject{}, watchers.WatchVirtualObject(r, gvk)). // Watch VirtualObjects
-		Owns(&v1alpha1.Call{}, watchers.WatchCall(r, gvk)).                   // Watch Calls
+		Owns(&v1alpha1.Service{}, watchers.Watch(r, gvk)).       // Watch Services
+		Owns(&v1alpha1.Cluster{}, watchers.Watch(r, gvk)).       // Watch Cluster
+		Owns(&v1alpha1.Chaos{}, watchers.Watch(r, gvk)).         // Watch Chaos
+		Owns(&v1alpha1.Cascade{}, watchers.Watch(r, gvk)).       // Watch Cascade
+		Owns(&v1alpha1.VirtualObject{}, watchers.Watch(r, gvk)). // Watch VirtualObjects
+		Owns(&v1alpha1.Call{}, watchers.Watch(r, gvk)).          // Watch Calls
 		Complete(r)
 }
