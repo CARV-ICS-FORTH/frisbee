@@ -100,6 +100,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	ctx := ctrl.SetupSignalHandler()
+
 	// Add controllers
 	if err := template.NewController(mgr, setupLog); err != nil {
 		utilruntime.HandleError(errors.Wrapf(err, "unable to create Templates controller"))
@@ -137,7 +139,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := testplan.NewController(mgr, setupLog); err != nil {
+	if err := testplan.NewController(ctx, mgr, setupLog); err != nil {
 		utilruntime.HandleError(errors.Wrapf(err, "unable to create TestPlan controller"))
 
 		os.Exit(1)
@@ -204,7 +206,7 @@ func main() {
 	*/
 
 	setupLog.Info("starting manager")
-	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
+	if err := mgr.Start(ctx); err != nil {
 		setupLog.Error(err, "problem running manager")
 
 		os.Exit(1)

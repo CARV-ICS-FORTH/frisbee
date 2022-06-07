@@ -1,0 +1,43 @@
+---
+apiVersion: frisbee.io/v1alpha1
+kind: Template
+metadata:
+  name: fl.quickstart.server
+spec:
+  inputs:
+    parameters:
+      logClaimName: ""
+
+  service:
+    decorators:
+      telemetry:
+        - system.telemetry.agent
+
+    volumes:
+      - name: logs
+        persistentVolumeClaim:
+          claimName: {{"{{.Inputs.Parameters.logClaimName}}" | quote}}
+
+    containers: # Container
+      - name: app
+        image: icsforth/fl-demo:latest
+        ports:
+          - name: tcp
+            containerPort: 8080
+        volumeMounts:
+          - name: logs
+            mountPath: /logs
+        command:
+          - /bin/sh # Run shell
+          - -c # Read from string
+          - |  # Multi-line str
+            set -eum
+            cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
+            trap "touch /dev/shm/stop" EXIT # Sidecar: use it to terminate itself when this container has exit.
+
+            export logDir=/logs/${HOSTNAME}
+
+            python3 server.py &> ${logDir} &
+            processnumber=$!
+
+            tail -F ${logDir} | awk  '/History (loss, distributed):/ { system("kill '$processnumber'") }'

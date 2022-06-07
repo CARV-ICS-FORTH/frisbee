@@ -6,7 +6,7 @@ metadata:
 spec:
   inputs:
     parameters:
-      logVolumeName: ""
+      logClaimName: ""
 
   service:
     decorators:
@@ -16,7 +16,7 @@ spec:
     volumes: # Match the pod to the log volume
       - name: logs
         persistentVolumeClaim:
-          claimName: {{"{{.Inputs.Parameters.logVolumeName}}" | quote}}
+          claimName: {{"{{.Inputs.Parameters.logClaimName}}" | quote}}
 
     # Do a nasty touch to sync/populate the volume.
     initContainers:
@@ -32,7 +32,7 @@ spec:
         image: filebrowser/filebrowser
         ports:
           - name: http
-            containerPort: {{.Values.telemetry.logviewerPort}}
+            containerPort: {{.Values.logviewer.port}}
         volumeMounts:
           - name: logs
             mountPath: /srv

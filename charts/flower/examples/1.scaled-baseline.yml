@@ -12,6 +12,7 @@ spec:
     requests:
       storage: 2Gi
 
+
 ---
 apiVersion: frisbee.io/v1alpha1
 kind: TestPlan
@@ -25,7 +26,7 @@ spec:
       service:
         templateRef: fl.quickstart.dataset.cifar
         inputs:
-          - { claimName: dataset }
+          - { dataClaimName: dataset }
 
     # Create a Flower server
     - action: Service
@@ -38,7 +39,7 @@ spec:
       depends: { running: [ server ], success: [ downloader ] }
       name: clients
       cluster:
-        instances: 10
         templateRef: fl.quickstart.client
+        instances: 3
         inputs:
-          - { server: server, claimName: dataset }
+          - { server: server, dataClaimName: dataset}

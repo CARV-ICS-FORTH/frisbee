@@ -219,12 +219,12 @@ const (
 )
 
 // SetAlert adds a new alert to Grafana.
-func (c *Client) SetAlert(alert *Alert, name string, msg string) (uint, error) {
+func (c *Client) SetAlert(ctx context.Context, alert *Alert, name string, msg string) (uint, error) {
 	if alert == nil {
 		return 0, errors.New("NIL alert was given")
 	}
 
-	board, _, err := c.Conn.GetDashboardByUID(context.Background(), alert.DashboardUID)
+	board, _, err := c.Conn.GetDashboardByUID(ctx, alert.DashboardUID)
 	if err != nil {
 		return 0, errors.Wrapf(err, "cannot retrieve dashboard %s", alert.DashboardUID)
 	}
@@ -276,7 +276,7 @@ func (c *Client) SetAlert(alert *Alert, name string, msg string) (uint, error) {
 		PreserveId: true,
 	}
 
-	res, err := c.Conn.SetDashboard(context.Background(), board, params)
+	res, err := c.Conn.SetDashboard(ctx, board, params)
 	if err != nil {
 		return 0, errors.Wrap(err, "set dashboard")
 	}

@@ -21,7 +21,7 @@ import (
 	"reflect"
 
 	"github.com/carv-ics-forth/frisbee/controllers/common"
-	"github.com/carv-ics-forth/frisbee/controllers/testplan/grafana"
+	"github.com/carv-ics-forth/frisbee/controllers/common/grafana"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"

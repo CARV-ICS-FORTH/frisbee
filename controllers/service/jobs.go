@@ -24,6 +24,7 @@ import (
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
+	"github.com/carv-ics-forth/frisbee/controllers/common/labelling"
 	serviceutils "github.com/carv-ics-forth/frisbee/controllers/service/utils"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -56,6 +57,9 @@ func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Service) error {
 	var pod corev1.Pod
 
 	pod.SetName(cr.GetName())
+
+	// make labels visibile to the pod
+	labelling.Propagate(&pod, cr)
 	pod.SetAnnotations(cr.GetAnnotations())
 
 	cr.Spec.PodSpec.DeepCopyInto(&pod.Spec)
@@ -263,41 +267,18 @@ func constructDiscoveryService(cr *v1alpha1.Service) (*corev1.Service, error) {
 		clusterIP = "None"
 	}
 
-	kubeService := corev1.Service{}
+	var kubeService corev1.Service
 
 	kubeService.SetName(cr.GetName())
+
+	// make labels visibile to the dns service
+	labelling.Propagate(&kubeService, cr)
 
 	kubeService.Spec.Ports = allPorts
 	kubeService.Spec.ClusterIP = clusterIP
 
 	// bind service to the pod
-	kubeService.Spec.Selector = map[string]string{v1alpha1.LabelCreatedBy: cr.GetName()}
+	kubeService.Spec.Selector = labelling.GetInstance(cr)
 
 	return &kubeService, nil
 }
-
-/*
-   - host: logviewer-frisbee.{{.Values.global.domainName}}
-     http:
-       paths:
-         - path: /
-           pathType: Prefix
-           backend:
-             service:
-               name: logviewer
-               port:
-                 number: 80
-
-   {{- if .Values.chaos.enabled }}
-   - host: chaos-frisbee.{{.Values.global.domainName}}
-     http:
-       paths:
-         - path: /
-           pathType: Prefix
-           backend:
-             service:
-               name: chaos-dashboard
-               port:
-                 number: 2333
-   {{- end}}
-*/

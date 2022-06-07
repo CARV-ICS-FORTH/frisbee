@@ -24,7 +24,7 @@ import (
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
-	"github.com/carv-ics-forth/frisbee/controllers/testplan/grafana"
+	grafana2 "github.com/carv-ics-forth/frisbee/controllers/common/grafana"
 	notifier "github.com/golanghelper/grafana-webhook"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -79,8 +79,8 @@ func (e *endpoint) Parse(in string) error {
 
 var endpointFields = reflect.TypeOf(endpoint{}).NumField()
 
-func SetAlert(job client.Object, slo v1alpha1.ExprMetrics) error {
-	alert, err := grafana.ParseAlertExpr(slo)
+func SetAlert(ctx context.Context, job client.Object, slo v1alpha1.ExprMetrics) error {
+	alert, err := grafana2.ParseAlertExpr(slo)
 	if err != nil {
 		return errors.Wrapf(err, "invalid alert expression")
 	}
@@ -99,7 +99,7 @@ func SetAlert(job client.Object, slo v1alpha1.ExprMetrics) error {
 	// If the dashboard is not found, retry a few times before failing.
 	// TODO: explicitly separate the NotFound from other types of errors.
 	if err := retry.OnError(retry.DefaultBackoff, func(error) bool { return true }, func() error {
-		_, err := grafana.GetClientFor(job).SetAlert(alert, name, msg)
+		_, err := grafana2.GetClientFor(job).SetAlert(ctx, alert, name, msg)
 		return err
 	}); err != nil {
 		return errors.Wrapf(err, "cannot set the alarm")
@@ -182,7 +182,7 @@ func FiredAlert(job metav1.Object) (string, bool) {
 		return "SOMETHING IS WRONG WITH THE ALERTING MECHANISMS", true
 	}
 
-	if state == grafana.NoData {
+	if state == grafana2.NoData {
 		/*
 		  Spurious Alert may be risen if the expr evaluation frequency is less than the scheduled interval.
 		  In this case, Grafana faces an idle period, and raises a NoData Alert.
@@ -191,7 +191,7 @@ func FiredAlert(job metav1.Object) (string, bool) {
 		return "", false
 	}
 
-	if state == grafana.Alerting {
+	if state == grafana2.Alerting {
 		info, ok := annotations[firedAlertDetails]
 		if !ok {
 			logrus.Warn("Strange creatures have screwed the alerting mechanism.")
@@ -202,7 +202,7 @@ func FiredAlert(job metav1.Object) (string, bool) {
 		return info, true
 	}
 
-	if state == grafana.OK {
+	if state == grafana2.OK {
 		/*
 		 This is the equivalent of revoking an alert. It happens when, after sending an Alert, decides
 		 that the latest evaluation no longer matches the given rule.
@@ -223,7 +223,7 @@ func FiredAlert(job metav1.Object) (string, bool) {
 func ResetAlert(obj metav1.Object) {
 	alertID, exists := obj.GetAnnotations()[jobHasAlert]
 	if exists {
-		grafana.GetClientFor(obj).UnsetAlert(alertID)
+		grafana2.GetClientFor(obj).UnsetAlert(alertID)
 	}
 }
 
@@ -231,6 +231,6 @@ func ResetAlert(obj metav1.Object) {
 func UnsetAlert(obj metav1.Object) {
 	alertID, exists := obj.GetAnnotations()[jobHasAlert]
 	if exists {
-		grafana.GetClientFor(obj).UnsetAlert(alertID)
+		grafana2.GetClientFor(obj).UnsetAlert(alertID)
 	}
 }

@@ -22,7 +22,9 @@ import (
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
+	"github.com/carv-ics-forth/frisbee/controllers/common/labelling"
 	"github.com/pkg/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var sprigFuncMap = sprig.TxtFuncMap() // a singleton for better performance
@@ -30,12 +32,29 @@ var sprigFuncMap = sprig.TxtFuncMap() // a singleton for better performance
 type ExpandedSpecBody string
 
 type Scheme struct {
+	// Plan returns the name of the plan that invokes the template.
+	Plan string `json:"plan,omitempty"`
+
+	// Returns the namespace where the plan is running
+	Namespace string `json:"namespace,omitempty"`
+
 	// Inputs are dynamic fields that populate the spec.
 	// +optional
 	Inputs *v1alpha1.Inputs `json:"inputs,omitempty"`
 
 	// Spec is the specification whose values will be replaced by parameters.
 	Spec []byte `json:"spec"`
+}
+
+func NewScheme(caller metav1.Object, inputs *v1alpha1.Inputs, body []byte) (*Scheme, error) {
+	var scheme Scheme
+
+	scheme.Plan = labelling.GetPlan(caller)
+	scheme.Namespace = caller.GetNamespace()
+	scheme.Inputs = inputs
+	scheme.Spec = body
+
+	return &scheme, nil
 }
 
 // Evaluate parses a given scheme and returns the respective ServiceSpec.

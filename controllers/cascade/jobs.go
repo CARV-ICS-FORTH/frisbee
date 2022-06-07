@@ -22,6 +22,7 @@ import (
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	chaosutils "github.com/carv-ics-forth/frisbee/controllers/chaos/utils"
+	"github.com/carv-ics-forth/frisbee/controllers/common/labelling"
 	"github.com/pkg/errors"
 )
 
@@ -39,6 +40,8 @@ func getJob(group *v1alpha1.Cascade, i int) *v1alpha1.Chaos {
 	var instance v1alpha1.Chaos
 
 	instance.SetName(generateName(group, i))
+
+	labelling.Propagate(&instance, group)
 
 	// modulo is needed to re-iterate the job list, required for the implementation of "Until".
 	jobSpec := group.Status.QueuedJobs[i%len(group.Status.QueuedJobs)]

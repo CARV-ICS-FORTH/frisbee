@@ -49,6 +49,8 @@ type Controller struct {
 
 	gvk schema.GroupVersionKind
 
+	chaosView lifecycle.Classifier
+
 	// because the range annotator has state (uid), we need to save in the controller's store.
 	regionAnnotations cmap.ConcurrentMap
 }
@@ -93,9 +95,11 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		client's parses will return the following error: "Object 'Kind' is missing in 'unstructured object has no kind'"
 		To avoid that, we ignore errors if the map is empty -- yielding the same behavior as empty, but valid objects.
 	*/
-	handler := dispatch(&cr)
+	var fault GenericFault
+	if err := getRawManifest(&cr, &fault); err != nil {
+		return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot get fault type for chaos '%s'", cr.GetName()))
+	}
 
-	fault := handler.GetFault()
 	{
 		key := client.ObjectKeyFromObject(&cr)
 
@@ -161,7 +165,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return common.Stop()
 	}
 
-	if err := handler.Inject(ctx, r); err != nil {
+	if err := r.inject(ctx, &cr); err != nil {
 		return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "injection failed"))
 	}
 
@@ -181,7 +185,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 }
 
 /*
-### Finalizers
+	### Finalizers
 */
 
 func (r *Controller) Finalizer() string {
@@ -215,22 +219,22 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 		regionAnnotations: cmap.New(),
 	}
 
-	var networkChaos Fault
+	var networkChaos GenericFault
 	networkChaos.SetGroupVersionKind(NetworkChaosGVK)
 
-	var podChaos Fault
+	var podChaos GenericFault
 	podChaos.SetGroupVersionKind(PodChaosGVK)
 
 	// var blockChaos Fault
 	// blockChaos.SetGroupVersionKind(BlockChaosGVK)
 
-	var ioChaos Fault
+	var ioChaos GenericFault
 	ioChaos.SetGroupVersionKind(IOChaosGVK)
 
-	var kernelChaos Fault
+	var kernelChaos GenericFault
 	kernelChaos.SetGroupVersionKind(KernelChaosGVK)
 
-	var timeChaos Fault
+	var timeChaos GenericFault
 	timeChaos.SetGroupVersionKind(TimeChaosGVK)
 
 	return ctrl.NewControllerManagedBy(mgr).

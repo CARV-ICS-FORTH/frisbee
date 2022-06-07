@@ -38,10 +38,6 @@ import (
 // +kubebuilder:rbac:groups=frisbee.io,resources=clusters/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=frisbee.io,resources=clusters/finalizers,verbs=update
 
-const (
-	jobOwnerKey = ".metadata.controller"
-)
-
 // Controller reconciles a Cluster object.
 type Controller struct {
 	ctrl.Manager
@@ -95,14 +91,8 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	*/
 	var childJobs v1alpha1.ServiceList
 
-	filters := []client.ListOption{
-		client.InNamespace(req.Namespace),
-		client.MatchingLabels{v1alpha1.LabelCreatedBy: req.Name},
-		client.MatchingFields{jobOwnerKey: req.Name},
-	}
-
-	if err := r.GetClient().List(ctx, &childJobs, filters...); err != nil {
-		return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "unable to list child services"))
+	if err := common.ListChildren(ctx, r, &childJobs, req.NamespacedName); err != nil {
+		return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "unable to list children for '%s'", req.NamespacedName))
 	}
 
 	/*
@@ -249,13 +239,13 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		// Metrics-driven execution requires to set alerts on Grafana.
 		if until := cr.Spec.Until; until != nil && until.HasMetricsExpr() {
-			if err := expressions.SetAlert(&cr, until.Metrics); err != nil {
+			if err := expressions.SetAlert(ctx, &cr, until.Metrics); err != nil {
 				return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "metrics expression error"))
 			}
 		}
 
 		if schedule := cr.Spec.Schedule; schedule != nil && schedule.Conditions.HasMetricsExpr() {
-			if err := expressions.SetAlert(&cr, schedule.Conditions.Metrics); err != nil {
+			if err := expressions.SetAlert(ctx, &cr, schedule.Conditions.Metrics); err != nil {
 				return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "metrics expression error"))
 			}
 		}
@@ -370,29 +360,9 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 
 	gvk := v1alpha1.GroupVersion.WithKind("Cluster")
 
-	// FieldIndexer knows how to index over a particular "field" such that it
-	// can later be used by a field selector.
-	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &v1alpha1.Service{}, jobOwnerKey,
-		func(rawObj client.Object) []string {
-			// grab the job object, extract the owner...
-			job := rawObj.(*v1alpha1.Service)
-
-			if !common.IsManagedByThisController(job, gvk) {
-				return nil
-			}
-
-			owner := metav1.GetControllerOf(job)
-
-			// ...and if so, return it
-			return []string{owner.Name}
-		}); err != nil {
-		return err
-	}
-
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.Cluster{}).
 		Named("cluster").
-		// WithEventFilter(r.Filters()).
-		Owns(&v1alpha1.Service{}, watchers.WatchService(r, gvk)).
+		Owns(&v1alpha1.Service{}, watchers.Watch(r, gvk)).
 		Complete(r)
 }

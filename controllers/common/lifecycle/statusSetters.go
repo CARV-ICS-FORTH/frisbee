@@ -29,6 +29,8 @@ import (
 )
 
 type ReconcileStatusAware interface {
+	GetResourceVersion() string
+
 	GetReconcileStatus() v1alpha1.Lifecycle
 	SetReconcileStatus(v1alpha1.Lifecycle)
 }

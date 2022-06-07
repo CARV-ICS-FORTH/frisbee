@@ -92,13 +92,8 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	*/
 	var childJobs v1alpha1.ChaosList
 
-	filters := []client.ListOption{
-		client.InNamespace(req.Namespace),
-		client.MatchingLabels{v1alpha1.LabelCreatedBy: req.Name},
-	}
-
-	if err := r.GetClient().List(ctx, &childJobs, filters...); err != nil {
-		return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "unable to list child services"))
+	if err := common.ListChildren(ctx, r, &childJobs, req.NamespacedName); err != nil {
+		return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "unable to list children for '%s'", req.NamespacedName))
 	}
 
 	/*
@@ -243,13 +238,13 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		// Metrics-driven execution requires to set alerts on Grafana.
 		if until := cr.Spec.Until; until != nil && until.HasMetricsExpr() {
-			if err := expressions.SetAlert(&cr, until.Metrics); err != nil {
+			if err := expressions.SetAlert(ctx, &cr, until.Metrics); err != nil {
 				return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "metrics expression error"))
 			}
 		}
 
 		if schedule := cr.Spec.Schedule; schedule != nil && schedule.Conditions.HasMetricsExpr() {
-			if err := expressions.SetAlert(&cr, schedule.Conditions.Metrics); err != nil {
+			if err := expressions.SetAlert(ctx, &cr, schedule.Conditions.Metrics); err != nil {
 				return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "metrics expression error"))
 			}
 		}
@@ -363,6 +358,6 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.Cascade{}).
 		Named("cascade").
-		Owns(&v1alpha1.Chaos{}, watchers.WatchChaos(r, gvk)).
+		Owns(&v1alpha1.Chaos{}, watchers.Watch(r, gvk)).
 		Complete(r)
 }

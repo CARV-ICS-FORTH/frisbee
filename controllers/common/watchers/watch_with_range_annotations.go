@@ -20,8 +20,10 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
+	"github.com/carv-ics-forth/frisbee/controllers/common/grafana"
+	"github.com/carv-ics-forth/frisbee/controllers/common/lifecycle"
+	cmap "github.com/orcaman/concurrent-map"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"
@@ -30,16 +32,26 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
-func WatchVirtualObject(r common.Reconciler, gvk schema.GroupVersionKind) builder.Predicates {
+func NewWatchWithRangeAnnotations(r common.Reconciler, gvk schema.GroupVersionKind) builder.Predicates {
+	w := watchWithRangeAnnotator{open: cmap.New()}
+
+	return w.Watch(r, gvk)
+}
+
+type watchWithRangeAnnotator struct {
+	open cmap.ConcurrentMap
+}
+
+func (w *watchWithRangeAnnotator) Watch(r common.Reconciler, gvk schema.GroupVersionKind) builder.Predicates {
 	return builder.WithPredicates(predicate.Funcs{
-		CreateFunc:  watchVirtualObjectCreate(r, gvk),
-		DeleteFunc:  watchVirtualObjectDelete(r, gvk),
-		UpdateFunc:  watchVirtualObjectUpdate(r, gvk),
-		GenericFunc: watchVirtualObjectGeneric(r, gvk),
+		CreateFunc:  w.watchCreate(r, gvk),
+		DeleteFunc:  w.watchDelete(r, gvk),
+		UpdateFunc:  w.watchUpdate(r, gvk),
+		GenericFunc: w.watchGeneric(r, gvk),
 	})
 }
 
-func watchVirtualObjectCreate(r common.Reconciler, gvk schema.GroupVersionKind) CreateFunc {
+func (w *watchWithRangeAnnotator) watchCreate(r common.Reconciler, gvk schema.GroupVersionKind) CreateFunc {
 	return func(e event.CreateEvent) bool {
 		if !common.IsManagedByThisController(e.Object, gvk) {
 			return false
@@ -58,11 +70,17 @@ func watchVirtualObjectCreate(r common.Reconciler, gvk schema.GroupVersionKind) 
 			"version", e.Object.GetResourceVersion(),
 		)
 
+		// because the range open has state (uid), we need to save in the controller's store.
+		annotator := &grafana.RangeAnnotation{}
+		annotator.Add(e.Object)
+
+		w.open.Set(e.Object.GetName(), annotator)
+
 		return true
 	}
 }
 
-func watchVirtualObjectUpdate(r common.Reconciler, gvk schema.GroupVersionKind) UpdateFunc {
+func (w *watchWithRangeAnnotator) watchUpdate(r common.Reconciler, gvk schema.GroupVersionKind) UpdateFunc {
 	return func(e event.UpdateEvent) bool {
 		if !common.IsManagedByThisController(e.ObjectNew, gvk) {
 			return false
@@ -82,11 +100,11 @@ func watchVirtualObjectUpdate(r common.Reconciler, gvk schema.GroupVersionKind) 
 			return true
 		}
 
-		// if the status is the same, there is no need to inform the VirtualObject
-		prev := e.ObjectOld.(*v1alpha1.VirtualObject)
-		latest := e.ObjectNew.(*v1alpha1.VirtualObject)
+		// if the status is the same, there is no need to inform the service
+		prev := e.ObjectOld.(lifecycle.ReconcileStatusAware)
+		latest := e.ObjectNew.(lifecycle.ReconcileStatusAware)
 
-		if prev.Status.Phase == latest.Status.Phase {
+		if prev.GetReconcileStatus().Phase == latest.GetReconcileStatus().Phase {
 			// a controller never initiates a phase change, and so is never asleep waiting for the same.
 			return false
 		}
@@ -95,8 +113,8 @@ func watchVirtualObjectUpdate(r common.Reconciler, gvk schema.GroupVersionKind) 
 			"Request", "Update",
 			"kind", reflect.TypeOf(e.ObjectNew),
 			"name", e.ObjectNew.GetName(),
-			"from", prev.Status.Phase,
-			"to", latest.Status.Phase,
+			"from", prev.GetReconcileStatus().Phase,
+			"to", latest.GetReconcileStatus().Phase,
 			"version", fmt.Sprintf("%s -> %s", prev.GetResourceVersion(), latest.GetResourceVersion()),
 		)
 
@@ -104,7 +122,7 @@ func watchVirtualObjectUpdate(r common.Reconciler, gvk schema.GroupVersionKind) 
 	}
 }
 
-func watchVirtualObjectDelete(r common.Reconciler, gvk schema.GroupVersionKind) DeleteFunc {
+func (w *watchWithRangeAnnotator) watchDelete(r common.Reconciler, gvk schema.GroupVersionKind) DeleteFunc {
 	return func(e event.DeleteEvent) bool {
 		if !common.IsManagedByThisController(e.Object, gvk) {
 			return false
@@ -126,11 +144,21 @@ func watchVirtualObjectDelete(r common.Reconciler, gvk schema.GroupVersionKind) 
 			"version", e.Object.GetResourceVersion(),
 		)
 
+		annotator, ok := w.open.Get(e.Object.GetName())
+		if !ok {
+			// this is a stall condition that happens when the controller is restarted. just ignore it
+			return false
+		}
+
+		annotator.(*grafana.RangeAnnotation).Delete(e.Object)
+
+		w.open.Remove(e.Object.GetName())
+
 		return true
 	}
 }
 
-func watchVirtualObjectGeneric(r common.Reconciler, gvk schema.GroupVersionKind) GenericFunc {
+func (w *watchWithRangeAnnotator) watchGeneric(r common.Reconciler, gvk schema.GroupVersionKind) GenericFunc {
 	return func(e event.GenericEvent) bool {
 		return true
 	}

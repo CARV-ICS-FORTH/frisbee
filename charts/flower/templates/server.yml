@@ -4,10 +4,22 @@ kind: Template
 metadata:
   name: fl.quickstart.server
 spec:
+  inputs:
+    parameters:
+      memory: ""
+      cpu: ""
+
   service:
     decorators:
       telemetry:
         - system.telemetry.agent
+
+
+      resources:
+        memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
+        cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
+
+    volumes:
     containers: # Container
       - name: app
         image: icsforth/fl-demo:latest
@@ -22,6 +34,9 @@ spec:
             cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
             trap "touch /dev/shm/stop" EXIT # Sidecar: use it to terminate itself when this container has exit.
 
-            python3 server.py
+            export logFile=/tmp/${HOSTNAME}
 
-            sleep 3600
+            python3 server.py &> ${logFile} &
+
+            # Exit the server if it gives the final report
+            tail -f ${logFile} | awk -W interactive '/History (loss, distributed):/{exit 0};END{print $0}'

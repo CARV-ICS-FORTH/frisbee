@@ -5,11 +5,6 @@ metadata:
   name: ycsb.telemetry.client
 spec:
   service:
-    decorators: # Decorators
-      dashboards:
-        matchLabels:
-          dashboard: ycsb
-
     containers: # Container(s)
       - name: telegraf
         image: telegraf:1.20.3
@@ -43,14 +38,11 @@ spec:
             done
 
 
-
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: ycsb-dashboard
-  labels:
-    dashboard: ycsb
+  name: ycsb.telemetry.client.config
 data:
 {{ (.Files.Glob "dashboards/*.json").AsConfig | indent 2 }}
 

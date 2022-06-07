@@ -21,7 +21,7 @@ import (
 	"reflect"
 
 	"github.com/carv-ics-forth/frisbee/controllers/common"
-	"github.com/carv-ics-forth/frisbee/controllers/testplan/grafana"
+	"github.com/carv-ics-forth/frisbee/controllers/common/grafana"
 	"github.com/pkg/errors"
 	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/event"

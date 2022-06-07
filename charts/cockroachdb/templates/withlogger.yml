@@ -8,7 +8,7 @@ spec:
     parameters:
       join: ""
       storedir: "cockroach-data"
-      logVolumeName: ""
+      logClaimName: ""
 
   service:
     decorators:
@@ -19,7 +19,7 @@ spec:
     volumes: # Match the pod to the log volume
       - name: logs
         persistentVolumeClaim:
-          claimName: {{"{{.Inputs.Parameters.logVolumeName}}" | quote}}
+          claimName: {{"{{.Inputs.Parameters.logClaimName}}" | quote}}
 
     initContainers:
       - name: wait-for-sync

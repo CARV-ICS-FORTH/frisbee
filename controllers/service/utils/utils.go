@@ -27,8 +27,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/json"
 )
 
-func GetServiceSpec(ctx context.Context, r common.Reconciler, who metav1.Object, fromTemplate v1alpha1.GenerateFromTemplate) (v1alpha1.ServiceSpec, error) {
-	template, err := templateutils.GetTemplate(ctx, r, who, fromTemplate.TemplateRef)
+func GetServiceSpec(ctx context.Context, r common.Reconciler, caller metav1.Object, fromTemplate v1alpha1.GenerateFromTemplate) (v1alpha1.ServiceSpec, error) {
+	template, err := templateutils.GetTemplate(ctx, r, caller, fromTemplate.TemplateRef)
 	if err != nil {
 		return v1alpha1.ServiceSpec{}, errors.Wrapf(err, "getTemplate error")
 	}
@@ -39,22 +39,22 @@ func GetServiceSpec(ctx context.Context, r common.Reconciler, who metav1.Object,
 		return v1alpha1.ServiceSpec{}, errors.Errorf("cannot marshal service of %s", fromTemplate.TemplateRef)
 	}
 
-	scheme := templateutils.Scheme{
-		Inputs: template.Spec.Inputs,
-		Spec:   specBody,
+	scheme, err := templateutils.NewScheme(caller, template.Spec.Inputs, specBody)
+	if err != nil {
+		return v1alpha1.ServiceSpec{}, errors.Wrapf(err, "cannot get scheme for '%s'", fromTemplate.TemplateRef)
 	}
 
 	var spec v1alpha1.ServiceSpec
 
-	if err := templateutils.GenerateFromScheme(&spec, &scheme, fromTemplate.GetInput(0)); err != nil {
+	if err := templateutils.GenerateFromScheme(&spec, scheme, fromTemplate.GetInput(0)); err != nil {
 		return v1alpha1.ServiceSpec{}, errors.Wrapf(err, "cannot create spec")
 	}
 
 	return spec, nil
 }
 
-func GetServiceSpecList(ctx context.Context, r common.Reconciler, who metav1.Object, fromTemplate v1alpha1.GenerateFromTemplate) ([]v1alpha1.ServiceSpec, error) {
-	template, err := templateutils.GetTemplate(ctx, r, who, fromTemplate.TemplateRef)
+func GetServiceSpecList(ctx context.Context, r common.Reconciler, caller metav1.Object, fromTemplate v1alpha1.GenerateFromTemplate) ([]v1alpha1.ServiceSpec, error) {
+	template, err := templateutils.GetTemplate(ctx, r, caller, fromTemplate.TemplateRef)
 	if err != nil {
 		return nil, errors.Wrapf(err, "template %s error", fromTemplate.TemplateRef)
 	}
@@ -69,14 +69,14 @@ func GetServiceSpecList(ctx context.Context, r common.Reconciler, who metav1.Obj
 	specs := make([]v1alpha1.ServiceSpec, 0, fromTemplate.MaxInstances)
 
 	if err := fromTemplate.IterateInputs(func(userInputs map[string]string) error {
-		scheme := templateutils.Scheme{
-			Inputs: template.Spec.Inputs,
-			Spec:   specBody,
+		scheme, err := templateutils.NewScheme(caller, template.Spec.Inputs, specBody)
+		if err != nil {
+			return errors.Wrapf(err, "cannot get scheme for '%s'", fromTemplate.TemplateRef)
 		}
 
 		var spec v1alpha1.ServiceSpec
 
-		if err := templateutils.GenerateFromScheme(&spec, &scheme, userInputs); err != nil {
+		if err := templateutils.GenerateFromScheme(&spec, scheme, userInputs); err != nil {
 			return errors.Wrapf(err, "macro expansion failed")
 		}
 

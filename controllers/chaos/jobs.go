@@ -21,119 +21,25 @@ import (
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
+	"github.com/carv-ics-forth/frisbee/controllers/common/labelling"
 	"github.com/pkg/errors"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
-type Fault = unstructured.Unstructured
+func (r *Controller) inject(ctx context.Context, cr *v1alpha1.Chaos) error {
+	var f GenericFault
 
-type chaoHandler interface {
-	GetFault() Fault
-
-	Inject(ctx context.Context, r *Controller) error
-}
-
-func dispatch(chaos *v1alpha1.Chaos) chaoHandler {
-	switch chaos.Spec.Type {
-	case v1alpha1.FaultRaw:
-		return &rawHandler{cr: chaos}
-	default:
-		panic("should never happen")
-	}
-}
-
-/*
-const (
-	TypeAWSChaos TemplateType = "AWSChaos"
-	TypeAzureChaos TemplateType = "AzureChaos"
-	TypeBlockChaos TemplateType = "BlockChaos"
-	TypeDNSChaos TemplateType = "DNSChaos"
-	TypeGCPChaos TemplateType = "GCPChaos"
-	TypeHTTPChaos TemplateType = "HTTPChaos"
-	TypeIOChaos TemplateType = "IOChaos"
-	TypeJVMChaos TemplateType = "JVMChaos"
-	TypeKernelChaos TemplateType = "KernelChaos"
-	TypeNetworkChaos TemplateType = "NetworkChaos"
-	TypePhysicalMachineChaos TemplateType = "PhysicalMachineChaos"
-	TypePodChaos TemplateType = "PodChaos"
-	TypeStressChaos TemplateType = "StressChaos"
-	TypeTimeChaos TemplateType = "TimeChaos"
-)
-
-*/
-
-var (
-	NetworkChaosGVK = schema.GroupVersionKind{
-		Group:   "chaos-mesh.org",
-		Version: "v1alpha1",
-		Kind:    "NetworkChaos",
+	if err := getRawManifest(cr, &f); err != nil {
+		return errors.Wrapf(err, "cannot get manifest for chaos '%s'", cr.GetName())
 	}
 
-	PodChaosGVK = schema.GroupVersionKind{
-		Group:   "chaos-mesh.org",
-		Version: "v1alpha1",
-		Kind:    "PodChaos",
-	}
+	f.SetName(cr.GetName())
 
-	/*
-		BlockChaosGVK = schema.GroupVersionKind{
-			Group:   "chaos-mesh.org",
-			Version: "v1alpha1",
-			Kind:    "BlockChaos",
-		}
+	labelling.Propagate(&f, cr)
 
-	*/
+	f.SetAnnotations(cr.GetAnnotations())
 
-	IOChaosGVK = schema.GroupVersionKind{
-		Group:   "chaos-mesh.org",
-		Version: "v1alpha1",
-		Kind:    "IOChaos",
-	}
-
-	KernelChaosGVK = schema.GroupVersionKind{
-		Group:   "chaos-mesh.org",
-		Version: "v1alpha1",
-		Kind:    "KernelChaos",
-	}
-
-	TimeChaosGVK = schema.GroupVersionKind{
-		Group:   "chaos-mesh.org",
-		Version: "v1alpha1",
-		Kind:    "TimeChaos",
-	}
-)
-
-/*
-	Raw Fault Handler
-*/
-type rawHandler struct {
-	cr *v1alpha1.Chaos
-}
-
-func (h rawHandler) GetFault() Fault {
-	var f map[string]interface{}
-
-	if err := yaml.Unmarshal([]byte(*h.cr.Spec.Raw), &f); err != nil {
-		panic(err)
-	}
-
-	var fault Fault
-
-	fault.SetUnstructuredContent(f)
-
-	fault.SetName(h.cr.GetName())
-	fault.SetNamespace(h.cr.GetNamespace())
-
-	return fault
-}
-
-func (h rawHandler) Inject(ctx context.Context, r *Controller) error {
-	fault := h.GetFault()
-
-	if err := common.Create(ctx, r, h.cr, &fault); err != nil {
-		return errors.Wrapf(err, "cannot inject fault")
+	if err := common.Create(ctx, r, cr, &f); err != nil {
+		return errors.Wrapf(err, "cannot inject GenericFault for chaos '%s'", cr.GetName())
 	}
 
 	return nil

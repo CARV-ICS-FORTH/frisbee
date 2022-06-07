@@ -21,7 +21,7 @@ import (
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	chaosutils "github.com/carv-ics-forth/frisbee/controllers/chaos/utils"
-	"github.com/carv-ics-forth/frisbee/controllers/common"
+	"github.com/carv-ics-forth/frisbee/controllers/common/labelling"
 	serviceutils "github.com/carv-ics-forth/frisbee/controllers/service/utils"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -46,32 +46,36 @@ func (r *Controller) service(ctx context.Context, t *v1alpha1.TestPlan, action v
 		return nil, errors.Wrapf(err, "input error")
 	}
 
-	// get the service template
+	// get the job template
 	if err := action.Service.Prepare(false); err != nil {
 		return nil, errors.Wrapf(err, "template validation")
 	}
 
 	spec, err := serviceutils.GetServiceSpec(ctx, r, t, *action.Service)
 	if err != nil {
-		return nil, errors.Wrapf(err, "cannot retrieve service spec")
+		return nil, errors.Wrapf(err, "cannot retrieve job spec")
 	}
 
-	var service v1alpha1.Service
+	var job v1alpha1.Service
 
-	service.SetGroupVersionKind(v1alpha1.GroupVersion.WithKind("Service"))
-	service.SetNamespace(t.GetNamespace())
-	service.SetName(action.Name)
+	job.SetGroupVersionKind(v1alpha1.GroupVersion.WithKind("Service"))
+	job.SetNamespace(t.GetNamespace())
+	job.SetName(action.Name)
 
-	// The service belongs to a SUT, unless the template is explicitly declared as a System service (SYS)
-	if common.SpecForSystemService(&spec) {
-		common.AppendLabel(&service, v1alpha1.LabelComponent, v1alpha1.ComponentSys)
+	// set labels
+	labelling.SetPlan(&job.ObjectMeta, t.GetName())
+	labelling.SetPartOf(&job.ObjectMeta, action.Name)
+
+	// The job belongs to a SUT, unless the template is explicitly declared as a System job (SYS)
+	if labelling.SpecForSystemService(&spec) {
+		labelling.SetComponent(&job.ObjectMeta, labelling.ComponentSys)
 	} else {
-		common.AppendLabel(&service, v1alpha1.LabelComponent, v1alpha1.ComponentSUT)
+		labelling.SetComponent(&job.ObjectMeta, labelling.ComponentSUT)
 	}
 
-	spec.DeepCopyInto(&service.Spec)
+	spec.DeepCopyInto(&job.Spec)
 
-	return &service, nil
+	return &job, nil
 }
 
 func (r *Controller) cluster(ctx context.Context, t *v1alpha1.TestPlan, action v1alpha1.Action) (client.Object, error) {
@@ -79,17 +83,20 @@ func (r *Controller) cluster(ctx context.Context, t *v1alpha1.TestPlan, action v
 		return nil, errors.Wrapf(err, "input error")
 	}
 
-	var cluster v1alpha1.Cluster
+	var job v1alpha1.Cluster
 
-	cluster.SetGroupVersionKind(v1alpha1.GroupVersion.WithKind("Cluster"))
-	cluster.SetNamespace(t.GetNamespace())
-	cluster.SetName(action.Name)
+	job.SetGroupVersionKind(v1alpha1.GroupVersion.WithKind("Cluster"))
+	job.SetNamespace(t.GetNamespace())
+	job.SetName(action.Name)
 
-	common.AppendLabel(&cluster, v1alpha1.LabelComponent, v1alpha1.ComponentSUT)
+	// set labels
+	labelling.SetPlan(&job.ObjectMeta, t.GetName())
+	labelling.SetPartOf(&job.ObjectMeta, action.Name)
+	labelling.SetComponent(&job.ObjectMeta, labelling.ComponentSUT)
 
-	action.Cluster.DeepCopyInto(&cluster.Spec)
+	action.Cluster.DeepCopyInto(&job.Spec)
 
-	return &cluster, nil
+	return &job, nil
 }
 
 func (r *Controller) chaos(ctx context.Context, t *v1alpha1.TestPlan, action v1alpha1.Action) (client.Object, error) {
@@ -107,17 +114,19 @@ func (r *Controller) chaos(ctx context.Context, t *v1alpha1.TestPlan, action v1a
 		return nil, errors.Wrapf(err, "service spec")
 	}
 
-	var chaos v1alpha1.Chaos
+	var job v1alpha1.Chaos
 
-	chaos.SetGroupVersionKind(v1alpha1.GroupVersion.WithKind("Chaos"))
-	chaos.SetNamespace(t.GetNamespace())
-	chaos.SetName(action.Name)
+	job.SetGroupVersionKind(v1alpha1.GroupVersion.WithKind("Chaos"))
+	job.SetNamespace(t.GetNamespace())
+	job.SetName(action.Name)
 
-	common.AppendLabel(&chaos, v1alpha1.LabelComponent, v1alpha1.ComponentSUT)
+	labelling.SetPlan(&job.ObjectMeta, t.GetName())
+	labelling.SetPartOf(&job.ObjectMeta, action.Name)
+	labelling.SetComponent(&job.ObjectMeta, labelling.ComponentSUT)
 
-	spec.DeepCopyInto(&chaos.Spec)
+	spec.DeepCopyInto(&job.Spec)
 
-	return &chaos, nil
+	return &job, nil
 }
 
 func (r *Controller) cascade(ctx context.Context, t *v1alpha1.TestPlan, action v1alpha1.Action) (client.Object, error) {
@@ -125,31 +134,35 @@ func (r *Controller) cascade(ctx context.Context, t *v1alpha1.TestPlan, action v
 		return nil, errors.Wrapf(err, "input error")
 	}
 
-	var cascade v1alpha1.Cascade
+	var job v1alpha1.Cascade
 
-	cascade.SetGroupVersionKind(v1alpha1.GroupVersion.WithKind("Cascade"))
-	cascade.SetNamespace(t.GetNamespace())
-	cascade.SetName(action.Name)
+	job.SetGroupVersionKind(v1alpha1.GroupVersion.WithKind("Cascade"))
+	job.SetNamespace(t.GetNamespace())
+	job.SetName(action.Name)
 
-	common.AppendLabel(&cascade, v1alpha1.LabelComponent, v1alpha1.ComponentSUT)
+	labelling.SetPlan(&job.ObjectMeta, t.GetName())
+	labelling.SetPartOf(&job.ObjectMeta, action.Name)
+	labelling.SetComponent(&job.ObjectMeta, labelling.ComponentSUT)
 
-	action.Cascade.DeepCopyInto(&cascade.Spec)
+	action.Cascade.DeepCopyInto(&job.Spec)
 
-	return &cascade, nil
+	return &job, nil
 }
 
 func (r *Controller) delete(ctx context.Context, t *v1alpha1.TestPlan, action v1alpha1.Action) (client.Object, error) {
 	// Delete normally does not return anything. This however would break all the pipeline for
 	// managing dependencies between jobs. For that, we return a dummy virtual object without dedicated controller.
-	var deletionJob v1alpha1.VirtualObject
+	var job v1alpha1.VirtualObject
 
-	deletionJob.SetGroupVersionKind(v1alpha1.GroupVersion.WithKind("VirtualObject"))
-	deletionJob.SetNamespace(t.GetNamespace())
-	deletionJob.SetName(action.Name)
+	job.SetGroupVersionKind(v1alpha1.GroupVersion.WithKind("VirtualObject"))
+	job.SetNamespace(t.GetNamespace())
+	job.SetName(action.Name)
 
-	common.AppendLabel(&deletionJob, v1alpha1.LabelComponent, v1alpha1.ComponentSUT)
+	labelling.SetPlan(&job.ObjectMeta, t.GetName())
+	labelling.SetPartOf(&job.ObjectMeta, action.Name)
+	labelling.SetComponent(&job.ObjectMeta, labelling.ComponentSUT)
 
-	deletionJob.SetReconcileStatus(v1alpha1.Lifecycle{
+	job.SetReconcileStatus(v1alpha1.Lifecycle{
 		Phase:   v1alpha1.PhaseSuccess,
 		Reason:  "AllJobsDeleted",
 		Message: "",
@@ -172,7 +185,7 @@ func (r *Controller) delete(ctx context.Context, t *v1alpha1.TestPlan, action v1
 		}
 	}
 
-	return &deletionJob, nil
+	return &job, nil
 }
 
 func (r *Controller) call(ctx context.Context, t *v1alpha1.TestPlan, action v1alpha1.Action) (client.Object, error) {
@@ -180,15 +193,17 @@ func (r *Controller) call(ctx context.Context, t *v1alpha1.TestPlan, action v1al
 		return nil, errors.Wrapf(err, "input error")
 	}
 
-	var call v1alpha1.Call
+	var job v1alpha1.Call
 
-	call.SetGroupVersionKind(v1alpha1.GroupVersion.WithKind("Call"))
-	call.SetNamespace(t.GetNamespace())
-	call.SetName(action.Name)
+	job.SetGroupVersionKind(v1alpha1.GroupVersion.WithKind("Call"))
+	job.SetNamespace(t.GetNamespace())
+	job.SetName(action.Name)
 
-	common.AppendLabel(&call, v1alpha1.LabelComponent, v1alpha1.ComponentSUT)
+	labelling.SetPlan(&job.ObjectMeta, t.GetName())
+	labelling.SetPartOf(&job.ObjectMeta, action.Name)
+	labelling.SetComponent(&job.ObjectMeta, labelling.ComponentSUT)
 
-	action.Call.DeepCopyInto(&call.Spec)
+	action.Call.DeepCopyInto(&job.Spec)
 
-	return &call, nil
+	return &job, nil
 }

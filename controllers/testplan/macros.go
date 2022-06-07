@@ -27,6 +27,7 @@ import (
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
 	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -240,9 +241,10 @@ func selectServices(ctx context.Context, r common.Reconciler, ss *v1alpha1.Match
 
 			var slist v1alpha1.ServiceList
 
-			err := r.GetClient().List(ctx, &slist, client.MatchingLabels{v1alpha1.LabelCreatedBy: cluster.GetName()})
-			if err != nil {
-				return nil, errors.Wrapf(err, "cannot get services")
+			req := types.NamespacedName{Namespace: cluster.GetNamespace(), Name: cluster.GetName()}
+
+			if err := common.ListChildren(ctx, r, &slist, req); err != nil {
+				return nil, errors.Wrapf(err, "cannot get services for '%s'", cluster.GetName())
 			}
 
 			// use only the running services

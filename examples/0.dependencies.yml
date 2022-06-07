@@ -1,0 +1,21 @@
+---
+apiVersion: frisbee.io/v1alpha1
+kind: TestPlan
+metadata:
+  name: dependencies
+spec:
+  actions:
+    # Create an iperf server
+    - action: Service
+      name: server
+      service:
+        templateRef: iperf2.server
+
+    # Create an iperf client
+    - action: Service
+      name: client
+      depends: { running: [ server ] }
+      service:
+        templateRef: iperf2.client
+        inputs:
+          - { server: .service.server.one, seconds: "60" }

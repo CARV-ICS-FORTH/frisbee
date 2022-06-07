@@ -1,0 +1,30 @@
+---
+apiVersion: frisbee.io/v1alpha1
+kind: TestPlan
+metadata:
+  name: stages
+spec:
+  actions:
+    # Step 1. Create a cockroach server
+    - action: Service
+      name: master
+      service:
+        templateRef: cockroach.single.master
+
+    # Step 2. Preload the server with keys
+    - action: Service
+      depends: { running: [ master ] }
+      name: loader
+      service:
+        templateRef: ycsb.cockroach.loader
+        inputs:
+          - { server: master, workload: workloada, recordcount: "50000", threads: "4", delay: "15" }
+
+    # Step 3. Run YCSB workload A
+    - action: Service
+      depends: { success: [ loader ] }
+      name: workload-a
+      service:
+        templateRef: ycsb.cockroach.runner
+        inputs:
+          - { server: master, workload: workloada, operationcount: "50000", threads: "4" }

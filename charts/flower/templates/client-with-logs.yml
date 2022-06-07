@@ -1,0 +1,59 @@
+---
+apiVersion: frisbee.io/v1alpha1
+kind: Template
+metadata:
+  name: fl.quickstart.client-with-logs
+spec:
+  inputs:
+    parameters:
+      server: "127.0.0.1"
+      dataClaimName: ""
+      logClaimName: ""
+
+  service:
+    decorators:
+      telemetry:
+        - system.telemetry.agent
+
+    volumes:
+      - name: dataset
+        persistentVolumeClaim:
+          claimName: {{"{{.Inputs.Parameters.dataClaimName}}" | quote}}
+      - name: logs
+        persistentVolumeClaim:
+          claimName: {{"{{.Inputs.Parameters.logClaimName}}" | quote}}
+    containers:
+      - name: app
+        image: icsforth/fl-demo:latest
+        volumeMounts:
+          - name: dataset
+            mountPath: /dataset
+            readOnly: true
+          - name: logs
+            mountPath: /logs
+        command:
+          - /bin/bash # Run shell
+          - -c # Read from string
+          - |  # Multi-line str
+            set -eumo  pipefail
+            cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
+            trap "touch /dev/shm/stop" EXIT # Sidecar: use it to terminate itself when this container has exit.
+
+            # Install basic utils
+            apt-get update && apt-get install -y procps
+
+            # Copy the media dataset into the local directory for processing. We use copy in order to avoid sending the
+            # I/O through the shared media.
+            cp -r /dataset ./data
+
+            # The clients are  supposed to be continuously running.
+            # If the training is stopped, the clients will report “Disconnect and shut down” on the logs,
+            # but they will keep running. To this end, we terminate the process upon the given message.
+            export FL_SERVER={{"{{.Inputs.Parameters.server}}"}}
+
+            export logDir=/logs/${HOSTNAME}
+
+            python3 client.py &> ${logDir} &
+            processnumber=$!
+
+            tail -F ${logDir} | awk  '/Disconnect and shut down/ { system("kill '$processnumber'") }'

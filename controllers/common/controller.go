@@ -21,13 +21,14 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
+	"github.com/carv-ics-forth/frisbee/controllers/common/labelling"
 	"github.com/carv-ics-forth/frisbee/pkg/debug"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	k8errors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
@@ -204,8 +205,8 @@ func Create(ctx context.Context, r Reconciler, parent, child client.Object) erro
 	// owner labels are used by the selectors.
 	// workflow labels are used to select only objects that belong to this experiment.
 	// used to narrow down the scope of fault injection in a common namespace
-	AppendLabels(child, parent.GetLabels())
-	AppendLabel(child, v1alpha1.LabelCreatedBy, parent.GetName())
+	labelling.SetCreatedBy(child, parent)
+	labelling.SetInstance(child)
 
 	child.SetNamespace(parent.GetNamespace())
 
@@ -228,6 +229,19 @@ func Create(ctx context.Context, r Reconciler, parent, child client.Object) erro
 	// If err is nil, Wrapf returns nil.
 	err := r.GetClient().Create(ctx, child)
 	return errors.Wrapf(err, "creation failed")
+}
+
+func ListChildren(ctx context.Context, r Reconciler, childJobs client.ObjectList, req types.NamespacedName) error {
+	filters := []client.ListOption{
+		client.InNamespace(req.Namespace),
+		client.MatchingLabels{labelling.LabelCreatedBy: req.Name},
+	}
+
+	if err := r.GetClient().List(ctx, childJobs, filters...); err != nil {
+		return errors.Wrapf(err, "cannot list children")
+	}
+
+	return nil
 }
 
 // Delete removes a Kubernetes object, ignoring the NotFound error. If any error exists,

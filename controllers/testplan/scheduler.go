@@ -24,14 +24,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// isJobInScheduledList take a job and checks if activeJobs has a job with the same
-// name and namespace.
-func isJobInScheduledList(name string, scheduledJobs map[string]v1alpha1.ConditionalExpr) bool {
-	_, ok := scheduledJobs[name]
-
-	return ok
-}
-
 // GetNextLogicalJob returns a list of jobs that meet the logical and time constraints.
 // That is, either the job has no dependencies, or the dependencies are met.
 //
@@ -40,7 +32,7 @@ func isJobInScheduledList(name string, scheduledJobs map[string]v1alpha1.Conditi
 // However, if there are no actions, the workflow will call the reconciliation cycle, and we will miss the
 // next timeout. To handle this scenario, we have to requeue the request with the given duration.
 // In this case, the given duration is the nearest expected timeout.
-func GetNextLogicalJob(timebase metav1.Time, all []v1alpha1.Action, gs lifecycle.ClassifierReader, scheduled map[string]v1alpha1.ConditionalExpr) ([]v1alpha1.Action, time.Time) {
+func GetNextLogicalJob(timebase metav1.Time, all []v1alpha1.Action, gs lifecycle.ClassifierReader, executed map[string]v1alpha1.ConditionalExpr) ([]v1alpha1.Action, time.Time) {
 	var nextCycle time.Time
 
 	successOK := func(deps *v1alpha1.WaitSpec) bool {
@@ -86,23 +78,23 @@ func GetNextLogicalJob(timebase metav1.Time, all []v1alpha1.Action, gs lifecycle
 		return true
 	}
 
-	var candidates []v1alpha1.Action
+	var schedule []v1alpha1.Action
 
 	for _, action := range all {
-		if isJobInScheduledList(action.Name, scheduled) {
-			// Not starting action because it is already processed.
+		if _, ok := executed[action.Name]; ok {
+			// Not starting action because it is already ok.
 			continue
 		}
 
 		if deps := action.DependsOn; deps != nil {
-			if !(successOK(deps) && runningOK(deps) && timeOK(deps)) {
+			if !successOK(deps) || !runningOK(deps) || !timeOK(deps) {
 				// some conditions are not met
 				continue
 			}
 		}
 
-		candidates = append(candidates, action)
+		schedule = append(schedule, action)
 	}
 
-	return candidates, nextCycle
+	return schedule, nextCycle
 }
