@@ -1,7 +1,5 @@
 ## @section Grafana
 
-## @param prometheus.honorTimestamp Use the timestamps of the metrics exposed by the agent (time-drifts)
-## @param prometheus.Port Listening port for Prometheus
 ## @param grafana.port Listening port for Grafana
 grafana:
   port: 3000
@@ -9,7 +7,8 @@ grafana:
 
 ## @section Prometheus
 
-## @param prometheus.Port Listening port for Prometheus
+## @param prometheus.name The name of the prometheus service
+## @param prometheus.port Listening port for Prometheus
 ## @param prometheus.honorTimestamp Use the timestamps of the metrics exposed by the agent (time-drifts)
 ## @param prometheus.queryLookbackDelta The maximum duration for retrieving metrics for considering the source as stale.
 prometheus:

@@ -1,0 +1,47 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: dataset
+spec:
+  storageClassName: network-volume
+  volumeMode: Filesystem
+  accessModes:
+    - ReadOnlyMany
+  resources:
+    requests:
+      storage: 2Gi
+
+
+---
+apiVersion: frisbee.io/v1alpha1
+kind: TestPlan
+metadata:
+  name: scaled-baseline
+spec:
+  actions:
+    # Step 0: Create a Flower server that expects N clients
+    - action: Service
+      name: server
+      service:
+        templateRef: fl.quickstart.server
+        inputs:
+          - { clients: "9" }
+
+    # Step 1: Download the dataset into a shared volume
+    - action: Service
+      name: downloader
+      service:
+        templateRef: fl.quickstart.dataset.cifar
+        inputs:
+          - { dataClaimName: dataset }
+
+    # Step 2: Create twelve Flower clients
+    - action: Cluster
+      depends: { running: [ server ], success: [ downloader ] }
+      name: clients
+      cluster:
+        templateRef: fl.quickstart.client
+        instances: 9
+        inputs:
+          - { server: server, dataClaimName: dataset }

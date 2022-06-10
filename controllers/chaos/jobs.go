@@ -32,14 +32,12 @@ func (r *Controller) inject(ctx context.Context, cr *v1alpha1.Chaos) error {
 		return errors.Wrapf(err, "cannot get manifest for chaos '%s'", cr.GetName())
 	}
 
-	f.SetName(cr.GetName())
-
 	labelling.Propagate(&f, cr)
 
 	f.SetAnnotations(cr.GetAnnotations())
 
 	if err := common.Create(ctx, r, cr, &f); err != nil {
-		return errors.Wrapf(err, "cannot inject GenericFault for chaos '%s'", cr.GetName())
+		return errors.Wrapf(err, "cannot inject fault for chaos '%s'", cr.GetName())
 	}
 
 	return nil

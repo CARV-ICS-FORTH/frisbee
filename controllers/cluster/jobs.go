@@ -45,7 +45,7 @@ func getJob(group *v1alpha1.Cluster, i int) *v1alpha1.Service {
 	instance.SetName(generateName(group, i))
 
 	labelling.SetPlan(&instance.ObjectMeta, labelling.GetPlan(group))
-	labelling.SetPartOf(&instance.ObjectMeta, labelling.GetPartOf(group))
+	labelling.SetAction(&instance.ObjectMeta, labelling.GetAction(group))
 	labelling.SetComponent(&instance.ObjectMeta, labelling.GetComponent(group))
 
 	// modulo is needed to re-iterate the job list, required for the implementation of "Until".

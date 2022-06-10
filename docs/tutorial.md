@@ -275,13 +275,10 @@ testplan.frisbee.io "cockroach-bitrot" deleted
 The flag `cascade=foreground` will wait until the experiment is actually deleted. Without this flag, the deletion will
 happen in the background. Use this flag if you want to run sequential tests, without interference.
 
-
-
-
-
 ## Check Ingress
 
-You can find more information about the cluster-wide (e.g, Dashboard, Chaos Dashboards) and plan-scoped services (Prometheus, Grafana, Logviewer) that are visible to the user, but inspecting the ingress.
+You can find more information about the cluster-wide (e.g, Dashboard, Chaos Dashboards) and plan-scoped services (
+Prometheus, Grafana, Logviewer) that are visible to the user, but inspecting the ingress.
 
 ```bash
 >> kubectl describe ingress
@@ -294,13 +291,11 @@ Rules:
   logviewer-mytest.localhost   							/   logviewer:http (10.244.4.62:80)
 ```
 
+The left side (host) points to the endpoint that is visible externally to the cluster, whereas the right side (backends)
+point to the internal services.
 
-
-The left side (host) points to the endpoint that is visible externally to the cluster, whereas the right side (backends) point to the internal services. 
-
-Although internal services may be directly accessible in a local deployment (e.g, 10.244.2.112:3000), this is not the case for remote deployments where services are only visible by the ingress (e.g,  grafana-mytest.localhost).
-
-
+Although internal services may be directly accessible in a local deployment (e.g, 10.244.2.112:3000), this is not the
+case for remote deployments where services are only visible by the ingress (e.g, grafana-mytest.localhost).
 
 ## Distributed Logs
 
@@ -315,8 +310,6 @@ Once done, the logs are available via a web-based file browser.
 
 The lifecycle of the volume is bind to that of the test. If the test is deleted, the volume will be garbage collected
 automatically.
-
-
 
 ## Parallel Tests.
 

@@ -8,12 +8,12 @@ spec:
     parameters:
       memory: ""
       cpu: ""
-
+      rounds: "3"
+      clients: "2"
   service:
     decorators:
       telemetry:
         - system.telemetry.agent
-
 
       resources:
         memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
@@ -33,6 +33,16 @@ spec:
             set -eum
             cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
             trap "touch /dev/shm/stop" EXIT # Sidecar: use it to terminate itself when this container has exit.
+
+
+            export FL_NUM_OF_ROUNDS={{"{{.Inputs.Parameters.rounds}}"}}
+
+            # Minimum number of clients that need to be connected to the server before a training round can start.
+            # It should be at least equal ro FL_MIN_FIT_CLIENTS
+            export FL_MIN_AVAILABLE_CLIENTS={{"{{.Inputs.Parameters.clients}}"}}
+
+            # Minimum number of clients to be sampled for the next round.
+            export FL_MIN_FIT_CLIENTS={{"{{.Inputs.Parameters.clients}}"}}
 
             export logFile=/tmp/${HOSTNAME}
 
