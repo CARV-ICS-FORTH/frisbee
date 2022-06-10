@@ -64,7 +64,7 @@ func (r *Controller) service(ctx context.Context, t *v1alpha1.TestPlan, action v
 
 	// set labels
 	labelling.SetPlan(&job.ObjectMeta, t.GetName())
-	labelling.SetPartOf(&job.ObjectMeta, action.Name)
+	labelling.SetAction(&job.ObjectMeta, action.Name)
 
 	// The job belongs to a SUT, unless the template is explicitly declared as a System job (SYS)
 	if labelling.SpecForSystemService(&spec) {
@@ -91,7 +91,7 @@ func (r *Controller) cluster(ctx context.Context, t *v1alpha1.TestPlan, action v
 
 	// set labels
 	labelling.SetPlan(&job.ObjectMeta, t.GetName())
-	labelling.SetPartOf(&job.ObjectMeta, action.Name)
+	labelling.SetAction(&job.ObjectMeta, action.Name)
 	labelling.SetComponent(&job.ObjectMeta, labelling.ComponentSUT)
 
 	action.Cluster.DeepCopyInto(&job.Spec)
@@ -121,7 +121,7 @@ func (r *Controller) chaos(ctx context.Context, t *v1alpha1.TestPlan, action v1a
 	job.SetName(action.Name)
 
 	labelling.SetPlan(&job.ObjectMeta, t.GetName())
-	labelling.SetPartOf(&job.ObjectMeta, action.Name)
+	labelling.SetAction(&job.ObjectMeta, action.Name)
 	labelling.SetComponent(&job.ObjectMeta, labelling.ComponentSUT)
 
 	spec.DeepCopyInto(&job.Spec)
@@ -141,7 +141,7 @@ func (r *Controller) cascade(ctx context.Context, t *v1alpha1.TestPlan, action v
 	job.SetName(action.Name)
 
 	labelling.SetPlan(&job.ObjectMeta, t.GetName())
-	labelling.SetPartOf(&job.ObjectMeta, action.Name)
+	labelling.SetAction(&job.ObjectMeta, action.Name)
 	labelling.SetComponent(&job.ObjectMeta, labelling.ComponentSUT)
 
 	action.Cascade.DeepCopyInto(&job.Spec)
@@ -159,7 +159,7 @@ func (r *Controller) delete(ctx context.Context, t *v1alpha1.TestPlan, action v1
 	job.SetName(action.Name)
 
 	labelling.SetPlan(&job.ObjectMeta, t.GetName())
-	labelling.SetPartOf(&job.ObjectMeta, action.Name)
+	labelling.SetAction(&job.ObjectMeta, action.Name)
 	labelling.SetComponent(&job.ObjectMeta, labelling.ComponentSUT)
 
 	job.SetReconcileStatus(v1alpha1.Lifecycle{
@@ -200,7 +200,7 @@ func (r *Controller) call(ctx context.Context, t *v1alpha1.TestPlan, action v1al
 	job.SetName(action.Name)
 
 	labelling.SetPlan(&job.ObjectMeta, t.GetName())
-	labelling.SetPartOf(&job.ObjectMeta, action.Name)
+	labelling.SetAction(&job.ObjectMeta, action.Name)
 	labelling.SetComponent(&job.ObjectMeta, labelling.ComponentSUT)
 
 	action.Call.DeepCopyInto(&job.Spec)

@@ -1,0 +1,53 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: dataset
+spec:
+  storageClassName: network-volume
+  volumeMode: Filesystem
+  accessModes:
+    - ReadOnlyMany
+  resources:
+    requests:
+      storage: 2Gi
+
+---
+apiVersion: frisbee.io/v1alpha1
+kind: TestPlan
+metadata:
+  name: throttle-client
+spec:
+  actions:
+    # Create a Flower server
+    - action: Service
+      name: server
+      service:
+        templateRef: fl.quickstart.server
+
+    # Download the dataset into a shared volume
+    - action: Service
+      name: downloader
+      service:
+        templateRef: fl.quickstart.dataset.cifar
+        inputs:
+          - { dataClaimName: dataset }
+
+    # Create two Flower clients without throttling
+    - action: Cluster
+      depends: { running: [ server ], success: [ downloader ] }
+      name: clients
+      cluster:
+        templateRef: fl.quickstart.client
+        instances: 2
+        inputs:
+          - { server: server, dataClaimName: dataset }
+
+    # Create 1 Flower client with throttling
+    - action: Service
+      name: throttled-client
+      depends: { running: [ server ], success: [ downloader ] }
+      service:
+        templateRef: fl.quickstart.client
+        inputs:
+          - { server: server, dataClaimName: dataset, cpu: "1" }

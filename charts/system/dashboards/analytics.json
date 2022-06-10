@@ -86,8 +86,8 @@
   "fiscalYearStartMonth": 0,
   "gnetId": 315,
   "graphTooltip": 0,
-  "id": 1,
-  "iteration": 1654538469564,
+  "id": 2,
+  "iteration": 1654776231933,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -1041,7 +1041,7 @@
       "id": 85,
       "links": [],
       "options": {
-        "orientation": "horizontal",
+        "orientation": "auto",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -1057,8 +1057,9 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(rate(container_cpu_usage_seconds_total{node=~\"$node\", id=\"/\"}[$__rate_interval]))  / max (machine_cpu_cores{node=~\"$node\"}) * 100",
+          "expr": "sum(rate(container_cpu_usage_seconds_total{node=~\"$node\", id=\"/\"}[$__rate_interval])) / sum(max(machine_cpu_cores{node=~\"$node\"}) by (node)) * 100",
           "hide": false,
+          "instant": false,
           "interval": "",
           "legendFormat": "",
           "refId": "usage"
@@ -1357,7 +1358,7 @@
               }
             ]
           },
-          "unit": "none"
+          "unit": "short"
         },
         "overrides": []
       },
@@ -1388,6 +1389,7 @@
           "exemplar": true,
           "expr": "sum(rate(container_cpu_usage_seconds_total{node=~\"$node\", id=\"/\"}[$__rate_interval]))",
           "hide": false,
+          "instant": true,
           "interval": "",
           "legendFormat": "",
           "refId": "vcores"
@@ -1450,9 +1452,10 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(max (machine_cpu_cores{node=~\"$node\"}))",
+          "expr": "sum(max(machine_cpu_cores{node=~\"$node\"}) by (node)) ",
           "format": "time_series",
           "hide": false,
+          "instant": false,
           "interval": "",
           "intervalFactor": 1,
           "legendFormat": "",
@@ -1653,7 +1656,7 @@
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
-            "fillOpacity": 0,
+            "fillOpacity": 2,
             "gradientMode": "opacity",
             "hideFrom": {
               "legend": false,
@@ -1748,7 +1751,7 @@
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
-            "fillOpacity": 0,
+            "fillOpacity": 2,
             "gradientMode": "opacity",
             "hideFrom": {
               "legend": false,
@@ -1898,7 +1901,7 @@
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
-            "fillOpacity": 0,
+            "fillOpacity": 2,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
@@ -2030,7 +2033,7 @@
     },
     {
       "datasource": "Prometheus",
-      "description": "hot:  The amount of working set memory, this includes recently accessed memory,  dirty memory, and kernel memory. \n\nswap: The amount of swap currently used by the processes in this cgroup\nmmap: \tThe amount of memory used for mapped files (includes tmpfs/shmem)\n\ncache:  Number of bytes of page cache memory.",
+      "description": "hot:  The amount of working set memory, this includes recently accessed memory,  dirty memory, and kernel memory. ",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2041,7 +2044,7 @@
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
-            "fillOpacity": 0,
+            "fillOpacity": 2,
             "gradientMode": "opacity",
             "hideFrom": {
               "legend": false,
@@ -2112,41 +2115,17 @@
           "interval": "",
           "legendFormat": "{{instance}} (Hot)",
           "refId": "hot"
-        },
-        {
-          "exemplar": true,
-          "expr": "container_memory_mapped_file{node=~\"$node\", id=\"/\", instance=~\"$instance\"}  != 0\n",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "{{instance}} (Mmap)",
-          "refId": "mmap"
-        },
-        {
-          "exemplar": true,
-          "expr": "container_memory_cache{node=~\"$node\", id=\"/\", instance=~\"$instance\"}  != 0",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "{{instance}} (Cache)",
-          "refId": "cache"
-        },
-        {
-          "exemplar": true,
-          "expr": "container_memory_swap{node=~\"$node\", id=\"/\", instance=~\"$instance\"}  != 0",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "{{instance}} (Swap)",
-          "refId": "swap"
         }
       ],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Breakdown Virtual Memory Usage",
+      "title": "Hot Memory Usage",
       "transformations": [],
       "type": "timeseries"
     },
     {
       "datasource": "Prometheus",
-      "description": "",
+      "description": "mmap: \tThe amount of memory used for mapped files (includes tmpfs/shmem)\n",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2156,8 +2135,8 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
-            "drawStyle": "bars",
-            "fillOpacity": 0,
+            "drawStyle": "line",
+            "fillOpacity": 2,
             "gradientMode": "opacity",
             "hideFrom": {
               "legend": false,
@@ -2166,12 +2145,12 @@
             },
             "lineInterpolation": "smooth",
             "lineWidth": 2,
-            "pointSize": 5,
+            "pointSize": 6,
             "scaleDistribution": {
               "type": "linear"
             },
             "showPoints": "auto",
-            "spanNulls": 31000,
+            "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -2194,7 +2173,7 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "decbytes"
         },
         "overrides": []
       },
@@ -2204,13 +2183,12 @@
         "x": 0,
         "y": 65
       },
-      "id": 106,
+      "id": 139,
       "links": [],
       "options": {
         "legend": {
           "calcs": [
-            "mean",
-            "lastNotNull"
+            "mean"
           ],
           "displayMode": "table",
           "placement": "bottom"
@@ -2220,6 +2198,235 @@
         }
       },
       "pluginVersion": "8.2.1",
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "container_memory_mapped_file{node=~\"$node\", id=\"/\", instance=~\"$instance\"}  != 0",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "{{instance}} ",
+          "refId": "mmap"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Memory Mapped File Usage",
+      "transformations": [],
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "cache:  Number of bytes of page cache memory.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 2,
+            "gradientMode": "opacity",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 6,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "decbytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 73
+      },
+      "id": 140,
+      "links": [],
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "pluginVersion": "8.2.1",
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "container_memory_cache{node=~\"$node\", id=\"/\", instance=~\"$instance\"}  != 0",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "{{instance}} (Cache)",
+          "refId": "cache"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Cache Memory Usage",
+      "transformations": [],
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "swap: The amount of swap currently used by the processes in this cgroup",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 2,
+            "gradientMode": "opacity",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 6,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "decbytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 81
+      },
+      "id": 141,
+      "links": [],
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "pluginVersion": "8.2.1",
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "container_memory_swap{node=~\"$node\", id=\"/\", instance=~\"$instance\"}  != 0",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "{{instance}} (Swap)",
+          "refId": "swap"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Swap Memory Usage",
+      "transformations": [],
+      "type": "timeseries"
+    },
+    {
+      "cards": {
+        "cardPadding": null,
+        "cardRound": null
+      },
+      "color": {
+        "cardColor": "#b4ff00",
+        "colorScale": "sqrt",
+        "colorScheme": "interpolateSpectral",
+        "exponent": 0.5,
+        "mode": "spectrum"
+      },
+      "dataFormat": "tsbuckets",
+      "datasource": "Prometheus",
+      "description": "",
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 89
+      },
+      "heatmap": {},
+      "hideZeroBuckets": false,
+      "highlightCards": true,
+      "id": 106,
+      "legend": {
+        "show": false
+      },
+      "links": [],
+      "pluginVersion": "8.2.1",
+      "reverseYBuckets": false,
       "targets": [
         {
           "exemplar": true,
@@ -2233,7 +2440,28 @@
       "timeFrom": null,
       "timeShift": null,
       "title": "Page Faults",
-      "type": "timeseries"
+      "tooltip": {
+        "show": true,
+        "showHistogram": false
+      },
+      "type": "heatmap",
+      "xAxis": {
+        "show": true
+      },
+      "xBucketNumber": null,
+      "xBucketSize": null,
+      "yAxis": {
+        "decimals": null,
+        "format": "short",
+        "logBase": 1,
+        "max": null,
+        "min": null,
+        "show": true,
+        "splitFactor": null
+      },
+      "yBucketBound": "auto",
+      "yBucketNumber": null,
+      "yBucketSize": null
     },
     {
       "datasource": "Prometheus",
@@ -2248,7 +2476,7 @@
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
-            "fillOpacity": 0,
+            "fillOpacity": 2,
             "gradientMode": "opacity",
             "hideFrom": {
               "legend": false,
@@ -2293,7 +2521,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 73
+        "y": 97
       },
       "id": 126,
       "links": [],
@@ -2334,7 +2562,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 81
+        "y": 105
       },
       "id": 133,
       "panels": [],
@@ -2347,7 +2575,7 @@
         "h": 2,
         "w": 24,
         "x": 0,
-        "y": 82
+        "y": 106
       },
       "id": 122,
       "options": {
@@ -2385,7 +2613,7 @@
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
-            "fillOpacity": 0,
+            "fillOpacity": 2,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
@@ -2430,7 +2658,7 @@
         "h": 11,
         "w": 24,
         "x": 0,
-        "y": 84
+        "y": 108
       },
       "id": 123,
       "links": [],
@@ -2490,7 +2718,7 @@
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
-            "fillOpacity": 0,
+            "fillOpacity": 2,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
@@ -2535,7 +2763,7 @@
         "h": 11,
         "w": 24,
         "x": 0,
-        "y": 95
+        "y": 119
       },
       "id": 113,
       "links": [],
@@ -2586,7 +2814,7 @@
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
-            "fillOpacity": 0,
+            "fillOpacity": 2,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
@@ -2631,7 +2859,7 @@
         "h": 11,
         "w": 24,
         "x": 0,
-        "y": 106
+        "y": 130
       },
       "id": 115,
       "links": [],
@@ -2735,7 +2963,7 @@
         "h": 11,
         "w": 24,
         "x": 0,
-        "y": 117
+        "y": 141
       },
       "id": 117,
       "links": [],
@@ -2797,7 +3025,7 @@
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "bars",
-            "fillOpacity": 0,
+            "fillOpacity": 2,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
@@ -2842,7 +3070,7 @@
         "h": 11,
         "w": 24,
         "x": 0,
-        "y": 128
+        "y": 152
       },
       "id": 114,
       "links": [],
@@ -2903,7 +3131,7 @@
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "bars",
-            "fillOpacity": 0,
+            "fillOpacity": 2,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
@@ -2948,7 +3176,7 @@
         "h": 11,
         "w": 24,
         "x": 0,
-        "y": 139
+        "y": 163
       },
       "id": 118,
       "links": [],
@@ -3006,7 +3234,7 @@
         "h": 11,
         "w": 24,
         "x": 0,
-        "y": 150
+        "y": 174
       },
       "heatmap": {},
       "hideZeroBuckets": true,
@@ -3079,7 +3307,7 @@
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
-            "fillOpacity": 0,
+            "fillOpacity": 2,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
@@ -3124,7 +3352,7 @@
         "h": 11,
         "w": 24,
         "x": 0,
-        "y": 161
+        "y": 185
       },
       "id": 121,
       "links": [],
@@ -3185,7 +3413,7 @@
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
-            "fillOpacity": 0,
+            "fillOpacity": 2,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
@@ -3255,7 +3483,7 @@
         "h": 11,
         "w": 24,
         "x": 0,
-        "y": 172
+        "y": 196
       },
       "id": 125,
       "links": [],
@@ -3309,7 +3537,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 183
+        "y": 207
       },
       "id": 136,
       "panels": [],
@@ -3328,7 +3556,7 @@
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
-            "fillOpacity": 0,
+            "fillOpacity": 2,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
@@ -3367,13 +3595,39 @@
           },
           "unit": "Bps"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "__systemRef": "hideSeriesFrom",
+            "matcher": {
+              "id": "byNames",
+              "options": {
+                "mode": "exclude",
+                "names": [
+                  "server:eth0 RX",
+                  "server:eth0 TX"
+                ],
+                "prefix": "All except:",
+                "readOnly": true
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": true
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 11,
         "w": 24,
         "x": 0,
-        "y": 184
+        "y": 208
       },
       "id": 97,
       "links": [],
@@ -3433,7 +3687,7 @@
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
-            "fillOpacity": 10,
+            "fillOpacity": 4,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
@@ -3442,7 +3696,7 @@
             },
             "lineInterpolation": "smooth",
             "lineWidth": 2,
-            "pointSize": 3,
+            "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
             },
@@ -3472,13 +3726,39 @@
           },
           "unit": "short"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "__systemRef": "hideSeriesFrom",
+            "matcher": {
+              "id": "byNames",
+              "options": {
+                "mode": "exclude",
+                "names": [
+                  "server:eth0 RX",
+                  "server:eth0 TX"
+                ],
+                "prefix": "All except:",
+                "readOnly": true
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": true
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 11,
         "w": 24,
         "x": 0,
-        "y": 195
+        "y": 219
       },
       "id": 100,
       "links": [],
@@ -3486,7 +3766,8 @@
         "legend": {
           "calcs": [
             "mean",
-            "lastNotNull"
+            "max",
+            "last"
           ],
           "displayMode": "table",
           "placement": "bottom"
@@ -3499,7 +3780,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(rate(container_network_transmit_packets_dropped_total{node=~\"$node\", id=\"/\", instance=~\"$instance\"}[$__rate_interval])) by (instance,interface) != 0",
+          "expr": "sum(rate(container_network_transmit_packets_total{node=~\"$node\", id=\"/\", instance=~\"$instance\"}[$__rate_interval])) by (instance,interface) != 0",
           "hide": false,
           "interval": "",
           "intervalFactor": 1,
@@ -3508,7 +3789,7 @@
         },
         {
           "exemplar": true,
-          "expr": "- sum(rate(container_network_receive_packets_dropped_total{node=~\"$node\", id=\"/\", instance=~\"$instance\"}[$__rate_interval])) by (instance,interface ) != 0",
+          "expr": "- sum(rate(container_network_receive_packets_total{node=~\"$node\", id=\"/\", instance=~\"$instance\"}[$__rate_interval])) by (instance,interface ) != 0",
           "hide": false,
           "instant": false,
           "interval": "",
@@ -3522,7 +3803,7 @@
       "thresholds": [],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Network Packet Drops ",
+      "title": "Network Packet ",
       "transparent": true,
       "type": "timeseries"
     }

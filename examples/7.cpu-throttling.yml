@@ -43,6 +43,6 @@ spec:
         templateRef: fl.quickstart.client
         instances: 3
         inputs:
-          - { server: server, dataClaimName: dataset, cpu: "1", memory: "2Gi"}
-          - { server: server, dataClaimName: dataset, cpu: "2", memory: "4Gi"}
-          - { server: server, dataClaimName: dataset, cpu: "4", memory: "8Gi"}
+          - { server: server, dataClaimName: dataset, cpu: "1", memory: "2Gi" }
+          - { server: server, dataClaimName: dataset, cpu: "2", memory: "4Gi" }
+          - { server: server, dataClaimName: dataset, cpu: "4", memory: "8Gi" }

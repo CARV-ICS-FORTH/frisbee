@@ -97,7 +97,7 @@ func getRawManifest(cr *v1alpha1.Chaos, f *GenericFault) error {
 	f.SetUnstructuredContent(body)
 
 	f.SetName(cr.GetName())
-	f.SetName(cr.GetNamespace())
+	f.SetNamespace(cr.GetNamespace())
 
 	return nil
 }
