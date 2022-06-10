@@ -25,6 +25,7 @@ import (
 	"github.com/carv-ics-forth/frisbee/controllers/common/labelling"
 	"github.com/carv-ics-forth/frisbee/pkg/structure"
 	"github.com/pkg/errors"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -76,9 +77,11 @@ func (r *Controller) callJob(ctx context.Context, cr *v1alpha1.Call, i int) erro
 		}
 	}
 
+	serviceName := cr.Spec.Services[i]
+	callable := cr.Status.QueuedJobs[i]
+
 	{ // Perform the actual job
-		serviceName := cr.Spec.Services[i]
-		callable := cr.Status.QueuedJobs[i]
+		r.GetEventRecorderFor("").Event(cr, corev1.EventTypeNormal, "CallBegin", serviceName)
 
 		r.Info("===> Synchronous call", "caller", cr.GetName(), "service", serviceName)
 		defer r.Info("<=== Synchronous call", "caller", cr.GetName(), "service", serviceName)
@@ -100,6 +103,7 @@ func (r *Controller) callJob(ctx context.Context, cr *v1alpha1.Call, i int) erro
 			}
 
 			r.Logger.Info("Call Output", "stdout", res.Stdout, "stderr", res.Stderr)
+
 		}()
 
 		select {
@@ -107,10 +111,14 @@ func (r *Controller) callJob(ctx context.Context, cr *v1alpha1.Call, i int) erro
 			return errors.Wrapf(ctx.Err(), "cancel operation")
 		case err := <-quit:
 			if err != nil {
+				r.GetEventRecorderFor("").Event(cr, corev1.EventTypeWarning, "CallFailed", serviceName)
+
 				return errors.Wrapf(err, "call failed")
 			}
 		}
 	}
+
+	r.GetEventRecorderFor("").Event(cr, corev1.EventTypeNormal, "CallSuccess", serviceName)
 
 	{ // update the status of the mockup. This will be captured by the lifecycle.
 		mock.SetReconcileStatus(v1alpha1.Lifecycle{

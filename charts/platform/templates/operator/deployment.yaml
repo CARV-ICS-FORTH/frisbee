@@ -12,7 +12,7 @@ metadata:
   name: {{.Values.operator.controllerName}}
 spec:
   ports:
-    - port: {{.Values.operator.webhookPort |quote}}
+    - port: {{.Values.operator.webhookPort}}
       protocol: TCP
   selector:
     control-plane: manager

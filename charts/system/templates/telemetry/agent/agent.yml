@@ -24,7 +24,6 @@ spec:
           #runAsNonRoot: true
           #readOnlyRootFilesystem: false
           #allowPrivilegeEscalation: false
-
         command:
           - /bin/sh # Run shell
           - -c # Read from string

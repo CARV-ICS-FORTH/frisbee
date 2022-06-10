@@ -8,7 +8,7 @@ metadata:
   labels:
     discover.frisbee.io/name: system.controller.configuration
 data:
-  DeveloperMode: {{.Values.operator.enabled | quote}}
+  DeveloperMode: {{not .Values.operator.enabled | quote}}
 
   Namespace: {{.Release.Namespace}}
 
