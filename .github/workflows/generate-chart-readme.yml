@@ -56,4 +56,4 @@ jobs:
           readme-generator-for-helm/bin/index.js -r $(cat prepared-inputs | grep README) -v $(cat prepared-inputs | grep values)
 
       - name: Output generated README.md
-        run: cat $(cat prepared-inputs | grep README)
+        run: readme-generator-for-helm/bin/index.js --values $(cat prepared-inputs | grep values) --schema /tmp/chart-schema.json
