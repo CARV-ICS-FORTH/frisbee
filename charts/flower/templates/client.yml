@@ -24,6 +24,7 @@ spec:
       - name: dataset
         persistentVolumeClaim:
           claimName: {{"{{.Inputs.Parameters.dataClaimName}}" | quote}}
+
     containers:
       - name: app
         image: icsforth/fl-demo:latest
@@ -35,7 +36,7 @@ spec:
           - /bin/bash # Run shell
           - -c # Read from string
           - |  # Multi-line str
-            set -eumo  pipefail
+            set -eumo pipefail
             cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
             trap "touch /dev/shm/stop" EXIT # Sidecar: use it to terminate itself when this container has exit.
 
@@ -50,7 +51,5 @@ spec:
 
             export logFile=/tmp/${HOSTNAME}
 
-            python3 client.py &> ${logFile} &
-
             # Exit the client if it disconnects
-            tail -f ${logFile} | awk -W interactive '/Disconnect and shut down/;END{print $0}'
+            python3 client.py | awk -W interactive '/Disconnect and shut down/{exit 0};END{print $0}'

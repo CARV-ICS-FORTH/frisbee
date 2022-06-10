@@ -44,7 +44,7 @@ const (
 	LabelName = "plan.frisbee.io/name"
 
 	// LabelPartOf points to the action this resource is part of.
-	LabelPartOf = "plan.frisbee.io/part-of"
+	LabelPartOf = "plan.frisbee.io/action"
 
 	// LabelCreatedBy points to the controller who created this resource
 	LabelCreatedBy = "plan.frisbee.io/created-by"
@@ -61,7 +61,7 @@ func SetPlan(obj *metav1.ObjectMeta, plan string) {
 	metav1.SetMetaDataLabel(obj, LabelName, plan)
 }
 
-func SetPartOf(obj *metav1.ObjectMeta, action string) {
+func SetAction(obj *metav1.ObjectMeta, action string) {
 	metav1.SetMetaDataLabel(obj, LabelPartOf, action)
 }
 
@@ -92,8 +92,8 @@ func GetPlan(obj metav1.Object) string {
 	return plan
 }
 
-// GetPartOf returns the name of the action the object belongs to.
-func GetPartOf(obj metav1.Object) string {
+// GetAction returns the name of the action the object belongs to.
+func GetAction(obj metav1.Object) string {
 	action, ok := obj.GetLabels()[LabelPartOf]
 	if !ok {
 		panic(errors.Errorf("Cannot extract label '%s' from resource '%s'. Labels: %s",

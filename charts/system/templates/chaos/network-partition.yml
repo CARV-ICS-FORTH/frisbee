@@ -1,4 +1,3 @@
-
 ---
 # system.chaos.network.partition.pods will separate the target service from the specified pods.
 # If the namespace is not specified, the installation namespace will be used.
@@ -85,7 +84,6 @@ spec:
       targets: "localhost"
       direction: both
       duration: "2m"
-      namespaces: {{.Release.Namespace}}
   chaos:
     type: raw
     raw: |
@@ -99,7 +97,7 @@ spec:
         duration: {{"{{.Inputs.Parameters.duration}}"}}
         mode: all
         selector:
-          namespaces: [{{"{{.Inputs.Parameters.namespace}}"}}]
+          namespaces: [{{.Release.Namespace}}]
         target:
           mode: all
           selector:
