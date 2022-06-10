@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"net/http"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
@@ -124,7 +125,7 @@ func (r *Controller) installPrometheus(ctx context.Context, t *v1alpha1.TestPlan
 		return errors.Wrapf(err, "cannot create %s", job.GetName())
 	}
 
-	t.Status.PrometheusEndpoint = common.GenerateEndpoint(notRandomPrometheusName, t.GetNamespace(), PrometheusPort)
+	t.Status.PrometheusEndpoint = externalEndpoint(notRandomPrometheusName, t.GetNamespace())
 
 	return nil
 }
@@ -165,7 +166,7 @@ func (r *Controller) installGrafana(ctx context.Context, t *v1alpha1.TestPlan, a
 		return errors.Wrapf(err, "cannot create %s", job.GetName())
 	}
 
-	t.Status.GrafanaEndpoint = common.GenerateEndpoint(notRandomGrafanaName, t.GetNamespace(), GrafanaPort)
+	t.Status.GrafanaEndpoint = externalEndpoint(notRandomGrafanaName, t.GetNamespace())
 
 	return nil
 }
@@ -238,7 +239,7 @@ func (r *Controller) createIngress(ctx context.Context, t *v1alpha1.TestPlan) er
 		IngressClassName: &ingressClassName,
 		Rules: []netv1.IngressRule{
 			{
-				Host: t.Status.PrometheusEndpoint,
+				Host: externalEndpoint(notRandomPrometheusName, t.GetNamespace()),
 				IngressRuleValue: netv1.IngressRuleValue{
 					HTTP: &netv1.HTTPIngressRuleValue{
 						Paths: []netv1.HTTPIngressPath{
@@ -259,7 +260,7 @@ func (r *Controller) createIngress(ctx context.Context, t *v1alpha1.TestPlan) er
 				},
 			},
 			{
-				Host: t.Status.GrafanaEndpoint,
+				Host: externalEndpoint(notRandomGrafanaName, t.GetNamespace()),
 				IngressRuleValue: netv1.IngressRuleValue{
 					HTTP: &netv1.HTTPIngressRuleValue{
 						Paths: []netv1.HTTPIngressPath{
@@ -281,7 +282,7 @@ func (r *Controller) createIngress(ctx context.Context, t *v1alpha1.TestPlan) er
 			},
 
 			{ // Create a placeholder for the logviewer.
-				Host: common.GenerateEndpoint(notRandomLogViewerName, t.GetNamespace(), LogviewerPort),
+				Host: externalEndpoint(notRandomLogViewerName, t.GetNamespace()),
 				IngressRuleValue: netv1.IngressRuleValue{
 					HTTP: &netv1.HTTPIngressRuleValue{
 						Paths: []netv1.HTTPIngressPath{
@@ -357,10 +358,20 @@ func (r *Controller) ConnectToGrafana(ctx context.Context, t *v1alpha1.TestPlan)
 		return nil
 	}
 
+	var endpoint string
+
+	if configuration.Global.DeveloperMode {
+		/* If in developer mode, the operator runs outside the cluster, and will reach Grafana via the ingress */
+		endpoint = externalEndpoint(notRandomGrafanaName, t.GetNamespace())
+	} else {
+		/* If the operator runs within the cluster, it will reach Grafana via the service */
+		endpoint = internalEndpoint(notRandomGrafanaName, t.GetNamespace(), GrafanaPort)
+	}
+
 	return grafana.New(ctx,
-		grafana.WithHTTP(t.Status.GrafanaEndpoint), // Connect to ...
-		grafana.WithRegisterFor(t),                 // Used by grafana.GetClient(), grafana.ClientExistsFor(), ...
-		grafana.WithLogger(r),                      // Log info
+		grafana.WithHTTP(endpoint), // Connect to ...
+		grafana.WithRegisterFor(t), // Used by grafana.GetClient(), grafana.ClientExistsFor(), ...
+		grafana.WithLogger(r),      // Log info
 		grafana.WithNotifications(WebhookURL),
 	)
 }
@@ -368,6 +379,8 @@ func (r *Controller) ConnectToGrafana(ctx context.Context, t *v1alpha1.TestPlan)
 var gracefulShutDown = 30 * time.Second
 
 var WebhookURL string
+
+var startWebhookOnce sync.Once
 
 // CreateWebhookServer  creates a Webhook for listening for events from Grafana *
 func (r *Controller) CreateWebhookServer(ctx context.Context) error {
@@ -391,8 +404,12 @@ func (r *Controller) CreateWebhookServer(ctx context.Context) error {
 
 		WebhookURL = fmt.Sprintf("http://%s:%d", ip.String(), configuration.Global.WebhookPort)
 	} else {
-		WebhookURL = fmt.Sprintf("http://%s:%d", configuration.Global.ControllerName, configuration.Global.WebhookPort)
+		WebhookURL = fmt.Sprintf("http://%s.%s:%d", configuration.Global.ControllerName,
+			configuration.Global.Namespace,
+			configuration.Global.WebhookPort)
 	}
+
+	r.Logger.Info("Controller Webhook", "URL", WebhookURL)
 
 	// Start the server
 	srv := &http.Server{
@@ -428,4 +445,14 @@ func (r *Controller) CreateWebhookServer(ctx context.Context) error {
 	}()
 
 	return nil
+}
+
+// internalEndpoint creates an endpoint for accessing the service within the cluster.
+func internalEndpoint(name string, planName string, port int64) string {
+	return fmt.Sprintf("%s.%s:%d", name, planName, port)
+}
+
+// externalEndpoint creates an endpoint for accessing the service outside the cluster.
+func externalEndpoint(name, planName string) string {
+	return fmt.Sprintf("%s-%s.%s", name, planName, configuration.Global.DomainName)
 }

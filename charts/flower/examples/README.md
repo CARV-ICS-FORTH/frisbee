@@ -24,8 +24,6 @@ Source: https://github.com/fnikolai/FDLC
 
 Average CPU Usage
 
-
-
 ![image-20220609192505809](README.assets/image-20220609192505809.png)
 
 Page faults
@@ -33,8 +31,6 @@ Page faults
 ![image-20220609192542674](README.assets/image-20220609192542674.png)
 
 Accessed Sectors
-
-
 
 ![image-20220609192602497](README.assets/image-20220609192602497.png)
 
@@ -442,10 +438,6 @@ Accessed Sectors
 
 Network Throughput
 
-
-
-
-
 ### 11b. Scaled Baseline, 12 Clients
 
 1. Start server that expects 12 clients
@@ -458,43 +450,27 @@ Network Throughput
 | round 2        | 1.7176001071929932 |             |
 | round 3        | 1.5219959020614624 |             |
 
-#### 
+####  
 
 #### Observations
 
-* 
+*
 
 ![image-20220609163419058](README.assets/image-20220609163419058.png)
-
-
 
 Average CPU Usage
 
 ![image-20220609163444920](README.assets/image-20220609163444920.png)
 
-
-
 Page faults
-
-
 
 ![image-20220609163521100](README.assets/image-20220609163521100.png)
 
-
-
 Accessed Sectors
-
-
 
 ![image-20220609163544081](README.assets/image-20220609163544081.png)
 
-
-
 Network Throughput
-
-
-
-
 
 ### 11c. Scaled Baseline, 10 Clients
 
@@ -508,21 +484,13 @@ Network Throughput
 | round 2          | 1.6616249084472656 |             |
 | round 3          | 1.5116339921951294 |             |
 
-#### 
+####  
 
 #### Observations
 
-
-
-
-
 ![image-20220609182917096](README.assets/image-20220609182917096.png)
 
-
-
 Average CPU Usage
-
-
 
 ![image-20220609183105844](README.assets/image-20220609183105844.png)
 
@@ -530,21 +498,11 @@ Page faults
 
 ![image-20220609183934485](README.assets/image-20220609183934485.png)
 
-
-
 Accessed Sectors
 
 ![image-20220609183921641](README.assets/image-20220609183921641.png)
 
-
-
 Network Throughput
-
-
-
-
-
-
 
 ### 11c. Scaled Baseline, 7 Clients
 
@@ -558,22 +516,18 @@ Network Throughput
 | round 2         | 1.687509298324585  |             |
 | round 3         | 1.5112173557281494 |             |
 
-#### 
+####  
 
 #### Observations
 
 * Because all the clients start simultaneously, the scheduling is inefficient.
-  * The scheduler sees 0 activity and collocates the clients. But then the traffic begins, and everything does down.
-
-
+    * The scheduler sees 0 activity and collocates the clients. But then the traffic begins, and everything does down.
 
 ![image-20220609193843149](README.assets/image-20220609193843149.png)
 
 Average CPU Usage
 
 ![image-20220609193855621](README.assets/image-20220609193855621.png)
-
-
 
 Page faults
 
@@ -584,14 +538,6 @@ Accessed Sectors
 ![image-20220609193918106](README.assets/image-20220609193918106.png)
 
 Network Throughput
-
-
-
-
-
-
-
-
 
 ### 11c. Scaled Baseline, 9 Clients
 
@@ -605,30 +551,24 @@ Network Throughput
 | round 2         | 1.6904945373535156 |             |
 | round 3         | 1.5080753564834595 |             |
 
-#### 
+####  
 
 #### Observations
 
 * Because all the clients start simultaneously, the scheduling is inefficient.
-  * The scheduler sees 0 activity and collocates the clients. But then the traffic begins, and everything does down.
+    * The scheduler sees 0 activity and collocates the clients. But then the traffic begins, and everything does down.
 
 ![image-20220609202344170](README.assets/image-20220609202344170.png)
 
 Average CPU Usage
 
-
-
 ![image-20220609202415613](README.assets/image-20220609202415613.png)
 
 Page faults
 
-
-
 ![image-20220609202430983](README.assets/image-20220609202430983.png)
 
 Accessed Sectors
-
-
 
 ![image-20220609202443154](README.assets/image-20220609202443154.png)
 

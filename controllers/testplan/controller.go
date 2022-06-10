@@ -301,6 +301,20 @@ func (r *Controller) Initialize(ctx context.Context, t *v1alpha1.TestPlan) error
 	/* FIXME: we set the configuration be global here. is there any better way ? */
 	configuration.SetGlobal(sysconf)
 
+	{
+		/*  Not the best place, but the webhook should start after we get the configuration parameters.
+		Given that, we need to start it here, and only once. An alternative solution would be to get
+		the webhook port and developer mode as parameters on the executable.
+		*/
+		startWebhookOnce.Do(func() {
+			err = r.CreateWebhookServer(ctx)
+		})
+
+		if err != nil {
+			return errors.Wrapf(err, "cannot create grafana webhook")
+		}
+	}
+
 	{ // Initialize metadata
 		/* Inherit the metadata of the configuration. This is used to automatically delete and remove the
 		resources if the configuration is deleted */
@@ -337,6 +351,9 @@ func (r *Controller) Initialize(ctx context.Context, t *v1alpha1.TestPlan) error
 }
 
 func (r *Controller) HasFailed(ctx context.Context, t *v1alpha1.TestPlan) error {
+
+	// TODO: What should we do when a call action fails ? Should we delete all services ?
+
 	r.Logger.Error(errors.New(t.Status.Reason), t.Status.Message)
 
 	// Remove the non-failed components. Leave the failed jobs and system jobs for postmortem analysis.
@@ -458,10 +475,6 @@ func NewController(ctx context.Context, mgr ctrl.Manager, logger logr.Logger) er
 	}
 
 	gvk := v1alpha1.GroupVersion.WithKind("TestPlan")
-
-	if err := r.CreateWebhookServer(ctx); err != nil {
-		return errors.Wrapf(err, "cannot create grafana webhook")
-	}
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named("testplan").

@@ -13,9 +13,6 @@ workstation or edge device.**
 # Install microk8s v.1.22
 >> sudo snap install microk8s --classic --channel=1.22/stable
 
-# Start microk8s
->> microk8s start
-
 # Create kubectl alias 
 >> sudo snap alias microk8s.kubectl kubectl
 
@@ -24,6 +21,9 @@ workstation or edge device.**
 
 # Enable Dependencies
 >> microk8s enable dns ingress helm3
+
+# Start microk8s
+>> microk8s start
 ```
 
 #### 2. Helm
@@ -123,12 +123,14 @@ Then you can verify that all the packages are successfully installed
 ```bash
 >> helm list
 NAME            NAMESPACE       REVISION        UPDATED                                         STATUS          CHART             
-my-cockroach    default         2               2022-05-25 16:15:58.682969153 +0300 EEST        deployed        cockroachdb-0.0.0 
+my-frisbee      default         1               2022-06-10 20:37:26.298297945 +0300 EEST        deployed        platform-0.0.0 
+
 
 >> helm list -n mytest
-NAME            NAMESPACE       REVISION        UPDATED                                         STATUS          CHART                   APP VERSION
-my-cockroach    mytest          1               2022-05-27 13:51:07.332866308 +0300 EEST        deployed        cockroachdb-0.0.0 
-my-ycsb         mytest          1               2022-05-27 13:51:19.429409791 +0300 EEST        deployed        ycsb-0.0.0       
+NAME            NAMESPACE       REVISION        UPDATED                                         STATUS          CHART            
+my-cockroach    mytest          1               2022-06-10 20:40:29.741398162 +0300 EEST        deployed        cockroachdb-0.0.0 
+my-system       mytest          1               2022-06-10 20:40:19.981077906 +0300 EEST        deployed        defaults-0.0.0   
+my-ycsb         mytest          1               2022-06-10 20:40:36.97639544 +0300 EEST         deployed        ycsb-0.0.0       
 ```
 
 > **Note:** if you modify the templates of a chart you must re-install it. examples can be modified without
@@ -143,7 +145,7 @@ You now select which scenario you wish to run.
 ...
 10.bitrot.yml
 11.network.yml
-12.withlogs.yml
+12.bitrot-logs.yml
 1.baseline-single.yml
 2.baseline-cluster-deterministic.yml
 3.baseline-cluster-deterministic-outoforder.yml
@@ -158,25 +160,39 @@ You now select which scenario you wish to run.
 Let's run a **bitrot** scenario.
 
 ```bash
->> kubectl -f ./charts/cockroachdb/examples/10.bitrot.yml apply -n mytest
+>> kubectl -f ./charts/cockroachdb/examples/12.bitrot-logs.yml apply -n mytest
 
-testplan.frisbee.io/cockroach-bitrot created
+persistentvolumeclaim/shared-dir created
+testplan.frisbee.io/cockroach-bitrot-logs created
 ```
 
 #### Observe a Test
 
-*Frisbee* provides two methods for observing the progress of a test.
+*Frisbee* provides 3 methods for observing the progress of a test.
 
-* **State-based:** Consumes information from the Kubernetes API
+* **Event-based:** Consumes information from the Kubernetes API
 
-    * [Dashboard](https://dashboard-frisbee.localhost/#/pod?namespace=default)
+    * [Dashboard](https://dashboard-frisbee.localhost/#/pod?namespace=mytest)
     * [Chaos Dashboard](http://chaos-frisbee.localhost/experiments)
+    * `kubectl get events`
 
 * **Metrics-based:** Consumes information from distributed performance metrics.
 
-    * [Prometheus](http://prometheus-frisbee.localhost)
+    * [Prometheus](http://prometheus-mytest.localhost)
+    * [Grafana](http://grafana-mytest.localhost/d/crdb-console-runtime/crdb-console-runtime)
 
-    * [Grafana](http://grafana-frisbee.localhost)
+* **Log-based:** Consumes information from distributed logs.
+
+    * [Logviewer](http://logviewer-mytest.localhost) (admin/admin)
+
+        
+
+>
+> You may notice that it takes **long time for the experiment to start**. This is due to preparing the NFS volume for collecting the logs from the various services.  Also note that the lifecycle of the volume is bind to that of the test. If the test is deleted, the volume will be garbage collected automatically.
+
+
+
+#### Pass/Fail a Test
 
 The above tools are for understanding the behavior of a system, but do not help with test automation.
 
@@ -187,30 +203,27 @@ We will use `kubectl` since is the most common CLI interface between Kubernetes 
 Firstly, let's inspect the test plan.
 
 ```bash
->> kubectl describe testplan.frisbee.io/cockroach-bitrot -n mytest
+>> kubectl describe testplan.frisbee.io/cockroach-bitrot-logs -n mytest
 
 ...
 Status:
-Conditions:
- Last Transition Time:  2022-05-25T13:20:52Z
- Message:               failed jobs: [masters]
- Reason:                JobHasFailed
- Status:                True
- Type:                  UnexpectedTermination
-Configuration:
- Advertised Host:      frisbee-operator
- Grafana Endpoint:     http://grafana:3000
- Prometheus Endpoint:  http://prometheus:9090
-Executed Actions:
- Bitrot:
- Boot:
- Import - Workload:
- Masters:
- Run - Workload:
-Message:         failed jobs: [masters]
-Phase:           Failed
-Reason:          JobHasFailed
-Telemetry Enabled:  true
+  Conditions:
+    Last Transition Time:  2022-06-10T20:05:07Z
+    Message:               failed jobs: [bitrot]
+    Reason:                JobHasFailed
+    Status:                True
+    Type:                  UnexpectedTermination
+  Executed Actions:
+    Bitrot:
+    Boot:
+    Import - Workload:
+    Logviewer:
+    Masters:
+  Grafana Endpoint:     grafana-mytest.localhost
+  Message:              failed jobs: [bitrot]
+  Phase:                Failed
+  Prometheus Endpoint:  prometheus-mytest.localhost
+  Reason:               JobHasFailed
 ```
 
 We are interested in the `Phase` and `Conditions` fields that provides information about the present status of a test.
@@ -224,7 +237,7 @@ The **Phase** describes the lifecycle of a Test.
 | Success |              All jobs have voluntarily exited.               |
 | Failed  | At least one job of the CR has terminated in a failure (exited with a  non-zero exit code or was stopped by the system). |
 
-#### Pass/Fail a Test
+#### 
 
 The **Phase** is a top-level description calculated based on some **Conditions**. The **Conditions** describe the
 various stages the Test has been through.
@@ -242,9 +255,9 @@ In the specific **bitrot** scenario, the test will pass only it has reached an *
 minutes of execution.
 
 ```bash
->> kubectl wait --for=condition=UnexpectedTermination --timeout=10m testplan.frisbee.io/cockroach-bitrot -n mytest
+>> kubectl wait --for=condition=UnexpectedTermination --timeout=10m testplan.frisbee.io/cockroach-bitrot-logs -n mytest
 
-testplan.frisbee.io/cockroach-bitrot condition met
+testplan.frisbee.io/cockroach-bitrot-logs condition met
 ```
 
 Indeed, the condition is met, meaning that the test has failed. We can visually verify it from
@@ -267,49 +280,16 @@ one (masters-1), and the telemetry stack (grafana/prometheus).
 The deletion is as simple as the creation of a test.
 
 ```bash
->> kubectl -f ./charts/cockroachdb/examples/10.bitrot.yml delete --cascade=foreground -n mytest
+>> kubectl -f ./charts/cockroachdb/examples/12.bitrot-logs.yml -n mytest delete --cascade=foreground
 
-testplan.frisbee.io "cockroach-bitrot" deleted
+persistentvolumeclaim "shared-dir" deleted
+testplan.frisbee.io "cockroach-bitrot-logs" deleted
 ```
 
 The flag `cascade=foreground` will wait until the experiment is actually deleted. Without this flag, the deletion will
 happen in the background. Use this flag if you want to run sequential tests, without interference.
 
-## Check Ingress
 
-You can find more information about the cluster-wide (e.g, Dashboard, Chaos Dashboards) and plan-scoped services (
-Prometheus, Grafana, Logviewer) that are visible to the user, but inspecting the ingress.
-
-```bash
->> kubectl describe ingress
-
-Rules:
-  Host                                                   Path  Backends
-  ----                                                   ----  --------
-  prometheus-mytest.localhost  							/   prometheus:http (10.244.3.96:9090)
-  grafana-mytest.localhost     							/   grafana:http (10.244.2.112:3000)
-  logviewer-mytest.localhost   							/   logviewer:http (10.244.4.62:80)
-```
-
-The left side (host) points to the endpoint that is visible externally to the cluster, whereas the right side (backends)
-point to the internal services.
-
-Although internal services may be directly accessible in a local deployment (e.g, 10.244.2.112:3000), this is not the
-case for remote deployments where services are only visible by the ingress (e.g, grafana-mytest.localhost).
-
-## Distributed Logs
-
-Collecting logs from distributed services is somewhat tricky. For the moment, we create a shared NFS filesystem and
-every service write its logs under the path `/shared/${HOSTNAME}`. This however, requires some instrumentation as shown
-in the [example](https://github.com/CARV-ICS-FORTH/frisbee/blob/main/charts/cockroachdb/examples/12.withlogs.yml). It
-also takes some to create the volume and sync it.
-
-Once done, the logs are available via a web-based file browser.
-
-* [Logviewer](logviewer-frisbee.localhost) (admin/admin)
-
-The lifecycle of the volume is bind to that of the test. If the test is deleted, the volume will be garbage collected
-automatically.
 
 ## Parallel Tests.
 

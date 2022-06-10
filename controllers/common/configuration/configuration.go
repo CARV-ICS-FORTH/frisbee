@@ -106,7 +106,7 @@ func Get(ctx context.Context, c client.Client, logger logr.Logger) (Configuratio
 		return Configuration{}, errors.Wrapf(err, "decoding error")
 	}
 
-	logger.Info("Set configuration parameters",
+	logger.Info("Retrieved configuration parameters",
 		"source", PlatformConfigurationName,
 		"parameters", sysConf,
 	)

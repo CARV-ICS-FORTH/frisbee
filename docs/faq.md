@@ -67,3 +67,13 @@ chart. for the chart `platform` (aka Frisbee), do the following
 ```
 
 ##
+
+**Q: Pods don't have internet access **
+
+**A:** This may happen either because you have not enabled DNS on microk8s (`microk8s enable dns`) or because your
+firewall is blocking DNS traffic (`sudo ufw allow out to any port 53`). If non of the above work, retry to reboot you
+machine !
+
+https://github.com/canonical/microk8s/issues/1484
+
+https://stackoverflow.com/questions/62664701/resolving-external-domains-from-within-pods-does-not-work

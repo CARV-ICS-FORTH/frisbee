@@ -19,7 +19,7 @@ spec:
 apiVersion: frisbee.io/v1alpha1
 kind: TestPlan
 metadata:
-  name: cockroach-with-logs
+  name: cockroach-bitrot-logs
 spec:
   actions:
     # Step 0. Enable the log viewer
