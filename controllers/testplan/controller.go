@@ -479,11 +479,11 @@ func NewController(ctx context.Context, mgr ctrl.Manager, logger logr.Logger) er
 	return ctrl.NewControllerManagedBy(mgr).
 		Named("testplan").
 		For(&v1alpha1.TestPlan{}).
-		Owns(&v1alpha1.Service{}, watchers.Watch(r, gvk)).       // Watch Services
-		Owns(&v1alpha1.Cluster{}, watchers.Watch(r, gvk)).       // Watch Cluster
-		Owns(&v1alpha1.Chaos{}, watchers.Watch(r, gvk)).         // Watch Chaos
-		Owns(&v1alpha1.Cascade{}, watchers.Watch(r, gvk)).       // Watch Cascade
+		Owns(&v1alpha1.Service{}, watchers.Watch(r, gvk)). // Watch Services
+		Owns(&v1alpha1.Cluster{}, watchers.Watch(r, gvk)). // Watch Cluster
+		Owns(&v1alpha1.Chaos{}, watchers.Watch(r, gvk)). // Watch Chaos
+		Owns(&v1alpha1.Cascade{}, watchers.Watch(r, gvk)). // Watch Cascade
 		Owns(&v1alpha1.VirtualObject{}, watchers.Watch(r, gvk)). // Watch VirtualObjects
-		Owns(&v1alpha1.Call{}, watchers.Watch(r, gvk)).          // Watch Calls
+		Owns(&v1alpha1.Call{}, watchers.Watch(r, gvk)). // Watch Calls
 		Complete(r)
 }
