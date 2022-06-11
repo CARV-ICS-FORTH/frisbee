@@ -5,6 +5,8 @@
 
 # https://grafana.com/docs/agent/latest/configuration/integrations/cadvisor-config/
 # https://github.com/google/cadvisor/blob/master/docs/storage/prometheus.md
+
+# https://pracucci.com/kubernetes-dns-resolution-ndots-options-and-why-it-may-affect-application-performances.html
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
@@ -18,20 +20,21 @@ spec:
           - name: tel-sys
             containerPort: 9442
         securityContext:
-          privileged: true
-          #capabilities:
-          #  add: [ SYS_ADMIN, SYS_CHROOT ]
-          #runAsNonRoot: true
-          #readOnlyRootFilesystem: false
-          #allowPrivilegeEscalation: false
+        #  privileged: true
+          capabilities:
+            add: [ SYS_ADMIN, SYS_CHROOT ]
         command:
           - /bin/sh # Run shell
           - -c # Read from string
           - |  # Multi-line str
             set -eum
 
+            # Needed to fix DNS issues
+            echo "$( cat /etc/resolv.conf | sed 's/ndots:5/ndots:1/')"  >  /etc/resolv.conf
+
+
             # Add a newer version of nsenter that supports cgroup
-            apk add util-linux
+            apk add util-linux --no-cache
 
             # Wait a bit to obtain the PID of the main container
             while [ ! -f "/dev/shm/app" ];

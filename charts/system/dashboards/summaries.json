@@ -86,7 +86,7 @@
   "fiscalYearStartMonth": 0,
   "gnetId": 315,
   "graphTooltip": 0,
-  "id": 2,
+  "id": 6,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -147,9 +147,7 @@
         "orientation": "horizontal",
         "reduceOptions": {
           "calcs": [
-            "mean",
-            "max",
-            "last"
+            "lastNotNull"
           ],
           "fields": "",
           "values": false
@@ -171,7 +169,7 @@
       ],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Node memory usage",
+      "title": "Memory usage",
       "type": "gauge"
     },
     {
@@ -217,9 +215,7 @@
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "mean",
-            "max",
-            "last"
+            "lastNotNull"
           ],
           "fields": "",
           "values": false
@@ -241,7 +237,7 @@
       ],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Node CPU usage ",
+      "title": "CPU usage ",
       "type": "gauge"
     },
     {
@@ -287,8 +283,6 @@
         "orientation": "horizontal",
         "reduceOptions": {
           "calcs": [
-            "mean",
-            "max",
             "last"
           ],
           "fields": "",
@@ -311,7 +305,7 @@
       ],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Node filesystem usage",
+      "title": "Filesystem usage",
       "type": "gauge"
     },
     {
@@ -368,8 +362,6 @@
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "mean",
-            "max",
             "last"
           ],
           "fields": "",
@@ -449,8 +441,6 @@
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "mean",
-            "max",
             "last"
           ],
           "fields": "",
@@ -515,8 +505,6 @@
         "pieType": "pie",
         "reduceOptions": {
           "calcs": [
-            "mean",
-            "max",
             "last"
           ],
           "fields": "",
@@ -584,8 +572,6 @@
         "pieType": "pie",
         "reduceOptions": {
           "calcs": [
-            "mean",
-            "max",
             "last"
           ],
           "fields": "",
@@ -655,8 +641,6 @@
         "orientation": "horizontal",
         "reduceOptions": {
           "calcs": [
-            "mean",
-            "max",
             "last"
           ],
           "fields": "",
@@ -723,9 +707,7 @@
         "orientation": "horizontal",
         "reduceOptions": {
           "calcs": [
-            "mean",
-            "max",
-            "last"
+            "lastNotNull"
           ],
           "fields": "",
           "values": false
@@ -741,7 +723,7 @@
           "hide": false,
           "interval": "",
           "legendFormat": "",
-          "refId": "A"
+          "refId": "total"
         }
       ],
       "timeFrom": null,
@@ -790,8 +772,6 @@
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "mean",
-            "max",
             "last"
           ],
           "fields": "",
@@ -856,9 +836,7 @@
         "orientation": "horizontal",
         "reduceOptions": {
           "calcs": [
-            "mean",
-            "max",
-            "last"
+            "lastNotNull"
           ],
           "fields": "",
           "values": false
@@ -926,8 +904,6 @@
         "orientation": "horizontal",
         "reduceOptions": {
           "calcs": [
-            "mean",
-            "max",
             "last"
           ],
           "fields": "",
@@ -993,8 +969,6 @@
         "orientation": "horizontal",
         "reduceOptions": {
           "calcs": [
-            "mean",
-            "max",
             "last"
           ],
           "fields": "",
@@ -2481,7 +2455,7 @@
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "lastNotNull"
+            "last"
           ],
           "fields": "",
           "values": false
@@ -4174,7 +4148,7 @@
       "type": "timeseries"
     }
   ],
-  "refresh": false,
+  "refresh": "5s",
   "schemaVersion": 31,
   "style": "dark",
   "tags": [

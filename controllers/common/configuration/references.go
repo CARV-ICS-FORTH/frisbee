@@ -23,11 +23,6 @@ const (
 	PlatformConfigurationName = "system.controller.configuration"
 
 	PrometheusTemplate = "system.telemetry.prometheus.template"
-	PrometheusConfig   = "system.telemetry.prometheus.config"
 
 	GrafanaTemplate = "system.telemetry.grafana.template"
-	GrafanaConfig   = "system.telemetry.grafana.config"
-
-	AgentTemplate = "system.telemetry.agent" // Keep it like that to make it easier for the user
-	AgentConfig   = "system.telemetry.agent.config"
 )

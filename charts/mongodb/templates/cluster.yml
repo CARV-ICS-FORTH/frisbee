@@ -12,7 +12,9 @@ spec:
       cpu: ""
   service:
     decorators:
-      telemetry: [ system.telemetry.agent, mongo.telemetry.server ]
+      telemetry:
+        - system.telemetry.agent
+        - mongo.telemetry.server
       resources:
         cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
         memory: {{"{{.Inputs.Parameters.memory}}" |quote}}

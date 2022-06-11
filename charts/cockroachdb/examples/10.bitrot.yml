@@ -2,7 +2,7 @@
 apiVersion: frisbee.io/v1alpha1
 kind: TestPlan
 metadata:
-  name: cockroach-bitrot-withlogs
+  name: cockroach-bitrot
 spec:
   actions:
     # Step 0. provision 3 individual servers

@@ -4,43 +4,37 @@ This tutorial will guide you through deploying and running Frisbee on a local Ku
 
 # Install Dependencies
 
-#### 1. microk8s
+#### 1. Kubernetes and & Helm
 
-[Microk8s](https://microk8s.io/docs)  is the simplest production-grade conformant K8s.  **It runs entirely on your
-workstation or edge device.**
+* [Microk8s](https://microk8s.io/docs)  is the simplest production-grade conformant K8s.  **It runs entirely on your
+  workstation or edge device.**
+
+* [Helm](https://helm.sh/docs/intro/install/)  is a package manager for Kubernetes. Helm uses **a packaging format called
+  charts**.
 
 ```bash
-# Install microk8s v.1.22
->> sudo snap install microk8s --classic --channel=1.22/stable
-
-# Create kubectl alias 
->> sudo snap alias microk8s.kubectl kubectl
+# Install microk8s v.1.24
+>> sudo snap install microk8s --classic --channel=1.24/stable
 
 # Use microk8s config as the default kubernetes config
 >> microk8s config > ~/.kube/config
 
+# Start microk8s
+>> microk8s start
+
 # Enable Dependencies
 >> microk8s enable dns ingress helm3
 
-# Start microk8s
->> microk8s start
+# Create aliases
+>> sudo snap alias microk8s.kubectl kubectl
+>> sudo snap alias microk8s.helm3 helm
 ```
 
-#### 2. Helm
 
-[Helm](https://helm.sh/docs/intro/install/)  is a package manager for Kubernetes. Helm uses **a packaging format called
-charts**.
 
-A chart is a collection of files that describe a related set of Kubernetes resources.
+#### 2. Frisbee platform
 
-```bash
->> sudo snap install helm --classic
-```
-
-#### 3. Frisbee platform
-
-Although Frisbee can be installed directly from a Helm repository, for demonstration purposes we favor the git-based
-method.
+Although Frisbee can be installed directly from a Helm repository, for demonstration purposes we favor the git-based method.
 
 ```bash
 # Download the source code
@@ -51,53 +45,23 @@ method.
 
 # Have a look at the installation configuration
 >> less charts/platform/values.yaml 
-```
 
-> **Note:** Make sure that the dir "/mnt/local" exists. The error will not appear until the execution of the test.
+# Make sure that the dir "/mnt/local" exists. The error will not appear until the execution of the test.
+>> mkdir /tmp/frisbee
 
-
-
-Now, it's time to deploy the platform, on the **default** namespace.
-
-```bash
-# Wait until the installation is complete
+# Deploy the platform on the default namespace
 >> helm  upgrade --install --wait my-frisbee ./charts/platform/ --debug -n default
 ```
 
-If everything works normally, you should be able to access the following **dashboards**:
 
-* [Dashboard](https://dashboard-frisbee.localhost) is a web-based Kubernetes user interface. You can use Dashboard to
-  deploy containerized applications to a
-  Kubernetes cluster, troubleshoot your containerized application, and manage the cluster resources.
-* [Chaos Dashboard](http://chaos-frisbee.localhost)  is a one-step web UI for managing, designing, and monitoring chaos
-  experiments on *Chaos Mesh*.
-
-> **Note:** Both dashboards will ask for config or token. In that case, copy the token from .kube/config file.
-
-```bash
->> grep token  ~/.kube/config
-```
-
-Now are ready to deploy the tests.
 
 ## Testing a System
 
-Before running any test, we need to install the System Under Testing (SUT).
-
-As a reference, we will use the Frisbee chart
-for [CockroachDB](https://github.com/CARV-ICS-FORTH/frisbee/tree/main/charts/cockroachdb)
-
-> [*CockroachDB*](https://github.com/cockroachdb/cockroach) is a distributed database with standard SQL for cloud
-> applications.
-
-#### 1. Prepare a namespace for the SUT
+#### 1. Deploy the system templates
 
 Firstly, we need to create a dedicated namespace for the test.
 
-The different namespaces allows us to run multiple tests in parallel.
-
-However, because templates are isolated to the namespace they are installed to, we must install the system templates to
-the testing namespace.
+The different namespaces provide isolation and allow us to run multiple tests in parallel.
 
 We combine the creation of the namespace and the installation of system templates (e.g, telemetry, chaos) in one
 command.
@@ -106,7 +70,11 @@ command.
 >> helm upgrade --install --wait my-system ./charts/system --debug -n mytest --create-namespace
 ```
 
-#### 2. Deploy the SUT
+
+
+#### 2. Deploy the System Under Testing (SUT)
+
+As a SUT we will use the  [CockroachDB](https://github.com/CARV-ICS-FORTH/frisbee/tree/main/charts/cockroachdb).
 
 The commands are to be executed from the *Frisbee* directory.
 
@@ -117,6 +85,10 @@ The commands are to be executed from the *Frisbee* directory.
 # Install YCSB for creating workload
 >> helm upgrade --install --wait my-ycsb ./charts/ycsb --debug -n mytest
 ```
+
+
+
+#### 3. Verify the Deployment
 
 Then you can verify that all the packages are successfully installed
 
@@ -133,10 +105,9 @@ my-system       mytest          1               2022-06-10 20:40:19.981077906 +0
 my-ycsb         mytest          1               2022-06-10 20:40:36.97639544 +0300 EEST         deployed        ycsb-0.0.0       
 ```
 
-> **Note:** if you modify the templates of a chart you must re-install it. examples can be modified without
-> re-installation.
 
-#### Run a Test
+
+#### 4. Run a Scenario
 
 You now select which scenario you wish to run.
 
@@ -160,26 +131,39 @@ You now select which scenario you wish to run.
 Let's run a **bitrot** scenario.
 
 ```bash
->> kubectl -f ./charts/cockroachdb/examples/12.bitrot-logs.yml apply -n mytest
+>> kubectl -f ./charts/cockroachdb/examples/10.bitrot.yml apply -n mytest
 
-persistentvolumeclaim/shared-dir created
-testplan.frisbee.io/cockroach-bitrot-logs created
+testplan.frisbee.io/cockroach-bitrot created
 ```
 
-#### Observe a Test
+
+
+#### 5. Exploratory Testing (Observe the Progress)
+
+
 
 *Frisbee* provides 3 methods for observing the progress of a test.
 
-* **Event-based:** Consumes information from the Kubernetes API
+----------------------------
 
-    * [Dashboard](https://dashboard-frisbee.localhost/#/pod?namespace=mytest)
-    * [Chaos Dashboard](http://chaos-frisbee.localhost/experiments)
-    * `kubectl get events`
+**Event-based**: Consumes information from the Kubernetes API 
 
-* **Metrics-based:** Consumes information from distributed performance metrics.
+* [Dashboard](https://dashboard-frisbee.localhost/#/pod?namespace=mytest):  is a web-based Kubernetes user interface. You can use Dashboard to deploy containerized applications to a Kubernetes cluster,  troubleshoot your containerized application, and manage the cluster resources. 
 
-    * [Prometheus](http://prometheus-mytest.localhost)
-    * [Grafana](http://grafana-mytest.localhost/d/crdb-console-runtime/crdb-console-runtime)
+* [Chaos Dashboard](http://chaos-frisbee.localhost/experiments): is a one-step web UI for managing, designing, and monitoring chaos experiments on *Chaos Mesh*. It will ask for a token. You can get it from the config via `grep token  ~/.kube/config`.
+
+  
+
+----------------------------------------------
+
+**Metrics-based:** Consumes information from distributed performance metrics.
+
+* [Prometheus](http://prometheus-mytest.localhost)
+* [Grafana](http://grafana-mytest.localhost/d/crdb-console-runtime/crdb-console-runtime)
+
+
+
+------------------------------------------------
 
 * **Log-based:** Consumes information from distributed logs.
 
@@ -192,7 +176,7 @@ testplan.frisbee.io/cockroach-bitrot-logs created
 
 
 
-#### Pass/Fail a Test
+#### 6. Automated Testing (Pass/Fail)
 
 The above tools are for understanding the behavior of a system, but do not help with test automation.
 
@@ -203,13 +187,13 @@ We will use `kubectl` since is the most common CLI interface between Kubernetes 
 Firstly, let's inspect the test plan.
 
 ```bash
->> kubectl describe testplan.frisbee.io/cockroach-bitrot-logs -n mytest
+>> kubectl describe testplan.frisbee.io/cockroach-bitrot -n mytest
 
 ...
 Status:
   Conditions:
-    Last Transition Time:  2022-06-10T20:05:07Z
-    Message:               failed jobs: [bitrot]
+    Last Transition Time:  2022-06-11T18:16:37Z
+    Message:               failed jobs: [run-workload]
     Reason:                JobHasFailed
     Status:                True
     Type:                  UnexpectedTermination
@@ -217,10 +201,10 @@ Status:
     Bitrot:
     Boot:
     Import - Workload:
-    Logviewer:
     Masters:
+    Run - Workload:
   Grafana Endpoint:     grafana-mytest.localhost
-  Message:              failed jobs: [bitrot]
+  Message:              failed jobs: [run-workload]
   Phase:                Failed
   Prometheus Endpoint:  prometheus-mytest.localhost
   Reason:               JobHasFailed
@@ -229,12 +213,12 @@ Status:
 We are interested in the `Phase` and `Conditions` fields that provides information about the present status of a test.
 The **Phase** describes the lifecycle of a Test.
 
-|  Phase  |                         Description                          |
-| :-----: | :----------------------------------------------------------: |
-|   ""    |      The request is not yet accepted by the controller       |
+|  Phase  | Description                                                  |
+| :-----: | :----------------------------------------------------------- |
+|   ""    | The request is not yet accepted by the controller            |
 | Pending | The request has been accepted by the Kubernetes cluster, but one of the child jobs has not been created. This includes the time waiting for logical dependencies, Ports discovery, data rewiring, and placement of Pods. |
 | Running | All the child jobs  have been created, and at least one job is still running. |
-| Success |              All jobs have voluntarily exited.               |
+| Success | All jobs have voluntarily exited.                            |
 | Failed  | At least one job of the CR has terminated in a failure (exited with a  non-zero exit code or was stopped by the system). |
 
 #### 
@@ -242,11 +226,11 @@ The **Phase** describes the lifecycle of a Test.
 The **Phase** is a top-level description calculated based on some **Conditions**. The **Conditions** describe the
 various stages the Test has been through.
 
-|       Condition       |                     Description                     |
-| :-------------------: | :-------------------------------------------------: |
-|      Initialized      |          The workflow has been initialized          |
-|  AllJobsAreScheduled  |     All jobs have been successfully scheduled.      |
-|  AllJobsAreCompleted  |     All jobs have been successfully completed.      |
+|       Condition       | Description                                         |
+| :-------------------: | :-------------------------------------------------- |
+|      Initialized      | The workflow has been initialized                   |
+|  AllJobsAreScheduled  | All jobs have been successfully scheduled.          |
+|  AllJobsAreCompleted  | All jobs have been successfully completed.          |
 | UnexpectedTermination | At least job that has been unexpectedly terminated. |
 
 To avoid continuous inspection via polling, we use the `wait` function of `kubectl`.
@@ -255,9 +239,9 @@ In the specific **bitrot** scenario, the test will pass only it has reached an *
 minutes of execution.
 
 ```bash
->> kubectl wait --for=condition=UnexpectedTermination --timeout=10m testplan.frisbee.io/cockroach-bitrot-logs -n mytest
+>> kubectl wait --for=condition=UnexpectedTermination --timeout=10m testplan.frisbee.io/cockroach-bitrot -n mytest
 
-testplan.frisbee.io/cockroach-bitrot-logs condition met
+testplan.frisbee.io/cockroach-bitrot condition met
 ```
 
 Indeed, the condition is met, meaning that the test has failed. We can visually verify it from
@@ -275,15 +259,16 @@ one (masters-1), and the telemetry stack (grafana/prometheus).
 >
 > "error: timed out waiting for the condition on testplans/cockroach-bitrot"
 
-#### Delete a Test
+
+
+#### 7. Delete a Test
 
 The deletion is as simple as the creation of a test.
 
 ```bash
->> kubectl -f ./charts/cockroachdb/examples/12.bitrot-logs.yml -n mytest delete --cascade=foreground
+>> kubectl -f /charts/cockroachdb/examples/10.bitrot.yml -n mytest delete --cascade=foreground
 
-persistentvolumeclaim "shared-dir" deleted
-testplan.frisbee.io "cockroach-bitrot-logs" deleted
+testplan.frisbee.io "cockroach-bitrot" deleted
 ```
 
 The flag `cascade=foreground` will wait until the experiment is actually deleted. Without this flag, the deletion will
@@ -291,9 +276,80 @@ happen in the background. Use this flag if you want to run sequential tests, wit
 
 
 
-## Parallel Tests.
+#### 8. Parallel Tests
 
 For the time being, the safest to run multiple experiments is to run each test on a **dedicated namespace**.
 
-To do so, you have to repeat this tutorial, replacing the  `-n ....`  flag with a different namespace.
+To do so, you have to repeat Step 1, replacing the  `-n ....`  flag with a different namespace.
 
+For example:
+
+* Run bitrot
+
+```bash
+>> helm upgrade --install --wait my-system ./charts/system --debug -n mytest --create-namespace
+>> helm upgrade --install --wait my-cockroach ./charts/cockroachdb --debug -n mytest
+>> helm upgrade --install --wait my-ycsb ./charts/ycsb --debug -n mytest
+>> kubectl -f ./charts/cockroachdb/examples/10.bitrot.yml apply -n mytest
+
+# go to http://grafana-mytest.localhost/d/crdb-console-runtime/crdb-console-runtime
+```
+
+
+
+* Run network failure
+
+```bash
+>> helm upgrade --install --wait my-system ./charts/system --debug -n mytest2 --create-namespace
+>> helm upgrade --install --wait my-cockroach ./charts/cockroachdb --debug -n mytest2
+>> helm upgrade --install --wait my-ycsb ./charts/ycsb --debug -n mytest2
+>> kubectl -f ./charts/cockroachdb/examples/11.network.yml apply -n mytest2
+
+# go to http://grafana-mytest2.localhost/d/crdb-console-runtime/crdb-console-runtime
+```
+
+
+Notice that for every experiment, we start a new dedicated monitoring stack.
+
+
+
+## Remove Frisbee
+
+#### 1. Delete the running experiments
+
+```bash
+# Delete bitrot test
+kubectl -f ./charts/cockroachdb/examples/10.bitrot.yml delete --cascade=foreground -n mytest 
+
+# Delete network test
+kubectl -f ./charts/cockroachdb/examples/11.network.yml delete --cascade=foreground -n mytest2 
+```
+
+
+
+#### 2. Delete all the namespaces you created
+
+By deleting the namespaces, you also delete all the installed components.
+
+```bash
+>> kubectl delete namespace mytest mytest2  --wait
+```
+
+
+Notice that you can no longer see the installed charts
+
+```bash
+>> helm list -n mytest
+>> helm list -n mytest2
+```
+
+
+
+#### 3. Remove Frisbee
+
+```bash
+>> helm  uninstall my-frisbee --debug -n default
+```
+
+
+You are done !
