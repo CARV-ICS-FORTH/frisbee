@@ -266,7 +266,7 @@ one (masters-1), and the telemetry stack (grafana/prometheus).
 The deletion is as simple as the creation of a test.
 
 ```bash
->> kubectl -f /charts/cockroachdb/examples/10.bitrot.yml -n mytest delete --cascade=foreground
+>> kubectl -f ./charts/cockroachdb/examples/10.bitrot.yml -n mytest delete --cascade=foreground
 
 testplan.frisbee.io "cockroach-bitrot" deleted
 ```
@@ -319,10 +319,10 @@ Notice that for every experiment, we start a new dedicated monitoring stack.
 
 ```bash
 # Delete bitrot test
-kubectl -f ./charts/cockroachdb/examples/10.bitrot.yml delete --cascade=foreground -n mytest 
+>> kubectl -f ./charts/cockroachdb/examples/10.bitrot.yml delete --cascade=foreground -n mytest 
 
 # Delete network test
-kubectl -f ./charts/cockroachdb/examples/11.network.yml delete --cascade=foreground -n mytest2 
+>> kubectl -f ./charts/cockroachdb/examples/11.network.yml delete --cascade=foreground -n mytest2 
 ```
 
 
