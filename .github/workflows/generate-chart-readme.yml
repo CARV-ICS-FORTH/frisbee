@@ -69,8 +69,8 @@ jobs:
         run: |
           # Push all the changes
           cd charts
-          if git status -s | grep charts; then
-            git config user.name "Frisbee Charts"
-            git config user.email "fnikol@ics.forth.gr"
-            git add . && git commit -am "Update README.md with readme-generator-for-helm" --signoff && git push
-          fi
+          
+          git config user.name "Frisbee-Bot"
+          git config user.email "frisbee-bot@ics.forth.gr"
+          git add . && git commit -am "Update README.md with readme-generator-for-helm" --signoff && git push
+        
