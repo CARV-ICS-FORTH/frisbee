@@ -39,9 +39,7 @@ openebs:
 
   ndm:
     enabled: false
-    filters:
-      includePaths: "" # example /dev/loop7
-      excludePaths: "/dev/fd0,/dev/sr0,/dev/ram,/dev/dm-,/dev/md,/dev/rbd,/dev/zd"
+
 
 
 ## @section Chaos Injection Parameters
