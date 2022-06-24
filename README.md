@@ -1,11 +1,3 @@
-<div align="center">
-<a href="https://www.vectorstock.com/royalty-free-vector/disc-golf-frisbee-eps-vector-25179185">
-  <img src="docs/images/logo.jpg" width="400">
-</a>
-</div>
-
-
-
 # <div align="center">Frisbee – Kubernetes Native Testbed</div>
 
 🏗️ Spin up entire dependency stack
