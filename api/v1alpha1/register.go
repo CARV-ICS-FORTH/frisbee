@@ -1,5 +1,5 @@
 // +k8s:deepcopy-gen=package,register
-// +groupName=api.frisbee.io
+// +groupName=frisbee.io
 
 /*
 Copyright 2021 ICS-FORTH.
