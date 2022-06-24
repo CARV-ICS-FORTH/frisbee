@@ -20,4 +20,4 @@ jobs:
         run: make api-docs
       - name: Check if docs are up to date
         # This check must fail if there are diffs.
-        run: git diff --exit-code ./docs/api.md
+        run: git diff --exit-code ./docs/api.html
