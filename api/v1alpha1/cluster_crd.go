@@ -36,7 +36,7 @@ type Cluster struct {
 }
 
 // TolerateSpec specifies the system's ability to continue operating despite failures or malfunctions.
-// If tolerate is enable, a cluster will be "alive" even if some services have failed.
+// If tolerate is enable, the cluster will remain "alive" even if some services have failed.
 // Such failures are likely to happen as part of a Chaos experiment.
 type TolerateSpec struct {
 	// FailedServices indicate the number of services that may fail before the cluster fails itself.
