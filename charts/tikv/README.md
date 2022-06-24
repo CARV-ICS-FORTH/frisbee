@@ -69,3 +69,11 @@ option `--purge` to delete all history too.
 https://docs.google.com/spreadsheets/d/1VjzC3IxCiqGQmSUgRxewgExE3c32YiZMUKNsKDuvrPg/edit#gid=1700439087
 
 ## Parameters
+
+### Common Parameters
+
+| Name           | Description                                        | Value |
+| -------------- | -------------------------------------------------- | ----- |
+| `nameOverride` | String to partially override common.names.fullname | `""`  |
+
+
