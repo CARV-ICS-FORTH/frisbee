@@ -3,10 +3,10 @@ entries:
   cockroachdb:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2022-06-24T15:11:07.149928456Z"
+    created: "2022-06-24T15:16:07.933790719Z"
     description: CockroachDB is a distributed database with standard SQL for cloud
       applications.
-    digest: 2f3b50c0b8ca47ce68f88bbeecad7f18f86ef33a7ee6b320335f458c7b8967d9
+    digest: 71fba9add106e510dd647dc924c1f30f46630eb1571b819363167953770e8818
     maintainers:
     - email: nikolaidis.fotis@gmail.com
       name: Fotis Nikolaidis
@@ -94,9 +94,9 @@ entries:
   defaults:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2022-06-24T15:11:07.151478191Z"
+    created: "2022-06-24T15:16:07.934818833Z"
     description: Default templates for Frisbee
-    digest: 1713744a57e86931d997dd85e02fd52f4dfb8c6fd8135be2166e95fb033f27eb
+    digest: f9a796e1b74574354688bc870baae0e851a3fbabcd1051aa8b894b23a64e07fd
     maintainers:
     - email: nikolaidis.fotis@gmail.com
       name: Fotis Nikolaidis
@@ -109,9 +109,9 @@ entries:
   fio:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2022-06-24T15:11:07.152163307Z"
+    created: "2022-06-24T15:16:07.935284539Z"
     description: fio is a benchmark to test I/O performance.
-    digest: fbfec5f0ed92e2e5c9ecb75bb9a1dc80555bc420e74891a833355a50b07bbbe1
+    digest: 52b57ee97450b5f8611cd30f19e59bf0fde5be30918ac891bcff9e4d3959daf9
     maintainers:
     - email: nikolaidis.fotis@gmail.com
       name: Fotis Nikolaidis
@@ -194,9 +194,9 @@ entries:
   flower:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2022-06-24T15:11:07.152800721Z"
+    created: "2022-06-24T15:16:07.935661644Z"
     description: Flower - A Friendly Federated Learning Framework
-    digest: 785f564b7b36b5f6f3629f919cfb35eca0e868fd4e09b31e69fa98ad87168f8d
+    digest: a931e5c441fba8838121a2b3eb1cf1465c0211449a9a06274d5b04a1a2afcf6c
     maintainers:
     - email: nikolaidis.fotis@gmail.com
       name: Fotis Nikolaidis
@@ -223,10 +223,10 @@ entries:
   iperf:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2022-06-24T15:11:07.153306833Z"
+    created: "2022-06-24T15:16:07.935970948Z"
     description: iPerf is a tool for active measurements of the maximum achievable
       bandwidth on IP networks
-    digest: bc875560b2cad5b2f04484b5d037aa03c7b8bcf8f7dd3650fbe84e0896a5de19
+    digest: 70856d16e4ec759043314325c1881403f1db3f0f2f93129e838ca1200001feea
     maintainers:
     - email: nikolaidis.fotis@gmail.com
       name: Fotis Nikolaidis
@@ -314,10 +314,10 @@ entries:
   mongodb:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2022-06-24T15:11:07.154106851Z"
+    created: "2022-06-24T15:16:07.936360353Z"
     description: MongoDB is a source-available cross-platform document-oriented database
       program.
-    digest: 7d9b43f21f389ac1a8a04edbc03e4fb5f5c744553441a23786c517940413a199
+    digest: e38b48f0669c97b86ff650fdec46521a6703333beae172591a4fa9f8a12c0297
     maintainers:
     - email: nikolaidis.fotis@gmail.com
       name: Fotis Nikolaidis
@@ -407,7 +407,7 @@ entries:
       category: Infrastructure
     apiVersion: v2
     appVersion: 1.16.0
-    created: "2022-06-24T15:11:07.195722399Z"
+    created: "2022-06-24T15:16:07.97071321Z"
     dependencies:
     - condition: openebs.enabled
       name: openebs
@@ -423,7 +423,7 @@ entries:
       version: 5.4.1
     description: Frisbee is a Kubernetes platform for exploring, testing, and benchmarking
       distributed applications.
-    digest: 12b1248d1f92160c479933166f3296441e390767290ddedd56552784445d64dc
+    digest: 91dd6f194409e5c94562327b28cdffa6c6f100703fd7ba325fe7695cc62c0dbb
     icon: https://github.com/CARV-ICS-FORTH/frisbee/blob/main/docs/images/logo.jpg
     maintainers:
     - email: nikolaidis.fotis@gmail.com
@@ -592,10 +592,10 @@ entries:
   redis:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2022-06-24T15:11:07.196464916Z"
+    created: "2022-06-24T15:16:07.971335018Z"
     description: Redis is an in-memory data structure store, used as a distributed,
       in-memory key–value database, cache and message broker, with optional durability.
-    digest: 9a04831bafd46616ef763b4a47dd69b11ef0007bd1d9b7e8bad4ed4d90947e18
+    digest: 060aaa168ce11ebe2abaca178f53309b43a3e0d2508c19454e4ec6a5d45bc1f4
     maintainers:
     - email: nikolaidis.fotis@gmail.com
       name: Fotis Nikolaidis
@@ -677,10 +677,10 @@ entries:
   tebis:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2022-06-24T15:11:07.196764223Z"
+    created: "2022-06-24T15:16:07.971607922Z"
     description: Tebis is a rack-scale key/value store optimized for replication over
       RDMA
-    digest: 19434eb6cedf1dd039e8a5402545ed6db3d3844a0e8ec59a6a444beabc087d27
+    digest: 11d5736c16bcb45ca6da191280400f390a88e06bf093af0b58cbb8ff6304ade6
     maintainers:
     - email: nikolaidis.fotis@gmail.com
       name: Fotis Nikolaidis
@@ -768,10 +768,10 @@ entries:
   tikv:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2022-06-24T15:11:07.198985673Z"
+    created: "2022-06-24T15:16:07.973146342Z"
     description: TiKV is a highly scalable, low latency, and easy to use key-value
       database.
-    digest: d4518c9f735b40da9dcfac0658452e20997740db763e092b56778d4b3e7ef177
+    digest: 8abe29caccfcab81218fe06c672ea5a153e2dcd5e5b40d11a72c64eedef2bed0
     icon: https://tikv.org/img/logos/horizontal/color/tikv-horizontal-color.png
     maintainers:
     - email: nikolaidis.fotis@gmail.com
@@ -865,9 +865,9 @@ entries:
   ycsb:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2022-06-24T15:11:07.199436684Z"
+    created: "2022-06-24T15:16:07.973536048Z"
     description: Yahoo! Cloud Serving Benchmark.
-    digest: 78f3b394a07ac067cda62cad57589c38fa328f8d45ff35cd9dcb3ddf5d802dff
+    digest: b9998af0070465d0af5e0f3cb5c72e8722c7303bada91d896bd605e1122c6248
     maintainers:
     - email: nikolaidis.fotis@gmail.com
       name: Fotis Nikolaidis
@@ -947,4 +947,4 @@ entries:
     urls:
     - https://carv-ics-forth.github.io/frisbee/charts/ycsb-1.0.16.tgz
     version: 1.0.16
-generated: "2022-06-24T15:11:07.147527601Z"
+generated: "2022-06-24T15:16:07.932202498Z"
