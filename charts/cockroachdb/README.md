@@ -63,3 +63,12 @@ The command removes all the Kubernetes components associated with the chart and 
 option `--purge` to delete all history too.
 
 ## Parameters
+
+### Cockroach Configuration parameters
+
+| Name       | Description                                                                  | Value   |
+| ---------- | ---------------------------------------------------------------------------- | ------- |
+| `port`     | CockroachDB's port to listen to inter-communications and client connections. | `26257` |
+| `httpPort` | CockroachDB's port to listen to HTTP requests.                               | `8080`  |
+
+
