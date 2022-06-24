@@ -4,8 +4,7 @@
     </a>
 </div>
 
-#
-<div align="center">Frisbee – Kubernetes Native Testbed</div>
+# <div align="center">Frisbee – Kubernetes Native Testbed</div>
 
 The effort being put in automating tests should not take over delivering value to users. Frisbee makes it possible to:
 
