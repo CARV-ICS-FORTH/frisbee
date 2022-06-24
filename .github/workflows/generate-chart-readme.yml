@@ -6,7 +6,7 @@ on:
       pr:
         description: 'Dummy Pull Request'
         required: true
-        default: ${{github.event.pull_request.head.ref}}
+        default: ''
   
   pull_request_target:
     branches:
@@ -46,13 +46,16 @@ jobs:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
           path: charts
-          # token: ${{ secrets.BITNAMI_BOT_TOKEN }}
+          # token: ${{ secrets.BOT_TOKEN }}
 
       - name: Get list of files with changes in Pull Request
-        id: pr-file-changes
+        id: file_changes
         uses: trilom/file-changes-action@v1.2.4
         with:
-          fileOutput: ' '
+          fileOutput: ' ' # alter: csv
+          githubRepo: ${{github.event.pull_request.head.repo.full_name}}
+          prNumber: ${{github.event.pull_request.head.ref}}
+          #githubToken: ${{ secrets.BOT_TOKEN }}          
 
       - name: Prepare readme-generator-for-helm inputs
         run: |
