@@ -69,14 +69,12 @@ type PlacementSpec struct {
 type ClusterSpec struct {
 	GenerateFromTemplate `json:",inline"`
 
-	// Tolerate specifies the conditions under which the cluster will fail. If left undefined, the cluster
-	// will fail immediately when a service has failed.
+	// Tolerate specifies the conditions under which the cluster will fail. If undefined, the cluster fails
+	// immediately when a service has failed.
 	// +optional
 	Tolerate TolerateSpec `json:"tolerate,omitempty"`
 
-	// Schedule defines the interval between the creation of services within the group. ExecutedActions creation is not
-	// supported in collocated mode. Since Pods are intended to be disposable and replaceable, we cannot add a
-	// container to a Pod once it has been created
+	// Schedule defines the interval between the creation of services in the group.
 	// +optional
 	Schedule *SchedulerSpec `json:"schedule,omitempty"`
 
@@ -84,8 +82,8 @@ type ClusterSpec struct {
 	// +optional
 	Placement *PlacementSpec `json:"placement,omitempty"`
 
-	// Suspend flag tells the controller to suspend subsequent executions, it does
-	// not apply to already started executions.  Defaults to false.
+	// Suspend flag tells the controller to suspend subsequent executions, it does not apply to already started
+	// executions.  Defaults to false.
 	// +optional
 	Suspend *bool `json:"suspend,omitempty"`
 }
