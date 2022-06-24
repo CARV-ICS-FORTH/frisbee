@@ -46,6 +46,7 @@ type TemplateSpec struct {
 	// +optional
 	Inputs *Inputs `json:"inputs,omitempty"`
 
+	// EmbedSpecs point to the Frisbee specs that can be templated.
 	*EmbedSpecs `json:",inline"`
 }
 
