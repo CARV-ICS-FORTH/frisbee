@@ -11,8 +11,8 @@ global:
 
 ## @section Frisbee Operator parameters
 
-## @param operator.enabled Set it to false for running the controller outside the Kubernetes Cluster
-## @param operator.controllerName Defines the name of the controller
+## @param operator.enabled Set it to false for running the controller outside the Kubernetes Cluster.
+## @param operator.controllerName Defines the name of the controller.
 ## @param operator.webhookPort Defines the telemetry webhook for receiving events from Grafana.
 operator:
   enabled: true
