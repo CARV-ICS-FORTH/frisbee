@@ -16,9 +16,16 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v2
         with:
-          go-version: '^1.13.1'
+          go-version: '^1.18.3'
       - name: gen-crd-api-reference-docs
         run: make api-docs
-      - name: Check if docs are up to date
-        # This check must fail if there are diffs.
-        run: git diff --exit-code ./docs/api.html
+        
+      - name: Push changes
+        run: |
+          # Push all the changes
+          cd charts
+          if git status -s | grep charts; then
+            git config user.name "Frisbee Charts"
+            git config user.email "fnikol@ics.forth.gr"
+            git add . && git commit -am "Update API documentation" --signoff && git push
+          fi
