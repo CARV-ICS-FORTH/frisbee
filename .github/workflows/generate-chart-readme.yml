@@ -2,6 +2,12 @@ name: Generate Chart Parameters
 
 on:
   workflow_dispatch:
+    inputs:
+      pr:
+        description: 'Dummy Pull Request'
+        required: true
+        default: ''
+  
   pull_request_target:
     branches:
       - main
