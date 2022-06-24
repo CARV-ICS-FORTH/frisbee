@@ -85,7 +85,7 @@ func handleRequirements(ctx context.Context, r *Controller, cr *v1alpha1.Service
 	}
 
 	// Volume
-	if req := cr.Spec.Requirements.PVC; req != nil {
+	if req := cr.Spec.Requirements.EphemeralVolume; req != nil {
 		var pvc corev1.PersistentVolumeClaim
 
 		pvc.SetName(cr.GetName())

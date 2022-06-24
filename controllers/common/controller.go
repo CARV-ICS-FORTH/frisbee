@@ -67,7 +67,7 @@ type Reconciler interface {
 
 	// Finalize deletes any external resources associated with the service
 	// Examples finalizers include performing backups and deleting
-	// resources that are not owned by this CR, like a PVC.
+	// resources that are not owned by this CR, like a EphemeralVolume.
 	//
 	// Ensure that delete implementation is idempotent and safe to invoke
 	// multiple times for same object

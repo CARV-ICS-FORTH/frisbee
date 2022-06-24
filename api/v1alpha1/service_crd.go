@@ -35,7 +35,7 @@ type Service struct {
 	Status ServiceStatus `json:"status,omitempty"`
 }
 
-type PVC struct {
+type EphemeralVolumeSpec struct {
 	Name string                           `json:"name"`
 	Spec corev1.PersistentVolumeClaimSpec `json:"spec,omitempty"`
 }
@@ -43,9 +43,12 @@ type PVC struct {
 // Requirements points to Kinds and their respective configurations required for the Service operation.
 // For example, this field can be used to create PVCs dedicated to this service.
 type Requirements struct {
+	// EphemeralVolume create an ephemeral volume. It's use for application that need additional storage but don't care whether
+	// that data is stored persistently across restarts.
 	// +optional
-	PVC *PVC `json:"persistentVolumeClaim,omitempty"`
+	EphemeralVolume *EphemeralVolumeSpec `json:"persistentVolumeClaim,omitempty"`
 
+	// Ingress makes An API object that manages external access to the services in a cluster, typically HTTP.
 	// +optional
 	Ingress *netv1.IngressBackend `json:"ingressBackend,omitempty"`
 }

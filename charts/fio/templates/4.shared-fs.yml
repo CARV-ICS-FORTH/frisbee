@@ -13,7 +13,7 @@ spec:
   service:
     volumes:
       - name: shared-fs
-        persistentVolumeClaim:
+        ephemeralVolumeClaim:
           claimName: {{"{{.Inputs.Parameters.claimName}}" | quote}}
 
     decorators: # decorators

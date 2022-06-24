@@ -29,7 +29,7 @@ func Test_setField(t *testing.T) {
 	cr := v1alpha1.Service{
 		Spec: v1alpha1.ServiceSpec{
 			Requirements: &v1alpha1.Requirements{
-				PVC: &v1alpha1.PVC{
+				EphemeralVolume: &v1alpha1.EphemeralVolumeSpec{
 					Name: "bind",
 					Spec: corev1.PersistentVolumeClaimSpec{
 						AccessModes: nil,
@@ -83,7 +83,7 @@ func Test_setField(t *testing.T) {
 			args: args{
 				cr: &cr,
 				val: v1alpha1.SetField{
-					Field: "Requirements.PVC.Spec.Resources.Requests.storage",
+					Field: "Requirements.EphemeralVolume.Spec.Resources.Requests.storage",
 					Value: "3Gi",
 				},
 			},

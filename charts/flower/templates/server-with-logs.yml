@@ -15,7 +15,7 @@ spec:
 
     volumes:
       - name: logs
-        persistentVolumeClaim:
+        ephemeralVolumeClaim:
           claimName: {{"{{.Inputs.Parameters.logClaimName}}" | quote}}
 
     containers: # Container

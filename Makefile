@@ -62,6 +62,11 @@ envtest:
 	$(call go-get-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest@latest)
 
 
+# Find or download gen-crd-api-reference-docs
+API_GEN = $(shell pwd)/bin/gen-crd-api-reference-docs
+gen-crd-api-reference-docs:
+	$(call go-get-tool,$(API_GEN),github.com/ahmetb/gen-crd-api-reference-docs@v0.3.0)
+
 
 ##@ General
 
@@ -100,6 +105,13 @@ vet: ## Run go vet against code.
 
 test: generate fmt vet envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
+
+
+##@ Documentation
+
+api-docs: gen-crd-api-reference-docs	## Generate API reference documentation
+	$(API_GEN) -api-dir=./api/v1alpha1 -config=./hack/api-docs/config.json -template-dir=./hack/api-docs/template -out-file=./docs/api.html
+
 
 verify-docs: ## Verify Documentation
 	@echo "===> Verifying spellings <==="

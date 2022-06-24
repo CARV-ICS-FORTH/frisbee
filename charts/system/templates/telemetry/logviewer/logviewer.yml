@@ -22,7 +22,7 @@ spec:
 
     volumes: # Match the pod to the log volume
       - name: logs
-        persistentVolumeClaim:
+        ephemeralVolumeClaim:
           claimName: {{"{{.Inputs.Parameters.logClaimName}}" | quote}}
 
     # Do a nasty touch to sync/populate the volume.
