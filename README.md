@@ -19,13 +19,6 @@ The effort being put in automating tests should not take over delivering value t
 
 🕹️ Assert actual program behavior and side effects
 
-##
-<div align="center">![releaser](https://github.com/carv-ics-forth/frisbee/actions/workflows/release.yml/badge.svg) [![Go
-    Report
-    Card](https://goreportcard.com/badge/github.com/carv-ics-forth/frisbee)](https://goreportcard.com/report/github.com/carv-ics-forth/frisbee)
-    ![License: Apache-2.0](https://img.shields.io/github/license/carv-ics-forth/frisbee?color=blue) [![GitHub Repo
-    stars](https://img.shields.io/github/stars/carv-ics-forth/frisbee)](https://github.com/carv-ics-forth/frisbee/stargazers)
-</div>
 
 ## :compass: Scenarios
 
