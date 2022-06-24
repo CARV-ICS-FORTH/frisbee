@@ -13,7 +13,7 @@ spec:
         - system.telemetry.agent
     volumes:
       - name: dataset
-        persistentVolumeClaim:
+        ephemeralVolumeClaim:
           claimName: {{"{{.Inputs.Parameters.dataClaimName}}" | quote}}
     containers: # Container(s)
       - name: app

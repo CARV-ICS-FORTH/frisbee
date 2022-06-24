@@ -5025,7 +5025,7 @@ spec:
                                   - name
                                 type: object
                             type: object
-                          persistentVolumeClaim:
+                          ephemeralVolumeClaim:
                             properties:
                               name:
                                 type: string
@@ -6438,7 +6438,7 @@ spec:
                                 - path
                                 - server
                               type: object
-                            persistentVolumeClaim:
+                            ephemeralVolumeClaim:
                               description: 'PersistentVolumeClaimVolumeSource represents
                               a reference to a PersistentVolumeClaim in the same namespace.
                               More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#persistentvolumeclaims'

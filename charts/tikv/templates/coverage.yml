@@ -12,7 +12,7 @@ spec:
       memory: ""
   service:
     requirements: # Requirements
-      persistentVolumeClaim:
+      ephemeralVolumeClaim:
         name: datastore
         spec:
           storageClassName: local-volume
@@ -106,7 +106,7 @@ spec:
 
   service:
     requirements: # Requirements
-      persistentVolumeClaim:
+      ephemeralVolumeClaim:
         name: datastore
         spec:
           storageClassName: local-volume

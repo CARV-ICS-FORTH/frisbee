@@ -11,7 +11,7 @@ spec:
       direct: "0"
   service:
     requirements: # Requirements
-      persistentVolumeClaim:
+      ephemeralVolumeClaim:
         name: local-fs
         spec:
           storageClassName: exclusive-device

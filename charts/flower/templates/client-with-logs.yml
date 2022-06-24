@@ -17,10 +17,10 @@ spec:
 
     volumes:
       - name: dataset
-        persistentVolumeClaim:
+        ephemeralVolumeClaim:
           claimName: {{"{{.Inputs.Parameters.dataClaimName}}" | quote}}
       - name: logs
-        persistentVolumeClaim:
+        ephemeralVolumeClaim:
           claimName: {{"{{.Inputs.Parameters.logClaimName}}" | quote}}
     containers:
       - name: app
