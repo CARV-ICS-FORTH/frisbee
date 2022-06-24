@@ -57,7 +57,7 @@ type PlacementSpec struct {
 	Collocate bool `json:"collocate"`
 
 	// ConflictsWith points to another cluster whose services cannot be located with this one.
-	// Used, for example, to place master nodes and slave nodes on different failures domains
+	// For example, this is needed for placing the master nodes on a different failure domain than the slave nodes.
 	ConflictsWith []string `json:"conflictsWith,omitempty"`
 
 	// Nodes will place all the services within the same specific node.
