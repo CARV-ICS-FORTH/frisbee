@@ -13,18 +13,23 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+        with:
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+        
       - name: Setup Go
         uses: actions/setup-go@v2
         with:
           go-version: '^1.18.3'
+          
       - name: gen-crd-api-reference-docs
         run: make api-docs
         
       - name: Push changes
         run: |
-          # Push all the changes         
-          if git status -s | grep docs; then
-            git config user.name "Frisbee Charts"
-            git config user.email "fnikol@ics.forth.gr"
-            git add ./docs && git commit -am "Update API documentation" --signoff && git push
-          fi
+          # Push all the changes
+          cd docs
+          
+          git config user.name "Frisbee-Bot"
+          git config user.email "frisbee-bot@ics.forth.gr"
+          git add . && git commit -am "Update API documentation" --signoff && git push
