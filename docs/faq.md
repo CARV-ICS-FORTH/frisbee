@@ -1,15 +1,26 @@
 ## This is a WIP FAQ for Frisbee
 
 <!-- toc -->
-[TOC]
+
+- [Q: The service seems fine, but I get a Failed message.](#q-the-service-seems-fine-but-i-get-a-failed-message)
+- [Q:  I changed some templates, but the changes does not seem to affect the Test Plan.](#q--i-changed-some-templates-but-the-changes-does-not-seem-to-affect-the-test-plan)
+- [Q: My experiment was running perfectly a few hours ago. Now, nothing works.](#q-my-experiment-was-running-perfectly-a-few-hours-ago-now-nothing-works)
+- [Q: All I see in Grafana is a dot. There are no lines](#q-all-i-see-in-grafana-is-a-dot-there-are-no-lines)
+- [Q: My plots in Grafana are not in line. The times are different](#q-my-plots-in-grafana-are-not-in-line-the-times-are-different)
+- [Q: I see dead plots ... on Grafana](#q-i-see-dead-plots--on-grafana)
+- [Q: Missing chart directory.](#q-missing-chart-directory)
+- [Q: Pods don't have internet access](#q-pods-dont-have-internet-access)
+- [Q: Ingress does not work](#q-ingress-does-not-work)
+
 <!-- /toc -->
 
 
-## FAQ
 
 **Question:** What is Frisbee ?
 
 **Answer:** Frisbee is a test-suite for Kubernetes.
+
+
 
 ##
 
