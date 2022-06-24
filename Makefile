@@ -88,7 +88,8 @@ help: ## Display this help.
 
 
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
-CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
+# CRD_OPTIONS ?= "crd:trivialVersions=true" # "crd:trivialVersions=true,preserveUnknownFields=false"
+CRD_OPTIONS ?= crd
 
 ##@ Development
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.

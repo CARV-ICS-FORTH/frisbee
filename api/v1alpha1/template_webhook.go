@@ -14,10 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package webhooks
+package v1alpha1
 
 import (
-	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -25,9 +24,9 @@ import (
 )
 
 // log is for logging in this package.
-var chaoslog = logf.Log.WithName("chaos-resource")
+var templatelog = logf.Log.WithName("template-resource")
 
-func (r *v1alpha1.Chaos) SetupWebhookWithManager(mgr ctrl.Manager) error {
+func (r *Template) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
 		Complete()
@@ -35,41 +34,41 @@ func (r *v1alpha1.Chaos) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
-// +kubebuilder:webhook:path=/mutate-chaos,mutating=true,failurePolicy=fail,sideEffects=None,groups=frisbee.io,resources=chaos,verbs=create;update,versions=v1alpha1,name=mchaos.kb.io,admissionReviewVersions={v1,v1alpha1}
+// +kubebuilder:webhook:path=/mutate-template,mutating=true,failurePolicy=fail,sideEffects=None,groups=frisbee.io,resources=templates,verbs=create;update,versions=v1alpha1,name=mtemplate.kb.io,admissionReviewVersions={v1,v1alpha1}
 
-var _ webhook.Defaulter = &v1alpha1.Chaos{}
+var _ webhook.Defaulter = &Template{}
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *v1alpha1.Chaos) Default() {
-	chaoslog.Info("default", "name", r.Name)
+func (r *Template) Default() {
+	templatelog.Info("default", "name", r.Name)
 
 	// TODO(user): fill in your defaulting logic.
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// +kubebuilder:webhook:path=/validate-chaos,mutating=false,failurePolicy=fail,sideEffects=None,groups=frisbee.io,resources=chaos,verbs=create;update,versions=v1alpha1,name=vchaos.kb.io,admissionReviewVersions={v1,v1alpha1}
+// +kubebuilder:webhook:path=/validate-template,mutating=false,failurePolicy=fail,sideEffects=None,groups=frisbee.io,resources=templates,verbs=create;update,versions=v1alpha1,name=vtemplate.kb.io,admissionReviewVersions={v1,v1alpha1}
 
-var _ webhook.Validator = &v1alpha1.Chaos{}
+var _ webhook.Validator = &Template{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *v1alpha1.Chaos) ValidateCreate() error {
-	chaoslog.Info("validate create", "name", r.Name)
+func (r *Template) ValidateCreate() error {
+	templatelog.Info("validate create", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object creation.
 	return nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *v1alpha1.Chaos) ValidateUpdate(old runtime.Object) error {
-	chaoslog.Info("validate update", "name", r.Name)
+func (r *Template) ValidateUpdate(old runtime.Object) error {
+	templatelog.Info("validate update", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object update.
 	return nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *v1alpha1.Chaos) ValidateDelete() error {
-	chaoslog.Info("validate delete", "name", r.Name)
+func (r *Template) ValidateDelete() error {
+	templatelog.Info("validate delete", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.
 	return nil
