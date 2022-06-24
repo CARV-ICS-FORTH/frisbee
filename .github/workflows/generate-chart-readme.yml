@@ -48,8 +48,8 @@ jobs:
         uses: trilom/file-changes-action@v1.2.4
         with:
           fileOutput: ' ' # alter: csv
-          githubRepo: ${{github.event.pull_request.head.repo.full_name}}
-          prNumber: ${{github.event.pull_request.head.ref}}
+          #githubRepo: ${{github.event.pull_request.head.repo.full_name}}
+          #prNumber: ${{github.event.pull_request.head.ref}}
           #githubToken: ${{ secrets.BOT_TOKEN }}          
 
       - name: Prepare readme-generator-for-helm inputs
