@@ -1,5 +1,7 @@
-# CockroachDB's port to listen to inter-communications and client connections.
-port: 26257
+## @section Cockroach Configuration parameters
 
-# CockroachDB's port to listen to HTTP requests.
+## @param port  CockroachDB's port to listen to inter-communications and client connections.
+## @param httpPort  CockroachDB's port to listen to HTTP requests.
+
+port: 26257
 httpPort: 8080
