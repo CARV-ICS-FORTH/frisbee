@@ -1,6 +1,15 @@
 name: Verify docs
 
 on:
+  workflow_dispatch:
+    inputs:
+      logLevel:
+        description: 'Log level'     
+        required: true
+        default: 'warning'
+      tags:
+        description: 'Test scenario tags'  
+
   schedule:
     # every day at 9am
     - cron: '0 9 * * *'
