@@ -85,10 +85,6 @@ func (r *Controller) StartTelemetry(ctx context.Context, t *v1alpha1.TestPlan) e
 		return errors.Wrapf(err, "grafana error")
 	}
 
-	if err := r.createIngress(ctx, t); err != nil {
-		return errors.Wrapf(err, "ingress error")
-	}
-
 	return nil
 }
 
@@ -125,7 +121,7 @@ func (r *Controller) installPrometheus(ctx context.Context, t *v1alpha1.TestPlan
 		return errors.Wrapf(err, "cannot create %s", job.GetName())
 	}
 
-	t.Status.PrometheusEndpoint = externalEndpoint(notRandomPrometheusName, t.GetNamespace())
+	t.Status.PrometheusEndpoint = common.ExternalEndpoint(notRandomPrometheusName, t.GetNamespace())
 
 	return nil
 }
@@ -166,7 +162,7 @@ func (r *Controller) installGrafana(ctx context.Context, t *v1alpha1.TestPlan, a
 		return errors.Wrapf(err, "cannot create %s", job.GetName())
 	}
 
-	t.Status.GrafanaEndpoint = externalEndpoint(notRandomGrafanaName, t.GetNamespace())
+	t.Status.GrafanaEndpoint = common.ExternalEndpoint(notRandomGrafanaName, t.GetNamespace())
 
 	return nil
 }
@@ -228,90 +224,6 @@ func (r *Controller) importDashboards(ctx context.Context, t *v1alpha1.TestPlan,
 	return nil
 }
 
-func (r *Controller) createIngress(ctx context.Context, t *v1alpha1.TestPlan) error {
-	ingressClassName := configuration.Global.IngressClassName
-
-	var ingress netv1.Ingress
-
-	ingress.SetName(t.GetName())
-
-	ingress.Spec = netv1.IngressSpec{
-		IngressClassName: &ingressClassName,
-		Rules: []netv1.IngressRule{
-			{
-				Host: externalEndpoint(notRandomPrometheusName, t.GetNamespace()),
-				IngressRuleValue: netv1.IngressRuleValue{
-					HTTP: &netv1.HTTPIngressRuleValue{
-						Paths: []netv1.HTTPIngressPath{
-							{
-								Path:     "/",
-								PathType: &pathType,
-								Backend: netv1.IngressBackend{
-									Service: &netv1.IngressServiceBackend{
-										Name: notRandomPrometheusName,
-										Port: netv1.ServiceBackendPort{
-											Name: "http",
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			{
-				Host: externalEndpoint(notRandomGrafanaName, t.GetNamespace()),
-				IngressRuleValue: netv1.IngressRuleValue{
-					HTTP: &netv1.HTTPIngressRuleValue{
-						Paths: []netv1.HTTPIngressPath{
-							{
-								Path:     "/",
-								PathType: &pathType,
-								Backend: netv1.IngressBackend{
-									Service: &netv1.IngressServiceBackend{
-										Name: notRandomGrafanaName,
-										Port: netv1.ServiceBackendPort{
-											Name: "http",
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-
-			{ // Create a placeholder for the logviewer.
-				Host: externalEndpoint(notRandomLogViewerName, t.GetNamespace()),
-				IngressRuleValue: netv1.IngressRuleValue{
-					HTTP: &netv1.HTTPIngressRuleValue{
-						Paths: []netv1.HTTPIngressPath{
-							{
-								Path:     "/",
-								PathType: &pathType,
-								Backend: netv1.IngressBackend{
-									Service: &netv1.IngressServiceBackend{
-										Name: notRandomLogViewerName,
-										Port: netv1.ServiceBackendPort{
-											Name: "http",
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	}
-
-	if err := common.Create(ctx, r, t, &ingress); err != nil {
-		return errors.Wrapf(err, "cannot create ingress")
-	}
-
-	return nil
-}
-
 // ImportTelemetryDashboards iterates the referenced services (directly via Service or indirectly via Cluster) and list
 // all telemetry dashboards that need to be imported
 func (r *Controller) ImportTelemetryDashboards(ctx context.Context, plan *v1alpha1.TestPlan) ([]string, error) {
@@ -362,10 +274,10 @@ func (r *Controller) ConnectToGrafana(ctx context.Context, t *v1alpha1.TestPlan)
 
 	if configuration.Global.DeveloperMode {
 		/* If in developer mode, the operator runs outside the cluster, and will reach Grafana via the ingress */
-		endpoint = externalEndpoint(notRandomGrafanaName, t.GetNamespace())
+		endpoint = common.ExternalEndpoint(notRandomGrafanaName, t.GetNamespace())
 	} else {
 		/* If the operator runs within the cluster, it will reach Grafana via the service */
-		endpoint = internalEndpoint(notRandomGrafanaName, t.GetNamespace(), GrafanaPort)
+		endpoint = common.InternalEndpoint(notRandomGrafanaName, t.GetNamespace(), GrafanaPort)
 	}
 
 	return grafana.New(ctx,
@@ -445,14 +357,4 @@ func (r *Controller) CreateWebhookServer(ctx context.Context) error {
 	}()
 
 	return nil
-}
-
-// internalEndpoint creates an endpoint for accessing the service within the cluster.
-func internalEndpoint(name string, planName string, port int64) string {
-	return fmt.Sprintf("%s.%s:%d", name, planName, port)
-}
-
-// externalEndpoint creates an endpoint for accessing the service outside the cluster.
-func externalEndpoint(name, planName string) string {
-	return fmt.Sprintf("%s-%s.%s", name, planName, configuration.Global.DomainName)
 }

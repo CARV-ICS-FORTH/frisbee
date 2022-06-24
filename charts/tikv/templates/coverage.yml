@@ -22,10 +22,17 @@ spec:
             requests:
               storage: 15Gi
 
+      ingressBackend:
+        service:
+          name: self
+          port:
+            number: 80
+
     decorators: # Decorators
       telemetry:
         - system.telemetry.agent
         - tikv.telemetry.pd
+
       resources:
         cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
         memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
@@ -96,6 +103,7 @@ spec:
       placementDriver: "localhost"
       cpu: ""
       memory: ""
+
   service:
     requirements: # Requirements
       persistentVolumeClaim:
@@ -108,8 +116,17 @@ spec:
             requests:
               storage: 15Gi
 
+      ingressBackend:
+        service:
+          name: self
+          port:
+            number: 80
+
     decorators: # Decorators
-      telemetry: [ system.telemetry.agent, tikv.telemetry.worker ]
+      telemetry:
+        - system.telemetry.agent
+        - tikv.telemetry.worker
+
       resources: # Resources
         cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
         memory: {{"{{.Inputs.Parameters.memory}}" |quote}}

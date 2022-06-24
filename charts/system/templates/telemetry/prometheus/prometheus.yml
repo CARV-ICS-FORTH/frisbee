@@ -5,6 +5,13 @@ metadata:
   name: system.telemetry.prometheus.template
 spec:
   service:
+    requirements:
+      ingressBackend:
+        service:
+          name: self
+          port:
+            number: {{.Values.prometheus.port}}
+
     decorators:
       labels:
         plan.frisbee.io/component: SYS

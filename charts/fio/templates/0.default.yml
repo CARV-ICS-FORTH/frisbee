@@ -9,6 +9,7 @@ spec:
     parameters:
       size: "10M"
       direct: "0"
+      ioengine: libaio
   service:
     decorators: # decorators
       telemetry:
@@ -30,6 +31,7 @@ spec:
             DEVICE=/testdata
             SIZE={{"{{.Inputs.Parameters.size}}"}}
             DIRECT={{"{{.Inputs.Parameters.direct}}"}}
+            IOENGINE={{"{{.Inputs.Parameters.ioengine}}"}}
 
             echo "USING DEVICE: $DEVICE"
 
@@ -44,7 +46,7 @@ spec:
             group_reporting=1
 
             [file1]
-            ioengine=libaio
+            ioengine=${IOENGINE}
             EOF
 
             for rw in randread randwrite; do

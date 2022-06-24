@@ -21,6 +21,7 @@ spec:
           resources:
             requests:
               storage: 500Mi
+
     decorators: # decorators
       telemetry:
         - system.telemetry.agent

@@ -450,7 +450,7 @@ Network Throughput
 | round 2        | 1.7176001071929932 |             |
 | round 3        | 1.5219959020614624 |             |
 
-####  
+####   
 
 #### Observations
 
@@ -484,7 +484,7 @@ Network Throughput
 | round 2          | 1.6616249084472656 |             |
 | round 3          | 1.5116339921951294 |             |
 
-####  
+####   
 
 #### Observations
 
@@ -516,7 +516,7 @@ Network Throughput
 | round 2         | 1.687509298324585  |             |
 | round 3         | 1.5112173557281494 |             |
 
-####  
+####   
 
 #### Observations
 
@@ -551,7 +551,7 @@ Network Throughput
 | round 2         | 1.6904945373535156 |             |
 | round 3         | 1.5080753564834595 |             |
 
-####  
+####   
 
 #### Observations
 

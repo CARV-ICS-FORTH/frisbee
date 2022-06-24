@@ -9,6 +9,13 @@ spec:
       logClaimName: ""
 
   service:
+    requirements:
+      ingressBackend:
+        service:
+          name: self
+          port:
+            number: {{.Values.logviewer.port}}
+
     decorators:
       labels:
         plan.frisbee.io/component: SYS
