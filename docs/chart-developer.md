@@ -1,7 +1,7 @@
 ## Guide for the Frisbee Chart Developers
 
-
 <!-- toc -->
+
   - [What is a Helm Chart ?](#what-is-a-helm-chart-)
       - [Lint Charts](#lint-charts)
       - [Working with MicroK8s’ built-in registry](#working-with-microk8s-built-in-registry)
