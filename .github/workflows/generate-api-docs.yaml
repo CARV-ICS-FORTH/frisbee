@@ -22,12 +22,9 @@ jobs:
         
       - name: Push changes
         run: |
-          # Push all the changes
-          git diff 
-          
-          cd docs
+          # Push all the changes         
           if git status -s | grep docs; then
             git config user.name "Frisbee Charts"
             git config user.email "fnikol@ics.forth.gr"
-            git add . && git commit -am "Update API documentation" --signoff && git push
+            git add ./docs && git commit -am "Update API documentation" --signoff && git push
           fi
