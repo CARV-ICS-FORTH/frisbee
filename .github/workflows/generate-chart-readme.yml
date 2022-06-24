@@ -6,7 +6,7 @@ on:
       pr:
         description: 'Dummy Pull Request'
         required: true
-        default: ''
+        default: ${{github.event.pull_request.head.ref}}
   
   pull_request_target:
     branches:
