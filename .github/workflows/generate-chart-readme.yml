@@ -38,14 +38,15 @@ jobs:
           key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('readme-generator-for-helm/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-build-${{ env.cache-name }}-
+            
       - name: Install readme-generator-for-helm dependencies
         run: cd readme-generator-for-helm && npm install
 
       - name: Checkout Frisbee/charts
         uses: actions/checkout@v2
         with:
-          #ref: ${{github.event.pull_request.head.ref}}
-          #repository: ${{github.event.pull_request.head.repo.full_name}}
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
           path: charts
           # token: ${{ secrets.BITNAMI_BOT_TOKEN }}
 
