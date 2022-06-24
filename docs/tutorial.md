@@ -1,5 +1,9 @@
 # Tutorial
 
+<!-- toc -->
+[TOC]
+<!-- /toc -->
+
 This tutorial will guide you through deploying and running Frisbee on a local Kubernetes installation.
 
 # Install Dependencies
@@ -7,11 +11,11 @@ This tutorial will guide you through deploying and running Frisbee on a local Ku
 #### 1. Kubernetes and & Helm
 
 * [Microk8s](https://microk8s.io/docs)  is the simplest production-grade conformant K8s.  **It runs entirely on your
-  workstation or edge device.**
+workstation or edge device.**
 
 * [Helm](https://helm.sh/docs/intro/install/)  is a package manager for Kubernetes. Helm uses **a packaging format
-  called
-  charts**.
+called
+charts**.
 
 ```bash
 # Install microk8s v.1.24
@@ -44,7 +48,7 @@ method.
 >> cd frisbee
 
 # Have a look at the installation configuration
->> less charts/platform/values.yaml 
+>> less charts/platform/values.yaml
 
 # Make sure that the dir "/mnt/local" exists. The error will not appear until the execution of the test.
 >> mkdir /tmp/frisbee
@@ -88,15 +92,15 @@ Then you can verify that all the packages are successfully installed
 
 ```bash
 >> helm list
-NAME            NAMESPACE       REVISION        UPDATED                                         STATUS          CHART             
-my-frisbee      default         1               2022-06-10 20:37:26.298297945 +0300 EEST        deployed        platform-0.0.0 
+NAME            NAMESPACE       REVISION        UPDATED                                         STATUS          CHART
+my-frisbee      default         1               2022-06-10 20:37:26.298297945 +0300 EEST        deployed        platform-0.0.0
 
 
 >> helm list -n mytest
-NAME            NAMESPACE       REVISION        UPDATED                                         STATUS          CHART            
-my-cockroach    mytest          1               2022-06-10 20:40:29.741398162 +0300 EEST        deployed        cockroachdb-0.0.0 
-my-system       mytest          1               2022-06-10 20:40:19.981077906 +0300 EEST        deployed        defaults-0.0.0   
-my-ycsb         mytest          1               2022-06-10 20:40:36.97639544 +0300 EEST         deployed        ycsb-0.0.0       
+NAME            NAMESPACE       REVISION        UPDATED                                         STATUS          CHART
+my-cockroach    mytest          1               2022-06-10 20:40:29.741398162 +0300 EEST        deployed        cockroachdb-0.0.0
+my-system       mytest          1               2022-06-10 20:40:19.981077906 +0300 EEST        deployed        defaults-0.0.0
+my-ycsb         mytest          1               2022-06-10 20:40:36.97639544 +0300 EEST         deployed        ycsb-0.0.0
 ```
 
 #### 4. Run a Scenario
@@ -137,12 +141,12 @@ testplan.frisbee.io/cockroach-bitrot created
 **Event-based**: Consumes information from the Kubernetes API
 
 * [Dashboard](https://dashboard-frisbee.localhost/#/pod?namespace=mytest):  is a web-based Kubernetes user interface.
-  You can use Dashboard to deploy containerized applications to a Kubernetes cluster, troubleshoot your containerized
-  application, and manage the cluster resources.
+You can use Dashboard to deploy containerized applications to a Kubernetes cluster, troubleshoot your containerized
+application, and manage the cluster resources.
 
 * [Chaos Dashboard](http://chaos-frisbee.localhost/experiments): is a one-step web UI for managing, designing, and
-  monitoring chaos experiments on *Chaos Mesh*. It will ask for a token. You can get it from the config
-  via `grep token  ~/.kube/config`.
+monitoring chaos experiments on *Chaos Mesh*. It will ask for a token. You can get it from the config
+via `grep token  ~/.kube/config`.
 
 ----------------------------------------------
 
@@ -155,7 +159,7 @@ testplan.frisbee.io/cockroach-bitrot created
 
 * **Log-based:** Consumes information from distributed logs.
 
-    * [Logviewer](http://logviewer-mytest.localhost) (admin/admin)
+* [Logviewer](http://logviewer-mytest.localhost) (admin/admin)
 
 >
 > You may notice that it takes **long time for the experiment to start**. This is due to preparing the NFS volume for
@@ -177,23 +181,23 @@ Firstly, let's inspect the test plan.
 
 ...
 Status:
-  Conditions:
-    Last Transition Time:  2022-06-11T18:16:37Z
-    Message:               failed jobs: [run-workload]
-    Reason:                JobHasFailed
-    Status:                True
-    Type:                  UnexpectedTermination
-  Executed Actions:
-    Bitrot:
-    Boot:
-    Import - Workload:
-    Masters:
-    Run - Workload:
-  Grafana Endpoint:     grafana-mytest.localhost
-  Message:              failed jobs: [run-workload]
-  Phase:                Failed
-  Prometheus Endpoint:  prometheus-mytest.localhost
-  Reason:               JobHasFailed
+Conditions:
+Last Transition Time:  2022-06-11T18:16:37Z
+Message:               failed jobs: [run-workload]
+Reason:                JobHasFailed
+Status:                True
+Type:                  UnexpectedTermination
+Executed Actions:
+Bitrot:
+Boot:
+Import - Workload:
+Masters:
+Run - Workload:
+Grafana Endpoint:     grafana-mytest.localhost
+Message:              failed jobs: [run-workload]
+Phase:                Failed
+Prometheus Endpoint:  prometheus-mytest.localhost
+Reason:               JobHasFailed
 ```
 
 We are interested in the `Phase` and `Conditions` fields that provides information about the present status of a test.
@@ -207,7 +211,7 @@ The **Phase** describes the lifecycle of a Test.
 | Success | All jobs have voluntarily exited.                            |
 | Failed  | At least one job of the CR has terminated in a failure (exited with a  non-zero exit code or was stopped by the system). |
 
-####   
+####
 
 The **Phase** is a top-level description calculated based on some **Conditions**. The **Conditions** describe the
 various stages the Test has been through.
@@ -237,7 +241,6 @@ the [Dashboard](https://dashboard-frisbee.localhost) .
 
 To reduce the noise when debugging a failed test, *Frisbee* automatically deletes all the jobs, expect for the failed
 one (masters-1), and the telemetry stack (grafana/prometheus).
-
 
 
 > If the condition is not met within the specified timeout, `kubectl` will exit with failure code (1) and the following

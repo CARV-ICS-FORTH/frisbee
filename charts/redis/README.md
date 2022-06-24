@@ -16,7 +16,7 @@ Install the platform and dependent charts.
 Run any of the testing plans.
 
 ```bash
->> kubectl apply -f examples/1.baseline-single.yml 
+>> kubectl apply -f examples/1.baseline-single.yml
 ```
 
 ## Introduction

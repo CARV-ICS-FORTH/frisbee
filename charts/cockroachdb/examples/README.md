@@ -64,13 +64,13 @@
 #### Observations
 
 * In the current implementation, the more-servers cluster will keep creating database nodes for as long as the alert
-  remains active. Which means that if the performance does not recover (and acknowledged back to the controller) before
-  the next reconciliation cycle begins, the controller will keep creating nodes. Is this the desired behavior, or do we
-  need one new node per alert? Or do we need a creation interval within the same alert ?
+remains active. Which means that if the performance does not recover (and acknowledged back to the controller) before
+the next reconciliation cycle begins, the controller will keep creating nodes. Is this the desired behavior, or do we
+need one new node per alert? Or do we need a creation interval within the same alert ?
 
 * For the moment, you can implement this functionality using multiple clusters with logical dependencies between them.
-  In this case, you have group a, group b, group c, with each group depending the previous (to become Running), and
-  scheduled conditions with alerts.
+In this case, you have group a, group b, group c, with each group depending the previous (to become Running), and
+scheduled conditions with alerts.
 
 ### 7. Elastic Scale-down (Delete)
 
@@ -84,7 +84,7 @@
 #### Observations
 
 * Currently, deletion is supported only at the level of "Actions"/Jobs. You may delete a cluster, but not services
-  within a cluster.
+within a cluster.
 * If the "Action" is of type Service, then you can delete it directly.
 
 ### 8. Elastic Scale-down (Stop)
@@ -94,15 +94,15 @@
 3) Run workload A sending traffic to a random node
 4) Scale-up the topology by adding new nodes
 5) Scale-down the topology by periodically **stopping** some nodes (run command within target container to drain the
-   node)
+node)
 
 #### **Observations**
 
 * With the present cockroach container it is difficult to terminate the cockroach process gracefully (lack of pidof,
-  pkill, or ps)
+pkill, or ps)
 
 * The cockroach's native way is to drain the node, without stopping the process. Given that, the services appear as "
-  live" to Kubernetes, but without producing any data for Grafana.
+live" to Kubernetes, but without producing any data for Grafana.
 * The experiment blocks randomly.
 
 ### 9. Elastic Scale-down (Kill)
@@ -116,7 +116,7 @@
 #### Observations
 
 * We need to setup the "toleration" field in the Cluster. Otherwise, when a service fails, the cluster will immediately,
-  before the experiment's activities are done.
+before the experiment's activities are done.
 
 ### TODO
 
@@ -141,29 +141,29 @@ https://github.com/cockroachdb/cockroach/blob/master/pkg/cmd/roachtest/tests/sst
 
 2. The import blocks unless all servers are started
 
-    1) The roachtest makes use of c.Start() and c.StartE().
-    2) But If I try to "init" the cluster twice I get an error message.
+1) The roachtest makes use of c.Start() and c.StartE().
+2) But If I try to "init" the cluster twice I get an error message.
 
 3. Some SSTs have peculiar names which cause dd to fail
 
-   > \xb4\xb6"/0/1651588517.218867146,0#31483,SET]   
-   > Corrupt \xb4\xb6"/0/1651588517.218867146,0#31483,SET].sst
+> \xb4\xb6"/0/1651588517.218867146,0#31483,SET]
+> Corrupt \xb4\xb6"/0/1651588517.218867146,0#31483,SET].sst
 
 ![image-20220518160002401](README.assets/image-20220518160002401.png)
 
 4. Cockroach detects and bitrot and panics with error
 
-   > * ERROR: [n3] a panic has occurred!
-   >
-   > \* panic: must not be holding latches
-   >
-   > \* (1) attached stack trace
-   >
-   > ...
-   >
-   > \* Wraps: (2) forced error mark
-   >
-   > * | "pebble: corruption"
+> * ERROR: [n3] a panic has occurred!
+>
+> \* panic: must not be holding latches
+>
+> \* (1) attached stack trace
+>
+> ...
+>
+> \* Wraps: (2) forced error mark
+>
+> * | "pebble: corruption"
 
 ### 11. Network
 
@@ -189,7 +189,7 @@ https://github.com/cockroachdb/cockroach/blob/release-21.2/pkg/cmd/roachtest/tes
 1. Localhost is always reachable for both public and localhost IPs.
 2. Egress TCP from masters-0 is feasible, but the ACK is blocked from ingress rule, and the connection is stalled
 3. Normally the connections are stalled. However, UDP from masters-1/2 to masters-0 fails with a "permissioned denied"
-   error.
+error.
 
 ***BOTH* network partition** (masters-0 -> masters-1, masters-2, masters-3)
 
@@ -220,7 +220,7 @@ There is an issue with the pgurl format. For the rest of the experiment we conti
 
 ​ During the partition, the reported number of nodes is 0.
 
-* If the partition starts after the workload, it recovers when the partition is reparied
+* If the partition starts after the workload, it recovers when the partition is repaired
 * Otherwise, it remains 0
 
 ![img](https://lh6.googleusercontent.com/X9rqdUvlJ2aFuiXfG3DtXherMy6KsnePLwoZxuJ8ZtOuvo1ioJylgC-ceL89ireRIVINj8-BbRhiD4VbAAJZQJ92E0yvtr-6WmwnWgh3Ef-PRkxQXLFZBg5eogUYeihf8-wNpPlxuzqXg3IxVmuvVA)

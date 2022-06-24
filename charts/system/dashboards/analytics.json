@@ -3264,7 +3264,7 @@
           "interval": "",
           "intervalFactor": 1,
           "legendFormat": "{{instance}}:{{device}} ",
-          "refId": "weightened"
+          "refId": "weighted"
         }
       ],
       "timeFrom": null,

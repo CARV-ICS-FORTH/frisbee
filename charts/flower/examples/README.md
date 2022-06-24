@@ -86,9 +86,9 @@ Network Throughput
 #### Observations
 
 * One slow node can kill the entire training
-    * Increases training time. Follows the Amdahl's law.
-    * Reduces accuracy. I assume that due to the prolonged execution the rolling averages spread over time and cause
-      time skews in the calculations.
+* Increases training time. Follows the Amdahl's law.
+* Reduces accuracy. I assume that due to the prolonged execution the rolling averages spread over time and cause
+time skews in the calculations.
 
 #### Metrics
 
@@ -124,7 +124,7 @@ Network Throughput
 #### Observations
 
 * The clients fail, but are not terminated
-    * Failed to pick subchannel"
+* Failed to pick subchannel"
 * The clients have local activity, until the first round where it detects the failure
 
 #### Metrics
@@ -162,9 +162,9 @@ Network Throughput
 
 * Recipe for destruction.
 
-    * 2 clients detect the failure.
-    * 1 client does not detect the failure
-    * The server does not detect the failure
+* 2 clients detect the failure.
+* 1 client does not detect the failure
+* The server does not detect the failure
 
 * They both behave normally, but without making any progress
 
@@ -412,7 +412,7 @@ Network Throughput
 
 * The experiment works only if FL_MIN_AVAILABLE_CLIENTS==FL_MIN_FIT_CLIENTS==joined clients
 
-    * Otherwise, additional nodes exit in failure
+* Otherwise, additional nodes exit in failure
 
 ![image-20220608185729213](README.assets/image-20220608185729213.png)
 
@@ -450,7 +450,7 @@ Network Throughput
 | round 2        | 1.7176001071929932 |             |
 | round 3        | 1.5219959020614624 |             |
 
-####    
+####
 
 #### Observations
 
@@ -484,7 +484,7 @@ Network Throughput
 | round 2          | 1.6616249084472656 |             |
 | round 3          | 1.5116339921951294 |             |
 
-####    
+####
 
 #### Observations
 
@@ -516,12 +516,12 @@ Network Throughput
 | round 2         | 1.687509298324585  |             |
 | round 3         | 1.5112173557281494 |             |
 
-####    
+####
 
 #### Observations
 
 * Because all the clients start simultaneously, the scheduling is inefficient.
-    * The scheduler sees 0 activity and collocates the clients. But then the traffic begins, and everything does down.
+* The scheduler sees 0 activity and collocates the clients. But then the traffic begins, and everything does down.
 
 ![image-20220609193843149](README.assets/image-20220609193843149.png)
 
@@ -551,12 +551,12 @@ Network Throughput
 | round 2         | 1.6904945373535156 |             |
 | round 3         | 1.5080753564834595 |             |
 
-####    
+####
 
 #### Observations
 
 * Because all the clients start simultaneously, the scheduling is inefficient.
-    * The scheduler sees 0 activity and collocates the clients. But then the traffic begins, and everything does down.
+* The scheduler sees 0 activity and collocates the clients. But then the traffic begins, and everything does down.
 
 ![image-20220609202344170](README.assets/image-20220609202344170.png)
 

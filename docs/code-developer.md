@@ -1,9 +1,22 @@
 # Guide for the Frisbee Platform Developers
 
+<!-- toc -->
+
+- [Change the Code](#change-the-code)
+- [Make a new release](#make-a-new-release)
+    - [Step 1: Change the version in the VERSION file](#step-1-change-the-version-in-the-version-file)
+    - [Step 2: Update the controller's container](#step-2-update-the-controllers-container)
+    - [Step 3: Update the Github repo](#step-3-update-the-github-repo)
+    - [Step 4: Create  GitHub release](#step-4-create--github-release)
+    - [Step 5: Validate release](#step-5-validate-release)
+
+<!-- /toc -->
+
+
 ## Change the Code
 
 ```bash
-# Fetch Frisbee 
+# Fetch Frisbee
 >> git clone git@github.com:CARV-ICS-FORTH/frisbee.git
 >> cd frisbee
 ```
@@ -25,8 +38,8 @@ controller.
 
 ```bash
 # Remove the containerized controller from a running deployment
->> helm upgrade --install  my-frisbee charts/platform/ --set operator.enabled=false \ 
-	--set global.ingress=platform.science-hangar.eu
+>> helm upgrade --install  my-frisbee charts/platform/ --set operator.enabled=false \
+--set global.ingress=platform.science-hangar.eu
 ```
 
 Notice we the flag `global.ingress` . Set it accordingly to the Ingress in your cluster.
@@ -47,7 +60,6 @@ This may take a while as it has to take download the Go dependencies and compile
 If everything went fine, you should see something like the following.
 
 ![image-20211217192114704](developers.assets/image-20211217192114704.png)
-
 
 
 > Tip: Beware the different between `charts/platform` and  `frisbee/platform`.
@@ -119,7 +131,7 @@ To confirm that they have been actually created, you can use the  `helm` tool to
 
 ```bash
 >> helm repo update
->> helm search repo frisbee 
+>> helm search repo frisbee
 ```
 
 Then, you see that the `latest` Chart version is equal to the latest `git tag`, and in accordance to the VERSION file.

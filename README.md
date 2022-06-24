@@ -1,10 +1,11 @@
 <div align="center">
-<a href="https://www.vectorstock.com/royalty-free-vector/disc-golf-frisbee-eps-vector-25179185">
-  <img src="docs/images/logo.jpg" width="400">
-</a>
+    <a href="https://www.vectorstock.com/royalty-free-vector/disc-golf-frisbee-eps-vector-25179185">
+        <img src="docs/images/logo.jpg" width="400">
+    </a>
 </div>
 
-# <div align="center">Frisbee – Kubernetes Native Testbed</div>
+#
+<div align="center">Frisbee – Kubernetes Native Testbed</div>
 
 The effort being put in automating tests should not take over delivering value to users. Frisbee makes it possible to:
 
@@ -18,7 +19,13 @@ The effort being put in automating tests should not take over delivering value t
 
 🕹️ Assert actual program behavior and side effects
 
-## <div align="center">![releaser](https://github.com/carv-ics-forth/frisbee/actions/workflows/release.yml/badge.svg) [![Go Report Card](https://goreportcard.com/badge/github.com/carv-ics-forth/frisbee)](https://goreportcard.com/report/github.com/carv-ics-forth/frisbee) ![License: Apache-2.0](https://img.shields.io/github/license/carv-ics-forth/frisbee?color=blue) [![GitHub Repo stars](https://img.shields.io/github/stars/carv-ics-forth/frisbee)](https://github.com/carv-ics-forth/frisbee/stargazers)</div>
+##
+<div align="center">![releaser](https://github.com/carv-ics-forth/frisbee/actions/workflows/release.yml/badge.svg) [![Go
+    Report
+    Card](https://goreportcard.com/badge/github.com/carv-ics-forth/frisbee)](https://goreportcard.com/report/github.com/carv-ics-forth/frisbee)
+    ![License: Apache-2.0](https://img.shields.io/github/license/carv-ics-forth/frisbee?color=blue) [![GitHub Repo
+    stars](https://img.shields.io/github/stars/carv-ics-forth/frisbee)](https://github.com/carv-ics-forth/frisbee/stargazers)
+</div>
 
 ## :compass: Scenarios
 
@@ -39,34 +46,34 @@ The effort being put in automating tests should not take over delivering value t
 # TL;DR
 
 1. Make sure that [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/)
-   and  [Helm](https://helm.sh/docs/intro/install/) are installed on your system.
+and  [Helm](https://helm.sh/docs/intro/install/) are installed on your system.
 
 2. Update Helm repo.
 
-   ```bash
-   >> helm repo add frisbee https://carv-ics-forth.github.io/frisbee/charts
-   ```
+```bash
+>> helm repo add frisbee https://carv-ics-forth.github.io/frisbee/charts
+```
 
 3. Install Helm Packages.
 
-   ```bash
-   # Install the platform
-   >> helm upgrade --install --wait my-frisbee frisbee/platform
-   # Install the package for monitoring YCSB output
-   >> helm upgrade --install --wait my-ycsb frisbee/ycsb
-   # Install TiKV store
-   >> helm upgrade --install --wait my-tikv frisbee/tikv
-   ```
+```bash
+# Install the platform
+>> helm upgrade --install --wait my-frisbee frisbee/platform
+# Install the package for monitoring YCSB output
+>> helm upgrade --install --wait my-ycsb frisbee/ycsb
+# Install TiKV store
+>> helm upgrade --install --wait my-tikv frisbee/tikv
+```
 
 4. Create/Destroy the test plan.
 
-   ```bash
-   # Create 
-   >> curl -sSL https://raw.githubusercontent.com/CARV-ICS-FORTH/frisbee/main/charts/tikv/examples/plan.baseline.yml | kubectl -f - apply
-   
-   # Destroy
-   >> curl -sSL https://raw.githubusercontent.com/CARV-ICS-FORTH/frisbee/main/charts/tikv/examples/plan.baseline.yml | kubectl -f - delete --cascade=foreground
-   ```
+```bash
+# Create
+>> curl -sSL https://raw.githubusercontent.com/CARV-ICS-FORTH/frisbee/main/charts/tikv/examples/plan.baseline.yml | kubectl -f - apply
+
+# Destroy
+>> curl -sSL https://raw.githubusercontent.com/CARV-ICS-FORTH/frisbee/main/charts/tikv/examples/plan.baseline.yml | kubectl -f - delete --cascade=foreground
+```
 
 If everything went smoothly, you should see a
 similar [Grafana Dashboard](http://grafana.localhost/d/R5y4AE8Mz/kubernetes-cluster-monitoring-via-prometheus?orgId=1&amp;from=now-15m&amp;to=now)
@@ -88,10 +95,10 @@ Frisbee addresses the key pain points developers and QA engineers face when test
 earlier stages of the software lifecycle. We make it possible to:
 
 * **Run tests:**  create temporary containers for application dependencies, setup their initial state and clean them up
-  in the end.
+in the end.
 * **Write tests:** describe complex topologies, dynamic operating conditions, Chaos Events, and distributed assertions.
 * **Debug tests:** integrate application-specific metrics, monitor site-wide health metrics, and raise notifications on
-  SLA violations.
+SLA violations.
 
 For more information, Frisbee installation and reference documents are available at:
 

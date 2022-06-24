@@ -1,5 +1,25 @@
 # Contributing to Frisbee
 
+<!-- toc -->
+
+- [What can you do](#what-can-you-do)
+- [Contributing](#contributing)
+  - [Preparation](#preparation)
+  - [Workflow](#workflow)
+  - [Compile](#compile)
+  - [Code Style](#code-style)
+  - [Commit Rules](#commit-rules)
+    - [Commit Message](#commit-message)
+    - [Commit Content](#commit-content)
+  - [Pull Request](#pull-request)
+  - [Code Review](#code-review)
+- [Others](#others)
+  - [Code of Conduct](#code-of-conduct)
+  - [Sign your work](#sign-your-work)
+
+<!-- /toc -->
+
+
 Welcome to Frisbee world, here is a list of contributing guide for you. If you find something incorrect or missing
 content in the page, please submit an issue or PR to fix it.
 
@@ -179,32 +199,33 @@ Developer's Certificate of Origin 1.1
 By making a contribution to this project, I certify that:
 
 (a) The contribution was created in whole or in part by me and I
-    have the right to submit it under the open source license
-    indicated in the file; or
+have the right to submit it under the open source license
+indicated in the file; or
 
 (b) The contribution is based upon previous work that, to the best
-    of my knowledge, is covered under an appropriate open source
-    license and I have the right under that license to submit that
-    work with modifications, whether created in whole or in part
-    by me, under the same open source license (unless I am
-    permitted to submit under a different license), as indicated
-    in the file; or
+of my knowledge, is covered under an appropriate open source
+license and I have the right under that license to submit that
+work with modifications, whether created in whole or in part
+by me, under the same open source license (unless I am
+permitted to submit under a different license), as indicated
+in the file; or
 
 (c) The contribution was provided directly to me by some other
-    person who certified (a), (b) or (c) and I have not modified
-    it.
+person who certified (a), (b) or (c) and I have not modified
+it.
 
 (d) I understand and agree that this project and the contribution
-    are public and that a record of the contribution (including all
-    personal information I submit with it, including my sign-off) is
-    maintained indefinitely and may be redistributed consistent with
-    this project or the open source license(s) involved.
+are public and that a record of the contribution (including all
+personal information I submit with it, including my sign-off) is
+maintained indefinitely and may be redistributed consistent with
+this project or the open source license(s) involved.
 ```
 
 Then you just add a line to every git commit message:
 
 ```
-Signed-off-by: Joe Smith <joe.smith@email.com>
+Signed-off-by: Joe Smith
+<joe.smith@email.com>
 ```
 
 Use your real name (sorry, no pseudonyms or anonymous contributions.)

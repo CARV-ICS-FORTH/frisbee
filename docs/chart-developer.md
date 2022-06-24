@@ -1,5 +1,41 @@
 ## Guide for the Frisbee Chart Developers
 
+
+<!-- toc -->
+  - [What is a Helm Chart ?](#what-is-a-helm-chart-)
+      - [Lint Charts](#lint-charts)
+      - [Working with MicroK8s’ built-in registry](#working-with-microk8s-built-in-registry)
+  - [Run a Test](#run-a-test)
+    - [Debugging an Installation](#debugging-an-installation)
+  - [Debug a Test](#debug-a-test)
+  - [Write a test](#write-a-test)
+- [Change the Code](#change-the-code)
+  - [Run a test](#run-a-test-1)
+      - [Step 1:  Install Dependencies](#step-1--install-dependencies)
+      - [Step 2: Update Helm repo](#step-2-update-helm-repo)
+      - [Step 3:](#step-3)
+      - [This step will install the following components:](#this-step-will-install-the-following-components)
+      - [Step 4:  Install the testing components](#step-4--install-the-testing-components)
+      - [Step 5: Run the Test Plan](#step-5-run-the-test-plan)
+- [Observe a Testplan](#observe-a-testplan)
+    - [Kubernetes Dashboard](#kubernetes-dashboard)
+      - [Controller Logs](#controller-logs)
+    - [Grafana Dashboard &amp; Alerts](#grafana-dashboard--alerts)
+- [HELM](#helm)
+  - [Baseline](#baseline)
+      - [YCSB](#ycsb)
+      - [FIO](#fio)
+  - [Stress](#stress)
+  - [Scaleout](#scaleout)
+  - [Elasticity](#elasticity)
+  - [Chaos](#chaos)
+  - [Guide for the Frisbee Plan Developers](#guide-for-the-frisbee-plan-developers)
+- [Periodically kill some nodes.](#periodically-kill-some-nodes)
+    - [Do not set dependencies on cascades](#do-not-set-dependencies-on-cascades)
+
+<!-- /toc -->
+
+
 This is a guide for those who wish to contribute new Charts in Frisbee.
 
 Because there is an overlap, we advise you to have a look at the Guide for Code Developers first.
@@ -56,9 +92,9 @@ To address this we need to edit `/etc/docker/daemon.json` and add:
 
 ```json
 {
-  "insecure-registries": [
-    "localhost:32000"
-  ]
+"insecure-registries": [
+"localhost:32000"
+]
 }
 ```
 
@@ -114,7 +150,7 @@ For TikV, the dependencies are:
 
 Error: UPGRADE FAILED: unable to recognize "": no matches for kind "Template" in version "frisbee.io/v1alpha1"
 
-In the next step, you should validate that CRDs are succesfully installed.
+In the next step, you should validate that CRDs are successfully installed.
 
 ```bash
 # Validate the CRDs are properly installed
@@ -171,80 +207,80 @@ check [here](docs/singlenode-deployment.md).)
 apiVersion: frisbee.io/v1alpha1
 kind: TestPlan
 metadata:
-  name: redis-failover
+name: redis-failover
 spec:
 
-  # Here we specify the workflow as a directed-acyclic graph (DAG) by specifying the dependencies of each action.
-  actions:
-    # Service creates an instance of a Redis Master
-    # To create the instance we use the redis.single.master with the default parameters.
-    - action: Service
-      name: master
-      service:
-        
-          templateRef: redis.single.master
+# Here we specify the workflow as a directed-acyclic graph (DAG) by specifying the dependencies of each action.
+actions:
+# Service creates an instance of a Redis Master
+# To create the instance we use the redis.single.master with the default parameters.
+- action: Service
+name: master
+service:
 
-    # This action is same as before, with two additions. 
-    # 1. The `depends' keyword ensure that the action will be executed only after the `master' action 
-    # has reached a Running state.
-    # 2. The `inputs' keyword initialized the instance with custom parameters. 
-    - action: Service
-      name: slave
-      depends: { running: [ master ] }
-      service:
-        
-          templateRef: redis.single.slave
-          inputs:
-            - { master: .service.master.one }
+templateRef: redis.single.master
 
-    # The sentinel is Redis failover manager. Notice that we can have multiple dependencies.
-    - action: Service
-      name: sentinel
-      depends: { running: [ master, slave ] }
-      service:
-        
-          templateRef: redis.single.sentinel
-          inputs:
-            - { master: .service.master.one }
+# This action is same as before, with two additions.
+# 1. The `depends' keyword ensure that the action will be executed only after the `master' action
+# has reached a Running state.
+# 2. The `inputs' keyword initialized the instance with custom parameters.
+- action: Service
+name: slave
+depends: { running: [ master ] }
+service:
 
-    # Cluster creates a list of services that run a shared context. 
-    # In this case, we create a cluster of YCSB loaders to populate the master with keys. 
-    - action: Cluster
-      name: "loaders"
-      depends: { running: [ master ] }
-      cluster:
-        templateRef: ycsb.redis.loader
-        inputs:
-          - { server: .service.master.one, recordcount: "100000000", offset: "0" }
-          - { server: .service.master.one, recordcount: "100000000", offset: "100000000" }
-          - { server: .service.master.one, recordcount: "100000000", offset: "200000000" }
+templateRef: redis.single.slave
+inputs:
+- { master: .service.master.one }
 
-    # While the loaders are running, we inject a network partition fault to the master node. 
-    # The "after" dependency adds a delay so to have some keys before injecting the fault. 
-    # The fault is automatically retracted after 2 minutes. 
-    - action: Chaos
-      name: partition0
-      depends: { running: [ loaders ], after: "3m" }
-      chaos:
-        type: partition
-        partition:
-          selector:
-            macro: .service.master.one
-          duration: "2m"
+# The sentinel is Redis failover manager. Notice that we can have multiple dependencies.
+- action: Service
+name: sentinel
+depends: { running: [ master, slave ] }
+service:
 
-    # Here we repeat the partition, a few minutes after the previous fault has been recovered.
-    - action: Chaos
-      name: partition1
-      depends: { running: [ master, slave ], success: [ partition0 ], after: "6m" }
-      chaos:
-        type: partition
-        partition:
-          selector: { macro: .service.master.one }
-          duration: "1m"
+templateRef: redis.single.sentinel
+inputs:
+- { master: .service.master.one }
 
-  # Here we declare the Grafana dashboards that Workflow will make use of.
-  withTelemetry:
-    importDashboards: [ "system.telemetry.agent", "ycsb.telemetry.client",  "redis.telemetry.server" ]
+# Cluster creates a list of services that run a shared context.
+# In this case, we create a cluster of YCSB loaders to populate the master with keys.
+- action: Cluster
+name: "loaders"
+depends: { running: [ master ] }
+cluster:
+templateRef: ycsb.redis.loader
+inputs:
+- { server: .service.master.one, recordcount: "100000000", offset: "0" }
+- { server: .service.master.one, recordcount: "100000000", offset: "100000000" }
+- { server: .service.master.one, recordcount: "100000000", offset: "200000000" }
+
+# While the loaders are running, we inject a network partition fault to the master node.
+# The "after" dependency adds a delay so to have some keys before injecting the fault.
+# The fault is automatically retracted after 2 minutes.
+- action: Chaos
+name: partition0
+depends: { running: [ loaders ], after: "3m" }
+chaos:
+type: partition
+partition:
+selector:
+macro: .service.master.one
+duration: "2m"
+
+# Here we repeat the partition, a few minutes after the previous fault has been recovered.
+- action: Chaos
+name: partition1
+depends: { running: [ master, slave ], success: [ partition0 ], after: "6m" }
+chaos:
+type: partition
+partition:
+selector: { macro: .service.master.one }
+duration: "1m"
+
+# Here we declare the Grafana dashboards that Workflow will make use of.
+withTelemetry:
+importDashboards: [ "system.telemetry.agent", "ycsb.telemetry.client",  "redis.telemetry.server" ]
 
 ```
 
@@ -281,7 +317,7 @@ On the other terminal, you can issue requests.
 >> kubectl create namespace frisbee
 
 # Run a testplan (from Frisbee directory)
->> kubectl -n frisbee apply -f examples/testplans/3.failover.yml 
+>> kubectl -n frisbee apply -f examples/testplans/3.failover.yml
 workflow.frisbee.io/redis-failover created
 
 # Confirm that the workflow is running.
@@ -329,7 +365,6 @@ Before anything else, we need to install the Frisbee platform and the Frisbee pa
 ```
 
 ```
-
 
 
 Then you have to go install the Frisbee system.
@@ -386,7 +421,6 @@ Then you will get a message like
 > Error: found in Chart.yaml, but missing in charts/ directory: chaos-mesh, openebs
 
 
-
 This is because the Frisbee installation are not yet downloaded. To get them automatically run the previous command
 with`--dependency-update` flag. Also, remove the `--dry-run` run to execute the actual installation.
 
@@ -402,7 +436,7 @@ Run the controller
 
 * operator-sdk create api --group frisbee --version v1alpha1 --kind MyNewController --resource --controller
 * operator-sdk create webhook --group frisbee --version v1alpha1 --kind MyNewController --defaulting
-  --programmatic-validation
+--programmatic-validation
 
 docker save frisbee:latest -o image.tar
 ````
@@ -424,7 +458,7 @@ installation.
 
 
 * **Remote Installation**: Set  `~/.kube/config` appropriately, and create tunnel for sending requests to Kubernetes
-  API.
+API.
 
 ```bash
 # Create tunnel for sending requests to Kubernetes API.
@@ -448,7 +482,7 @@ If you use a non-local cluster, you can these the ingress via the  `global.ingre
 
 ```bash
 # Install the platform with non-local ingress
->> helm upgrade --install --wait my-frisbee frisbee/platform --set global.ingress=platform.science-hangar.eu 
+>> helm upgrade --install --wait my-frisbee frisbee/platform --set global.ingress=platform.science-hangar.eu
 ```
 
 #### Step 4:  Install the testing components
@@ -498,7 +532,7 @@ For example,
 
 ```bash
 # Access Grafana via your browser
-http://grafana.platform.science-hangar.eu 
+http://grafana.platform.science-hangar.eu
 ```
 
 Optionally, validate that everything works.
@@ -532,4 +566,142 @@ KUBECONFIG="/home/fnikol/.kube/config.evolve.admin" make run
 
 ahelm upgrade --install --wait my-frisbee ./charts/platform/ --debug --set operator.enabled=false -f
 ./charts/platform/values-baremetal.yaml
-ehelm upgrade --install --wait my-system ./charts/system --debug 
+ehelm upgrade --install --wait my-system ./charts/system --debug
+
+
+Cool hacks:
+
+https://github.com/antrea-io/antrea/tree/main/hack
+
+
+# HELM
+
+
+Create a public Helm chart repository with GitHub Pages
+
+What is Helm and a Helm chart repository
+
+Helm, as per official claim, is “The package manager for Kubernetes”.
+
+Indeed Helm really helps handling application deployments on Kubernetes, not only because it simplifies the application
+release phase but also because Helm makes possible to easily manage variables in the Kubernetes manifest YAML files.
+
+Once the charts are ready and you need to share them, the easiest way to do so is by uploading them to a chart
+repository. A Helm chart repository is where we host and share Helm packages and any HTTP server will do. Unluckily Helm
+does not include natively a tool for uploading charts to a remote chart repository server (Helm can serve the local
+repository via $ helm serve though).
+
+We’ll take advantage of GitHub Pages for the purpose to share our charts.
+
+What is GitHub Pages
+
+GitHub Pages is a static site hosting service provided to you by GitHub, designed to host your pages directly from a
+GitHub repository. GitHub Pages is a perfect match for our purpose, since everything we need is to host a single
+index.yaml file along with a bunch of .tgz files.
+
+Why not hosting all this stuff in your own web server? A managed service helps to reduce your operational overhead and
+risk (think to monitoring, patch management, security, backup services…) so you can focus on code and in what makes your
+business relevant for your customers.
+
+Useful links:
+https://medium.com/@mattiaperi/create-a-public-helm-chart-repository-with-github-pages-49b180dbb417
+https://github.com/technosophos/tscharts
+
+
+A **Test Plan** documents the strategy that will be used to verify a specific test for
+a [software](https://en.wikipedia.org/wiki/Software) product.
+
+The plan typically contains a detailed understanding of the eventual [workflow](https://en.wikipedia.org/wiki/Workflow)
+that models the deployment scenario for a software product, the test strategy, the resources required to perform
+testing, and the Key Performance Indicators required to ensure that a product or system meets its design specifications
+and other requirements.
+
+By codifying the test plan in a YAML-based syntax, Frisbee carriers three main benefits to teams:
+
+1. Help people outside the test team such as developers, business managers, customers **understand** the details of
+testing.
+
+2. Test Plan **guides** our thinking. It is like a rule book, which needs to be followed.
+
+3. Important aspects like test estimation, test
+scope,[Test Strategy](https://www.guru99.com/how-to-create-test-strategy-document.html)are **documented** in Test
+Plan, so it can be reviewed by Management Team and re-used for other projects.
+
+A test plan may include a strategy for one or more of the following:
+
+* Baseline: to be performed during the development or approval stages of the product, typically on a small sample of
+units.
+* Stress: to be performed during preparation or assembly of the product, in an ongoing manner for purposes of
+performance verification and quality control.
+
+## Baseline
+
+A baseline is **a fixed point of reference that is used for comparison purposes**.
+
+#### YCSB
+
+Cloud Serving Benchmark (YCSB) is **an open-source specification and program suite for evaluating retrieval and
+maintenance capabilities of computer programs**. It is often used to compare relative performance of NoSQL database
+management systems.
+
+All six workloads have a data set which is similar. Workloads D and E insert records during the test run.
+
+Thus, to keep the database size consistent, we apply the following sequence:
+
+0. Bootstrap the database.
+
+1. Load the database, using workload A's parameter file (workloads/workloada) and the "-load" switch to the client.
+2. Run workload A (using workloads/workloada and "-t") for a variety of throughputs.
+3. Run workload B (using workloads/workloadb and "-t") for a variety of throughputs.
+4. Run workload C (using workloads/workloadc and "-t") for a variety of throughputs.
+5. Run workload F (using workloads/workloadf and "-t") for a variety of throughputs.
+6. Run workload D (using workloads/workloadd and "-t") for a variety of throughputs. This workload inserts records,
+increasing the size of the database.
+7. Delete the data in the database. Otherwise, the remaining data of the cluster might affect the results of the
+following workload. For the deletion, instead of destroying the cluster, we destroy and recreate the cluster.
+8. Reload the database, using workload E's parameter file (workloads/workloade) and the "-load switch to the client.
+9. Run workload E (using workloads/workloadd and "-t") for a variety of throughputs. This workload inserts records,
+increasing the size of the database.
+
+In general, these steps remain the same for the various databases. The difference is how we bootstrap each database.
+
+#### FIO
+
+To *benchmark* persistent disk performance, use *FIO* instead of other disk *benchmarking* tools such as dd .
+
+Fio spawns a number of threads or processes doing a particular type of I/O action as specified by the user.
+
+## Stress
+
+## Scaleout
+
+## Elasticity
+
+## Chaos
+
+
+## Guide for the Frisbee Plan Developers
+
+<!-- toc -->
+
+<!-- /toc -->
+
+* Spurious Alert may be risen if the expr evaluation frequency is less than the scheduled interval.
+* In this case, Grafana faces an idle period, and raises a NoData Alert.
+* The controller ignores such messages.
+
+# Periodically kill some nodes.
+- action: Cascade name: killer depends: { running: [ clients ] } cascade:
+templateRef: system.chaos.pod.kill instances: 3 inputs:
+- { target: .cluster.clients.one }
+
+This can be wrong because Frisbee selects a single client -- and will be used 3 times, without error. Instead, we must
+use as many inputs as the number of instances -- or omit instances.
+
+In general, because when you use one input for multiple instances.
+
+Macros select only Running objects
+
+### Do not set dependencies on cascades
+
+This is because Kills are always running -- therefore cascades that involve kill actions are always running

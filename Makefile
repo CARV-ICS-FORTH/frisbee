@@ -1,6 +1,19 @@
+
+# go options
+GO                 ?= go
+LDFLAGS            :=
+GOFLAGS            :=
+
+# Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
+ifeq (,$(shell go env GOBIN))
+GOBIN=$(shell go env GOPATH)/bin
+else
+GOBIN=$(shell go env GOBIN)
+endif
+
 # VERSION defines the project version for the operator.
 # Update this value when you upgrade the version of your project.
-VERSION=$(shell cat VERSION)
+FrisbeeVersion=$(shell cat VERSION)
 
 # IMAGE_TAG_BASE defines the docker.io namespace and part of the image name for remote images.
 # This variable is used to construct full image tags for bundle and catalog images.
@@ -11,17 +24,11 @@ IMAGE_TAG_BASE ?= icsforth
 
 # Image URL to use all building/pushing image targets
 # You can use it as an arg. (E.g make bundle-build BUNDLE_IMG=<some-registry>/<project-name-bundle>:<tag>)
-IMG ?= $(IMAGE_TAG_BASE)/frisbee-operator:$(VERSION)
+IMG ?= $(IMAGE_TAG_BASE)/frisbee-operator:$(FrisbeeVersion)
 
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.21
 
-# Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
-ifeq (,$(shell go env GOBIN))
-GOBIN=$(shell go env GOPATH)/bin
-else
-GOBIN=$(shell go env GOBIN)
-endif
 
 # go-get-tool will 'go get' any package $2 and install it to $1.
 PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
@@ -94,6 +101,14 @@ vet: ## Run go vet against code.
 test: generate fmt vet envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
 
+verify-docs: ## Verify Documentation
+	@echo "===> Verifying spellings <==="
+	GO=$(GO) $(CURDIR)/hack/verify-spelling.sh
+	@echo "===> Verifying Table of Contents <==="
+	GO=$(GO) $(CURDIR)/hack/verify-toc.sh
+	@echo "===> Verifying documentation formatting for website <==="
+	$(CURDIR)/hack/verify-docs-for-website.sh
+
 ##@ Build
 
 build: generate fmt vet ## Build manager binary.
@@ -130,10 +145,10 @@ uninstall: ## Undeploy platform from the K8s cluster specified in ~/.kube/config
 
 
 release: ## Release a new version of Frisbee.
-	if [[ -z "${VERSION}" ]]; then echo "VERSION is not set"; exit 1; fi
-	echo "${VERSION}" > VERSION
+	if [[ -z "${FrisbeeVersion}" ]]; then echo "VERSION is not set"; exit 1; fi
+	echo "${FrisbeeVersion}" > VERSION
 	git add VERSION
 	git commit -m "Bump version"
-	git tag ${VERSION}
+	git tag ${FrisbeeVersion}
 	# git push --set-upstream origin $(git branch --show-current) && git push --tags
 
