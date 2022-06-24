@@ -3,7 +3,7 @@ name: Update README metadata
 on:
   pull_request_target:
     branches:
-      - master
+      - main
     paths:
       - 'charts/*/values.yaml'
 
