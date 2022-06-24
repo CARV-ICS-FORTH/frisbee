@@ -1,7 +1,9 @@
-package v1alpha1
+package fuzz_test
 
 import (
 	"testing"
+
+	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 )
 
 func TestFromTemplate_Validate(t1 *testing.T) {
@@ -95,7 +97,7 @@ func TestFromTemplate_Validate(t1 *testing.T) {
 
 	for _, tt := range tests {
 		t1.Run(tt.name, func(t1 *testing.T) {
-			t := &GenerateFromTemplate{
+			t := &v1alpha1.GenerateFromTemplate{
 				TemplateRef:  tt.fields.TemplateRef,
 				MaxInstances: tt.fields.Instances,
 				Inputs:       tt.fields.Inputs,

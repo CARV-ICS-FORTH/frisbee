@@ -20,11 +20,20 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type FaultType string
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 
-const (
-	FaultRaw = FaultType("raw")
-)
+// Chaos is the Schema for the chaos API.
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+type Chaos struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec   ChaosSpec   `json:"spec,omitempty"`
+	Status ChaosStatus `json:"status,omitempty"`
+}
+
+type FaultType string
 
 type RawSpec string
 
@@ -56,18 +65,6 @@ func (in *Chaos) GetReconcileStatus() Lifecycle {
 
 func (in *Chaos) SetReconcileStatus(lifecycle Lifecycle) {
 	in.Status.Lifecycle = lifecycle
-}
-
-// +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
-
-// Chaos is the Schema for the chaos API.
-type Chaos struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	Spec   ChaosSpec   `json:"spec,omitempty"`
-	Status ChaosStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true

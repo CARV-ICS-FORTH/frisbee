@@ -528,11 +528,8 @@ This step will install the Frisbee CRDs and all the necessary tools.
 >> helm upgrade --install --wait my-frisbee frisbee/platform
 ```
 
-
-
 KUBECONFIG="/home/fnikol/.kube/config.evolve.admin" make run
 
-
-
-ahelm  upgrade --install --wait my-frisbee ./charts/platform/ --debug --set operator.enabled=false -f ./charts/platform/values-baremetal.yaml
+ahelm upgrade --install --wait my-frisbee ./charts/platform/ --debug --set operator.enabled=false -f
+./charts/platform/values-baremetal.yaml
 ehelm upgrade --install --wait my-system ./charts/system --debug 

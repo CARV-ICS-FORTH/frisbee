@@ -22,6 +22,19 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+
+// Template is the Schema for the templates API
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+type Template struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec   TemplateSpec   `json:"spec,omitempty"`
+	Status TemplateStatus `json:"status,omitempty"`
+}
+
 type Inputs struct {
 	// Parameters are user-set values that are dynamically evaluated
 	Parameters map[string]string `json:"parameters,omitempty"`
@@ -55,18 +68,6 @@ func (in *Template) GetReconcileStatus() Lifecycle {
 
 func (in *Template) SetReconcileStatus(lifecycle Lifecycle) {
 	in.Status.Lifecycle = lifecycle
-}
-
-// +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
-
-// Template is the Schema for the templates API
-type Template struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	Spec   TemplateSpec   `json:"spec,omitempty"`
-	Status TemplateStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true

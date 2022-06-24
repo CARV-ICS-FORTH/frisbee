@@ -20,6 +20,19 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+
+// Cascade is the Schema for the clusters API.
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+type Cascade struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec   CascadeSpec   `json:"spec,omitempty"`
+	Status CascadeStatus `json:"status,omitempty"`
+}
+
 // CascadeSpec defines the desired state of Cascade.
 type CascadeSpec struct {
 	GenerateFromTemplate `json:",inline"`
@@ -57,18 +70,6 @@ func (in *Cascade) GetReconcileStatus() Lifecycle {
 
 func (in *Cascade) SetReconcileStatus(lifecycle Lifecycle) {
 	in.Status.Lifecycle = lifecycle
-}
-
-// +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
-
-// Cascade is the Schema for the clusters API.
-type Cascade struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	Spec   CascadeSpec   `json:"spec,omitempty"`
-	Status CascadeStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
