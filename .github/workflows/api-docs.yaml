@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'api/**'
+      - 'api/*.go'
 
 jobs:
   check-docs:
