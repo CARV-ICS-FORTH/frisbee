@@ -2,7 +2,7 @@
 apiVersion: frisbee.io/v1alpha1
 kind: Template
 metadata:
-  name: fl.quickstart.server
+  name: fl.quickstart.server-logs
 spec:
   inputs:
     parameters:

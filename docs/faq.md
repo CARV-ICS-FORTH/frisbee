@@ -78,19 +78,20 @@ https://github.com/canonical/microk8s/issues/1484
 
 https://stackoverflow.com/questions/62664701/resolving-external-domains-from-within-pods-does-not-work
 
-**Disable your firewall**  
+**Disable your firewall**
 
-* DNS issues will manifest as a `[UFW BLOCK]... ` entries on the `dmesg`. 
+* DNS issues will manifest as a `[UFW BLOCK]... ` entries on the `dmesg`.
 * If you see that, disable your firewall via `sudo ufw disable`
 
-#### 
+####  
 
 ##
 
 **Q: Ingress does not work **
 
-**A:**  Ingress issues will appear as 404 HTTP codes when trying to access the HTTP page. 
+**A:**  Ingress issues will appear as 404 HTTP codes when trying to access the HTTP page.
 
-If so, run `kubectl describe ingress | grep "dashboard:"`  and access the HTTP page via `ip:port` scheme (e.g, 10.1.128.37:8443)
+If so, run `kubectl describe ingress | grep "dashboard:"`  and access the HTTP page via `ip:port` scheme (e.g,
+10.1.128.37:8443)
 
 If the page is accessible then **restart your machine** and retry.

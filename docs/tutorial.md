@@ -9,7 +9,8 @@ This tutorial will guide you through deploying and running Frisbee on a local Ku
 * [Microk8s](https://microk8s.io/docs)  is the simplest production-grade conformant K8s.  **It runs entirely on your
   workstation or edge device.**
 
-* [Helm](https://helm.sh/docs/intro/install/)  is a package manager for Kubernetes. Helm uses **a packaging format called
+* [Helm](https://helm.sh/docs/intro/install/)  is a package manager for Kubernetes. Helm uses **a packaging format
+  called
   charts**.
 
 ```bash
@@ -30,11 +31,10 @@ This tutorial will guide you through deploying and running Frisbee on a local Ku
 >> sudo snap alias microk8s.helm3 helm
 ```
 
-
-
 #### 2. Frisbee platform
 
-Although Frisbee can be installed directly from a Helm repository, for demonstration purposes we favor the git-based method.
+Although Frisbee can be installed directly from a Helm repository, for demonstration purposes we favor the git-based
+method.
 
 ```bash
 # Download the source code
@@ -53,8 +53,6 @@ Although Frisbee can be installed directly from a Helm repository, for demonstra
 >> helm  upgrade --install --wait my-frisbee ./charts/platform/ --debug -n default
 ```
 
-
-
 ## Testing a System
 
 #### 1. Deploy the system templates
@@ -70,8 +68,6 @@ command.
 >> helm upgrade --install --wait my-system ./charts/system --debug -n mytest --create-namespace
 ```
 
-
-
 #### 2. Deploy the System Under Testing (SUT)
 
 As a SUT we will use the  [CockroachDB](https://github.com/CARV-ICS-FORTH/frisbee/tree/main/charts/cockroachdb).
@@ -85,8 +81,6 @@ The commands are to be executed from the *Frisbee* directory.
 # Install YCSB for creating workload
 >> helm upgrade --install --wait my-ycsb ./charts/ycsb --debug -n mytest
 ```
-
-
 
 #### 3. Verify the Deployment
 
@@ -104,8 +98,6 @@ my-cockroach    mytest          1               2022-06-10 20:40:29.741398162 +0
 my-system       mytest          1               2022-06-10 20:40:19.981077906 +0300 EEST        deployed        defaults-0.0.0   
 my-ycsb         mytest          1               2022-06-10 20:40:36.97639544 +0300 EEST         deployed        ycsb-0.0.0       
 ```
-
-
 
 #### 4. Run a Scenario
 
@@ -136,23 +128,21 @@ Let's run a **bitrot** scenario.
 testplan.frisbee.io/cockroach-bitrot created
 ```
 
-
-
 #### 5. Exploratory Testing (Observe the Progress)
-
-
 
 *Frisbee* provides 3 methods for observing the progress of a test.
 
 ----------------------------
 
-**Event-based**: Consumes information from the Kubernetes API 
+**Event-based**: Consumes information from the Kubernetes API
 
-* [Dashboard](https://dashboard-frisbee.localhost/#/pod?namespace=mytest):  is a web-based Kubernetes user interface. You can use Dashboard to deploy containerized applications to a Kubernetes cluster,  troubleshoot your containerized application, and manage the cluster resources. 
+* [Dashboard](https://dashboard-frisbee.localhost/#/pod?namespace=mytest):  is a web-based Kubernetes user interface.
+  You can use Dashboard to deploy containerized applications to a Kubernetes cluster, troubleshoot your containerized
+  application, and manage the cluster resources.
 
-* [Chaos Dashboard](http://chaos-frisbee.localhost/experiments): is a one-step web UI for managing, designing, and monitoring chaos experiments on *Chaos Mesh*. It will ask for a token. You can get it from the config via `grep token  ~/.kube/config`.
-
-  
+* [Chaos Dashboard](http://chaos-frisbee.localhost/experiments): is a one-step web UI for managing, designing, and
+  monitoring chaos experiments on *Chaos Mesh*. It will ask for a token. You can get it from the config
+  via `grep token  ~/.kube/config`.
 
 ----------------------------------------------
 
@@ -161,20 +151,16 @@ testplan.frisbee.io/cockroach-bitrot created
 * [Prometheus](http://prometheus-mytest.localhost)
 * [Grafana](http://grafana-mytest.localhost/d/crdb-console-runtime/crdb-console-runtime)
 
-
-
 ------------------------------------------------
 
 * **Log-based:** Consumes information from distributed logs.
 
     * [Logviewer](http://logviewer-mytest.localhost) (admin/admin)
 
-        
-
 >
-> You may notice that it takes **long time for the experiment to start**. This is due to preparing the NFS volume for collecting the logs from the various services.  Also note that the lifecycle of the volume is bind to that of the test. If the test is deleted, the volume will be garbage collected automatically.
-
-
+> You may notice that it takes **long time for the experiment to start**. This is due to preparing the NFS volume for
+> collecting the logs from the various services. Also note that the lifecycle of the volume is bind to that of the test.
+> If the test is deleted, the volume will be garbage collected automatically.
 
 #### 6. Automated Testing (Pass/Fail)
 
@@ -221,7 +207,7 @@ The **Phase** describes the lifecycle of a Test.
 | Success | All jobs have voluntarily exited.                            |
 | Failed  | At least one job of the CR has terminated in a failure (exited with a  non-zero exit code or was stopped by the system). |
 
-#### 
+####  
 
 The **Phase** is a top-level description calculated based on some **Conditions**. The **Conditions** describe the
 various stages the Test has been through.
@@ -259,8 +245,6 @@ one (masters-1), and the telemetry stack (grafana/prometheus).
 >
 > "error: timed out waiting for the condition on testplans/cockroach-bitrot"
 
-
-
 #### 7. Delete a Test
 
 The deletion is as simple as the creation of a test.
@@ -273,8 +257,6 @@ testplan.frisbee.io "cockroach-bitrot" deleted
 
 The flag `cascade=foreground` will wait until the experiment is actually deleted. Without this flag, the deletion will
 happen in the background. Use this flag if you want to run sequential tests, without interference.
-
-
 
 #### 8. Parallel Tests
 
@@ -295,8 +277,6 @@ For example:
 # go to http://grafana-mytest.localhost/d/crdb-console-runtime/crdb-console-runtime
 ```
 
-
-
 * Run network failure
 
 ```bash
@@ -308,48 +288,30 @@ For example:
 # go to http://grafana-mytest2.localhost/d/crdb-console-runtime/crdb-console-runtime
 ```
 
-
 Notice that for every experiment, we start a new dedicated monitoring stack.
-
-
 
 ## Remove Frisbee
 
-#### 1. Delete the running experiments
-
-```bash
-# Delete bitrot test
-kubectl -f ./charts/cockroachdb/examples/10.bitrot.yml delete --cascade=foreground -n mytest 
-
-# Delete network test
-kubectl -f ./charts/cockroachdb/examples/11.network.yml delete --cascade=foreground -n mytest2 
-```
-
-
-
-#### 2. Delete all the namespaces you created
+#### 1. Delete all the namespaces you created
 
 By deleting the namespaces, you also delete all the installed components.
 
 ```bash
->> kubectl delete namespace mytest mytest2  --wait
+>> kubectl delete namespace mytest mytest2 --wait
 ```
 
+Notice that it may take some time.
 
-Notice that you can no longer see the installed charts
-
-```bash
->> helm list -n mytest
->> helm list -n mytest2
-```
-
-
-
-#### 3. Remove Frisbee
+#### 2. Remove Frisbee
 
 ```bash
 >> helm  uninstall my-frisbee --debug -n default
 ```
 
+#### 3. Remove Frisbee CRDS
+Because Helm does not delete CRDs for secure reasons, we must do it manually.
 
-You are done !
+
+```bash
+>> kubectl get crds | awk /frisbee.io/'{print $1}' | xargs -I{} kubectl delete crds  {}
+```

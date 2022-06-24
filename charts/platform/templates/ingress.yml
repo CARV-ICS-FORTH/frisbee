@@ -2,7 +2,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: insecure-ingress
+  name: chaos-dashboard
 spec:
   ingressClassName: {{.Values.global.ingressClass}}
   rules:
@@ -24,7 +24,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: secure-ingress
+  name: dashboard
   annotations:
     nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
     nginx.ingress.kubernetes.io/ssl-redirect: "true"

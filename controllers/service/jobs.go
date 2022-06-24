@@ -24,11 +24,13 @@ import (
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
+	"github.com/carv-ics-forth/frisbee/controllers/common/configuration"
 	"github.com/carv-ics-forth/frisbee/controllers/common/labelling"
 	serviceutils "github.com/carv-ics-forth/frisbee/controllers/service/utils"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
+	netv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/labels"
 )
@@ -75,6 +77,8 @@ func setDefaultValues(cr *v1alpha1.Service) {
 	cr.Spec.RestartPolicy = corev1.RestartPolicyNever
 }
 
+var pathType = netv1.PathTypePrefix
+
 func handleRequirements(ctx context.Context, r *Controller, cr *v1alpha1.Service) error {
 	if cr.Spec.Requirements == nil {
 		return nil
@@ -103,6 +107,43 @@ func handleRequirements(ctx context.Context, r *Controller, cr *v1alpha1.Service
 		}
 
 		cr.Spec.Volumes = append(cr.Spec.Volumes, volume)
+	}
+
+	// Ingress
+	if req := cr.Spec.Requirements.Ingress; req != nil {
+		var ingress netv1.Ingress
+
+		ingressClassName := configuration.Global.IngressClassName
+
+		ingress.SetName(cr.GetName())
+		ingress.Spec = netv1.IngressSpec{
+			IngressClassName: &ingressClassName,
+			Rules: []netv1.IngressRule{
+				{
+					Host: common.ExternalEndpoint(cr.GetName(), cr.GetNamespace()),
+					IngressRuleValue: netv1.IngressRuleValue{
+						HTTP: &netv1.HTTPIngressRuleValue{
+							Paths: []netv1.HTTPIngressPath{
+								{
+									Path:     "/",
+									PathType: &pathType,
+									Backend: netv1.IngressBackend{
+										Service: &netv1.IngressServiceBackend{
+											Name: cr.GetName(),
+											Port: req.Service.Port,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+
+		if err := common.Create(ctx, r, cr, &ingress); err != nil {
+			return errors.Wrapf(err, "cannot create ingress")
+		}
 	}
 
 	return nil

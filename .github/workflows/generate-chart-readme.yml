@@ -1,4 +1,4 @@
-name: Generate Chart Readme
+name: Update Chart Readme
 
 on:
   pull_request:

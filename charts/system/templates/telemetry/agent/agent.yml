@@ -20,9 +20,9 @@ spec:
           - name: tel-sys
             containerPort: 9442
         securityContext:
-        #  privileged: true
-          capabilities:
-            add: [ SYS_ADMIN, SYS_CHROOT ]
+            privileged: true
+          #capabilities:
+            #add: [ SYS_ADMIN, SYS_CHROOT, MKNOD, SETFCAP ]
         command:
           - /bin/sh # Run shell
           - -c # Read from string

@@ -18,6 +18,7 @@ package v1alpha1
 
 import (
 	corev1 "k8s.io/api/core/v1"
+	netv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -31,6 +32,9 @@ type PVC struct {
 type Requirements struct {
 	// +optional
 	PVC *PVC `json:"persistentVolumeClaim,omitempty"`
+
+	// +optional
+	Ingress *netv1.IngressBackend `json:"ingressBackend,omitempty"`
 }
 
 // NIC specifies the capabilities of the emulated network interface.

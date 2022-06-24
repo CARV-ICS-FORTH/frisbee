@@ -4548,6 +4548,59 @@ spec:
                   required for the Service operation. For example, this field can
                   be used to create PVCs dedicated to this service.
                 properties:
+                  ingressBackend:
+                    description: IngressBackend describes all endpoints for a given
+                      service and port.
+                    properties:
+                      resource:
+                        description: Resource is an ObjectRef to another Kubernetes
+                          resource in the namespace of the Ingress object. If resource
+                          is specified, a service.Name and service.Port must not be
+                          specified. This is a mutually exclusive setting with "Service".
+                        properties:
+                          apiGroup:
+                            description: APIGroup is the group for the resource being
+                              referenced. If APIGroup is not specified, the specified
+                              Kind must be in the core API group. For any other third-party
+                              types, APIGroup is required.
+                            type: string
+                          kind:
+                            description: Kind is the type of resource being referenced
+                            type: string
+                          name:
+                            description: Name is the name of resource being referenced
+                            type: string
+                        required:
+                        - kind
+                        - name
+                        type: object
+                      service:
+                        description: Service references a Service as a Backend. This
+                          is a mutually exclusive setting with "Resource".
+                        properties:
+                          name:
+                            description: Name is the referenced service. The service
+                              must exist in the same namespace as the Ingress object.
+                            type: string
+                          port:
+                            description: Port of the referenced service. A port name
+                              or port number is required for a IngressServiceBackend.
+                            properties:
+                              name:
+                                description: Name is the name of the port on the Service.
+                                  This is a mutually exclusive setting with "Number".
+                                type: string
+                              number:
+                                description: Number is the numerical port number (e.g.
+                                  80) on the Service. This is a mutually exclusive
+                                  setting with "Name".
+                                format: int32
+                                type: integer
+                            type: object
+                        required:
+                        - name
+                        type: object
+                    type: object
                   persistentVolumeClaim:
                     properties:
                       name:

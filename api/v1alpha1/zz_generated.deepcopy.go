@@ -22,7 +22,8 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/api/networking/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -770,7 +771,7 @@ func (in *Lifecycle) DeepCopyInto(out *Lifecycle) {
 	*out = *in
 	if in.Conditions != nil {
 		in, out := &in.Conditions, &out.Conditions
-		*out = make([]v1.Condition, len(*in))
+		*out = make([]metav1.Condition, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
@@ -886,6 +887,11 @@ func (in *Requirements) DeepCopyInto(out *Requirements) {
 	if in.PVC != nil {
 		in, out := &in.PVC, &out.PVC
 		*out = new(PVC)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.Ingress != nil {
+		in, out := &in.Ingress, &out.Ingress
+		*out = new(v1.IngressBackend)
 		(*in).DeepCopyInto(*out)
 	}
 }
@@ -1432,7 +1438,7 @@ func (in *WaitSpec) DeepCopyInto(out *WaitSpec) {
 	}
 	if in.After != nil {
 		in, out := &in.After, &out.After
-		*out = new(v1.Duration)
+		*out = new(metav1.Duration)
 		**out = **in
 	}
 }
