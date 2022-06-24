@@ -34,7 +34,7 @@ spec:
             then
                 echo "Directory /dataset/cifar-10-batches-py exists."
             else
-              echo "Downlaod CIFAR10"
+              echo "Download CIFAR10"
               wget https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz
 
               echo "Extract Cifar10 at /dataset/cifar-10-batches-py"

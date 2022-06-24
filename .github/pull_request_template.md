@@ -10,21 +10,21 @@ Proposal: xxx
 What's Changed:
 Related changes
 
-    Need to update Frisbee Dashboard component, related issue:
-    Need to cheery-pick to the release branch
+Need to update Frisbee Dashboard component, related issue:
+Need to cheery-pick to the release branch
 
 Checklist
 
 Tests
 
-    Unit test
-    E2E test
-    Manual test (add detailed scripts or steps below)
-    No code
+Unit test
+E2E test
+Manual test (add detailed scripts or steps below)
+No code
 
 Side effects
 
-    Breaking backward compatibility
+Breaking backward compatibility
 
 Release note
 

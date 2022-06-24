@@ -24,20 +24,20 @@ and other requirements.
 By codifying the test plan in a YAML-based syntax, Frisbee carriers three main benefits to teams:
 
 1. Help people outside the test team such as developers, business managers, customers **understand** the details of
-   testing.
+testing.
 
 2. Test Plan **guides** our thinking. It is like a rule book, which needs to be followed.
 
 3. Important aspects like test estimation, test
-   scope,[Test Strategy](https://www.guru99.com/how-to-create-test-strategy-document.html)are **documented** in Test
-   Plan, so it can be reviewed by Management Team and re-used for other projects.
+scope,[Test Strategy](https://www.guru99.com/how-to-create-test-strategy-document.html)are **documented** in Test
+Plan, so it can be reviewed by Management Team and re-used for other projects.
 
 A test plan may include a strategy for one or more of the following:
 
 * Baseline: to be performed during the development or approval stages of the product, typically on a small sample of
-  units.
+units.
 * Stress: to be performed during preparation or assembly of the product, in an ongoing manner for purposes of
-  performance verification and quality control.
+performance verification and quality control.
 
 ## Baseline
 
@@ -61,12 +61,12 @@ Thus, to keep the database size consistent, we apply the following sequence:
 4. Run workload C (using workloads/workloadc and "-t") for a variety of throughputs.
 5. Run workload F (using workloads/workloadf and "-t") for a variety of throughputs.
 6. Run workload D (using workloads/workloadd and "-t") for a variety of throughputs. This workload inserts records,
-   increasing the size of the database.
+increasing the size of the database.
 7. Delete the data in the database. Otherwise, the remaining data of the cluster might affect the results of the
-   following workload. For the deletion, instead of destroying the cluster, we destroy and recreate the cluster.
+following workload. For the deletion, instead of destroying the cluster, we destroy and recreate the cluster.
 8. Reload the database, using workload E's parameter file (workloads/workloade) and the "-load switch to the client.
 9. Run workload E (using workloads/workloadd and "-t") for a variety of throughputs. This workload inserts records,
-   increasing the size of the database.
+increasing the size of the database.
 
 In general, these steps remain the same for the various databases. The difference is how we bootstrap each database.
 

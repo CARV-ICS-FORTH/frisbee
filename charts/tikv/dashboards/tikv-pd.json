@@ -5262,7 +5262,7 @@
               "expr": "pd_schedule_store_limit{store=~\"$store\", type=\"available\"}",
               "format": "time_series",
               "intervalFactor": 2,
-              "legendFormat": "{{store}}-avaliable",
+              "legendFormat": "{{store}}-available",
               "metric": "pd_scheduler_event_count",
               "refId": "A",
               "step": 4
