@@ -36,7 +36,7 @@ type Cluster struct {
 }
 
 // TolerateSpec specifies the system's ability to continue operating despite failures or malfunctions.
-// If tolerate is enable, a cluster will be "alive" even if some services have failed.
+// If tolerate is enable, the cluster will remain "alive" even if some services have failed.
 // Such failures are likely to happen as part of a Chaos experiment.
 type TolerateSpec struct {
 	// FailedServices indicate the number of services that may fail before the cluster fails itself.
@@ -57,7 +57,7 @@ type PlacementSpec struct {
 	Collocate bool `json:"collocate"`
 
 	// ConflictsWith points to another cluster whose services cannot be located with this one.
-	// Used, for example, to place master nodes and slave nodes on different failures domains
+	// For example, this is needed for placing the master nodes on a different failure domain than the slave nodes.
 	ConflictsWith []string `json:"conflictsWith,omitempty"`
 
 	// Nodes will place all the services within the same specific node.
