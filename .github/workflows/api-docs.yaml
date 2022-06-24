@@ -1,4 +1,4 @@
-name: API Docs
+name: Generate API Docs
 on:
   workflow_dispatch:
   pull_request:
@@ -23,7 +23,7 @@ jobs:
       - name: Push changes
         run: |
           # Push all the changes
-          cd charts
+          cd docs
           if git status -s | grep charts; then
             git config user.name "Frisbee Charts"
             git config user.email "fnikol@ics.forth.gr"
