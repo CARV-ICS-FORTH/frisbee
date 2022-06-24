@@ -1,4 +1,4 @@
-name: helm-release
+name: Release Helm Charts
 
 on:
   workflow_dispatch:
