@@ -1,6 +1,15 @@
 name: Update README metadata
 
 on:
+  workflow_dispatch:
+    inputs:
+      logLevel:
+        description: 'Log level'     
+        required: true
+        default: 'warning'
+      tags:
+        description: 'Test scenario tags'  
+
   pull_request_target:
     branches:
       - main
