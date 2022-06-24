@@ -2,6 +2,11 @@ name: Generate Chart Parameters
 
 on:
   workflow_dispatch:
+    inputs:
+      paths:
+        description: 'Log level'     
+        required: true
+        default: 'charts/*/values.yaml'
 
   pull_request_target:
     branches:
