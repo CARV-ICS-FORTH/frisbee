@@ -20,6 +20,19 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+
+// TestPlan is the Schema for the TestPlans API.
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+type TestPlan struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec   TestPlanSpec   `json:"spec,omitempty"`
+	Status TestPlanStatus `json:"status,omitempty"`
+}
+
 type ActionType string
 
 // List of supported actions
@@ -121,18 +134,6 @@ func (in *TestPlan) GetReconcileStatus() Lifecycle {
 
 func (in *TestPlan) SetReconcileStatus(lifecycle Lifecycle) {
 	in.Status.Lifecycle = lifecycle
-}
-
-// +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
-
-// TestPlan is the Schema for the TestPlans API.
-type TestPlan struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	Spec   TestPlanSpec   `json:"spec,omitempty"`
-	Status TestPlanStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true

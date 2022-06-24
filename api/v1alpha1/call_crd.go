@@ -20,6 +20,19 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+
+// Call is the Schema for the Call API.
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+type Call struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec   CallSpec   `json:"spec,omitempty"`
+	Status CallStatus `json:"status,omitempty"`
+}
+
 // CallSpec defines the desired state of Call.
 type CallSpec struct {
 	// Callable is the name of the endpoint that will be called
@@ -64,18 +77,6 @@ func (in *Call) GetReconcileStatus() Lifecycle {
 
 func (in *Call) SetReconcileStatus(lifecycle Lifecycle) {
 	in.Status.Lifecycle = lifecycle
-}
-
-// +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
-
-// Call is the Schema for the Call API.
-type Call struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	Spec   CallSpec   `json:"spec,omitempty"`
-	Status CallStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true

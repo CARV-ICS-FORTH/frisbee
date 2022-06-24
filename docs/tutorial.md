@@ -207,7 +207,7 @@ The **Phase** describes the lifecycle of a Test.
 | Success | All jobs have voluntarily exited.                            |
 | Failed  | At least one job of the CR has terminated in a failure (exited with a  non-zero exit code or was stopped by the system). |
 
-####  
+####   
 
 The **Phase** is a top-level description calculated based on some **Conditions**. The **Conditions** describe the
 various stages the Test has been through.
@@ -309,8 +309,8 @@ Notice that it may take some time.
 ```
 
 #### 3. Remove Frisbee CRDS
-Because Helm does not delete CRDs for secure reasons, we must do it manually.
 
+Because Helm does not delete CRDs for secure reasons, we must do it manually.
 
 ```bash
 >> kubectl get crds | awk /frisbee.io/'{print $1}' | xargs -I{} kubectl delete crds  {}

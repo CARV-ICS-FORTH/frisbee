@@ -14,9 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package webhooks
 
 import (
+	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -26,7 +27,7 @@ import (
 // log is for logging in this package.
 var testplanlog = logf.Log.WithName("testplan-resource")
 
-func (r *TestPlan) SetupWebhookWithManager(mgr ctrl.Manager) error {
+func (r *v1alpha1.TestPlan) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
 		Complete()
@@ -36,10 +37,10 @@ func (r *TestPlan) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // +kubebuilder:webhook:path=/mutate-testplan,mutating=true,failurePolicy=fail,sideEffects=None,groups=frisbee.io,resources=testplans,verbs=create;update,versions=v1alpha1,name=mtestplan.kb.io,admissionReviewVersions={v1,v1alpha1}
 
-var _ webhook.Defaulter = &TestPlan{}
+var _ webhook.Defaulter = &v1alpha1.TestPlan{}
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *TestPlan) Default() {
+func (r *v1alpha1.TestPlan) Default() {
 	testplanlog.Info("default", "name", r.Name)
 
 	// TODO(user): fill in your defaulting logic.
@@ -48,10 +49,10 @@ func (r *TestPlan) Default() {
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
 // +kubebuilder:webhook:path=/validate-testplan,mutating=false,failurePolicy=fail,sideEffects=None,groups=frisbee.io,resources=testplans,verbs=create;update,versions=v1alpha1,name=vtestplan.kb.io,admissionReviewVersions={v1,v1alpha1}
 
-var _ webhook.Validator = &TestPlan{}
+var _ webhook.Validator = &v1alpha1.TestPlan{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *TestPlan) ValidateCreate() error {
+func (r *v1alpha1.TestPlan) ValidateCreate() error {
 	testplanlog.Info("validate create", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object creation.
@@ -59,7 +60,7 @@ func (r *TestPlan) ValidateCreate() error {
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *TestPlan) ValidateUpdate(old runtime.Object) error {
+func (r *v1alpha1.TestPlan) ValidateUpdate(old runtime.Object) error {
 	testplanlog.Info("validate update", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object update.
@@ -67,7 +68,7 @@ func (r *TestPlan) ValidateUpdate(old runtime.Object) error {
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *TestPlan) ValidateDelete() error {
+func (r *v1alpha1.TestPlan) ValidateDelete() error {
 	testplanlog.Info("validate delete", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.

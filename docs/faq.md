@@ -83,7 +83,7 @@ https://stackoverflow.com/questions/62664701/resolving-external-domains-from-wit
 * DNS issues will manifest as a `[UFW BLOCK]... ` entries on the `dmesg`.
 * If you see that, disable your firewall via `sudo ufw disable`
 
-####  
+####   
 
 ##
 

@@ -22,6 +22,19 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+
+// Service is the Schema for the services API.
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+type Service struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec   ServiceSpec   `json:"spec,omitempty"`
+	Status ServiceStatus `json:"status,omitempty"`
+}
+
 type PVC struct {
 	Name string                           `json:"name"`
 	Spec corev1.PersistentVolumeClaimSpec `json:"spec,omitempty"`
@@ -139,18 +152,6 @@ func (in *Service) GetReconcileStatus() Lifecycle {
 
 func (in *Service) SetReconcileStatus(lifecycle Lifecycle) {
 	in.Status.Lifecycle = lifecycle
-}
-
-// +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
-
-// Service is the Schema for the services API.
-type Service struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	Spec   ServiceSpec   `json:"spec,omitempty"`
-	Status ServiceStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true

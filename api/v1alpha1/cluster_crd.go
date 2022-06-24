@@ -22,6 +22,19 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+
+// Cluster is the Schema for the clusters API.
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+type Cluster struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec   ClusterSpec   `json:"spec,omitempty"`
+	Status ClusterStatus `json:"status,omitempty"`
+}
+
 // TolerateSpec specifies the system's ability to continue operating despite failures or malfunctions.
 // If tolerate is enable, a cluster will be "alive" even if some services have failed.
 // Such failures are likely to happen as part of a Chaos experiment.
@@ -98,18 +111,6 @@ func (in *Cluster) GetReconcileStatus() Lifecycle {
 
 func (in *Cluster) SetReconcileStatus(lifecycle Lifecycle) {
 	in.Status.Lifecycle = lifecycle
-}
-
-// +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
-
-// Cluster is the Schema for the clusters API.
-type Cluster struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	Spec   ClusterSpec   `json:"spec,omitempty"`
-	Status ClusterStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
