@@ -1,0 +1,3179 @@
+<p>Packages:</p>
+<ul>
+<li>
+<a href="#frisbee.io%2fv1alpha1">frisbee.io/v1alpha1</a>
+</li>
+</ul>
+<h2 id="frisbee.io/v1alpha1">frisbee.io/v1alpha1</h2>
+<div>
+<p>Package v1alpha1 is the v1alpha1 version of the API.</p>
+</div>
+Resource Types:
+<ul></ul>
+<h3 id="frisbee.io/v1alpha1.Action">Action
+</h3>
+<p>
+(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.TestPlanSpec">TestPlanSpec</a>)
+</p>
+<div>
+<p>Action delegates arguments to the proper action handler.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>action</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.ActionType">
+ActionType
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>name</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Name is a unique identifier of the action</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>depends</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.WaitSpec">
+WaitSpec
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>DependsOn defines the conditions for the execution of this action</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>assert</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.ConditionalExpr">
+ConditionalExpr
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Assert defines the conditions under which the Plan will terminate with a &ldquo;passed&rdquo; or &ldquo;failed&rdquo; message</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>EmbedActions</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.EmbedActions">
+EmbedActions
+</a>
+</em>
+</td>
+<td>
+<p>
+(Members of <code>EmbedActions</code> are embedded into this type.)
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frisbee.io/v1alpha1.ActionType">ActionType
+(<code>string</code> alias)</h3>
+<p>
+(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.Action">Action</a>)
+</p>
+<div>
+</div>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr><td><p>&#34;Call&#34;</p></td>
+<td></td>
+</tr><tr><td><p>&#34;Cascade&#34;</p></td>
+<td></td>
+</tr><tr><td><p>&#34;Chaos&#34;</p></td>
+<td></td>
+</tr><tr><td><p>&#34;Cluster&#34;</p></td>
+<td></td>
+</tr><tr><td><p>&#34;Delete&#34;</p></td>
+<td></td>
+</tr><tr><td><p>&#34;Service&#34;</p></td>
+<td></td>
+</tr></tbody>
+</table>
+<h3 id="frisbee.io/v1alpha1.Call">Call
+</h3>
+<div>
+<p>Call is the Schema for the Call API.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>metadata</code><br/>
+<em>
+<a href="https://v1-20.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#objectmeta-v1-meta">
+Kubernetes meta/v1.ObjectMeta
+</a>
+</em>
+</td>
+<td>
+Refer to the Kubernetes API documentation for the fields of the
+<code>metadata</code> field.
+</td>
+</tr>
+<tr>
+<td>
+<code>spec</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.CallSpec">
+CallSpec
+</a>
+</em>
+</td>
+<td>
+<br/>
+<br/>
+<table>
+<tr>
+<td>
+<code>callable</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Callable is the name of the endpoint that will be called</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>services</code><br/>
+<em>
+[]string
+</em>
+</td>
+<td>
+<p>Services is a list of services that will be stopped.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>until</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.ConditionalExpr">
+ConditionalExpr
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Until defines the conditions under which the CR will stop spawning new jobs.
+If used in conjunction with inputs, it will loop over inputs until the conditions are met.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>schedule</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.SchedulerSpec">
+SchedulerSpec
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Schedule defines the interval between the invocations of the callable.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>suspend</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Suspend flag tells the controller to suspend subsequent executions, it does
+not apply to already started executions.  Defaults to false.</p>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td>
+<code>status</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.CallStatus">
+CallStatus
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frisbee.io/v1alpha1.CallSpec">CallSpec
+</h3>
+<p>
+(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.Call">Call</a>, <a href="#frisbee.io/v1alpha1.EmbedActions">EmbedActions</a>)
+</p>
+<div>
+<p>CallSpec defines the desired state of Call.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>callable</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Callable is the name of the endpoint that will be called</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>services</code><br/>
+<em>
+[]string
+</em>
+</td>
+<td>
+<p>Services is a list of services that will be stopped.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>until</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.ConditionalExpr">
+ConditionalExpr
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Until defines the conditions under which the CR will stop spawning new jobs.
+If used in conjunction with inputs, it will loop over inputs until the conditions are met.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>schedule</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.SchedulerSpec">
+SchedulerSpec
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Schedule defines the interval between the invocations of the callable.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>suspend</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Suspend flag tells the controller to suspend subsequent executions, it does
+not apply to already started executions.  Defaults to false.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frisbee.io/v1alpha1.CallStatus">CallStatus
+</h3>
+<p>
+(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.Call">Call</a>)
+</p>
+<div>
+<p>CallStatus defines the observed state of Call.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>Lifecycle</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.Lifecycle">
+Lifecycle
+</a>
+</em>
+</td>
+<td>
+<p>
+(Members of <code>Lifecycle</code> are embedded into this type.)
+</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>queuedJobs</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.Callable">
+[]Callable
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>QueuedJobs is a list of services scheduled for stopping.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>scheduledJobs</code><br/>
+<em>
+int
+</em>
+</td>
+<td>
+<p>ScheduledJobs points to the next QueuedJobs.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>lastScheduleTime</code><br/>
+<em>
+<a href="https://v1-20.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#time-v1-meta">
+Kubernetes meta/v1.Time
+</a>
+</em>
+</td>
+<td>
+<p>LastScheduleTime provide information about  the last time a Service was successfully scheduled.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frisbee.io/v1alpha1.Callable">Callable
+</h3>
+<p>
+(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.CallStatus">CallStatus</a>, <a href="#frisbee.io/v1alpha1.ServiceSpec">ServiceSpec</a>)
+</p>
+<div>
+<p>Callable is a script that is executed within the service container, and returns a value.
+For example, a callable can be a command for stopping the containers that run in the Pod.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>container</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Container specific the name of the container to which we will run the command</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>command</code><br/>
+<em>
+[]string
+</em>
+</td>
+<td>
+<p>Container specifies a command and arguments to stop the targeted container in an application-specific manner.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frisbee.io/v1alpha1.Cascade">Cascade
+</h3>
+<div>
+<p>Cascade is the Schema for the clusters API.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>metadata</code><br/>
+<em>
+<a href="https://v1-20.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#objectmeta-v1-meta">
+Kubernetes meta/v1.ObjectMeta
+</a>
+</em>
+</td>
+<td>
+Refer to the Kubernetes API documentation for the fields of the
+<code>metadata</code> field.
+</td>
+</tr>
+<tr>
+<td>
+<code>spec</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.CascadeSpec">
+CascadeSpec
+</a>
+</em>
+</td>
+<td>
+<br/>
+<br/>
+<table>
+<tr>
+<td>
+<code>GenerateFromTemplate</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.GenerateFromTemplate">
+GenerateFromTemplate
+</a>
+</em>
+</td>
+<td>
+<p>
+(Members of <code>GenerateFromTemplate</code> are embedded into this type.)
+</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>schedule</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.SchedulerSpec">
+SchedulerSpec
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Schedule defines the interval between the creation of services within the group.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>suspend</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Suspend flag tells the controller to suspend subsequent executions, it does
+not apply to already started executions.  Defaults to false.</p>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td>
+<code>status</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.CascadeStatus">
+CascadeStatus
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frisbee.io/v1alpha1.CascadeSpec">CascadeSpec
+</h3>
+<p>
+(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.Cascade">Cascade</a>, <a href="#frisbee.io/v1alpha1.EmbedActions">EmbedActions</a>)
+</p>
+<div>
+<p>CascadeSpec defines the desired state of Cascade.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>GenerateFromTemplate</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.GenerateFromTemplate">
+GenerateFromTemplate
+</a>
+</em>
+</td>
+<td>
+<p>
+(Members of <code>GenerateFromTemplate</code> are embedded into this type.)
+</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>schedule</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.SchedulerSpec">
+SchedulerSpec
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Schedule defines the interval between the creation of services within the group.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>suspend</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Suspend flag tells the controller to suspend subsequent executions, it does
+not apply to already started executions.  Defaults to false.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frisbee.io/v1alpha1.CascadeStatus">CascadeStatus
+</h3>
+<p>
+(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.Cascade">Cascade</a>)
+</p>
+<div>
+<p>CascadeStatus defines the observed state of Cascade.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>Lifecycle</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.Lifecycle">
+Lifecycle
+</a>
+</em>
+</td>
+<td>
+<p>
+(Members of <code>Lifecycle</code> are embedded into this type.)
+</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>queuedJobs</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.ChaosSpec">
+[]ChaosSpec
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>QueuedJobs is a list of Chaos jobs scheduled for creation by the cascade.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>scheduledJobs</code><br/>
+<em>
+int
+</em>
+</td>
+<td>
+<p>ScheduledJobs points to the next QueuedJobs.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>lastScheduleTime</code><br/>
+<em>
+<a href="https://v1-20.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#time-v1-meta">
+Kubernetes meta/v1.Time
+</a>
+</em>
+</td>
+<td>
+<p>LastScheduleTime provide information about  the last time a Chaos job was successfully scheduled.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frisbee.io/v1alpha1.Chaos">Chaos
+</h3>
+<div>
+<p>Chaos is the Schema for the chaos API.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>metadata</code><br/>
+<em>
+<a href="https://v1-20.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#objectmeta-v1-meta">
+Kubernetes meta/v1.ObjectMeta
+</a>
+</em>
+</td>
+<td>
+Refer to the Kubernetes API documentation for the fields of the
+<code>metadata</code> field.
+</td>
+</tr>
+<tr>
+<td>
+<code>spec</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.ChaosSpec">
+ChaosSpec
+</a>
+</em>
+</td>
+<td>
+<br/>
+<br/>
+<table>
+<tr>
+<td>
+<code>type</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.FaultType">
+FaultType
+</a>
+</em>
+</td>
+<td>
+<p>Type indicate the type of the injected fault</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>EmbedFaultType</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.EmbedFaultType">
+EmbedFaultType
+</a>
+</em>
+</td>
+<td>
+<p>
+(Members of <code>EmbedFaultType</code> are embedded into this type.)
+</p>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td>
+<code>status</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.ChaosStatus">
+ChaosStatus
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frisbee.io/v1alpha1.ChaosSpec">ChaosSpec
+</h3>
+<p>
+(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.CascadeStatus">CascadeStatus</a>, <a href="#frisbee.io/v1alpha1.Chaos">Chaos</a>, <a href="#frisbee.io/v1alpha1.EmbedSpecs">EmbedSpecs</a>)
+</p>
+<div>
+<p>ChaosSpec defines the desired state of Chaos.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>type</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.FaultType">
+FaultType
+</a>
+</em>
+</td>
+<td>
+<p>Type indicate the type of the injected fault</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>EmbedFaultType</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.EmbedFaultType">
+EmbedFaultType
+</a>
+</em>
+</td>
+<td>
+<p>
+(Members of <code>EmbedFaultType</code> are embedded into this type.)
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frisbee.io/v1alpha1.ChaosStatus">ChaosStatus
+</h3>
+<p>
+(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.Chaos">Chaos</a>)
+</p>
+<div>
+<p>ChaosStatus defines the observed state of Chaos.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>Lifecycle</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.Lifecycle">
+Lifecycle
+</a>
+</em>
+</td>
+<td>
+<p>
+(Members of <code>Lifecycle</code> are embedded into this type.)
+</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>lastScheduleTime</code><br/>
+<em>
+<a href="https://v1-20.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#time-v1-meta">
+Kubernetes meta/v1.Time
+</a>
+</em>
+</td>
+<td>
+<p>LastScheduleTime provide information about  the last time a Pod was scheduled.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frisbee.io/v1alpha1.Cluster">Cluster
+</h3>
+<div>
+<p>Cluster is the Schema for the clusters API.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>metadata</code><br/>
+<em>
+<a href="https://v1-20.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#objectmeta-v1-meta">
+Kubernetes meta/v1.ObjectMeta
+</a>
+</em>
+</td>
+<td>
+Refer to the Kubernetes API documentation for the fields of the
+<code>metadata</code> field.
+</td>
+</tr>
+<tr>
+<td>
+<code>spec</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.ClusterSpec">
+ClusterSpec
+</a>
+</em>
+</td>
+<td>
+<br/>
+<br/>
+<table>
+<tr>
+<td>
+<code>GenerateFromTemplate</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.GenerateFromTemplate">
+GenerateFromTemplate
+</a>
+</em>
+</td>
+<td>
+<p>
+(Members of <code>GenerateFromTemplate</code> are embedded into this type.)
+</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>tolerate</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.TolerateSpec">
+TolerateSpec
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Tolerate specifies the conditions under which the cluster will fail. If undefined, the cluster fails
+immediately when a service has failed.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>schedule</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.SchedulerSpec">
+SchedulerSpec
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Schedule defines the interval between the creation of services in the group.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>placement</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.PlacementSpec">
+PlacementSpec
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Placement defines rules for placing the containers across the available nodes.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>suspend</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Suspend flag tells the controller to suspend subsequent executions, it does not apply to already started
+executions.  Defaults to false.</p>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td>
+<code>status</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.ClusterStatus">
+ClusterStatus
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frisbee.io/v1alpha1.ClusterSpec">ClusterSpec
+</h3>
+<p>
+(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.Cluster">Cluster</a>, <a href="#frisbee.io/v1alpha1.EmbedActions">EmbedActions</a>)
+</p>
+<div>
+<p>ClusterSpec defines the desired state of Cluster.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>GenerateFromTemplate</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.GenerateFromTemplate">
+GenerateFromTemplate
+</a>
+</em>
+</td>
+<td>
+<p>
+(Members of <code>GenerateFromTemplate</code> are embedded into this type.)
+</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>tolerate</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.TolerateSpec">
+TolerateSpec
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Tolerate specifies the conditions under which the cluster will fail. If undefined, the cluster fails
+immediately when a service has failed.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>schedule</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.SchedulerSpec">
+SchedulerSpec
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Schedule defines the interval between the creation of services in the group.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>placement</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.PlacementSpec">
+PlacementSpec
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Placement defines rules for placing the containers across the available nodes.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>suspend</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Suspend flag tells the controller to suspend subsequent executions, it does not apply to already started
+executions.  Defaults to false.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frisbee.io/v1alpha1.ClusterStatus">ClusterStatus
+</h3>
+<p>
+(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.Cluster">Cluster</a>)
+</p>
+<div>
+<p>ClusterStatus defines the observed state of Cluster.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>Lifecycle</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.Lifecycle">
+Lifecycle
+</a>
+</em>
+</td>
+<td>
+<p>
+(Members of <code>Lifecycle</code> are embedded into this type.)
+</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>queuedJobs</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.ServiceSpec">
+[]ServiceSpec
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>QueuedJobs is a list of services scheduled for creation by the cluster.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>scheduledJobs</code><br/>
+<em>
+int
+</em>
+</td>
+<td>
+<p>ScheduledJobs points to the next QueuedJobs.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>lastScheduleTime</code><br/>
+<em>
+<a href="https://v1-20.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#time-v1-meta">
+Kubernetes meta/v1.Time
+</a>
+</em>
+</td>
+<td>
+<p>LastScheduleTime provide information about  the last time a Service was successfully scheduled.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frisbee.io/v1alpha1.ConditionType">ConditionType
+(<code>string</code> alias)</h3>
+<div>
+<p>ConditionType is a valid value for WorkflowCondition.Type</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr><td><p>&#34;AllJobsAreCompleted&#34;</p></td>
+<td><p>ConditionAllJobsAreCompleted indicates that all jobs have been successfully completed.
+Jobs may refer to actions of a plan, services of a cluster, chaos events of a cascade, etc.</p>
+</td>
+</tr><tr><td><p>&#34;AllJobsAreScheduled&#34;</p></td>
+<td><p>ConditionAllJobsAreScheduled indicates that all jobs have been successfully scheduled.
+Jobs may refer to actions of a plan, services of a cluster, chaos events of a cascade, etc.</p>
+</td>
+</tr><tr><td><p>&#34;Initialized&#34;</p></td>
+<td><p>ConditionCRInitialized indicates whether the workflow has been initialized</p>
+</td>
+</tr><tr><td><p>&#34;UnexpectedTermination&#34;</p></td>
+<td><p>ConditionJobUnexpectedTermination is used for a job that has been unexpectedly terminated.
+The termination refers to both Success and Fail.</p>
+</td>
+</tr><tr><td><p>&#34;Terminated&#34;</p></td>
+<td><p>ConditionTerminated indicates the user-defined conditions are met.</p>
+</td>
+</tr></tbody>
+</table>
+<h3 id="frisbee.io/v1alpha1.ConditionalExpr">ConditionalExpr
+</h3>
+<p>
+(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.Action">Action</a>, <a href="#frisbee.io/v1alpha1.CallSpec">CallSpec</a>, <a href="#frisbee.io/v1alpha1.GenerateFromTemplate">GenerateFromTemplate</a>, <a href="#frisbee.io/v1alpha1.SchedulerSpec">SchedulerSpec</a>, <a href="#frisbee.io/v1alpha1.TestPlanStatus">TestPlanStatus</a>)
+</p>
+<div>
+<p>ConditionalExpr is a source of information about whether the state of the workflow after a given time is correct or not.
+This is needed because some test plans may run in infinite-horizons.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>metrics</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.ExprMetrics">
+ExprMetrics
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Metrics set a Grafana alert that will be triggered once the condition is met.
+Parsing:
+Grafana URL: <a href="http://grafana/d/A2EjFbsMk/ycsb-services?editPanel=86">http://grafana/d/A2EjFbsMk/ycsb-services?editPanel=86</a>
+metrics: A2EjFbsMk/86/Average (Panel/Dashboard/Metric)</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>state</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.ExprState">
+ExprState
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>State describe the runtime condition that should be met after the action has been executed
+Shall be defined using .Lifecycle() methods. The methods account only jobs that are managed by the object.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frisbee.io/v1alpha1.Decorators">Decorators
+</h3>
+<p>
+(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.ServiceSpec">ServiceSpec</a>)
+</p>
+<div>
+<p>Decorators takes in a PodSpec, add some functionality and returns it.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>labels</code><br/>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
+<tr>
+<td>
+<code>annotations</code><br/>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
+<tr>
+<td>
+<code>setFields</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.SetField">
+[]SetField
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>SetFields is used to populate fields. Used for dynamic assignment based templated inputs.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>resources</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.Resources">
+Resources
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Resources specifies limitations as to how the container will access host resources.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>telemetry</code><br/>
+<em>
+[]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Telemetry is a list of referenced agents responsible to monitor the Service.
+Agents are sidecar services will be deployed in the same Pod as the Service container.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frisbee.io/v1alpha1.DeleteSpec">DeleteSpec
+</h3>
+<p>
+(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.EmbedActions">EmbedActions</a>)
+</p>
+<div>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>jobs</code><br/>
+<em>
+[]string
+</em>
+</td>
+<td>
+<p>Jobs is a list of jobs to be deleted. The format is {&ldquo;kind&rdquo;:&ldquo;name&rdquo;}, e.g, {&ldquo;service&rdquo;,&ldquo;client&rdquo;}</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frisbee.io/v1alpha1.Disk">Disk
+</h3>
+<p>
+(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.Resources">Resources</a>)
+</p>
+<div>
+<p>Disk specifies the capabilities of the emulated storage device.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>readbps</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>ReadBPS limits read rate (bytes per second)</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>readiops</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>ReadIOPS limits read rate (IO per second)</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>writebps</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>WriteBPS limits write rate (bytes per second)</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>writeiops</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>WriteIOPS limits write rate (IO per second)</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frisbee.io/v1alpha1.EmbedActions">EmbedActions
+</h3>
+<p>
+(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.Action">Action</a>)
+</p>
+<div>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>service</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.GenerateFromTemplate">
+GenerateFromTemplate
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
+<tr>
+<td>
+<code>cluster</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.ClusterSpec">
+ClusterSpec
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
+<tr>
+<td>
+<code>chaos</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.GenerateFromTemplate">
+GenerateFromTemplate
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
+<tr>
+<td>
+<code>cascade</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.CascadeSpec">
+CascadeSpec
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
+<tr>
+<td>
+<code>delete</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.DeleteSpec">
+DeleteSpec
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
+<tr>
+<td>
+<code>call</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.CallSpec">
+CallSpec
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frisbee.io/v1alpha1.EmbedFaultType">EmbedFaultType
+</h3>
+<p>
+(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.ChaosSpec">ChaosSpec</a>)
+</p>
+<div>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>raw</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.RawSpec">
+RawSpec
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frisbee.io/v1alpha1.EmbedSpecs">EmbedSpecs
+</h3>
+<p>
+(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.TemplateSpec">TemplateSpec</a>)
+</p>
+<div>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>service</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.ServiceSpec">
+ServiceSpec
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
+<tr>
+<td>
+<code>chaos</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.ChaosSpec">
+ChaosSpec
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frisbee.io/v1alpha1.EphemeralVolumeSpec">EphemeralVolumeSpec
+</h3>
+<p>
+(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.Requirements">Requirements</a>)
+</p>
+<div>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>name</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>spec</code><br/>
+<em>
+<a href="https://v1-20.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#persistentvolumeclaimspec-v1-core">
+Kubernetes core/v1.PersistentVolumeClaimSpec
+</a>
+</em>
+</td>
+<td>
+<br/>
+<br/>
+<table>
+<tr>
+<td>
+<code>accessModes</code><br/>
+<em>
+<a href="https://v1-20.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#persistentvolumeaccessmode-v1-core">
+[]Kubernetes core/v1.PersistentVolumeAccessMode
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>AccessModes contains the desired access modes the volume should have.
+More info: <a href="https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes-1">https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes-1</a></p>
+</td>
+</tr>
+<tr>
+<td>
+<code>selector</code><br/>
+<em>
+<a href="https://v1-20.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#labelselector-v1-meta">
+Kubernetes meta/v1.LabelSelector
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>A label query over volumes to consider for binding.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>resources</code><br/>
+<em>
+<a href="https://v1-20.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#resourcerequirements-v1-core">
+Kubernetes core/v1.ResourceRequirements
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Resources represents the minimum resources the volume should have.
+More info: <a href="https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources">https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources</a></p>
+</td>
+</tr>
+<tr>
+<td>
+<code>volumeName</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>VolumeName is the binding reference to the PersistentVolume backing this claim.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>storageClassName</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Name of the StorageClass required by the claim.
+More info: <a href="https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1">https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1</a></p>
+</td>
+</tr>
+<tr>
+<td>
+<code>volumeMode</code><br/>
+<em>
+<a href="https://v1-20.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#persistentvolumemode-v1-core">
+Kubernetes core/v1.PersistentVolumeMode
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>volumeMode defines what type of volume is required by the claim.
+Value of Filesystem is implied when not included in claim spec.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>dataSource</code><br/>
+<em>
+<a href="https://v1-20.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#typedlocalobjectreference-v1-core">
+Kubernetes core/v1.TypedLocalObjectReference
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>This field can be used to specify either:
+* An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot)
+* An existing PVC (PersistentVolumeClaim)
+* An existing custom resource that implements data population (Alpha)
+In order to use custom resource types that implement data population,
+the AnyVolumeDataSource feature gate must be enabled.
+If the provisioner or an external controller can support the specified data source,
+it will create a new volume based on the contents of the specified data source.</p>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frisbee.io/v1alpha1.ExprMetrics">ExprMetrics
+(<code>string</code> alias)</h3>
+<p>
+(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.ConditionalExpr">ConditionalExpr</a>)
+</p>
+<div>
+</div>
+<h3 id="frisbee.io/v1alpha1.ExprState">ExprState
+(<code>string</code> alias)</h3>
+<p>
+(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.ConditionalExpr">ConditionalExpr</a>)
+</p>
+<div>
+</div>
+<h3 id="frisbee.io/v1alpha1.FaultType">FaultType
+(<code>string</code> alias)</h3>
+<p>
+(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.ChaosSpec">ChaosSpec</a>)
+</p>
+<div>
+</div>
+<h3 id="frisbee.io/v1alpha1.GenerateFromTemplate">GenerateFromTemplate
+</h3>
+<p>
+(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.CascadeSpec">CascadeSpec</a>, <a href="#frisbee.io/v1alpha1.ClusterSpec">ClusterSpec</a>, <a href="#frisbee.io/v1alpha1.EmbedActions">EmbedActions</a>)
+</p>
+<div>
+<p>GenerateFromTemplate generates a spec by parameterizing the templateRef with the given inputs.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>templateRef</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>TemplateRef refers to a  template (e.g, iperf-server).</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>until</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.ConditionalExpr">
+ConditionalExpr
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Until defines the conditions under which the CR will stop spawning new jobs.
+If used in conjunction with inputs, it will loop over inputs until the conditions are met.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>instances</code><br/>
+<em>
+int
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>MaxInstances dictate the number of objects to be created for the CR.
+If no inputs are defined, then all instances will be initiated using the default parameters of the template.
+Conditions used in conjunction with Until, MaxInstances as a max bound.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>inputs</code><br/>
+<em>
+[]map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Inputs are list of inputs passed to the objects.
+Conditions used in conjunction with instances, if the number of instances is larger that the number of inputs,
+then inputs are recursively iteration.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frisbee.io/v1alpha1.Inputs">Inputs
+</h3>
+<p>
+(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.TemplateSpec">TemplateSpec</a>)
+</p>
+<div>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>parameters</code><br/>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<p>Parameters are user-set values that are dynamically evaluated</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frisbee.io/v1alpha1.Lifecycle">Lifecycle
+</h3>
+<p>
+(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.CallStatus">CallStatus</a>, <a href="#frisbee.io/v1alpha1.CascadeStatus">CascadeStatus</a>, <a href="#frisbee.io/v1alpha1.ChaosStatus">ChaosStatus</a>, <a href="#frisbee.io/v1alpha1.ClusterStatus">ClusterStatus</a>, <a href="#frisbee.io/v1alpha1.ServiceStatus">ServiceStatus</a>, <a href="#frisbee.io/v1alpha1.TemplateStatus">TemplateStatus</a>, <a href="#frisbee.io/v1alpha1.TestPlanStatus">TestPlanStatus</a>, <a href="#frisbee.io/v1alpha1.VirtualObjectStatus">VirtualObjectStatus</a>)
+</p>
+<div>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>phase</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.Phase">
+Phase
+</a>
+</em>
+</td>
+<td>
+<p>Phase is a simple, high-level summary of where the Object is in its lifecycle.
+The conditions array, the reason and message fields, and the individual container status
+arrays contain more detail about the pod&rsquo;s status.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>reason</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Reason is A brief CamelCase message indicating details about why the service is in this Phase.
+e.g. &lsquo;Evicted&rsquo;</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>message</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Message provides more details for understanding the Reason.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>conditions</code><br/>
+<em>
+<a href="https://v1-20.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#condition-v1-meta">
+[]Kubernetes meta/v1.Condition
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Conditions describe sequences of events that warrant the present Phase.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frisbee.io/v1alpha1.MatchBy">MatchBy
+</h3>
+<p>
+(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.ServiceSelector">ServiceSelector</a>)
+</p>
+<div>
+<p>MatchBy defines the selectors for services.
+If the all selectors are empty, all services will be selected.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>byName</code><br/>
+<em>
+map[string][]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ByName is a map of string keys and a set values that used to select services.
+The key defines the namespace which services belong, and the values is a set of service names.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>byCluster</code><br/>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ByCluster defines the service group where services belong.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frisbee.io/v1alpha1.Mode">Mode
+(<code>string</code> alias)</h3>
+<p>
+(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.ServiceSelector">ServiceSelector</a>)
+</p>
+<div>
+<p>Mode represents the filter for selecting on of many.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr><td><p>&#34;all&#34;</p></td>
+<td><p>AllMode represents that the system will select all objects  regardless of status
+(not ready or not running pods includes).
+Use this label carefully.</p>
+</td>
+</tr><tr><td><p>&#34;fixed&#34;</p></td>
+<td><p>FixedMode represents that the system will select a specific number of running objects.</p>
+</td>
+</tr><tr><td><p>&#34;fixed-percent&#34;</p></td>
+<td><p>FixedPercentMode to specify a fixed % of a cluster</p>
+</td>
+</tr><tr><td><p>&#34;one&#34;</p></td>
+<td><p>OneMode represents that the system will select one object randomly.</p>
+</td>
+</tr><tr><td><p>&#34;random-max-percent&#34;</p></td>
+<td><p>RandomMaxPercentMode to specify a maximum % of a cluster</p>
+</td>
+</tr></tbody>
+</table>
+<h3 id="frisbee.io/v1alpha1.NIC">NIC
+</h3>
+<p>
+(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.Resources">Resources</a>)
+</p>
+<div>
+<p>NIC specifies the capabilities of the emulated network interface.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>rate</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>latency</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frisbee.io/v1alpha1.Phase">Phase
+(<code>string</code> alias)</h3>
+<p>
+(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.Lifecycle">Lifecycle</a>)
+</p>
+<div>
+<p>Phase is a simple, high-level summary of where the Object is in its lifecycle.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr><td><p>&#34;Failed&#34;</p></td>
+<td><p>PhaseFailed means that at least one job of the CR has terminated in a failure (exited with a
+non-zero exit code or was stopped by the system).</p>
+</td>
+</tr><tr><td><p>&#34;Pending&#34;</p></td>
+<td><p>PhasePending means that the CR has been accepted by the Kubernetes cluster, but one of the child
+jobs has not been created. This includes the time waiting for logical dependencies, Ports discovery,
+data rewiring, and placement of Pods.</p>
+</td>
+</tr><tr><td><p>&#34;Running&#34;</p></td>
+<td><p>PhaseRunning means that all the child jobs of a CR have been created, and at least one job
+is still running.</p>
+</td>
+</tr><tr><td><p>&#34;Success&#34;</p></td>
+<td><p>PhaseSuccess means that all jobs in a CR have voluntarily exited, and the system is not going
+to restart any of these Jobs.</p>
+</td>
+</tr><tr><td><p>&#34;&#34;</p></td>
+<td><p>PhaseUninitialized means that request is not yet accepted by the controller.</p>
+</td>
+</tr></tbody>
+</table>
+<h3 id="frisbee.io/v1alpha1.PlacementSpec">PlacementSpec
+</h3>
+<p>
+(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.ClusterSpec">ClusterSpec</a>)
+</p>
+<div>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>collocate</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Collocate will place all the services within the same node.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>conflictsWith</code><br/>
+<em>
+[]string
+</em>
+</td>
+<td>
+<p>ConflictsWith points to another cluster whose services cannot be located with this one.
+For example, this is needed for placing the master nodes on a different failure domain than the slave nodes.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nodes</code><br/>
+<em>
+[]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Nodes will place all the services within the same specific node.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frisbee.io/v1alpha1.RawSpec">RawSpec
+(<code>string</code> alias)</h3>
+<p>
+(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.EmbedFaultType">EmbedFaultType</a>)
+</p>
+<div>
+</div>
+<h3 id="frisbee.io/v1alpha1.Requirements">Requirements
+</h3>
+<p>
+(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.ServiceSpec">ServiceSpec</a>)
+</p>
+<div>
+<p>Requirements points to Kinds and their respective configurations required for the Service operation.
+For example, this field can be used to create PVCs dedicated to this service.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>persistentVolumeClaim</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.EphemeralVolumeSpec">
+EphemeralVolumeSpec
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>EphemeralVolume create an ephemeral volume. It&rsquo;s use for application that need additional storage but don&rsquo;t care whether
+that data is stored persistently across restarts.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>ingressBackend</code><br/>
+<em>
+<a href="https://v1-20.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#ingressbackend-v1-networking">
+Kubernetes networking/v1.IngressBackend
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Ingress makes An API object that manages external access to the services in a cluster, typically HTTP.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frisbee.io/v1alpha1.Resources">Resources
+</h3>
+<p>
+(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.Decorators">Decorators</a>)
+</p>
+<div>
+<p>Resources specifies limitations as to how the container will access host resources.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>memory</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
+<tr>
+<td>
+<code>cpu</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
+<tr>
+<td>
+<code>nic</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.NIC">
+NIC
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
+<tr>
+<td>
+<code>disk</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.Disk">
+Disk
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frisbee.io/v1alpha1.SchedulerSpec">SchedulerSpec
+</h3>
+<p>
+(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.CallSpec">CallSpec</a>, <a href="#frisbee.io/v1alpha1.CascadeSpec">CascadeSpec</a>, <a href="#frisbee.io/v1alpha1.ClusterSpec">ClusterSpec</a>)
+</p>
+<div>
+<p>SchedulerSpec defines information about schedule of the chaos experiment.
+The scheduler will schedule up to spec.GenerateFromTemplate.Instances or spec.GenerateFromTemplate.Until.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>cron</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Cron defines a cron job rule.</p>
+<p>Some rule examples:
+&ldquo;0 30 * * * *&rdquo; means to &ldquo;Every hour on the half hour&rdquo;
+&ldquo;@hourly&rdquo;      means to &ldquo;Every hour&rdquo;
+&ldquo;@every 1h30m&rdquo; means to &ldquo;Every hour thirty&rdquo;</p>
+<p>More rule info: <a href="https://godoc.org/github.com/robfig/cron">https://godoc.org/github.com/robfig/cron</a></p>
+</td>
+</tr>
+<tr>
+<td>
+<code>startingDeadlineSeconds</code><br/>
+<em>
+int64
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>StartingDeadlineSeconds is an optional deadline in seconds for starting the job if it misses scheduled
+time for any reason. if we miss this deadline, we&rsquo;ll just wait till the next scheduled time</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>conditions</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.ConditionalExpr">
+ConditionalExpr
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frisbee.io/v1alpha1.Service">Service
+</h3>
+<div>
+<p>Service is the Schema for the services API.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>metadata</code><br/>
+<em>
+<a href="https://v1-20.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#objectmeta-v1-meta">
+Kubernetes meta/v1.ObjectMeta
+</a>
+</em>
+</td>
+<td>
+Refer to the Kubernetes API documentation for the fields of the
+<code>metadata</code> field.
+</td>
+</tr>
+<tr>
+<td>
+<code>spec</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.ServiceSpec">
+ServiceSpec
+</a>
+</em>
+</td>
+<td>
+<br/>
+<br/>
+<table>
+<tr>
+<td>
+<code>requirements</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.Requirements">
+Requirements
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
+<tr>
+<td>
+<code>decorators</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.Decorators">
+Decorators
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
+<tr>
+<td>
+<code>callables</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.Callable">
+map[string]./api/v1alpha1.Callable
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
+<tr>
+<td>
+<code>PodSpec</code><br/>
+<em>
+<a href="https://v1-20.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#podspec-v1-core">
+Kubernetes core/v1.PodSpec
+</a>
+</em>
+</td>
+<td>
+<p>
+(Members of <code>PodSpec</code> are embedded into this type.)
+</p>
+<em>(Optional)</em>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td>
+<code>status</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.ServiceStatus">
+ServiceStatus
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frisbee.io/v1alpha1.ServiceSelector">ServiceSelector
+</h3>
+<div>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>match</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.MatchBy">
+MatchBy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Match contains the rules to select target</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>mode</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.Mode">
+Mode
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Mode defines which of the selected services to use. If undefined, all() is used
+Supported mode: one / all / fixed / fixed-percent / random-max-percent</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>value</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Value is required when the mode is set to <code>FixedPodMode</code> / <code>FixedPercentPodMod</code> / <code>RandomMaxPercentPodMod</code>.
+If <code>FixedPodMode</code>, provide an integer of pods to do chaos action.
+If <code>FixedPercentPodMod</code>, provide a number from 0-100 to specify the percent of pods the server can do chaos action.
+IF <code>RandomMaxPercentPodMod</code>,  provide a number from 0-100 to specify the max percent of pods to do chaos action</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>macro</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Macro abstract selector parameters into a structured string (e.g, .cluster.master.all). Every parsed field is
+represents an inner structure of the selector.
+In case of invalid macro, the selector will return empty results.
+Macro conflicts with any other parameter.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frisbee.io/v1alpha1.ServiceSpec">ServiceSpec
+</h3>
+<p>
+(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.ClusterStatus">ClusterStatus</a>, <a href="#frisbee.io/v1alpha1.EmbedSpecs">EmbedSpecs</a>, <a href="#frisbee.io/v1alpha1.Service">Service</a>)
+</p>
+<div>
+<p>ServiceSpec defines the desired state of Service.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>requirements</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.Requirements">
+Requirements
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
+<tr>
+<td>
+<code>decorators</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.Decorators">
+Decorators
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
+<tr>
+<td>
+<code>callables</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.Callable">
+map[string]./api/v1alpha1.Callable
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
+<tr>
+<td>
+<code>PodSpec</code><br/>
+<em>
+<a href="https://v1-20.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#podspec-v1-core">
+Kubernetes core/v1.PodSpec
+</a>
+</em>
+</td>
+<td>
+<p>
+(Members of <code>PodSpec</code> are embedded into this type.)
+</p>
+<em>(Optional)</em>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frisbee.io/v1alpha1.ServiceStatus">ServiceStatus
+</h3>
+<p>
+(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.Service">Service</a>)
+</p>
+<div>
+<p>ServiceStatus defines the observed state of Service.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>Lifecycle</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.Lifecycle">
+Lifecycle
+</a>
+</em>
+</td>
+<td>
+<p>
+(Members of <code>Lifecycle</code> are embedded into this type.)
+</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>lastScheduleTime</code><br/>
+<em>
+<a href="https://v1-20.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#time-v1-meta">
+Kubernetes meta/v1.Time
+</a>
+</em>
+</td>
+<td>
+<p>LastScheduleTime provide information about  the last time a Pod was scheduled.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frisbee.io/v1alpha1.SetField">SetField
+</h3>
+<p>
+(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.Decorators">Decorators</a>)
+</p>
+<div>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>field</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Field is the path to the field whose value will be replaced.
+Examples: Containers.0.Ports.0</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>value</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frisbee.io/v1alpha1.Template">Template
+</h3>
+<div>
+<p>Template is the Schema for the templates API</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>metadata</code><br/>
+<em>
+<a href="https://v1-20.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#objectmeta-v1-meta">
+Kubernetes meta/v1.ObjectMeta
+</a>
+</em>
+</td>
+<td>
+Refer to the Kubernetes API documentation for the fields of the
+<code>metadata</code> field.
+</td>
+</tr>
+<tr>
+<td>
+<code>spec</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.TemplateSpec">
+TemplateSpec
+</a>
+</em>
+</td>
+<td>
+<br/>
+<br/>
+<table>
+<tr>
+<td>
+<code>inputs</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.Inputs">
+Inputs
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Inputs are dynamic fields that populate the spec.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>EmbedSpecs</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.EmbedSpecs">
+EmbedSpecs
+</a>
+</em>
+</td>
+<td>
+<p>
+(Members of <code>EmbedSpecs</code> are embedded into this type.)
+</p>
+<p>EmbedSpecs point to the Frisbee specs that can be templated.</p>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td>
+<code>status</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.TemplateStatus">
+TemplateStatus
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frisbee.io/v1alpha1.TemplateSpec">TemplateSpec
+</h3>
+<p>
+(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.Template">Template</a>)
+</p>
+<div>
+<p>TemplateSpec defines the desired state of Template</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>inputs</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.Inputs">
+Inputs
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Inputs are dynamic fields that populate the spec.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>EmbedSpecs</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.EmbedSpecs">
+EmbedSpecs
+</a>
+</em>
+</td>
+<td>
+<p>
+(Members of <code>EmbedSpecs</code> are embedded into this type.)
+</p>
+<p>EmbedSpecs point to the Frisbee specs that can be templated.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frisbee.io/v1alpha1.TemplateStatus">TemplateStatus
+</h3>
+<p>
+(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.Template">Template</a>)
+</p>
+<div>
+<p>TemplateStatus defines the observed state of Template</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>Lifecycle</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.Lifecycle">
+Lifecycle
+</a>
+</em>
+</td>
+<td>
+<p>
+(Members of <code>Lifecycle</code> are embedded into this type.)
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frisbee.io/v1alpha1.TestPlan">TestPlan
+</h3>
+<div>
+<p>TestPlan is the Schema for the TestPlans API.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>metadata</code><br/>
+<em>
+<a href="https://v1-20.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#objectmeta-v1-meta">
+Kubernetes meta/v1.ObjectMeta
+</a>
+</em>
+</td>
+<td>
+Refer to the Kubernetes API documentation for the fields of the
+<code>metadata</code> field.
+</td>
+</tr>
+<tr>
+<td>
+<code>spec</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.TestPlanSpec">
+TestPlanSpec
+</a>
+</em>
+</td>
+<td>
+<br/>
+<br/>
+<table>
+<tr>
+<td>
+<code>actions</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.Action">
+[]Action
+</a>
+</em>
+</td>
+<td>
+<p>Actions are the tasks that will be taken.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>suspend</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Suspend flag tells the controller to suspend subsequent executions, it does
+not apply to already started executions.  Defaults to false.</p>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td>
+<code>status</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.TestPlanStatus">
+TestPlanStatus
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frisbee.io/v1alpha1.TestPlanSpec">TestPlanSpec
+</h3>
+<p>
+(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.TestPlan">TestPlan</a>)
+</p>
+<div>
+<p>TestPlanSpec defines the desired state of TestPlan.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>actions</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.Action">
+[]Action
+</a>
+</em>
+</td>
+<td>
+<p>Actions are the tasks that will be taken.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>suspend</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Suspend flag tells the controller to suspend subsequent executions, it does
+not apply to already started executions.  Defaults to false.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frisbee.io/v1alpha1.TestPlanStatus">TestPlanStatus
+</h3>
+<p>
+(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.TestPlan">TestPlan</a>)
+</p>
+<div>
+<p>TestPlanStatus defines the observed state of TestPlan.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>Lifecycle</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.Lifecycle">
+Lifecycle
+</a>
+</em>
+</td>
+<td>
+<p>
+(Members of <code>Lifecycle</code> are embedded into this type.)
+</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>executedActions</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.ConditionalExpr">
+map[string]./api/v1alpha1.ConditionalExpr
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ExecutedActions is a list of executed actions.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>grafanaEndpoint</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>GrafanaEndpoint points to the local Grafana instance</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>prometheusEndpoint</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>PrometheusEndpoint points to the local Prometheus instance</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frisbee.io/v1alpha1.TolerateSpec">TolerateSpec
+</h3>
+<p>
+(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.ClusterSpec">ClusterSpec</a>)
+</p>
+<div>
+<p>TolerateSpec specifies the system&rsquo;s ability to continue operating despite failures or malfunctions.
+If tolerate is enable, the cluster will remain &ldquo;alive&rdquo; even if some services have failed.
+Such failures are likely to happen as part of a Chaos experiment.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>failedServices</code><br/>
+<em>
+int
+</em>
+</td>
+<td>
+<p>FailedServices indicate the number of services that may fail before the cluster fails itself.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frisbee.io/v1alpha1.VirtualObject">VirtualObject
+</h3>
+<div>
+<p>VirtualObject is a wrapper for jobs that do not actually create something on the system. For example, Deletion jobs.
+These jobs do not have a dedicated controller, but their fields are set manually.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>metadata</code><br/>
+<em>
+<a href="https://v1-20.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#objectmeta-v1-meta">
+Kubernetes meta/v1.ObjectMeta
+</a>
+</em>
+</td>
+<td>
+Refer to the Kubernetes API documentation for the fields of the
+<code>metadata</code> field.
+</td>
+</tr>
+<tr>
+<td>
+<code>spec</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.VirtualObjectSpec">
+VirtualObjectSpec
+</a>
+</em>
+</td>
+<td>
+<br/>
+<br/>
+<table>
+</table>
+</td>
+</tr>
+<tr>
+<td>
+<code>status</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.VirtualObjectStatus">
+VirtualObjectStatus
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frisbee.io/v1alpha1.VirtualObjectSpec">VirtualObjectSpec
+</h3>
+<p>
+(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.VirtualObject">VirtualObject</a>)
+</p>
+<div>
+</div>
+<h3 id="frisbee.io/v1alpha1.VirtualObjectStatus">VirtualObjectStatus
+</h3>
+<p>
+(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.VirtualObject">VirtualObject</a>)
+</p>
+<div>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>Lifecycle</code><br/>
+<em>
+<a href="#frisbee.io/v1alpha1.Lifecycle">
+Lifecycle
+</a>
+</em>
+</td>
+<td>
+<p>
+(Members of <code>Lifecycle</code> are embedded into this type.)
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frisbee.io/v1alpha1.WaitSpec">WaitSpec
+</h3>
+<p>
+(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.Action">Action</a>)
+</p>
+<div>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>running</code><br/>
+<em>
+[]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Running waits for the given groups to be running</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>success</code><br/>
+<em>
+[]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Success waits for the given groups to be succeeded</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>after</code><br/>
+<em>
+<a href="https://pkg.go.dev/k8s.io/apimachinery/pkg/apis/meta/v1#Duration">
+Kubernetes meta/v1.Duration
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>After is the time offset since the beginning of this action.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<hr/>
+<p><em>
+Generated with <code>gen-crd-api-reference-docs</code>
+on git commit <code>9941b89</code>.
+</em></p>
