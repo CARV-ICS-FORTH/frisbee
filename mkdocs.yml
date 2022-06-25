@@ -1,0 +1,10 @@
+site_name: Frisbee
+site_url: https://carv-ics-forth.github.io/frisbee/
+
+
+#nav:
+#    - Home: index.md
+#    - About: about.md
+
+
+theme: readthedocs

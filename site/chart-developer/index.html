@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://carv-ics-forth.github.io/frisbee/chart-developer/" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Chart developer - Frisbee</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Chart developer";
+        var mkdocs_page_input_path = "chart-developer.md";
+        var mkdocs_page_url = "/frisbee/chart-developer/";
+      </script>
+    
+    <script src="../js/jquery-3.6.0.min.js" defer></script>
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
+      <script>hljs.initHighlightingOnLoad();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> Frisbee
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="./">Chart developer</a>
+    <ul class="current">
+    </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../code-developer/">Guide for the Frisbee Platform Developers</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../faq/">Faq</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../tutorial/">Tutorial</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">Frisbee</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" alt="Docs"></a> &raquo;</li><li>Chart developer</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h2 id="guide-for-the-frisbee-chart-developers">Guide for the Frisbee Chart Developers</h2>
+<!-- toc -->
+
+<ul>
+<li><a href="#what-is-a-helm-chart-">What is a Helm Chart ?</a><ul>
+<li><a href="#lint-charts">Lint Charts</a></li>
+<li><a href="#working-with-microk8s-built-in-registry">Working with MicroK8s’ built-in registry</a></li>
+</ul>
+</li>
+<li><a href="#run-a-test">Run a Test</a><ul>
+<li><a href="#debugging-an-installation">Debugging an Installation</a></li>
+</ul>
+</li>
+<li><a href="#debug-a-test">Debug a Test</a></li>
+<li><a href="#write-a-test">Write a test</a></li>
+<li><a href="#change-the-code">Change the Code</a></li>
+<li><a href="#run-a-test-1">Run a test</a><ul>
+<li><a href="#step-1--install-dependencies">Step 1:  Install Dependencies</a></li>
+<li><a href="#step-2-update-helm-repo">Step 2: Update Helm repo</a></li>
+<li><a href="#step-3">Step 3:</a></li>
+<li><a href="#this-step-will-install-the-following-components">This step will install the following components:</a></li>
+<li><a href="#step-4--install-the-testing-components">Step 4:  Install the testing components</a></li>
+<li><a href="#step-5-run-the-test-plan">Step 5: Run the Test Plan</a></li>
+</ul>
+</li>
+<li><a href="#observe-a-testplan">Observe a Testplan</a><ul>
+<li><a href="#kubernetes-dashboard">Kubernetes Dashboard</a></li>
+<li><a href="#controller-logs">Controller Logs</a></li>
+<li><a href="#grafana-dashboard--alerts">Grafana Dashboard &amp; Alerts</a></li>
+</ul>
+</li>
+<li><a href="#helm">HELM</a></li>
+<li><a href="#baseline">Baseline</a><ul>
+<li><a href="#ycsb">YCSB</a></li>
+<li><a href="#fio">FIO</a></li>
+</ul>
+</li>
+<li><a href="#stress">Stress</a></li>
+<li><a href="#scaleout">Scaleout</a></li>
+<li><a href="#elasticity">Elasticity</a></li>
+<li><a href="#chaos">Chaos</a></li>
+<li><a href="#guide-for-the-frisbee-plan-developers">Guide for the Frisbee Plan Developers</a></li>
+<li><a href="#periodically-kill-some-nodes">Periodically kill some nodes.</a><ul>
+<li><a href="#do-not-set-dependencies-on-cascades">Do not set dependencies on cascades</a></li>
+</ul>
+</li>
+</ul>
+<!-- /toc -->
+
+<p>This is a guide for those who wish to contribute new Charts in Frisbee.</p>
+<p>Because there is an overlap, we advise you to have a look at the Guide for Code Developers first.</p>
+<h2 id="what-is-a-helm-chart">What is a Helm Chart ?</h2>
+<p>Helm is a package manager for Kubernetes.</p>
+<p>Helm uses <strong>a packaging format called charts</strong>. A chart is a collection of files that describe a related set of
+Kubernetes resources. A single chart might be used to deploy something simple, like a memcached pod, or something
+complex, like a full web app stack with HTTP servers, databases, caches, and so on.</p>
+<p>The best way to start is by reading the official <a href="https://helm.sh/docs/">Helm documentation</a>.</p>
+<p>Control how to visualize the services.</p>
+<pre><code>// DrawAs hints how to mark points on the Grafana dashboard.
+DrawAs string = &quot;frisbee.io/draw/&quot;
+
+// DrawAsPoint will mark the creation and deletion of a service as distinct events.
+DrawAsPoint string = &quot;pointInTime&quot;
+// DrawAsRegion will draw a region starting from the creation of a service and ending to the deletion of the service.
+DrawAsRegion string = &quot;timeRegion&quot;
+</code></pre>
+<h4 id="lint-charts">Lint Charts</h4>
+<pre><code class="language-bash">yamllint ./platform/Chart.yaml
+</code></pre>
+<pre><code>docker run quay.io/helmpack/chart-testing:lates ct lint --target-branch=main --check-version-increment=false
+</code></pre>
+<h4 id="working-with-microk8s-built-in-registry">Working with MicroK8s’ built-in registry</h4>
+<pre><code class="language-bash"># Install the registry
+microk8s enable registry
+
+# To upload images we have to tag them with localhost:32000/your-image before pushing them:
+docker build . -t localhost:32000/mynginx:registry
+
+# Now that the image is tagged correctly, it can be pushed to the registry:
+docker push localhost:32000/mynginx
+</code></pre>
+<p>Pushing to this insecure registry may fail in some versions of Docker unless the daemon is explicitly configured to
+trust this registry.</p>
+<p>To address this we need to edit <code>/etc/docker/daemon.json</code> and add:</p>
+<pre><code class="language-json">{
+&quot;insecure-registries&quot;: [
+&quot;localhost:32000&quot;
+]
+}
+</code></pre>
+<p>The new configuration should be loaded with a Docker daemon restart:</p>
+<pre><code class="language-bash">sudo systemctl restart docker
+</code></pre>
+<p>Source: https://microk8s.io/docs/registry-built-in</p>
+<h2 id="run-a-test">Run a Test</h2>
+<p>The easiest way to begin with is by have a look at the examples. Let's assume you are interested in testing TiKV.</p>
+<pre><code class="language-bash">&gt;&gt; cd examples/tikv/
+&gt;&gt; ls
+templates  plan.baseline.yml  plan.elasticity.yml  plan.saturation.yml  plan.scaleout.yml
+</code></pre>
+<p>You will some <code>plan.*.yml</code> files, and a sub-directory called <code>templates</code>.</p>
+<ul>
+<li><strong>Templates:</strong> are libraries of frequently-used specifications that are reusable throughout the testing plan.</li>
+<li><strong>Plans:</strong> are lists of actions that define what will happen throughout the test.</li>
+</ul>
+<p>In general, a plan may dependent on numerous templates, and the templates depend on other templates.</p>
+<p>To run the test will all the dependencies satisfied:</p>
+<pre><code class="language-bash"># Create a dedicated Frisbee name
+&gt;&gt; kubectl create namespace karvdash-fnikol
+
+# Run the test
+&gt;&gt; kubectl -n karvdash-fnikol apply -f ../core/observability/ -f ../core/ycsb/ -f ./templates/ -f templates/telemetry/ -f plan.baseline.yml
+</code></pre>
+<p>For TikV, the dependencies are:</p>
+<ul>
+<li><code>./templates/</code> : TiKV servers and clients</li>
+<li>
+<p><code>./templates/telemetry</code> : Telemetry for TiKV servers (TiKV-specific metrics)</p>
+</li>
+<li>
+<p><code>examples/templates/core/observability</code> : Telemetry for TiKV containers (system-wise metrics)</p>
+</li>
+<li><code>examples/templates/core/ycsb</code> : Telemetry for TiKV clients (YCSB-specific metrics)</li>
+</ul>
+<blockquote>
+<p>BEWARE:</p>
+<p>1) flag <code>-f</code> does not work recursively. You must explicitly declare the telemetry directory.
+2) If you modify a template, you must re-apply it</p>
+</blockquote>
+<h3 id="debugging-an-installation">Debugging an Installation</h3>
+<p>Error: UPGRADE FAILED: unable to recognize "": no matches for kind "Template" in version "frisbee.io/v1alpha1"</p>
+<p>In the next step, you should validate that CRDs are successfully installed.</p>
+<pre><code class="language-bash"># Validate the CRDs are properly installed
+&gt;&gt; kubectl get crds  | grep frisbee.io
+</code></pre>
+<p>chaos.frisbee.io 2021-12-17T12:30:06Z clusters.frisbee.io 2021-12-17T12:30:06Z services.frisbee.io 2021-12-17T12:30:07Z
+telemetries.frisbee.io 2021-12-17T12:30:07Z workflows.frisbee.io 2021-12-17T12:30:07Z</p>
+<h2 id="debug-a-test">Debug a Test</h2>
+<p>At this point, the workflow is installed. You can go to the controller's terminal and see some progress.</p>
+<p>If anything fails, you will it see it from there.</p>
+<pre><code>$ sudo curl -s https://raw.githubusercontent.com/ncarlier/webhookd/master/install.sh | bash
+</code></pre>
+<h2 id="write-a-test">Write a test</h2>
+<p>helm install --dry-run --debug --dependency-update ./ ../observability/</p>
+<p>https://github.com/helm/chartmuseum</p>
+<p>https://medium.com/@maanadev/how-set-up-a-helm-chart-repository-using-apache-web-server-670ffe0e63c7</p>
+<p>Deploy as helm chart helm repo index ./ --url https://carv-ics-forth.github.io/frisbee</p>
+<h1 id="change-the-code">Change the Code</h1>
+<pre><code>The easiest way to begin with is by have a look at the examples. It consists of two sub-directories:
+
+* **Templates:** are libraries of frequently-used specifications that are reusable throughout the testing plan.
+* **Testplans:** are lists of actions that define what will happen throughout the test.
+
+We will use the `examples/testplans/3.failover.yml` as a reference.
+
+This plans uses the following templates:
+
+* `examples/templates/core/sysmon.yml`
+* `examples/templates/redis/redis.cluster.yml`
+* `examples/templates/ycsb/redis.client.yml`
+
+Because these templates are deployed as Kubernetes resources, they are references by name rather than by the relative
+path.
+
+This is why we need to have them installed before running the experiment. (for installation instructions
+check [here](docs/singlenode-deployment.md).)
+
+```yaml
+# Standard Kubernetes boilerplate
+apiVersion: frisbee.io/v1alpha1
+kind: TestPlan
+metadata:
+name: redis-failover
+spec:
+
+# Here we specify the workflow as a directed-acyclic graph (DAG) by specifying the dependencies of each action.
+actions:
+# Service creates an instance of a Redis Master
+# To create the instance we use the redis.single.master with the default parameters.
+- action: Service
+name: master
+service:
+
+templateRef: redis.single.master
+
+# This action is same as before, with two additions.
+# 1. The `depends' keyword ensure that the action will be executed only after the `master' action
+# has reached a Running state.
+# 2. The `inputs' keyword initialized the instance with custom parameters.
+- action: Service
+name: slave
+depends: { running: [ master ] }
+service:
+
+templateRef: redis.single.slave
+inputs:
+- { master: .service.master.one }
+
+# The sentinel is Redis failover manager. Notice that we can have multiple dependencies.
+- action: Service
+name: sentinel
+depends: { running: [ master, slave ] }
+service:
+
+templateRef: redis.single.sentinel
+inputs:
+- { master: .service.master.one }
+
+# Cluster creates a list of services that run a shared context.
+# In this case, we create a cluster of YCSB loaders to populate the master with keys.
+- action: Cluster
+name: &quot;loaders&quot;
+depends: { running: [ master ] }
+cluster:
+templateRef: ycsb.redis.loader
+inputs:
+- { server: .service.master.one, recordcount: &quot;100000000&quot;, offset: &quot;0&quot; }
+- { server: .service.master.one, recordcount: &quot;100000000&quot;, offset: &quot;100000000&quot; }
+- { server: .service.master.one, recordcount: &quot;100000000&quot;, offset: &quot;200000000&quot; }
+
+# While the loaders are running, we inject a network partition fault to the master node.
+# The &quot;after&quot; dependency adds a delay so to have some keys before injecting the fault.
+# The fault is automatically retracted after 2 minutes.
+- action: Chaos
+name: partition0
+depends: { running: [ loaders ], after: &quot;3m&quot; }
+chaos:
+type: partition
+partition:
+selector:
+macro: .service.master.one
+duration: &quot;2m&quot;
+
+# Here we repeat the partition, a few minutes after the previous fault has been recovered.
+- action: Chaos
+name: partition1
+depends: { running: [ master, slave ], success: [ partition0 ], after: &quot;6m&quot; }
+chaos:
+type: partition
+partition:
+selector: { macro: .service.master.one }
+duration: &quot;1m&quot;
+
+# Here we declare the Grafana dashboards that Workflow will make use of.
+withTelemetry:
+importDashboards: [ &quot;system.telemetry.agent&quot;, &quot;ycsb.telemetry.client&quot;,  &quot;redis.telemetry.server&quot; ]
+
+```
+
+# Run the experiment
+
+Firstly, you'll need a Kubernetes deployment and `kubectl` set-up
+
+* For a single-node deployment click [here](docs/singlenode-deployment.md).
+
+* For a multi-node deployment click [here](docs/cluster-deployment.md).
+
+In this walk-through, we assume you have followed the instructions for the single-node deployment.
+
+In one terminal, run the Frisbee controller.
+
+If you want to run the webhooks locally, you’ll have to generate certificates for serving the webhooks, and place them
+in the right directory (/tmp/k8s-webhook-server/serving-certs/tls.{crt,key}, by default).
+
+_If you’re not running a local API server, you’ll also need to figure out how to proxy traffic from the remote cluster
+to your local webhook server. For this reason, we generally recommend disabling webhooks when doing your local
+code-run-test cycle, as we do below._
+
+```bash
+# Run the Frisbee controller
+&gt;&gt;  make run ENABLE_WEBHOOKS=false
+```
+
+We can use the controller's output to reason about the experiments transition.
+
+On the other terminal, you can issue requests.
+
+```bash
+# Create a dedicated Frisbee name
+&gt;&gt; kubectl create namespace frisbee
+
+# Run a testplan (from Frisbee directory)
+&gt;&gt; kubectl -n frisbee apply -f examples/testplans/3.failover.yml
+workflow.frisbee.io/redis-failover created
+
+# Confirm that the workflow is running.
+&gt;&gt; kubectl -n frisbee get pods
+NAME         READY   STATUS    RESTARTS   AGE
+prometheus   1/1     Running   0          12m
+grafana      1/1     Running   0          12m
+master       3/3     Running   0          12m
+loaders-0    3/3     Running   0          11m
+slave        3/3     Running   0          11m
+sentinel     1/1     Running   0          11m
+
+
+# Wait until the test oracle is triggered.
+&gt;&gt; kubectl -n frisbee wait --for=condition=oracle workflows.frisbee.io/redis-failover
+...
+```
+
+## How can I understand what happened ?
+
+One way, is to access the workflow's description
+
+```bash
+&gt;&gt; kubectl -n frisbee describe workflows.frisbee.io/validate-local
+```
+
+But why bother if you can access Grafana directly ?
+</code></pre>
+<pre><code># Frisbee in a Nutshell
+
+This tutorial introduces the basic functionalities of Frisbee:
+
+- **Write tests:**  for stressing complex topologies and dynamic operating conditions.
+- **Run tests:**  provides seamless scaling from a single workstation to hundreds of machines.
+- **Debug tests:**  through extensive monitoring and comprehensive dashboards.
+
+For the rest of this tutorial we will use the Frisbee package of TiKV key/value store.
+
+#### Frisbee Installation
+
+Before anything else, we need to install the Frisbee platform and the Frisbee packages for testing.
+
+```
+
+```
+
+
+Then you have to go install the Frisbee system.
+
+```bash
+&gt;&gt; cd charts/frisbee/charts/frisbee
+&gt;&gt; helm install frisbee ./ --dependency-update
+```
+
+You will see a YAML output that describe the components to be installed.
+
+#### Run the controller
+
+After the Frisbee CRDs and their dependencies are installed, you can start running the Frisbee controller.
+
+From the project's directory run
+
+```bash
+&gt;&gt; make run
+```
+
+#### Modify an examples test
+
+Perhaps the best way is to modify an existing test. We use the `iperf` benchmark as a reference.
+
+From another terminal (do not close the controller), go to
+
+```bash
+&gt;&gt; cd charts/iperf/
+```
+
+You will see the following files:
+
+* **templates**:  libraries of frequently-used specifications that are reusable throughout the testing plan.
+* **plans**: lists of actions that define what will happen throughout the test.
+* **dashboards**: application-specific dashboards for Grafana
+
+Because templates are used by the plans, we must have them installed before the running the tests.
+
+```bash
+&gt;&gt; helm install iperf ./ --dependency-update
+```
+
+Then, run the test to become familiar with the procedure.
+
+```bash
+&gt;&gt; kubectl apply -f plans/plan.validate-network.yml
+```
+
+If everything works fine, you will see the logs flowing in the **controller**.
+
+Then you will get a message like
+
+&gt; Error: found in Chart.yaml, but missing in charts/ directory: chaos-mesh, openebs
+
+
+This is because the Frisbee installation are not yet downloaded. To get them automatically run the previous command
+with`--dependency-update` flag. Also, remove the `--dry-run` run to execute the actual installation.
+
+```bash
+&gt;&gt;  helm install frisbee ./ --dependency-update
+```
+
+Run the controller
+
+== Operatator-SDK
+
+=== Create a new Controller
+
+* operator-sdk create api --group frisbee --version v1alpha1 --kind MyNewController --resource --controller
+* operator-sdk create webhook --group frisbee --version v1alpha1 --kind MyNewController --defaulting
+--programmatic-validation
+
+docker save frisbee:latest -o image.tar
+</code></pre>
+<p>== Notes ==</p>
+<p>1) Cadvisor does not support for NFS mounts.
+2) Check how we can use block devices</p>
+<h2 id="run-a-test_1">Run a test</h2>
+<h4 id="step-1-install-dependencies">Step 1:  Install Dependencies</h4>
+<p>Make sure that <a href="https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/">kubectl</a>
+and are installed on your system, and that you have access to a Kubernetes
+installation.</p>
+<ul>
+<li>
+<p><strong>Local Installation</strong> If you want a local installation you can use</p>
+</li>
+<li>
+<p><strong>Remote Installation</strong>: Set  <code>~/.kube/config</code> appropriately, and create tunnel for sending requests to Kubernetes
+API.</p>
+</li>
+</ul>
+<pre><code class="language-bash"># Create tunnel for sending requests to Kubernetes API.
+&gt;&gt; ssh -L 6443:192.168.1.213:6443 [USER@]SSH_SERVER
+</code></pre>
+<h4 id="step-2-update-helm-repo">Step 2: Update Helm repo</h4>
+<h4 id="step-3">Step 3:</h4>
+<h4 id="this-step-will-install-the-following-components">This step will install the following components:</h4>
+<ul>
+<li>Frisbee CRDS</li>
+<li>Frisbee Controller</li>
+<li>Frisbee Dependency stack (e.g, Chaos toolkits, dynamic volume provisioning, observability stack)</li>
+<li>Ingress for making the observability stack accessible from outside the Kubernetes</li>
+</ul>
+<p>By default the platform sets the Ingress to <code>localhost</code>.</p>
+<p>If you use a non-local cluster, you can these the ingress via the  <code>global.ingress</code> flag.</p>
+<pre><code class="language-bash"># Install the platform with non-local ingress
+&gt;&gt; helm upgrade --install --wait my-frisbee frisbee/platform --set global.ingress=platform.science-hangar.eu
+</code></pre>
+<h4 id="step-4-install-the-testing-components">Step 4:  Install the testing components</h4>
+<pre><code class="language-bash">
+</code></pre>
+<h4 id="step-5-run-the-test-plan">Step 5: Run the Test Plan</h4>
+<p>This url points
+to : https://raw.githubusercontent.com/CARV-ICS-FORTH/frisbee/main/charts/tikv/examples/plan.baseline.yml</p>
+<pre><code class="language-bash"># Create a plan
+&gt;&gt; curl -sSL https://tinyurl.com/t3xrtmny | kubectl -f - apply
+</code></pre>
+<h1 id="observe-a-testplan">Observe a Testplan</h1>
+<h3 id="kubernetes-dashboard">Kubernetes Dashboard</h3>
+<p>If you use a microk8s installation of Kubernetes, then the procedure is slightly different.</p>
+<pre><code class="language-bash"># Deploy the dashboard
+&gt;&gt; microk8s dashboard-proxy
+
+# Start the dashboard
+&gt;&gt; microk8s dashboard-proxy
+
+# Now access Dashboard at:
+https://localhost:10443
+</code></pre>
+<h4 id="controller-logs">Controller Logs</h4>
+<p>The logs of the controller are accessible by the terminal on which the controller is running.</p>
+<h3 id="grafana-dashboard-alerts">Grafana Dashboard &amp; Alerts</h3>
+<p>Grafana is a multi-platform open source analytics and interactive visualization web application.</p>
+<p>To access it, use the format <code>http://grafana.${INGRESS}</code> where <code>Ingress</code> is the value you defined in step 3.</p>
+<p>For example,</p>
+<pre><code class="language-bash"># Access Grafana via your browser
+http://grafana.platform.science-hangar.eu
+</code></pre>
+<p>Optionally, validate that everything works.</p>
+<pre><code class="language-bash"># Deploy a hello world
+&gt;&gt;  kubectl create deployment hello-node --image=k8s.gcr.io/echoserver:1.4
+deployment.apps/hello-node created
+
+# Verify that a hell-node deployment exists
+&gt;&gt; kubectl get deployments
+NAME         READY   UP-TO-DATE   AVAILABLE   AGE
+hello-node   1/1     1            1           36s
+
+# Delete the deployment
+&gt;&gt; kubectl delete deployments hello-node
+deployment.apps &quot;hello-node&quot; deleted
+</code></pre>
+<p>This step will install the Frisbee CRDs and all the necessary tools.</p>
+<pre><code class="language-bash"># Update Helm repo
+&gt;&gt; helm repo add frisbee https://carv-ics-forth.github.io/frisbee/charts
+
+# Install the platform with local ingress
+&gt;&gt; helm upgrade --install --wait my-frisbee frisbee/platform
+</code></pre>
+<p>KUBECONFIG="/home/fnikol/.kube/config.evolve.admin" make run</p>
+<p>ahelm upgrade --install --wait my-frisbee ./charts/platform/ --debug --set operator.enabled=false -f
+./charts/platform/values-baremetal.yaml
+ehelm upgrade --install --wait my-system ./charts/system --debug</p>
+<p>Cool hacks:</p>
+<p>https://github.com/antrea-io/antrea/tree/main/hack</p>
+<h1 id="helm">HELM</h1>
+<p>Create a public Helm chart repository with GitHub Pages</p>
+<p>What is Helm and a Helm chart repository</p>
+<p>Helm, as per official claim, is “The package manager for Kubernetes”.</p>
+<p>Indeed Helm really helps handling application deployments on Kubernetes, not only because it simplifies the application
+release phase but also because Helm makes possible to easily manage variables in the Kubernetes manifest YAML files.</p>
+<p>Once the charts are ready and you need to share them, the easiest way to do so is by uploading them to a chart
+repository. A Helm chart repository is where we host and share Helm packages and any HTTP server will do. Unluckily Helm
+does not include natively a tool for uploading charts to a remote chart repository server (Helm can serve the local
+repository via $ helm serve though).</p>
+<p>We’ll take advantage of GitHub Pages for the purpose to share our charts.</p>
+<p>What is GitHub Pages</p>
+<p>GitHub Pages is a static site hosting service provided to you by GitHub, designed to host your pages directly from a
+GitHub repository. GitHub Pages is a perfect match for our purpose, since everything we need is to host a single
+index.yaml file along with a bunch of .tgz files.</p>
+<p>Why not hosting all this stuff in your own web server? A managed service helps to reduce your operational overhead and
+risk (think to monitoring, patch management, security, backup services…) so you can focus on code and in what makes your
+business relevant for your customers.</p>
+<p>Useful links:
+https://medium.com/@mattiaperi/create-a-public-helm-chart-repository-with-github-pages-49b180dbb417
+https://github.com/technosophos/tscharts</p>
+<p>A <strong>Test Plan</strong> documents the strategy that will be used to verify a specific test for
+a <a href="https://en.wikipedia.org/wiki/Software">software</a> product.</p>
+<p>The plan typically contains a detailed understanding of the eventual <a href="https://en.wikipedia.org/wiki/Workflow">workflow</a>
+that models the deployment scenario for a software product, the test strategy, the resources required to perform
+testing, and the Key Performance Indicators required to ensure that a product or system meets its design specifications
+and other requirements.</p>
+<p>By codifying the test plan in a YAML-based syntax, Frisbee carriers three main benefits to teams:</p>
+<ol>
+<li>
+<p>Help people outside the test team such as developers, business managers, customers <strong>understand</strong> the details of
+testing.</p>
+</li>
+<li>
+<p>Test Plan <strong>guides</strong> our thinking. It is like a rule book, which needs to be followed.</p>
+</li>
+<li>
+<p>Important aspects like test estimation, test
+scope,<a href="https://www.guru99.com/how-to-create-test-strategy-document.html">Test Strategy</a>are <strong>documented</strong> in Test
+Plan, so it can be reviewed by Management Team and re-used for other projects.</p>
+</li>
+</ol>
+<p>A test plan may include a strategy for one or more of the following:</p>
+<ul>
+<li>Baseline: to be performed during the development or approval stages of the product, typically on a small sample of
+units.</li>
+<li>Stress: to be performed during preparation or assembly of the product, in an ongoing manner for purposes of
+performance verification and quality control.</li>
+</ul>
+<h2 id="baseline">Baseline</h2>
+<p>A baseline is <strong>a fixed point of reference that is used for comparison purposes</strong>.</p>
+<h4 id="ycsb">YCSB</h4>
+<p>Cloud Serving Benchmark (YCSB) is <strong>an open-source specification and program suite for evaluating retrieval and
+maintenance capabilities of computer programs</strong>. It is often used to compare relative performance of NoSQL database
+management systems.</p>
+<p>All six workloads have a data set which is similar. Workloads D and E insert records during the test run.</p>
+<p>Thus, to keep the database size consistent, we apply the following sequence:</p>
+<ol>
+<li>
+<p>Bootstrap the database.</p>
+</li>
+<li>
+<p>Load the database, using workload A's parameter file (workloads/workloada) and the "-load" switch to the client.</p>
+</li>
+<li>Run workload A (using workloads/workloada and "-t") for a variety of throughputs.</li>
+<li>Run workload B (using workloads/workloadb and "-t") for a variety of throughputs.</li>
+<li>Run workload C (using workloads/workloadc and "-t") for a variety of throughputs.</li>
+<li>Run workload F (using workloads/workloadf and "-t") for a variety of throughputs.</li>
+<li>Run workload D (using workloads/workloadd and "-t") for a variety of throughputs. This workload inserts records,
+increasing the size of the database.</li>
+<li>Delete the data in the database. Otherwise, the remaining data of the cluster might affect the results of the
+following workload. For the deletion, instead of destroying the cluster, we destroy and recreate the cluster.</li>
+<li>Reload the database, using workload E's parameter file (workloads/workloade) and the "-load switch to the client.</li>
+<li>Run workload E (using workloads/workloadd and "-t") for a variety of throughputs. This workload inserts records,
+increasing the size of the database.</li>
+</ol>
+<p>In general, these steps remain the same for the various databases. The difference is how we bootstrap each database.</p>
+<h4 id="fio">FIO</h4>
+<p>To <em>benchmark</em> persistent disk performance, use <em>FIO</em> instead of other disk <em>benchmarking</em> tools such as dd .</p>
+<p>Fio spawns a number of threads or processes doing a particular type of I/O action as specified by the user.</p>
+<h2 id="stress">Stress</h2>
+<h2 id="scaleout">Scaleout</h2>
+<h2 id="elasticity">Elasticity</h2>
+<h2 id="chaos">Chaos</h2>
+<h2 id="guide-for-the-frisbee-plan-developers">Guide for the Frisbee Plan Developers</h2>
+<!-- toc -->
+
+<!-- /toc -->
+
+<ul>
+<li>Spurious Alert may be risen if the expr evaluation frequency is less than the scheduled interval.</li>
+<li>In this case, Grafana faces an idle period, and raises a NoData Alert.</li>
+<li>The controller ignores such messages.</li>
+</ul>
+<h1 id="periodically-kill-some-nodes">Periodically kill some nodes.</h1>
+<ul>
+<li>action: Cascade name: killer depends: { running: [ clients ] } cascade:
+templateRef: system.chaos.pod.kill instances: 3 inputs:</li>
+<li>{ target: .cluster.clients.one }</li>
+</ul>
+<p>This can be wrong because Frisbee selects a single client -- and will be used 3 times, without error. Instead, we must
+use as many inputs as the number of instances -- or omit instances.</p>
+<p>In general, because when you use one input for multiple instances.</p>
+<p>Macros select only Running objects</p>
+<h3 id="do-not-set-dependencies-on-cascades">Do not set dependencies on cascades</h3>
+<p>This is because Kills are always running -- therefore cascades that involve kill actions are always running</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href=".." class="btn btn-neutral float-left" title="Home"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../code-developer/" class="btn btn-neutral float-right" title="Guide for the Frisbee Platform Developers">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href=".." style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../code-developer/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script>var base_url = '..';</script>
+    <script src="../js/theme_extra.js" defer></script>
+    <script src="../js/theme.js" defer></script>
+      <script src="../search/main.js" defer></script>
+    <script defer>
+        window.onload = function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        };
+    </script>
+
+</body>
+</html>
