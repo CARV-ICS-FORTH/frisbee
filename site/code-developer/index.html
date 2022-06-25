@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        
+        <link rel="shortcut icon" href="../img/favicon.ico">
+        <title>Guide for the Frisbee Platform Developers - MyTest</title>
+        <link href="../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../css/font-awesome.min.css" rel="stylesheet">
+        <link href="../css/base.css" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/github.min.css">
+
+        <script src="../js/jquery-1.10.2.min.js" defer></script>
+        <script src="../js/bootstrap.min.js" defer></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
+        <script>hljs.initHighlightingOnLoad();</script> 
+    </head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="..">MyTest</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbar-collapse">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="navitem">
+                                <a href="../chart-developer/" class="nav-link">Chart developer</a>
+                            </li>
+                            <li class="navitem active">
+                                <a href="./" class="nav-link">Guide for the Frisbee Platform Developers</a>
+                            </li>
+                            <li class="navitem">
+                                <a href="../faq/" class="nav-link">Faq</a>
+                            </li>
+                            <li class="navitem">
+                                <a href="../tutorial/" class="nav-link">Tutorial</a>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ml-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-toggle="modal" data-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="../chart-developer/" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="../faq/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-light navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-toggle="collapse" data-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-secondary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-level="1"><a href="#guide-for-the-frisbee-platform-developers" class="nav-link">Guide for the Frisbee Platform Developers</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-level="2"><a href="#change-the-code" class="nav-link">Change the Code</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-level="2"><a href="#make-a-new-release" class="nav-link">Make a new release</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="guide-for-the-frisbee-platform-developers">Guide for the Frisbee Platform Developers</h1>
+<!-- toc -->
+
+<ul>
+<li><a href="#change-the-code">Change the Code</a></li>
+<li><a href="#make-a-new-release">Make a new release</a><ul>
+<li><a href="#step-1-change-the-version-in-the-version-file">Step 1: Change the version in the VERSION file</a></li>
+<li><a href="#step-2-update-the-controllers-container">Step 2: Update the controller's container</a></li>
+<li><a href="#step-3-update-the-github-repo">Step 3: Update the Github repo</a></li>
+<li><a href="#step-4-create--github-release">Step 4: Create  GitHub release</a></li>
+<li><a href="#step-5-validate-release">Step 5: Validate release</a></li>
+</ul>
+</li>
+</ul>
+<!-- /toc -->
+
+<h2 id="change-the-code">Change the Code</h2>
+<pre><code class="language-bash"># Fetch Frisbee
+&gt;&gt; git clone git@github.com:CARV-ICS-FORTH/frisbee.git
+&gt;&gt; cd frisbee
+</code></pre>
+<p>There are two ways to run a Frisbee controller.</p>
+<ul>
+<li>As Go program outside a cluster.</li>
+<li>As a container inside a Kubernetes cluster.</li>
+</ul>
+<p>By default, Frisbee prefers the second way.</p>
+<p>However, when debugging a few feature it is impractical to have to create and deploy the container all the time. In such
+cases, it is preferable to run the controller outside the cluster, as shown next.</p>
+<p><strong>Step 1:</strong></p>
+<p>Firstly, we have to inform the Helm chart responsible for handling the platform deployment to not include the
+controller.</p>
+<pre><code class="language-bash"># Remove the containerized controller from a running deployment
+&gt;&gt; helm upgrade --install  my-frisbee charts/platform/ --set operator.enabled=false \
+--set global.ingress=platform.science-hangar.eu
+</code></pre>
+<p>Notice we the flag <code>global.ingress</code> . Set it accordingly to the Ingress in your cluster.</p>
+<p>If you run Frisbee on a local cluster, simply omit the flag.</p>
+<p><strong>Step 2:</strong></p>
+<p>On the second step, we need to run the controller as a standalone binary.</p>
+<pre><code class="language-bash"># Run Frisbee controller outside a cluster (from Frisbee directory)
+&gt;&gt; make run
+</code></pre>
+<p>This may take a while as it has to take download the Go dependencies and compile the binary.</p>
+<p>If everything went fine, you should see something like the following.</p>
+<p><img alt="image-20211217192114704" src="../developers.assets/image-20211217192114704.png" /></p>
+<blockquote>
+<p>Tip: Beware the different between <code>charts/platform</code> and  <code>frisbee/platform</code>.</p>
+</blockquote>
+<p>Given that we are under the Frisbee directory, the <code>charts/platform</code> points to the local copy of the chart, which is the
+one we want to modify.</p>
+<p>Otherwise, if <code>frisbee/platform</code> is used, Helm will use the released version of the repo.</p>
+<h2 id="make-a-new-release">Make a new release</h2>
+<h4 id="step-1-change-the-version-in-the-version-file">Step 1: Change the version in the VERSION file</h4>
+<h4 id="step-2-update-the-controllers-container">Step 2: Update the controller's container</h4>
+<p>If you have changes anything outside the <code>charts</code> folder, then you have probably modified some of the controller.</p>
+<p>In this case, you have to rebuild the container and push it to the registry.</p>
+<pre><code class="language-bash">make docker-build IMG=&quot;yourImage&quot;
+</code></pre>
+<p>Otherwise, you can use which will rebuild and automatically publish the container into the public Docker Hun registry,
+under the name <a href="https://hub.docker.com/repository/docker/icsforth/frisbee-operator">icsforth / frisbee-operator</a></p>
+<pre><code class="language-bash">&gt;&gt; make docker push
+</code></pre>
+<h4 id="step-3-update-the-github-repo">Step 3: Update the Github repo</h4>
+<p>We have also automated the way to publish new releases in Github.</p>
+<pre><code class="language-bash">&gt;&gt; make release
+</code></pre>
+<p>This will commit and tag all the changes in the repo. However, it will push changes to the Github.</p>
+<p>You have to do it manually using</p>
+<pre><code class="language-bash">&gt;&gt; git push --set-upstream origin  &amp;&amp; git push --tags
+</code></pre>
+<h4 id="step-4-create-github-release">Step 4: Create  GitHub release</h4>
+<ol>
+<li>
+<p>Go to GitHub and create a pull request</p>
+</li>
+<li>
+<p>Merge pull request</p>
+</li>
+<li>
+<p>Delete branch</p>
+</li>
+<li>
+<p>Go to <a href="https://github.com/CARV-ICS-FORTH/frisbee/tags">GitHub Tags</a> and create a new release for the latest tag</p>
+</li>
+</ol>
+<p>The previous must have triggered some GitHub Actions. Go to https://github.com/CARV-ICS-FORTH/frisbee/actions and check
+that is everything is successful.</p>
+<p>Then go to the <a href="https://github.com/CARV-ICS-FORTH/frisbee/tags">tags</a> and create a new release for the latest tag.</p>
+<p><img alt="image-20211217145923170" src="../developers.assets/image-20211217145923170.png" /></p>
+<h4 id="step-5-validate-release">Step 5: Validate release</h4>
+<p>The previous step have triggered the appropriate action for creating new charts.</p>
+<p>To confirm that they have been actually created, you can use the  <code>helm</code> tool to search the repo.</p>
+<pre><code class="language-bash">&gt;&gt; helm repo update
+&gt;&gt; helm search repo frisbee
+</code></pre>
+<p>Then, you see that the <code>latest</code> Chart version is equal to the latest <code>git tag</code>, and in accordance to the VERSION file.</p></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script>
+            var base_url = "..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../js/base.js" defer></script>
+        <script src="../search/main.js" defer></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>
