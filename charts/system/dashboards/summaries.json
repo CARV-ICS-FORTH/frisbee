@@ -506,7 +506,7 @@
         "pieType": "pie",
         "reduceOptions": {
           "calcs": [
-            "last"
+            "lastNotNull"
           ],
           "fields": "",
           "values": false
@@ -717,6 +717,7 @@
           "exemplar": true,
           "expr": "sum(rate(container_cpu_usage_seconds_total{ id=\"/\"}[$__rate_interval]))",
           "hide": false,
+          "instant": false,
           "interval": "",
           "legendFormat": "",
           "refId": "vcores"
@@ -4147,7 +4148,7 @@
     ]
   },
   "timezone": "",
-  "title": "Frisbee SUT Monitoring (Summaries)",
-  "uid": "overview",
+  "title": "Frisbee SUT Monitoring (Summary)",
+  "uid": "summary",
   "version": 1
 }

@@ -24,6 +24,8 @@ spec:
       name: server
       service:
         templateRef: fl.quickstart.server
+        inputs:
+          - { clients: "3" }
 
     # Download the dataset into a shared volume
     - action: Service

@@ -1,0 +1,86 @@
+---
+apiVersion: frisbee.io/v1alpha1
+kind: Template
+metadata:
+  name: fl.quickstart.client-with-coverage
+spec:
+  inputs:
+    parameters:
+      server: "127.0.0.1"
+      dataClaimName: ""
+      memory: ""
+      cpu: ""
+  service:
+    requirements:
+      ingressBackend:
+        service:
+          name: self
+          port:
+            number: 80
+
+    decorators:
+      telemetry:
+        - system.telemetry.agent
+
+      #sidecar:
+      #  - system.coverage.server
+
+      resources:
+        memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
+        cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
+
+    volumes:
+      - name: dataset
+        persistentVolumeClaim:
+          claimName: {{"{{.Inputs.Parameters.dataClaimName}}" | quote}}
+
+    containers:
+      - name: app
+        image: icsforth/fl-demo:latest
+        volumeMounts:
+          - name: dataset
+            mountPath: /dataset
+            readOnly: true
+
+        ports:
+          - name: coverage
+            containerPort: 80
+        command:
+          - /bin/sh # Run shell
+          - -c # Read from string
+          - |  # Multi-line str
+            set -eum
+            cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
+            trap "touch /dev/shm/stop" EXIT # Sidecar: use it to terminate itself when this container has exit.
+
+            # Copy the media dataset into the local directory for processing. We use copy in order to avoid sending the
+            # I/O through the shared media.
+            cp -r /dataset ./data
+
+            # The clients are  supposed to be continuously running.
+            # If the training is stopped, the clients will report “Disconnect and shut down” on the logs,
+            # but they will keep running. To this end, we terminate the process upon the given message.
+            export FL_SERVER={{"{{.Inputs.Parameters.server}}"}}
+
+            # Install coverage tool
+            pip install coverage
+
+            echo "Starting lcov webserver at :80 Path:/var/www/html/"
+            apt-get update
+            apt-get install -y lighttpd
+            lighttpd -f /etc/lighttpd/lighttpd.conf
+
+            sleep 3600
+
+            # Start the client in coverage mode
+            echo "Run the client"
+            coverage run client.py &
+
+            # Export coverage report
+            while true;
+            do
+              sleep 20
+              echo "Refresh coverage report"
+
+              coverage html -d /var/www/html
+            done

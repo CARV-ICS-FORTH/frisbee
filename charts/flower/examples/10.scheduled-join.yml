@@ -24,6 +24,8 @@ spec:
       name: server
       service:
         templateRef: fl.quickstart.server
+        inputs:
+          - { clients: "3" }
 
     # Download the dataset into a shared volume
     - action: Service
@@ -43,4 +45,4 @@ spec:
         inputs:
           - { server: server, dataClaimName: dataset }
         schedule:
-          cron: "@every 5m"
+          cron: "@every 2m"
