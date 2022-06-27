@@ -39,7 +39,7 @@ spec:
       name: clients
       cluster:
         templateRef: fl.quickstart.client
-        instances: 2
+        instances: 4
         inputs:
           - { server: server, dataClaimName: dataset }
 
@@ -50,4 +50,4 @@ spec:
       service:
         templateRef: fl.quickstart.client
         inputs:
-          - { server: server, dataClaimName: dataset, cpu: "1" }
+          - { server: server, dataClaimName: dataset, cpu: "1.8" }

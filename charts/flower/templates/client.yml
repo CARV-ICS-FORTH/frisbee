@@ -22,7 +22,7 @@ spec:
 
     volumes:
       - name: dataset
-        ephemeralVolumeClaim:
+        persistentVolumeClaim:
           claimName: {{"{{.Inputs.Parameters.dataClaimName}}" | quote}}
 
     containers:

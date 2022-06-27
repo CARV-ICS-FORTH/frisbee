@@ -165,10 +165,7 @@ spec:
                           type: integer
                         schedule:
                           description: Schedule defines the interval between the creation
-                            of services within the group. ExecutedActions creation
-                            is not supported in collocated mode. Since Pods are intended
-                            to be disposable and replaceable, we cannot add a container
-                            to a Pod once it has been created
+                            of services within the group.
                           properties:
                             conditions:
                               description: ConditionalExpr is a source of information
@@ -317,9 +314,9 @@ spec:
                               type: boolean
                             conflictsWith:
                               description: ConflictsWith points to another cluster
-                                whose services cannot be located with this one. Used,
-                                for example, to place master nodes and slave nodes
-                                on different failures domains
+                                whose services cannot be located with this one. For
+                                example, this is needed for placing the master nodes
+                                on a different failure domain than the slave nodes.
                               items:
                                 type: string
                               type: array
@@ -332,10 +329,7 @@ spec:
                           type: object
                         schedule:
                           description: Schedule defines the interval between the creation
-                            of services within the group. ExecutedActions creation
-                            is not supported in collocated mode. Since Pods are intended
-                            to be disposable and replaceable, we cannot add a container
-                            to a Pod once it has been created
+                            of services in the group.
                           properties:
                             conditions:
                               description: ConditionalExpr is a source of information
@@ -384,8 +378,8 @@ spec:
                           type: string
                         tolerate:
                           description: Tolerate specifies the conditions under which
-                            the cluster will fail. If left undefined, the cluster
-                            will fail immediately when a service has failed.
+                            the cluster will fail. If undefined, the cluster fails
+                            immediately when a service has failed.
                           properties:
                             failedServices:
                               description: FailedServices indicate the number of services

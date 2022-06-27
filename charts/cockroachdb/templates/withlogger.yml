@@ -18,7 +18,7 @@ spec:
 
     volumes: # Match the pod to the log volume
       - name: logs
-        ephemeralVolumeClaim:
+        persistentVolumeClaim:
           claimName: {{"{{.Inputs.Parameters.logClaimName}}" | quote}}
 
     initContainers:

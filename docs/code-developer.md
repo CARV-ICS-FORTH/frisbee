@@ -38,8 +38,7 @@ controller.
 
 ```bash
 # Remove the containerized controller from a running deployment
->> helm upgrade --install  my-frisbee charts/platform/ --set operator.enabled=false \
---set global.ingress=platform.science-hangar.eu
+>> helm upgrade --install  my-frisbee ./charts/platform/ --set operator.enabled=false -f ./charts/platform/values.yaml
 ```
 
 Notice we the flag `global.ingress` . Set it accordingly to the Ingress in your cluster.
