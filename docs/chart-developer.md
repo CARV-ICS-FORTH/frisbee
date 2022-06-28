@@ -1,3 +1,13 @@
+---
+title: Chart Developer
+type: ...
+weight: 59
+menu: 
+  main:
+    parent: "section name"
+    weight: 01
+---
+
 ## Guide for the Frisbee Chart Developers
 
 <!-- toc -->
