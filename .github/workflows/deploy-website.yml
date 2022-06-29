@@ -1,10 +1,10 @@
 name: Deploy the website
 
 on:
-  workflow_dispatch:
-  pull_request_target:
+  push:
     branches:
-      - website
+      - website  # Set a branch to deploy
+  pull_request:
 
 jobs:
   deploy:
