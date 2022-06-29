@@ -30,7 +30,6 @@ jobs:
 
       - name: Build
         run: |
-          git 
           ls -lah 
           hugo --minify
 
