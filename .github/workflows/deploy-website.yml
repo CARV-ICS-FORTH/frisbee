@@ -30,6 +30,7 @@ jobs:
 
       - name: Build
         run: |
+          ls -lah
           hugo --minify
 
       - name: Deploy
