@@ -30,7 +30,6 @@ jobs:
 
       - name: Build
         run: |
-          cd website
           hugo --minify
 
       - name: Deploy
