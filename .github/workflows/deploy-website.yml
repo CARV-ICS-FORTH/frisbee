@@ -16,8 +16,10 @@ jobs:
       group: ${{ github.workflow }}-${{ github.ref }}
   
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v2
         with:
+          ref: 'website'
           submodules: true  # Fetch Hugo themes (true OR recursive)
           fetch-depth: 0    # Fetch all history for .GitInfo and .Lastmod
 
@@ -28,6 +30,7 @@ jobs:
 
       - name: Build
         run: |
+          git 
           ls -lah 
           hugo --minify
 
