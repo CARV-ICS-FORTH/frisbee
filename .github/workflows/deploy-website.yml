@@ -30,7 +30,7 @@ jobs:
 
       - name: Build
         run: |
-          ls -lah 
+          cd website
           hugo --minify
 
       - name: Deploy
