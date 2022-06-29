@@ -34,4 +34,6 @@ jobs:
         if: github.ref == 'refs/heads/website'
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          # external_repository: username/external-repository
+          # publish_branch: your-branch  # default: gh-pages
           publish_dir: ./public
