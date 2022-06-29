@@ -27,7 +27,7 @@ jobs:
           hugo-version: 'latest'
 
       - name: Build
-        run: 
+        run: |
           ls -lah 
           hugo --minify
 
