@@ -30,7 +30,8 @@ jobs:
 
       - name: Build
         run: |
-          hugo --minify
+          ls -lah
+          hugo 
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
