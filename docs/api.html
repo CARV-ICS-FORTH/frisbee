@@ -110,17 +110,22 @@ EmbedActions
 </tr>
 </thead>
 <tbody><tr><td><p>&#34;Call&#34;</p></td>
-<td></td>
+<td><p>ActionCall starts a remote process execution, from the controller to the targeted services.</p>
+</td>
 </tr><tr><td><p>&#34;Cascade&#34;</p></td>
-<td></td>
+<td><p>ActionCascade injects multiple failures into the running system.</p>
+</td>
 </tr><tr><td><p>&#34;Chaos&#34;</p></td>
-<td></td>
+<td><p>ActionChaos injects failures into the running system.</p>
+</td>
 </tr><tr><td><p>&#34;Cluster&#34;</p></td>
-<td></td>
+<td><p>ActionCluster creates multiple services running in a shared context.</p>
+</td>
 </tr><tr><td><p>&#34;Delete&#34;</p></td>
-<td></td>
+<td><p>ActionDelete deletes a created Frisbee resource (i.e services, clusters,).</p>
+</td>
 </tr><tr><td><p>&#34;Service&#34;</p></td>
-<td><p>Service defines a long-running task.</p>
+<td><p>ActionService creates a new service.</p>
 </td>
 </tr></tbody>
 </table>
@@ -1223,7 +1228,7 @@ Shall be defined using .Lifecycle() methods. The methods account only jobs that 
 (<em>Appears on:</em><a href="#frisbee.io/v1alpha1.ServiceSpec">ServiceSpec</a>)
 </p>
 <div>
-<p>Decorators takes in a PodSpec, add some functionality and returns it.</p>
+<p>Decorators takes-in a PodSpec, add some functionality and returns it.</p>
 </div>
 <table>
 <thead>
@@ -1562,6 +1567,9 @@ ChaosSpec
 (<em>Appears on:</em><a href="#frisbee.io/v1alpha1.Requirements">Requirements</a>)
 </p>
 <div>
+<p>EphemeralVolumeSpec defines an ephemeral volume that has the  lifetime of a pod,
+It&rsquo;s use for application that need additional storage but don&rsquo;t care whether
+that data is stored persistently across restarts.</p>
 </div>
 <table>
 <thead>
@@ -2054,6 +2062,7 @@ to restart any of these Jobs.</p>
 (<em>Appears on:</em><a href="#frisbee.io/v1alpha1.ClusterSpec">ClusterSpec</a>)
 </p>
 <div>
+<p>PlacementSpec defines rules for placing the containers across the available nodes.</p>
 </div>
 <table>
 <thead>
@@ -2136,8 +2145,7 @@ EphemeralVolumeSpec
 </td>
 <td>
 <em>(Optional)</em>
-<p>EphemeralVolume create an ephemeral volume. It&rsquo;s use for application that need additional storage but don&rsquo;t care whether
-that data is stored persistently across restarts.</p>
+<p>EphemeralVolume creates an ephemeral volume type.</p>
 </td>
 </tr>
 <tr>
@@ -3177,5 +3185,5 @@ Kubernetes meta/v1.Duration
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>ecc70e2</code>.
+on git commit <code>e10f12d</code>.
 </em></p>
