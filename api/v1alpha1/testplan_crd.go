@@ -35,18 +35,25 @@ type TestPlan struct {
 
 type ActionType string
 
-// List of supported actions
 const (
+	// ActionService creates a new service.
 	ActionService ActionType = "Service"
+	// ActionCluster creates multiple services running in a shared context.
 	ActionCluster ActionType = "Cluster"
-	ActionChaos   ActionType = "Chaos"
+	// ActionChaos injects failures into the running system.
+	ActionChaos ActionType = "Chaos"
+	// ActionCascade injects multiple failures into the running system.
 	ActionCascade ActionType = "Cascade"
-	ActionDelete  ActionType = "Delete"
-	ActionCall    ActionType = "Call"
+	// ActionDelete deletes a created Frisbee resource (i.e services, clusters,).
+	ActionDelete ActionType = "Delete"
+	// ActionCall starts a remote process execution, from the controller to the targeted services.
+	ActionCall ActionType = "Call"
 )
 
-// Action delegates arguments to the proper action handler.
+// Action is a step in a workflow that defines a particular part of a testing process.
 type Action struct {
+	// ActionType refers to a category of actions that can be associated with a specific controller.
+	// +kubebuilder:validation:Enum=service;cluster;chaos;cascade;delete;call
 	ActionType ActionType `json:"action"`
 
 	// Name is a unique identifier of the action

@@ -1,0 +1,13 @@
+---
+apiVersion: frisbee.io/v1alpha1
+kind: TestPlan
+metadata:
+  name: hello-world
+spec:
+  actions:
+    - action: Service
+      name: hello-world
+      service:
+        templateRef: hello-world
+        inputs:
+          - { msg: "hello world" }

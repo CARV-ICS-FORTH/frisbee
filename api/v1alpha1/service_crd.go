@@ -35,6 +35,9 @@ type Service struct {
 	Status ServiceStatus `json:"status,omitempty"`
 }
 
+// EphemeralVolumeSpec defines an ephemeral volume that has the  lifetime of a pod,
+// It's use for application that need additional storage but don't care whether
+// that data is stored persistently across restarts.
 type EphemeralVolumeSpec struct {
 	Name string                           `json:"name"`
 	Spec corev1.PersistentVolumeClaimSpec `json:"spec,omitempty"`
@@ -43,8 +46,7 @@ type EphemeralVolumeSpec struct {
 // Requirements points to Kinds and their respective configurations required for the Service operation.
 // For example, this field can be used to create PVCs dedicated to this service.
 type Requirements struct {
-	// EphemeralVolume create an ephemeral volume. It's use for application that need additional storage but don't care whether
-	// that data is stored persistently across restarts.
+	// EphemeralVolume creates an ephemeral volume type.
 	// +optional
 	EphemeralVolume *EphemeralVolumeSpec `json:"persistentVolumeClaim,omitempty"`
 
@@ -55,7 +57,8 @@ type Requirements struct {
 
 // NIC specifies the capabilities of the emulated network interface.
 type NIC struct {
-	Rate    string `json:"rate,omitempty"`
+	Rate string `json:"rate,omitempty"`
+
 	Latency string `json:"latency,omitempty"`
 }
 
@@ -93,7 +96,7 @@ type SetField struct {
 	Value string `json:"value"`
 }
 
-// Decorators takes in a PodSpec, add some functionality and returns it.
+// Decorators takes-in a PodSpec, add some functionality and returns it.
 type Decorators struct {
 	// +optional
 	Labels map[string]string `json:"labels,omitempty"`

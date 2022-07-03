@@ -102,7 +102,7 @@ For more information, Frisbee installation and reference documents are available
 
 We are here to help!
 
-👉 If you face troubles, check the [Frequently Asked Questions](docs/faq.md).
+👉 If you face troubles, check the [Frequently Asked Questions](https://frisbee.dev/faq).
 
 👉 For feature requests and bugs, file an [issue](https://github.com/carv-ics-forth/frisbee/issues).
 

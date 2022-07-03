@@ -1,0 +1,19 @@
+---
+apiVersion: frisbee.io/v1alpha1
+kind: Template
+metadata:
+  name: hello-world
+spec:
+  inputs:
+    parameters:
+      msg: ""
+  service:
+    containers: # Container
+      - name: app
+        image:  docker/whalesay 
+        command:
+          - /bin/sh # Run shell
+          - -c      # Read from string
+          - |       # Multi-line str
+            cowsay {{"{{.Inputs.Parameters.msg"}}
+

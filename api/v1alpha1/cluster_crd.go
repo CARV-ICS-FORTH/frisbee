@@ -51,6 +51,7 @@ func (in TolerateSpec) String() string {
 	return fmt.Sprintf("FailedServices:%d", in.FailedServices)
 }
 
+// PlacementSpec defines rules for placing the containers across the available nodes.
 type PlacementSpec struct {
 	// Collocate will place all the services within the same node.
 	// +optional

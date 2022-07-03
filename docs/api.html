@@ -6,7 +6,7 @@
 </ul>
 <h2 id="frisbee.io/v1alpha1">frisbee.io/v1alpha1</h2>
 <div>
-<p>Package v1alpha1 is the v1alpha1 version of the API.</p>
+<p>Package v1alpha1 is the v1alpha1 version of the Frisbee API.</p>
 </div>
 Resource Types:
 <ul></ul>
@@ -16,7 +16,7 @@ Resource Types:
 (<em>Appears on:</em><a href="#frisbee.io/v1alpha1.TestPlanSpec">TestPlanSpec</a>)
 </p>
 <div>
-<p>Action delegates arguments to the proper action handler.</p>
+<p>Action is a step in a workflow that defines a particular part of a testing process.</p>
 </div>
 <table>
 <thead>
@@ -36,6 +36,7 @@ ActionType
 </em>
 </td>
 <td>
+<p>ActionType refers to a category of actions that can be associated with a specific controller.</p>
 </td>
 </tr>
 <tr>
@@ -119,7 +120,8 @@ EmbedActions
 </tr><tr><td><p>&#34;Delete&#34;</p></td>
 <td></td>
 </tr><tr><td><p>&#34;Service&#34;</p></td>
-<td></td>
+<td><p>Service defines a long-running task.</p>
+</td>
 </tr></tbody>
 </table>
 <h3 id="frisbee.io/v1alpha1.Call">Call
@@ -3175,5 +3177,5 @@ Kubernetes meta/v1.Duration
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>9941b89</code>.
+on git commit <code>ecc70e2</code>.
 </em></p>
