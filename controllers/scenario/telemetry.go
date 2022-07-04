@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package testplan
+package scenario
 
 import (
 	"context"
@@ -67,7 +67,7 @@ var (
 
 var pathType = netv1.PathTypePrefix
 
-func (r *Controller) StartTelemetry(ctx context.Context, t *v1alpha1.TestPlan) error {
+func (r *Controller) StartTelemetry(ctx context.Context, t *v1alpha1.Scenario) error {
 	telemetryAgents, err := r.ImportTelemetryDashboards(ctx, t)
 	if err != nil {
 		return errors.Wrapf(err, "errors with importing dashboards")
@@ -88,13 +88,13 @@ func (r *Controller) StartTelemetry(ctx context.Context, t *v1alpha1.TestPlan) e
 	return nil
 }
 
-func (r *Controller) installPrometheus(ctx context.Context, t *v1alpha1.TestPlan) error {
+func (r *Controller) installPrometheus(ctx context.Context, t *v1alpha1.Scenario) error {
 	var job v1alpha1.Service
 
 	job.SetName(notRandomPrometheusName)
 
 	// set labels
-	labelling.SetPlan(&job.ObjectMeta, t.GetName())
+	labelling.SetScenario(&job.ObjectMeta, t.GetName())
 	labelling.SetAction(&job.ObjectMeta, job.GetName())
 	labelling.SetComponent(&job.ObjectMeta, labelling.ComponentSys)
 
@@ -126,12 +126,12 @@ func (r *Controller) installPrometheus(ctx context.Context, t *v1alpha1.TestPlan
 	return nil
 }
 
-func (r *Controller) installGrafana(ctx context.Context, t *v1alpha1.TestPlan, agentRefs []string) error {
+func (r *Controller) installGrafana(ctx context.Context, t *v1alpha1.Scenario, agentRefs []string) error {
 	var job v1alpha1.Service
 
 	job.SetName(notRandomGrafanaName)
 
-	labelling.SetPlan(&job.ObjectMeta, t.GetName())
+	labelling.SetScenario(&job.ObjectMeta, t.GetName())
 	labelling.SetAction(&job.ObjectMeta, job.GetName())
 	labelling.SetComponent(&job.ObjectMeta, labelling.ComponentSys)
 
@@ -167,7 +167,7 @@ func (r *Controller) installGrafana(ctx context.Context, t *v1alpha1.TestPlan, a
 	return nil
 }
 
-func (r *Controller) importDashboards(ctx context.Context, t *v1alpha1.TestPlan, spec *v1alpha1.ServiceSpec, telemetryAgents []string) error {
+func (r *Controller) importDashboards(ctx context.Context, t *v1alpha1.Scenario, spec *v1alpha1.ServiceSpec, telemetryAgents []string) error {
 	imported := make(map[string]struct{})
 
 	// iterate monitoring services
@@ -226,12 +226,12 @@ func (r *Controller) importDashboards(ctx context.Context, t *v1alpha1.TestPlan,
 
 // ImportTelemetryDashboards iterates the referenced services (directly via Service or indirectly via Cluster) and list
 // all telemetry dashboards that need to be imported
-func (r *Controller) ImportTelemetryDashboards(ctx context.Context, plan *v1alpha1.TestPlan) ([]string, error) {
+func (r *Controller) ImportTelemetryDashboards(ctx context.Context, scenario *v1alpha1.Scenario) ([]string, error) {
 	dedup := make(map[string]struct{})
 
 	var fromTemplate *v1alpha1.GenerateFromTemplate
 
-	for _, action := range plan.Spec.Actions {
+	for _, action := range scenario.Spec.Actions {
 		fromTemplate = nil
 
 		switch action.ActionType {
@@ -243,7 +243,7 @@ func (r *Controller) ImportTelemetryDashboards(ctx context.Context, plan *v1alph
 			continue
 		}
 
-		spec, err := serviceutils.GetServiceSpec(ctx, r, plan, *fromTemplate)
+		spec, err := serviceutils.GetServiceSpec(ctx, r, scenario, *fromTemplate)
 		if err != nil {
 			return nil, errors.Wrapf(err, "cannot retrieve service spec")
 		}
@@ -265,7 +265,7 @@ func (r *Controller) ImportTelemetryDashboards(ctx context.Context, plan *v1alph
 	return imports, nil
 }
 
-func (r *Controller) ConnectToGrafana(ctx context.Context, t *v1alpha1.TestPlan) error {
+func (r *Controller) ConnectToGrafana(ctx context.Context, t *v1alpha1.Scenario) error {
 	if grafana.ClientExistsFor(t) {
 		return nil
 	}

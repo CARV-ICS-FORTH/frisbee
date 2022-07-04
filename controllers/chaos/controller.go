@@ -137,7 +137,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if cr.Status.Phase.Is(v1alpha1.PhaseSuccess) {
 		// Remove cr children once the cr is successfully complete.
 		// We should not remove the cr descriptor itself, as we need to maintain its
-		// status for higher-entities like the TestPlan.
+		// status for higher-entities like the Scenario.
 		common.Delete(ctx, r, &fault)
 
 		return common.Stop()

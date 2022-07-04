@@ -1,4 +1,4 @@
-# Examples of Testplans
+# Examples of Scenarios
 
 We assume you have followed the installation [tutorial](/docs/tutorial.md).
 
@@ -13,26 +13,26 @@ To run it, you need the following dependencies:
 >> helm upgrade --install --wait my-i frisbee/iperf
 ```
 
-A **Test Plan** documents the strategy that will be used to verify a specific test for
+A **Scenario** documents the strategy that will be used to verify a specific test for
 a [software](https://en.wikipedia.org/wiki/Software) product.
 
-The plan typically contains a detailed understanding of the eventual [workflow](https://en.wikipedia.org/wiki/Workflow)
+The scenario typically contains a detailed understanding of the eventual [workflow](https://en.wikipedia.org/wiki/Workflow)
 that models the deployment scenario for a software product, the test strategy, the resources required to perform
 testing, and the Key Performance Indicators required to ensure that a product or system meets its design specifications
 and other requirements.
 
-By codifying the test plan in a YAML-based syntax, Frisbee carriers three main benefits to teams:
+By codifying the scenario in a YAML-based syntax, Frisbee carriers three main benefits to teams:
 
 1. Help people outside the test team such as developers, business managers, customers **understand** the details of
 testing.
 
-2. Test Plan **guides** our thinking. It is like a rule book, which needs to be followed.
+2. Scenario **guides** our thinking. It is like a rule book, which needs to be followed.
 
 3. Important aspects like test estimation, test
 scope,[Test Strategy](https://www.guru99.com/how-to-create-test-strategy-document.html)are **documented** in Test
-Plan, so it can be reviewed by Management Team and re-used for other projects.
+Scenario, so it can be reviewed by Management Team and re-used for other projects.
 
-A test plan may include a strategy for one or more of the following:
+A scenario may include a strategy for one or more of the following:
 
 * Baseline: to be performed during the development or approval stages of the product, typically on a small sample of
 units.

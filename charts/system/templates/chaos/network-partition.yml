@@ -34,14 +34,14 @@ spec:
               {{.Release.Namespace}}: [ {{"{{.Inputs.Parameters.source}}"}} ]
 
 ---
-# system.chaos.network.partition will separate the target service from every other service that exists in the given plan,
+# system.chaos.network.partition will separate the target service from every other service that exists in the given scenario,
 # and it is not a core frisbee service (e.g, telemetry)
 #
 # https://chaos-mesh.org/docs/1.0.3/user_guides/experiment_scope/
 apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
-  name: system.chaos.network.partition.plan
+  name: system.chaos.network.partition.scenario
 spec:
   inputs:
     parameters:
@@ -62,8 +62,8 @@ spec:
         mode: all
         selector:
           expressionSelectors:
-            - { key: 'plan.frisbee.dev/name', operator: In, values: [ {{"{{.Plan}}"}}] }
-            - { key: 'plan.frisbee.dev/component', operator: In, values: [ "SUT" ] }
+            - { key: 'scenario.frisbee.dev/name', operator: In, values: [ {{"{{.Scenario}}"}}] }
+            - { key: 'scenario.frisbee.dev/component', operator: In, values: [ "SUT" ] }
         target:
           mode: all
           selector:

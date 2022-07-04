@@ -17,7 +17,7 @@ spec:
 
 ---
 apiVersion: frisbee.dev/v1alpha1
-kind: TestPlan
+kind: Scenario
 metadata:
   name: distributed-logs
 spec:

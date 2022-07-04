@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package testplan
+package scenario
 
 import (
 	"context"
@@ -36,10 +36,10 @@ import (
 // 2. Ensures that there are no two actions with the same name.
 // 3. Ensure that dependencies point to a valid action.
 // 4. Ensure that macros point to a valid action.
-func (r *Controller) Validate(ctx context.Context, plan *v1alpha1.TestPlan, clusterView lifecycle.ClassifierReader) error {
-	callIndex, err := PrepareDependencyGraph(plan.Spec.Actions)
+func (r *Controller) Validate(ctx context.Context, scenario *v1alpha1.Scenario, clusterView lifecycle.ClassifierReader) error {
+	callIndex, err := PrepareDependencyGraph(scenario.Spec.Actions)
 	if err != nil {
-		return errors.Wrapf(err, "invalid plan [%s]", plan.GetName())
+		return errors.Wrapf(err, "invalid scenario [%s]", scenario.GetName())
 	}
 
 	for actionName, action := range callIndex {
@@ -51,7 +51,7 @@ func (r *Controller) Validate(ctx context.Context, plan *v1alpha1.TestPlan, clus
 			return errors.Wrapf(err, "assertion error for action [%s]", actionName)
 		}
 
-		if err := r.CheckTemplateRef(ctx, plan, action); err != nil {
+		if err := r.CheckTemplateRef(ctx, scenario, action); err != nil {
 			return errors.Wrapf(err, "template reference error for action [%s]", actionName)
 		}
 

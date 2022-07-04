@@ -5,7 +5,7 @@
 #
 # For a fixed number of TiKV, we perform experiments by changing the number of clients, for a given workload.
 apiVersion: frisbee.dev/v1alpha1
-kind: TestPlan
+kind: Scenario
 metadata:
   name: tikv-saturation
 spec:

@@ -13,7 +13,7 @@ Resource Types:
 <h3 id="frisbee.dev/v1alpha1.Action">Action
 </h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.TestPlanSpec">TestPlanSpec</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.ScenarioSpec">ScenarioSpec</a>)
 </p>
 <div>
 <p>Action is a step in a workflow that defines a particular part of a testing process.</p>
@@ -75,7 +75,7 @@ ConditionalExpr
 </td>
 <td>
 <em>(Optional)</em>
-<p>Assert defines the conditions under which the Plan will terminate with a &ldquo;passed&rdquo; or &ldquo;failed&rdquo; message</p>
+<p>Assert defines the conditions under which the Scenario will terminate with a &ldquo;passed&rdquo; or &ldquo;failed&rdquo; message</p>
 </td>
 </tr>
 <tr>
@@ -1153,11 +1153,11 @@ Kubernetes meta/v1.Time
 </thead>
 <tbody><tr><td><p>&#34;AllJobsAreCompleted&#34;</p></td>
 <td><p>ConditionAllJobsAreCompleted indicates that all jobs have been successfully completed.
-Jobs may refer to actions of a plan, services of a cluster, chaos events of a cascade, etc.</p>
+Jobs may refer to actions of a scenario, services of a cluster, chaos events of a cascade, etc.</p>
 </td>
 </tr><tr><td><p>&#34;AllJobsAreScheduled&#34;</p></td>
 <td><p>ConditionAllJobsAreScheduled indicates that all jobs have been successfully scheduled.
-Jobs may refer to actions of a plan, services of a cluster, chaos events of a cascade, etc.</p>
+Jobs may refer to actions of a scenario, services of a cluster, chaos events of a cascade, etc.</p>
 </td>
 </tr><tr><td><p>&#34;Initialized&#34;</p></td>
 <td><p>ConditionCRInitialized indicates whether the workflow has been initialized</p>
@@ -1174,11 +1174,11 @@ The termination refers to both Success and Fail.</p>
 <h3 id="frisbee.dev/v1alpha1.ConditionalExpr">ConditionalExpr
 </h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.Action">Action</a>, <a href="#frisbee.dev/v1alpha1.CallSpec">CallSpec</a>, <a href="#frisbee.dev/v1alpha1.GenerateFromTemplate">GenerateFromTemplate</a>, <a href="#frisbee.dev/v1alpha1.SchedulerSpec">SchedulerSpec</a>, <a href="#frisbee.dev/v1alpha1.TestPlanStatus">TestPlanStatus</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.Action">Action</a>, <a href="#frisbee.dev/v1alpha1.CallSpec">CallSpec</a>, <a href="#frisbee.dev/v1alpha1.GenerateFromTemplate">GenerateFromTemplate</a>, <a href="#frisbee.dev/v1alpha1.SchedulerSpec">SchedulerSpec</a>, <a href="#frisbee.dev/v1alpha1.ScenarioStatus">ScenarioStatus</a>)
 </p>
 <div>
 <p>ConditionalExpr is a source of information about whether the state of the workflow after a given time is correct or not.
-This is needed because some test plans may run in infinite-horizons.</p>
+This is needed because some scenarios may run in infinite-horizons.</p>
 </div>
 <table>
 <thead>
@@ -1836,7 +1836,7 @@ map[string]string
 <h3 id="frisbee.dev/v1alpha1.Lifecycle">Lifecycle
 </h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.CallStatus">CallStatus</a>, <a href="#frisbee.dev/v1alpha1.CascadeStatus">CascadeStatus</a>, <a href="#frisbee.dev/v1alpha1.ChaosStatus">ChaosStatus</a>, <a href="#frisbee.dev/v1alpha1.ClusterStatus">ClusterStatus</a>, <a href="#frisbee.dev/v1alpha1.ServiceStatus">ServiceStatus</a>, <a href="#frisbee.dev/v1alpha1.TemplateStatus">TemplateStatus</a>, <a href="#frisbee.dev/v1alpha1.TestPlanStatus">TestPlanStatus</a>, <a href="#frisbee.dev/v1alpha1.VirtualObjectStatus">VirtualObjectStatus</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.CallStatus">CallStatus</a>, <a href="#frisbee.dev/v1alpha1.CascadeStatus">CascadeStatus</a>, <a href="#frisbee.dev/v1alpha1.ChaosStatus">ChaosStatus</a>, <a href="#frisbee.dev/v1alpha1.ClusterStatus">ClusterStatus</a>, <a href="#frisbee.dev/v1alpha1.ServiceStatus">ServiceStatus</a>, <a href="#frisbee.dev/v1alpha1.TemplateStatus">TemplateStatus</a>, <a href="#frisbee.dev/v1alpha1.ScenarioStatus">ScenarioStatus</a>, <a href="#frisbee.dev/v1alpha1.VirtualObjectStatus">VirtualObjectStatus</a>)
 </p>
 <div>
 </div>
@@ -2803,10 +2803,10 @@ Lifecycle
 </tr>
 </tbody>
 </table>
-<h3 id="frisbee.dev/v1alpha1.TestPlan">TestPlan
+<h3 id="frisbee.dev/v1alpha1.Scenario">Scenario
 </h3>
 <div>
-<p>TestPlan is the Schema for the TestPlans API.</p>
+<p>Scenario is the Schema for the Scenarios API.</p>
 </div>
 <table>
 <thead>
@@ -2834,8 +2834,8 @@ Refer to the Kubernetes API documentation for the fields of the
 <td>
 <code>spec</code><br/>
 <em>
-<a href="#frisbee.dev/v1alpha1.TestPlanSpec">
-TestPlanSpec
+<a href="#frisbee.dev/v1alpha1.ScenarioSpec">
+ScenarioSpec
 </a>
 </em>
 </td>
@@ -2876,8 +2876,8 @@ not apply to already started executions.  Defaults to false.</p>
 <td>
 <code>status</code><br/>
 <em>
-<a href="#frisbee.dev/v1alpha1.TestPlanStatus">
-TestPlanStatus
+<a href="#frisbee.dev/v1alpha1.ScenarioStatus">
+ScenarioStatus
 </a>
 </em>
 </td>
@@ -2886,13 +2886,13 @@ TestPlanStatus
 </tr>
 </tbody>
 </table>
-<h3 id="frisbee.dev/v1alpha1.TestPlanSpec">TestPlanSpec
+<h3 id="frisbee.dev/v1alpha1.ScenarioSpec">ScenarioSpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.TestPlan">TestPlan</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.Scenario">Scenario</a>)
 </p>
 <div>
-<p>TestPlanSpec defines the desired state of TestPlan.</p>
+<p>ScenarioSpec defines the desired state of Scenario.</p>
 </div>
 <table>
 <thead>
@@ -2930,13 +2930,13 @@ not apply to already started executions.  Defaults to false.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="frisbee.dev/v1alpha1.TestPlanStatus">TestPlanStatus
+<h3 id="frisbee.dev/v1alpha1.ScenarioStatus">ScenarioStatus
 </h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.TestPlan">TestPlan</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.Scenario">Scenario</a>)
 </p>
 <div>
-<p>TestPlanStatus defines the observed state of TestPlan.</p>
+<p>ScenarioStatus defines the observed state of Scenario.</p>
 </div>
 <table>
 <thead>

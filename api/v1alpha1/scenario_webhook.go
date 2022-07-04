@@ -24,9 +24,9 @@ import (
 )
 
 // log is for logging in this package.
-var testplanlog = logf.Log.WithName("testplan-resource")
+var scenariolog = logf.Log.WithName("scenario-resource")
 
-func (r *TestPlan) SetupWebhookWithManager(mgr ctrl.Manager) error {
+func (r *Scenario) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
 		Complete()
@@ -34,41 +34,41 @@ func (r *TestPlan) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
-// +kubebuilder:webhook:path=/mutate-testplan,mutating=true,failurePolicy=fail,sideEffects=None,groups=frisbee.dev,resources=testplans,verbs=create;update,versions=v1alpha1,name=mtestplan.kb.io,admissionReviewVersions={v1,v1alpha1}
+// +kubebuilder:webhook:path=/mutate-scenario,mutating=true,failurePolicy=fail,sideEffects=None,groups=frisbee.dev,resources=scenarios,verbs=create;update,versions=v1alpha1,name=mscenario.kb.io,admissionReviewVersions={v1,v1alpha1}
 
-var _ webhook.Defaulter = &TestPlan{}
+var _ webhook.Defaulter = &Scenario{}
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *TestPlan) Default() {
-	testplanlog.Info("default", "name", r.Name)
+func (r *Scenario) Default() {
+	scenariolog.Info("default", "name", r.Name)
 
 	// TODO(user): fill in your defaulting logic.
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// +kubebuilder:webhook:path=/validate-testplan,mutating=false,failurePolicy=fail,sideEffects=None,groups=frisbee.dev,resources=testplans,verbs=create;update,versions=v1alpha1,name=vtestplan.kb.io,admissionReviewVersions={v1,v1alpha1}
+// +kubebuilder:webhook:path=/validate-scenario,mutating=false,failurePolicy=fail,sideEffects=None,groups=frisbee.dev,resources=scenarios,verbs=create;update,versions=v1alpha1,name=vscenario.kb.io,admissionReviewVersions={v1,v1alpha1}
 
-var _ webhook.Validator = &TestPlan{}
+var _ webhook.Validator = &Scenario{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *TestPlan) ValidateCreate() error {
-	testplanlog.Info("validate create", "name", r.Name)
+func (r *Scenario) ValidateCreate() error {
+	scenariolog.Info("validate create", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object creation.
 	return nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *TestPlan) ValidateUpdate(old runtime.Object) error {
-	testplanlog.Info("validate update", "name", r.Name)
+func (r *Scenario) ValidateUpdate(old runtime.Object) error {
+	scenariolog.Info("validate update", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object update.
 	return nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *TestPlan) ValidateDelete() error {
-	testplanlog.Info("validate delete", "name", r.Name)
+func (r *Scenario) ValidateDelete() error {
+	scenariolog.Info("validate delete", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.
 	return nil

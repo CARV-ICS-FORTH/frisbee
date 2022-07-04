@@ -224,6 +224,32 @@ rules:
 - apiGroups:
   - frisbee.dev
   resources:
+  - scenarios
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - frisbee.dev
+  resources:
+  - scenarios/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - frisbee.dev
+  resources:
+  - scenarios/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - frisbee.dev
+  resources:
   - services
   verbs:
   - create
@@ -269,32 +295,6 @@ rules:
   - frisbee.dev
   resources:
   - templates/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - frisbee.dev
-  resources:
-  - testplans
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - frisbee.dev
-  resources:
-  - testplans/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - frisbee.dev
-  resources:
-  - testplans/status
   verbs:
   - get
   - patch

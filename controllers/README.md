@@ -34,7 +34,7 @@ https://book.kubebuilder.io/cronjob-tutorial/controller-overview.html
 
 * Chaos: inject faults into the Services
 
-* TestPlan: orchestrate the testing workflow
+* Scenario: orchestrate the testing workflow
 
 ## Controller Families
 

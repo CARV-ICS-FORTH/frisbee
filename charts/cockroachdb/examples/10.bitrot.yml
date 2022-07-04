@@ -1,6 +1,6 @@
 ---
 apiVersion: frisbee.dev/v1alpha1
-kind: TestPlan
+kind: Scenario
 metadata:
   name: cockroach-bitrot
 spec:

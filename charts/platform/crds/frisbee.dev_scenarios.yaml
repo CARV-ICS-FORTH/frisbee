@@ -5,20 +5,20 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.9.2
   creationTimestamp: null
-  name: testplans.frisbee.dev
+  name: scenarios.frisbee.dev
 spec:
   group: frisbee.dev
   names:
-    kind: TestPlan
-    listKind: TestPlanList
-    plural: testplans
-    singular: testplan
+    kind: Scenario
+    listKind: ScenarioList
+    plural: scenarios
+    singular: scenario
   scope: Namespaced
   versions:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: TestPlan is the Schema for the TestPlans API.
+        description: Scenario is the Schema for the Scenarios API.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -33,7 +33,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: TestPlanSpec defines the desired state of TestPlan.
+            description: ScenarioSpec defines the desired state of Scenario.
             properties:
               actions:
                 description: Actions are the tasks that will be taken.
@@ -53,7 +53,7 @@ spec:
                       - Call
                       type: string
                     assert:
-                      description: Assert defines the conditions under which the Plan
+                      description: Assert defines the conditions under which the Scenario
                         will terminate with a "passed" or "failed" message
                       properties:
                         metrics:
@@ -85,7 +85,7 @@ spec:
                               description: ConditionalExpr is a source of information
                                 about whether the state of the workflow after a given
                                 time is correct or not. This is needed because some
-                                test plans may run in infinite-horizons.
+                                scenarios may run in infinite-horizons.
                               properties:
                                 metrics:
                                   description: 'Metrics set a Grafana alert that will
@@ -181,7 +181,7 @@ spec:
                               description: ConditionalExpr is a source of information
                                 about whether the state of the workflow after a given
                                 time is correct or not. This is needed because some
-                                test plans may run in infinite-horizons.
+                                scenarios may run in infinite-horizons.
                               properties:
                                 metrics:
                                   description: 'Metrics set a Grafana alert that will
@@ -345,7 +345,7 @@ spec:
                               description: ConditionalExpr is a source of information
                                 about whether the state of the workflow after a given
                                 time is correct or not. This is needed because some
-                                test plans may run in infinite-horizons.
+                                scenarios may run in infinite-horizons.
                               properties:
                                 metrics:
                                   description: 'Metrics set a Grafana alert that will
@@ -517,7 +517,7 @@ spec:
             - actions
             type: object
           status:
-            description: TestPlanStatus defines the observed state of TestPlan.
+            description: ScenarioStatus defines the observed state of Scenario.
             properties:
               conditions:
                 description: Conditions describe sequences of events that warrant
@@ -593,7 +593,7 @@ spec:
                 additionalProperties:
                   description: ConditionalExpr is a source of information about whether
                     the state of the workflow after a given time is correct or not.
-                    This is needed because some test plans may run in infinite-horizons.
+                    This is needed because some scenarios may run in infinite-horizons.
                   properties:
                     metrics:
                       description: 'Metrics set a Grafana alert that will be triggered

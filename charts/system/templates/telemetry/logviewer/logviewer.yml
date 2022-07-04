@@ -18,7 +18,7 @@ spec:
 
     decorators:
       labels:
-        plan.frisbee.dev/component: SYS
+        scenario.frisbee.dev/component: SYS
 
     volumes: # Match the pod to the log volume
       - name: logs

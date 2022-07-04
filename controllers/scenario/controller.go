@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package testplan
+package scenario
 
 import (
 	"context"
@@ -38,9 +38,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// +kubebuilder:rbac:groups=frisbee.dev,resources=testplans,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=frisbee.dev,resources=testplans/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=frisbee.dev,resources=testplans/finalizers,verbs=update
+// +kubebuilder:rbac:groups=frisbee.dev,resources=scenarios,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=frisbee.dev,resources=scenarios/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=frisbee.dev,resources=scenarios/finalizers,verbs=update
 
 // +kubebuilder:rbac:groups=frisbee.dev,resources=virtualobjects,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=frisbee.dev,resources=virtualobjects/status,verbs=get;update;patch
@@ -62,7 +62,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		1: Load CR by name.
 		------------------------------------------------------------------
 	*/
-	var cr v1alpha1.TestPlan
+	var cr v1alpha1.Scenario
 
 	var requeue bool
 	result, err := common.Reconcile(ctx, r, req, &cr, &requeue)
@@ -116,8 +116,8 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		pause runs to investigate or putz with the cluster, without deleting the object.
 	*/
 	if cr.Spec.Suspend != nil && *cr.Spec.Suspend {
-		r.Logger.Info("TestPlan is suspended",
-			"testplan", cr.GetName(),
+		r.Logger.Info("Scenario is suspended",
+			"scenario", cr.GetName(),
 			"reason", cr.Status.Reason,
 			"message", cr.Status.Message,
 		)
@@ -136,7 +136,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if cr.Status.Phase.Is(v1alpha1.PhaseSuccess) {
 		// Remove the testing components once the experiment is successfully complete.
 		// We maintain testbed components (e.g, prometheus and grafana) for getting back the test results.
-		// These components are removed by deleting the TestPlan.
+		// These components are removed by deleting the Scenario.
 		for _, job := range r.clusterView.SuccessfulJobs() {
 			if labelling.GetComponent(job) == labelling.ComponentSUT { // System services should not be removed
 				expressions.UnsetAlert(job)
@@ -169,7 +169,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot communicate with the telemetry stack"))
 		}
 
-		return lifecycle.Pending(ctx, r, &cr, "The TestPlan is ready to start submitting jobs.")
+		return lifecycle.Pending(ctx, r, &cr, "The Scenario is ready to start submitting jobs.")
 	}
 
 	/*
@@ -207,7 +207,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 }
 
 /*
-	GetClusterView list all child objects in this namespace that belong to this plan, and split them into
+	GetClusterView list all child objects in this namespace that belong to this scenario, and split them into
 	active, successful, and failed jobs.
 */
 func (r *Controller) GetClusterView(ctx context.Context, req types.NamespacedName) error {
@@ -291,7 +291,7 @@ func (r *Controller) GetClusterView(ctx context.Context, req types.NamespacedNam
 	return nil
 }
 
-func (r *Controller) Initialize(ctx context.Context, t *v1alpha1.TestPlan) error {
+func (r *Controller) Initialize(ctx context.Context, t *v1alpha1.Scenario) error {
 	/* Clone system configuration, needed to retrieve telemetry, chaos, etc  */
 	sysconf, err := configuration.Get(ctx, r.GetClient(), r.Logger)
 	if err != nil {
@@ -321,14 +321,14 @@ func (r *Controller) Initialize(ctx context.Context, t *v1alpha1.TestPlan) error
 		// utils.AppendLabels(t, configMeta.GetLabels())
 		// utils.AppendLabels(t, configMeta.GetAnnotations())
 
-		/* Inherit the metadata of the test plan. This label will be adopted by all children objects of this workflow.
+		/* Inherit the metadata of the scenario. This label will be adopted by all children objects of this workflow.
 		 */
-		labelling.SetPlan(&t.ObjectMeta, t.GetName())
+		labelling.SetScenario(&t.ObjectMeta, t.GetName())
 	}
 
-	/* Ensure that the plan is OK */
+	/* Ensure that the scenario is OK */
 	if err := r.Validate(ctx, t, r.clusterView); err != nil {
-		return errors.Wrapf(err, "invalid testplan")
+		return errors.Wrapf(err, "invalid scenario")
 	}
 
 	if err := r.StartTelemetry(ctx, t); err != nil {
@@ -338,8 +338,8 @@ func (r *Controller) Initialize(ctx context.Context, t *v1alpha1.TestPlan) error
 	meta.SetStatusCondition(&t.Status.Conditions, metav1.Condition{
 		Type:    v1alpha1.ConditionCRInitialized.String(),
 		Status:  metav1.ConditionTrue,
-		Reason:  "TestPlanInitialized",
-		Message: "The Test Plan has been initialized. Start running actions",
+		Reason:  "ScenarioInitialized",
+		Message: "The Scenario has been initialized. Start running actions",
 	})
 
 	// Update() is different than UpdateStatus(). Update() is used to update the metadata (e.g, labels).
@@ -350,7 +350,7 @@ func (r *Controller) Initialize(ctx context.Context, t *v1alpha1.TestPlan) error
 	return nil
 }
 
-func (r *Controller) HasFailed(ctx context.Context, t *v1alpha1.TestPlan) error {
+func (r *Controller) HasFailed(ctx context.Context, t *v1alpha1.Scenario) error {
 
 	// TODO: What should we do when a call action fails ? Should we delete all services ?
 
@@ -392,7 +392,7 @@ func (r *Controller) HasFailed(ctx context.Context, t *v1alpha1.TestPlan) error 
 	return nil
 }
 
-func (r *Controller) RunActions(ctx context.Context, t *v1alpha1.TestPlan, actionList []v1alpha1.Action) error {
+func (r *Controller) RunActions(ctx context.Context, t *v1alpha1.Scenario, actionList []v1alpha1.Action) error {
 	endpoints := r.supportedActions()
 	for _, action := range actionList {
 		if action.Assert.HasMetricsExpr() {
@@ -445,7 +445,7 @@ func (r *Controller) RunActions(ctx context.Context, t *v1alpha1.TestPlan, actio
 */
 
 func (r *Controller) Finalizer() string {
-	return "testplans.frisbee.dev/finalizer"
+	return "scenarios.frisbee.dev/finalizer"
 }
 
 func (r *Controller) Finalize(obj client.Object) error {
@@ -471,14 +471,14 @@ func NewController(ctx context.Context, mgr ctrl.Manager, logger logr.Logger) er
 	// instantiate the controller
 	r := &Controller{
 		Manager: mgr,
-		Logger:  logger.WithName("testplan"),
+		Logger:  logger.WithName("scenario"),
 	}
 
-	gvk := v1alpha1.GroupVersion.WithKind("TestPlan")
+	gvk := v1alpha1.GroupVersion.WithKind("Scenario")
 
 	return ctrl.NewControllerManagedBy(mgr).
-		Named("testplan").
-		For(&v1alpha1.TestPlan{}).
+		Named("scenario").
+		For(&v1alpha1.Scenario{}).
 		Owns(&v1alpha1.Service{}, watchers.Watch(r, gvk)).       // Watch Services
 		Owns(&v1alpha1.Cluster{}, watchers.Watch(r, gvk)).       // Watch Cluster
 		Owns(&v1alpha1.Chaos{}, watchers.Watch(r, gvk)).         // Watch Chaos

@@ -23,14 +23,14 @@ import (
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-// TestPlan is the Schema for the TestPlans API.
+// Scenario is the Schema for the Scenarios API.
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-type TestPlan struct {
+type Scenario struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   TestPlanSpec   `json:"spec,omitempty"`
-	Status TestPlanStatus `json:"status,omitempty"`
+	Spec   ScenarioSpec   `json:"spec,omitempty"`
+	Status ScenarioStatus `json:"status,omitempty"`
 }
 
 type ActionType string
@@ -63,7 +63,7 @@ type Action struct {
 	// +optional
 	DependsOn *WaitSpec `json:"depends,omitempty"`
 
-	// Assert defines the conditions under which the Plan will terminate with a "passed" or "failed" message
+	// Assert defines the conditions under which the Scenario will terminate with a "passed" or "failed" message
 	// +optional
 	Assert *ConditionalExpr `json:"assert,omitempty"`
 
@@ -109,8 +109,8 @@ type EmbedActions struct {
 	Call *CallSpec `json:"call,omitempty"`
 }
 
-// TestPlanSpec defines the desired state of TestPlan.
-type TestPlanSpec struct {
+// ScenarioSpec defines the desired state of Scenario.
+type ScenarioSpec struct {
 	// Actions are the tasks that will be taken.
 	Actions []Action `json:"actions"`
 
@@ -120,8 +120,8 @@ type TestPlanSpec struct {
 	Suspend *bool `json:"suspend,omitempty"`
 }
 
-// TestPlanStatus defines the observed state of TestPlan.
-type TestPlanStatus struct {
+// ScenarioStatus defines the observed state of Scenario.
+type ScenarioStatus struct {
 	Lifecycle `json:",inline"`
 
 	// ExecutedActions is a list of executed actions.
@@ -135,23 +135,23 @@ type TestPlanStatus struct {
 	PrometheusEndpoint string `json:"prometheusEndpoint,omitempty"`
 }
 
-func (in *TestPlan) GetReconcileStatus() Lifecycle {
+func (in *Scenario) GetReconcileStatus() Lifecycle {
 	return in.Status.Lifecycle
 }
 
-func (in *TestPlan) SetReconcileStatus(lifecycle Lifecycle) {
+func (in *Scenario) SetReconcileStatus(lifecycle Lifecycle) {
 	in.Status.Lifecycle = lifecycle
 }
 
 // +kubebuilder:object:root=true
 
-// TestPlanList contains a list of TestPlan.
-type TestPlanList struct {
+// ScenarioList contains a list of Scenario.
+type ScenarioList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []TestPlan `json:"items"`
+	Items           []Scenario `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&TestPlan{}, &TestPlanList{})
+	SchemeBuilder.Register(&Scenario{}, &ScenarioList{})
 }

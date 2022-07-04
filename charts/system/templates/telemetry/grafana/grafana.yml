@@ -14,7 +14,7 @@ spec:
 
     decorators:
       labels:
-        plan.frisbee.dev/component: SYS
+        scenario.frisbee.dev/component: SYS
 
     volumes:
       - name: config

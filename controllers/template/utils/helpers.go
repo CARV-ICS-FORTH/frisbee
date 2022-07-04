@@ -32,10 +32,10 @@ var sprigFuncMap = sprig.TxtFuncMap() // a singleton for better performance
 type ExpandedSpecBody string
 
 type Scheme struct {
-	// Plan returns the name of the plan that invokes the template.
-	Plan string `json:"plan,omitempty"`
+	// Scenario returns the name of the scenario that invokes the template.
+	Scenario string `json:"scenario,omitempty"`
 
-	// Returns the namespace where the plan is running
+	// Returns the namespace where the scenario is running
 	Namespace string `json:"namespace,omitempty"`
 
 	// Inputs are dynamic fields that populate the spec.
@@ -49,7 +49,7 @@ type Scheme struct {
 func NewScheme(caller metav1.Object, inputs *v1alpha1.Inputs, body []byte) (*Scheme, error) {
 	var scheme Scheme
 
-	scheme.Plan = labelling.GetPlan(caller)
+	scheme.Scenario = labelling.GetScenario(caller)
 	scheme.Namespace = caller.GetNamespace()
 	scheme.Inputs = inputs
 	scheme.Spec = body

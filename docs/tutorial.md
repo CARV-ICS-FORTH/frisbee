@@ -146,7 +146,7 @@ Let's run a **bitrot** scenario.
 ```bash
 >> kubectl -f ./charts/cockroachdb/examples/10.bitrot.yml apply -n mytest
 
-testplan.frisbee.dev/cockroach-bitrot created
+scenario.frisbee.dev/cockroach-bitrot created
 ```
 
 #### 5. Exploratory Testing (Observe the Progress)
@@ -191,10 +191,10 @@ Besides the visual information, we need something that can be used in external s
 
 We will use `kubectl` since is the most common CLI interface between Kubernetes API and third-party applications.
 
-Firstly, let's inspect the test plan.
+Firstly, let's inspect the scenario.
 
 ```bash
->> kubectl describe testplan.frisbee.dev/cockroach-bitrot -n mytest
+>> kubectl describe scenario.frisbee.dev/cockroach-bitrot -n mytest
 
 ...
 Status:
@@ -246,9 +246,9 @@ In the specific **bitrot** scenario, the test will pass only it has reached an *
 minutes of execution.
 
 ```bash
->> kubectl wait --for=condition=UnexpectedTermination --timeout=10m testplan.frisbee.dev/cockroach-bitrot -n mytest
+>> kubectl wait --for=condition=UnexpectedTermination --timeout=10m scenario.frisbee.dev/cockroach-bitrot -n mytest
 
-testplan.frisbee.dev/cockroach-bitrot condition met
+scenario.frisbee.dev/cockroach-bitrot condition met
 ```
 
 Indeed, the condition is met, meaning that the test has failed. We can visually verify it from
@@ -263,7 +263,7 @@ one (masters-1), and the telemetry stack (grafana/prometheus).
 > If the condition is not met within the specified timeout, `kubectl` will exit with failure code (1) and the following
 > error message:
 >
-> "error: timed out waiting for the condition on testplans/cockroach-bitrot"
+> "error: timed out waiting for the condition on scenarios/cockroach-bitrot"
 
 #### 7. Delete a Test
 
@@ -272,7 +272,7 @@ The deletion is as simple as the creation of a test.
 ```bash
 >> kubectl -f /charts/cockroachdb/examples/10.bitrot.yml -n mytest delete --cascade=foreground
 
-testplan.frisbee.dev "cockroach-bitrot" deleted
+scenario.frisbee.dev "cockroach-bitrot" deleted
 ```
 
 The flag `cascade=foreground` will wait until the experiment is actually deleted. Without this flag, the deletion will

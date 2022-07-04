@@ -13,7 +13,7 @@ Install the platform and dependent charts.
 >> helm install my-ycsb frisbee/ycsb
 ```
 
-Run any of the testing plans.
+Run any of the scenarios.
 
 ```bash
 >> kubectl apply -f examples/1.baseline-single.yml

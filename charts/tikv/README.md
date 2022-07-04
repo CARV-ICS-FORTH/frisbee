@@ -16,10 +16,10 @@ Install the platform and dependent charts.
 >> helm install my-tikv frisbee/tikv
 ```
 
-Run any of the testing plans.
+Run any of the scenarios.
 
 ```bash
->> kubectl apply -f examples/plan.baseline.yml
+>> kubectl apply -f examples/scenario.baseline.yml
 ```
 
 ## Introduction
