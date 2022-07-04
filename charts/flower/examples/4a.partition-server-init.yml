@@ -13,7 +13,7 @@ spec:
       storage: 2Gi
 
 ---
-apiVersion: frisbee.io/v1alpha1
+apiVersion: frisbee.dev/v1alpha1
 kind: TestPlan
 metadata:
   name: partition-server-init-progress

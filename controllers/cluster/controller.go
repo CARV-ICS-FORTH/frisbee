@@ -34,9 +34,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// +kubebuilder:rbac:groups=frisbee.io,resources=clusters,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=frisbee.io,resources=clusters/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=frisbee.io,resources=clusters/finalizers,verbs=update
+// +kubebuilder:rbac:groups=frisbee.dev,resources=clusters,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=frisbee.dev,resources=clusters/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=frisbee.dev,resources=clusters/finalizers,verbs=update
 
 // Controller reconciles a Cluster object.
 type Controller struct {
@@ -326,7 +326,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 */
 
 func (r *Controller) Finalizer() string {
-	return "clusters.frisbee.io/finalizer"
+	return "clusters.frisbee.dev/finalizer"
 }
 
 func (r *Controller) Finalize(obj client.Object) error {

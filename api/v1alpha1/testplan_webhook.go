@@ -34,7 +34,7 @@ func (r *TestPlan) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
-// +kubebuilder:webhook:path=/mutate-testplan,mutating=true,failurePolicy=fail,sideEffects=None,groups=frisbee.io,resources=testplans,verbs=create;update,versions=v1alpha1,name=mtestplan.kb.io,admissionReviewVersions={v1,v1alpha1}
+// +kubebuilder:webhook:path=/mutate-testplan,mutating=true,failurePolicy=fail,sideEffects=None,groups=frisbee.dev,resources=testplans,verbs=create;update,versions=v1alpha1,name=mtestplan.kb.io,admissionReviewVersions={v1,v1alpha1}
 
 var _ webhook.Defaulter = &TestPlan{}
 
@@ -46,7 +46,7 @@ func (r *TestPlan) Default() {
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// +kubebuilder:webhook:path=/validate-testplan,mutating=false,failurePolicy=fail,sideEffects=None,groups=frisbee.io,resources=testplans,verbs=create;update,versions=v1alpha1,name=vtestplan.kb.io,admissionReviewVersions={v1,v1alpha1}
+// +kubebuilder:webhook:path=/validate-testplan,mutating=false,failurePolicy=fail,sideEffects=None,groups=frisbee.dev,resources=testplans,verbs=create;update,versions=v1alpha1,name=vtestplan.kb.io,admissionReviewVersions={v1,v1alpha1}
 
 var _ webhook.Validator = &TestPlan{}
 

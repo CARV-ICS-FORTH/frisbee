@@ -34,7 +34,7 @@ func (r *Service) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
-// +kubebuilder:webhook:path=/mutate-service,mutating=true,failurePolicy=fail,sideEffects=None,groups=frisbee.io,resources=services,verbs=create;update,versions=v1alpha1,name=mservice.kb.io,admissionReviewVersions={v1,v1alpha1}
+// +kubebuilder:webhook:path=/mutate-service,mutating=true,failurePolicy=fail,sideEffects=None,groups=frisbee.dev,resources=services,verbs=create;update,versions=v1alpha1,name=mservice.kb.io,admissionReviewVersions={v1,v1alpha1}
 
 var _ webhook.Defaulter = &Service{}
 
@@ -46,7 +46,7 @@ func (r *Service) Default() {
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// +kubebuilder:webhook:path=/validate-service,mutating=false,failurePolicy=fail,sideEffects=None,groups=frisbee.io,resources=services,verbs=create;update,versions=v1alpha1,name=vservice.kb.io,admissionReviewVersions={v1,v1alpha1}
+// +kubebuilder:webhook:path=/validate-service,mutating=false,failurePolicy=fail,sideEffects=None,groups=frisbee.dev,resources=services,verbs=create;update,versions=v1alpha1,name=vservice.kb.io,admissionReviewVersions={v1,v1alpha1}
 
 var _ webhook.Validator = &Service{}
 

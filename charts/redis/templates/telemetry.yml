@@ -1,4 +1,4 @@
-apiVersion: frisbee.io/v1alpha1
+apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
   name: redis.telemetry.server

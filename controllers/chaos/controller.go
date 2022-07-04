@@ -34,9 +34,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// +kubebuilder:rbac:groups=frisbee.io,resources=chaos,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=frisbee.io,resources=chaos/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=frisbee.io,resources=chaos/finalizers,verbs=update
+// +kubebuilder:rbac:groups=frisbee.dev,resources=chaos,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=frisbee.dev,resources=chaos/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=frisbee.dev,resources=chaos/finalizers,verbs=update
 
 // +kubebuilder:rbac:groups=chaos-mesh.org,resources=*,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=chaos-mesh.org,resources=*/status,verbs=get;update;patch
@@ -189,7 +189,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 */
 
 func (r *Controller) Finalizer() string {
-	return "chaos.frisbee.io/finalizer"
+	return "chaos.frisbee.dev/finalizer"
 }
 
 func (r *Controller) Finalize(obj client.Object) error {

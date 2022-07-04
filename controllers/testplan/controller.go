@@ -38,13 +38,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// +kubebuilder:rbac:groups=frisbee.io,resources=testplans,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=frisbee.io,resources=testplans/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=frisbee.io,resources=testplans/finalizers,verbs=update
+// +kubebuilder:rbac:groups=frisbee.dev,resources=testplans,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=frisbee.dev,resources=testplans/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=frisbee.dev,resources=testplans/finalizers,verbs=update
 
-// +kubebuilder:rbac:groups=frisbee.io,resources=virtualobjects,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=frisbee.io,resources=virtualobjects/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=frisbee.io,resources=virtualobjects/finalizers,verbs=update
+// +kubebuilder:rbac:groups=frisbee.dev,resources=virtualobjects,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=frisbee.dev,resources=virtualobjects/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=frisbee.dev,resources=virtualobjects/finalizers,verbs=update
 
 // +kubebuilder:rbac:groups=core,resources=configmaps,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,resources=configmaps/status,verbs=get;update;patch
@@ -445,7 +445,7 @@ func (r *Controller) RunActions(ctx context.Context, t *v1alpha1.TestPlan, actio
 */
 
 func (r *Controller) Finalizer() string {
-	return "testplans.frisbee.io/finalizer"
+	return "testplans.frisbee.dev/finalizer"
 }
 
 func (r *Controller) Finalize(obj client.Object) error {

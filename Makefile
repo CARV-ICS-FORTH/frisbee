@@ -19,7 +19,7 @@ FrisbeeVersion=$(shell cat VERSION)
 # This variable is used to construct full image tags for bundle and catalog images.
 #
 # For example, running 'make bundle-build bundle-push catalog-build catalog-push' will build and push both
-# frisbee.io/frisbee-bundle:$VERSION and frisbee.io/frisbee-catalog:$VERSION.
+# frisbee.dev/frisbee-bundle:$VERSION and frisbee.dev/frisbee-catalog:$VERSION.
 IMAGE_TAG_BASE ?= icsforth
 
 # Image URL to use all building/pushing image targets

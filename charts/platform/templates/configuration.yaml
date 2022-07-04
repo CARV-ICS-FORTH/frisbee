@@ -6,7 +6,7 @@ kind: ConfigMap
 metadata:
   name: system.controller.configuration
   labels:
-    discover.frisbee.io/name: system.controller.configuration
+    discover.frisbee.dev/name: system.controller.configuration
 data:
   DeveloperMode: {{not .Values.operator.enabled | quote}}
 

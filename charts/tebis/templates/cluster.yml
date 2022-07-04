@@ -1,5 +1,5 @@
 ---
-apiVersion: frisbee.io/v1alpha1
+apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
   name: tebis.cluster.zookeeper
@@ -22,7 +22,7 @@ spec:
 
 
 ---
-apiVersion: frisbee.io/v1alpha1
+apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
   name: tebis.cluster.bootstrap
@@ -67,7 +67,7 @@ spec:
 
 
 ---
-apiVersion: frisbee.io/v1alpha1
+apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
   name: tebis.cluster.master
@@ -117,7 +117,7 @@ spec:
 
 
 ---
-apiVersion: frisbee.io/v1alpha1
+apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
   name: tebis.cluster.client

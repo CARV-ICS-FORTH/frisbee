@@ -35,26 +35,26 @@ const (
 
 const (
 	// ResourceDiscoveryLabel is used to discover frisbee resources across different namespaces
-	ResourceDiscoveryLabel = "discover.frisbee.io/name"
+	ResourceDiscoveryLabel = "discover.frisbee.dev/name"
 )
 
 // https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/
 const (
 	// LabelName points to the plan
-	LabelName = "plan.frisbee.io/name"
+	LabelName = "plan.frisbee.dev/name"
 
 	// LabelPartOf points to the action this resource is part of.
-	LabelPartOf = "plan.frisbee.io/action"
+	LabelPartOf = "plan.frisbee.dev/action"
 
 	// LabelCreatedBy points to the controller who created this resource
-	LabelCreatedBy = "plan.frisbee.io/created-by"
+	LabelCreatedBy = "plan.frisbee.dev/created-by"
 
 	// LabelComponent describes the role of the component within the architecture.
 	// It can be SUT (for system under service) or SYS (if it's a frisbee component like Grafana).
-	LabelComponent = "plan.frisbee.io/component"
+	LabelComponent = "plan.frisbee.dev/component"
 
 	// LabelInstance contains a unique name identifying the instance of the  resource
-	LabelInstance = "plan.frisbee.io/instance"
+	LabelInstance = "plan.frisbee.dev/instance"
 )
 
 func SetPlan(obj *metav1.ObjectMeta, plan string) {

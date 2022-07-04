@@ -42,7 +42,7 @@ For example, to generate API reference docs for the `TestPlan` custom API define
 
  ## 4. Customize the generated doc for the website
 
-[Frisbee's website](https://docs.frisbee.io/) is built using Hugo and requires every page to have a [Front Matter](https://gohugo.io/content-management/front-matter/)  defined.
+[Frisbee's website](https://frisbee.dev/) is built using Hugo and requires every page to have a [Front Matter](https://gohugo.io/content-management/front-matter/)  defined.
 
 Add the `Front Matter` to the generated docs so they render correctly on the website.
 

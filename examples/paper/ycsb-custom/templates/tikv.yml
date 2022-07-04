@@ -1,5 +1,5 @@
 ---
-apiVersion: frisbee.io/v1alpha1
+apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
   name: ycsb.tikv.loader
@@ -24,7 +24,7 @@ spec:
         cpu: {{"{{.Inputs.Parameters.cpu}}"}}
         memory: {{"{{.Inputs.Parameters.memory}}"}}
         #annotations:
-        #"grafana.frisbee.io/draw": "range"
+        #"grafana.frisbee.dev/draw": "range"
 
     containers: # Container(s)
       - name: app
@@ -53,7 +53,7 @@ spec:
 
 
 ---
-apiVersion: frisbee.io/v1alpha1
+apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
   name: ycsb.tikv.runner
@@ -76,7 +76,7 @@ spec:
         cpu: {{"{{.Inputs.Parameters.cpu}}"}}
         memory: {{"{{.Inputs.Parameters.memory}}"}}
         #annotations:
-        #"grafana.frisbee.io/draw": "range"
+        #"grafana.frisbee.dev/draw": "range"
 
     containers: # Container(s)
       - name: app

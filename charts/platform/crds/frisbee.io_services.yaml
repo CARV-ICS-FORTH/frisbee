@@ -5,9 +5,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.9.0
   creationTimestamp: null
-  name: services.frisbee.io
+  name: services.frisbee.dev
 spec:
-  group: frisbee.io
+  group: frisbee.dev
   names:
     kind: Service
     listKind: ServiceList

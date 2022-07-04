@@ -1,19 +1,19 @@
 <p>Packages:</p>
 <ul>
 <li>
-<a href="#frisbee.io%2fv1alpha1">frisbee.io/v1alpha1</a>
+<a href="#frisbee.dev%2fv1alpha1">frisbee.dev/v1alpha1</a>
 </li>
 </ul>
-<h2 id="frisbee.io/v1alpha1">frisbee.io/v1alpha1</h2>
+<h2 id="frisbee.dev/v1alpha1">frisbee.dev/v1alpha1</h2>
 <div>
 <p>Package v1alpha1 is the v1alpha1 version of the Frisbee API.</p>
 </div>
 Resource Types:
 <ul></ul>
-<h3 id="frisbee.io/v1alpha1.Action">Action
+<h3 id="frisbee.dev/v1alpha1.Action">Action
 </h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.TestPlanSpec">TestPlanSpec</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.TestPlanSpec">TestPlanSpec</a>)
 </p>
 <div>
 <p>Action is a step in a workflow that defines a particular part of a testing process.</p>
@@ -30,7 +30,7 @@ Resource Types:
 <td>
 <code>action</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.ActionType">
+<a href="#frisbee.dev/v1alpha1.ActionType">
 ActionType
 </a>
 </em>
@@ -54,7 +54,7 @@ string
 <td>
 <code>depends</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.WaitSpec">
+<a href="#frisbee.dev/v1alpha1.WaitSpec">
 WaitSpec
 </a>
 </em>
@@ -68,7 +68,7 @@ WaitSpec
 <td>
 <code>assert</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.ConditionalExpr">
+<a href="#frisbee.dev/v1alpha1.ConditionalExpr">
 ConditionalExpr
 </a>
 </em>
@@ -82,7 +82,7 @@ ConditionalExpr
 <td>
 <code>EmbedActions</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.EmbedActions">
+<a href="#frisbee.dev/v1alpha1.EmbedActions">
 EmbedActions
 </a>
 </em>
@@ -95,10 +95,10 @@ EmbedActions
 </tr>
 </tbody>
 </table>
-<h3 id="frisbee.io/v1alpha1.ActionType">ActionType
+<h3 id="frisbee.dev/v1alpha1.ActionType">ActionType
 (<code>string</code> alias)</h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.Action">Action</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.Action">Action</a>)
 </p>
 <div>
 </div>
@@ -129,7 +129,7 @@ EmbedActions
 </td>
 </tr></tbody>
 </table>
-<h3 id="frisbee.io/v1alpha1.Call">Call
+<h3 id="frisbee.dev/v1alpha1.Call">Call
 </h3>
 <div>
 <p>Call is the Schema for the Call API.</p>
@@ -160,7 +160,7 @@ Refer to the Kubernetes API documentation for the fields of the
 <td>
 <code>spec</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.CallSpec">
+<a href="#frisbee.dev/v1alpha1.CallSpec">
 CallSpec
 </a>
 </em>
@@ -195,7 +195,7 @@ string
 <td>
 <code>until</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.ConditionalExpr">
+<a href="#frisbee.dev/v1alpha1.ConditionalExpr">
 ConditionalExpr
 </a>
 </em>
@@ -210,7 +210,7 @@ If used in conjunction with inputs, it will loop over inputs until the condition
 <td>
 <code>schedule</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.SchedulerSpec">
+<a href="#frisbee.dev/v1alpha1.SchedulerSpec">
 SchedulerSpec
 </a>
 </em>
@@ -240,7 +240,7 @@ not apply to already started executions.  Defaults to false.</p>
 <td>
 <code>status</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.CallStatus">
+<a href="#frisbee.dev/v1alpha1.CallStatus">
 CallStatus
 </a>
 </em>
@@ -250,10 +250,10 @@ CallStatus
 </tr>
 </tbody>
 </table>
-<h3 id="frisbee.io/v1alpha1.CallSpec">CallSpec
+<h3 id="frisbee.dev/v1alpha1.CallSpec">CallSpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.Call">Call</a>, <a href="#frisbee.io/v1alpha1.EmbedActions">EmbedActions</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.Call">Call</a>, <a href="#frisbee.dev/v1alpha1.EmbedActions">EmbedActions</a>)
 </p>
 <div>
 <p>CallSpec defines the desired state of Call.</p>
@@ -292,7 +292,7 @@ string
 <td>
 <code>until</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.ConditionalExpr">
+<a href="#frisbee.dev/v1alpha1.ConditionalExpr">
 ConditionalExpr
 </a>
 </em>
@@ -307,7 +307,7 @@ If used in conjunction with inputs, it will loop over inputs until the condition
 <td>
 <code>schedule</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.SchedulerSpec">
+<a href="#frisbee.dev/v1alpha1.SchedulerSpec">
 SchedulerSpec
 </a>
 </em>
@@ -332,10 +332,10 @@ not apply to already started executions.  Defaults to false.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="frisbee.io/v1alpha1.CallStatus">CallStatus
+<h3 id="frisbee.dev/v1alpha1.CallStatus">CallStatus
 </h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.Call">Call</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.Call">Call</a>)
 </p>
 <div>
 <p>CallStatus defines the observed state of Call.</p>
@@ -352,7 +352,7 @@ not apply to already started executions.  Defaults to false.</p>
 <td>
 <code>Lifecycle</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.Lifecycle">
+<a href="#frisbee.dev/v1alpha1.Lifecycle">
 Lifecycle
 </a>
 </em>
@@ -367,7 +367,7 @@ Lifecycle
 <td>
 <code>queuedJobs</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.Callable">
+<a href="#frisbee.dev/v1alpha1.Callable">
 []Callable
 </a>
 </em>
@@ -403,10 +403,10 @@ Kubernetes meta/v1.Time
 </tr>
 </tbody>
 </table>
-<h3 id="frisbee.io/v1alpha1.Callable">Callable
+<h3 id="frisbee.dev/v1alpha1.Callable">Callable
 </h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.CallStatus">CallStatus</a>, <a href="#frisbee.io/v1alpha1.ServiceSpec">ServiceSpec</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.CallStatus">CallStatus</a>, <a href="#frisbee.dev/v1alpha1.ServiceSpec">ServiceSpec</a>)
 </p>
 <div>
 <p>Callable is a script that is executed within the service container, and returns a value.
@@ -444,7 +444,7 @@ string
 </tr>
 </tbody>
 </table>
-<h3 id="frisbee.io/v1alpha1.Cascade">Cascade
+<h3 id="frisbee.dev/v1alpha1.Cascade">Cascade
 </h3>
 <div>
 <p>Cascade is the Schema for the clusters API.</p>
@@ -475,7 +475,7 @@ Refer to the Kubernetes API documentation for the fields of the
 <td>
 <code>spec</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.CascadeSpec">
+<a href="#frisbee.dev/v1alpha1.CascadeSpec">
 CascadeSpec
 </a>
 </em>
@@ -488,7 +488,7 @@ CascadeSpec
 <td>
 <code>GenerateFromTemplate</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.GenerateFromTemplate">
+<a href="#frisbee.dev/v1alpha1.GenerateFromTemplate">
 GenerateFromTemplate
 </a>
 </em>
@@ -503,7 +503,7 @@ GenerateFromTemplate
 <td>
 <code>schedule</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.SchedulerSpec">
+<a href="#frisbee.dev/v1alpha1.SchedulerSpec">
 SchedulerSpec
 </a>
 </em>
@@ -533,7 +533,7 @@ not apply to already started executions.  Defaults to false.</p>
 <td>
 <code>status</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.CascadeStatus">
+<a href="#frisbee.dev/v1alpha1.CascadeStatus">
 CascadeStatus
 </a>
 </em>
@@ -543,10 +543,10 @@ CascadeStatus
 </tr>
 </tbody>
 </table>
-<h3 id="frisbee.io/v1alpha1.CascadeSpec">CascadeSpec
+<h3 id="frisbee.dev/v1alpha1.CascadeSpec">CascadeSpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.Cascade">Cascade</a>, <a href="#frisbee.io/v1alpha1.EmbedActions">EmbedActions</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.Cascade">Cascade</a>, <a href="#frisbee.dev/v1alpha1.EmbedActions">EmbedActions</a>)
 </p>
 <div>
 <p>CascadeSpec defines the desired state of Cascade.</p>
@@ -563,7 +563,7 @@ CascadeStatus
 <td>
 <code>GenerateFromTemplate</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.GenerateFromTemplate">
+<a href="#frisbee.dev/v1alpha1.GenerateFromTemplate">
 GenerateFromTemplate
 </a>
 </em>
@@ -578,7 +578,7 @@ GenerateFromTemplate
 <td>
 <code>schedule</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.SchedulerSpec">
+<a href="#frisbee.dev/v1alpha1.SchedulerSpec">
 SchedulerSpec
 </a>
 </em>
@@ -603,10 +603,10 @@ not apply to already started executions.  Defaults to false.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="frisbee.io/v1alpha1.CascadeStatus">CascadeStatus
+<h3 id="frisbee.dev/v1alpha1.CascadeStatus">CascadeStatus
 </h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.Cascade">Cascade</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.Cascade">Cascade</a>)
 </p>
 <div>
 <p>CascadeStatus defines the observed state of Cascade.</p>
@@ -623,7 +623,7 @@ not apply to already started executions.  Defaults to false.</p>
 <td>
 <code>Lifecycle</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.Lifecycle">
+<a href="#frisbee.dev/v1alpha1.Lifecycle">
 Lifecycle
 </a>
 </em>
@@ -638,7 +638,7 @@ Lifecycle
 <td>
 <code>queuedJobs</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.ChaosSpec">
+<a href="#frisbee.dev/v1alpha1.ChaosSpec">
 []ChaosSpec
 </a>
 </em>
@@ -674,7 +674,7 @@ Kubernetes meta/v1.Time
 </tr>
 </tbody>
 </table>
-<h3 id="frisbee.io/v1alpha1.Chaos">Chaos
+<h3 id="frisbee.dev/v1alpha1.Chaos">Chaos
 </h3>
 <div>
 <p>Chaos is the Schema for the chaos API.</p>
@@ -705,7 +705,7 @@ Refer to the Kubernetes API documentation for the fields of the
 <td>
 <code>spec</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.ChaosSpec">
+<a href="#frisbee.dev/v1alpha1.ChaosSpec">
 ChaosSpec
 </a>
 </em>
@@ -718,7 +718,7 @@ ChaosSpec
 <td>
 <code>type</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.FaultType">
+<a href="#frisbee.dev/v1alpha1.FaultType">
 FaultType
 </a>
 </em>
@@ -731,7 +731,7 @@ FaultType
 <td>
 <code>EmbedFaultType</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.EmbedFaultType">
+<a href="#frisbee.dev/v1alpha1.EmbedFaultType">
 EmbedFaultType
 </a>
 </em>
@@ -749,7 +749,7 @@ EmbedFaultType
 <td>
 <code>status</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.ChaosStatus">
+<a href="#frisbee.dev/v1alpha1.ChaosStatus">
 ChaosStatus
 </a>
 </em>
@@ -759,10 +759,10 @@ ChaosStatus
 </tr>
 </tbody>
 </table>
-<h3 id="frisbee.io/v1alpha1.ChaosSpec">ChaosSpec
+<h3 id="frisbee.dev/v1alpha1.ChaosSpec">ChaosSpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.CascadeStatus">CascadeStatus</a>, <a href="#frisbee.io/v1alpha1.Chaos">Chaos</a>, <a href="#frisbee.io/v1alpha1.EmbedSpecs">EmbedSpecs</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.CascadeStatus">CascadeStatus</a>, <a href="#frisbee.dev/v1alpha1.Chaos">Chaos</a>, <a href="#frisbee.dev/v1alpha1.EmbedSpecs">EmbedSpecs</a>)
 </p>
 <div>
 <p>ChaosSpec defines the desired state of Chaos.</p>
@@ -779,7 +779,7 @@ ChaosStatus
 <td>
 <code>type</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.FaultType">
+<a href="#frisbee.dev/v1alpha1.FaultType">
 FaultType
 </a>
 </em>
@@ -792,7 +792,7 @@ FaultType
 <td>
 <code>EmbedFaultType</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.EmbedFaultType">
+<a href="#frisbee.dev/v1alpha1.EmbedFaultType">
 EmbedFaultType
 </a>
 </em>
@@ -805,10 +805,10 @@ EmbedFaultType
 </tr>
 </tbody>
 </table>
-<h3 id="frisbee.io/v1alpha1.ChaosStatus">ChaosStatus
+<h3 id="frisbee.dev/v1alpha1.ChaosStatus">ChaosStatus
 </h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.Chaos">Chaos</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.Chaos">Chaos</a>)
 </p>
 <div>
 <p>ChaosStatus defines the observed state of Chaos.</p>
@@ -825,7 +825,7 @@ EmbedFaultType
 <td>
 <code>Lifecycle</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.Lifecycle">
+<a href="#frisbee.dev/v1alpha1.Lifecycle">
 Lifecycle
 </a>
 </em>
@@ -851,7 +851,7 @@ Kubernetes meta/v1.Time
 </tr>
 </tbody>
 </table>
-<h3 id="frisbee.io/v1alpha1.Cluster">Cluster
+<h3 id="frisbee.dev/v1alpha1.Cluster">Cluster
 </h3>
 <div>
 <p>Cluster is the Schema for the clusters API.</p>
@@ -882,7 +882,7 @@ Refer to the Kubernetes API documentation for the fields of the
 <td>
 <code>spec</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.ClusterSpec">
+<a href="#frisbee.dev/v1alpha1.ClusterSpec">
 ClusterSpec
 </a>
 </em>
@@ -895,7 +895,7 @@ ClusterSpec
 <td>
 <code>GenerateFromTemplate</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.GenerateFromTemplate">
+<a href="#frisbee.dev/v1alpha1.GenerateFromTemplate">
 GenerateFromTemplate
 </a>
 </em>
@@ -910,7 +910,7 @@ GenerateFromTemplate
 <td>
 <code>tolerate</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.TolerateSpec">
+<a href="#frisbee.dev/v1alpha1.TolerateSpec">
 TolerateSpec
 </a>
 </em>
@@ -925,7 +925,7 @@ immediately when a service has failed.</p>
 <td>
 <code>schedule</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.SchedulerSpec">
+<a href="#frisbee.dev/v1alpha1.SchedulerSpec">
 SchedulerSpec
 </a>
 </em>
@@ -939,7 +939,7 @@ SchedulerSpec
 <td>
 <code>placement</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.PlacementSpec">
+<a href="#frisbee.dev/v1alpha1.PlacementSpec">
 PlacementSpec
 </a>
 </em>
@@ -969,7 +969,7 @@ executions.  Defaults to false.</p>
 <td>
 <code>status</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.ClusterStatus">
+<a href="#frisbee.dev/v1alpha1.ClusterStatus">
 ClusterStatus
 </a>
 </em>
@@ -979,10 +979,10 @@ ClusterStatus
 </tr>
 </tbody>
 </table>
-<h3 id="frisbee.io/v1alpha1.ClusterSpec">ClusterSpec
+<h3 id="frisbee.dev/v1alpha1.ClusterSpec">ClusterSpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.Cluster">Cluster</a>, <a href="#frisbee.io/v1alpha1.EmbedActions">EmbedActions</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.Cluster">Cluster</a>, <a href="#frisbee.dev/v1alpha1.EmbedActions">EmbedActions</a>)
 </p>
 <div>
 <p>ClusterSpec defines the desired state of Cluster.</p>
@@ -999,7 +999,7 @@ ClusterStatus
 <td>
 <code>GenerateFromTemplate</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.GenerateFromTemplate">
+<a href="#frisbee.dev/v1alpha1.GenerateFromTemplate">
 GenerateFromTemplate
 </a>
 </em>
@@ -1014,7 +1014,7 @@ GenerateFromTemplate
 <td>
 <code>tolerate</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.TolerateSpec">
+<a href="#frisbee.dev/v1alpha1.TolerateSpec">
 TolerateSpec
 </a>
 </em>
@@ -1029,7 +1029,7 @@ immediately when a service has failed.</p>
 <td>
 <code>schedule</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.SchedulerSpec">
+<a href="#frisbee.dev/v1alpha1.SchedulerSpec">
 SchedulerSpec
 </a>
 </em>
@@ -1043,7 +1043,7 @@ SchedulerSpec
 <td>
 <code>placement</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.PlacementSpec">
+<a href="#frisbee.dev/v1alpha1.PlacementSpec">
 PlacementSpec
 </a>
 </em>
@@ -1068,10 +1068,10 @@ executions.  Defaults to false.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="frisbee.io/v1alpha1.ClusterStatus">ClusterStatus
+<h3 id="frisbee.dev/v1alpha1.ClusterStatus">ClusterStatus
 </h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.Cluster">Cluster</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.Cluster">Cluster</a>)
 </p>
 <div>
 <p>ClusterStatus defines the observed state of Cluster.</p>
@@ -1088,7 +1088,7 @@ executions.  Defaults to false.</p>
 <td>
 <code>Lifecycle</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.Lifecycle">
+<a href="#frisbee.dev/v1alpha1.Lifecycle">
 Lifecycle
 </a>
 </em>
@@ -1103,7 +1103,7 @@ Lifecycle
 <td>
 <code>queuedJobs</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.ServiceSpec">
+<a href="#frisbee.dev/v1alpha1.ServiceSpec">
 []ServiceSpec
 </a>
 </em>
@@ -1139,7 +1139,7 @@ Kubernetes meta/v1.Time
 </tr>
 </tbody>
 </table>
-<h3 id="frisbee.io/v1alpha1.ConditionType">ConditionType
+<h3 id="frisbee.dev/v1alpha1.ConditionType">ConditionType
 (<code>string</code> alias)</h3>
 <div>
 <p>ConditionType is a valid value for WorkflowCondition.Type</p>
@@ -1171,10 +1171,10 @@ The termination refers to both Success and Fail.</p>
 </td>
 </tr></tbody>
 </table>
-<h3 id="frisbee.io/v1alpha1.ConditionalExpr">ConditionalExpr
+<h3 id="frisbee.dev/v1alpha1.ConditionalExpr">ConditionalExpr
 </h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.Action">Action</a>, <a href="#frisbee.io/v1alpha1.CallSpec">CallSpec</a>, <a href="#frisbee.io/v1alpha1.GenerateFromTemplate">GenerateFromTemplate</a>, <a href="#frisbee.io/v1alpha1.SchedulerSpec">SchedulerSpec</a>, <a href="#frisbee.io/v1alpha1.TestPlanStatus">TestPlanStatus</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.Action">Action</a>, <a href="#frisbee.dev/v1alpha1.CallSpec">CallSpec</a>, <a href="#frisbee.dev/v1alpha1.GenerateFromTemplate">GenerateFromTemplate</a>, <a href="#frisbee.dev/v1alpha1.SchedulerSpec">SchedulerSpec</a>, <a href="#frisbee.dev/v1alpha1.TestPlanStatus">TestPlanStatus</a>)
 </p>
 <div>
 <p>ConditionalExpr is a source of information about whether the state of the workflow after a given time is correct or not.
@@ -1192,7 +1192,7 @@ This is needed because some test plans may run in infinite-horizons.</p>
 <td>
 <code>metrics</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.ExprMetrics">
+<a href="#frisbee.dev/v1alpha1.ExprMetrics">
 ExprMetrics
 </a>
 </em>
@@ -1209,7 +1209,7 @@ metrics: A2EjFbsMk/86/Average (Panel/Dashboard/Metric)</p>
 <td>
 <code>state</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.ExprState">
+<a href="#frisbee.dev/v1alpha1.ExprState">
 ExprState
 </a>
 </em>
@@ -1222,10 +1222,10 @@ Shall be defined using .Lifecycle() methods. The methods account only jobs that 
 </tr>
 </tbody>
 </table>
-<h3 id="frisbee.io/v1alpha1.Decorators">Decorators
+<h3 id="frisbee.dev/v1alpha1.Decorators">Decorators
 </h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.ServiceSpec">ServiceSpec</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.ServiceSpec">ServiceSpec</a>)
 </p>
 <div>
 <p>Decorators takes-in a PodSpec, add some functionality and returns it.</p>
@@ -1264,7 +1264,7 @@ map[string]string
 <td>
 <code>setFields</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.SetField">
+<a href="#frisbee.dev/v1alpha1.SetField">
 []SetField
 </a>
 </em>
@@ -1278,7 +1278,7 @@ map[string]string
 <td>
 <code>resources</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.Resources">
+<a href="#frisbee.dev/v1alpha1.Resources">
 Resources
 </a>
 </em>
@@ -1303,10 +1303,10 @@ Agents are sidecar services will be deployed in the same Pod as the Service cont
 </tr>
 </tbody>
 </table>
-<h3 id="frisbee.io/v1alpha1.DeleteSpec">DeleteSpec
+<h3 id="frisbee.dev/v1alpha1.DeleteSpec">DeleteSpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.EmbedActions">EmbedActions</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.EmbedActions">EmbedActions</a>)
 </p>
 <div>
 </div>
@@ -1331,10 +1331,10 @@ Agents are sidecar services will be deployed in the same Pod as the Service cont
 </tr>
 </tbody>
 </table>
-<h3 id="frisbee.io/v1alpha1.Disk">Disk
+<h3 id="frisbee.dev/v1alpha1.Disk">Disk
 </h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.Resources">Resources</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.Resources">Resources</a>)
 </p>
 <div>
 <p>Disk specifies the capabilities of the emulated storage device.</p>
@@ -1393,10 +1393,10 @@ string
 </tr>
 </tbody>
 </table>
-<h3 id="frisbee.io/v1alpha1.EmbedActions">EmbedActions
+<h3 id="frisbee.dev/v1alpha1.EmbedActions">EmbedActions
 </h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.Action">Action</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.Action">Action</a>)
 </p>
 <div>
 </div>
@@ -1412,7 +1412,7 @@ string
 <td>
 <code>service</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.GenerateFromTemplate">
+<a href="#frisbee.dev/v1alpha1.GenerateFromTemplate">
 GenerateFromTemplate
 </a>
 </em>
@@ -1425,7 +1425,7 @@ GenerateFromTemplate
 <td>
 <code>cluster</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.ClusterSpec">
+<a href="#frisbee.dev/v1alpha1.ClusterSpec">
 ClusterSpec
 </a>
 </em>
@@ -1438,7 +1438,7 @@ ClusterSpec
 <td>
 <code>chaos</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.GenerateFromTemplate">
+<a href="#frisbee.dev/v1alpha1.GenerateFromTemplate">
 GenerateFromTemplate
 </a>
 </em>
@@ -1451,7 +1451,7 @@ GenerateFromTemplate
 <td>
 <code>cascade</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.CascadeSpec">
+<a href="#frisbee.dev/v1alpha1.CascadeSpec">
 CascadeSpec
 </a>
 </em>
@@ -1464,7 +1464,7 @@ CascadeSpec
 <td>
 <code>delete</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.DeleteSpec">
+<a href="#frisbee.dev/v1alpha1.DeleteSpec">
 DeleteSpec
 </a>
 </em>
@@ -1477,7 +1477,7 @@ DeleteSpec
 <td>
 <code>call</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.CallSpec">
+<a href="#frisbee.dev/v1alpha1.CallSpec">
 CallSpec
 </a>
 </em>
@@ -1488,10 +1488,10 @@ CallSpec
 </tr>
 </tbody>
 </table>
-<h3 id="frisbee.io/v1alpha1.EmbedFaultType">EmbedFaultType
+<h3 id="frisbee.dev/v1alpha1.EmbedFaultType">EmbedFaultType
 </h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.ChaosSpec">ChaosSpec</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.ChaosSpec">ChaosSpec</a>)
 </p>
 <div>
 </div>
@@ -1507,7 +1507,7 @@ CallSpec
 <td>
 <code>raw</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.RawSpec">
+<a href="#frisbee.dev/v1alpha1.RawSpec">
 RawSpec
 </a>
 </em>
@@ -1518,10 +1518,10 @@ RawSpec
 </tr>
 </tbody>
 </table>
-<h3 id="frisbee.io/v1alpha1.EmbedSpecs">EmbedSpecs
+<h3 id="frisbee.dev/v1alpha1.EmbedSpecs">EmbedSpecs
 </h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.TemplateSpec">TemplateSpec</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.TemplateSpec">TemplateSpec</a>)
 </p>
 <div>
 </div>
@@ -1537,7 +1537,7 @@ RawSpec
 <td>
 <code>service</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.ServiceSpec">
+<a href="#frisbee.dev/v1alpha1.ServiceSpec">
 ServiceSpec
 </a>
 </em>
@@ -1550,7 +1550,7 @@ ServiceSpec
 <td>
 <code>chaos</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.ChaosSpec">
+<a href="#frisbee.dev/v1alpha1.ChaosSpec">
 ChaosSpec
 </a>
 </em>
@@ -1561,10 +1561,10 @@ ChaosSpec
 </tr>
 </tbody>
 </table>
-<h3 id="frisbee.io/v1alpha1.EphemeralVolumeSpec">EphemeralVolumeSpec
+<h3 id="frisbee.dev/v1alpha1.EphemeralVolumeSpec">EphemeralVolumeSpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.Requirements">Requirements</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.Requirements">Requirements</a>)
 </p>
 <div>
 <p>EphemeralVolumeSpec defines an ephemeral volume that has the  lifetime of a pod,
@@ -1712,31 +1712,31 @@ it will create a new volume based on the contents of the specified data source.<
 </tr>
 </tbody>
 </table>
-<h3 id="frisbee.io/v1alpha1.ExprMetrics">ExprMetrics
+<h3 id="frisbee.dev/v1alpha1.ExprMetrics">ExprMetrics
 (<code>string</code> alias)</h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.ConditionalExpr">ConditionalExpr</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.ConditionalExpr">ConditionalExpr</a>)
 </p>
 <div>
 </div>
-<h3 id="frisbee.io/v1alpha1.ExprState">ExprState
+<h3 id="frisbee.dev/v1alpha1.ExprState">ExprState
 (<code>string</code> alias)</h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.ConditionalExpr">ConditionalExpr</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.ConditionalExpr">ConditionalExpr</a>)
 </p>
 <div>
 </div>
-<h3 id="frisbee.io/v1alpha1.FaultType">FaultType
+<h3 id="frisbee.dev/v1alpha1.FaultType">FaultType
 (<code>string</code> alias)</h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.ChaosSpec">ChaosSpec</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.ChaosSpec">ChaosSpec</a>)
 </p>
 <div>
 </div>
-<h3 id="frisbee.io/v1alpha1.GenerateFromTemplate">GenerateFromTemplate
+<h3 id="frisbee.dev/v1alpha1.GenerateFromTemplate">GenerateFromTemplate
 </h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.CascadeSpec">CascadeSpec</a>, <a href="#frisbee.io/v1alpha1.ClusterSpec">ClusterSpec</a>, <a href="#frisbee.io/v1alpha1.EmbedActions">EmbedActions</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.CascadeSpec">CascadeSpec</a>, <a href="#frisbee.dev/v1alpha1.ClusterSpec">ClusterSpec</a>, <a href="#frisbee.dev/v1alpha1.EmbedActions">EmbedActions</a>)
 </p>
 <div>
 <p>GenerateFromTemplate generates a spec by parameterizing the templateRef with the given inputs.</p>
@@ -1764,7 +1764,7 @@ string
 <td>
 <code>until</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.ConditionalExpr">
+<a href="#frisbee.dev/v1alpha1.ConditionalExpr">
 ConditionalExpr
 </a>
 </em>
@@ -1805,10 +1805,10 @@ then inputs are recursively iteration.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="frisbee.io/v1alpha1.Inputs">Inputs
+<h3 id="frisbee.dev/v1alpha1.Inputs">Inputs
 </h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.TemplateSpec">TemplateSpec</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.TemplateSpec">TemplateSpec</a>)
 </p>
 <div>
 </div>
@@ -1833,10 +1833,10 @@ map[string]string
 </tr>
 </tbody>
 </table>
-<h3 id="frisbee.io/v1alpha1.Lifecycle">Lifecycle
+<h3 id="frisbee.dev/v1alpha1.Lifecycle">Lifecycle
 </h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.CallStatus">CallStatus</a>, <a href="#frisbee.io/v1alpha1.CascadeStatus">CascadeStatus</a>, <a href="#frisbee.io/v1alpha1.ChaosStatus">ChaosStatus</a>, <a href="#frisbee.io/v1alpha1.ClusterStatus">ClusterStatus</a>, <a href="#frisbee.io/v1alpha1.ServiceStatus">ServiceStatus</a>, <a href="#frisbee.io/v1alpha1.TemplateStatus">TemplateStatus</a>, <a href="#frisbee.io/v1alpha1.TestPlanStatus">TestPlanStatus</a>, <a href="#frisbee.io/v1alpha1.VirtualObjectStatus">VirtualObjectStatus</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.CallStatus">CallStatus</a>, <a href="#frisbee.dev/v1alpha1.CascadeStatus">CascadeStatus</a>, <a href="#frisbee.dev/v1alpha1.ChaosStatus">ChaosStatus</a>, <a href="#frisbee.dev/v1alpha1.ClusterStatus">ClusterStatus</a>, <a href="#frisbee.dev/v1alpha1.ServiceStatus">ServiceStatus</a>, <a href="#frisbee.dev/v1alpha1.TemplateStatus">TemplateStatus</a>, <a href="#frisbee.dev/v1alpha1.TestPlanStatus">TestPlanStatus</a>, <a href="#frisbee.dev/v1alpha1.VirtualObjectStatus">VirtualObjectStatus</a>)
 </p>
 <div>
 </div>
@@ -1852,7 +1852,7 @@ map[string]string
 <td>
 <code>phase</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.Phase">
+<a href="#frisbee.dev/v1alpha1.Phase">
 Phase
 </a>
 </em>
@@ -1903,10 +1903,10 @@ string
 </tr>
 </tbody>
 </table>
-<h3 id="frisbee.io/v1alpha1.MatchBy">MatchBy
+<h3 id="frisbee.dev/v1alpha1.MatchBy">MatchBy
 </h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.ServiceSelector">ServiceSelector</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.ServiceSelector">ServiceSelector</a>)
 </p>
 <div>
 <p>MatchBy defines the selectors for services.
@@ -1947,10 +1947,10 @@ map[string]string
 </tr>
 </tbody>
 </table>
-<h3 id="frisbee.io/v1alpha1.Mode">Mode
+<h3 id="frisbee.dev/v1alpha1.Mode">Mode
 (<code>string</code> alias)</h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.ServiceSelector">ServiceSelector</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.ServiceSelector">ServiceSelector</a>)
 </p>
 <div>
 <p>Mode represents the filter for selecting on of many.</p>
@@ -1981,10 +1981,10 @@ Use this label carefully.</p>
 </td>
 </tr></tbody>
 </table>
-<h3 id="frisbee.io/v1alpha1.NIC">NIC
+<h3 id="frisbee.dev/v1alpha1.NIC">NIC
 </h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.Resources">Resources</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.Resources">Resources</a>)
 </p>
 <div>
 <p>NIC specifies the capabilities of the emulated network interface.</p>
@@ -2019,10 +2019,10 @@ string
 </tr>
 </tbody>
 </table>
-<h3 id="frisbee.io/v1alpha1.Phase">Phase
+<h3 id="frisbee.dev/v1alpha1.Phase">Phase
 (<code>string</code> alias)</h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.Lifecycle">Lifecycle</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.Lifecycle">Lifecycle</a>)
 </p>
 <div>
 <p>Phase is a simple, high-level summary of where the Object is in its lifecycle.</p>
@@ -2056,10 +2056,10 @@ to restart any of these Jobs.</p>
 </td>
 </tr></tbody>
 </table>
-<h3 id="frisbee.io/v1alpha1.PlacementSpec">PlacementSpec
+<h3 id="frisbee.dev/v1alpha1.PlacementSpec">PlacementSpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.ClusterSpec">ClusterSpec</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.ClusterSpec">ClusterSpec</a>)
 </p>
 <div>
 <p>PlacementSpec defines rules for placing the containers across the available nodes.</p>
@@ -2110,17 +2110,17 @@ For example, this is needed for placing the master nodes on a different failure 
 </tr>
 </tbody>
 </table>
-<h3 id="frisbee.io/v1alpha1.RawSpec">RawSpec
+<h3 id="frisbee.dev/v1alpha1.RawSpec">RawSpec
 (<code>string</code> alias)</h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.EmbedFaultType">EmbedFaultType</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.EmbedFaultType">EmbedFaultType</a>)
 </p>
 <div>
 </div>
-<h3 id="frisbee.io/v1alpha1.Requirements">Requirements
+<h3 id="frisbee.dev/v1alpha1.Requirements">Requirements
 </h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.ServiceSpec">ServiceSpec</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.ServiceSpec">ServiceSpec</a>)
 </p>
 <div>
 <p>Requirements points to Kinds and their respective configurations required for the Service operation.
@@ -2138,7 +2138,7 @@ For example, this field can be used to create PVCs dedicated to this service.</p
 <td>
 <code>persistentVolumeClaim</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.EphemeralVolumeSpec">
+<a href="#frisbee.dev/v1alpha1.EphemeralVolumeSpec">
 EphemeralVolumeSpec
 </a>
 </em>
@@ -2164,10 +2164,10 @@ Kubernetes networking/v1.IngressBackend
 </tr>
 </tbody>
 </table>
-<h3 id="frisbee.io/v1alpha1.Resources">Resources
+<h3 id="frisbee.dev/v1alpha1.Resources">Resources
 </h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.Decorators">Decorators</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.Decorators">Decorators</a>)
 </p>
 <div>
 <p>Resources specifies limitations as to how the container will access host resources.</p>
@@ -2206,7 +2206,7 @@ string
 <td>
 <code>nic</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.NIC">
+<a href="#frisbee.dev/v1alpha1.NIC">
 NIC
 </a>
 </em>
@@ -2219,7 +2219,7 @@ NIC
 <td>
 <code>disk</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.Disk">
+<a href="#frisbee.dev/v1alpha1.Disk">
 Disk
 </a>
 </em>
@@ -2230,10 +2230,10 @@ Disk
 </tr>
 </tbody>
 </table>
-<h3 id="frisbee.io/v1alpha1.SchedulerSpec">SchedulerSpec
+<h3 id="frisbee.dev/v1alpha1.SchedulerSpec">SchedulerSpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.CallSpec">CallSpec</a>, <a href="#frisbee.io/v1alpha1.CascadeSpec">CascadeSpec</a>, <a href="#frisbee.io/v1alpha1.ClusterSpec">ClusterSpec</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.CallSpec">CallSpec</a>, <a href="#frisbee.dev/v1alpha1.CascadeSpec">CascadeSpec</a>, <a href="#frisbee.dev/v1alpha1.ClusterSpec">ClusterSpec</a>)
 </p>
 <div>
 <p>SchedulerSpec defines information about schedule of the chaos experiment.
@@ -2281,7 +2281,7 @@ time for any reason. if we miss this deadline, we&rsquo;ll just wait till the ne
 <td>
 <code>conditions</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.ConditionalExpr">
+<a href="#frisbee.dev/v1alpha1.ConditionalExpr">
 ConditionalExpr
 </a>
 </em>
@@ -2292,7 +2292,7 @@ ConditionalExpr
 </tr>
 </tbody>
 </table>
-<h3 id="frisbee.io/v1alpha1.Service">Service
+<h3 id="frisbee.dev/v1alpha1.Service">Service
 </h3>
 <div>
 <p>Service is the Schema for the services API.</p>
@@ -2323,7 +2323,7 @@ Refer to the Kubernetes API documentation for the fields of the
 <td>
 <code>spec</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.ServiceSpec">
+<a href="#frisbee.dev/v1alpha1.ServiceSpec">
 ServiceSpec
 </a>
 </em>
@@ -2336,7 +2336,7 @@ ServiceSpec
 <td>
 <code>requirements</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.Requirements">
+<a href="#frisbee.dev/v1alpha1.Requirements">
 Requirements
 </a>
 </em>
@@ -2349,7 +2349,7 @@ Requirements
 <td>
 <code>decorators</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.Decorators">
+<a href="#frisbee.dev/v1alpha1.Decorators">
 Decorators
 </a>
 </em>
@@ -2362,7 +2362,7 @@ Decorators
 <td>
 <code>callables</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.Callable">
+<a href="#frisbee.dev/v1alpha1.Callable">
 map[string]./api/v1alpha1.Callable
 </a>
 </em>
@@ -2394,7 +2394,7 @@ Kubernetes core/v1.PodSpec
 <td>
 <code>status</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.ServiceStatus">
+<a href="#frisbee.dev/v1alpha1.ServiceStatus">
 ServiceStatus
 </a>
 </em>
@@ -2404,7 +2404,7 @@ ServiceStatus
 </tr>
 </tbody>
 </table>
-<h3 id="frisbee.io/v1alpha1.ServiceSelector">ServiceSelector
+<h3 id="frisbee.dev/v1alpha1.ServiceSelector">ServiceSelector
 </h3>
 <div>
 </div>
@@ -2420,7 +2420,7 @@ ServiceStatus
 <td>
 <code>match</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.MatchBy">
+<a href="#frisbee.dev/v1alpha1.MatchBy">
 MatchBy
 </a>
 </em>
@@ -2434,7 +2434,7 @@ MatchBy
 <td>
 <code>mode</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.Mode">
+<a href="#frisbee.dev/v1alpha1.Mode">
 Mode
 </a>
 </em>
@@ -2477,10 +2477,10 @@ Macro conflicts with any other parameter.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="frisbee.io/v1alpha1.ServiceSpec">ServiceSpec
+<h3 id="frisbee.dev/v1alpha1.ServiceSpec">ServiceSpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.ClusterStatus">ClusterStatus</a>, <a href="#frisbee.io/v1alpha1.EmbedSpecs">EmbedSpecs</a>, <a href="#frisbee.io/v1alpha1.Service">Service</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.ClusterStatus">ClusterStatus</a>, <a href="#frisbee.dev/v1alpha1.EmbedSpecs">EmbedSpecs</a>, <a href="#frisbee.dev/v1alpha1.Service">Service</a>)
 </p>
 <div>
 <p>ServiceSpec defines the desired state of Service.</p>
@@ -2497,7 +2497,7 @@ Macro conflicts with any other parameter.</p>
 <td>
 <code>requirements</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.Requirements">
+<a href="#frisbee.dev/v1alpha1.Requirements">
 Requirements
 </a>
 </em>
@@ -2510,7 +2510,7 @@ Requirements
 <td>
 <code>decorators</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.Decorators">
+<a href="#frisbee.dev/v1alpha1.Decorators">
 Decorators
 </a>
 </em>
@@ -2523,7 +2523,7 @@ Decorators
 <td>
 <code>callables</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.Callable">
+<a href="#frisbee.dev/v1alpha1.Callable">
 map[string]./api/v1alpha1.Callable
 </a>
 </em>
@@ -2550,10 +2550,10 @@ Kubernetes core/v1.PodSpec
 </tr>
 </tbody>
 </table>
-<h3 id="frisbee.io/v1alpha1.ServiceStatus">ServiceStatus
+<h3 id="frisbee.dev/v1alpha1.ServiceStatus">ServiceStatus
 </h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.Service">Service</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.Service">Service</a>)
 </p>
 <div>
 <p>ServiceStatus defines the observed state of Service.</p>
@@ -2570,7 +2570,7 @@ Kubernetes core/v1.PodSpec
 <td>
 <code>Lifecycle</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.Lifecycle">
+<a href="#frisbee.dev/v1alpha1.Lifecycle">
 Lifecycle
 </a>
 </em>
@@ -2596,10 +2596,10 @@ Kubernetes meta/v1.Time
 </tr>
 </tbody>
 </table>
-<h3 id="frisbee.io/v1alpha1.SetField">SetField
+<h3 id="frisbee.dev/v1alpha1.SetField">SetField
 </h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.Decorators">Decorators</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.Decorators">Decorators</a>)
 </p>
 <div>
 </div>
@@ -2635,7 +2635,7 @@ string
 </tr>
 </tbody>
 </table>
-<h3 id="frisbee.io/v1alpha1.Template">Template
+<h3 id="frisbee.dev/v1alpha1.Template">Template
 </h3>
 <div>
 <p>Template is the Schema for the templates API</p>
@@ -2666,7 +2666,7 @@ Refer to the Kubernetes API documentation for the fields of the
 <td>
 <code>spec</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.TemplateSpec">
+<a href="#frisbee.dev/v1alpha1.TemplateSpec">
 TemplateSpec
 </a>
 </em>
@@ -2679,7 +2679,7 @@ TemplateSpec
 <td>
 <code>inputs</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.Inputs">
+<a href="#frisbee.dev/v1alpha1.Inputs">
 Inputs
 </a>
 </em>
@@ -2693,7 +2693,7 @@ Inputs
 <td>
 <code>EmbedSpecs</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.EmbedSpecs">
+<a href="#frisbee.dev/v1alpha1.EmbedSpecs">
 EmbedSpecs
 </a>
 </em>
@@ -2712,7 +2712,7 @@ EmbedSpecs
 <td>
 <code>status</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.TemplateStatus">
+<a href="#frisbee.dev/v1alpha1.TemplateStatus">
 TemplateStatus
 </a>
 </em>
@@ -2722,10 +2722,10 @@ TemplateStatus
 </tr>
 </tbody>
 </table>
-<h3 id="frisbee.io/v1alpha1.TemplateSpec">TemplateSpec
+<h3 id="frisbee.dev/v1alpha1.TemplateSpec">TemplateSpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.Template">Template</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.Template">Template</a>)
 </p>
 <div>
 <p>TemplateSpec defines the desired state of Template</p>
@@ -2742,7 +2742,7 @@ TemplateStatus
 <td>
 <code>inputs</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.Inputs">
+<a href="#frisbee.dev/v1alpha1.Inputs">
 Inputs
 </a>
 </em>
@@ -2756,7 +2756,7 @@ Inputs
 <td>
 <code>EmbedSpecs</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.EmbedSpecs">
+<a href="#frisbee.dev/v1alpha1.EmbedSpecs">
 EmbedSpecs
 </a>
 </em>
@@ -2770,10 +2770,10 @@ EmbedSpecs
 </tr>
 </tbody>
 </table>
-<h3 id="frisbee.io/v1alpha1.TemplateStatus">TemplateStatus
+<h3 id="frisbee.dev/v1alpha1.TemplateStatus">TemplateStatus
 </h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.Template">Template</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.Template">Template</a>)
 </p>
 <div>
 <p>TemplateStatus defines the observed state of Template</p>
@@ -2790,7 +2790,7 @@ EmbedSpecs
 <td>
 <code>Lifecycle</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.Lifecycle">
+<a href="#frisbee.dev/v1alpha1.Lifecycle">
 Lifecycle
 </a>
 </em>
@@ -2803,7 +2803,7 @@ Lifecycle
 </tr>
 </tbody>
 </table>
-<h3 id="frisbee.io/v1alpha1.TestPlan">TestPlan
+<h3 id="frisbee.dev/v1alpha1.TestPlan">TestPlan
 </h3>
 <div>
 <p>TestPlan is the Schema for the TestPlans API.</p>
@@ -2834,7 +2834,7 @@ Refer to the Kubernetes API documentation for the fields of the
 <td>
 <code>spec</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.TestPlanSpec">
+<a href="#frisbee.dev/v1alpha1.TestPlanSpec">
 TestPlanSpec
 </a>
 </em>
@@ -2847,7 +2847,7 @@ TestPlanSpec
 <td>
 <code>actions</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.Action">
+<a href="#frisbee.dev/v1alpha1.Action">
 []Action
 </a>
 </em>
@@ -2876,7 +2876,7 @@ not apply to already started executions.  Defaults to false.</p>
 <td>
 <code>status</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.TestPlanStatus">
+<a href="#frisbee.dev/v1alpha1.TestPlanStatus">
 TestPlanStatus
 </a>
 </em>
@@ -2886,10 +2886,10 @@ TestPlanStatus
 </tr>
 </tbody>
 </table>
-<h3 id="frisbee.io/v1alpha1.TestPlanSpec">TestPlanSpec
+<h3 id="frisbee.dev/v1alpha1.TestPlanSpec">TestPlanSpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.TestPlan">TestPlan</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.TestPlan">TestPlan</a>)
 </p>
 <div>
 <p>TestPlanSpec defines the desired state of TestPlan.</p>
@@ -2906,7 +2906,7 @@ TestPlanStatus
 <td>
 <code>actions</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.Action">
+<a href="#frisbee.dev/v1alpha1.Action">
 []Action
 </a>
 </em>
@@ -2930,10 +2930,10 @@ not apply to already started executions.  Defaults to false.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="frisbee.io/v1alpha1.TestPlanStatus">TestPlanStatus
+<h3 id="frisbee.dev/v1alpha1.TestPlanStatus">TestPlanStatus
 </h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.TestPlan">TestPlan</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.TestPlan">TestPlan</a>)
 </p>
 <div>
 <p>TestPlanStatus defines the observed state of TestPlan.</p>
@@ -2950,7 +2950,7 @@ not apply to already started executions.  Defaults to false.</p>
 <td>
 <code>Lifecycle</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.Lifecycle">
+<a href="#frisbee.dev/v1alpha1.Lifecycle">
 Lifecycle
 </a>
 </em>
@@ -2965,7 +2965,7 @@ Lifecycle
 <td>
 <code>executedActions</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.ConditionalExpr">
+<a href="#frisbee.dev/v1alpha1.ConditionalExpr">
 map[string]./api/v1alpha1.ConditionalExpr
 </a>
 </em>
@@ -2999,10 +2999,10 @@ string
 </tr>
 </tbody>
 </table>
-<h3 id="frisbee.io/v1alpha1.TolerateSpec">TolerateSpec
+<h3 id="frisbee.dev/v1alpha1.TolerateSpec">TolerateSpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.ClusterSpec">ClusterSpec</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.ClusterSpec">ClusterSpec</a>)
 </p>
 <div>
 <p>TolerateSpec specifies the system&rsquo;s ability to continue operating despite failures or malfunctions.
@@ -3030,7 +3030,7 @@ int
 </tr>
 </tbody>
 </table>
-<h3 id="frisbee.io/v1alpha1.VirtualObject">VirtualObject
+<h3 id="frisbee.dev/v1alpha1.VirtualObject">VirtualObject
 </h3>
 <div>
 <p>VirtualObject is a wrapper for jobs that do not actually create something on the system. For example, Deletion jobs.
@@ -3062,7 +3062,7 @@ Refer to the Kubernetes API documentation for the fields of the
 <td>
 <code>spec</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.VirtualObjectSpec">
+<a href="#frisbee.dev/v1alpha1.VirtualObjectSpec">
 VirtualObjectSpec
 </a>
 </em>
@@ -3078,7 +3078,7 @@ VirtualObjectSpec
 <td>
 <code>status</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.VirtualObjectStatus">
+<a href="#frisbee.dev/v1alpha1.VirtualObjectStatus">
 VirtualObjectStatus
 </a>
 </em>
@@ -3088,17 +3088,17 @@ VirtualObjectStatus
 </tr>
 </tbody>
 </table>
-<h3 id="frisbee.io/v1alpha1.VirtualObjectSpec">VirtualObjectSpec
+<h3 id="frisbee.dev/v1alpha1.VirtualObjectSpec">VirtualObjectSpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.VirtualObject">VirtualObject</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.VirtualObject">VirtualObject</a>)
 </p>
 <div>
 </div>
-<h3 id="frisbee.io/v1alpha1.VirtualObjectStatus">VirtualObjectStatus
+<h3 id="frisbee.dev/v1alpha1.VirtualObjectStatus">VirtualObjectStatus
 </h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.VirtualObject">VirtualObject</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.VirtualObject">VirtualObject</a>)
 </p>
 <div>
 </div>
@@ -3114,7 +3114,7 @@ VirtualObjectStatus
 <td>
 <code>Lifecycle</code><br/>
 <em>
-<a href="#frisbee.io/v1alpha1.Lifecycle">
+<a href="#frisbee.dev/v1alpha1.Lifecycle">
 Lifecycle
 </a>
 </em>
@@ -3127,10 +3127,10 @@ Lifecycle
 </tr>
 </tbody>
 </table>
-<h3 id="frisbee.io/v1alpha1.WaitSpec">WaitSpec
+<h3 id="frisbee.dev/v1alpha1.WaitSpec">WaitSpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.io/v1alpha1.Action">Action</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.Action">Action</a>)
 </p>
 <div>
 </div>

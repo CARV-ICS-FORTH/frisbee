@@ -31,7 +31,7 @@ import (
 
 const (
 	// DrawAs hints how to mark points on the Grafana dashboard.
-	DrawAs string = "grafana.frisbee.io/draw"
+	DrawAs string = "grafana.frisbee.dev/draw"
 	// DrawAsPoint will mark the creation and deletion of a service as distinct events.
 	DrawAsPoint string = "point"
 	// DrawAsRegion will draw a region starting from the creation of a service and ending to the deletion of the service.

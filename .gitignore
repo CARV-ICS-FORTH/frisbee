@@ -23,7 +23,3 @@ testbin/*
 *.swp
 *.swo
 *~
-
-# Usually these changes are due to the linter which screws everything. just ignore it.
-.github
-site/

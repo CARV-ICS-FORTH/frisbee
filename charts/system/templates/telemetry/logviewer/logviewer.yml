@@ -1,5 +1,5 @@
 ---
-apiVersion: frisbee.io/v1alpha1
+apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
   name: default.telemetry.logviewer
@@ -18,7 +18,7 @@ spec:
 
     decorators:
       labels:
-        plan.frisbee.io/component: SYS
+        plan.frisbee.dev/component: SYS
 
     volumes: # Match the pod to the log volume
       - name: logs

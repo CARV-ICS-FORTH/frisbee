@@ -93,7 +93,7 @@ func main() {
 		Port:                   9443,
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "233dac68.frisbee.io",
+		LeaderElectionID:       "233dac68.frisbee.dev",
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")

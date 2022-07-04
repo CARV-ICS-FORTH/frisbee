@@ -51,7 +51,7 @@ Let's choose the 3rd scenario.
 ```bash
 >> kubectl -f ./charts/flower/examples/3.throttle-client.yml apply
 persistentvolumeclaim/dataset created
-testplan.frisbee.io/throttle-client created
+testplan.frisbee.dev/throttle-client created
 ```
 
 
@@ -59,7 +59,7 @@ testplan.frisbee.io/throttle-client created
 Once it's running, you can access the real-time dashboard. To do so, you can get the endpoints by inspecting the testplan.
 
 ```bash
->> kubectl describe testplan.frisbee.io/throttle-client
+>> kubectl describe testplan.frisbee.dev/throttle-client
 ...
   Grafana Endpoint:     grafana-karvdash-fnikol.platform.science-hangar.eu
   Message:              running jobs: [clients server throttled-client]
@@ -72,7 +72,7 @@ Notice the ".platform.science-hangar.eu". This is the cluster's dns, and we have
 
 If you are too lazy, you can open it with the following one-liner:
 
-`firefox $(kubectl describe testplan.frisbee.io/throttle-client | grep Grafana | cut -d ":" -f 2)`
+`firefox $(kubectl describe testplan.frisbee.dev/throttle-client | grep Grafana | cut -d ":" -f 2)`
 
 
 

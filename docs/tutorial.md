@@ -146,7 +146,7 @@ Let's run a **bitrot** scenario.
 ```bash
 >> kubectl -f ./charts/cockroachdb/examples/10.bitrot.yml apply -n mytest
 
-testplan.frisbee.io/cockroach-bitrot created
+testplan.frisbee.dev/cockroach-bitrot created
 ```
 
 #### 5. Exploratory Testing (Observe the Progress)
@@ -194,7 +194,7 @@ We will use `kubectl` since is the most common CLI interface between Kubernetes 
 Firstly, let's inspect the test plan.
 
 ```bash
->> kubectl describe testplan.frisbee.io/cockroach-bitrot -n mytest
+>> kubectl describe testplan.frisbee.dev/cockroach-bitrot -n mytest
 
 ...
 Status:
@@ -246,9 +246,9 @@ In the specific **bitrot** scenario, the test will pass only it has reached an *
 minutes of execution.
 
 ```bash
->> kubectl wait --for=condition=UnexpectedTermination --timeout=10m testplan.frisbee.io/cockroach-bitrot -n mytest
+>> kubectl wait --for=condition=UnexpectedTermination --timeout=10m testplan.frisbee.dev/cockroach-bitrot -n mytest
 
-testplan.frisbee.io/cockroach-bitrot condition met
+testplan.frisbee.dev/cockroach-bitrot condition met
 ```
 
 Indeed, the condition is met, meaning that the test has failed. We can visually verify it from
@@ -272,7 +272,7 @@ The deletion is as simple as the creation of a test.
 ```bash
 >> kubectl -f /charts/cockroachdb/examples/10.bitrot.yml -n mytest delete --cascade=foreground
 
-testplan.frisbee.io "cockroach-bitrot" deleted
+testplan.frisbee.dev "cockroach-bitrot" deleted
 ```
 
 The flag `cascade=foreground` will wait until the experiment is actually deleted. Without this flag, the deletion will
@@ -333,5 +333,5 @@ Notice that it may take some time.
 Because Helm does not delete CRDs for secure reasons, we must do it manually.
 
 ```bash
->> kubectl get crds | awk /frisbee.io/'{print $1}' | xargs -I{} kubectl delete crds  {}
+>> kubectl get crds | awk /frisbee.dev/'{print $1}' | xargs -I{} kubectl delete crds  {}
 ```

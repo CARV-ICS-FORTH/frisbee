@@ -35,9 +35,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// +kubebuilder:rbac:groups=frisbee.io,resources=services,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=frisbee.io,resources=services/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=frisbee.io,resources=services/finalizers,verbs=update
+// +kubebuilder:rbac:groups=frisbee.dev,resources=services,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=frisbee.dev,resources=services/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=frisbee.dev,resources=services/finalizers,verbs=update
 
 // +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,resources=pods/status,verbs=get;list;watch
@@ -194,7 +194,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 */
 
 func (r *Controller) Finalizer() string {
-	return "services.frisbee.io/finalizer"
+	return "services.frisbee.dev/finalizer"
 }
 
 func (r *Controller) Finalize(obj client.Object) error {

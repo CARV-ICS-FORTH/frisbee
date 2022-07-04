@@ -53,7 +53,7 @@ const (
 // Action is a step in a workflow that defines a particular part of a testing process.
 type Action struct {
 	// ActionType refers to a category of actions that can be associated with a specific controller.
-	// +kubebuilder:validation:Enum=service;cluster;chaos;cascade;delete;call
+	// +kubebuilder:validation:Enum=Service;Cluster;Chaos;Cascade;Delete;Call
 	ActionType ActionType `json:"action"`
 
 	// Name is a unique identifier of the action
