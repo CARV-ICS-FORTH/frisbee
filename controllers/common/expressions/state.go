@@ -59,7 +59,7 @@ func FiredState(expr v1alpha1.ExprState, state lifecycle.ClassifierReader) (stri
 	return "AssertionValidationError", false, nil
 }
 
-// Taken from Argo-TestPlan.
+// Taken from Argo-Scenario.
 // shouldExecute evaluates an already substituted expression to decide whether a step should execute.
 func shouldExecute(expr string) (bool, error) {
 	if expr == "" {

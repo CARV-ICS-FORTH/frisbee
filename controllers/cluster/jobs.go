@@ -44,7 +44,7 @@ func getJob(group *v1alpha1.Cluster, i int) *v1alpha1.Service {
 
 	instance.SetName(generateName(group, i))
 
-	labelling.SetPlan(&instance.ObjectMeta, labelling.GetPlan(group))
+	labelling.SetScenario(&instance.ObjectMeta, labelling.GetScenario(group))
 	labelling.SetAction(&instance.ObjectMeta, labelling.GetAction(group))
 	labelling.SetComponent(&instance.ObjectMeta, labelling.GetComponent(group))
 

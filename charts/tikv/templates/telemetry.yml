@@ -1,5 +1,5 @@
 ---
-apiVersion: frisbee.io/v1alpha1
+apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
   name: tikv.telemetry.pd
@@ -51,7 +51,7 @@ data:
 
 
 ---
-apiVersion: frisbee.io/v1alpha1
+apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
   name: tikv.telemetry.worker

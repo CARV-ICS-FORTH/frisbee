@@ -1,5 +1,5 @@
 ---
-apiVersion: frisbee.io/v1alpha1
+apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
   name: tebis.cluster.zookeeper
@@ -22,7 +22,7 @@ spec:
 
 
 ---
-apiVersion: frisbee.io/v1alpha1
+apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
   name: tebis.cluster.bootstrap
@@ -67,7 +67,7 @@ spec:
 
 
 ---
-apiVersion: frisbee.io/v1alpha1
+apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
   name: tebis.cluster.master
@@ -117,7 +117,7 @@ spec:
 
 
 ---
-apiVersion: frisbee.io/v1alpha1
+apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
   name: tebis.cluster.client
@@ -125,7 +125,7 @@ spec:
   inputs:
     parameters:
       zookeeper: localhost
-      plan: "./ycsb_execution_plans/execution_plan_la.txt"
+      scenario: "./ycsb_execution_plans/execution_plan_la.txt"
       threads: "4"
       regions: "1"
   service:
@@ -149,7 +149,7 @@ spec:
             echo "Starting Tebis client"
 
              /ycsb-async-kreon                                \
-            -e {{"{{.Inputs.Parameters.plan}}"}}              \
+            -e {{"{{.Inputs.Parameters.scenario}}"}}              \
             -threads {{"{{.Inputs.Parameters.threads}}"}}     \
             -dbnum 1                                          \
             -w sd                                             \

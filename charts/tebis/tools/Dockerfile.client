@@ -60,11 +60,11 @@ COPY --from=builder /root/tebis/ansible/ycsb_execution_plans /ycsb_execution_pla
 COPY --from=builder /root/tebis/build/YCSB-CXX/workloads /workloads
 
 
-ENV plan="./ycsb_execution_plans/execution_plan_la.txt"
+ENV scenario="./ycsb_execution_plans/execution_plan_la.txt"
 ENV threads=4
 ENV regions=1
 ENV zookeeper="localhost"
 
-RUN echo /ycsb-async-kreon -e ${plan} -threads ${threads} -dbnum 1 -r ${regions} -w sd -zk_host ${zookeeper} -zk_port 2181
+RUN echo /ycsb-async-kreon -e ${scenario} -threads ${threads} -dbnum 1 -r ${regions} -w sd -zk_host ${zookeeper} -zk_port 2181
 
 # ENTRYPOINT ["/ycsb-async-kreon", "-e ${plans}", "-threads ${threads}", "-dbnum 1", "-r ${regions}", "-w sd", "-zk_host", "${zookeeper}", "-zk_port 2181"]

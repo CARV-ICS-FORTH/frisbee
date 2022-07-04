@@ -108,11 +108,11 @@ const (
 	ConditionCRInitialized = ConditionType("Initialized")
 
 	// ConditionAllJobsAreScheduled indicates that all jobs have been successfully scheduled.
-	// Jobs may refer to actions of a plan, services of a cluster, chaos events of a cascade, etc.
+	// Jobs may refer to actions of a scenario, services of a cluster, chaos events of a cascade, etc.
 	ConditionAllJobsAreScheduled = ConditionType("AllJobsAreScheduled")
 
 	// ConditionAllJobsAreCompleted indicates that all jobs have been successfully completed.
-	// Jobs may refer to actions of a plan, services of a cluster, chaos events of a cascade, etc.
+	// Jobs may refer to actions of a scenario, services of a cluster, chaos events of a cascade, etc.
 	ConditionAllJobsAreCompleted = ConditionType("AllJobsAreCompleted")
 
 	// ConditionJobUnexpectedTermination is used for a job that has been unexpectedly terminated.

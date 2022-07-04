@@ -57,14 +57,14 @@ and  [Helm](https://helm.sh/docs/intro/install/) are installed on your system.
 >> helm upgrade --install --wait my-tikv frisbee/tikv
 ```
 
-4. Create/Destroy the test plan.
+4. Create/Destroy the scenario.
 
 ```bash
 # Create
->> curl -sSL https://raw.githubusercontent.com/CARV-ICS-FORTH/frisbee/main/charts/tikv/examples/plan.baseline.yml | kubectl -f - apply
+>> curl -sSL https://raw.githubusercontent.com/CARV-ICS-FORTH/frisbee/main/charts/tikv/examples/scenario.baseline.yml | kubectl -f - apply
 
 # Destroy
->> curl -sSL https://raw.githubusercontent.com/CARV-ICS-FORTH/frisbee/main/charts/tikv/examples/plan.baseline.yml | kubectl -f - delete --cascade=foreground
+>> curl -sSL https://raw.githubusercontent.com/CARV-ICS-FORTH/frisbee/main/charts/tikv/examples/scenario.baseline.yml | kubectl -f - delete --cascade=foreground
 ```
 
 If everything went smoothly, you should see a
@@ -96,7 +96,7 @@ For more information, Frisbee installation and reference documents are available
 
 👉 **[Quick Start](docs/tutorial.md)**
 
-👉 **[Test Plans](charts)**
+👉 **[Scenarios](charts)**
 
 ## 🙋‍♂️ Getting Help
 

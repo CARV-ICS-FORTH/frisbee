@@ -1,6 +1,6 @@
 ---
-apiVersion: frisbee.io/v1alpha1
-kind: TestPlan
+apiVersion: frisbee.dev/v1alpha1
+kind: Scenario
 metadata:
   name: raw-device
 spec:

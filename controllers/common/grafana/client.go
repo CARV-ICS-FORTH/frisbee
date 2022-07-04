@@ -137,14 +137,14 @@ func New(ctx context.Context, setters ...Option) error {
 
 	// Register the client. It will be used by GetClient(), ClientExistsFor()...
 	if args.RegisterFor != nil {
-		plan := labelling.GetPlan(args.RegisterFor)
+		scenario := labelling.GetScenario(args.RegisterFor)
 
-		_, exists := clients[plan]
+		_, exists := clients[scenario]
 		if exists {
-			return errors.Errorf("client is already registered for plan '%s'", plan)
+			return errors.Errorf("client is already registered for scenario '%s'", scenario)
 		}
 
-		clients[plan] = client
+		clients[scenario] = client
 	}
 
 	return nil
@@ -161,11 +161,11 @@ type Client struct {
 
 // ClientExistsFor check if a client is registered for the given name. It panics if it cannot parse the object's metadata.
 func ClientExistsFor(obj metav1.Object) bool {
-	if !labelling.HasPlan(obj) {
+	if !labelling.HasScenario(obj) {
 		return false
 	}
 
-	_, exists := clients[labelling.GetPlan(obj)]
+	_, exists := clients[labelling.GetScenario(obj)]
 
 	return exists
 }
@@ -173,15 +173,15 @@ func ClientExistsFor(obj metav1.Object) bool {
 // GetClientFor returns the client with the given name. It panics if it cannot parse the object's metadata,
 // if the client does not exist or if the client is empty.
 func GetClientFor(obj metav1.Object) *Client {
-	plan := labelling.GetPlan(obj)
+	scenario := labelling.GetScenario(obj)
 
-	c, exists := clients[plan]
+	c, exists := clients[scenario]
 	if !exists {
-		panic(errors.Errorf("Grafana client for plan '%s' does not exist", plan))
+		panic(errors.Errorf("Grafana client for scenario '%s' does not exist", scenario))
 	}
 
 	if c == (Client{}) {
-		panic(errors.Errorf("Grafana client for plan '%s' exists but is nil", plan))
+		panic(errors.Errorf("Grafana client for scenario '%s' exists but is nil", scenario))
 	}
 
 	return &c

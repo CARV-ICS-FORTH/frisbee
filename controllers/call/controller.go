@@ -39,13 +39,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// +kubebuilder:rbac:groups=frisbee.io,resources=calls,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=frisbee.io,resources=calls/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=frisbee.io,resources=calls/finalizers,verbs=update
+// +kubebuilder:rbac:groups=frisbee.dev,resources=calls,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=frisbee.dev,resources=calls/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=frisbee.dev,resources=calls/finalizers,verbs=update
 
-// +kubebuilder:rbac:groups=frisbee.io,resources=virtualobjects,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=frisbee.io,resources=virtualobjects/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=frisbee.io,resources=virtualobjects/finalizers,verbs=update
+// +kubebuilder:rbac:groups=frisbee.dev,resources=virtualobjects,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=frisbee.dev,resources=virtualobjects/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=frisbee.dev,resources=virtualobjects/finalizers,verbs=update
 
 // +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,resources=pods/status,verbs=get;list;watch
@@ -155,7 +155,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		/*
 			Remove cr children once the cr is successfully complete.
 			We should not remove the cr descriptor itself, as we need to maintain its
-			status for higher-entities like the TestPlan.
+			status for higher-entities like the Scenario.
 		*/
 		for _, job := range r.clusterView.SuccessfulJobs() {
 			common.Delete(ctx, r, job)
@@ -365,7 +365,7 @@ func (r *Controller) HasFailed(ctx context.Context, t *v1alpha1.Call, clusterVie
 */
 
 func (r *Controller) Finalizer() string {
-	return "calls.frisbee.io/finalizer"
+	return "calls.frisbee.dev/finalizer"
 }
 
 func (r *Controller) Finalize(obj client.Object) error {

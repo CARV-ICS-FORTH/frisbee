@@ -118,7 +118,7 @@ rules:
   - list
   - watch
 - apiGroups:
-  - frisbee.io
+  - frisbee.dev
   resources:
   - calls
   verbs:
@@ -130,13 +130,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - frisbee.io
+  - frisbee.dev
   resources:
   - calls/finalizers
   verbs:
   - update
 - apiGroups:
-  - frisbee.io
+  - frisbee.dev
   resources:
   - calls/status
   verbs:
@@ -144,7 +144,7 @@ rules:
   - patch
   - update
 - apiGroups:
-  - frisbee.io
+  - frisbee.dev
   resources:
   - cascades
   verbs:
@@ -156,13 +156,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - frisbee.io
+  - frisbee.dev
   resources:
   - cascades/finalizers
   verbs:
   - update
 - apiGroups:
-  - frisbee.io
+  - frisbee.dev
   resources:
   - cascades/status
   verbs:
@@ -170,7 +170,7 @@ rules:
   - patch
   - update
 - apiGroups:
-  - frisbee.io
+  - frisbee.dev
   resources:
   - chaos
   verbs:
@@ -182,13 +182,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - frisbee.io
+  - frisbee.dev
   resources:
   - chaos/finalizers
   verbs:
   - update
 - apiGroups:
-  - frisbee.io
+  - frisbee.dev
   resources:
   - chaos/status
   verbs:
@@ -196,7 +196,7 @@ rules:
   - patch
   - update
 - apiGroups:
-  - frisbee.io
+  - frisbee.dev
   resources:
   - clusters
   verbs:
@@ -208,13 +208,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - frisbee.io
+  - frisbee.dev
   resources:
   - clusters/finalizers
   verbs:
   - update
 - apiGroups:
-  - frisbee.io
+  - frisbee.dev
   resources:
   - clusters/status
   verbs:
@@ -222,7 +222,33 @@ rules:
   - patch
   - update
 - apiGroups:
-  - frisbee.io
+  - frisbee.dev
+  resources:
+  - scenarios
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - frisbee.dev
+  resources:
+  - scenarios/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - frisbee.dev
+  resources:
+  - scenarios/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - frisbee.dev
   resources:
   - services
   verbs:
@@ -234,13 +260,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - frisbee.io
+  - frisbee.dev
   resources:
   - services/finalizers
   verbs:
   - update
 - apiGroups:
-  - frisbee.io
+  - frisbee.dev
   resources:
   - services/status
   verbs:
@@ -248,7 +274,7 @@ rules:
   - patch
   - update
 - apiGroups:
-  - frisbee.io
+  - frisbee.dev
   resources:
   - templates
   verbs:
@@ -260,13 +286,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - frisbee.io
+  - frisbee.dev
   resources:
   - templates/finalizers
   verbs:
   - update
 - apiGroups:
-  - frisbee.io
+  - frisbee.dev
   resources:
   - templates/status
   verbs:
@@ -274,33 +300,7 @@ rules:
   - patch
   - update
 - apiGroups:
-  - frisbee.io
-  resources:
-  - testplans
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - frisbee.io
-  resources:
-  - testplans/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - frisbee.io
-  resources:
-  - testplans/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - frisbee.io
+  - frisbee.dev
   resources:
   - virtualobjects
   verbs:
@@ -312,13 +312,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - frisbee.io
+  - frisbee.dev
   resources:
   - virtualobjects/finalizers
   verbs:
   - update
 - apiGroups:
-  - frisbee.io
+  - frisbee.dev
   resources:
   - virtualobjects/status
   verbs:

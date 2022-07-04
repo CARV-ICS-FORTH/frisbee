@@ -22,7 +22,7 @@ import (
 
 	"github.com/carv-ics-forth/frisbee/controllers/call"
 	"github.com/carv-ics-forth/frisbee/controllers/cascade"
-	"github.com/carv-ics-forth/frisbee/controllers/testplan"
+	"github.com/carv-ics-forth/frisbee/controllers/scenario"
 	"github.com/pkg/errors"
 
 	"github.com/carv-ics-forth/frisbee/controllers/chaos"
@@ -93,7 +93,7 @@ func main() {
 		Port:                   9443,
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "233dac68.frisbee.io",
+		LeaderElectionID:       "233dac68.frisbee.dev",
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
@@ -139,8 +139,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := testplan.NewController(ctx, mgr, setupLog); err != nil {
-		utilruntime.HandleError(errors.Wrapf(err, "unable to create TestPlan controller"))
+	if err := scenario.NewController(ctx, mgr, setupLog); err != nil {
+		utilruntime.HandleError(errors.Wrapf(err, "unable to create Scenario controller"))
 
 		os.Exit(1)
 	}
@@ -173,8 +173,8 @@ func main() {
 			TODO: add webhooks for cascade, stop
 		*/
 
-		if err = (&frisbeev1alpha1.TestPlan{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "TestPlan")
+		if err = (&frisbeev1alpha1.Scenario{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Scenario")
 
 			os.Exit(1)
 		}

@@ -40,18 +40,18 @@ import (
 const (
 	// jobHasAlert indicate that a job has SLA assertion. Used to deregister the alert once the job has finished.
 	// Used as [jobHasAlert]: [alertID].
-	jobHasAlert = "alert.frisbee.io"
+	jobHasAlert = "alert.frisbee.dev"
 
 	// alertHasBeenFired indicate that a Grafana alert has been fired.
 	// Used as [alertHasBeenFired]: [alertID].
-	alertHasBeenFired = "sla.frisbee.io/fired"
+	alertHasBeenFired = "sla.frisbee.dev/fired"
 
 	// firedAlertState points to the reason why the alert is fired.
-	firedAlertState = "sla.frisbee.io/state"
+	firedAlertState = "sla.frisbee.dev/state"
 
 	// firedAlertDetails include information about the fired Grafana Alert.
 	// Used as [SlaViolationINfo]: [string].
-	firedAlertDetails = "sla.frisbee.io/details"
+	firedAlertDetails = "sla.frisbee.dev/details"
 )
 
 type endpoint struct {

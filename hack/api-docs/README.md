@@ -30,7 +30,7 @@ This document describes the process to generate custom API reference documentati
 
 From the root of the `osm` repository, use the `gen-crd-api-reference-docs` binary to generate custom API reference documentation based on the Go API definititions present within the `osm` repository.
 
-For example, to generate API reference docs for the `TestPlan` custom API defined in `/api/v1alpha1/`:
+For example, to generate API reference docs for the `Scenario` custom API defined in `/api/v1alpha1/`:
 ```bash
 <path to api doc generator repo>/gen-crd-api-reference-docs -config `pwd`/docs/api_reference/config.json    \
 -api-dir  "github.com/carv-ics-forth/frisbee/api/v1alpha1"              \
@@ -42,7 +42,7 @@ For example, to generate API reference docs for the `TestPlan` custom API define
 
  ## 4. Customize the generated doc for the website
 
-[Frisbee's website](https://docs.frisbee.io/) is built using Hugo and requires every page to have a [Front Matter](https://gohugo.io/content-management/front-matter/)  defined.
+[Frisbee's website](https://frisbee.dev/) is built using Hugo and requires every page to have a [Front Matter](https://gohugo.io/content-management/front-matter/)  defined.
 
 Add the `Front Matter` to the generated docs so they render correctly on the website.
 

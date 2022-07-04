@@ -1,7 +1,7 @@
 ---
 # In some situations such as in the Docker or NAT network environment, if the other nodes (peers) cannot access
 # the PD node through the default peer URLs listened to by this PD node, you must manually set the advertise peer URLs.
-apiVersion: frisbee.io/v1alpha1
+apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
   name: tikv.cluster.coverage.placement-driver
@@ -93,7 +93,7 @@ spec:
             done
 
 ---
-apiVersion: frisbee.io/v1alpha1
+apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
   name: tikv.cluster.coverage.worker

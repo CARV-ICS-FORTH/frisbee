@@ -3,24 +3,22 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.9.0
+    controller-gen.kubebuilder.io/version: v0.9.2
   creationTimestamp: null
-  name: virtualobjects.frisbee.io
+  name: chaos.frisbee.dev
 spec:
-  group: frisbee.io
+  group: frisbee.dev
   names:
-    kind: VirtualObject
-    listKind: VirtualObjectList
-    plural: virtualobjects
-    singular: virtualobject
+    kind: Chaos
+    listKind: ChaosList
+    plural: chaos
+    singular: chaos
   scope: Namespaced
   versions:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: VirtualObject is a wrapper for jobs that do not actually create
-          something on the system. For example, Deletion jobs. These jobs do not have
-          a dedicated controller, but their fields are set manually.
+        description: Chaos is the Schema for the chaos API.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -35,8 +33,22 @@ spec:
           metadata:
             type: object
           spec:
+            description: ChaosSpec defines the desired state of Chaos.
+            properties:
+              raw:
+                type: string
+              type:
+                description: Type indicate the type of the injected fault
+                enum:
+                - partition
+                - kill
+                - raw
+                type: string
+            required:
+            - type
             type: object
           status:
+            description: ChaosStatus defines the observed state of Chaos.
             properties:
               conditions:
                 description: Conditions describe sequences of events that warrant
@@ -108,6 +120,11 @@ spec:
                   - type
                   type: object
                 type: array
+              lastScheduleTime:
+                description: LastScheduleTime provide information about  the last
+                  time a Pod was scheduled.
+                format: date-time
+                type: string
               message:
                 description: Message provides more details for understanding the Reason.
                 type: string

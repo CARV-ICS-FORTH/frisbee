@@ -35,30 +35,30 @@ const (
 
 const (
 	// ResourceDiscoveryLabel is used to discover frisbee resources across different namespaces
-	ResourceDiscoveryLabel = "discover.frisbee.io/name"
+	ResourceDiscoveryLabel = "discover.frisbee.dev/name"
 )
 
 // https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/
 const (
-	// LabelName points to the plan
-	LabelName = "plan.frisbee.io/name"
+	// LabelName points to the scenario
+	LabelName = "scenario.frisbee.dev/name"
 
 	// LabelPartOf points to the action this resource is part of.
-	LabelPartOf = "plan.frisbee.io/action"
+	LabelPartOf = "scenario.frisbee.dev/action"
 
 	// LabelCreatedBy points to the controller who created this resource
-	LabelCreatedBy = "plan.frisbee.io/created-by"
+	LabelCreatedBy = "scenario.frisbee.dev/created-by"
 
 	// LabelComponent describes the role of the component within the architecture.
 	// It can be SUT (for system under service) or SYS (if it's a frisbee component like Grafana).
-	LabelComponent = "plan.frisbee.io/component"
+	LabelComponent = "scenario.frisbee.dev/component"
 
 	// LabelInstance contains a unique name identifying the instance of the  resource
-	LabelInstance = "plan.frisbee.io/instance"
+	LabelInstance = "scenario.frisbee.dev/instance"
 )
 
-func SetPlan(obj *metav1.ObjectMeta, plan string) {
-	metav1.SetMetaDataLabel(obj, LabelName, plan)
+func SetScenario(obj *metav1.ObjectMeta, scenario string) {
+	metav1.SetMetaDataLabel(obj, LabelName, scenario)
 }
 
 func SetAction(obj *metav1.ObjectMeta, action string) {
@@ -77,19 +77,19 @@ func SetInstance(obj metav1.Object) {
 	obj.SetLabels(labels.Merge(obj.GetLabels(), map[string]string{LabelInstance: obj.GetName()}))
 }
 
-func HasPlan(obj metav1.Object) bool {
+func HasScenario(obj metav1.Object) bool {
 	_, ok := obj.GetLabels()[LabelName]
 	return ok
 }
 
-func GetPlan(obj metav1.Object) string {
-	plan, ok := obj.GetLabels()[LabelName]
+func GetScenario(obj metav1.Object) string {
+	scenario, ok := obj.GetLabels()[LabelName]
 	if !ok {
 		panic(errors.Errorf("Cannot extract label '%s' from resource '%s'. Labels: %s",
 			LabelName, obj.GetName(), obj.GetLabels()))
 	}
 
-	return plan
+	return scenario
 }
 
 // GetAction returns the name of the action the object belongs to.

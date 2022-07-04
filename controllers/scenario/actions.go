@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package testplan
+package scenario
 
 import (
 	"context"
@@ -28,7 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type endpoint func(context.Context, *v1alpha1.TestPlan, v1alpha1.Action) (client.Object, error)
+type endpoint func(context.Context, *v1alpha1.Scenario, v1alpha1.Action) (client.Object, error)
 
 func (r *Controller) supportedActions() map[v1alpha1.ActionType]endpoint {
 	return map[v1alpha1.ActionType]endpoint{
@@ -41,7 +41,7 @@ func (r *Controller) supportedActions() map[v1alpha1.ActionType]endpoint {
 	}
 }
 
-func (r *Controller) service(ctx context.Context, t *v1alpha1.TestPlan, action v1alpha1.Action) (client.Object, error) {
+func (r *Controller) service(ctx context.Context, t *v1alpha1.Scenario, action v1alpha1.Action) (client.Object, error) {
 	if err := expandMapInputs(ctx, r, t.GetNamespace(), &action.Service.Inputs); err != nil {
 		return nil, errors.Wrapf(err, "input error")
 	}
@@ -63,7 +63,7 @@ func (r *Controller) service(ctx context.Context, t *v1alpha1.TestPlan, action v
 	job.SetName(action.Name)
 
 	// set labels
-	labelling.SetPlan(&job.ObjectMeta, t.GetName())
+	labelling.SetScenario(&job.ObjectMeta, t.GetName())
 	labelling.SetAction(&job.ObjectMeta, action.Name)
 
 	// The job belongs to a SUT, unless the template is explicitly declared as a System job (SYS)
@@ -78,7 +78,7 @@ func (r *Controller) service(ctx context.Context, t *v1alpha1.TestPlan, action v
 	return &job, nil
 }
 
-func (r *Controller) cluster(ctx context.Context, t *v1alpha1.TestPlan, action v1alpha1.Action) (client.Object, error) {
+func (r *Controller) cluster(ctx context.Context, t *v1alpha1.Scenario, action v1alpha1.Action) (client.Object, error) {
 	if err := expandMapInputs(ctx, r, t.GetNamespace(), &action.Cluster.Inputs); err != nil {
 		return nil, errors.Wrapf(err, "input error")
 	}
@@ -90,7 +90,7 @@ func (r *Controller) cluster(ctx context.Context, t *v1alpha1.TestPlan, action v
 	job.SetName(action.Name)
 
 	// set labels
-	labelling.SetPlan(&job.ObjectMeta, t.GetName())
+	labelling.SetScenario(&job.ObjectMeta, t.GetName())
 	labelling.SetAction(&job.ObjectMeta, action.Name)
 	labelling.SetComponent(&job.ObjectMeta, labelling.ComponentSUT)
 
@@ -99,7 +99,7 @@ func (r *Controller) cluster(ctx context.Context, t *v1alpha1.TestPlan, action v
 	return &job, nil
 }
 
-func (r *Controller) chaos(ctx context.Context, t *v1alpha1.TestPlan, action v1alpha1.Action) (client.Object, error) {
+func (r *Controller) chaos(ctx context.Context, t *v1alpha1.Scenario, action v1alpha1.Action) (client.Object, error) {
 	if err := expandMapInputs(ctx, r, t.GetNamespace(), &action.Chaos.Inputs); err != nil {
 		return nil, errors.Wrapf(err, "input error")
 	}
@@ -120,7 +120,7 @@ func (r *Controller) chaos(ctx context.Context, t *v1alpha1.TestPlan, action v1a
 	job.SetNamespace(t.GetNamespace())
 	job.SetName(action.Name)
 
-	labelling.SetPlan(&job.ObjectMeta, t.GetName())
+	labelling.SetScenario(&job.ObjectMeta, t.GetName())
 	labelling.SetAction(&job.ObjectMeta, action.Name)
 	labelling.SetComponent(&job.ObjectMeta, labelling.ComponentSUT)
 
@@ -129,7 +129,7 @@ func (r *Controller) chaos(ctx context.Context, t *v1alpha1.TestPlan, action v1a
 	return &job, nil
 }
 
-func (r *Controller) cascade(ctx context.Context, t *v1alpha1.TestPlan, action v1alpha1.Action) (client.Object, error) {
+func (r *Controller) cascade(ctx context.Context, t *v1alpha1.Scenario, action v1alpha1.Action) (client.Object, error) {
 	if err := expandMapInputs(ctx, r, t.GetNamespace(), &action.Cascade.Inputs); err != nil {
 		return nil, errors.Wrapf(err, "input error")
 	}
@@ -140,7 +140,7 @@ func (r *Controller) cascade(ctx context.Context, t *v1alpha1.TestPlan, action v
 	job.SetNamespace(t.GetNamespace())
 	job.SetName(action.Name)
 
-	labelling.SetPlan(&job.ObjectMeta, t.GetName())
+	labelling.SetScenario(&job.ObjectMeta, t.GetName())
 	labelling.SetAction(&job.ObjectMeta, action.Name)
 	labelling.SetComponent(&job.ObjectMeta, labelling.ComponentSUT)
 
@@ -149,7 +149,7 @@ func (r *Controller) cascade(ctx context.Context, t *v1alpha1.TestPlan, action v
 	return &job, nil
 }
 
-func (r *Controller) delete(ctx context.Context, t *v1alpha1.TestPlan, action v1alpha1.Action) (client.Object, error) {
+func (r *Controller) delete(ctx context.Context, t *v1alpha1.Scenario, action v1alpha1.Action) (client.Object, error) {
 	// Delete normally does not return anything. This however would break all the pipeline for
 	// managing dependencies between jobs. For that, we return a dummy virtual object without dedicated controller.
 	var job v1alpha1.VirtualObject
@@ -158,7 +158,7 @@ func (r *Controller) delete(ctx context.Context, t *v1alpha1.TestPlan, action v1
 	job.SetNamespace(t.GetNamespace())
 	job.SetName(action.Name)
 
-	labelling.SetPlan(&job.ObjectMeta, t.GetName())
+	labelling.SetScenario(&job.ObjectMeta, t.GetName())
 	labelling.SetAction(&job.ObjectMeta, action.Name)
 	labelling.SetComponent(&job.ObjectMeta, labelling.ComponentSUT)
 
@@ -188,7 +188,7 @@ func (r *Controller) delete(ctx context.Context, t *v1alpha1.TestPlan, action v1
 	return &job, nil
 }
 
-func (r *Controller) call(ctx context.Context, t *v1alpha1.TestPlan, action v1alpha1.Action) (client.Object, error) {
+func (r *Controller) call(ctx context.Context, t *v1alpha1.Scenario, action v1alpha1.Action) (client.Object, error) {
 	if err := expandSliceInputs(ctx, r, t.GetNamespace(), &action.Call.Services); err != nil {
 		return nil, errors.Wrapf(err, "input error")
 	}
@@ -199,7 +199,7 @@ func (r *Controller) call(ctx context.Context, t *v1alpha1.TestPlan, action v1al
 	job.SetNamespace(t.GetNamespace())
 	job.SetName(action.Name)
 
-	labelling.SetPlan(&job.ObjectMeta, t.GetName())
+	labelling.SetScenario(&job.ObjectMeta, t.GetName())
 	labelling.SetAction(&job.ObjectMeta, action.Name)
 	labelling.SetComponent(&job.ObjectMeta, labelling.ComponentSUT)
 

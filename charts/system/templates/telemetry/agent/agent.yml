@@ -7,7 +7,7 @@
 # https://github.com/google/cadvisor/blob/master/docs/storage/prometheus.md
 
 # https://pracucci.com/kubernetes-dns-resolution-ndots-options-and-why-it-may-affect-application-performances.html
-apiVersion: frisbee.io/v1alpha1
+apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
   name: system.telemetry.agent

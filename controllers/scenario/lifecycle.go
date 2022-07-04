@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package testplan
+package scenario
 
 import (
 	"fmt"
@@ -32,7 +32,7 @@ type test struct {
 	condition  metav1.Condition
 }
 
-func (r *Controller) updateLifecycle(t *v1alpha1.TestPlan) v1alpha1.Lifecycle {
+func (r *Controller) updateLifecycle(t *v1alpha1.Scenario) v1alpha1.Lifecycle {
 	life := t.Status.Lifecycle
 
 	// Step 1. Skip any CR which are already completed, or uninitialized.
@@ -170,7 +170,7 @@ func (r *Controller) updateLifecycle(t *v1alpha1.TestPlan) v1alpha1.Lifecycle {
 		}
 	}
 
-	logrus.Warn("TestPlan Debug info \n",
+	logrus.Warn("Scenario Debug info \n",
 		" phase ", life.Phase,
 		" actions: ", expectedJobs,
 		" executed: ", len(t.Status.ExecutedActions),

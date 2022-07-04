@@ -1,5 +1,5 @@
 ---
-apiVersion: frisbee.io/v1alpha1
+apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
   name: system.telemetry.prometheus.template
@@ -14,7 +14,7 @@ spec:
 
     decorators:
       labels:
-        plan.frisbee.io/component: SYS
+        scenario.frisbee.dev/component: SYS
 
     volumes:
       - name: config # Parameterized config using the reflective information
@@ -37,7 +37,7 @@ spec:
           - |         # Multi-line str
             # Create local envs that will be used to substitute the configuration placeholders
             export NAMESPACE={{"{{.Namespace}}"}}
-            export TESTPLAN={{"{{.Plan}}"}}
+            export SCENARIO={{"{{.Scenario}}"}}
 
             # Use envsubst to replace ${var} or $var according to the values of the current environment variables.
             wget https://github.com/a8m/envsubst/releases/download/v1.2.0/envsubst-Linux-x86_64
@@ -83,7 +83,7 @@ data:
 
         # The pod role discovers all pods and exposes their containers as targets.
         # Optional namespace discovery. If omitted, all namespaces are used.
-        # The vars ${NAMESPACE} and ${TESTPLAN} will be replaced by envst on the pod.
+        # The vars ${NAMESPACE} and ${SCENARIO} will be replaced by envst on the pod.
         # For more info check https://prometheus.io/docs/prometheus/latest/configuration/configuration/
         kubernetes_sd_configs:
           - role: pod
@@ -92,10 +92,10 @@ data:
                 - ${NAMESPACE}
 
         relabel_configs:
-          # Condition 1. Filter services that belong to the same plan as this Prometheus instance.
-          - source_labels: [ __meta_kubernetes_pod_label_plan_frisbee_io_name ]
+          # Condition 1. Filter services that belong to the same scenario as this Prometheus instance.
+          - source_labels: [ __meta_kubernetes_pod_label_scenario_frisbee_dev_name ]
             separator: ;
-            regex: ${TESTPLAN}
+            regex: ${SCENARIO}
             action: keep
 
           # Condition 2. Filter the telemetry containers (ports with name "telemetry")

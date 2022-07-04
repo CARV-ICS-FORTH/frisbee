@@ -1,8 +1,8 @@
 ---
 # This experiment runs a given load for various numbers of TikV instance.
 # This goal is to find the maximum number of TikV servers after which the overall performance does not increase further.
-apiVersion: frisbee.io/v1alpha1
-kind: TestPlan
+apiVersion: frisbee.dev/v1alpha1
+kind: Scenario
 metadata:
   name: tikv-scaleout
 spec:

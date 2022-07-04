@@ -35,9 +35,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// +kubebuilder:rbac:groups=frisbee.io,resources=cascades,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=frisbee.io,resources=cascades/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=frisbee.io,resources=cascades/finalizers,verbs=update
+// +kubebuilder:rbac:groups=frisbee.dev,resources=cascades,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=frisbee.dev,resources=cascades/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=frisbee.dev,resources=cascades/finalizers,verbs=update
 
 // Controller reconciles a Cascade object.
 type Controller struct {
@@ -165,7 +165,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		/*
 			Remove cr children once the cr is successfully complete.
 			We should not remove the cr descriptor itself, as we need to maintain its
-			status for higher-entities like the TestPlan.
+			status for higher-entities like the Scenario.
 		*/
 		for _, job := range r.state.SuccessfulJobs() {
 			common.Delete(ctx, r, job)
@@ -325,7 +325,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 */
 
 func (r *Controller) Finalizer() string {
-	return "cascades.frisbee.io/finalizer"
+	return "cascades.frisbee.dev/finalizer"
 }
 
 func (r *Controller) Finalize(obj client.Object) error {

@@ -3,11 +3,11 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.9.0
+    controller-gen.kubebuilder.io/version: v0.9.2
   creationTimestamp: null
-  name: clusters.frisbee.io
+  name: clusters.frisbee.dev
 spec:
-  group: frisbee.io
+  group: frisbee.dev
   names:
     kind: Cluster
     listKind: ClusterList
@@ -80,7 +80,7 @@ spec:
                   conditions:
                     description: ConditionalExpr is a source of information about
                       whether the state of the workflow after a given time is correct
-                      or not. This is needed because some test plans may run in infinite-horizons.
+                      or not. This is needed because some scenarios may run in infinite-horizons.
                     properties:
                       metrics:
                         description: 'Metrics set a Grafana alert that will be triggered
@@ -548,6 +548,7 @@ spec:
                                               only "value". The requirements are ANDed.
                                             type: object
                                         type: object
+                                        x-kubernetes-map-type: atomic
                                       namespaceSelector:
                                         description: A label query over the set of
                                           namespaces that the term applies to. The
@@ -608,6 +609,7 @@ spec:
                                               only "value". The requirements are ANDed.
                                             type: object
                                         type: object
+                                        x-kubernetes-map-type: atomic
                                       namespaces:
                                         description: namespaces specifies a static
                                           list of namespace names that the term applies
@@ -715,6 +717,7 @@ spec:
                                           "value". The requirements are ANDed.
                                         type: object
                                     type: object
+                                    x-kubernetes-map-type: atomic
                                   namespaceSelector:
                                     description: A label query over the set of namespaces
                                       that the term applies to. The term is applied
@@ -773,6 +776,7 @@ spec:
                                           "value". The requirements are ANDed.
                                         type: object
                                     type: object
+                                    x-kubernetes-map-type: atomic
                                   namespaces:
                                     description: namespaces specifies a static list
                                       of namespace names that the term applies to.
@@ -878,6 +882,7 @@ spec:
                                               only "value". The requirements are ANDed.
                                             type: object
                                         type: object
+                                        x-kubernetes-map-type: atomic
                                       namespaceSelector:
                                         description: A label query over the set of
                                           namespaces that the term applies to. The
@@ -938,6 +943,7 @@ spec:
                                               only "value". The requirements are ANDed.
                                             type: object
                                         type: object
+                                        x-kubernetes-map-type: atomic
                                       namespaces:
                                         description: namespaces specifies a static
                                           list of namespace names that the term applies
@@ -1045,6 +1051,7 @@ spec:
                                           "value". The requirements are ANDed.
                                         type: object
                                     type: object
+                                    x-kubernetes-map-type: atomic
                                   namespaceSelector:
                                     description: A label query over the set of namespaces
                                       that the term applies to. The term is applied
@@ -1103,6 +1110,7 @@ spec:
                                           "value". The requirements are ANDed.
                                         type: object
                                     type: object
+                                    x-kubernetes-map-type: atomic
                                   namespaces:
                                     description: namespaces specifies a static list
                                       of namespace names that the term applies to.
@@ -2339,7 +2347,7 @@ spec:
                         type: object
                       type: array
                     decorators:
-                      description: Decorators takes in a PodSpec, add some functionality
+                      description: Decorators takes-in a PodSpec, add some functionality
                         and returns it.
                       properties:
                         annotations:
@@ -5023,10 +5031,8 @@ spec:
                               type: object
                           type: object
                         persistentVolumeClaim:
-                          description: EphemeralVolume create an ephemeral volume.
-                            It's use for application that need additional storage
-                            but don't care whether that data is stored persistently
-                            across restarts.
+                          description: EphemeralVolume creates an ephemeral volume
+                            type.
                           properties:
                             name:
                               type: string
@@ -5152,6 +5158,7 @@ spec:
                                         The requirements are ANDed.
                                       type: object
                                   type: object
+                                  x-kubernetes-map-type: atomic
                                 storageClassName:
                                   description: 'Name of the StorageClass required
                                     by the claim. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1'
@@ -5488,6 +5495,7 @@ spec:
                                   contains only "value". The requirements are ANDed.
                                 type: object
                             type: object
+                            x-kubernetes-map-type: atomic
                           maxSkew:
                             description: 'MaxSkew describes the degree to which pods
                               may be unevenly distributed. When `whenUnsatisfiable=DoNotSchedule`,
@@ -6131,6 +6139,7 @@ spec:
                                               only "value". The requirements are ANDed.
                                             type: object
                                         type: object
+                                        x-kubernetes-map-type: atomic
                                       storageClassName:
                                         description: 'Name of the StorageClass required
                                           by the claim. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1'

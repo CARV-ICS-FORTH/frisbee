@@ -13,8 +13,8 @@ spec:
       storage: 512Mi
 
 ---
-apiVersion: frisbee.io/v1alpha1
-kind: TestPlan
+apiVersion: frisbee.dev/v1alpha1
+kind: Scenario
 metadata:
   name: shared-fs
 spec:

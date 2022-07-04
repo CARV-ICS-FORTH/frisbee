@@ -12,7 +12,7 @@ Install the platform and dependent charts.
 >> helm install my-iperf2 frisbee/iperf2
 ```
 
-Run any of the testing plans.
+Run any of the scenarios.
 
 ```bash
 >> kubectl apply -f examples/0.server-client.yml

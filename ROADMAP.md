@@ -8,7 +8,7 @@ not listed now does not mean it will not be considered for Frisbee. We definitel
 welcome suggestions and ideas from everyone about the roadmap and Frisbee
 features. Reach us through Issues, Slack and / or Google Group!
 
-## Planned Features
+## Scenarioned Features
 
 The following features are considered for the near future:
 

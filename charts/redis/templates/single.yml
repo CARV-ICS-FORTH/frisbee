@@ -1,5 +1,5 @@
 ---
-apiVersion: frisbee.io/v1alpha1
+apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
   name: redis.single.master
@@ -55,7 +55,7 @@ spec:
 
 
 ---
-apiVersion: frisbee.io/v1alpha1
+apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
   name: redis.single.slave
@@ -109,7 +109,7 @@ spec:
 
 ---
 # Failover agent
-apiVersion: frisbee.io/v1alpha1
+apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
   name: redis.single.sentinel
