@@ -43,7 +43,7 @@ dependencies:
   - name: kubernetes-dashboard # web-based Kubernetes user interface
     condition: dashboard.enabled
     version: 5.4.1
-    repository: https://kubernetes.github.io/dashboard
+    repository: https://kubernetes.github.io/dashboard/
 
 
 
