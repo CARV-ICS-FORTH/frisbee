@@ -3,8 +3,6 @@ apiVersion: v2
 name: hello-world
 description: very simple example to echo "hello world" using the docker/whalesay container image from Docker Hub.
 
-fio is a benchmark to test I/O performance.
-
 # A chart can be either an 'application' or a 'library' chart.
 #
 # Application charts are a collection of templates that can be packaged into
