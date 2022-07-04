@@ -14,7 +14,7 @@
 | ------------------------- | -------------------------------------------------------------------------- | -------------------- |
 | `operator.enabled`        | Set it to false for running the controller outside the Kubernetes Cluster. | `true`               |
 | `operator.controllerName` | Defines the name of the controller.                                        | `frisbee-controller` |
-| `operator.webhookPort`    | Defines the telemetry webhook for receiving events from Grafana.           | `6666`               |
+| `operator.grafanaWebhookPort`    | Defines the telemetry webhook for receiving events from Grafana.           | `6666`               |
 
 
 ### Provision of dynamic volumes

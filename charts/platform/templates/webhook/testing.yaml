@@ -1,0 +1,188 @@
+{{if .Values.operator.webhook.k8s.enabled}}
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  creationTimestamp: null
+  name: mutating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  - v1alpha1
+  clientConfig:
+    url: https://139.91.92.82:{{.Values.operator.webhook.k8s.port}}/mutate-frisbee-dev-v1alpha1-chaos
+    caBundle: {{.Values.operator.webhook.k8s.caBundle}}
+  failurePolicy: Fail
+  name: mchaos.kb.io
+  rules:
+  - apiGroups:
+    - frisbee.dev
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - chaos
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1alpha1
+  clientConfig:
+    url: https://139.91.92.82:{{.Values.operator.webhook.k8s.port}}/mutate-frisbee-dev-v1alpha1-cluster
+    caBundle: {{.Values.operator.webhook.k8s.caBundle}}
+  failurePolicy: Fail
+  name: mcluster.kb.io
+  rules:
+  - apiGroups:
+    - frisbee.dev
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - clusters
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1alpha1
+  clientConfig:
+    url: https://139.91.92.82:{{.Values.operator.webhook.k8s.port}}/mutate-frisbee-dev-v1alpha1-scenario
+    caBundle: {{.Values.operator.webhook.k8s.caBundle}}
+  failurePolicy: Fail
+  name: mservice.kb.io
+  rules:
+  - apiGroups:
+    - frisbee.dev
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - services
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1alpha1
+  clientConfig:
+    url: https://139.91.92.82:{{.Values.operator.webhook.k8s.port}}/mutate-frisbee-dev-v1alpha1-template
+    caBundle: {{.Values.operator.webhook.k8s.caBundle}}
+  failurePolicy: Fail
+  name: mtemplate.kb.io
+  rules:
+  - apiGroups:
+    - frisbee.dev
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - templates
+  sideEffects: None
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  creationTimestamp: null
+  name: validating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  - v1alpha1
+  clientConfig:
+    url: https://139.91.92.82:{{.Values.operator.webhook.k8s.port}}/validate-frisbee-dev-v1alpha1-chaos
+    caBundle: {{.Values.operator.webhook.k8s.caBundle}}
+  failurePolicy: Fail
+  name: vchaos.kb.io
+  rules:
+  - apiGroups:
+    - frisbee.dev
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - chaos
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1alpha1
+  clientConfig:
+    url: https://139.91.92.82:{{.Values.operator.webhook.k8s.port}}/validate-frisbee-dev-v1alpha1-cluster
+    caBundle: {{.Values.operator.webhook.k8s.caBundle}}
+  failurePolicy: Fail
+  name: vcluster.kb.io
+  rules:
+  - apiGroups:
+    - frisbee.dev
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - clusters
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1alpha1
+  clientConfig:
+    url: https://139.91.92.82:{{.Values.operator.webhook.k8s.port}}/validate-frisbee-dev-v1alpha1-scenario
+    caBundle: {{.Values.operator.webhook.k8s.caBundle}}
+  failurePolicy: Fail
+  name: vscenario.kb.io
+  rules:
+  - apiGroups:
+    - frisbee.dev
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - scenarios
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1alpha1
+  clientConfig:
+    url: https://139.91.92.82:{{.Values.operator.webhook.k8s.port}}/validate-frisbee-dev-v1alpha1-service
+    caBundle: {{.Values.operator.webhook.k8s.caBundle}}
+  failurePolicy: Fail
+  name: vservice.kb.io
+  rules:
+  - apiGroups:
+    - frisbee.dev
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - services
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1alpha1
+  clientConfig:
+    url: https://139.91.92.82:{{.Values.operator.webhook.k8s.port}}/validate-frisbee-dev-v1alpha1-template
+    caBundle: {{.Values.operator.webhook.k8s.caBundle}}
+  failurePolicy: Fail
+  name: vtemplate.kb.io
+  rules:
+  - apiGroups:
+    - frisbee.dev
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - templates
+  sideEffects: None
+
+{{end}}

@@ -2,32 +2,19 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: frisbee
+  name: {{.Values.operator.serviceAccountName}}
 
 {{- if .Values.operator.enabled }}
 ---
+# This Service is used for Grafana to be able to communicate with the operator.
 apiVersion: v1
 kind: Service
 metadata:
   name: {{.Values.operator.controllerName}}
 spec:
   ports:
-    - port: {{.Values.operator.webhookPort}}
-      protocol: TCP
-  selector:
-    control-plane: manager
-
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: webhook-service
-
-spec:
-  ports:
-    - port: 443
-      protocol: TCP
-      targetPort: 9443
+    - port: {{.Values.operator.webhook.grafana.port | int64}}
+    - port: {{.Values.operator.webhook.k8s.port | int64}}
   selector:
     control-plane: manager
 
@@ -47,7 +34,7 @@ spec:
       labels:
         control-plane: manager
     spec:
-      serviceAccountName: frisbee
+      serviceAccountName:  {{.Values.operator.serviceAccountName}}
       securityContext:
         runAsNonRoot: true
         runAsUser: 666
@@ -57,11 +44,10 @@ spec:
         - name: manager
           image: icsforth/frisbee-operator:latest
           ports:
-            - containerPort: {{.Values.operator.webhookPort | int64}} # Receive alerts from Grafana
-              name: webhook-grafana
-            - containerPort: 9443 # Admission Webhooks
-              name: webhook-service
-              protocol: TCP
+            - name: "k8s-receiver"                   # Receive alerts from K8s
+              containerPort: {{.Values.operator.webhook.k8s.port | int64}}
+            - name: "grafana-receiver"               # Receive alerts from Grafana
+              containerPort: {{.Values.operator.webhook.grafana.port | int64}}
           command:
             - /bin/sh   # Run shell
             - -c        # Read from string

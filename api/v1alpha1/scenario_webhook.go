@@ -34,8 +34,7 @@ func (r *Scenario) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
-// +kubebuilder:webhook:path=/mutate-scenario,mutating=true,failurePolicy=fail,sideEffects=None,groups=frisbee.dev,resources=scenarios,verbs=create;update,versions=v1alpha1,name=mscenario.kb.io,admissionReviewVersions={v1,v1alpha1}
-
+// +kubebuilder:webhook:path=/mutate-frisbee-dev-v1alpha1-scenario,mutating=true,failurePolicy=fail,sideEffects=None,groups=frisbee.dev,resources=scenarios,verbs=create;update,versions=v1alpha1,name=mscenario.kb.io,admissionReviewVersions={v1,v1alpha1}
 var _ webhook.Defaulter = &Scenario{}
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
@@ -46,7 +45,7 @@ func (r *Scenario) Default() {
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// +kubebuilder:webhook:path=/validate-scenario,mutating=false,failurePolicy=fail,sideEffects=None,groups=frisbee.dev,resources=scenarios,verbs=create;update,versions=v1alpha1,name=vscenario.kb.io,admissionReviewVersions={v1,v1alpha1}
+// +kubebuilder:webhook:path=//validate-frisbee-dev-v1alpha1-scenario,mutating=false,failurePolicy=fail,sideEffects=None,groups=frisbee.dev,resources=scenarios,verbs=create;update,versions=v1alpha1,name=vscenario.kb.io,admissionReviewVersions={v1,v1alpha1}
 
 var _ webhook.Validator = &Scenario{}
 

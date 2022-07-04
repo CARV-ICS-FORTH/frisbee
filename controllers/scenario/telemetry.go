@@ -314,18 +314,18 @@ func (r *Controller) CreateWebhookServer(ctx context.Context) error {
 			return errors.Wrapf(err, "cannot get controller's public ip")
 		}
 
-		WebhookURL = fmt.Sprintf("http://%s:%d", ip.String(), configuration.Global.WebhookPort)
+		WebhookURL = fmt.Sprintf("http://%s:%d", ip.String(), configuration.Global.GrafanaWebhookPort)
 	} else {
 		WebhookURL = fmt.Sprintf("http://%s.%s:%d", configuration.Global.ControllerName,
 			configuration.Global.Namespace,
-			configuration.Global.WebhookPort)
+			configuration.Global.GrafanaWebhookPort)
 	}
 
 	r.Logger.Info("Controller Webhook", "URL", WebhookURL)
 
 	// Start the server
 	srv := &http.Server{
-		Addr:    fmt.Sprintf(":%d", configuration.Global.WebhookPort),
+		Addr:    fmt.Sprintf(":%d", configuration.Global.GrafanaWebhookPort),
 		Handler: webhook,
 	}
 

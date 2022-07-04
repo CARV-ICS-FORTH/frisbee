@@ -13,12 +13,31 @@ global:
 
 ## @param operator.enabled Set it to false for running the controller outside the Kubernetes Cluster.
 ## @param operator.controllerName Defines the name of the controller.
-## @param operator.webhookPort Defines the telemetry webhook for receiving events from Grafana.
+## @param operator.serviceAccountName Defines the name of the service account for the controller.
+
+## @param operator.webhook.k8s.port Sets the port for the Admission/Mutation  webhook server.
+## @param operator.webhook.k8s.caBundle A PEM-encoded certificate authority (CA) bundle that validates the webhook's server certificate. If this is not set, the webhook uses the system trust roots on the apiserver.
+## @param operator.webhook.k8s.tlsSecret Secret that contains the following keys for the caBundle
+
+## @param operator.webhook.grafana.port Sets the port for the telemetry webhook server.
 operator:
   enabled: true
 
+  serviceAccountName: "frisbee-account"
+
   controllerName: "frisbee-controller"
-  webhookPort: 6666
+
+  webhook:
+    k8s:
+      enabled: true
+      port: 9443
+      caBundle: ""
+      tlsSecret: "frisbee-secret"
+
+    grafana:
+      port: 6666
+
+
 
 
 ## @section Provision of dynamic volumes

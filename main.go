@@ -65,7 +65,9 @@ func main() {
 	)
 
 	// flag.StringVar(&namespace, "namespace", "default", "Restricts the manager's cache to watch objects in this namespace ")
-	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
+
+	// If set to "0" the metrics serving is disabled (otherwise, :8080).
+	flag.StringVar(&metricsAddr, "metrics-bind-address", "0", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
@@ -91,6 +93,7 @@ func main() {
 		MetricsBindAddress:     metricsAddr,
 		Host:                   "0.0.0.0",
 		Port:                   9443,
+		CertDir:                "./certs",
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "233dac68.frisbee.dev",
@@ -154,6 +157,12 @@ func main() {
 			os.Exit(1)
 		}
 
+		if err = (&frisbeev1alpha1.Scenario{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Scenario")
+
+			os.Exit(1)
+		}
+
 		if err = (&frisbeev1alpha1.Service{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Service")
 			os.Exit(1)
@@ -170,14 +179,8 @@ func main() {
 		}
 
 		/*
-			TODO: add webhooks for cascade, stop
+			TODO: add webhooks for cascade, delete, call
 		*/
-
-		if err = (&frisbeev1alpha1.Scenario{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "Scenario")
-
-			os.Exit(1)
-		}
 	}
 
 	// +kubebuilder:scaffold:builder

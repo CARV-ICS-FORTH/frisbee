@@ -1,4 +1,3 @@
-
 # go options
 GO                 ?= go
 LDFLAGS            :=
@@ -14,6 +13,10 @@ endif
 # VERSION defines the project version for the operator.
 # Update this value when you upgrade the version of your project.
 FrisbeeVersion=$(shell cat VERSION)
+
+CRD_DIR ?=	charts/platform/crds
+WEBHOOK_DIR ?= charts/platform/templates/webhook
+RBAC_DIR ?= charts/platform/templates/rbac
 
 # IMAGE_TAG_BASE defines the docker.io namespace and part of the image name for remote images.
 # This variable is used to construct full image tags for bundle and catalog images.
@@ -94,9 +97,9 @@ CRD_OPTIONS ?= crd
 ##@ Development
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
-	$(CONTROLLER_GEN) $(CRD_OPTIONS) paths="./..."  output:crd:artifacts:config=charts/platform/crds
-	#$(CONTROLLER_GEN) webhook paths="./..."  output:webhook:artifacts:config=charts/platform/templates/operator/webhook
-	$(CONTROLLER_GEN) rbac:roleName=frisbee paths="./..."  output:rbac:artifacts:config=charts/platform/templates/operator/rbac
+	$(CONTROLLER_GEN) $(CRD_OPTIONS) paths="./..."  output:crd:artifacts:config=${CRD_DIR}
+	#$(CONTROLLER_GEN) webhook paths="./..."  output:webhook:artifacts:config=${WEBHOOK_DIR}
+	$(CONTROLLER_GEN) rbac:roleName=frisbee paths="./..."  output:rbac:artifacts:config=${RBAC_DIR}
 
 fmt: ## Run go fmt against code.
 	go fmt ./...
@@ -116,13 +119,16 @@ api-docs: gen-crd-api-reference-docs	## Generate API reference documentation
 
 ##@ Build
 
+.PHONY: certs
+certs:  ## Generate certs under 'certs' folder
+	@echo "===> Generate Certs <==="
+	WEBHOOK_DIR=${WEBHOOK_DIR} $(CURDIR)/hack/gen_cert.sh
+
+
 build: generate fmt vet ## Build manager binary.
 	go build -o bin/manager main.go
 
 run: generate fmt vet ## Run a controller from your host.
-	# mkdir -p /tmp/k8s-webhook-server/serving-certs/
-	# openssl req -new -newkey rsa:4096 -x509 -sha256 -days 365 -nodes -out tls.crt -keyout tls.key
-
 	go run -race ./main.go
 
 docker-build: test ## Build docker image for the Frisbee controller.
