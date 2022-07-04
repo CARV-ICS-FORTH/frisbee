@@ -1174,7 +1174,7 @@ The termination refers to both Success and Fail.</p>
 <h3 id="frisbee.dev/v1alpha1.ConditionalExpr">ConditionalExpr
 </h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.Action">Action</a>, <a href="#frisbee.dev/v1alpha1.CallSpec">CallSpec</a>, <a href="#frisbee.dev/v1alpha1.GenerateFromTemplate">GenerateFromTemplate</a>, <a href="#frisbee.dev/v1alpha1.SchedulerSpec">SchedulerSpec</a>, <a href="#frisbee.dev/v1alpha1.ScenarioStatus">ScenarioStatus</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.Action">Action</a>, <a href="#frisbee.dev/v1alpha1.CallSpec">CallSpec</a>, <a href="#frisbee.dev/v1alpha1.GenerateFromTemplate">GenerateFromTemplate</a>, <a href="#frisbee.dev/v1alpha1.ScenarioStatus">ScenarioStatus</a>, <a href="#frisbee.dev/v1alpha1.SchedulerSpec">SchedulerSpec</a>)
 </p>
 <div>
 <p>ConditionalExpr is a source of information about whether the state of the workflow after a given time is correct or not.
@@ -1836,7 +1836,7 @@ map[string]string
 <h3 id="frisbee.dev/v1alpha1.Lifecycle">Lifecycle
 </h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.CallStatus">CallStatus</a>, <a href="#frisbee.dev/v1alpha1.CascadeStatus">CascadeStatus</a>, <a href="#frisbee.dev/v1alpha1.ChaosStatus">ChaosStatus</a>, <a href="#frisbee.dev/v1alpha1.ClusterStatus">ClusterStatus</a>, <a href="#frisbee.dev/v1alpha1.ServiceStatus">ServiceStatus</a>, <a href="#frisbee.dev/v1alpha1.TemplateStatus">TemplateStatus</a>, <a href="#frisbee.dev/v1alpha1.ScenarioStatus">ScenarioStatus</a>, <a href="#frisbee.dev/v1alpha1.VirtualObjectStatus">VirtualObjectStatus</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.CallStatus">CallStatus</a>, <a href="#frisbee.dev/v1alpha1.CascadeStatus">CascadeStatus</a>, <a href="#frisbee.dev/v1alpha1.ChaosStatus">ChaosStatus</a>, <a href="#frisbee.dev/v1alpha1.ClusterStatus">ClusterStatus</a>, <a href="#frisbee.dev/v1alpha1.ScenarioStatus">ScenarioStatus</a>, <a href="#frisbee.dev/v1alpha1.ServiceStatus">ServiceStatus</a>, <a href="#frisbee.dev/v1alpha1.TemplateStatus">TemplateStatus</a>, <a href="#frisbee.dev/v1alpha1.VirtualObjectStatus">VirtualObjectStatus</a>)
 </p>
 <div>
 </div>
@@ -2226,6 +2226,202 @@ Disk
 </td>
 <td>
 <em>(Optional)</em>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frisbee.dev/v1alpha1.Scenario">Scenario
+</h3>
+<div>
+<p>Scenario is the Schema for the Scenarios API.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>metadata</code><br/>
+<em>
+<a href="https://v1-20.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#objectmeta-v1-meta">
+Kubernetes meta/v1.ObjectMeta
+</a>
+</em>
+</td>
+<td>
+Refer to the Kubernetes API documentation for the fields of the
+<code>metadata</code> field.
+</td>
+</tr>
+<tr>
+<td>
+<code>spec</code><br/>
+<em>
+<a href="#frisbee.dev/v1alpha1.ScenarioSpec">
+ScenarioSpec
+</a>
+</em>
+</td>
+<td>
+<br/>
+<br/>
+<table>
+<tr>
+<td>
+<code>actions</code><br/>
+<em>
+<a href="#frisbee.dev/v1alpha1.Action">
+[]Action
+</a>
+</em>
+</td>
+<td>
+<p>Actions are the tasks that will be taken.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>suspend</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Suspend flag tells the controller to suspend subsequent executions, it does
+not apply to already started executions.  Defaults to false.</p>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td>
+<code>status</code><br/>
+<em>
+<a href="#frisbee.dev/v1alpha1.ScenarioStatus">
+ScenarioStatus
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frisbee.dev/v1alpha1.ScenarioSpec">ScenarioSpec
+</h3>
+<p>
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.Scenario">Scenario</a>)
+</p>
+<div>
+<p>ScenarioSpec defines the desired state of Scenario.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>actions</code><br/>
+<em>
+<a href="#frisbee.dev/v1alpha1.Action">
+[]Action
+</a>
+</em>
+</td>
+<td>
+<p>Actions are the tasks that will be taken.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>suspend</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Suspend flag tells the controller to suspend subsequent executions, it does
+not apply to already started executions.  Defaults to false.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frisbee.dev/v1alpha1.ScenarioStatus">ScenarioStatus
+</h3>
+<p>
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.Scenario">Scenario</a>)
+</p>
+<div>
+<p>ScenarioStatus defines the observed state of Scenario.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>Lifecycle</code><br/>
+<em>
+<a href="#frisbee.dev/v1alpha1.Lifecycle">
+Lifecycle
+</a>
+</em>
+</td>
+<td>
+<p>
+(Members of <code>Lifecycle</code> are embedded into this type.)
+</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>executedActions</code><br/>
+<em>
+<a href="#frisbee.dev/v1alpha1.ConditionalExpr">
+map[string]./api/v1alpha1.ConditionalExpr
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ExecutedActions is a list of executed actions.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>grafanaEndpoint</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>GrafanaEndpoint points to the local Grafana instance</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>prometheusEndpoint</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>PrometheusEndpoint points to the local Prometheus instance</p>
 </td>
 </tr>
 </tbody>
@@ -2803,202 +2999,6 @@ Lifecycle
 </tr>
 </tbody>
 </table>
-<h3 id="frisbee.dev/v1alpha1.Scenario">Scenario
-</h3>
-<div>
-<p>Scenario is the Schema for the Scenarios API.</p>
-</div>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>metadata</code><br/>
-<em>
-<a href="https://v1-20.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#objectmeta-v1-meta">
-Kubernetes meta/v1.ObjectMeta
-</a>
-</em>
-</td>
-<td>
-Refer to the Kubernetes API documentation for the fields of the
-<code>metadata</code> field.
-</td>
-</tr>
-<tr>
-<td>
-<code>spec</code><br/>
-<em>
-<a href="#frisbee.dev/v1alpha1.ScenarioSpec">
-ScenarioSpec
-</a>
-</em>
-</td>
-<td>
-<br/>
-<br/>
-<table>
-<tr>
-<td>
-<code>actions</code><br/>
-<em>
-<a href="#frisbee.dev/v1alpha1.Action">
-[]Action
-</a>
-</em>
-</td>
-<td>
-<p>Actions are the tasks that will be taken.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>suspend</code><br/>
-<em>
-bool
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Suspend flag tells the controller to suspend subsequent executions, it does
-not apply to already started executions.  Defaults to false.</p>
-</td>
-</tr>
-</table>
-</td>
-</tr>
-<tr>
-<td>
-<code>status</code><br/>
-<em>
-<a href="#frisbee.dev/v1alpha1.ScenarioStatus">
-ScenarioStatus
-</a>
-</em>
-</td>
-<td>
-</td>
-</tr>
-</tbody>
-</table>
-<h3 id="frisbee.dev/v1alpha1.ScenarioSpec">ScenarioSpec
-</h3>
-<p>
-(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.Scenario">Scenario</a>)
-</p>
-<div>
-<p>ScenarioSpec defines the desired state of Scenario.</p>
-</div>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>actions</code><br/>
-<em>
-<a href="#frisbee.dev/v1alpha1.Action">
-[]Action
-</a>
-</em>
-</td>
-<td>
-<p>Actions are the tasks that will be taken.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>suspend</code><br/>
-<em>
-bool
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Suspend flag tells the controller to suspend subsequent executions, it does
-not apply to already started executions.  Defaults to false.</p>
-</td>
-</tr>
-</tbody>
-</table>
-<h3 id="frisbee.dev/v1alpha1.ScenarioStatus">ScenarioStatus
-</h3>
-<p>
-(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.Scenario">Scenario</a>)
-</p>
-<div>
-<p>ScenarioStatus defines the observed state of Scenario.</p>
-</div>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>Lifecycle</code><br/>
-<em>
-<a href="#frisbee.dev/v1alpha1.Lifecycle">
-Lifecycle
-</a>
-</em>
-</td>
-<td>
-<p>
-(Members of <code>Lifecycle</code> are embedded into this type.)
-</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>executedActions</code><br/>
-<em>
-<a href="#frisbee.dev/v1alpha1.ConditionalExpr">
-map[string]./api/v1alpha1.ConditionalExpr
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>ExecutedActions is a list of executed actions.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>grafanaEndpoint</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-<p>GrafanaEndpoint points to the local Grafana instance</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>prometheusEndpoint</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-<p>PrometheusEndpoint points to the local Prometheus instance</p>
-</td>
-</tr>
-</tbody>
-</table>
 <h3 id="frisbee.dev/v1alpha1.TolerateSpec">TolerateSpec
 </h3>
 <p>
@@ -3185,5 +3185,5 @@ Kubernetes meta/v1.Duration
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>e10f12d</code>.
+on git commit <code>e526204</code>.
 </em></p>

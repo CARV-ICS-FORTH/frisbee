@@ -8,7 +8,7 @@
 
 <!-- /toc -->
 
-This document describes the process to generate custom API reference documentation meant to be serverd on [OSM's docs website](https://docs.openservicemesh.io/).
+This document describes the process to generate custom API reference documentation meant to be served on [Frisbee's docs website](https://docs.frisbee.dev/).
 
 ## 1. Fork [Frisbee](https://github.com/CARV-ICS-FORTH/frisbee) repository
 
