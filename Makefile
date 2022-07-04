@@ -114,14 +114,6 @@ api-docs: gen-crd-api-reference-docs	## Generate API reference documentation
 	$(API_GEN) -api-dir=./api/v1alpha1 -config=./hack/api-docs/config.json -template-dir=./hack/api-docs/template -out-file=./docs/api.html
 
 
-verify-docs: ## Verify Documentation
-	@echo "===> Verifying spellings <==="
-	GO=$(GO) $(CURDIR)/hack/verify-spelling.sh
-	@echo "===> Verifying Table of Contents <==="
-	GO=$(GO) $(CURDIR)/hack/verify-toc.sh
-	@echo "===> Verifying documentation formatting for website <==="
-	$(CURDIR)/hack/verify-docs-for-website.sh
-
 ##@ Build
 
 build: generate fmt vet ## Build manager binary.
