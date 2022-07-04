@@ -16,7 +16,7 @@ spec:
 
     containers:
       - name: app
-        image: cockroachdb/cockroach:latest
+        image: cockroachdb/cockroach:v22.1.2
         ports:
           - name: grpc
             containerPort: {{.Values.port | int64}}
@@ -56,7 +56,8 @@ spec:
           - /bin/sh   # Run shell
           - -c        # Read from string
           - |         # Multi-line str
-            cockroach init --insecure
+            set -eum
+            exec cockroach init --insecure
 
       import-tpcc:
         container: app

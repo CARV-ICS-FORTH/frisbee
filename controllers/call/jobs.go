@@ -99,11 +99,24 @@ func (r *Controller) callJob(ctx context.Context, cr *v1alpha1.Call, i int) erro
 
 			res, err := r.executor.Exec(pod, callable.Container, callable.Command, true)
 			if err != nil {
+				r.Logger.Error(err, "Remote execution failed")
+
 				quit <- errors.Wrapf(err, "command execution failed. Out: %s, Err: %s", res.Stdout, res.Stderr)
 			}
 
 			r.Logger.Info("Call Output", "stdout", res.Stdout, "stderr", res.Stderr)
 
+			if cr.Spec.Expect != nil {
+				expect := cr.Spec.Expect[i]
+
+				if expect.Stdout != nil && *expect.Stdout != res.Stdout {
+					quit <- errors.Errorf("Mismatched stdout. Expected '%s' but got '%s'", *expect.Stdout, res.Stdout)
+				}
+
+				if expect.Stderr != nil && *expect.Stderr != res.Stderr {
+					quit <- errors.Errorf("Mismatched stderr. Expected '%s' but got '%s'", *expect.Stderr, res.Stderr)
+				}
+			}
 		}()
 
 		select {
