@@ -77,6 +77,20 @@ spec:
                           description: Callable is the name of the endpoint that will
                             be called
                           type: string
+                        expect:
+                          description: Expect declares a list of expected outputs.
+                            The number of expected outputs must be the same as the
+                            number of defined services.
+                          items:
+                            description: MatchOutputs defined a set of remote command
+                              outputs that must be matched.
+                            properties:
+                              stderr:
+                                type: string
+                              stdout:
+                                type: string
+                            type: object
+                          type: array
                         schedule:
                           description: Schedule defines the interval between the invocations
                             of the callable.

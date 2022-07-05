@@ -21,6 +21,8 @@ spec:
       call:
         callable: boot
         services: [ masters-0 ]
+        expect:
+          - {stdout: "Cluster successfully initialized"}
 
     # Step 2. import TPC-C data from the workload node (node 1)
     - action: Call

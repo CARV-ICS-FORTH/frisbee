@@ -33,6 +33,18 @@ type Call struct {
 	Status CallStatus `json:"status,omitempty"`
 }
 
+// MatchOutputs defined a set of remote command outputs that must be matched. The limit for both Stdout and Stderr
+// is 1024 characters.
+type MatchOutputs struct {
+	// +optional
+	// +kubebuilder:validation:MaxLength=1024
+	Stdout *string `json:"stdout,omitempty"`
+
+	// +optional
+	// +kubebuilder:validation:MaxLength=1024
+	Stderr *string `json:"stderr,omitempty"`
+}
+
 // CallSpec defines the desired state of Call.
 type CallSpec struct {
 	// Callable is the name of the endpoint that will be called
@@ -40,6 +52,11 @@ type CallSpec struct {
 
 	// Services is a list of services that will be stopped.
 	Services []string `json:"services"`
+
+	// Expect declares a list of expected outputs. The number of expected outputs must be the same
+	// as the number of defined services.
+	// +optional
+	Expect []MatchOutputs `json:"expect,omitempty"`
 
 	// Until defines the conditions under which the CR will stop spawning new jobs.
 	// If used in conjunction with inputs, it will loop over inputs until the conditions are met.
