@@ -36,10 +36,12 @@ type Call struct {
 // MatchOutputs defined a set of remote command outputs that must be matched. The limit for both Stdout and Stderr
 // is 1024 characters.
 type MatchOutputs struct {
+	// Stdout is a regex that describes the expected output from stdout. It cannot be longer than 1024 characters.
 	// +optional
 	// +kubebuilder:validation:MaxLength=1024
 	Stdout *string `json:"stdout,omitempty"`
 
+	// Stderr is a regex that describes the expected output from stderr. It cannot be longer than 1024 characters.
 	// +optional
 	// +kubebuilder:validation:MaxLength=1024
 	Stderr *string `json:"stderr,omitempty"`

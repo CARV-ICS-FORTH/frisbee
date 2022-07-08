@@ -10,11 +10,14 @@
 
 ### Frisbee Operator parameters
 
-| Name                      | Description                                                                | Value                |
-| ------------------------- | -------------------------------------------------------------------------- | -------------------- |
-| `operator.enabled`        | Set it to false for running the controller outside the Kubernetes Cluster. | `true`               |
-| `operator.controllerName` | Defines the name of the controller.                                        | `frisbee-controller` |
-| `operator.webhookPort`    | Defines the telemetry webhook for receiving events from Grafana.           | `6666`               |
+| Name                            | Description                                                                | Value              |
+| ------------------------------- | -------------------------------------------------------------------------- | ------------------ |
+| `operator.enabled`              | Set it to false for running the controller outside the Kubernetes Cluster. | `true`             |
+| `operator.name`                 | Defines the name of the controller.                                        | `frisbee-operator` |
+| `operator.advertisedHost`       | Defines the Public IP of the controller, when operator.enabled==false.     | `139.91.92.82`     |
+| `operator.webhook.k8s.enabled`  | Enables the Admission webhooks                                             | `true`             |
+| `operator.webhook.k8s.port`     | Sets the port for the Admission/Mutation  webhook server.                  | `9443`             |
+| `operator.webhook.grafana.port` | Sets the port for the telemetry webhook server.                            | `6666`             |
 
 
 ### Provision of dynamic volumes

@@ -22,13 +22,12 @@ import (
 
 	"github.com/carv-ics-forth/frisbee/controllers/call"
 	"github.com/carv-ics-forth/frisbee/controllers/cascade"
-	"github.com/carv-ics-forth/frisbee/controllers/scenario"
-	"github.com/pkg/errors"
-
 	"github.com/carv-ics-forth/frisbee/controllers/chaos"
 	"github.com/carv-ics-forth/frisbee/controllers/cluster"
+	"github.com/carv-ics-forth/frisbee/controllers/scenario"
 	"github.com/carv-ics-forth/frisbee/controllers/service"
 	"github.com/carv-ics-forth/frisbee/controllers/template"
+	"github.com/pkg/errors"
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -58,15 +57,32 @@ func init() {
 
 func main() {
 	var (
+		// admission webhooks
+		certDir     string
+		webhookPort int
+
+		// grafana webhook
+		alertingPort int
+
 		//	namespace            string
 		metricsAddr          string
 		enableLeaderElection bool
 		probeAddr            string
 	)
 
+	flag.StringVar(&certDir, "cert-dir", "/tmp/k8s-webhook-server/serving-certs/", "Points to the directory with webhook certificates.")
+
+	flag.IntVar(&webhookPort, "webhook-port", 9443, "Listening port for admission controller.")
+
+	flag.IntVar(&alertingPort, "alerting-port", 6666, "Listening port for Grafana alerts.")
+
 	// flag.StringVar(&namespace, "namespace", "default", "Restricts the manager's cache to watch objects in this namespace ")
-	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
+
+	// If set to "0" the metrics serving is disabled (otherwise, :8080).
+	flag.StringVar(&metricsAddr, "metrics-bind-address", "0", "The address the metric endpoint binds to.")
+
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
+
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
@@ -80,17 +96,13 @@ func main() {
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
-	// GetConfigOrDie creates a *rest.Config for talking to a Kubernetes apiserver.
-	// If --kubeconfig is set, will use the kubeconfig file at that location.
-	// Otherwise, will assume running  in cluster and use the cluster provided kubeconfig.
-	//
-	// Will log an error and exit if there is an error creating the rest.Config.
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme: scheme,
 		// Namespace:              namespace,
-		MetricsBindAddress:     metricsAddr,
-		Host:                   "0.0.0.0",
-		Port:                   9443,
+		MetricsBindAddress: metricsAddr,
+		//		Host:                   "0.0.0.0",
+		Port:                   webhookPort,
+		CertDir:                certDir,
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "233dac68.frisbee.dev",
@@ -100,57 +112,60 @@ func main() {
 		os.Exit(1)
 	}
 
-	ctx := ctrl.SetupSignalHandler()
-
 	// Add controllers
-	if err := template.NewController(mgr, setupLog); err != nil {
-		utilruntime.HandleError(errors.Wrapf(err, "unable to create Templates controller"))
+	{
+		if err := template.NewController(mgr, setupLog); err != nil {
+			utilruntime.HandleError(errors.Wrapf(err, "unable to create Templates controller"))
 
-		os.Exit(1)
+			os.Exit(1)
+		}
+
+		if err := service.NewController(mgr, setupLog); err != nil {
+			utilruntime.HandleError(errors.Wrapf(err, "unable to create Service controller"))
+
+			os.Exit(1)
+		}
+
+		if err := cluster.NewController(mgr, setupLog); err != nil {
+			utilruntime.HandleError(errors.Wrapf(err, "unable to create Cluster controller"))
+
+			os.Exit(1)
+		}
+
+		if err := chaos.NewController(mgr, setupLog); err != nil {
+			utilruntime.HandleError(errors.Wrapf(err, "unable to create Chaos controller"))
+
+			os.Exit(1)
+		}
+
+		if err := cascade.NewController(mgr, setupLog); err != nil {
+			utilruntime.HandleError(errors.Wrapf(err, "unable to create Cascade controller"))
+
+			os.Exit(1)
+		}
+
+		if err := call.NewController(mgr, setupLog); err != nil {
+			utilruntime.HandleError(errors.Wrapf(err, "unable to create Call controller"))
+
+			os.Exit(1)
+		}
+
+		if err := scenario.NewController(mgr, setupLog, alertingPort); err != nil {
+			utilruntime.HandleError(errors.Wrapf(err, "unable to create Scenario controller"))
+
+			os.Exit(1)
+		}
 	}
 
-	if err := service.NewController(mgr, setupLog); err != nil {
-		utilruntime.HandleError(errors.Wrapf(err, "unable to create Service controller"))
-
-		os.Exit(1)
-	}
-
-	if err := cluster.NewController(mgr, setupLog); err != nil {
-		utilruntime.HandleError(errors.Wrapf(err, "unable to create Cluster controller"))
-
-		os.Exit(1)
-	}
-
-	if err := chaos.NewController(mgr, setupLog); err != nil {
-		utilruntime.HandleError(errors.Wrapf(err, "unable to create Chaos controller"))
-
-		os.Exit(1)
-	}
-
-	if err := cascade.NewController(mgr, setupLog); err != nil {
-		utilruntime.HandleError(errors.Wrapf(err, "unable to create Cascade controller"))
-
-		os.Exit(1)
-	}
-
-	if err := call.NewController(mgr, setupLog); err != nil {
-		utilruntime.HandleError(errors.Wrapf(err, "unable to create Call controller"))
-
-		os.Exit(1)
-	}
-
-	if err := scenario.NewController(ctx, mgr, setupLog); err != nil {
-		utilruntime.HandleError(errors.Wrapf(err, "unable to create Scenario controller"))
-
-		os.Exit(1)
-	}
-
-	/*
-		Our existing call to SetupWebhookWithManager registers our conversion webhooks with the manager, too.
-	*/
-	if os.Getenv("ENABLE_WEBHOOKS") == "true" {
+	{
 		if err = (&frisbeev1alpha1.Template{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Template")
+			os.Exit(1)
+		}
+
+		if err = (&frisbeev1alpha1.Scenario{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Scenario")
+
 			os.Exit(1)
 		}
 
@@ -170,42 +185,40 @@ func main() {
 		}
 
 		/*
-			TODO: add webhooks for cascade, stop
+			TODO: add webhooks for cascade, delete, call
 		*/
-
-		if err = (&frisbeev1alpha1.Scenario{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "Scenario")
-
-			os.Exit(1)
-		}
 	}
 
 	// +kubebuilder:scaffold:builder
+	{ // Add manager monitoring
+		if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
+			setupLog.Error(err, "unable to set up health check")
+			os.Exit(1)
+		}
 
-	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
-		setupLog.Error(err, "unable to set up health check")
-		os.Exit(1)
+		if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
+			setupLog.Error(err, "unable to set up ready check")
+			os.Exit(1)
+		}
+
+		/*
+			// init webserver to get the pprof webserver
+			go func() {
+				err := http.ListenAndServe("localhost:6060", nil)
+				if err != nil {
+					runtimeutil.HandleError(errors.Wrapf(err, "unable to start profiling server"))
+				}
+
+				setupLog.Info("Profiler started", "addr", "localhost:6060")
+			}()
+
+		*/
 	}
-
-	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
-		setupLog.Error(err, "unable to set up ready check")
-		os.Exit(1)
-	}
-
-	/*
-		// init webserver to get the pprof webserver
-		go func() {
-			err := http.ListenAndServe("localhost:6060", nil)
-			if err != nil {
-				runtimeutil.HandleError(errors.Wrapf(err, "unable to start profiling server"))
-			}
-
-			setupLog.Info("Profiler started", "addr", "localhost:6060")
-		}()
-
-	*/
 
 	setupLog.Info("starting manager")
+
+	ctx := ctrl.SetupSignalHandler()
+
 	if err := mgr.Start(ctx); err != nil {
 		setupLog.Error(err, "problem running manager")
 

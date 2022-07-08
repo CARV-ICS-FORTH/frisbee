@@ -55,6 +55,8 @@ type Controller struct {
 	logr.Logger
 
 	clusterView lifecycle.Classifier
+
+	alertingPort int
 }
 
 func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -162,7 +164,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	if cr.Status.Phase.Is(v1alpha1.PhaseUninitialized) {
 		if err := r.Initialize(ctx, &cr); err != nil {
-			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot initialize"))
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "scenario initialization error"))
 		}
 
 		if err := r.ConnectToGrafana(ctx, &cr); err != nil {
@@ -307,7 +309,7 @@ func (r *Controller) Initialize(ctx context.Context, t *v1alpha1.Scenario) error
 		the webhook port and developer mode as parameters on the executable.
 		*/
 		startWebhookOnce.Do(func() {
-			err = r.CreateWebhookServer(ctx)
+			err = r.CreateWebhookServer(ctx, r.alertingPort)
 		})
 
 		if err != nil {
@@ -327,8 +329,8 @@ func (r *Controller) Initialize(ctx context.Context, t *v1alpha1.Scenario) error
 	}
 
 	/* Ensure that the scenario is OK */
-	if err := r.Validate(ctx, t, r.clusterView); err != nil {
-		return errors.Wrapf(err, "invalid scenario")
+	if err := r.Validate(ctx, t); err != nil {
+		return errors.Wrapf(err, "validation error")
 	}
 
 	if err := r.StartTelemetry(ctx, t); err != nil {
@@ -467,11 +469,12 @@ func (r *Controller) Finalize(obj client.Object) error {
 	deleted, etc.
 */
 
-func NewController(ctx context.Context, mgr ctrl.Manager, logger logr.Logger) error {
+func NewController(mgr ctrl.Manager, logger logr.Logger, alertingPort int) error {
 	// instantiate the controller
 	r := &Controller{
-		Manager: mgr,
-		Logger:  logger.WithName("scenario"),
+		Manager:      mgr,
+		Logger:       logger.WithName("scenario"),
+		alertingPort: alertingPort,
 	}
 
 	gvk := v1alpha1.GroupVersion.WithKind("Scenario")

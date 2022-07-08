@@ -24,10 +24,9 @@ import (
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
-	grafana2 "github.com/carv-ics-forth/frisbee/controllers/common/grafana"
+	"github.com/carv-ics-forth/frisbee/controllers/common/grafana"
 	notifier "github.com/golanghelper/grafana-webhook"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -80,7 +79,7 @@ func (e *endpoint) Parse(in string) error {
 var endpointFields = reflect.TypeOf(endpoint{}).NumField()
 
 func SetAlert(ctx context.Context, job client.Object, slo v1alpha1.ExprMetrics) error {
-	alert, err := grafana2.ParseAlertExpr(slo)
+	alert, err := grafana.ParseAlertExpr(slo)
 	if err != nil {
 		return errors.Wrapf(err, "invalid alert expression")
 	}
@@ -99,7 +98,7 @@ func SetAlert(ctx context.Context, job client.Object, slo v1alpha1.ExprMetrics) 
 	// If the dashboard is not found, retry a few times before failing.
 	// TODO: explicitly separate the NotFound from other types of errors.
 	if err := retry.OnError(retry.DefaultBackoff, func(error) bool { return true }, func() error {
-		_, err := grafana2.GetClientFor(job).SetAlert(ctx, alert, name, msg)
+		_, err := grafana.GetClientFor(job).SetAlert(ctx, alert, name, msg)
 		return err
 	}); err != nil {
 		return errors.Wrapf(err, "cannot set the alarm")
@@ -118,6 +117,14 @@ func SetAlert(ctx context.Context, job client.Object, slo v1alpha1.ExprMetrics) 
 // DispatchAlert informs an object about the fired alert by updating the metadata of that object.
 func DispatchAlert(ctx context.Context, r common.Reconciler, b *notifier.Body) error {
 	// Step 1. create the patch
+	if b == nil {
+		return errors.Errorf("notifier body cannot be empty")
+	}
+
+	alertJSON, err := json.Marshal(b)
+	if err != nil {
+		return errors.Wrapf(err, "marshalling error")
+	}
 
 	// For more examples see:
 	// https://golang.hotexamples.com/examples/k8s.io.kubernetes.pkg.client.unversioned/Client/Patch/golang-client-patch-method-examples.html
@@ -126,8 +133,6 @@ func DispatchAlert(ctx context.Context, r common.Reconciler, b *notifier.Body) e
 			Annotations map[string]string `json:"annotations"`
 		} `json:"metadata"`
 	}{}
-
-	alertJSON, _ := json.Marshal(b)
 
 	patchStruct.Metadata.Annotations = map[string]string{
 		alertHasBeenFired: b.RuleName,
@@ -161,6 +166,8 @@ func DispatchAlert(ctx context.Context, r common.Reconciler, b *notifier.Body) e
 	return r.GetClient().Patch(ctx, &obj, patch)
 }
 
+const notifyChannelError = "SOMETHING IS WRONG WITH THE ALERTING MECHANISMS"
+
 func FiredAlert(job metav1.Object) (string, bool) {
 	if job == nil {
 		return "", false
@@ -174,15 +181,15 @@ func FiredAlert(job metav1.Object) (string, bool) {
 		return "", false
 	}
 
+	_ = alertName
+
 	// Step 1. Decide if the alert is spurious, enabled, or disabled.
 	state, ok := annotations[firedAlertState]
 	if !ok {
-		logrus.Warn("Strange creatures have screwed the alerting mechanism.")
-
-		return "SOMETHING IS WRONG WITH THE ALERTING MECHANISMS", true
+		return notifyChannelError, true
 	}
 
-	if state == grafana2.NoData {
+	if state == grafana.NoData {
 		/*
 		  Spurious Alert may be risen if the expr evaluation frequency is less than the scheduled interval.
 		  In this case, Grafana faces an idle period, and raises a NoData Alert.
@@ -191,39 +198,33 @@ func FiredAlert(job metav1.Object) (string, bool) {
 		return "", false
 	}
 
-	if state == grafana2.Alerting {
+	if state == grafana.Alerting {
 		info, ok := annotations[firedAlertDetails]
 		if !ok {
-			logrus.Warn("Strange creatures have screwed the alerting mechanism.")
-
-			return "SOMETHING IS WRONG WITH THE ALERTING MECHANISMS", true
+			return notifyChannelError, true
 		}
 
 		return info, true
 	}
 
-	if state == grafana2.OK {
+	if state == grafana.OK {
 		/*
 		 This is the equivalent of revoking an alert. It happens when, after sending an Alert, decides
 		 that the latest evaluation no longer matches the given rule.
 		*/
-		logrus.Warn("Reset alert ", alertName)
-
 		ResetAlert(job)
 
 		return "", false
 	}
 
-	logrus.Warn("Should never reach this point")
-
-	return "", false
+	panic("Should never reach this point")
 }
 
 // ResetAlert removes the annotations from the target object. It does not remove the Alert from Grafana.
 func ResetAlert(obj metav1.Object) {
 	alertID, exists := obj.GetAnnotations()[jobHasAlert]
 	if exists {
-		grafana2.GetClientFor(obj).UnsetAlert(alertID)
+		grafana.GetClientFor(obj).UnsetAlert(alertID)
 	}
 }
 
@@ -231,6 +232,6 @@ func ResetAlert(obj metav1.Object) {
 func UnsetAlert(obj metav1.Object) {
 	alertID, exists := obj.GetAnnotations()[jobHasAlert]
 	if exists {
-		grafana2.GetClientFor(obj).UnsetAlert(alertID)
+		grafana.GetClientFor(obj).UnsetAlert(alertID)
 	}
 }

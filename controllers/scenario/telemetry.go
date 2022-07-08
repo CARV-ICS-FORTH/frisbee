@@ -31,12 +31,9 @@ import (
 	"github.com/carv-ics-forth/frisbee/controllers/common/grafana"
 	"github.com/carv-ics-forth/frisbee/controllers/common/labelling"
 	serviceutils "github.com/carv-ics-forth/frisbee/controllers/service/utils"
-	"github.com/carv-ics-forth/frisbee/pkg/netutils"
-	"github.com/dustinkirkland/golang-petname"
 	notifier "github.com/golanghelper/grafana-webhook"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
-	netv1 "k8s.io/api/networking/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -53,19 +50,11 @@ const (
 	notRandomPrometheusName = "prometheus"
 
 	notRandomGrafanaName = "grafana"
-
-	notRandomLogViewerName = "logviewer"
 )
 
 var (
-	PrometheusPort = int64(9090)
-
 	GrafanaPort = int64(3000)
-
-	LogviewerPort = int64(80)
 )
-
-var pathType = netv1.PathTypePrefix
 
 func (r *Controller) StartTelemetry(ctx context.Context, t *v1alpha1.Scenario) error {
 	telemetryAgents, err := r.ImportTelemetryDashboards(ctx, t)
@@ -109,7 +98,7 @@ func (r *Controller) installPrometheus(ctx context.Context, t *v1alpha1.Scenario
 			return errors.Wrapf(err, "template validation")
 		}
 
-		spec, err := serviceutils.GetServiceSpec(ctx, r, t, *fromtemplate)
+		spec, err := serviceutils.GetServiceSpec(ctx, r.GetClient(), t, *fromtemplate)
 		if err != nil {
 			return errors.Wrapf(err, "cannot get spec")
 		}
@@ -146,7 +135,7 @@ func (r *Controller) installGrafana(ctx context.Context, t *v1alpha1.Scenario, a
 			return errors.Wrapf(err, "template validation")
 		}
 
-		spec, err := serviceutils.GetServiceSpec(ctx, r, t, *fromtemplate)
+		spec, err := serviceutils.GetServiceSpec(ctx, r.GetClient(), t, *fromtemplate)
 		if err != nil {
 			return errors.Wrapf(err, "cannot get spec")
 		}
@@ -186,15 +175,14 @@ func (r *Controller) importDashboards(ctx context.Context, t *v1alpha1.Scenario,
 
 		// avoid duplicates that may be caused when multiple agents share the same dashboard
 		{
-			_, exists := imported[dashboards.GetName()]
-			if exists {
+			if _, exists := imported[dashboards.GetName()]; exists {
 				continue
 			}
 
 			imported[dashboards.GetName()] = struct{}{}
 		}
 
-		volumeName := petname.Name()
+		volumeName := fmt.Sprintf("vol-%d", len(spec.Volumes))
 
 		// associate volume to grafana
 		spec.Volumes = append(spec.Volumes, corev1.Volume{
@@ -243,7 +231,7 @@ func (r *Controller) ImportTelemetryDashboards(ctx context.Context, scenario *v1
 			continue
 		}
 
-		spec, err := serviceutils.GetServiceSpec(ctx, r, scenario, *fromTemplate)
+		spec, err := serviceutils.GetServiceSpec(ctx, r.GetClient(), scenario, *fromTemplate)
 		if err != nil {
 			return nil, errors.Wrapf(err, "cannot retrieve service spec")
 		}
@@ -256,9 +244,9 @@ func (r *Controller) ImportTelemetryDashboards(ctx context.Context, scenario *v1
 		}
 	}
 
-	// secondly, return a deduped array
+	// secondly, return a de-duplicated array
 	imports := make([]string, 0, len(dedup))
-	for dashboard, _ := range dedup {
+	for dashboard := range dedup {
 		imports = append(imports, dashboard)
 	}
 
@@ -266,6 +254,11 @@ func (r *Controller) ImportTelemetryDashboards(ctx context.Context, scenario *v1
 }
 
 func (r *Controller) ConnectToGrafana(ctx context.Context, t *v1alpha1.Scenario) error {
+	if t.Status.GrafanaEndpoint == "" {
+		r.Logger.Info("The Grafana endpoint is empty. Skip telemetry.", "scenario", t.GetName())
+		return nil
+	}
+
 	if grafana.ClientExistsFor(t) {
 		return nil
 	}
@@ -294,38 +287,27 @@ var WebhookURL string
 
 var startWebhookOnce sync.Once
 
+const alertingWebhook = "alerting-service"
+
 // CreateWebhookServer  creates a Webhook for listening for events from Grafana *
-func (r *Controller) CreateWebhookServer(ctx context.Context) error {
+func (r *Controller) CreateWebhookServer(ctx context.Context, alertingPort int) error {
+	WebhookURL = fmt.Sprintf("http://%s:%d", alertingWebhook, alertingPort)
+
+	r.Logger.Info("Controller Webhook", "URL", WebhookURL)
+
 	webhook := http.DefaultServeMux
 
 	webhook.Handle("/", notifier.HandleWebhook(func(w http.ResponseWriter, b *notifier.Body) {
 		r.Logger.Info("Grafana Alert", "body", b)
 
 		if err := expressions.DispatchAlert(ctx, r, b); err != nil {
-			r.Logger.Error(err, "unable to process metrics alert", b)
+			r.Logger.Error(err, "Drop alert", "body", b)
 		}
 	}, 0))
 
-	// If the controller runs within the Kubernetes cluster, we use the assigned name as the advertised host
-	// If the controller runs externally to the Kubernetes cluster, we use the public IP of the local machine.
-	if configuration.Global.DeveloperMode {
-		ip, err := netutils.GetPublicIP()
-		if err != nil {
-			return errors.Wrapf(err, "cannot get controller's public ip")
-		}
-
-		WebhookURL = fmt.Sprintf("http://%s:%d", ip.String(), configuration.Global.WebhookPort)
-	} else {
-		WebhookURL = fmt.Sprintf("http://%s.%s:%d", configuration.Global.ControllerName,
-			configuration.Global.Namespace,
-			configuration.Global.WebhookPort)
-	}
-
-	r.Logger.Info("Controller Webhook", "URL", WebhookURL)
-
 	// Start the server
 	srv := &http.Server{
-		Addr:    fmt.Sprintf(":%d", configuration.Global.WebhookPort),
+		Addr:    fmt.Sprintf(":%d", alertingPort),
 		Handler: webhook,
 	}
 

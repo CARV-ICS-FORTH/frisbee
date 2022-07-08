@@ -43,11 +43,18 @@ spec:
                   of expected outputs must be the same as the number of defined services.
                 items:
                   description: MatchOutputs defined a set of remote command outputs
-                    that must be matched.
+                    that must be matched. The limit for both Stdout and Stderr is
+                    1024 characters.
                   properties:
                     stderr:
+                      description: Stderr is a regex that describes the expected output
+                        from stderr. It cannot be longer than 1024 characters.
+                      maxLength: 1024
                       type: string
                     stdout:
+                      description: Stdout is a regex that describes the expected output
+                        from stdout. It cannot be longer than 1024 characters.
+                      maxLength: 1024
                       type: string
                   type: object
                 type: array

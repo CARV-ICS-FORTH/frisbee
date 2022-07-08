@@ -18,16 +18,12 @@ package expressions
 
 import (
 	"strings"
-	"text/template"
 
 	"github.com/Knetic/govaluate"
-	"github.com/Masterminds/sprig/v3"
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common/lifecycle"
 	"github.com/pkg/errors"
 )
-
-var sprigFuncMap = sprig.TxtFuncMap() // a singleton for better performance
 
 // FiredState enforces user-driven decisions as to when the test has passed or has fail.
 // if it has failed, it updates the workflow status and returns true to indicate that the status has been modified.
@@ -36,7 +32,7 @@ func FiredState(expr v1alpha1.ExprState, state lifecycle.ClassifierReader) (stri
 		return "", false, nil
 	}
 
-	t, err := template.New("").Funcs(sprigFuncMap).Option("missingkey=error").Parse(string(expr))
+	t, err := expr.Parse()
 	if err != nil {
 		return "ParsingError", false, errors.Wrapf(err, "dereference error")
 	}

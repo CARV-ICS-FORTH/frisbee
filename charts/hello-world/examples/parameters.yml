@@ -6,8 +6,8 @@ metadata:
 spec:
   actions:
     - action: Service
-      name: hello-world
+      name: whalesay
       service:
-        templateRef: hello-world
+        templateRef: whalesay
         inputs:
-          - { msg: "hello world" }
+          - { message: "hello world", sleep: "10m" }

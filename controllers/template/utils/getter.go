@@ -20,7 +20,6 @@ import (
 	"context"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	"github.com/carv-ics-forth/frisbee/controllers/common"
 	"github.com/carv-ics-forth/frisbee/controllers/common/configuration"
 	"github.com/pkg/errors"
 	k8errors "k8s.io/apimachinery/pkg/api/errors"
@@ -31,7 +30,7 @@ import (
 
 // GetTemplate searches Frisbee for the given reference. By default, it searches the given namespace. If it is not found,
 // then it searches the installation namespace.
-func GetTemplate(ctx context.Context, r common.Reconciler, who metav1.Object, ref string) (*v1alpha1.Template, error) {
+func GetTemplate(ctx context.Context, c client.Client, who metav1.Object, ref string) (*v1alpha1.Template, error) {
 	var template v1alpha1.Template
 
 	key := client.ObjectKey{
@@ -39,7 +38,7 @@ func GetTemplate(ctx context.Context, r common.Reconciler, who metav1.Object, re
 		Name:      ref,
 	}
 
-	err := r.GetClient().Get(ctx, key, &template)
+	err := c.Get(ctx, key, &template)
 	switch {
 	case k8errors.IsNotFound(err):
 		if who.GetNamespace() == configuration.Global.Namespace {
@@ -49,7 +48,7 @@ func GetTemplate(ctx context.Context, r common.Reconciler, who metav1.Object, re
 		// If it not found on the default namespace, try with the installation namespace
 		key.Namespace = configuration.Global.Namespace
 
-		if err := r.GetClient().Get(ctx, key, &template); err != nil {
+		if err := c.Get(ctx, key, &template); err != nil {
 			return nil, errors.Wrapf(err, "failed to discover '%s' at both test '%s' and installation '%s' namespaces",
 				ref, who.GetNamespace(), configuration.Global.Namespace)
 		}

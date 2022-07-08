@@ -16,6 +16,4 @@ data:
 
   IngressClassName: {{.Values.global.ingressClass}}
 
-  WebhookPort: {{.Values.operator.webhookPort | quote}}
-
-  ControllerName: {{.Values.operator.controllerName}}
+  ControllerName: {{.Values.operator.name}}

@@ -60,7 +60,7 @@ func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Service) error {
 
 	pod.SetName(cr.GetName())
 
-	// make labels visibile to the pod
+	// make labels visible to the pod
 	labelling.Propagate(&pod, cr)
 	pod.SetAnnotations(cr.GetAnnotations())
 
@@ -265,7 +265,7 @@ func decoratePod(ctx context.Context, r *Controller, cr *v1alpha1.Service) error
 	if req := cr.Spec.Decorators.Telemetry; req != nil {
 		// import dashboards for monitoring agents to the service
 		for _, monRef := range req {
-			monSpec, err := serviceutils.GetServiceSpec(ctx, r, cr, v1alpha1.GenerateFromTemplate{TemplateRef: monRef})
+			monSpec, err := serviceutils.GetServiceSpec(ctx, r.GetClient(), cr, v1alpha1.GenerateFromTemplate{TemplateRef: monRef})
 			if err != nil {
 				return errors.Wrapf(err, "cannot get monitor")
 			}

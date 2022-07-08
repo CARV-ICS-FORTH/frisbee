@@ -1,0 +1,101 @@
+{{ if .Values.operator.enabled}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: webhook-service
+spec:
+  ports:
+    - name: https
+      port: 443
+      targetPort: {{.Values.operator.webhook.k8s.port | int64}}
+  selector:
+    control-plane: {{.Values.operator.name}}
+---
+
+{{ else }}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: webhook-service
+spec:
+  type: ClusterIP
+  ports:
+    - name: https
+      port: 443 # Do no add targetPort. It is handled by the proxy.
+  selector:
+    control-plane: webhook-proxy
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: webhook-proxy-config
+data:
+  default.conf: |
+    log_format custom '$remote_addr - $sent_http_x_log_user [$time_local] "$request" '
+                      '$status $body_bytes_sent "$http_referer" "$http_user_agent"';
+    server {
+        listen 443 ssl;
+        server_name webhook-service.{{.Release.Namespace}}.svc;
+        access_log /var/log/nginx/access.log custom;
+        ssl_certificate         /etc/ssl/keys/tls.crt;
+        ssl_certificate_key     /etc/ssl/keys/tls.key;
+        ssl_session_cache       builtin:1000 shared:SSL:10m;
+        ssl_protocols           TLSv1 TLSv1.1 TLSv1.2;
+        ssl_ciphers             HIGH:!aNULL:!eNULL:!EXPORT:!CAMELLIA:!DES:!MD5:!PSK:!RC4;
+        ssl_prefer_server_ciphers on;
+        location / {
+            proxy_set_header    Host $host;
+            proxy_set_header    X-Real-IP $remote_addr;
+            proxy_set_header    X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header    X-Forwarded-Proto $scheme;
+            proxy_pass          https://{{.Values.operator.advertisedHost}}:{{.Values.operator.webhook.k8s.port}};
+            proxy_read_timeout  10;
+            proxy_redirect      https://{{.Values.operator.advertisedHost}}:{{.Values.operator.webhook.k8s.port}} https://webhook-service.{{.Release.Namespace}}.svc;
+        }
+    }
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webhook-proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      control-plane: webhook-proxy
+  template:
+    metadata:
+      labels:
+        control-plane: webhook-proxy
+    spec:
+      containers:
+        - image: nginx:1.19.6-alpine
+          name: proxy
+          env:
+            - name: NGINX_ENTRYPOINT_QUIET_LOGS
+              value: "1"
+          ports:
+            - containerPort: 443
+              name: https
+          volumeMounts:
+            - name: webhook-tls-volume
+              mountPath: /etc/ssl/keys
+              readOnly: true
+            - name: webhook-proxy-config-volume
+              mountPath: /etc/nginx/conf.d/default.conf
+              subPath: default.conf
+      volumes:
+        - name: webhook-tls-volume
+          secret:
+            secretName: webhook-tls
+        - name: webhook-proxy-config-volume
+          configMap:
+            name: webhook-proxy-config
+            defaultMode: 0644
+
+  {{end}}

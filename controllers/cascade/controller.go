@@ -258,7 +258,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	/*
 		If all jobs are scheduled, we have nothing else to do.
-		If all jobs are scheduled but are not in the Running phase, they may be in the Pending phase. A
+		If all jobs are scheduled but are not in the Running phase, they may be in the Pending phase.
 		In both cases, we have nothing else to do but waiting for the next reconciliation cycle.
 	*/
 	nextExpectedJob := cr.Status.ScheduledJobs + 1

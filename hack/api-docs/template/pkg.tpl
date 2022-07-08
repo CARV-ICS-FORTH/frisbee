@@ -1,6 +1,24 @@
 {{ define "packages" }}
 
 {{ with .packages}}
+
+---
+title: Field Reference
+linktitle: Field Reference
+description: This document describes the fields for building a Frisbee experiment.
+publishdate: 2022-06-28
+lastmod: 2022-06-28
+layout: single
+menu:
+main:
+    parent:  "section name"
+    weight: 10
+weight: 10
+draft: false
+aliases: [/fields]
+toc: true
+---
+
 <p>Packages:</p>
 <ul>
     {{ range . }}

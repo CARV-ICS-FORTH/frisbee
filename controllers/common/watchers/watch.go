@@ -120,7 +120,7 @@ func (w *simpleWatch) watchDelete(r common.Reconciler, gvk schema.GroupVersionKi
 		}
 
 		// an object was deleted but the watch deletion event was missed while disconnected from apiserver.
-		// In this case we don'w know the final "resting" state of the object,
+		// In this case we don't know the final "resting" state of the object,
 		// so there's a chance the included `Obj` is stale.
 		if e.DeleteStateUnknown {
 			runtimeutil.HandleError(errors.Errorf("couldn'w get object from tombstone %+v", e.Object))

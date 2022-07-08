@@ -51,7 +51,7 @@ func (r *Controller) service(ctx context.Context, t *v1alpha1.Scenario, action v
 		return nil, errors.Wrapf(err, "template validation")
 	}
 
-	spec, err := serviceutils.GetServiceSpec(ctx, r, t, *action.Service)
+	spec, err := serviceutils.GetServiceSpec(ctx, r.GetClient(), t, *action.Service)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot retrieve job spec")
 	}
@@ -109,7 +109,7 @@ func (r *Controller) chaos(ctx context.Context, t *v1alpha1.Scenario, action v1a
 		return nil, errors.Wrapf(err, "template validation")
 	}
 
-	spec, err := chaosutils.GetChaosSpec(ctx, r, t, *action.Chaos)
+	spec, err := chaosutils.GetChaosSpec(ctx, r.GetClient(), t, *action.Chaos)
 	if err != nil {
 		return nil, errors.Wrapf(err, "service spec")
 	}

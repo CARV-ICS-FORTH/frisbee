@@ -20,17 +20,17 @@ import (
 	"context"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	"github.com/carv-ics-forth/frisbee/controllers/common"
 	templateutils "github.com/carv-ics-forth/frisbee/controllers/template/utils"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/json"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func GetServiceSpec(ctx context.Context, r common.Reconciler, caller metav1.Object, fromTemplate v1alpha1.GenerateFromTemplate) (v1alpha1.ServiceSpec, error) {
-	template, err := templateutils.GetTemplate(ctx, r, caller, fromTemplate.TemplateRef)
+func GetServiceSpec(ctx context.Context, c client.Client, caller metav1.Object, fromTemplate v1alpha1.GenerateFromTemplate) (v1alpha1.ServiceSpec, error) {
+	template, err := templateutils.GetTemplate(ctx, c, caller, fromTemplate.TemplateRef)
 	if err != nil {
-		return v1alpha1.ServiceSpec{}, errors.Wrapf(err, "getTemplate error")
+		return v1alpha1.ServiceSpec{}, errors.Wrapf(err, "template [%s] is not installed", fromTemplate.TemplateRef)
 	}
 
 	// convert the service to a json and then expand templated values.
@@ -53,10 +53,10 @@ func GetServiceSpec(ctx context.Context, r common.Reconciler, caller metav1.Obje
 	return spec, nil
 }
 
-func GetServiceSpecList(ctx context.Context, r common.Reconciler, caller metav1.Object, fromTemplate v1alpha1.GenerateFromTemplate) ([]v1alpha1.ServiceSpec, error) {
-	template, err := templateutils.GetTemplate(ctx, r, caller, fromTemplate.TemplateRef)
+func GetServiceSpecList(ctx context.Context, c client.Client, caller metav1.Object, fromTemplate v1alpha1.GenerateFromTemplate) ([]v1alpha1.ServiceSpec, error) {
+	template, err := templateutils.GetTemplate(ctx, c, caller, fromTemplate.TemplateRef)
 	if err != nil {
-		return nil, errors.Wrapf(err, "template %s error", fromTemplate.TemplateRef)
+		return nil, errors.Wrapf(err, "template [%s] is not installed", fromTemplate.TemplateRef)
 	}
 
 	// convert the service to a json and then expand templated values.
