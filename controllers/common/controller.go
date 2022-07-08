@@ -228,6 +228,7 @@ func Create(ctx context.Context, r Reconciler, parent, child client.Object) erro
 
 	// If err is nil, Wrapf returns nil.
 	err := r.GetClient().Create(ctx, child)
+
 	return errors.Wrapf(err, "creation failed")
 }
 

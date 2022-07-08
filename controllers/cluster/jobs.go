@@ -63,7 +63,7 @@ func (r *Controller) constructJobSpecList(ctx context.Context, cluster *v1alpha1
 		return nil, errors.Wrapf(err, "template validation")
 	}
 
-	specs, err := serviceutils.GetServiceSpecList(ctx, r, cluster, cluster.Spec.GenerateFromTemplate)
+	specs, err := serviceutils.GetServiceSpecList(ctx, r.GetClient(), cluster, cluster.Spec.GenerateFromTemplate)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot get specs")
 	}

@@ -1,3 +1,19 @@
+---
+title: Field Reference
+linktitle: Field Reference
+description: This document describes the fields for building a Frisbee experiment.
+publishdate: 2022-06-28
+lastmod: 2022-06-28
+layout: single
+menu:
+main:
+parent:  "section name"
+weight: 10
+weight: 10
+draft: false
+aliases: [/fields]
+toc: true
+---
 <p>Packages:</p>
 <ul>
 <li>
@@ -193,6 +209,21 @@ string
 </tr>
 <tr>
 <td>
+<code>expect</code><br/>
+<em>
+<a href="#frisbee.dev/v1alpha1.MatchOutputs">
+[]MatchOutputs
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Expect declares a list of expected outputs. The number of expected outputs must be the same
+as the number of defined services.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>until</code><br/>
 <em>
 <a href="#frisbee.dev/v1alpha1.ConditionalExpr">
@@ -286,6 +317,21 @@ string
 </td>
 <td>
 <p>Services is a list of services that will be stopped.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>expect</code><br/>
+<em>
+<a href="#frisbee.dev/v1alpha1.MatchOutputs">
+[]MatchOutputs
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Expect declares a list of expected outputs. The number of expected outputs must be the same
+as the number of defined services.</p>
 </td>
 </tr>
 <tr>
@@ -1947,6 +1993,49 @@ map[string]string
 </tr>
 </tbody>
 </table>
+<h3 id="frisbee.dev/v1alpha1.MatchOutputs">MatchOutputs
+</h3>
+<p>
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.CallSpec">CallSpec</a>)
+</p>
+<div>
+<p>MatchOutputs defined a set of remote command outputs that must be matched. The limit for both Stdout and Stderr
+is 1024 characters.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>stdout</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Stdout is a regex that describes the expected output from stdout. It cannot be longer than 1024 characters.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>stderr</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Stderr is a regex that describes the expected output from stderr. It cannot be longer than 1024 characters.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="frisbee.dev/v1alpha1.Mode">Mode
 (<code>string</code> alias)</h3>
 <p>
@@ -3185,5 +3274,5 @@ Kubernetes meta/v1.Duration
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>a894dd4</code>.
+on git commit <code>92c476c</code>.
 </em></p>

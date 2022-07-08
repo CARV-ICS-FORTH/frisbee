@@ -37,8 +37,6 @@ type Configuration struct {
 
 	IngressClassName string `json:"ingressClassName"`
 
-	GrafanaWebhookPort int64 `json:"grafanaWebhookPort"`
-
 	ControllerName string `json:"controllerName"`
 }
 

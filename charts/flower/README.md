@@ -3,7 +3,6 @@
 > [*Flower*](https://github.com/adap/flower)  A Friendly Federated Learning Framework
 
 
-
 ## Install the Chart
 
 Firstly, install the platform and dependent charts.
@@ -20,7 +19,6 @@ Firstly, install the platform and dependent charts.
 >> helm upgrade --install --wait my-system ./charts/system --debug -n mytest --create-namespace
 >> helm upgrade --install my-flower ./charts/flower/ --debug -n mytest
 ```
-
 
 
 Now you are ready to run the Flower scenarios.
@@ -43,7 +41,6 @@ n.scaled-baseline.yml
 ```
 
 
-
 ## Run a Scenario
 
 Let's choose the 3rd scenario.
@@ -55,16 +52,15 @@ scenario.frisbee.dev/throttle-client created
 ```
 
 
-
 Once it's running, you can access the real-time dashboard. To do so, you can get the endpoints by inspecting the scenario.
 
 ```bash
 >> kubectl describe scenario.frisbee.dev/throttle-client
 ...
-  Grafana Endpoint:     grafana-karvdash-fnikol.platform.science-hangar.eu
-  Message:              running jobs: [clients server throttled-client]
-  Phase:                Running
-  Prometheus Endpoint:  prometheus-karvdash-fnikol.platform.science-hangar.eu
+Grafana Endpoint:     grafana-karvdash-fnikol.platform.science-hangar.eu
+Message:              running jobs: [clients server throttled-client]
+Phase:                Running
+Prometheus Endpoint:  prometheus-karvdash-fnikol.platform.science-hangar.eu
 ```
 
 Notice the ".platform.science-hangar.eu". This is the cluster's dns, and we have it defined in the `charts/platform/values.yaml`.
@@ -73,7 +69,6 @@ Notice the ".platform.science-hangar.eu". This is the cluster's dns, and we have
 If you are too lazy, you can open it with the following one-liner:
 
 `firefox $(kubectl describe scenario.frisbee.dev/throttle-client | grep Grafana | cut -d ":" -f 2)`
-
 
 
 ## Uninstall the Chart
@@ -85,8 +80,7 @@ Firstly, terminate the experiment.
 ```
 
 
-
-Then delete the installed charts. 
+Then delete the installed charts.
 
 ```bash
 >> helm delete my-flower my-system my-frisbee

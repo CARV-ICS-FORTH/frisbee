@@ -1,17 +1,19 @@
-{{if .Values.operator.webhook.k8s.enabled}}
 ---
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
-  creationTimestamp: null
-  name: mutating-webhook-configuration
+  name: {{.Release.Name}}-mutating-webhook
+  annotations:
+    cert-manager.io/inject-ca-from: {{.Release.Namespace}}/webhook-tls
 webhooks:
 - admissionReviewVersions:
   - v1
   - v1alpha1
   clientConfig:
-    url: https://139.91.92.82:{{.Values.operator.webhook.k8s.port}}/mutate-frisbee-dev-v1alpha1-chaos
-    caBundle: {{.Values.operator.webhook.k8s.caBundle}}
+    service:
+      name: webhook-service
+      namespace: {{.Release.Namespace}}
+      path: /mutate-frisbee-dev-v1alpha1-chaos
   failurePolicy: Fail
   name: mchaos.kb.io
   rules:
@@ -29,8 +31,10 @@ webhooks:
   - v1
   - v1alpha1
   clientConfig:
-    url: https://139.91.92.82:{{.Values.operator.webhook.k8s.port}}/mutate-frisbee-dev-v1alpha1-cluster
-    caBundle: {{.Values.operator.webhook.k8s.caBundle}}
+    service:
+      name: webhook-service
+      namespace: {{.Release.Namespace}}
+      path: /mutate-frisbee-dev-v1alpha1-cluster
   failurePolicy: Fail
   name: mcluster.kb.io
   rules:
@@ -48,8 +52,10 @@ webhooks:
   - v1
   - v1alpha1
   clientConfig:
-    url: https://139.91.92.82:{{.Values.operator.webhook.k8s.port}}/mutate-frisbee-dev-v1alpha1-scenario
-    caBundle: {{.Values.operator.webhook.k8s.caBundle}}
+    service:
+      name: webhook-service
+      namespace: {{.Release.Namespace}}
+      path: /mutate-frisbee-dev-v1alpha1-scenario
   failurePolicy: Fail
   name: mservice.kb.io
   rules:
@@ -67,8 +73,10 @@ webhooks:
   - v1
   - v1alpha1
   clientConfig:
-    url: https://139.91.92.82:{{.Values.operator.webhook.k8s.port}}/mutate-frisbee-dev-v1alpha1-template
-    caBundle: {{.Values.operator.webhook.k8s.caBundle}}
+    service:
+      name: webhook-service
+      namespace: {{.Release.Namespace}}
+      path: /mutate-frisbee-dev-v1alpha1-template
   failurePolicy: Fail
   name: mtemplate.kb.io
   rules:
@@ -86,15 +94,18 @@ webhooks:
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
-  creationTimestamp: null
-  name: validating-webhook-configuration
+  name: {{.Release.Name}}-validating-webhook
+  annotations:
+    cert-manager.io/inject-ca-from: {{.Release.Namespace}}/webhook-tls
 webhooks:
 - admissionReviewVersions:
   - v1
   - v1alpha1
   clientConfig:
-    url: https://139.91.92.82:{{.Values.operator.webhook.k8s.port}}/validate-frisbee-dev-v1alpha1-chaos
-    caBundle: {{.Values.operator.webhook.k8s.caBundle}}
+    service:
+      name: webhook-service
+      namespace: {{.Release.Namespace}}
+      path: /validate-frisbee-dev-v1alpha1-chaos
   failurePolicy: Fail
   name: vchaos.kb.io
   rules:
@@ -112,8 +123,10 @@ webhooks:
   - v1
   - v1alpha1
   clientConfig:
-    url: https://139.91.92.82:{{.Values.operator.webhook.k8s.port}}/validate-frisbee-dev-v1alpha1-cluster
-    caBundle: {{.Values.operator.webhook.k8s.caBundle}}
+    service:
+      name: webhook-service
+      namespace: {{.Release.Namespace}}
+      path: /validate-frisbee-dev-v1alpha1-cluster
   failurePolicy: Fail
   name: vcluster.kb.io
   rules:
@@ -131,8 +144,10 @@ webhooks:
   - v1
   - v1alpha1
   clientConfig:
-    url: https://139.91.92.82:{{.Values.operator.webhook.k8s.port}}/validate-frisbee-dev-v1alpha1-scenario
-    caBundle: {{.Values.operator.webhook.k8s.caBundle}}
+    service:
+      name: webhook-service
+      namespace: {{.Release.Namespace}}
+      path: /validate-frisbee-dev-v1alpha1-scenario
   failurePolicy: Fail
   name: vscenario.kb.io
   rules:
@@ -150,8 +165,10 @@ webhooks:
   - v1
   - v1alpha1
   clientConfig:
-    url: https://139.91.92.82:{{.Values.operator.webhook.k8s.port}}/validate-frisbee-dev-v1alpha1-service
-    caBundle: {{.Values.operator.webhook.k8s.caBundle}}
+    service:
+      name: webhook-service
+      namespace: {{.Release.Namespace}}
+      path: /validate-frisbee-dev-v1alpha1-service
   failurePolicy: Fail
   name: vservice.kb.io
   rules:
@@ -169,8 +186,10 @@ webhooks:
   - v1
   - v1alpha1
   clientConfig:
-    url: https://139.91.92.82:{{.Values.operator.webhook.k8s.port}}/validate-frisbee-dev-v1alpha1-template
-    caBundle: {{.Values.operator.webhook.k8s.caBundle}}
+    service:
+      name: webhook-service
+      namespace: {{.Release.Namespace}}
+      path: /validate-frisbee-dev-v1alpha1-template
   failurePolicy: Fail
   name: vtemplate.kb.io
   rules:
@@ -184,5 +203,3 @@ webhooks:
     resources:
     - templates
   sideEffects: None
-
-{{end}}

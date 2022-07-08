@@ -56,7 +56,7 @@ func (r *Controller) constructJobSpecList(ctx context.Context, group *v1alpha1.C
 		return nil, errors.Wrapf(err, "template validation")
 	}
 
-	specs, err := chaosutils.GetChaosSpecList(ctx, r, group, group.Spec.GenerateFromTemplate)
+	specs, err := chaosutils.GetChaosSpecList(ctx, r.GetClient(), group, group.Spec.GenerateFromTemplate)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot get specs")
 	}

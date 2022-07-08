@@ -1,58 +1,54 @@
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: {{.Values.operator.serviceAccountName}}
-
 {{- if .Values.operator.enabled }}
----
-# This Service is used for Grafana to be able to communicate with the operator.
-apiVersion: v1
-kind: Service
-metadata:
-  name: {{.Values.operator.controllerName}}
-spec:
-  ports:
-    - port: {{.Values.operator.webhook.grafana.port | int64}}
-    - port: {{.Values.operator.webhook.k8s.port | int64}}
-  selector:
-    control-plane: manager
 
 ---
 # Deployment of the Frisbee controller.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{.Values.operator.controllerName}}
+  name: {{.Values.operator.name}}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      control-plane: manager
+      control-plane: {{.Values.operator.name}}
   template:
     metadata:
       labels:
-        control-plane: manager
+        control-plane: {{.Values.operator.name}}
     spec:
-      serviceAccountName:  {{.Values.operator.serviceAccountName}}
+      serviceAccountName: {{.Values.operator.name}}-account
       securityContext:
         runAsNonRoot: true
         runAsUser: 666
         runAsGroup: 666
       terminationGracePeriodSeconds: 10
+
+      volumes:
+        - name: webhook-tls-volume
+          secret:
+            secretName: webhook-tls
+
       containers:
         - name: manager
           image: icsforth/frisbee-operator:latest
           ports:
-            - name: "k8s-receiver"                   # Receive alerts from K8s
+            - name: "admission-hook"                   # Admission Webhooks
               containerPort: {{.Values.operator.webhook.k8s.port | int64}}
-            - name: "grafana-receiver"               # Receive alerts from Grafana
+            - name: "grafana-hook"               # Grafana Alerts
               containerPort: {{.Values.operator.webhook.grafana.port | int64}}
+
+          volumeMounts:
+            - name: webhook-tls-volume
+              mountPath: /tmp/k8s-webhook-server/serving-certs
+              readOnly: true
           command:
             - /bin/sh   # Run shell
             - -c        # Read from string
             - |         # Multi-line str
-              ~/manager
+              ~/manager       \
+              -cert-dir=/tmp/k8s-webhook-server/serving-certs     \
+              -webhook-port={{.Values.operator.webhook.k8s.port}}  \
+              --alerting-port={{.Values.operator.webhook.grafana.port}}
 
           livenessProbe:
             httpGet:

@@ -8,6 +8,7 @@ on:
         required: true
         default: 'warning'
       tags:
+        required: true
         description: 'Test scenario tags'
 
   push:

@@ -1,0 +1,32 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: webhook-tls
+spec:
+  secretName: webhook-tls
+  duration: 87600h
+  commonName: webhook-service.{{.Release.Namespace}}.svc
+  dnsNames:
+    - webhook-service.{{.Release.Namespace}}.svc
+  privateKey:
+    algorithm: RSA
+    size: 2048
+  issuerRef:
+    name: my-issuer
+  subject:
+    organizations: [ "FORTH" ]
+    countries: [ "GR" ]
+    provinces: [ "Crete" ]
+    localities: [ "Heraklion" ]
+    organizationalUnits: [ "CARV" ]
+    postalCodes: [ "71300" ]
+    streetAddresses: [ "N. Plastira 100" ]
+
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: my-issuer
+spec:
+  selfSigned: { }

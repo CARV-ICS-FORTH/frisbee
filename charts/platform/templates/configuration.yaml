@@ -16,6 +16,4 @@ data:
 
   IngressClassName: {{.Values.global.ingressClass}}
 
-  GrafanaWebhookPort: {{.Values.operator.webhook.grafana.port | quote}}
-
-  ControllerName: {{.Values.operator.controllerName}}
+  ControllerName: {{.Values.operator.name}}

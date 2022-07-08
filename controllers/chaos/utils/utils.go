@@ -20,15 +20,15 @@ import (
 	"context"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	"github.com/carv-ics-forth/frisbee/controllers/common"
 	templateutils "github.com/carv-ics-forth/frisbee/controllers/template/utils"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/json"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func GetChaosSpec(ctx context.Context, r common.Reconciler, caller metav1.Object, fromTemplate v1alpha1.GenerateFromTemplate) (v1alpha1.ChaosSpec, error) {
-	template, err := templateutils.GetTemplate(ctx, r, caller, fromTemplate.TemplateRef)
+func GetChaosSpec(ctx context.Context, c client.Client, caller metav1.Object, fromTemplate v1alpha1.GenerateFromTemplate) (v1alpha1.ChaosSpec, error) {
+	template, err := templateutils.GetTemplate(ctx, c, caller, fromTemplate.TemplateRef)
 	if err != nil {
 		return v1alpha1.ChaosSpec{}, errors.Wrapf(err, "getTemplate error")
 	}
@@ -53,8 +53,8 @@ func GetChaosSpec(ctx context.Context, r common.Reconciler, caller metav1.Object
 	return spec, nil
 }
 
-func GetChaosSpecList(ctx context.Context, r common.Reconciler, caller metav1.Object, fromTemplate v1alpha1.GenerateFromTemplate) ([]v1alpha1.ChaosSpec, error) {
-	template, err := templateutils.GetTemplate(ctx, r, caller, fromTemplate.TemplateRef)
+func GetChaosSpecList(ctx context.Context, c client.Client, caller metav1.Object, fromTemplate v1alpha1.GenerateFromTemplate) ([]v1alpha1.ChaosSpec, error) {
+	template, err := templateutils.GetTemplate(ctx, c, caller, fromTemplate.TemplateRef)
 	if err != nil {
 		return nil, errors.Wrapf(err, "template %s error", fromTemplate.TemplateRef)
 	}

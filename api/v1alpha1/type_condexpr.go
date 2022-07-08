@@ -16,9 +16,13 @@ limitations under the License.
 
 package v1alpha1
 
-type ExprMetrics string
+import (
+	"regexp"
+	"text/template"
 
-type ExprState string
+	"github.com/Masterminds/sprig/v3"
+	"github.com/pkg/errors"
+)
 
 // ConditionalExpr is a source of information about whether the state of the workflow after a given time is correct or not.
 // This is needed because some scenarios may run in infinite-horizons.
@@ -39,6 +43,10 @@ type ConditionalExpr struct {
 	State ExprState `json:"state,omitempty"`
 }
 
+func (c *ConditionalExpr) IsZero() bool {
+	return c == nil || !c.HasStateExpr() || !c.HasMetricsExpr()
+}
+
 func (c *ConditionalExpr) HasMetricsExpr() bool {
 	return c != nil && c.Metrics != ""
 }
@@ -47,6 +55,45 @@ func (c *ConditionalExpr) HasStateExpr() bool {
 	return c != nil && c.State != ""
 }
 
-func (c *ConditionalExpr) IsZero() bool {
-	return c == nil || !c.HasStateExpr() || !c.HasMetricsExpr()
+/*
+	Validate State Expressions
+*/
+
+var sprigFuncMap = sprig.TxtFuncMap() // a singleton for better performance
+
+type ExprState string
+
+func (query ExprState) Parse() (*template.Template, error) {
+	t, err := template.New("").Funcs(sprigFuncMap).Option("missingkey=error").Parse(string(query))
+	if err != nil {
+		return nil, errors.Wrapf(err, "parsing error")
+	}
+
+	return t, nil
 }
+
+/*
+	Validate Metrics Expressions
+*/
+
+type ExprMetrics string
+
+func (query ExprMetrics) Parse() ([]string, error) {
+	matches := ExprMetricsValidator.FindStringSubmatch(string(query))
+	if len(matches) == 0 {
+		return nil, errors.Errorf(`erroneous query %s. 
+		Examples:
+			1) avg() OF query(wpFnYRwGk/2/bitrate, 15m, now) IS BELOW(14)
+			2) avg() OF query(wpFnYRwGk/2/bitrate, 15m, now) IS NOVALUE()
+			3) avg() OF query(wpFnYRwGk/2/bitrate, 15m, now) IS WithinRange(4, 88)
+			4) avg() OF query(wpFnYRwGk/2/bitrate, 15m, now) IS WithinRange(4, 88) FOR (1m)
+			5) avg() OF query(wpFnYRwGk/2/bitrate, 15m, now) IS WithinRange(4, 88) FOR (1m) EVERY(1m)
+
+		Prepare your expressions at: https://regex101.com/r/sIspYb/1/`, query)
+	}
+
+	return matches, nil
+}
+
+// ExprMetricsValidator expressions evaluated with https://regex101.com/r/xrSyEz/1
+var ExprMetricsValidator = regexp.MustCompile(`(?m)^(?P<reducer>\w+)\(\)\s+of\s+query\((?P<dashboardUID>\w+)\/(?P<panelID>\d+)\/(?P<metric>\w+),\s+(?P<from>\w+),\s+(?P<to>\w+)\)\s+is\s+(?P<evaluator>\w+)\((?P<params>\d*[,\s]*\d*)\)\s*(for\((?P<for>\w+)\))*\s*(every\((?P<every>\w+)\))*\s*$`)

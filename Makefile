@@ -17,6 +17,7 @@ FrisbeeVersion=$(shell cat VERSION)
 CRD_DIR ?=	charts/platform/crds
 WEBHOOK_DIR ?= charts/platform/templates/webhook
 RBAC_DIR ?= charts/platform/templates/rbac
+CERTS_DIR ?= /tmp/k8s-webhook-server/serving-certs
 
 # IMAGE_TAG_BASE defines the docker.io namespace and part of the image name for remote images.
 # This variable is used to construct full image tags for bundle and catalog images.
@@ -54,7 +55,6 @@ endef
 # Options are set to exit when a recipe line exits non-zero or a piped command fails.
 SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
-
 
 CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
 controller-gen:
@@ -120,21 +120,29 @@ api-docs: gen-crd-api-reference-docs	## Generate API reference documentation
 ##@ Build
 
 .PHONY: certs
-certs:  ## Generate certs under 'certs' folder
-	@echo "===> Generate Certs <==="
-	WEBHOOK_DIR=${WEBHOOK_DIR} $(CURDIR)/hack/gen_cert.sh
+certs:  ## Download certs under 'certs' folder
+	# @echo "===> Generate Certs <==="
+	# WEBHOOK_DIR=${WEBHOOK_DIR} $(CURDIR)/hack/gen_cert.sh
 
+	@echo "===> Download Certs <==="
+	@mkdir -p ${CERTS_DIR}
+	@kubectl get secret webhook-tls -o json | jq -r '.data["tls.key"]' | base64 -d > ${CERTS_DIR}/tls.key
+	@kubectl get secret webhook-tls -o json | jq -r '.data["tls.crt"]' | base64 -d > ${CERTS_DIR}/tls.crt
 
 build: generate fmt vet ## Build manager binary.
 	go build -o bin/manager main.go
 
-run: generate fmt vet ## Run a controller from your host.
-	go run -race ./main.go
+run: generate fmt vet certs ## Run a controller from your host.
+	@echo "===> Run Frisbee <==="
+	go run -race ./main.go -cert-dir=${CERTS_DIR}
 
 docker-build: test ## Build docker image for the Frisbee controller.
+	@echo "===> Build Frisbee Container <==="
 	docker build -t ${IMG} .
 
 docker-run: docker-build ## Build and Run docker image for the Frisbee controller.
+	@echo "===> Run Frisbee Container Locally <==="
+
 	# --rm automatically clean up the container when the container exits
 	# -ti allocate a pseudo-TTY and ieep STDIN open even if not attached
 	# -v mount the local kubernetes configuration to the container
@@ -143,7 +151,9 @@ docker-run: docker-build ## Build and Run docker image for the Frisbee controlle
 
 ##@ Deployment
 docker-push: docker-build ## Push the latest docker image for Frisbee controller.
+	@echo "===> Tag ${IMG} as frisbee-operator:latest <==="
 	docker tag ${IMG} $(IMAGE_TAG_BASE)/frisbee-operator:latest
+	@echo "===> Push frisbee:operator:latest <==="
 	docker push $(IMAGE_TAG_BASE)/frisbee-operator:latest
 
 

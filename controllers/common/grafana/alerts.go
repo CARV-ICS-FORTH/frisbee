@@ -18,7 +18,6 @@ package grafana
 
 import (
 	"context"
-	"regexp"
 	"strconv"
 	"strings"
 
@@ -27,9 +26,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
-
-// Assertor expressions evaluated with https://regex101.com/r/xrSyEz/1
-var Assertor = regexp.MustCompile(`(?m)^(?P<reducer>\w+)\(\)\s+of\s+query\((?P<dashboardUID>\w+)\/(?P<panelID>\d+)\/(?P<metric>\w+),\s+(?P<from>\w+),\s+(?P<to>\w+)\)\s+is\s+(?P<evaluator>\w+)\((?P<params>\d*[,\s]*\d*)\)\s*(for\((?P<for>\w+)\))*\s*(every\((?P<every>\w+)\))*\s*$`)
 
 func ConvertEvaluatorAlias(alias string) string {
 	switch alias {
@@ -45,7 +41,7 @@ func ConvertEvaluatorAlias(alias string) string {
 }
 
 // Metric points to the Grafana metric we are interested in.
-// The location can retrieved from the Grafana URL.
+// The location can be retrieved from the Grafana URL.
 // Example:
 // URL: http://grafana.platform.science-hangar.eu/d/wpFnYRwGk/iperf?orgId=1&viewPanel=2
 // Metric: wpFnYRwGk/2/bitrate
@@ -106,7 +102,11 @@ type Alert struct {
 }
 
 func ParseAlertExpr(query v1alpha1.ExprMetrics) (*Alert, error) {
-	matches := Assertor.FindStringSubmatch(string(query))
+	matches, err := query.Parse()
+	if err != nil {
+		return nil, errors.Wrapf(err, "parsing error")
+	}
+
 	if len(matches) == 0 {
 		return nil, errors.Errorf(`erroneous query %s. 
 		Examples:
@@ -129,12 +129,12 @@ func ParseAlertExpr(query v1alpha1.ExprMetrics) (*Alert, error) {
 		},
 	}
 
-	for _, field := range Assertor.SubexpNames() {
+	for _, field := range v1alpha1.ExprMetricsValidator.SubexpNames() {
 		if field == "" { // Evaluate only existing fields.
 			continue
 		}
 
-		index := Assertor.SubexpIndex(field)
+		index := v1alpha1.ExprMetricsValidator.SubexpIndex(field)
 		match := matches[index]
 
 		if match == "" { // The Field is not set
