@@ -61,7 +61,7 @@ spec:
         until:
           metrics: 'avg() of query(CR1YMET7z/104/99Latency, 1m, now) is above(80000)'
         tolerate:
-          failedServices: 5
+          failedJobs: 5
 
     # If there is a violation, we need to remove the latest client in order to come into the latest stable state.
     #- action: Kill

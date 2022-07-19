@@ -62,10 +62,14 @@ spec:
                 description: Schedule defines the interval between the invocations
                   of the callable.
                 properties:
-                  conditions:
-                    description: ConditionalExpr is a source of information about
-                      whether the state of the workflow after a given time is correct
-                      or not. This is needed because some scenarios may run in infinite-horizons.
+                  cron:
+                    description: "Cron defines a cron job rule. \n Some rule examples:
+                      \"0 30 * * * *\" means to \"Every hour on the half hour\" \"@hourly\"
+                      \     means to \"Every hour\" \"@every 1h30m\" means to \"Every
+                      hour thirty\" \n More rule info: https://godoc.org/github.com/robfig/cron"
+                    type: string
+                  event:
+                    description: Event schedules a new every when an event has happened.
                     properties:
                       metrics:
                         description: 'Metrics set a Grafana alert that will be triggered
@@ -81,12 +85,6 @@ spec:
                         nullable: true
                         type: string
                     type: object
-                  cron:
-                    description: "Cron defines a cron job rule. \n Some rule examples:
-                      \"0 30 * * * *\" means to \"Every hour on the half hour\" \"@hourly\"
-                      \     means to \"Every hour\" \"@every 1h30m\" means to \"Every
-                      hour thirty\" \n More rule info: https://godoc.org/github.com/robfig/cron"
-                    type: string
                   startingDeadlineSeconds:
                     description: StartingDeadlineSeconds is an optional deadline in
                       seconds for starting the job if it misses scheduled time for
@@ -105,6 +103,17 @@ spec:
                   executions, it does not apply to already started executions.  Defaults
                   to false.
                 type: boolean
+              tolerate:
+                description: Tolerate specifies the conditions under which the call
+                  will fail. If undefined, the call fails immediately when a call
+                  to service has failed.
+                properties:
+                  failedJobs:
+                    description: FailedJobs indicate the number of services that may
+                      fail before the cluster fails itself.
+                    minimum: 1
+                    type: integer
+                type: object
               until:
                 description: Until defines the conditions under which the CR will
                   stop spawning new jobs. If used in conjunction with inputs, it will

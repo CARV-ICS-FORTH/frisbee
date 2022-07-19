@@ -2,7 +2,7 @@
 apiVersion: frisbee.dev/v1alpha1
 kind: Scenario
 metadata:
-  name: cockroach-baseline-cluster-deterministic
+  name: cockroach-baseline-cluster-time
 spec:
   actions:
     # Step 0. Create individual cockroach servers
@@ -31,70 +31,70 @@ spec:
       service:
         templateRef: ycsb.cockroach.loader
         inputs:
-          - { server: masters-0, workload: workloada, recordcount: "1000000", threads: "40" }
+          - { server: masters-0, workload: workloada, recordcount: "500000", threads: "40" }
 
     # Step 2. Run YCSB workload A
     - action: Service
-      depends: { success: [ loader ] }
+      depends: { after: 5m }
       name: workload-a
       service:
         templateRef: ycsb.cockroach.runner
         inputs:
-          - { server: masters-0, workload: workloada, operationcount: "1000000", threads: "40" }
+          - { server: masters-0, workload: workloada, operationcount: "500000", threads: "40" }
 
     # Step 3. Run YCSB workload B
     - action: Service
-      depends: { success: [ workload-a ] }
+      depends: { after: 10m }
       name: workload-b
       service:
         templateRef: ycsb.cockroach.runner
         inputs:
-          - { server: masters-0, workload: workloadb, operationcount: "1000000", threads: "40" }
+          - { server: masters-0, workload: workloadb, operationcount: "500000", threads: "40" }
 
     # Step 4. Run YCSB workload C
     - action: Service
-      depends: { success: [ workload-b ] }
+      depends: { after: 15m }
       name: workload-c
       service:
         templateRef: ycsb.cockroach.runner
         inputs:
-          - { server: masters-0, workload: workloadc, operationcount: "1000000", threads: "40" }
+          - { server: masters-0, workload: workloadc, operationcount: "500000", threads: "40" }
 
     # Step 5. Run YCSB workload F
     - action: Service
-      depends: { success: [ workload-c ] }
+      depends: { after: 20m }
       name: workload-f
       service:
         templateRef: ycsb.cockroach.runner
         inputs:
-          - { server: masters-0, workload: workloadf, operationcount: "1000000", threads: "40" }
+          - { server: masters-0, workload: workloadf, operationcount: "500000", threads: "40" }
 
     # Step 6. Run YCSB workload D
     - action: Service
-      depends: { success: [ workload-f ] }
+      depends: { after: 25m }
       name: workload-d
       service:
         templateRef: ycsb.cockroach.runner
         inputs:
-          - { server: masters-0, workload: workloadd, operationcount: "1000000", threads: "40" }
+          - { server: masters-0, workload: workloadd, operationcount: "500000", threads: "40" }
 
     # Step 7: Reload the data with parameters of workload E.
     # Otherwise, the remaining data of the cluster might affect the results
     # We use the dropdata field to remove all data before test.
     - action: Service
-      depends: { success: [ workload-d ] }
+      depends: { after: 30m }
       name: reloader
       service:
         templateRef: ycsb.cockroach.loader
         inputs:
-          - { server: masters-0, workload: workloade, recordcount: "1000000", threads: "40", dropdata: "true" }
+          - { server: masters-0, workload: workloade, recordcount: "500000", threads: "40", dropdata: "true" }
 
 
     # Step 8: Run workload E
     - action: Service
-      depends: { success: [ reloader ] }
+      depends: { after: 35m }
       name: workload-e
       service:
         templateRef: ycsb.cockroach.runner
         inputs:
-          - { server: masters-0, workload: workloade, operationcount: "1000000", threads: "40" }
+          - { server: masters-0, workload: workloade, operationcount: "500000", threads: "40" }

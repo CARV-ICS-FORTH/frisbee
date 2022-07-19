@@ -91,8 +91,8 @@ func DependencyGraph(scenario *Scenario) (map[string]*Action, error) {
 	// prepare a dependency graph
 	for i, action := range scenario.Spec.Actions {
 		// Ensure that the type of action is supported and is correctly set
-		if !CheckAction(&action) {
-			return nil, errors.Errorf("incorrent spec for type [%s] of action [%s]", action.ActionType, action.Name)
+		if err := CheckAction(&action); err != nil {
+			return nil, errors.Wrapf(err, "incorrent spec for type [%s] of action [%s]", action.ActionType, action.Name)
 		}
 
 		// Because the action name will be the "matrix" for generating addressable jobs,
@@ -114,27 +114,68 @@ func DependencyGraph(scenario *Scenario) (map[string]*Action, error) {
 	return callIndex, nil
 }
 
-func CheckAction(act *Action) bool {
+func CheckAction(act *Action) error {
 	if act == nil || act.EmbedActions == nil {
-		return false
+		return errors.Errorf("empty definition")
 	}
 
 	switch act.ActionType {
 	case ActionService:
-		return act.EmbedActions.Service != nil
-	case ActionCluster:
-		return act.EmbedActions.Cluster != nil
-	case ActionChaos:
-		return act.EmbedActions.Chaos != nil
-	case ActionCascade:
-		return act.EmbedActions.Cascade != nil
-	case ActionDelete:
-		return act.EmbedActions.Delete != nil
-	case ActionCall:
-		return act.EmbedActions.Call != nil
-	}
+		if act.EmbedActions.Service == nil {
+			return errors.Errorf("empty service definition")
+		}
 
-	return false
+		return nil
+
+	case ActionCluster:
+		if act.EmbedActions.Cluster == nil {
+			return errors.Errorf("empty cluster definition")
+		}
+
+		v := &Cluster{
+			Spec: *act.EmbedActions.Cluster,
+		}
+
+		return v.ValidateCreate()
+	case ActionChaos:
+		if act.EmbedActions.Chaos == nil {
+			return errors.Errorf("empty chaos definition")
+		}
+
+		return nil
+
+	case ActionCascade:
+		if act.EmbedActions.Cascade == nil {
+			return errors.Errorf("empty cascade definition")
+		}
+
+		v := &Cascade{
+			Spec: *act.EmbedActions.Cascade,
+		}
+
+		return v.ValidateCreate()
+	case ActionDelete:
+		if act.EmbedActions.Delete == nil {
+			return errors.Errorf("empty delete definition")
+		}
+
+		// TODO: add support for delete
+
+		return nil
+	case ActionCall:
+		if act.EmbedActions.Call == nil {
+			return errors.Errorf("empty call definition")
+		}
+
+		v := &Call{
+			Spec: *act.EmbedActions.Call,
+		}
+
+		return v.ValidateCreate()
+
+	default:
+		return errors.Errorf("Unknown action")
+	}
 }
 
 func CheckDependencies(action *Action, callIndex map[string]*Action) error {
@@ -161,16 +202,8 @@ func CheckAssertions(action *Action) error {
 			return errors.Errorf("Delete job cannot have assertion")
 		}
 
-		if assert.HasStateExpr() {
-			if _, err := assert.State.Parse(); err != nil {
-				return errors.Wrapf(err, "Invalid state expr for action %s", action.Name)
-			}
-		}
-
-		if assert.HasMetricsExpr() {
-			if _, err := assert.Metrics.Parse(); err != nil {
-				return errors.Wrapf(err, "Invalid metrics expr for action %s", action.Name)
-			}
+		if err := ValidateExpr(assert); err != nil {
+			return errors.Wrapf(err, "Invalid expr for action %s", action.Name)
 		}
 	}
 

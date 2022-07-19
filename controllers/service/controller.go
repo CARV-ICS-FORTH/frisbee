@@ -41,6 +41,7 @@ import (
 
 // +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,resources=pods/status,verbs=get;list;watch
+// +kubebuilder:rbac:groups=core,resources=pods/exec,verbs=get;list;watch;create;update;patch;delete
 
 // +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,resources=services/status,verbs=get;list;watch
@@ -51,6 +52,10 @@ import (
 // +kubebuilder:rbac:groups=storage.k8s.io,resources=storageclasses,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=storage.k8s.io,resources=storageclasses/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=storage.k8s.io,resources=storageclasses/finalizers,verbs=update
+
+// +kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses/finalizers,verbs=update
 
 // Controller reconciles a Service object.
 type Controller struct {
@@ -126,7 +131,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	cr.SetReconcileStatus(updateLifecycle(&cr, &pod))
 
 	if err := common.UpdateStatus(ctx, r, &cr); err != nil {
-		r.Info("update status error. retry", "object", cr.GetName(), "err", err)
+		r.Info("Reschedule.", "object", cr.GetName(), "UpdateStatusErr", err)
 		return common.RequeueAfter(time.Second)
 	}
 

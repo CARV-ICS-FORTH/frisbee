@@ -22,10 +22,10 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/carv-ics-forth/frisbee/controllers/common"
 	"github.com/grafana-tools/sdk"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -51,7 +51,7 @@ const (
 )
 
 // Annotation provides a way to mark points on the graph with rich events.
-// // Conditions you hover over an annotation you can get event description and event tags.
+// // Event you hover over an annotation you can get event description and event tags.
 // // The text field can include links to other systems with more detail.
 type Annotation interface {
 	// Add  pushes an annotation to grafana indicating that a new component has joined the experiment.
@@ -96,7 +96,7 @@ func (a *PointAnnotation) Delete(obj client.Object) {
 
 // RangeAnnotation uses range annotations to indicate the duration of a Chaos.
 // It consists of two parts. In the first part, a failure annotation is created
-// with open end. Conditions a new value is pushed to the timeEnd channel, the annotation is updated
+// with open end. Event a new value is pushed to the timeEnd channel, the annotation is updated
 // accordingly. TimeEnd channel can be used as many times as wished. The client is responsible to close the channel.
 type RangeAnnotation struct {
 	// Currently the Annotator works for a single watched object. If we want to support more, use a map with
@@ -151,7 +151,7 @@ func (a *RangeAnnotation) Delete(obj client.Object, tags ...Tag) {
 //		Grafana Annotator
 // ///////////////////////////////////////////
 
-var annotationTimeout = 30 * time.Second
+var annotationTimeout = 10 * time.Second
 
 const (
 	statusAnnotationAdded = "Annotation added"
@@ -164,22 +164,30 @@ func (c *Client) SetAnnotation(ga sdk.CreateAnnotationRequest) (reqID uint) {
 	ctx, cancel := context.WithTimeout(c.ctx, annotationTimeout)
 	defer cancel()
 
-	// submit
-	gaResp, err := c.Conn.CreateAnnotation(ctx, ga)
-	if err != nil {
-		runtime.HandleError(errors.Wrapf(err, "annotation failed"))
+	// retry until Grafana is ready to receive annotations.
+	if common.AbortAfterRetry(ctx, c.logger, func() error {
+		gaResp, err := c.Conn.CreateAnnotation(ctx, ga)
+		if err != nil {
+			return err
+		}
 
-		return
+		if gaResp.Message == nil {
+			return errors.Errorf("empty annotation response")
+		} else if *gaResp.Message != statusAnnotationAdded {
+			return errors.Errorf("expected message '%s', but got '%s'",
+				statusAnnotationAdded, *gaResp.Message)
+		}
+
+		reqID = *gaResp.ID
+
+		return nil
+	}) {
+		c.logger.Info("cannot set annotation", "request", ga)
+
+		return 0
 	}
 
-	if gaResp.Message == nil {
-		runtime.HandleError(errors.Wrapf(err, "empty annotation response"))
-	} else if *gaResp.Message != statusAnnotationAdded {
-		runtime.HandleError(errors.Wrapf(err, "expected message '%s', but got '%s'",
-			statusAnnotationAdded, *gaResp.Message))
-	}
-
-	return *gaResp.ID
+	return reqID
 }
 
 // PatchAnnotation updates an existing annotation to Grafana.
@@ -187,18 +195,22 @@ func (c *Client) PatchAnnotation(reqID uint, ga sdk.PatchAnnotationRequest) {
 	ctx, cancel := context.WithTimeout(c.ctx, annotationTimeout)
 	defer cancel()
 
-	// submit
-	gaResp, err := c.Conn.PatchAnnotation(ctx, reqID, ga)
-	if err != nil {
-		runtime.HandleError(errors.Wrapf(err, "annotation failed"))
+	// retry until Grafana is ready to receive annotations.
+	if common.AbortAfterRetry(ctx, c.logger, func() error {
+		gaResp, err := c.Conn.PatchAnnotation(ctx, reqID, ga)
+		if err != nil {
+			return errors.Wrapf(err, "patch error")
+		}
 
-		return
-	}
+		if gaResp.Message == nil {
+			return errors.Wrapf(err, "empty annotation response")
+		} else if *gaResp.Message != statusAnnotationPatched {
+			return errors.Wrapf(err, "expected message '%s', but got '%s'",
+				statusAnnotationPatched, *gaResp.Message)
+		}
 
-	if gaResp.Message == nil {
-		runtime.HandleError(errors.Wrapf(err, "empty annotation response"))
-	} else if *gaResp.Message != statusAnnotationPatched {
-		runtime.HandleError(errors.Wrapf(err, "expected message '%s', but got '%s'",
-			statusAnnotationPatched, *gaResp.Message))
+		return nil
+	}) {
+		c.logger.Info("cannot patch annotation", "request", ga)
 	}
 }

@@ -23,6 +23,7 @@ import (
 )
 
 func (c *Client) SetNotificationChannel(webhookURL string) error {
+
 	// use the webhook as notification channel for grafana
 	feedback := sdk.AlertNotification{
 		Name:                  configuration.Global.ControllerName,
@@ -35,7 +36,9 @@ func (c *Client) SetNotificationChannel(webhookURL string) error {
 		},
 	}
 
-	_, err := c.Conn.CreateAlertNotification(c.ctx, feedback)
+	if _, err := c.Conn.CreateAlertNotification(c.ctx, feedback); err != nil {
+		return errors.Wrapf(err, "cannot create alert notification channel '%s'", feedback.Name)
+	}
 
-	return errors.Wrapf(err, "cannot create notification channel at '%s'", webhookURL)
+	return nil
 }

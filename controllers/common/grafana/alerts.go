@@ -107,18 +107,6 @@ func ParseAlertExpr(query v1alpha1.ExprMetrics) (*Alert, error) {
 		return nil, errors.Wrapf(err, "parsing error")
 	}
 
-	if len(matches) == 0 {
-		return nil, errors.Errorf(`erroneous query %s. 
-		Examples:
-			1) avg() OF query(wpFnYRwGk/2/bitrate, 15m, now) IS BELOW(14)
-			2) avg() OF query(wpFnYRwGk/2/bitrate, 15m, now) IS NOVALUE()
-			3) avg() OF query(wpFnYRwGk/2/bitrate, 15m, now) IS WithinRange(4, 88)
-			4) avg() OF query(wpFnYRwGk/2/bitrate, 15m, now) IS WithinRange(4, 88) FOR (1m)
-			5) avg() OF query(wpFnYRwGk/2/bitrate, 15m, now) IS WithinRange(4, 88) FOR (1m) EVERY(1m)
-
-		Prepare your expressions at: https://regex101.com/r/sIspYb/1/`, query)
-	}
-
 	alert := Alert{
 		Metric:    Metric{},
 		TimeRange: TimeRange{},
@@ -219,20 +207,20 @@ const (
 )
 
 // SetAlert adds a new alert to Grafana.
-func (c *Client) SetAlert(ctx context.Context, alert *Alert, name string, msg string) (uint, error) {
+func (c *Client) SetAlert(ctx context.Context, alert *Alert, name string, msg string) error {
 	if alert == nil {
-		return 0, errors.New("NIL alert was given")
+		return errors.New("NIL alert was given")
 	}
 
 	board, _, err := c.Conn.GetDashboardByUID(ctx, alert.DashboardUID)
 	if err != nil {
-		return 0, errors.Wrapf(err, "cannot retrieve dashboard %s", alert.DashboardUID)
+		return errors.Wrapf(err, "cannot retrieve dashboard %s", alert.DashboardUID)
 	}
 
 	for _, panel := range board.Panels {
 		if panel.ID == alert.PanelID {
 			if panel.Alert != nil {
-				return 0, errors.Errorf("Alert [%s] has already been set for this panel.", panel.Alert.Name)
+				return errors.Errorf("Alert [%s] has already been set for this panel.", panel.Alert.Name)
 			}
 
 			panel.Alert = &sdk.Alert{
@@ -278,14 +266,14 @@ func (c *Client) SetAlert(ctx context.Context, alert *Alert, name string, msg st
 
 	res, err := c.Conn.SetDashboard(ctx, board, params)
 	if err != nil {
-		return 0, errors.Wrap(err, "set dashboard")
+		return errors.Wrap(err, "set dashboard")
 	}
 
 	if *res.Status == "success" {
-		return 0, nil
+		return nil
 	}
 
-	return *res.ID, errors.Errorf("unable to set alert [%v]", res)
+	return errors.Errorf("unable to set alert [%v]", res)
 }
 
 // UnsetAlert removes an alert from Grafana.

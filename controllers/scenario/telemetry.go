@@ -34,6 +34,7 @@ import (
 	notifier "github.com/golanghelper/grafana-webhook"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -74,7 +75,20 @@ func (r *Controller) StartTelemetry(ctx context.Context, t *v1alpha1.Scenario) e
 		return errors.Wrapf(err, "grafana error")
 	}
 
+	if err := r.connectToGrafana(ctx, t); err != nil {
+		return errors.Wrapf(err, "cannot communicate with the telemetry stack")
+	}
+
 	return nil
+}
+
+// StopTelemetry removes the annotations from the target object, removes the Alert from Grafana, and deleted the
+// client for the specific scenario.
+func (r *Controller) StopTelemetry(t *v1alpha1.Scenario) {
+	// If the resource is not initialized, then there is not registered telemetry client.
+	if meta.IsStatusConditionTrue(t.Status.Conditions, v1alpha1.ConditionCRInitialized.String()) {
+		grafana.DeleteClientFor(t)
+	}
 }
 
 func (r *Controller) installPrometheus(ctx context.Context, t *v1alpha1.Scenario) error {
@@ -253,7 +267,9 @@ func (r *Controller) ImportTelemetryDashboards(ctx context.Context, scenario *v1
 	return imports, nil
 }
 
-func (r *Controller) ConnectToGrafana(ctx context.Context, t *v1alpha1.Scenario) error {
+// connectToGrafana creates a dedicated link between the scenario controller and the Grafana service.
+// The link must be destroyed if the scenario is deleted, since any new instance will change the ip of Grafana.
+func (r *Controller) connectToGrafana(ctx context.Context, t *v1alpha1.Scenario) error {
 	if t.Status.GrafanaEndpoint == "" {
 		r.Logger.Info("The Grafana endpoint is empty. Skip telemetry.", "scenario", t.GetName())
 		return nil
@@ -298,8 +314,6 @@ func (r *Controller) CreateWebhookServer(ctx context.Context, alertingPort int) 
 	webhook := http.DefaultServeMux
 
 	webhook.Handle("/", notifier.HandleWebhook(func(w http.ResponseWriter, b *notifier.Body) {
-		r.Logger.Info("Grafana Alert", "body", b)
-
 		if err := expressions.DispatchAlert(ctx, r, b); err != nil {
 			r.Logger.Error(err, "Drop alert", "body", b)
 		}

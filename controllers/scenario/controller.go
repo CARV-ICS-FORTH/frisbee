@@ -108,7 +108,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	cr.SetReconcileStatus(r.updateLifecycle(&cr))
 
 	if err := common.UpdateStatus(ctx, r, &cr); err != nil {
-		r.Info("update status error. retry", "object", cr.GetName(), "err", err)
+		r.Info("Reschedule.", "object", cr.GetName(), "UpdateStatusErr", err)
 		return common.RequeueAfter(time.Second)
 	}
 
@@ -118,7 +118,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		pause runs to investigate or putz with the cluster, without deleting the object.
 	*/
 	if cr.Spec.Suspend != nil && *cr.Spec.Suspend {
-		r.Logger.Info("Scenario is suspended",
+		r.Logger.Info("Suspended",
 			"scenario", cr.GetName(),
 			"reason", cr.Status.Reason,
 			"message", cr.Status.Message,
@@ -136,15 +136,8 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	*/
 
 	if cr.Status.Phase.Is(v1alpha1.PhaseSuccess) {
-		// Remove the testing components once the experiment is successfully complete.
-		// We maintain testbed components (e.g, prometheus and grafana) for getting back the test results.
-		// These components are removed by deleting the Scenario.
-		for _, job := range r.clusterView.SuccessfulJobs() {
-			if labelling.GetComponent(job) == labelling.ComponentSUT { // System services should not be removed
-				expressions.UnsetAlert(job)
-
-				common.Delete(ctx, r, job)
-			}
+		if err := r.HasSucceed(ctx, &cr); err != nil {
+			return common.RequeueAfter(time.Second)
 		}
 
 		return common.Stop()
@@ -163,12 +156,8 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	if cr.Status.Phase.Is(v1alpha1.PhaseUninitialized) {
-		if err := r.Initialize(ctx, &cr); err != nil {
+		if err := r.InitScenario(ctx, &cr); err != nil {
 			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "scenario initialization error"))
-		}
-
-		if err := r.ConnectToGrafana(ctx, &cr); err != nil {
-			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot communicate with the telemetry stack"))
 		}
 
 		return lifecycle.Pending(ctx, r, &cr, "The Scenario is ready to start submitting jobs.")
@@ -293,7 +282,7 @@ func (r *Controller) GetClusterView(ctx context.Context, req types.NamespacedNam
 	return nil
 }
 
-func (r *Controller) Initialize(ctx context.Context, t *v1alpha1.Scenario) error {
+func (r *Controller) InitScenario(ctx context.Context, t *v1alpha1.Scenario) error {
 	/* Clone system configuration, needed to retrieve telemetry, chaos, etc  */
 	sysconf, err := configuration.Get(ctx, r.GetClient(), r.Logger)
 	if err != nil {
@@ -329,12 +318,12 @@ func (r *Controller) Initialize(ctx context.Context, t *v1alpha1.Scenario) error
 	}
 
 	/* Ensure that the scenario is OK */
-	if err := r.Validate(ctx, t); err != nil {
-		return errors.Wrapf(err, "validation error")
+	if errValidate := r.Validate(ctx, t); errValidate != nil {
+		return errors.Wrapf(errValidate, "validation error")
 	}
 
-	if err := r.StartTelemetry(ctx, t); err != nil {
-		return errors.Wrapf(err, "cannot create the telemetry stack")
+	if errTelemetry := r.StartTelemetry(ctx, t); errTelemetry != nil {
+		return errors.Wrapf(errTelemetry, "cannot create the telemetry stack")
 	}
 
 	meta.SetStatusCondition(&t.Status.Conditions, metav1.Condition{
@@ -345,9 +334,26 @@ func (r *Controller) Initialize(ctx context.Context, t *v1alpha1.Scenario) error
 	})
 
 	// Update() is different than UpdateStatus(). Update() is used to update the metadata (e.g, labels).
-	if err := common.Update(ctx, r, t); err != nil {
-		return errors.Wrap(err, "cannot update metadata")
+	if errUpdate := common.Update(ctx, r, t); errUpdate != nil {
+		return errors.Wrap(errUpdate, "cannot update metadata")
 	}
+
+	return nil
+}
+
+func (r *Controller) HasSucceed(ctx context.Context, t *v1alpha1.Scenario) error {
+	// Remove the testing components once the experiment is successfully complete.
+	// We maintain testbed components (e.g, prometheus and grafana) for getting back the test results.
+	// These components are removed by deleting the Scenario.
+	for _, job := range r.clusterView.SuccessfulJobs() {
+		if labelling.GetComponent(job) == labelling.ComponentSUT { // System services should not be removed
+
+			expressions.UnsetAlert(job)
+			common.Delete(ctx, r, job)
+		}
+	}
+
+	r.StopTelemetry(t)
 
 	return nil
 }
@@ -363,6 +369,7 @@ func (r *Controller) HasFailed(ctx context.Context, t *v1alpha1.Scenario) error 
 		if labelling.GetComponent(job) == labelling.ComponentSUT { // System jobs should not be deleted
 			r.GetEventRecorderFor("").Event(job, corev1.EventTypeWarning, "Terminating", t.Status.Message)
 
+			expressions.UnsetAlert(job)
 			common.Delete(ctx, r, job)
 		}
 	}
@@ -371,6 +378,7 @@ func (r *Controller) HasFailed(ctx context.Context, t *v1alpha1.Scenario) error 
 		if labelling.GetComponent(job) == labelling.ComponentSUT { // System jobs should not be deleted
 			r.GetEventRecorderFor("").Event(job, corev1.EventTypeWarning, "Terminating", t.Status.Message)
 
+			expressions.UnsetAlert(job)
 			common.Delete(ctx, r, job)
 		}
 	}
@@ -379,9 +387,12 @@ func (r *Controller) HasFailed(ctx context.Context, t *v1alpha1.Scenario) error 
 		if labelling.GetComponent(job) == labelling.ComponentSUT {
 			r.GetEventRecorderFor("").Event(job, corev1.EventTypeWarning, "Terminating", t.Status.Message)
 
+			expressions.UnsetAlert(job)
 			common.Delete(ctx, r, job)
 		}
 	}
+
+	r.StopTelemetry(t)
 
 	// Suspend the workflow from creating new job.
 	suspend := true

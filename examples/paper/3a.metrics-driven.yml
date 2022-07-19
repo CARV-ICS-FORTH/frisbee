@@ -115,5 +115,5 @@ spec:
         inputs:
           - { target: .service.victim.one, duration: "3m" }
         schedule:
-          conditions:
+          event:
             metrics: "max() of query(78sl7n1nk/86/Average, 5m, now) is below(2000)"

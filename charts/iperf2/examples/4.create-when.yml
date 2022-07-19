@@ -33,5 +33,5 @@ spec:
           - { server: .service.server.one, seconds: "160" }
           - { server: .service.server.one, seconds: "60" }
         schedule:
-          conditions:
+          event:
             metrics: 'avg() of query(wpFnYRwGk/2/bitrate, 5m, now) is above(100)'

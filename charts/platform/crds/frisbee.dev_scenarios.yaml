@@ -104,11 +104,16 @@ spec:
                           description: Schedule defines the interval between the invocations
                             of the callable.
                           properties:
-                            conditions:
-                              description: ConditionalExpr is a source of information
-                                about whether the state of the workflow after a given
-                                time is correct or not. This is needed because some
-                                scenarios may run in infinite-horizons.
+                            cron:
+                              description: "Cron defines a cron job rule. \n Some
+                                rule examples: \"0 30 * * * *\" means to \"Every hour
+                                on the half hour\" \"@hourly\"      means to \"Every
+                                hour\" \"@every 1h30m\" means to \"Every hour thirty\"
+                                \n More rule info: https://godoc.org/github.com/robfig/cron"
+                              type: string
+                            event:
+                              description: Event schedules a new every when an event
+                                has happened.
                               properties:
                                 metrics:
                                   description: 'Metrics set a Grafana alert that will
@@ -126,13 +131,6 @@ spec:
                                   nullable: true
                                   type: string
                               type: object
-                            cron:
-                              description: "Cron defines a cron job rule. \n Some
-                                rule examples: \"0 30 * * * *\" means to \"Every hour
-                                on the half hour\" \"@hourly\"      means to \"Every
-                                hour\" \"@every 1h30m\" means to \"Every hour thirty\"
-                                \n More rule info: https://godoc.org/github.com/robfig/cron"
-                              type: string
                             startingDeadlineSeconds:
                               description: StartingDeadlineSeconds is an optional
                                 deadline in seconds for starting the job if it misses
@@ -152,6 +150,17 @@ spec:
                             subsequent executions, it does not apply to already started
                             executions.  Defaults to false.
                           type: boolean
+                        tolerate:
+                          description: Tolerate specifies the conditions under which
+                            the call will fail. If undefined, the call fails immediately
+                            when a call to service has failed.
+                          properties:
+                            failedJobs:
+                              description: FailedJobs indicate the number of services
+                                that may fail before the cluster fails itself.
+                              minimum: 1
+                              type: integer
+                          type: object
                         until:
                           description: Until defines the conditions under which the
                             CR will stop spawning new jobs. If used in conjunction
@@ -181,9 +190,9 @@ spec:
                       properties:
                         inputs:
                           description: Inputs are list of inputs passed to the objects.
-                            Conditions used in conjunction with instances, if the
-                            number of instances is larger that the number of inputs,
-                            then inputs are recursively iteration.
+                            Event used in conjunction with instances, if the number
+                            of instances is larger that the number of inputs, then
+                            inputs are recursively iteration.
                           items:
                             additionalProperties:
                               type: string
@@ -193,18 +202,23 @@ spec:
                           description: MaxInstances dictate the number of objects
                             to be created for the CR. If no inputs are defined, then
                             all instances will be initiated using the default parameters
-                            of the template. Conditions used in conjunction with Until,
+                            of the template. Event used in conjunction with Until,
                             MaxInstances as a max bound.
                           type: integer
                         schedule:
                           description: Schedule defines the interval between the creation
                             of services within the group.
                           properties:
-                            conditions:
-                              description: ConditionalExpr is a source of information
-                                about whether the state of the workflow after a given
-                                time is correct or not. This is needed because some
-                                scenarios may run in infinite-horizons.
+                            cron:
+                              description: "Cron defines a cron job rule. \n Some
+                                rule examples: \"0 30 * * * *\" means to \"Every hour
+                                on the half hour\" \"@hourly\"      means to \"Every
+                                hour\" \"@every 1h30m\" means to \"Every hour thirty\"
+                                \n More rule info: https://godoc.org/github.com/robfig/cron"
+                              type: string
+                            event:
+                              description: Event schedules a new every when an event
+                                has happened.
                               properties:
                                 metrics:
                                   description: 'Metrics set a Grafana alert that will
@@ -222,13 +236,6 @@ spec:
                                   nullable: true
                                   type: string
                               type: object
-                            cron:
-                              description: "Cron defines a cron job rule. \n Some
-                                rule examples: \"0 30 * * * *\" means to \"Every hour
-                                on the half hour\" \"@hourly\"      means to \"Every
-                                hour\" \"@every 1h30m\" means to \"Every hour thirty\"
-                                \n More rule info: https://godoc.org/github.com/robfig/cron"
-                              type: string
                             startingDeadlineSeconds:
                               description: StartingDeadlineSeconds is an optional
                                 deadline in seconds for starting the job if it misses
@@ -275,9 +282,9 @@ spec:
                       properties:
                         inputs:
                           description: Inputs are list of inputs passed to the objects.
-                            Conditions used in conjunction with instances, if the
-                            number of instances is larger that the number of inputs,
-                            then inputs are recursively iteration.
+                            Event used in conjunction with instances, if the number
+                            of instances is larger that the number of inputs, then
+                            inputs are recursively iteration.
                           items:
                             additionalProperties:
                               type: string
@@ -287,7 +294,7 @@ spec:
                           description: MaxInstances dictate the number of objects
                             to be created for the CR. If no inputs are defined, then
                             all instances will be initiated using the default parameters
-                            of the template. Conditions used in conjunction with Until,
+                            of the template. Event used in conjunction with Until,
                             MaxInstances as a max bound.
                           type: integer
                         templateRef:
@@ -322,9 +329,9 @@ spec:
                       properties:
                         inputs:
                           description: Inputs are list of inputs passed to the objects.
-                            Conditions used in conjunction with instances, if the
-                            number of instances is larger that the number of inputs,
-                            then inputs are recursively iteration.
+                            Event used in conjunction with instances, if the number
+                            of instances is larger that the number of inputs, then
+                            inputs are recursively iteration.
                           items:
                             additionalProperties:
                               type: string
@@ -334,7 +341,7 @@ spec:
                           description: MaxInstances dictate the number of objects
                             to be created for the CR. If no inputs are defined, then
                             all instances will be initiated using the default parameters
-                            of the template. Conditions used in conjunction with Until,
+                            of the template. Event used in conjunction with Until,
                             MaxInstances as a max bound.
                           type: integer
                         placement:
@@ -364,11 +371,16 @@ spec:
                           description: Schedule defines the interval between the creation
                             of services in the group.
                           properties:
-                            conditions:
-                              description: ConditionalExpr is a source of information
-                                about whether the state of the workflow after a given
-                                time is correct or not. This is needed because some
-                                scenarios may run in infinite-horizons.
+                            cron:
+                              description: "Cron defines a cron job rule. \n Some
+                                rule examples: \"0 30 * * * *\" means to \"Every hour
+                                on the half hour\" \"@hourly\"      means to \"Every
+                                hour\" \"@every 1h30m\" means to \"Every hour thirty\"
+                                \n More rule info: https://godoc.org/github.com/robfig/cron"
+                              type: string
+                            event:
+                              description: Event schedules a new every when an event
+                                has happened.
                               properties:
                                 metrics:
                                   description: 'Metrics set a Grafana alert that will
@@ -386,13 +398,6 @@ spec:
                                   nullable: true
                                   type: string
                               type: object
-                            cron:
-                              description: "Cron defines a cron job rule. \n Some
-                                rule examples: \"0 30 * * * *\" means to \"Every hour
-                                on the half hour\" \"@hourly\"      means to \"Every
-                                hour\" \"@every 1h30m\" means to \"Every hour thirty\"
-                                \n More rule info: https://godoc.org/github.com/robfig/cron"
-                              type: string
                             startingDeadlineSeconds:
                               description: StartingDeadlineSeconds is an optional
                                 deadline in seconds for starting the job if it misses
@@ -414,12 +419,11 @@ spec:
                             the cluster will fail. If undefined, the cluster fails
                             immediately when a service has failed.
                           properties:
-                            failedServices:
-                              description: FailedServices indicate the number of services
+                            failedJobs:
+                              description: FailedJobs indicate the number of services
                                 that may fail before the cluster fails itself.
+                              minimum: 1
                               type: integer
-                          required:
-                          - failedServices
                           type: object
                         until:
                           description: Until defines the conditions under which the
@@ -484,9 +488,9 @@ spec:
                       properties:
                         inputs:
                           description: Inputs are list of inputs passed to the objects.
-                            Conditions used in conjunction with instances, if the
-                            number of instances is larger that the number of inputs,
-                            then inputs are recursively iteration.
+                            Event used in conjunction with instances, if the number
+                            of instances is larger that the number of inputs, then
+                            inputs are recursively iteration.
                           items:
                             additionalProperties:
                               type: string
@@ -496,7 +500,7 @@ spec:
                           description: MaxInstances dictate the number of objects
                             to be created for the CR. If no inputs are defined, then
                             all instances will be initiated using the default parameters
-                            of the template. Conditions used in conjunction with Until,
+                            of the template. Event used in conjunction with Until,
                             MaxInstances as a max bound.
                           type: integer
                         templateRef:

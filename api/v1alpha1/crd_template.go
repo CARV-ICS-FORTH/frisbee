@@ -96,12 +96,12 @@ type GenerateFromTemplate struct {
 
 	// MaxInstances dictate the number of objects to be created for the CR.
 	// If no inputs are defined, then all instances will be initiated using the default parameters of the template.
-	// Conditions used in conjunction with Until, MaxInstances as a max bound.
+	// Event used in conjunction with Until, MaxInstances as a max bound.
 	// +optional
 	MaxInstances int `json:"instances"`
 
 	// Inputs are list of inputs passed to the objects.
-	// Conditions used in conjunction with instances, if the number of instances is larger that the number of inputs,
+	// Event used in conjunction with instances, if the number of instances is larger that the number of inputs,
 	// then inputs are recursively iteration.
 	// +optional
 	Inputs []map[string]string `json:"inputs,omitempty"`

@@ -1,12 +1,12 @@
 dependencies:
 - name: openebs
   repository: https://openebs.github.io/charts
-  version: 3.0.0
+  version: 3.2.0
 - name: chaos-mesh
   repository: https://charts.chaos-mesh.org
   version: 2.1.2
 - name: kubernetes-dashboard
-  repository: https://kubernetes.github.io/dashboard
-  version: 5.4.1
-digest: sha256:4b5d32d095b8358b7cb7df6eba62f269609b0bd0e00bd5fd357d1d052d9ae09a
-generated: "2022-05-25T13:49:07.882553633+03:00"
+  repository: https://kubernetes.github.io/dashboard/
+  version: 5.7.0
+digest: sha256:e653a9bc4bc395642be6e4156fae941eaeda8a52b1061cbb520bd279859818d0
+generated: "2022-07-16T01:01:13.277059714+03:00"

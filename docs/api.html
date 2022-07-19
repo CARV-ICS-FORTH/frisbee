@@ -224,6 +224,21 @@ as the number of defined services.</p>
 </tr>
 <tr>
 <td>
+<code>tolerate</code><br/>
+<em>
+<a href="#frisbee.dev/v1alpha1.TolerateSpec">
+TolerateSpec
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Tolerate specifies the conditions under which the call will fail. If undefined, the call fails
+immediately when a call to service has failed.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>until</code><br/>
 <em>
 <a href="#frisbee.dev/v1alpha1.ConditionalExpr">
@@ -332,6 +347,21 @@ string
 <em>(Optional)</em>
 <p>Expect declares a list of expected outputs. The number of expected outputs must be the same
 as the number of defined services.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>tolerate</code><br/>
+<em>
+<a href="#frisbee.dev/v1alpha1.TolerateSpec">
+TolerateSpec
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Tolerate specifies the conditions under which the call will fail. If undefined, the call fails
+immediately when a call to service has failed.</p>
 </td>
 </tr>
 <tr>
@@ -1832,7 +1862,7 @@ int
 <em>(Optional)</em>
 <p>MaxInstances dictate the number of objects to be created for the CR.
 If no inputs are defined, then all instances will be initiated using the default parameters of the template.
-Conditions used in conjunction with Until, MaxInstances as a max bound.</p>
+Event used in conjunction with Until, MaxInstances as a max bound.</p>
 </td>
 </tr>
 <tr>
@@ -1845,7 +1875,7 @@ Conditions used in conjunction with Until, MaxInstances as a max bound.</p>
 <td>
 <em>(Optional)</em>
 <p>Inputs are list of inputs passed to the objects.
-Conditions used in conjunction with instances, if the number of instances is larger that the number of inputs,
+Event used in conjunction with instances, if the number of instances is larger that the number of inputs,
 then inputs are recursively iteration.</p>
 </td>
 </tr>
@@ -2108,6 +2138,10 @@ string
 </tr>
 </tbody>
 </table>
+<h3 id="frisbee.dev/v1alpha1.OnTime">OnTime
+</h3>
+<div>
+</div>
 <h3 id="frisbee.dev/v1alpha1.Phase">Phase
 (<code>string</code> alias)</h3>
 <p>
@@ -2564,7 +2598,7 @@ time for any reason. if we miss this deadline, we&rsquo;ll just wait till the ne
 </tr>
 <tr>
 <td>
-<code>conditions</code><br/>
+<code>event</code><br/>
 <em>
 <a href="#frisbee.dev/v1alpha1.ConditionalExpr">
 ConditionalExpr
@@ -2573,6 +2607,7 @@ ConditionalExpr
 </td>
 <td>
 <em>(Optional)</em>
+<p>Event schedules a new every when an event has happened.</p>
 </td>
 </tr>
 </tbody>
@@ -3091,7 +3126,7 @@ Lifecycle
 <h3 id="frisbee.dev/v1alpha1.TolerateSpec">TolerateSpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.ClusterSpec">ClusterSpec</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.CallSpec">CallSpec</a>, <a href="#frisbee.dev/v1alpha1.ClusterSpec">ClusterSpec</a>)
 </p>
 <div>
 <p>TolerateSpec specifies the system&rsquo;s ability to continue operating despite failures or malfunctions.
@@ -3108,13 +3143,14 @@ Such failures are likely to happen as part of a Chaos experiment.</p>
 <tbody>
 <tr>
 <td>
-<code>failedServices</code><br/>
+<code>failedJobs</code><br/>
 <em>
 int
 </em>
 </td>
 <td>
-<p>FailedServices indicate the number of services that may fail before the cluster fails itself.</p>
+<em>(Optional)</em>
+<p>FailedJobs indicate the number of services that may fail before the cluster fails itself.</p>
 </td>
 </tr>
 </tbody>
@@ -3274,5 +3310,5 @@ Kubernetes meta/v1.Duration
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>92c476c</code>.
+on git commit <code>9d2edfb</code>.
 </em></p>

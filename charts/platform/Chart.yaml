@@ -32,20 +32,18 @@ icon: https://github.com/CARV-ICS-FORTH/frisbee/blob/main/docs/images/logo.jpg
 dependencies:
   - name: openebs # Dynamic volume provisioning
     condition: openebs.enabled
-    version: "3.0.0"
+    version: 3.2.0
     repository: https://openebs.github.io/charts
 
   - name: chaos-mesh # Fault injection
     condition: chaos-mesh.enabled
-    version: "2.1.2"
+    version: 2.1.2
     repository: https://charts.chaos-mesh.org
 
   - name: kubernetes-dashboard # web-based Kubernetes user interface
     condition: dashboard.enabled
-    version: 5.4.1
+    version: 5.7.0
     repository: https://kubernetes.github.io/dashboard/
-
-
 
 # This is the chart version. This version number should be incremented each time you make changes
 # to the chart and its templates, including the app version.

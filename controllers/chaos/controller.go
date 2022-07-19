@@ -123,7 +123,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	cr.SetReconcileStatus(calculateLifecycle(&cr, &fault))
 
 	if err := common.UpdateStatus(ctx, r, &cr); err != nil {
-		r.Info("update status error. retry", "object", cr.GetName(), "err", err)
+		r.Info("Reschedule.", "object", cr.GetName(), "UpdateStatusErr", err)
 		return common.RequeueAfter(time.Second)
 	}
 

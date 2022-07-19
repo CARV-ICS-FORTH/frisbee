@@ -48,6 +48,8 @@ spec:
       call:
         callable: test2-run-workload
         services: [ masters-3 ]
+        tolerate:
+          failedJobs: 1
 
     # Step5. partition node 1 from the rest of the nodes; node 1 can reach other nodes, but no other nodes can reach node 1
     - action: Chaos

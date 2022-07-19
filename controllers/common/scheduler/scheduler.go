@@ -44,13 +44,13 @@ func Schedule(ctx context.Context, r common.Reconciler, cr client.Object, schedu
 	}
 
 	// Metrics-based scheduling
-	if schedule.Conditions.HasMetricsExpr() {
-		return metricsBased(r, cr)
+	if schedule.Event.HasMetricsExpr() {
+		return metricsBased(r, cr, lastSchedule)
 	}
 
 	// State-based scheduling
-	if schedule.Conditions.HasStateExpr() {
-		return stateBased(ctx, r, cr, schedule.Conditions.State, state)
+	if schedule.Event.HasStateExpr() {
+		return stateBased(ctx, r, cr, schedule.Event.State, state)
 	}
 
 	return true, ctrl.Result{}, nil
@@ -117,15 +117,26 @@ func stateBased(ctx context.Context, r common.Reconciler, cr client.Object, expr
 	return false, ctrl.Result{}, nil
 }
 
-func metricsBased(r common.Reconciler, cr metav1.Object) (bool, ctrl.Result, error) {
-	info, fired := expressions.FiredAlert(cr)
-	if fired {
-		r.Info("Metrics-Event fired ", "msg", info)
+func metricsBased(r common.Reconciler, cr metav1.Object, lastSchedule *metav1.Time) (bool, ctrl.Result, error) {
+	ts, info, fired := expressions.AlertIsFired(cr)
+	if !fired {
+		// nothing is fired yet
+		return false, ctrl.Result{}, nil
+	}
+
+	// If the alert is fired, we must know if the alert is already handled or if it is the first
+	// time that we see it. To differentiate the cases, we compare the alerting time with the last scheduling time.
+	// If the scheduling time is greater than the alerting time, it means that the alert is handled.
+	if lastSchedule.IsZero() || ts.After(lastSchedule.Time) {
+		// Alert is fired, but not handled
+		r.Info("Alert is fired. First seen.", "msg", info)
 
 		return true, ctrl.Result{}, nil
 	}
 
-	// nothing is fired yet
+	// Alert is fired, but not handled
+	r.V(10).Info("Omit Alert. Already handled. ", "msg", info)
+
 	return false, ctrl.Result{}, nil
 }
 

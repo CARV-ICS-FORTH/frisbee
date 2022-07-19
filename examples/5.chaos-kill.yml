@@ -44,7 +44,7 @@ spec:
         inputs:
           - { join: "masters-0:26257" }
         tolerate: # Without this field, the cluster will fail immediately after the killing
-          failedServices: 3
+          failedJobs: 3
 
 
     # When all servers are up and running, kill some of them periodically

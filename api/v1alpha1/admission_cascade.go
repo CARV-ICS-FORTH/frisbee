@@ -1,5 +1,5 @@
 /*
-Copyright 2021 ICS-FORTH.
+Copyright 2022 ICS-FORTH.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -23,10 +23,20 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
-// log is for logging in this package.
-var templatelog = logf.Log.WithName("template-resource")
+// TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
 
-func (r *Template) SetupWebhookWithManager(mgr ctrl.Manager) error {
+// +kubebuilder:webhook:path=/mutate-frisbee-dev-v1alpha1-cascade,mutating=true,failurePolicy=fail,sideEffects=None,groups=frisbee.dev,resources=cascades,verbs=create;update,versions=v1alpha1,name=mcascade.kb.io,admissionReviewVersions={v1,v1alpha1}
+
+var _ webhook.Defaulter = &Cascade{}
+
+// +kubebuilder:webhook:path=/validate-frisbee-dev-v1alpha1-cascade,mutating=false,failurePolicy=fail,sideEffects=None,groups=frisbee.dev,resources=cascades,verbs=create;update,versions=v1alpha1,name=vcascade.kb.io,admissionReviewVersions={v1,v1alpha1}
+
+var _ webhook.Validator = &Cascade{}
+
+// log is for logging in this package.
+var cascadelog = logf.Log.WithName("cascade-resource")
+
+func (r *Cascade) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
 		Complete()
@@ -34,41 +44,32 @@ func (r *Template) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
-// +kubebuilder:webhook:path=/mutate-frisbee-dev-v1alpha1-template,mutating=true,failurePolicy=fail,sideEffects=None,groups=frisbee.dev,resources=templates,verbs=create;update,versions=v1alpha1,name=mtemplate.kb.io,admissionReviewVersions={v1,v1alpha1}
-
-var _ webhook.Defaulter = &Template{}
-
 // Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *Template) Default() {
-	templatelog.Info("default", "name", r.Name)
+func (r *Cascade) Default() {
+	cascadelog.Info("default", "name", r.Name)
 
 	// TODO(user): fill in your defaulting logic.
 }
 
-// TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// +kubebuilder:webhook:path=/validate-frisbee-dev-v1alpha1-template,mutating=false,failurePolicy=fail,sideEffects=None,groups=frisbee.dev,resources=templates,verbs=create;update,versions=v1alpha1,name=vtemplate.kb.io,admissionReviewVersions={v1,v1alpha1}
-
-var _ webhook.Validator = &Template{}
-
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *Template) ValidateCreate() error {
-	templatelog.Info("validate create", "name", r.Name)
+func (r *Cascade) ValidateCreate() error {
+	cascadelog.Info("validate create", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object creation.
 	return nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *Template) ValidateUpdate(old runtime.Object) error {
-	templatelog.Info("validate update", "name", r.Name)
+func (r *Cascade) ValidateUpdate(old runtime.Object) error {
+	cascadelog.Info("validate update", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object update.
 	return nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *Template) ValidateDelete() error {
-	templatelog.Info("validate delete", "name", r.Name)
+func (r *Cascade) ValidateDelete() error {
+	cascadelog.Info("validate delete", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.
 	return nil

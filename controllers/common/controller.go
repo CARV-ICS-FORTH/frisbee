@@ -154,6 +154,8 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 
 		if err := Update(ctx, r, obj); err != nil {
 			r.Error(err, "resource deletion error")
+
+			return RequeueAfter(time.Second)
 		}
 
 		// Call reconciliation as the item is being deleted

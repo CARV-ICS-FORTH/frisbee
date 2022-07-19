@@ -46,5 +46,5 @@ spec:
         inputs:
           - { targets: .service.noise.one,  duration: "2m" }
         schedule:
-          conditions:
+          event:
             metrics: "avg() of query(wpFnYRwGk/2/bitrate, 5m, now) is below(500)"

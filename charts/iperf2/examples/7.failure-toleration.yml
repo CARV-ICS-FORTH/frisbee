@@ -24,7 +24,7 @@ spec:
         inputs:
           - { server: .service.server.one, seconds: "600" }
         tolerate: # Without this field, the cluster will fail immediately after the killing
-          failedServices: 3
+          failedJobs: 3
 
 
     # Periodically kill some nodes. Beware that in this case we use multiple inputs.

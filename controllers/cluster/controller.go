@@ -140,7 +140,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		pause runs to investigate the cluster, without deleting the object.
 	*/
 	if cr.Spec.Suspend != nil && *cr.Spec.Suspend {
-		r.Logger.Info("Cluster is suspended",
+		r.Logger.Info("Suspended",
 			"cluster", cr.GetName(),
 			"reason", cr.Status.Reason,
 			"message", cr.Status.Message,
@@ -240,13 +240,13 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		// Metrics-driven execution requires to set alerts on Grafana.
 		if until := cr.Spec.Until; until != nil && until.HasMetricsExpr() {
 			if err := expressions.SetAlert(ctx, &cr, until.Metrics); err != nil {
-				return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "metrics expression error"))
+				return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "spec.until"))
 			}
 		}
 
-		if schedule := cr.Spec.Schedule; schedule != nil && schedule.Conditions.HasMetricsExpr() {
-			if err := expressions.SetAlert(ctx, &cr, schedule.Conditions.Metrics); err != nil {
-				return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "metrics expression error"))
+		if schedule := cr.Spec.Schedule; schedule != nil && schedule.Event.HasMetricsExpr() {
+			if err := expressions.SetAlert(ctx, &cr, schedule.Event.Metrics); err != nil {
+				return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "spec.schedule"))
 			}
 		}
 
