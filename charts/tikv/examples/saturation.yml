@@ -65,7 +65,7 @@ spec:
         until:
           metrics: 'percent_diff() of query(A2EjFbsMk/86/Average, 5m, now) is below(5)'
         tolerate:
-          failedServices: 1
+          failedJobs: 1
 
     # When the clients become running, it means tha Until limit is hit. We then need to remove one client
     # in order to recover the performance.

@@ -50,15 +50,22 @@ type MatchOutputs struct {
 // CallSpec defines the desired state of Call.
 type CallSpec struct {
 	// Callable is the name of the endpoint that will be called
+	// +kubebuilder:validation:minlength=1
 	Callable string `json:"callable,omitempty"`
 
 	// Services is a list of services that will be stopped.
+	// +kubebuilder:validation:minimum=1
 	Services []string `json:"services"`
 
 	// Expect declares a list of expected outputs. The number of expected outputs must be the same
 	// as the number of defined services.
 	// +optional
 	Expect []MatchOutputs `json:"expect,omitempty"`
+
+	// Tolerate specifies the conditions under which the call will fail. If undefined, the call fails
+	// immediately when a call to service has failed.
+	// +optional
+	Tolerate *TolerateSpec `json:"tolerate,omitempty"`
 
 	// Until defines the conditions under which the CR will stop spawning new jobs.
 	// If used in conjunction with inputs, it will loop over inputs until the conditions are met.

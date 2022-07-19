@@ -16,6 +16,9 @@ limitations under the License.
 
 package v1alpha1
 
+type OnTime struct {
+}
+
 // SchedulerSpec defines information about schedule of the chaos experiment.
 // The scheduler will schedule up to spec.GenerateFromTemplate.Instances or spec.GenerateFromTemplate.Until.
 type SchedulerSpec struct {
@@ -37,6 +40,7 @@ type SchedulerSpec struct {
 	// +optional
 	StartingDeadlineSeconds *int64 `json:"startingDeadlineSeconds,omitempty"`
 
+	// Event schedules a new every when an event has happened.
 	// +optional
-	Conditions *ConditionalExpr `json:"conditions,omitempty"`
+	Event *ConditionalExpr `json:"event,omitempty"`
 }

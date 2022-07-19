@@ -163,12 +163,6 @@ func main() {
 			os.Exit(1)
 		}
 
-		if err = (&frisbeev1alpha1.Scenario{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "Scenario")
-
-			os.Exit(1)
-		}
-
 		if err = (&frisbeev1alpha1.Service{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Service")
 			os.Exit(1)
@@ -184,9 +178,22 @@ func main() {
 			os.Exit(1)
 		}
 
-		/*
-			TODO: add webhooks for cascade, delete, call
-		*/
+		if err = (&frisbeev1alpha1.Cascade{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Cascade")
+			os.Exit(1)
+		}
+
+		if err = (&frisbeev1alpha1.Scenario{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Scenario")
+
+			os.Exit(1)
+		}
+
+		if err = (&frisbeev1alpha1.Call{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Call")
+
+			os.Exit(1)
+		}
 	}
 
 	// +kubebuilder:scaffold:builder

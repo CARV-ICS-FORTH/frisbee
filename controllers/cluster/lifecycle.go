@@ -20,18 +20,12 @@ import (
 	"fmt"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	"github.com/carv-ics-forth/frisbee/controllers/common/expressions"
 	"github.com/carv-ics-forth/frisbee/controllers/common/lifecycle"
+	"github.com/carv-ics-forth/frisbee/controllers/common/lifecycle/check"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
-
-type test struct {
-	expression bool
-	lifecycle  v1alpha1.Lifecycle
-	condition  metav1.Condition
-}
 
 // calculateLifecycle returns the update lifecycle of the cluster.
 func calculateLifecycle(cluster *v1alpha1.Cluster, gs lifecycle.ClassifierReader) v1alpha1.Lifecycle {
@@ -43,90 +37,22 @@ func calculateLifecycle(cluster *v1alpha1.Cluster, gs lifecycle.ClassifierReader
 	}
 
 	// Step 2. Check if failures violate cluster's toleration.
-	if gs.FailedJobsNum() > cluster.Spec.Tolerate.FailedServices {
-		cycle = v1alpha1.Lifecycle{
-			Phase:  v1alpha1.PhaseFailed,
-			Reason: "TolerateFailuresExceeded",
-			Message: fmt.Sprintf("tolerate: %s. failed jobs: %s",
-				cluster.Spec.Tolerate.String(), gs.FailedJobsList()),
+	if tolerate := cluster.Spec.Tolerate; tolerate != nil {
+		if check.TolerationExceeded(tolerate, gs, &cycle) {
+			return cycle
 		}
-
-		meta.SetStatusCondition(&cycle.Conditions, metav1.Condition{
-			Type:    v1alpha1.ConditionJobUnexpectedTermination.String(),
-			Status:  metav1.ConditionTrue,
-			Reason:  "JobHasFailed",
-			Message: fmt.Sprintf("failed jobs: %s", gs.FailedJobsList()),
-		})
-
-		return cycle
 	}
 
 	// Step 3. Check if "Until" conditions are met.
 	if until := cluster.Spec.Until; until != nil {
-		if until.HasMetricsExpr() {
-			info, fired := expressions.FiredAlert(cluster)
-			if fired {
-				cycle = v1alpha1.Lifecycle{
-					Phase:   v1alpha1.PhaseRunning,
-					Reason:  "MetricsEventFired",
-					Message: info,
-				}
+		if check.UntilConditionIsMet(until, gs, cluster, &cycle) {
+			suspend := true
+			cluster.Spec.Suspend = &suspend
 
-				meta.SetStatusCondition(&cycle.Conditions, metav1.Condition{
-					Type:    v1alpha1.ConditionAllJobsAreScheduled.String(),
-					Status:  metav1.ConditionTrue,
-					Reason:  "MetricsEventFired",
-					Message: info,
-				})
-
-				suspend := true
-				cluster.Spec.Suspend = &suspend
-
-				return cycle
-			}
+			return cycle
 		}
 
-		if until.HasStateExpr() {
-			info, fired, err := expressions.FiredState(until.State, gs)
-			if err != nil {
-				cycle = v1alpha1.Lifecycle{
-					Phase:   v1alpha1.PhaseFailed,
-					Reason:  "StateQueryError",
-					Message: err.Error(),
-				}
-
-				meta.SetStatusCondition(&cycle.Conditions, metav1.Condition{
-					Type:    v1alpha1.ConditionJobUnexpectedTermination.String(),
-					Status:  metav1.ConditionTrue,
-					Reason:  "StateQueryError",
-					Message: err.Error(),
-				})
-
-				return cycle
-			}
-
-			if fired {
-				cycle = v1alpha1.Lifecycle{
-					Phase:   v1alpha1.PhaseRunning,
-					Reason:  "StateEventFired",
-					Message: info,
-				}
-
-				meta.SetStatusCondition(&cycle.Conditions, metav1.Condition{
-					Type:    v1alpha1.ConditionAllJobsAreScheduled.String(),
-					Status:  metav1.ConditionTrue,
-					Reason:  "StateEventFired",
-					Message: info,
-				})
-
-				suspend := true
-				cluster.Spec.Suspend = &suspend
-
-				return cycle
-			}
-		}
-
-		// Conditions used in conjunction with "Until", instance act as a maximum bound.
+		// Event used in conjunction with "Until", instance act as a maximum bound.
 		// If the maximum instances are reached before the Until conditions, we assume that
 		// the experiment never converges, and it fails.
 		if cluster.Spec.MaxInstances > 0 && (cluster.Status.ScheduledJobs > cluster.Spec.MaxInstances) {
@@ -165,61 +91,8 @@ func calculateLifecycle(cluster *v1alpha1.Cluster, gs lifecycle.ClassifierReader
 	// Step 4. Check if scheduling goes as expected.
 	queuedJobs := len(cluster.Status.QueuedJobs)
 
-	autotests := []test{
-		{ // All jobs are successfully completed
-			expression: gs.SuccessfulJobsNum() == queuedJobs,
-			lifecycle: v1alpha1.Lifecycle{
-				Phase:   v1alpha1.PhaseSuccess,
-				Reason:  "AllJobsCompleted",
-				Message: fmt.Sprintf("successful jobs: %s", gs.SuccessfulJobsList()),
-			},
-			condition: metav1.Condition{
-				Type:    v1alpha1.ConditionAllJobsAreCompleted.String(),
-				Status:  metav1.ConditionTrue,
-				Reason:  "AllJobsCompleted",
-				Message: fmt.Sprintf("successful jobs: %s", gs.SuccessfulJobsList()),
-			},
-		},
-		{ // A job has been failed, but it is within the expected toleration.
-			// In this case, simply return the previous status.
-			expression: cycle.Phase == v1alpha1.PhaseRunning && gs.FailedJobsNum() > 0,
-			lifecycle:  cycle,
-		},
-		{ // All jobs are created, and at least one is still running
-			expression: gs.RunningJobsNum()+gs.SuccessfulJobsNum() == queuedJobs,
-			lifecycle: v1alpha1.Lifecycle{
-				Phase:   v1alpha1.PhaseRunning,
-				Reason:  "AllJobsRunning",
-				Message: fmt.Sprintf("running jobs: %s", gs.RunningJobsList()),
-			},
-			condition: metav1.Condition{
-				Type:    v1alpha1.ConditionAllJobsAreScheduled.String(),
-				Status:  metav1.ConditionTrue,
-				Reason:  "AllJobsRunning",
-				Message: fmt.Sprintf("running jobs: %s", gs.RunningJobsList()),
-			},
-		},
-
-		{ // Not all Jobs are yet created
-			expression: cycle.Phase == v1alpha1.PhasePending,
-			lifecycle: v1alpha1.Lifecycle{
-				Phase:   v1alpha1.PhasePending,
-				Reason:  "JobIsPending",
-				Message: "at least one jobs has not yet created",
-			},
-		},
-	}
-
-	for _, testcase := range autotests {
-		if testcase.expression {
-			cycle = testcase.lifecycle
-
-			if testcase.condition != (metav1.Condition{}) {
-				meta.SetStatusCondition(&cycle.Conditions, testcase.condition)
-			}
-
-			return cycle
-		}
+	if check.ScheduledJobs(queuedJobs, gs, &cycle) {
+		return cycle
 	}
 
 	panic(errors.Errorf(`unhandled lifecycle conditions.

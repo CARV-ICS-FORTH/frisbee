@@ -66,7 +66,7 @@ spec:
           - -c        # Read from string
           - |         # Multi-line str
             set -eum
-            ./cockroach workload fixtures import tpcc --warehouses=100 --fks=false --checks=false
+            ./cockroach workload fixtures import tpcc --warehouses=200 --fks=false --checks=false
 
       bitrot:
         container: app

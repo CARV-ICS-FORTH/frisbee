@@ -9,6 +9,7 @@ global:
 
   ingressClass: nginx
 
+
 ## @section Frisbee Operator parameters
 
 ## @param operator.enabled Set it to false for running the controller outside the Kubernetes Cluster.
@@ -22,7 +23,7 @@ global:
 operator:
   enabled: true
 
-  name: "frisbee"
+  name: "frisbee-operator"
 
   advertisedHost: "139.91.92.82"
 
@@ -82,3 +83,15 @@ chaos-mesh:
 ## @param dashboard.enabled Whether to enable Dashboard
 dashboard:
   enabled: true
+
+
+
+
+## @section Certificate Manager
+
+## @param cert-manager.enabled Enables the certificate manager
+## @param cert-manager.installCRDs Install CRDs for the certificate manager
+cert-manager:
+  enabled: true
+
+  installCRDs: true

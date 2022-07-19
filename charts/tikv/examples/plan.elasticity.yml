@@ -48,7 +48,7 @@ spec:
         inputs:
           - { placementDriver: .service.master.one }
         tolerate:
-          failedServices: 5
+          failedJobs: 5
         schedule:
           cron: "@every 1m"
 

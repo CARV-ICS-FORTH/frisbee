@@ -17,11 +17,20 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
+
+// +kubebuilder:webhook:path=/mutate-frisbee-dev-v1alpha1-cluster,mutating=true,failurePolicy=fail,sideEffects=None,groups=frisbee.dev,resources=clusters,verbs=create;update,versions=v1alpha1,name=mcluster.kb.io,admissionReviewVersions={v1,v1alpha1}
+
+var _ webhook.Defaulter = &Cluster{}
+
+// +kubebuilder:webhook:path=/validate-frisbee-dev-v1alpha1-cluster,mutating=false,failurePolicy=fail,sideEffects=None,groups=frisbee.dev,resources=clusters,verbs=create;update,versions=v1alpha1,name=vcluster.kb.io,admissionReviewVersions={v1,v1alpha1}
+
+var _ webhook.Validator = &Cluster{}
 
 // log is for logging in this package.
 var clusterlog = logf.Log.WithName("cluster-resource")
@@ -32,12 +41,6 @@ func (r *Cluster) SetupWebhookWithManager(mgr ctrl.Manager) error {
 		Complete()
 }
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-
-// +kubebuilder:webhook:path=/mutate-frisbee-dev-v1alpha1-cluster,mutating=true,failurePolicy=fail,sideEffects=None,groups=frisbee.dev,resources=clusters,verbs=create;update,versions=v1alpha1,name=mcluster.kb.io,admissionReviewVersions={v1,v1alpha1}
-
-var _ webhook.Defaulter = &Cluster{}
-
 // Default implements webhook.Defaulter so a webhook will be registered for the type
 func (r *Cluster) Default() {
 	clusterlog.Info("default", "name", r.Name)
@@ -45,16 +48,42 @@ func (r *Cluster) Default() {
 	// TODO(user): fill in your defaulting logic.
 }
 
-// TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// +kubebuilder:webhook:path=/validate-frisbee-dev-v1alpha1-cluster,mutating=false,failurePolicy=fail,sideEffects=None,groups=frisbee.dev,resources=clusters,verbs=create;update,versions=v1alpha1,name=vcluster.kb.io,admissionReviewVersions={v1,v1alpha1}
-
-var _ webhook.Validator = &Cluster{}
-
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (r *Cluster) ValidateCreate() error {
 	clusterlog.Info("validate create", "name", r.Name)
 
-	// TODO(user): fill in your validation logic upon object creation.
+	spec := r.Spec
+
+	// Tolerate field
+	if tolerate := spec.Tolerate; tolerate != nil {
+		if err := ValidateTolerate(tolerate); err != nil {
+			return errors.Wrapf(err, "tolerate error")
+		}
+	}
+
+	// Until field
+	if until := spec.Until; until != nil {
+		if err := ValidateExpr(until); err != nil {
+			return errors.Wrapf(err, "until error")
+		}
+	}
+
+	// Schedule field
+	if schedule := spec.Schedule; schedule != nil {
+		clusterlog.Info("Validate Scheduler")
+
+		if err := ValidateScheduler(schedule); err != nil {
+			return errors.Wrapf(err, "until error")
+		}
+	}
+
+	// Suspend Field
+	if suspend := spec.Suspend; suspend != nil {
+		if *suspend {
+			return errors.Errorf("Cannot create a call that is already suspended")
+		}
+	}
+
 	return nil
 }
 

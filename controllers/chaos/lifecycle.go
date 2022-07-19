@@ -204,6 +204,17 @@ func convertLifecycle(fault *GenericFault) v1alpha1.Lifecycle {
 			},
 		},
 
+		{
+			// This condition happens when you delete the experiment during a network partition.
+			// FIXME: Perhaps it could return a failure.
+			condition: phase.Run() && selected.True() && allInjected.False() && allRecovered.True(),
+			outcome: v1alpha1.Lifecycle{
+				Phase:   v1alpha1.PhasePending,
+				Reason:  "ChaosInjecting",
+				Message: "Chaos experiment is in the process of fault injection.",
+			},
+		},
+
 		{ // All Faults are injected to all targets.
 			condition: phase.Run() && selected.True() && allInjected.True() && allRecovered.False(),
 			outcome: v1alpha1.Lifecycle{
@@ -256,6 +267,6 @@ func convertLifecycle(fault *GenericFault) v1alpha1.Lifecycle {
 		}
 	}
 
-	panic(errors.Errorf("unhandled lifecycle conditions. \nincoming: %v, \n%v, \n%v, \n%v, \nraw: %v",
+	panic(errors.Errorf("unhandled lifecycle conditions. \nphase: %v, \n%v, \n%v, \n%v, \nraw: %v",
 		phase, selected, allInjected, allRecovered, fault))
 }

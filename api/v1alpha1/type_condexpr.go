@@ -80,14 +80,16 @@ type ExprMetrics string
 
 func (query ExprMetrics) Parse() ([]string, error) {
 	matches := ExprMetricsValidator.FindStringSubmatch(string(query))
+
 	if len(matches) == 0 {
-		return nil, errors.Errorf(`erroneous query %s. 
+		return nil, errors.Errorf(`erroneous query '%s'. 
 		Examples:
-			1) avg() OF query(wpFnYRwGk/2/bitrate, 15m, now) IS BELOW(14)
-			2) avg() OF query(wpFnYRwGk/2/bitrate, 15m, now) IS NOVALUE()
-			3) avg() OF query(wpFnYRwGk/2/bitrate, 15m, now) IS WithinRange(4, 88)
-			4) avg() OF query(wpFnYRwGk/2/bitrate, 15m, now) IS WithinRange(4, 88) FOR (1m)
-			5) avg() OF query(wpFnYRwGk/2/bitrate, 15m, now) IS WithinRange(4, 88) FOR (1m) EVERY(1m)
+			- 'avg() of query(wpFnYRwGk/2/bitrate, 15m, now) is below(14)'
+			- 'avg() of query(wpFnYRwGk/2/bitrate, 15m, now) is below(0.4)'
+			- 'avg() of query(wpFnYRwGk/2/bitrate, 15m, now) is novalue()'
+			- 'avg() of query(wpFnYRwGk/2/bitrate, 15m, now) is withinrange(4, 88)'
+			- 'avg() of query(wpFnYRwGk/2/bitrate, 15m, now) is withinrange(4, 88) for (1m)'
+			- 'avg() of query(wpFnYRwGk/2/bitrate, 15m, now) is withinrange(4, 88) for (1m) every(1m)'
 
 		Prepare your expressions at: https://regex101.com/r/sIspYb/1/`, query)
 	}
@@ -95,5 +97,5 @@ func (query ExprMetrics) Parse() ([]string, error) {
 	return matches, nil
 }
 
-// ExprMetricsValidator expressions evaluated with https://regex101.com/r/xrSyEz/1
-var ExprMetricsValidator = regexp.MustCompile(`(?m)^(?P<reducer>\w+)\(\)\s+of\s+query\((?P<dashboardUID>\w+)\/(?P<panelID>\d+)\/(?P<metric>\w+),\s+(?P<from>\w+),\s+(?P<to>\w+)\)\s+is\s+(?P<evaluator>\w+)\((?P<params>\d*[,\s]*\d*)\)\s*(for\((?P<for>\w+)\))*\s*(every\((?P<every>\w+)\))*\s*$`)
+// ExprMetricsValidator expressions evaluated with https://regex101.com/r/ZB8rPs/1
+var ExprMetricsValidator = regexp.MustCompile(`(?m)^(?P<reducer>\w+)\(\)\s+of\s+query\((?P<dashboardUID>\w+)\/(?P<panelID>\d+)\/(?P<metric>\w+),\s+(?P<from>\w+),\s+(?P<to>\w+)\)\s+is\s+(?P<evaluator>\w+)\((?P<params>\d*[\.,\s]*\d*)\)\s*(for\s+\((?P<for>\w+)\))*\s*(every\((?P<every>\w+)\))*\s*$`)

@@ -17,8 +17,6 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"fmt"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -33,22 +31,6 @@ type Cluster struct {
 
 	Spec   ClusterSpec   `json:"spec,omitempty"`
 	Status ClusterStatus `json:"status,omitempty"`
-}
-
-// TolerateSpec specifies the system's ability to continue operating despite failures or malfunctions.
-// If tolerate is enable, the cluster will remain "alive" even if some services have failed.
-// Such failures are likely to happen as part of a Chaos experiment.
-type TolerateSpec struct {
-	// FailedServices indicate the number of services that may fail before the cluster fails itself.
-	FailedServices int `json:"failedServices"`
-}
-
-func (in TolerateSpec) String() string {
-	if in.FailedServices == 0 {
-		return "None"
-	}
-
-	return fmt.Sprintf("FailedServices:%d", in.FailedServices)
 }
 
 // PlacementSpec defines rules for placing the containers across the available nodes.
@@ -73,7 +55,7 @@ type ClusterSpec struct {
 	// Tolerate specifies the conditions under which the cluster will fail. If undefined, the cluster fails
 	// immediately when a service has failed.
 	// +optional
-	Tolerate TolerateSpec `json:"tolerate,omitempty"`
+	Tolerate *TolerateSpec `json:"tolerate,omitempty"`
 
 	// Schedule defines the interval between the creation of services in the group.
 	// +optional

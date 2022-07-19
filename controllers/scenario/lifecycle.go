@@ -41,7 +41,7 @@ func (r *Controller) updateLifecycle(t *v1alpha1.Scenario) v1alpha1.Lifecycle {
 	}
 
 	// Step 2. Check if metrics-driven assertions are fired
-	if info, fired := expressions.FiredAlert(t); fired {
+	if _, info, fired := expressions.AlertIsFired(t); fired {
 		life = v1alpha1.Lifecycle{
 			Phase:   v1alpha1.PhaseFailed,
 			Reason:  "MetricsAssertion",
@@ -120,7 +120,7 @@ func (r *Controller) updateLifecycle(t *v1alpha1.Scenario) v1alpha1.Lifecycle {
 				Message: fmt.Sprintf("failed jobs: %s", r.clusterView.FailedJobsList()),
 			},
 		},
-		{ // All jobs are created, and completed successfully
+		{ // All jobs are created, and completed successfully (x)
 			expression: r.clusterView.SuccessfulJobsNum() == expectedJobs,
 			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseSuccess,
@@ -148,7 +148,7 @@ func (r *Controller) updateLifecycle(t *v1alpha1.Scenario) v1alpha1.Lifecycle {
 				Message: fmt.Sprintf("running jobs: %s", r.clusterView.RunningJobsList()),
 			},
 		},
-		{ // Not all Jobs are yet created
+		{ // Not all Jobs are yet created (x)
 			expression: len(t.Status.ExecutedActions) < expectedJobs,
 			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhasePending,

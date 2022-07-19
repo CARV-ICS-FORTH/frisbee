@@ -54,8 +54,16 @@ charts**.
 
 #### 2. Frisbee platform
 
-Although Frisbee can be installed directly from a Helm repository, for demonstration purposes we favor the git-based
-method.
+Firstly, we need to install the certificate manager.
+
+```bash
+helm repo add jetstack https://charts.jetstack.io
+helm repo update
+helm upgrade --install cert-manager jetstack/cert-manager --version v1.8.2 --set installCRDs=true
+```
+
+
+Although Frisbee can be installed in a similar Helm-ish way, for demonstration purposes, we favor the git-based method.
 
 ```bash
 # Download the source code

@@ -61,19 +61,19 @@ func (r *Controller) constructJobSpecList(ctx context.Context, cr *v1alpha1.Call
 }
 
 func (r *Controller) callJob(ctx context.Context, cr *v1alpha1.Call, i int) error {
-	var mock v1alpha1.VirtualObject
+	var vobject v1alpha1.VirtualObject
 	// Call normally does not return anything. This however would break all the pipeline for
 	// managing dependencies between jobs. For that, we return a dummy virtual object without dedicated controller.
 	// Delete normally does not return anything. This however would break all the pipeline for
 	// managing dependencies between jobs. For that, we return a dummy virtual object without dedicated controller.
 	// FIXME: if the call fails, this object will be re-created, and the call will failed with an "existing object" error.
 	{
-		mock.SetGroupVersionKind(v1alpha1.GroupVersion.WithKind("VirtualObject"))
-		mock.SetName(fmt.Sprintf("%s-%d", cr.GetName(), i))
+		vobject.SetGroupVersionKind(v1alpha1.GroupVersion.WithKind("VirtualObject"))
+		vobject.SetName(fmt.Sprintf("%s-%d", cr.GetName(), i))
 
-		labelling.Propagate(&mock, cr)
+		labelling.Propagate(&vobject, cr)
 
-		if err := common.Create(ctx, r, cr, &mock); err != nil {
+		if err := common.Create(ctx, r, cr, &vobject); err != nil {
 			return errors.Wrapf(err, "cannot create virtual object")
 		}
 	}
@@ -82,10 +82,8 @@ func (r *Controller) callJob(ctx context.Context, cr *v1alpha1.Call, i int) erro
 	callable := cr.Status.QueuedJobs[i]
 
 	{ // Perform the actual job
-		r.GetEventRecorderFor("").Event(cr, corev1.EventTypeNormal, "CallBegin", serviceName)
-
-		r.Info("===> Synchronous call", "caller", cr.GetName(), "service", serviceName)
-		defer r.Info("<=== Synchronous call", "caller", cr.GetName(), "service", serviceName)
+		r.Info("-> Call", "caller", cr.GetName(), "service", serviceName)
+		defer r.Info("<- Call", "caller", cr.GetName(), "service", serviceName)
 
 		pod := types.NamespacedName{
 			Namespace: cr.GetNamespace(),
@@ -93,21 +91,32 @@ func (r *Controller) callJob(ctx context.Context, cr *v1alpha1.Call, i int) erro
 		}
 
 		// Do some hacks to abort the call if the main context is cancelled.
-		quit := make(chan error, 1)
+		quit := make(chan error)
 
 		go func() {
+			r.GetEventRecorderFor("").Event(cr, corev1.EventTypeNormal, "CallBegin", serviceName)
+
 			defer close(quit)
 
 			res, err := r.executor.Exec(pod, callable.Container, callable.Command, true)
 			if err != nil {
-				quit <- errors.Wrapf(err, "command execution failed. Out: %s, Err: %s", res.Stdout, res.Stderr)
+				quit <- errors.Wrapf(err, "remote command has failed. Out: %s, Err: %s", res.Stdout, res.Stderr)
 
 				return
 			}
 
-			r.Logger.Info("Call Output", "stdout", res.Stdout, "stderr", res.Stderr)
+			r.Logger.V(2).Info("Call Output",
+				"job", cr.GetName(),
+				"stdout", res.Stdout,
+				"stderr", res.Stderr,
+			)
 
 			if cr.Spec.Expect != nil {
+				r.Logger.V(2).Info("Assert Call Output",
+					"job", cr.GetName(),
+					"expect", cr.Spec.Expect,
+				)
+
 				expect := cr.Spec.Expect[i]
 
 				if expect.Stdout != nil {
@@ -149,7 +158,7 @@ func (r *Controller) callJob(ctx context.Context, cr *v1alpha1.Call, i int) erro
 			if err != nil {
 				r.GetEventRecorderFor("").Event(cr, corev1.EventTypeWarning, "CallFailed", serviceName)
 
-				return errors.Wrapf(err, "call failed")
+				return err
 			}
 		}
 	}
@@ -157,13 +166,13 @@ func (r *Controller) callJob(ctx context.Context, cr *v1alpha1.Call, i int) erro
 	r.GetEventRecorderFor("").Event(cr, corev1.EventTypeNormal, "CallSuccess", serviceName)
 
 	{ // update the status of the mockup. This will be captured by the lifecycle.
-		mock.SetReconcileStatus(v1alpha1.Lifecycle{
+		vobject.SetReconcileStatus(v1alpha1.Lifecycle{
 			Phase:   v1alpha1.PhaseSuccess,
 			Reason:  "AllJobsCalled",
 			Message: "Job is called ",
 		})
 
-		if err := common.UpdateStatus(ctx, r, &mock); err != nil {
+		if err := common.UpdateStatus(ctx, r, &vobject); err != nil {
 			return errors.Wrapf(err, "cannot update job status")
 		}
 	}

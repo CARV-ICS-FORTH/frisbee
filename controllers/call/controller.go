@@ -50,6 +50,8 @@ import (
 // +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,resources=pods/status,verbs=get;list;watch
 
+// +kubebuilder:rbac:groups=core,resources=events,verbs=get;list;watch;create;update;patch;delete
+
 // Controller reconciles a Cluster object.
 type Controller struct {
 	ctrl.Manager
@@ -120,7 +122,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	cr.SetReconcileStatus(calculateLifecycle(&cr, r.clusterView))
 
 	if err := common.UpdateStatus(ctx, r, &cr); err != nil {
-		r.Info("update status error. retry", "object", cr.GetName(), "err", err)
+		r.Info("Reschedule.", "object", cr.GetName(), "UpdateStatusErr", err)
 		return common.RequeueAfter(time.Second)
 	}
 
@@ -130,7 +132,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		pause runs to investigate the cluster, without deleting the object.
 	*/
 	if cr.Spec.Suspend != nil && *cr.Spec.Suspend {
-		r.Logger.Info("Caller is suspended",
+		r.Logger.Info("Suspended",
 			"caller", cr.GetName(),
 			"reason", cr.Status.Reason,
 			"message", cr.Status.Message,
@@ -147,25 +149,15 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		around.
 	*/
 	if cr.Status.Phase.Is(v1alpha1.PhaseSuccess) {
-		r.Logger.Info("Cleaning up call jobs",
-			"call", cr.GetName(),
-			"successfulJobs", r.clusterView.SuccessfulJobsList(),
-		)
-
-		/*
-			Remove cr children once the cr is successfully complete.
-			We should not remove the cr descriptor itself, as we need to maintain its
-			status for higher-entities like the Scenario.
-		*/
-		for _, job := range r.clusterView.SuccessfulJobs() {
-			common.Delete(ctx, r, job)
+		if err := r.HasSucceed(ctx, &cr); err != nil {
+			return common.RequeueAfter(time.Second)
 		}
 
 		return common.Stop()
 	}
 
 	if cr.Status.Phase.Is(v1alpha1.PhaseFailed) {
-		if err := r.HasFailed(ctx, &cr, r.clusterView); err != nil {
+		if err := r.HasFailed(ctx, &cr); err != nil {
 			return common.RequeueAfter(time.Second)
 		}
 
@@ -225,7 +217,6 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		Since we have prepared these jobs at initialization, all we need is to get a pointer to the next job.
 		We then use the Kubernetes client to exec the stopping command directly into the target container.
 	*/
-	// perform the sub-call
 	if err := r.callJob(ctx, &cr, nextJob); err != nil {
 		return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "call error"))
 	}
@@ -308,13 +299,13 @@ func (r *Controller) Initialize(ctx context.Context, t *v1alpha1.Call) error {
 	// Metrics-driven execution requires to set alerts on Grafana.
 	if until := t.Spec.Until; until != nil && until.HasMetricsExpr() {
 		if err := expressions.SetAlert(ctx, t, until.Metrics); err != nil {
-			return errors.Wrapf(err, "metrics expression error")
+			return errors.Wrapf(err, "spec.until")
 		}
 	}
 
-	if schedule := t.Spec.Schedule; schedule != nil && schedule.Conditions.HasMetricsExpr() {
-		if err := expressions.SetAlert(ctx, t, schedule.Conditions.Metrics); err != nil {
-			return errors.Wrapf(err, "metrics expression error")
+	if schedule := t.Spec.Schedule; schedule != nil && schedule.Event.HasMetricsExpr() {
+		if err := expressions.SetAlert(ctx, t, schedule.Event.Metrics); err != nil {
+			return errors.Wrapf(err, "spec.schedule")
 		}
 	}
 
@@ -325,26 +316,46 @@ func (r *Controller) Initialize(ctx context.Context, t *v1alpha1.Call) error {
 	return nil
 }
 
-func (r *Controller) HasFailed(ctx context.Context, t *v1alpha1.Call, clusterView lifecycle.ClassifierReader) error {
+func (r *Controller) HasSucceed(ctx context.Context, t *v1alpha1.Call) error {
+	r.Logger.Info("CleanOnSuccess",
+		"kind", reflect.TypeOf(t),
+		"name", t.GetName(),
+		"sucessfulJobs", r.clusterView.SuccessfulJobsList(),
+	)
+
+	/*
+		Remove cr children once the cr is successfully complete.
+		We should not remove the cr descriptor itself, as we need to maintain its
+		status for higher-entities like the Scenario.
+	*/
+	for _, job := range r.clusterView.SuccessfulJobs() {
+		common.Delete(ctx, r, job)
+	}
+
+	return nil
+}
+
+func (r *Controller) HasFailed(ctx context.Context, t *v1alpha1.Call) error {
 	r.Logger.Error(errors.New(t.Status.Reason), t.Status.Message)
 
-	r.Logger.Info("Cleaning up caller jobs",
-		"caller", t.GetName(),
+	r.Logger.Info("CleanOnFailure",
+		"kind", reflect.TypeOf(t),
+		"name", t.GetName(),
 		"successfulJobs", r.clusterView.SuccessfulJobsList(),
 		"runningJobs", r.clusterView.RunningJobsList(),
 		"pendingJobs", r.clusterView.PendingJobsList(),
 	)
 
 	// Remove the non-failed components. Leave the failed jobs and system jobs for postmortem analysis.
-	for _, job := range clusterView.PendingJobs() {
+	for _, job := range r.clusterView.PendingJobs() {
 		common.Delete(ctx, r, job)
 	}
 
-	for _, job := range clusterView.RunningJobs() {
+	for _, job := range r.clusterView.RunningJobs() {
 		common.Delete(ctx, r, job)
 	}
 
-	for _, job := range clusterView.SuccessfulJobs() {
+	for _, job := range r.clusterView.SuccessfulJobs() {
 		common.Delete(ctx, r, job)
 	}
 

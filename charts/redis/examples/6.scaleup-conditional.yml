@@ -45,5 +45,5 @@ spec:
         inputs:
           - { join: .cluster.masters.one }
         schedule:
-          conditions:
+          event:
             metrics: 'max() of query(A2EjFbsMk/26/99Latency, 5m, now) is above(80000)'
