@@ -78,7 +78,7 @@ func TestFiredState(t *testing.T) {
 				state: lifecycle.Classifier{},
 			},
 			wantErr:  false,
-			wantPass: false,
+			wantPass: true,
 		},
 
 		{
@@ -129,7 +129,7 @@ func TestFiredState(t *testing.T) {
 		{
 			name: "valid numeric comparison",
 			args: args{
-				expr:  `{{.RunningJobsNum}} == 2`,
+				expr:  `{{.NumRunningJobs}} == 2`,
 				state: state,
 			},
 			wantErr:  false,

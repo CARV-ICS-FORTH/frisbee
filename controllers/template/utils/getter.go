@@ -59,7 +59,7 @@ func GetTemplate(ctx context.Context, c client.Client, who metav1.Object, ref st
 	return &template, nil
 }
 
-func GenerateFromScheme(spec interface{}, scheme *Scheme, userInputs map[string]string) error {
+func GenerateFromScheme(spec interface{}, scheme *v1alpha1.Scheme, userInputs map[string]string) error {
 	if userInputs != nil {
 		if scheme.Inputs == nil || scheme.Inputs.Parameters == nil {
 			return errors.New("template is not parameterizable")

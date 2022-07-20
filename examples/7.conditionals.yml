@@ -1,0 +1,59 @@
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Template
+metadata:
+  name: iperf.server
+spec:
+  service:
+    containers:
+      - name: app
+        image: czero/iperf2
+        command: [ iperf ]
+        args: [ "-s", "-f", "m", "-i", "5" ]
+
+
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Template
+metadata:
+  name: iperf.client
+spec:
+  inputs:
+    parameters:
+      target: localhost
+      duration: "60"
+  service:
+    containers:
+      - name: app
+        image: czero/iperf2
+        command: [ iperf ]
+        args: [ "-c", "{{.Inputs.Parameters.target}}", "-t", "{{.Inputs.Parameters.duration}}" ]
+
+
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Scenario
+metadata:
+  name: conditionals
+spec:
+  actions:
+    - action: Service
+      name: server
+      service:
+        templateRef: iperf.server
+
+    - action: Cluster
+      name: clients
+      depends: { running: [ server ] }
+      cluster:
+        templateRef: iperf.client
+        instances: 10
+        inputs:
+          - { target: server, duration: "10" }
+          - { target: server, duration: "20" }
+          - { target: server, duration: "30" }
+        schedule:
+          cron: "@every 1m"
+        # Suspend the execution if more than 6 clients are created
+        until:
+          state: '{{.NumSuccessfulJobs}} >= 6'

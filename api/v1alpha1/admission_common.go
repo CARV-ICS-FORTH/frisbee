@@ -31,7 +31,7 @@ func ValidateExpr(expr *ConditionalExpr) error {
 	}
 
 	if expr.HasStateExpr() {
-		if _, err := expr.State.Parse(); err != nil {
+		if _, err := expr.State.GoValuate(DefaultClassifier{}); err != nil {
 			return errors.Wrapf(err, "Invalid state expr")
 		}
 	}

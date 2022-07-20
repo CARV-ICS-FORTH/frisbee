@@ -1,0 +1,25 @@
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Template                # new type of k8s spec
+metadata:
+  name: whalesay            # name of the template spec
+spec:
+  service:
+    containers: # application container
+      - name: app
+        image: docker/whalesay
+        command: [ cowsay ]
+        args: [ "hello-world" ]
+
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Scenario
+metadata:
+  name: hello-world
+spec:
+  actions:
+    # create a service using the whalesay template
+    - action: Service
+      name: whalesay
+      service:
+        templateRef: whalesay

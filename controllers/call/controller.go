@@ -320,7 +320,7 @@ func (r *Controller) HasSucceed(ctx context.Context, t *v1alpha1.Call) error {
 	r.Logger.Info("CleanOnSuccess",
 		"kind", reflect.TypeOf(t),
 		"name", t.GetName(),
-		"sucessfulJobs", r.clusterView.SuccessfulJobsList(),
+		"sucessfulJobs", r.clusterView.ListSuccessfulJobs(),
 	)
 
 	/*
@@ -328,7 +328,7 @@ func (r *Controller) HasSucceed(ctx context.Context, t *v1alpha1.Call) error {
 		We should not remove the cr descriptor itself, as we need to maintain its
 		status for higher-entities like the Scenario.
 	*/
-	for _, job := range r.clusterView.SuccessfulJobs() {
+	for _, job := range r.clusterView.GetSuccessfulJobs() {
 		common.Delete(ctx, r, job)
 	}
 
@@ -341,21 +341,21 @@ func (r *Controller) HasFailed(ctx context.Context, t *v1alpha1.Call) error {
 	r.Logger.Info("CleanOnFailure",
 		"kind", reflect.TypeOf(t),
 		"name", t.GetName(),
-		"successfulJobs", r.clusterView.SuccessfulJobsList(),
-		"runningJobs", r.clusterView.RunningJobsList(),
-		"pendingJobs", r.clusterView.PendingJobsList(),
+		"successfulJobs", r.clusterView.ListSuccessfulJobs(),
+		"runningJobs", r.clusterView.ListRunningJobs(),
+		"pendingJobs", r.clusterView.ListPendingJobs(),
 	)
 
 	// Remove the non-failed components. Leave the failed jobs and system jobs for postmortem analysis.
-	for _, job := range r.clusterView.PendingJobs() {
+	for _, job := range r.clusterView.GetPendingJobs() {
 		common.Delete(ctx, r, job)
 	}
 
-	for _, job := range r.clusterView.RunningJobs() {
+	for _, job := range r.clusterView.GetRunningJobs() {
 		common.Delete(ctx, r, job)
 	}
 
-	for _, job := range r.clusterView.SuccessfulJobs() {
+	for _, job := range r.clusterView.GetSuccessfulJobs() {
 		common.Delete(ctx, r, job)
 	}
 

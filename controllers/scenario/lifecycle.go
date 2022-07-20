@@ -17,45 +17,40 @@ limitations under the License.
 package scenario
 
 import (
-	"fmt"
-
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common/expressions"
-	"github.com/sirupsen/logrus"
+	"github.com/carv-ics-forth/frisbee/controllers/common/lifecycle/check"
+	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type test struct {
-	expression bool
-	lifecycle  v1alpha1.Lifecycle
-	condition  metav1.Condition
-}
-
 func (r *Controller) updateLifecycle(t *v1alpha1.Scenario) v1alpha1.Lifecycle {
-	life := t.Status.Lifecycle
+	cycle := t.Status.Lifecycle
+	gs := r.clusterView
 
-	// Step 1. Skip any CR which are already completed, or uninitialized.
-	if life.Phase.Is(v1alpha1.PhaseUninitialized, v1alpha1.PhaseSuccess, v1alpha1.PhaseFailed) {
-		return life
+	// Step 1. Skip any scenario which are already completed, or uninitialized.
+	if cycle.Phase.Is(v1alpha1.PhaseUninitialized, v1alpha1.PhaseSuccess, v1alpha1.PhaseFailed) {
+		return cycle
 	}
 
-	// Step 2. Check if metrics-driven assertions are fired
+	// Step 2. Because the assertions belong to the scenario, we must check if the scenario is the
+	// recipient of any fired alert.
 	if _, info, fired := expressions.AlertIsFired(t); fired {
-		life = v1alpha1.Lifecycle{
+		cycle = v1alpha1.Lifecycle{
 			Phase:   v1alpha1.PhaseFailed,
 			Reason:  "MetricsAssertion",
 			Message: info,
 		}
 
-		meta.SetStatusCondition(&life.Conditions, metav1.Condition{
+		meta.SetStatusCondition(&cycle.Conditions, metav1.Condition{
 			Type:    v1alpha1.ConditionTerminated.String(),
 			Status:  metav1.ConditionTrue,
 			Reason:  "MetricsAssertion",
 			Message: info,
 		})
 
-		return life
+		return cycle
 	}
 
 	// Step 3. Check if state-driven assertions are fired
@@ -65,121 +60,56 @@ func (r *Controller) updateLifecycle(t *v1alpha1.Scenario) v1alpha1.Lifecycle {
 		}
 
 		if assertion.HasStateExpr() {
-			info, fired, err := expressions.FiredState(assertion.State, r.clusterView)
+			info, fired, err := expressions.FiredState(assertion.State, gs)
 			if err != nil {
-				life = v1alpha1.Lifecycle{
+				cycle = v1alpha1.Lifecycle{
 					Phase:   v1alpha1.PhaseFailed,
 					Reason:  "StateQueryError",
 					Message: err.Error(),
 				}
 
-				meta.SetStatusCondition(&life.Conditions, metav1.Condition{
+				meta.SetStatusCondition(&cycle.Conditions, metav1.Condition{
 					Type:    v1alpha1.ConditionTerminated.String(),
 					Status:  metav1.ConditionTrue,
 					Reason:  "StateQueryError",
 					Message: err.Error(),
 				})
 
-				return life
+				return cycle
 			}
 
 			if fired {
-				life = v1alpha1.Lifecycle{
+				cycle = v1alpha1.Lifecycle{
 					Phase:   v1alpha1.PhaseRunning,
 					Reason:  "StateAssertion",
 					Message: info,
 				}
 
-				meta.SetStatusCondition(&life.Conditions, metav1.Condition{
+				meta.SetStatusCondition(&cycle.Conditions, metav1.Condition{
 					Type:    v1alpha1.ConditionTerminated.String(),
 					Status:  metav1.ConditionTrue,
 					Reason:  "StateAssertion",
 					Message: info,
 				})
 
-				return life
+				return cycle
 			}
 		}
 	}
 
-	// we are only interested in the number of jobs in each category.
-	expectedJobs := len(t.Spec.Actions)
+	// Step 4. Check if scheduling goes as expected.
+	queuedJobs := len(t.Spec.Actions)
 
-	selftests := []test{
-		{ // A job has failed during execution.
-			expression: r.clusterView.FailedJobsNum() > 0,
-			lifecycle: v1alpha1.Lifecycle{
-				Phase:   v1alpha1.PhaseFailed,
-				Reason:  "JobHasFailed",
-				Message: fmt.Sprintf("failed jobs: %s", r.clusterView.FailedJobsList()),
-			},
-			condition: metav1.Condition{
-				Type:    v1alpha1.ConditionJobUnexpectedTermination.String(),
-				Status:  metav1.ConditionTrue,
-				Reason:  "JobHasFailed",
-				Message: fmt.Sprintf("failed jobs: %s", r.clusterView.FailedJobsList()),
-			},
-		},
-		{ // All jobs are created, and completed successfully (x)
-			expression: r.clusterView.SuccessfulJobsNum() == expectedJobs,
-			lifecycle: v1alpha1.Lifecycle{
-				Phase:   v1alpha1.PhaseSuccess,
-				Reason:  "AllJobsCompleted",
-				Message: fmt.Sprintf("successful jobs: %s", r.clusterView.SuccessfulJobsList()),
-			},
-			condition: metav1.Condition{
-				Type:    v1alpha1.ConditionAllJobsAreCompleted.String(),
-				Status:  metav1.ConditionTrue,
-				Reason:  "AllJobsCompleted",
-				Message: fmt.Sprintf("successful jobs: %s", r.clusterView.SuccessfulJobsList()),
-			},
-		},
-		{ // All jobs are created, and at least one is still running
-			expression: len(t.Status.ExecutedActions) == expectedJobs,
-			lifecycle: v1alpha1.Lifecycle{
-				Phase:   v1alpha1.PhaseRunning,
-				Reason:  "JobIsRunning",
-				Message: fmt.Sprintf("running jobs: %s", r.clusterView.RunningJobsList()),
-			},
-			condition: metav1.Condition{
-				Type:    v1alpha1.ConditionAllJobsAreScheduled.String(),
-				Status:  metav1.ConditionTrue,
-				Reason:  "AllJobsRunning",
-				Message: fmt.Sprintf("running jobs: %s", r.clusterView.RunningJobsList()),
-			},
-		},
-		{ // Not all Jobs are yet created (x)
-			expression: len(t.Status.ExecutedActions) < expectedJobs,
-			lifecycle: v1alpha1.Lifecycle{
-				Phase:   v1alpha1.PhasePending,
-				Reason:  "JobIsPending",
-				Message: "at least one jobs has not yet created",
-			},
-		},
+	if check.ScheduledJobs(queuedJobs, gs, &cycle) {
+		return cycle
 	}
 
-	for _, testcase := range selftests {
-		if testcase.expression {
-			life = testcase.lifecycle
-
-			if testcase.condition != (metav1.Condition{}) {
-				meta.SetStatusCondition(&life.Conditions, testcase.condition)
-			}
-
-			return life
-		}
-	}
-
-	logrus.Warn("Scenario Debug info \n",
-		" phase ", life.Phase,
-		" actions: ", expectedJobs,
-		" executed: ", len(t.Status.ExecutedActions),
-		" pending: ", r.clusterView.PendingJobsList(),
-		" running: ", r.clusterView.RunningJobsList(),
-		" successfulJobs: ", r.clusterView.SuccessfulJobsList(),
-		" failedJobs: ", r.clusterView.FailedJobsList(),
-		" cur status: ", t.Status,
-	)
-
-	panic("unhandled lifecycle conditions")
+	panic(errors.Errorf(`unhandled lifecycle conditions.
+		current: %v,
+		total: %d,
+		pendingJobs: %s,
+		runningJobs: %s,
+		successfulJobs: %s,
+		failedJobs: %s
+	`, cycle, queuedJobs, gs.ListPendingJobs(), gs.ListRunningJobs(), gs.ListSuccessfulJobs(), gs.ListFailedJobs()))
 }

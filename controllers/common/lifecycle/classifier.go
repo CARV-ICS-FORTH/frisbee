@@ -21,38 +21,23 @@ import (
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common/labelling"
-	"github.com/sirupsen/logrus"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type ClassifierReader interface {
-	IsZero() bool
-	IsPending(jobName string) bool
-	IsRunning(name string) bool
-	IsSuccessful(name string) bool
-	IsFailed(name string) bool
+	v1alpha1.StateAggregationFunctions
 
 	// IsDeletable returns true if a job is deletable: it is pending or running
-	IsDeletable(jobName string) (client.Object, bool)
+	IsDeletable(job string) (client.Object, bool)
 
-	PendingJobs() []client.Object
-	RunningJobs() []client.Object
-	SuccessfulJobs() []client.Object
-	FailedJobs() []client.Object
-
-	PendingJobsNum() int
-	RunningJobsNum() int
-	SuccessfulJobsNum() int
-	FailedJobsNum() int
-
-	PendingJobsList() []string
-	RunningJobsList() []string
-	SuccessfulJobsList() []string
-	FailedJobsList() []string
+	GetPendingJobs() []client.Object
+	GetRunningJobs() []client.Object
+	GetSuccessfulJobs() []client.Object
+	GetFailedJobs() []client.Object
 }
 
 type Classifier struct {
-	// pendingJobs involve pending + running
 	pendingJobs    map[string]client.Object
 	runningJobs    map[string]client.Object
 	successfulJobs map[string]client.Object
@@ -60,7 +45,10 @@ type Classifier struct {
 }
 
 func (in Classifier) IsZero() bool {
-	return in.pendingJobs == nil && in.runningJobs == nil && in.successfulJobs == nil && in.failedJobs == nil
+	return len(in.pendingJobs) == 0 &&
+		len(in.runningJobs) == 0 &&
+		len(in.successfulJobs) == 0 &&
+		len(in.failedJobs) == 0
 }
 
 func (in *Classifier) Reset() {
@@ -91,7 +79,7 @@ func (in *Classifier) Classify(name string, obj client.Object) {
 			panic("unhandled lifecycle condition")
 		}
 	} else {
-		logrus.Warn("Not RecocileStatusAware, not setting status for obj:", obj.GetName())
+		ctrl.Log.Info("Object does not implement RecocileStatusAware interface.", "object", obj.GetName())
 	}
 }
 
@@ -105,7 +93,7 @@ func (in *Classifier) Exclude(name string, obj client.Object) {
 			in.failedJobs[name] = obj
 		}
 	} else {
-		logrus.Warn("Not RecocileStatusAware, not setting status for obj:", obj.GetName())
+		ctrl.Log.Info("Object does not implement RecocileStatusAware interface.", "object", obj.GetName())
 	}
 }
 
@@ -133,23 +121,23 @@ func (in Classifier) IsFailed(name string) bool {
 	return ok
 }
 
-func (in Classifier) PendingJobsNum() int {
+func (in Classifier) NumPendingJobs() int {
 	return len(in.pendingJobs)
 }
 
-func (in Classifier) RunningJobsNum() int {
+func (in Classifier) NumRunningJobs() int {
 	return len(in.runningJobs)
 }
 
-func (in Classifier) SuccessfulJobsNum() int {
+func (in Classifier) NumSuccessfulJobs() int {
 	return len(in.successfulJobs)
 }
 
-func (in Classifier) FailedJobsNum() int {
+func (in Classifier) NumFailedJobs() int {
 	return len(in.failedJobs)
 }
 
-func (in Classifier) PendingJobsList() []string {
+func (in Classifier) ListPendingJobs() []string {
 	list := make([]string, 0, len(in.pendingJobs))
 
 	for jobName := range in.pendingJobs {
@@ -161,7 +149,7 @@ func (in Classifier) PendingJobsList() []string {
 	return list
 }
 
-func (in Classifier) RunningJobsList() []string {
+func (in Classifier) ListRunningJobs() []string {
 	list := make([]string, 0, len(in.runningJobs))
 
 	for jobName := range in.runningJobs {
@@ -173,7 +161,7 @@ func (in Classifier) RunningJobsList() []string {
 	return list
 }
 
-func (in Classifier) SuccessfulJobsList() []string {
+func (in Classifier) ListSuccessfulJobs() []string {
 	list := make([]string, 0, len(in.successfulJobs))
 
 	for jobName := range in.successfulJobs {
@@ -185,7 +173,7 @@ func (in Classifier) SuccessfulJobsList() []string {
 	return list
 }
 
-func (in Classifier) FailedJobsList() []string {
+func (in Classifier) ListFailedJobs() []string {
 	list := make([]string, 0, len(in.failedJobs))
 
 	for jobName := range in.failedJobs {
@@ -197,7 +185,7 @@ func (in Classifier) FailedJobsList() []string {
 	return list
 }
 
-func (in Classifier) PendingJobs() []client.Object {
+func (in Classifier) GetPendingJobs() []client.Object {
 	list := make([]client.Object, 0, len(in.pendingJobs))
 
 	for _, job := range in.pendingJobs {
@@ -207,7 +195,7 @@ func (in Classifier) PendingJobs() []client.Object {
 	return list
 }
 
-func (in Classifier) RunningJobs() []client.Object {
+func (in Classifier) GetRunningJobs() []client.Object {
 	list := make([]client.Object, 0, len(in.runningJobs))
 
 	for _, job := range in.runningJobs {
@@ -217,7 +205,7 @@ func (in Classifier) RunningJobs() []client.Object {
 	return list
 }
 
-func (in Classifier) SuccessfulJobs() []client.Object {
+func (in Classifier) GetSuccessfulJobs() []client.Object {
 	list := make([]client.Object, 0, len(in.successfulJobs))
 
 	for _, job := range in.successfulJobs {
@@ -227,7 +215,7 @@ func (in Classifier) SuccessfulJobs() []client.Object {
 	return list
 }
 
-func (in Classifier) FailedJobs() []client.Object {
+func (in Classifier) GetFailedJobs() []client.Object {
 	list := make([]client.Object, 0, len(in.failedJobs))
 
 	for _, job := range in.failedJobs {

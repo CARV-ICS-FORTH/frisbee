@@ -33,19 +33,19 @@ func TolerationExceeded(spec *v1alpha1.TolerateSpec, state lifecycle.ClassifierR
 		panic(errors.Errorf("empty spec"))
 	}
 
-	if state.FailedJobsNum() > spec.FailedJobs {
+	if state.NumFailedJobs() > spec.FailedJobs {
 		*lf = v1alpha1.Lifecycle{
 			Phase:  v1alpha1.PhaseFailed,
 			Reason: "TolerateFailuresExceeded",
 			Message: fmt.Sprintf("tolerate: %s. failed jobs: %s",
-				spec.String(), state.FailedJobsList()),
+				spec.String(), state.ListFailedJobs()),
 		}
 
 		meta.SetStatusCondition(&lf.Conditions, metav1.Condition{
 			Type:    v1alpha1.ConditionJobUnexpectedTermination.String(),
 			Status:  metav1.ConditionTrue,
 			Reason:  "JobHasFailed",
-			Message: fmt.Sprintf("failed jobs: %s", state.FailedJobsList()),
+			Message: fmt.Sprintf("failed jobs: %s", state.ListFailedJobs()),
 		})
 
 		return true

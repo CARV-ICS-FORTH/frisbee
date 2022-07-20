@@ -61,12 +61,19 @@ func (r *Scenario) ValidateCreate() error {
 	}
 
 	for _, action := range r.Spec.Actions {
-		if err := CheckDependencies(&action, legitReferences); err != nil {
+		// Check the referenced dependencies are ok
+		if err := CheckDependencyGraph(&action, legitReferences); err != nil {
 			return errors.Wrapf(err, "dependency error for action [%s]", action.Name)
 		}
 
+		// Check that expressions used in the assertions are ok
 		if err := CheckAssertions(&action); err != nil {
 			return errors.Wrapf(err, "assertion error for action [%s]", action.Name)
+		}
+
+		// Ensure that the type of action is supported and is correctly set
+		if err := CheckAction(&action, legitReferences); err != nil {
+			return errors.Wrapf(err, "incorrent spec for type [%s] of action [%s]", action.ActionType, action.Name)
 		}
 
 		/*
@@ -76,9 +83,6 @@ func (r *Scenario) ValidateCreate() error {
 
 		*/
 
-		if err := CheckJobRef(&action, legitReferences); err != nil {
-			return errors.Wrapf(err, "job reference error for action [%s]", action.Name)
-		}
 	}
 
 	return nil
@@ -90,11 +94,6 @@ func DependencyGraph(scenario *Scenario) (map[string]*Action, error) {
 
 	// prepare a dependency graph
 	for i, action := range scenario.Spec.Actions {
-		// Ensure that the type of action is supported and is correctly set
-		if err := CheckAction(&action); err != nil {
-			return nil, errors.Wrapf(err, "incorrent spec for type [%s] of action [%s]", action.ActionType, action.Name)
-		}
-
 		// Because the action name will be the "matrix" for generating addressable jobs,
 		// it must adhere to certain properties.
 		if errs := validation.IsDNS1123Subdomain(action.Name); errs != nil {
@@ -114,71 +113,7 @@ func DependencyGraph(scenario *Scenario) (map[string]*Action, error) {
 	return callIndex, nil
 }
 
-func CheckAction(act *Action) error {
-	if act == nil || act.EmbedActions == nil {
-		return errors.Errorf("empty definition")
-	}
-
-	switch act.ActionType {
-	case ActionService:
-		if act.EmbedActions.Service == nil {
-			return errors.Errorf("empty service definition")
-		}
-
-		return nil
-
-	case ActionCluster:
-		if act.EmbedActions.Cluster == nil {
-			return errors.Errorf("empty cluster definition")
-		}
-
-		v := &Cluster{
-			Spec: *act.EmbedActions.Cluster,
-		}
-
-		return v.ValidateCreate()
-	case ActionChaos:
-		if act.EmbedActions.Chaos == nil {
-			return errors.Errorf("empty chaos definition")
-		}
-
-		return nil
-
-	case ActionCascade:
-		if act.EmbedActions.Cascade == nil {
-			return errors.Errorf("empty cascade definition")
-		}
-
-		v := &Cascade{
-			Spec: *act.EmbedActions.Cascade,
-		}
-
-		return v.ValidateCreate()
-	case ActionDelete:
-		if act.EmbedActions.Delete == nil {
-			return errors.Errorf("empty delete definition")
-		}
-
-		// TODO: add support for delete
-
-		return nil
-	case ActionCall:
-		if act.EmbedActions.Call == nil {
-			return errors.Errorf("empty call definition")
-		}
-
-		v := &Call{
-			Spec: *act.EmbedActions.Call,
-		}
-
-		return v.ValidateCreate()
-
-	default:
-		return errors.Errorf("Unknown action")
-	}
-}
-
-func CheckDependencies(action *Action, callIndex map[string]*Action) error {
+func CheckDependencyGraph(action *Action, callIndex map[string]*Action) error {
 	if deps := action.DependsOn; deps != nil {
 		for _, dep := range deps.Success {
 			if _, ok := callIndex[dep]; !ok {
@@ -210,12 +145,63 @@ func CheckAssertions(action *Action) error {
 	return nil
 }
 
-func CheckJobRef(action *Action, callIndex map[string]*Action) error {
+func CheckAction(action *Action, references map[string]*Action) error {
+	if action == nil || action.EmbedActions == nil {
+		return errors.Errorf("empty definition")
+	}
+
 	switch action.ActionType {
+	case ActionService:
+		if action.EmbedActions.Service == nil {
+			return errors.Errorf("empty service definition")
+		}
+
+		return nil
+
+	case ActionCluster:
+		if action.EmbedActions.Cluster == nil {
+			return errors.Errorf("empty cluster definition")
+		}
+
+		v := &Cluster{
+			Spec: *action.EmbedActions.Cluster,
+		}
+
+		return v.ValidateCreate()
+	case ActionChaos:
+		if action.EmbedActions.Chaos == nil {
+			return errors.Errorf("empty chaos definition")
+		}
+
+		/*
+			if spec.Type == v1alpha1.FaultKill {
+				if action.DependsOn.Success != nil {
+					return nil, errors.Errorf("kill is a inject-only chaos. it does not have success. only running")
+				}
+			}
+
+		*/
+
+		return nil
+
+	case ActionCascade:
+		if action.EmbedActions.Cascade == nil {
+			return errors.Errorf("empty cascade definition")
+		}
+
+		v := &Cascade{
+			Spec: *action.EmbedActions.Cascade,
+		}
+
+		return v.ValidateCreate()
 	case ActionDelete:
+		if action.EmbedActions.Delete == nil {
+			return errors.Errorf("empty delete definition")
+		}
+
 		// Check that references jobs exist and there are no cycle deletions
-		for _, job := range action.Delete.Jobs {
-			target, exists := callIndex[job]
+		for _, job := range action.EmbedActions.Delete.Jobs {
+			target, exists := references[job]
 			if !exists {
 				return errors.Errorf("job [%s] of action [%s] does not exist", job, action.Name)
 			}
@@ -224,18 +210,22 @@ func CheckJobRef(action *Action, callIndex map[string]*Action) error {
 				return errors.Errorf("cycle deletion. job [%s] of action [%s] is a deletion job", job, action.Name)
 			}
 		}
-	}
 
-	/*
-		if spec.Type == v1alpha1.FaultKill {
-			if action.DependsOn.Success != nil {
-				return nil, errors.Errorf("kill is a inject-only chaos. it does not have success. only running")
-			}
+		return nil
+	case ActionCall:
+		if action.EmbedActions.Call == nil {
+			return errors.Errorf("empty call definition")
 		}
 
-	*/
+		v := &Call{
+			Spec: *action.EmbedActions.Call,
+		}
 
-	return nil
+		return v.ValidateCreate()
+
+	default:
+		return errors.Errorf("Unknown action")
+	}
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type

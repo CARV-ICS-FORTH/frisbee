@@ -1,0 +1,66 @@
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Template
+metadata:
+  name: iperf.server
+spec:
+  service:
+    containers:
+      - name: app
+        image: czero/iperf2
+        command: [ iperf ]
+        args: [ "-s", "-f", "m", "-i", "5" ]
+
+
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Template
+metadata:
+  name: iperf.client
+spec:
+  inputs:
+    parameters:
+      target: localhost
+      duration: "60"
+      exit: "false"
+  service:
+    containers:
+      - name: app
+        image: czero/iperf2
+        command:
+          - /bin/sh   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
+            [[ {{.Inputs.Parameters.exit}} == "true" ]] && exit -1
+            
+            iperf -c {{.Inputs.Parameters.target}} -t {{.Inputs.Parameters.duration}} 
+
+
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Scenario
+metadata:
+  name: assertions
+spec:
+  actions:
+    - action: Service
+      name: server
+      service:
+        templateRef: iperf.server
+
+    # Scenario Scope
+    - action: Cluster
+      name: clients
+      depends: { running: [ server ] }
+      assert: # Abort the scenario
+          state: '{{.NumSuccessfulJobs}} >= 2'
+      # Cluster Scope
+      cluster:
+        templateRef: iperf.client
+        instances: 10
+        inputs:
+          - { target: server, duration: "10", exit: "true" }
+          - { target: server, duration: "20" }
+          - { target: server, duration: "30" }
+        schedule: # Suspend the cluster
+          cron: "@every 1m"

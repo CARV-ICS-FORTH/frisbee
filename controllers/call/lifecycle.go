@@ -102,5 +102,5 @@ func calculateLifecycle(call *v1alpha1.Call, gs lifecycle.ClassifierReader) v1al
 		runningJobs: %s,
 		successfulJobs: %s,
 		failedJobs: %s
-	`, cycle, queuedJobs, gs.PendingJobsList(), gs.RunningJobsList(), gs.SuccessfulJobsList(), gs.FailedJobsList()))
+	`, cycle, queuedJobs, gs.ListPendingJobs(), gs.ListRunningJobs(), gs.ListSuccessfulJobs(), gs.ListFailedJobs()))
 }

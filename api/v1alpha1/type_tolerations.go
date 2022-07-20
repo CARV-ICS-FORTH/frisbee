@@ -35,5 +35,5 @@ func (in TolerateSpec) String() string {
 		return "None"
 	}
 
-	return fmt.Sprintf("FailedJobs:%d", in.FailedJobs)
+	return fmt.Sprintf("Failed Jobs:%d", in.FailedJobs)
 }

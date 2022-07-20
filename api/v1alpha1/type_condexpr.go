@@ -18,8 +18,10 @@ package v1alpha1
 
 import (
 	"regexp"
+	"strings"
 	"text/template"
 
+	"github.com/Knetic/govaluate"
 	"github.com/Masterminds/sprig/v3"
 	"github.com/pkg/errors"
 )
@@ -44,7 +46,7 @@ type ConditionalExpr struct {
 }
 
 func (c *ConditionalExpr) IsZero() bool {
-	return c == nil || !c.HasStateExpr() || !c.HasMetricsExpr()
+	return c == nil || *c == (ConditionalExpr{})
 }
 
 func (c *ConditionalExpr) HasMetricsExpr() bool {
@@ -63,13 +65,78 @@ var sprigFuncMap = sprig.TxtFuncMap() // a singleton for better performance
 
 type ExprState string
 
-func (query ExprState) Parse() (*template.Template, error) {
-	t, err := template.New("").Funcs(sprigFuncMap).Option("missingkey=error").Parse(string(query))
-	if err != nil {
-		return nil, errors.Wrapf(err, "parsing error")
+// Evaluate will evaluate the expression using the golang's templates enriched with the spring func map.
+func (expr ExprState) Evaluate(state interface{}) (string, error) {
+	if expr == "" {
+		return "", nil
 	}
 
-	return t, nil
+	// Parse the expression
+	t, err := template.New("").Funcs(sprigFuncMap).Option("missingkey=error").Parse(string(expr))
+	if err != nil {
+		return "", errors.Wrapf(err, "parsing error")
+	}
+
+	// Access the state fields and substitute the output.
+	var out strings.Builder
+
+	if err := t.Execute(&out, state); err != nil {
+		return "", errors.Wrapf(err, "execution error")
+	}
+
+	return out.String(), nil
+}
+
+// GoValuate  wraps the Evaluate function to the GoValuate expressions.
+func (expr ExprState) GoValuate(state interface{}) (bool, error) {
+	if expr == "" {
+		return true, nil
+	}
+
+	out, err := expr.Evaluate(state)
+	if err != nil {
+		return false, errors.Wrapf(err, "dereference error")
+	}
+
+	expression, err := govaluate.NewEvaluableExpression(out)
+	if err != nil {
+		if strings.Contains(err.Error(), "Invalid token") {
+			return false, errors.Wrapf(err, "Invalid  expression '%s'.", expr)
+		}
+
+		return false, errors.Wrapf(err, "Invalid 'expr' expression '%s': %v", expr, err)
+	}
+
+	// The following loop converts govaluate variables (which we don't use), into strings. This
+	// allows us to have expressions like: "foo != bar" without requiring foo and bar to be quoted.
+	tokens := expression.Tokens()
+	for i, tok := range tokens {
+		switch tok.Kind {
+		case govaluate.VARIABLE:
+			tok.Kind = govaluate.STRING
+		default:
+			continue
+		}
+
+		tokens[i] = tok
+	}
+
+	expression, err = govaluate.NewEvaluableExpressionFromTokens(tokens)
+	if err != nil {
+		return false, errors.Wrapf(err, "failed to parse expression '%s'", expr)
+	}
+
+	result, err := expression.Evaluate(nil)
+	if err != nil {
+		return false, errors.Wrapf(err, "failed to evaluate expresion '%s'", expr)
+	}
+
+	boolRes, ok := result.(bool)
+	if !ok {
+		return false, errors.Errorf("expected boolean evaluation for '%s'. Got %v", expr, result)
+	}
+
+	return boolRes, nil
 }
 
 /*
