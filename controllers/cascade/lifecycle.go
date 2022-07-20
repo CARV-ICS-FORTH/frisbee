@@ -20,22 +20,16 @@ import (
 	"fmt"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	"github.com/carv-ics-forth/frisbee/controllers/common/lifecycle"
 	"github.com/carv-ics-forth/frisbee/controllers/common/lifecycle/check"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type test struct {
-	expression bool
-	lifecycle  v1alpha1.Lifecycle
-	condition  metav1.Condition
-}
-
 // calculateLifecycle returns the update lifecycle of the cascade.
-func calculateLifecycle(cascade *v1alpha1.Cascade, gs lifecycle.ClassifierReader) v1alpha1.Lifecycle {
+func (r *Controller) calculateLifecycle(cascade *v1alpha1.Cascade) v1alpha1.Lifecycle {
 	cycle := cascade.Status.Lifecycle
+	gs := r.state
 
 	// Step 1. Skip any CR which are already completed, or uninitialized.
 	if cycle.Phase.Is(v1alpha1.PhaseUninitialized, v1alpha1.PhaseSuccess, v1alpha1.PhaseFailed) {

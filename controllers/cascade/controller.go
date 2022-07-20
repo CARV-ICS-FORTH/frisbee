@@ -123,7 +123,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		subresource, we'll use the `Status` part of the client, with the `Update`
 		method.
 	*/
-	cr.SetReconcileStatus(calculateLifecycle(&cr, r.state))
+	cr.SetReconcileStatus(r.calculateLifecycle(&cr))
 
 	if err := common.UpdateStatus(ctx, r, &cr); err != nil {
 		r.Info("Reschedule.", "object", cr.GetName(), "UpdateStatusErr", err)

@@ -34,6 +34,21 @@ type test struct {
 func ScheduledJobs(queuedJobs int, state lifecycle.ClassifierReader, lf *v1alpha1.Lifecycle) bool {
 
 	autotests := []test{
+		{ // A job has failed during execution.
+			expression: state.FailedJobsNum() > 0,
+			lifecycle: v1alpha1.Lifecycle{
+				Phase:   v1alpha1.PhaseFailed,
+				Reason:  "JobHasFailed",
+				Message: fmt.Sprintf("failed jobs: %s", state.FailedJobsList()),
+			},
+			condition: metav1.Condition{
+				Type:    v1alpha1.ConditionJobUnexpectedTermination.String(),
+				Status:  metav1.ConditionTrue,
+				Reason:  "JobHasFailed",
+				Message: fmt.Sprintf("failed jobs: %s", state.FailedJobsList()),
+			},
+		},
+
 		{ // All jobs are successfully completed
 			expression: state.SuccessfulJobsNum() == queuedJobs,
 			lifecycle: v1alpha1.Lifecycle{
@@ -48,11 +63,7 @@ func ScheduledJobs(queuedJobs int, state lifecycle.ClassifierReader, lf *v1alpha
 				Message: fmt.Sprintf("successful jobs: %s", state.SuccessfulJobsList()),
 			},
 		},
-		{ // A job has been failed, but it is within the expected toleration.
-			// In this case, simply return the previous status.
-			expression: lf.Phase == v1alpha1.PhaseRunning && state.FailedJobsNum() > 0,
-			lifecycle:  *lf,
-		},
+
 		{ // All jobs are created, and at least one is still running
 			expression: state.RunningJobsNum()+state.SuccessfulJobsNum() == queuedJobs,
 			lifecycle: v1alpha1.Lifecycle{

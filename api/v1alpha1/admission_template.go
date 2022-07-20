@@ -17,7 +17,9 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/json"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -50,6 +52,17 @@ func (r *Template) Default() {
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (r *Template) ValidateCreate() error {
 	templatelog.Info("validate create", "name", r.Name)
+
+	{ // Ensure the template is ok and there are no brackets missing.
+		specBody, err := json.Marshal(r.Spec)
+		if err != nil {
+			return errors.Wrapf(err, "marshal error")
+		}
+
+		if _, err := ExprState(specBody).Parse(); err != nil {
+			return errors.Wrapf(err, "template error")
+		}
+	}
 
 	if r.Spec.Service != nil {
 		v := Service{

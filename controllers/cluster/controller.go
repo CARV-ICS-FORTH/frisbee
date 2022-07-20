@@ -122,9 +122,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		subresource, we'll use the `Status` part of the client, with the `Update`
 		method.
 	*/
-	latestLF := calculateLifecycle(&cr, r.state)
-
-	cr.SetReconcileStatus(latestLF)
+	cr.SetReconcileStatus(r.calculateLifecycle(&cr))
 
 	if err := common.UpdateStatus(ctx, r, &cr); err != nil {
 		// due to the multiple updates, it is possible for this function to
@@ -156,9 +154,9 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		First, we'll try to clean up old jobs, so that we don't leave too many lying
 		around.
 	*/
-	if latestLF.Phase == v1alpha1.PhaseSuccess {
-		r.Logger.Info("Cleaning up cluster jobs",
-			"cluster", cr.GetName(),
+	if cr.Status.Phase == v1alpha1.PhaseSuccess {
+		r.Logger.Info("CleanOnSuccess",
+			"name", cr.GetName(),
 			"successfulJobs", r.state.SuccessfulJobsList(),
 		)
 
@@ -174,11 +172,11 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return common.Stop()
 	}
 
-	if latestLF.Phase == v1alpha1.PhaseFailed {
-		r.Logger.Error(errors.New(latestLF.Reason), latestLF.Message)
+	if cr.Status.Phase == v1alpha1.PhaseFailed {
+		r.Logger.Error(errors.New(cr.Status.Reason), cr.Status.Message)
 
-		r.Logger.Info("Cleaning up cluster jobs",
-			"cluster", cr.GetName(),
+		r.Logger.Info("CleanOnFailure",
+			"name", cr.GetName(),
 			"successfulJobs", r.state.SuccessfulJobsList(),
 			"runningJobs", r.state.RunningJobsList(),
 			"pendingJobs", r.state.PendingJobsList(),
@@ -219,7 +217,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		We may delete the service, add a pod, or wait for existing pod to change its status.
 	*/
-	if latestLF.Phase == v1alpha1.PhaseUninitialized {
+	if cr.Status.Phase == v1alpha1.PhaseUninitialized {
 		/*
 			We construct a list of job specifications based on the CR's template.
 			This list is used by the execution step to create the actual job.
@@ -264,7 +262,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	*/
 	nextExpectedJob := cr.Status.ScheduledJobs + 1
 
-	if latestLF.Phase == v1alpha1.PhaseRunning ||
+	if cr.Status.Phase == v1alpha1.PhaseRunning ||
 		(cr.Spec.Until == nil && (nextExpectedJob >= len(cr.Status.QueuedJobs))) {
 		r.Logger.Info("All jobs are scheduled. Nothing else to do. Waiting for something to happen",
 			"cluster", cr.GetName(),

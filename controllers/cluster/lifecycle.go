@@ -20,7 +20,6 @@ import (
 	"fmt"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	"github.com/carv-ics-forth/frisbee/controllers/common/lifecycle"
 	"github.com/carv-ics-forth/frisbee/controllers/common/lifecycle/check"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -28,8 +27,9 @@ import (
 )
 
 // calculateLifecycle returns the update lifecycle of the cluster.
-func calculateLifecycle(cluster *v1alpha1.Cluster, gs lifecycle.ClassifierReader) v1alpha1.Lifecycle {
+func (r *Controller) calculateLifecycle(cluster *v1alpha1.Cluster) v1alpha1.Lifecycle {
 	cycle := cluster.Status.Lifecycle
+	gs := r.state
 
 	// Step 1. Skip any CR which are already completed, or uninitialized.
 	if cycle.Phase.Is(v1alpha1.PhaseUninitialized, v1alpha1.PhaseSuccess, v1alpha1.PhaseFailed) {

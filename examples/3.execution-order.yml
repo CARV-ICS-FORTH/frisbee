@@ -1,0 +1,56 @@
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Template
+metadata:
+  name: whalesay
+spec:
+  # invoke the whalesay template with
+  # "hello world" as the default argument
+  # to the message parameter
+  inputs:
+    parameters:
+      message: "hello-world"
+  service:
+    containers:
+      - name: app
+        image:  docker/whalesay
+        command: [cowsay]
+        args: ["{{.Inputs.Parameters.message}}"]
+
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Scenario
+metadata:
+  name: execution-order
+spec:
+  actions:
+    - action: Service
+      name: a
+      service:
+        templateRef: whalesay
+        inputs:
+          - { message: "I am A" }
+
+    - action: Service
+      name: b
+      depends: { success: [ a ] }
+      service:
+        templateRef: whalesay
+        inputs:
+          - { message: "I am B" }
+
+    - action: Service
+      name: c
+      depends: { success: [ a ] }
+      service:
+        templateRef: whalesay
+        inputs:
+          - { message: "I am C" }
+
+    - action: Service
+      name: d
+      depends: { success: [ b, c ] }
+      service:
+        templateRef: whalesay
+        inputs:
+          - { message: "I am D" }

@@ -1,0 +1,60 @@
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Template
+metadata:
+  name: iperf.server
+spec:
+  service:
+    containers:
+      - name: app
+        image:  czero/iperf2
+        command: [iperf]
+        args: ["-s", "-f", "m", "-i", "5"]
+
+
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Template
+metadata:
+  name: iperf.client
+spec:
+  inputs:
+    parameters:
+      target: localhost
+      duration: "60"
+  service:
+    containers:
+      - name: app
+        image:  czero/iperf2
+        command: [iperf]
+        args: ["-c", "{{.Inputs.Parameters.target}}", "-t", "{{.Inputs.Parameters.duration}}"]
+
+
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Scenario
+metadata:
+  name: conditionals
+spec:
+  actions:
+    # Create an iperf server
+    - action: Service
+      name: server
+      service:
+        templateRef: iperf.server
+
+    # Create a set of iperf clients
+    - action: Cluster
+      name: clients
+      depends: { running: [ server ] }
+      cluster:
+        templateRef: iperf.client
+        instances: 10 # Create 10 instances, by reusing the same 3 inputs.
+        inputs:
+          - { target: server, duration: "10" }
+          - { target: server, duration: "20" }
+          - { target: server, duration: "30" }
+        schedule:
+          cron: "@every 1m"
+        until:
+          state: '{{.SuccessfulJobs}} >= 6'

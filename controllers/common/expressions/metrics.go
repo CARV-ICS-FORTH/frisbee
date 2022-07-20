@@ -36,10 +36,6 @@ import (
 )
 
 const (
-	// jobHasAlert indicate that a job has SLA assertion. Used to deregister the alert once the job has finished.
-	// Used as [jobHasAlert]: [alertID].
-	// jobHasAlert = "alert.frisbee.dev"
-
 	// alertName indicate that a Grafana alert has been fired.
 	// Used as [alertName]: [alertID].
 	alertName = "alert.frisbee.dev/name"
@@ -106,15 +102,6 @@ func SetAlert(ctx context.Context, job client.Object, expr v1alpha1.ExprMetrics)
 	}) {
 		return errors.Errorf("cannot set the alarm")
 	}
-
-	/*
-		// use annotations to know which jobs have alert in Grafana.
-		// we use this information to remove alerts when the jobs are complete.
-		// We also use to discover the object based on the alertID.
-		job.SetAnnotations(labels.Merge(job.GetAnnotations(),
-			map[string]string{jobHasAlert: fmt.Sprint(name)}),
-		)
-	*/
 
 	return nil
 }
@@ -245,28 +232,10 @@ func AlertIsFired(job metav1.Object) (*time.Time, string, bool) {
 	panic("Should never reach this point")
 }
 
-// ResetAlert removes the annotations from the target object. It does not remove the Alert from Grafana.
-func ResetAlert(ctx context.Context, r common.Reconciler, job metav1.Object) error {
-	/*
-		alertID, exists := job.GetAnnotations()[jobHasAlert]
-		if !exists {
-			return nil
-		}
-
-		_ = alertID
-
-	*/
-
-	return nil
-}
-
 // UnsetAlert removes the annotations from the target object, and removes the Alert from Grafana.
 func UnsetAlert(obj metav1.Object) {
-	/*
-		alertID, exists := obj.GetAnnotations()[jobHasAlert]
-		if exists {
-			grafana.GetClientFor(obj).UnsetAlert(alertID)
-		}
-
-	*/
+	alertID, exists := obj.GetAnnotations()[alertName]
+	if exists {
+		grafana.GetClientFor(obj).UnsetAlert(alertID)
+	}
 }
