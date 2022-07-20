@@ -183,3 +183,18 @@ func (t *GenerateFromTemplate) IterateInputs(cb func(in map[string]string) error
 
 	return nil
 }
+
+type Scheme struct {
+	// Scenario returns the name of the scenario that invokes the template.
+	Scenario string `json:"scenario,omitempty"`
+
+	// Returns the namespace where the scenario is running
+	Namespace string `json:"namespace,omitempty"`
+
+	// Inputs are dynamic fields that populate the spec.
+	// +optional
+	Inputs *Inputs `json:"inputs,omitempty"`
+
+	// Spec is the specification whose values will be replaced by parameters.
+	Spec []byte `json:"spec"`
+}

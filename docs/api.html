@@ -1379,6 +1379,10 @@ Agents are sidecar services will be deployed in the same Pod as the Service cont
 </tr>
 </tbody>
 </table>
+<h3 id="frisbee.dev/v1alpha1.DefaultClassifier">DefaultClassifier
+</h3>
+<div>
+</div>
 <h3 id="frisbee.dev/v1alpha1.DeleteSpec">DeleteSpec
 </h3>
 <p>
@@ -1884,7 +1888,7 @@ then inputs are recursively iteration.</p>
 <h3 id="frisbee.dev/v1alpha1.Inputs">Inputs
 </h3>
 <p>
-(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.TemplateSpec">TemplateSpec</a>)
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.Scheme">Scheme</a>, <a href="#frisbee.dev/v1alpha1.TemplateSpec">TemplateSpec</a>)
 </p>
 <div>
 </div>
@@ -2612,6 +2616,71 @@ ConditionalExpr
 </tr>
 </tbody>
 </table>
+<h3 id="frisbee.dev/v1alpha1.Scheme">Scheme
+</h3>
+<div>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>scenario</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Scenario returns the name of the scenario that invokes the template.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>namespace</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Returns the namespace where the scenario is running</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>inputs</code><br/>
+<em>
+<a href="#frisbee.dev/v1alpha1.Inputs">
+Inputs
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Inputs are dynamic fields that populate the spec.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>spec</code><br/>
+<em>
+[]byte
+</em>
+</td>
+<td>
+<p>Spec is the specification whose values will be replaced by parameters.</p>
+<br/>
+<br/>
+<table>
+</table>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="frisbee.dev/v1alpha1.Service">Service
 </h3>
 <div>
@@ -2955,6 +3024,11 @@ string
 </tr>
 </tbody>
 </table>
+<h3 id="frisbee.dev/v1alpha1.StateAggregationFunctions">StateAggregationFunctions
+</h3>
+<div>
+<p>StateAggregationFunctions is a set of aggregation functions for managing the lifecycle of different resources.</p>
+</div>
 <h3 id="frisbee.dev/v1alpha1.Template">Template
 </h3>
 <div>
@@ -3310,5 +3384,5 @@ Kubernetes meta/v1.Duration
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>9d2edfb</code>.
+on git commit <code>793b683</code>.
 </em></p>

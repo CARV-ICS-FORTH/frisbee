@@ -95,5 +95,5 @@ func (r *Controller) calculateLifecycle(cascade *v1alpha1.Cascade) v1alpha1.Life
 		runningJobs: %s,
 		successfulJobs: %s,
 		failedJobs: %s
-	`, cycle, queuedJobs, gs.PendingJobsList(), gs.RunningJobsList(), gs.SuccessfulJobsList(), gs.FailedJobsList()))
+	`, cycle, queuedJobs, gs.ListPendingJobs(), gs.ListRunningJobs(), gs.ListSuccessfulJobs(), gs.ListFailedJobs()))
 }

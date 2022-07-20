@@ -345,7 +345,7 @@ func (r *Controller) HasSucceed(ctx context.Context, t *v1alpha1.Scenario) error
 	// Remove the testing components once the experiment is successfully complete.
 	// We maintain testbed components (e.g, prometheus and grafana) for getting back the test results.
 	// These components are removed by deleting the Scenario.
-	for _, job := range r.clusterView.SuccessfulJobs() {
+	for _, job := range r.clusterView.GetSuccessfulJobs() {
 		if labelling.GetComponent(job) == labelling.ComponentSUT { // System services should not be removed
 
 			expressions.UnsetAlert(job)
@@ -365,7 +365,7 @@ func (r *Controller) HasFailed(ctx context.Context, t *v1alpha1.Scenario) error 
 	r.Logger.Error(errors.New(t.Status.Reason), t.Status.Message)
 
 	// Remove the non-failed components. Leave the failed jobs and system jobs for postmortem analysis.
-	for _, job := range r.clusterView.PendingJobs() {
+	for _, job := range r.clusterView.GetPendingJobs() {
 		if labelling.GetComponent(job) == labelling.ComponentSUT { // System jobs should not be deleted
 			r.GetEventRecorderFor("").Event(job, corev1.EventTypeWarning, "Terminating", t.Status.Message)
 
@@ -374,7 +374,7 @@ func (r *Controller) HasFailed(ctx context.Context, t *v1alpha1.Scenario) error 
 		}
 	}
 
-	for _, job := range r.clusterView.RunningJobs() {
+	for _, job := range r.clusterView.GetRunningJobs() {
 		if labelling.GetComponent(job) == labelling.ComponentSUT { // System jobs should not be deleted
 			r.GetEventRecorderFor("").Event(job, corev1.EventTypeWarning, "Terminating", t.Status.Message)
 
@@ -383,7 +383,7 @@ func (r *Controller) HasFailed(ctx context.Context, t *v1alpha1.Scenario) error 
 		}
 	}
 
-	for _, job := range r.clusterView.SuccessfulJobs() { // System jobs should not be deleted
+	for _, job := range r.clusterView.GetSuccessfulJobs() { // System jobs should not be deleted
 		if labelling.GetComponent(job) == labelling.ComponentSUT {
 			r.GetEventRecorderFor("").Event(job, corev1.EventTypeWarning, "Terminating", t.Status.Message)
 

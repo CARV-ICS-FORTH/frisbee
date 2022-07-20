@@ -25,7 +25,7 @@ import (
 
 func TestGenerateSpecFromScheme(t *testing.T) {
 	type args struct {
-		tspec *templateutils.Scheme
+		tspec *v1alpha1.Scheme
 	}
 
 	// Examples: http://masterminds.github.io/sprig/string_slice.html
@@ -37,7 +37,7 @@ func TestGenerateSpecFromScheme(t *testing.T) {
 	}{
 		{
 			name: "single",
-			args: args{tspec: &templateutils.Scheme{
+			args: args{tspec: &v1alpha1.Scheme{
 				Inputs: &v1alpha1.Inputs{Parameters: map[string]string{"slaves": "slave0"}},
 				Spec:   []byte(`{{.Inputs.Parameters.slaves}}`),
 			}},
@@ -46,7 +46,7 @@ func TestGenerateSpecFromScheme(t *testing.T) {
 		},
 		{
 			name: "space-newlines",
-			args: args{tspec: &templateutils.Scheme{
+			args: args{tspec: &v1alpha1.Scheme{
 				Inputs: &v1alpha1.Inputs{Parameters: map[string]string{"slaves": "slave0 slave1 slave2"}},
 				Spec: []byte(`
 cat > test.yml <<EOF
@@ -68,7 +68,7 @@ EOF
 		},
 		{
 			name: "comma-nonewlines",
-			args: args{tspec: &templateutils.Scheme{
+			args: args{tspec: &v1alpha1.Scheme{
 				Inputs: &v1alpha1.Inputs{Parameters: map[string]string{"slaves": "slave0,slave1,slave2"}},
 				Spec:   []byte(`{{range splitList "," .Inputs.Parameters.slaves -}}{{.}}{{- end -}}`),
 			}},

@@ -13,9 +13,9 @@ spec:
   service:
     containers:
       - name: app
-        image:  docker/whalesay
-        command: [cowsay]
-        args: ["{{.Inputs.Parameters.message}}"]
+        image: docker/whalesay
+        command: [ cowsay ]
+        args: [ "{{.Inputs.Parameters.message}}" ]
 
 ---
 apiVersion: frisbee.dev/v1alpha1

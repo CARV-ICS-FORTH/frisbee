@@ -122,3 +122,79 @@ const (
 	// ConditionTerminated indicates the user-defined conditions are met.
 	ConditionTerminated = ConditionType("Terminated")
 )
+
+// +kubebuilder:object:generate=false
+
+// StateAggregationFunctions is a set of aggregation functions for managing the lifecycle of different resources.
+type StateAggregationFunctions interface {
+	IsZero() bool
+
+	IsPending(job string) bool
+	IsRunning(job string) bool
+	IsSuccessful(job string) bool
+	IsFailed(job string) bool
+
+	NumPendingJobs() int
+	NumRunningJobs() int
+	NumSuccessfulJobs() int
+	NumFailedJobs() int
+
+	ListPendingJobs() []string
+	ListRunningJobs() []string
+	ListSuccessfulJobs() []string
+	ListFailedJobs() []string
+}
+
+type DefaultClassifier struct{}
+
+func (DefaultClassifier) IsZero() bool {
+	return true
+}
+
+func (DefaultClassifier) IsPending(_ string) bool {
+	return false
+}
+
+func (DefaultClassifier) IsRunning(_ string) bool {
+	return false
+}
+
+func (DefaultClassifier) IsSuccessful(_ string) bool {
+	return false
+}
+
+func (DefaultClassifier) IsFailed(_ string) bool {
+	return false
+}
+
+func (DefaultClassifier) NumPendingJobs() int {
+	return 0
+}
+
+func (DefaultClassifier) NumRunningJobs() int {
+	return 0
+}
+
+func (DefaultClassifier) NumSuccessfulJobs() int {
+	return 0
+}
+
+func (DefaultClassifier) NumFailedJobs() int {
+	return 0
+}
+
+func (DefaultClassifier) ListPendingJobs() []string {
+	return nil
+}
+
+func (DefaultClassifier) ListRunningJobs() []string {
+	return nil
+}
+
+func (DefaultClassifier) ListSuccessfulJobs() []string {
+	return nil
+}
+
+func (DefaultClassifier) ListFailedJobs() []string {
+	return nil
+}

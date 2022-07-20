@@ -17,9 +17,6 @@ limitations under the License.
 package expressions
 
 import (
-	"strings"
-
-	"github.com/Knetic/govaluate"
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common/lifecycle"
 	"github.com/pkg/errors"
@@ -28,78 +25,15 @@ import (
 // FiredState enforces user-driven decisions as to when the test has passed or has fail.
 // if it has failed, it updates the workflow status and returns true to indicate that the status has been modified.
 func FiredState(expr v1alpha1.ExprState, state lifecycle.ClassifierReader) (string, bool, error) {
-	if expr == "" || state.IsZero() {
-		return "", false, nil
-	}
 
-	t, err := expr.Parse()
+	pass, err := expr.GoValuate(state)
 	if err != nil {
-		return "ParsingError", false, errors.Wrapf(err, "dereference error")
-	}
-
-	var out strings.Builder
-
-	if err := t.Execute(&out, state); err != nil {
-		return "AssertionExecutionError", false, errors.Wrapf(err, "execution error")
-	}
-
-	pass, err := shouldExecute(out.String())
-	if err != nil {
-		return "AssertionExecutionError", false, errors.Wrapf(err, "assertion dereference error")
+		return "ExecutionError", false, errors.Wrapf(err, "dereference error")
 	}
 
 	if pass {
-		return "AssertionValidationOK", true, nil
+		return "StateOK", true, nil
 	}
 
-	return "AssertionValidationError", false, nil
-}
-
-// Taken from Argo-Scenario.
-// shouldExecute evaluates an already substituted expression to decide whether a step should execute.
-func shouldExecute(expr string) (bool, error) {
-	if expr == "" {
-		return true, nil
-	}
-
-	expression, err := govaluate.NewEvaluableExpression(expr)
-	if err != nil {
-		if strings.Contains(err.Error(), "Invalid token") {
-			return false, errors.Wrapf(err, "Invalid 'expr' expression '%s': %v "+
-				"(hint: try wrapping the affected expression in quotes (\"))", expr, err)
-		}
-
-		return false, errors.Wrapf(err, "Invalid 'expr' expression '%s': %v", expr, err)
-	}
-
-	// The following loop converts govaluate variables (which we don't use), into strings. This
-	// allows us to have expressions like: "foo != bar" without requiring foo and bar to be quoted.
-	tokens := expression.Tokens()
-	for i, tok := range tokens {
-		switch tok.Kind {
-		case govaluate.VARIABLE:
-			tok.Kind = govaluate.STRING
-		default:
-			continue
-		}
-
-		tokens[i] = tok
-	}
-
-	expression, err = govaluate.NewEvaluableExpressionFromTokens(tokens)
-	if err != nil {
-		return false, errors.Wrapf(err, "Failed to parse 'expr' expression '%s': %v", expr, err)
-	}
-
-	result, err := expression.Evaluate(nil)
-	if err != nil {
-		return false, errors.Wrapf(err, "Failed to FiredState 'expr' expresion '%s': %v", expr, err)
-	}
-
-	boolRes, ok := result.(bool)
-	if !ok {
-		return false, errors.Errorf("QueuedJobs boolean evaluation for '%s'. Got %v", expr, result)
-	}
-
-	return boolRes, nil
+	return "InvalidTransition", false, nil
 }

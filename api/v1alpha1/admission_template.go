@@ -59,8 +59,12 @@ func (r *Template) ValidateCreate() error {
 			return errors.Wrapf(err, "marshal error")
 		}
 
-		if _, err := ExprState(specBody).Parse(); err != nil {
-			return errors.Wrapf(err, "template error")
+		if _, err := ExprState(specBody).Evaluate(Scheme{
+			Scenario:  "",
+			Namespace: "",
+			Inputs:    r.Spec.Inputs,
+		}); err != nil {
+			return errors.Wrapf(err, "Invalid template definition")
 		}
 	}
 

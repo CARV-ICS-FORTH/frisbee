@@ -17,37 +17,16 @@ limitations under the License.
 package utils
 
 import (
-	"strings"
-	"text/template"
-
-	"github.com/Masterminds/sprig/v3"
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common/labelling"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var sprigFuncMap = sprig.TxtFuncMap() // a singleton for better performance
-
 type ExpandedSpecBody string
 
-type Scheme struct {
-	// Scenario returns the name of the scenario that invokes the template.
-	Scenario string `json:"scenario,omitempty"`
-
-	// Returns the namespace where the scenario is running
-	Namespace string `json:"namespace,omitempty"`
-
-	// Inputs are dynamic fields that populate the spec.
-	// +optional
-	Inputs *v1alpha1.Inputs `json:"inputs,omitempty"`
-
-	// Spec is the specification whose values will be replaced by parameters.
-	Spec []byte `json:"spec"`
-}
-
-func NewScheme(caller metav1.Object, inputs *v1alpha1.Inputs, body []byte) (*Scheme, error) {
-	var scheme Scheme
+func NewScheme(caller metav1.Object, inputs *v1alpha1.Inputs, body []byte) (*v1alpha1.Scheme, error) {
+	var scheme v1alpha1.Scheme
 
 	scheme.Scenario = labelling.GetScenario(caller)
 	scheme.Namespace = caller.GetNamespace()
@@ -58,26 +37,15 @@ func NewScheme(caller metav1.Object, inputs *v1alpha1.Inputs, body []byte) (*Sch
 }
 
 // Evaluate parses a given scheme and returns the respective ServiceSpec.
-func Evaluate(scheme *Scheme) (ExpandedSpecBody, error) {
+func Evaluate(scheme *v1alpha1.Scheme) (ExpandedSpecBody, error) {
 	if scheme == nil {
 		return "", errors.Errorf("empty scheme")
 	}
 
-	t, err := template.New("").
-		Funcs(sprigFuncMap).
-		Option("missingkey=error").
-		Parse(string(scheme.Spec))
-
+	out, err := v1alpha1.ExprState(scheme.Spec).Evaluate(scheme)
 	if err != nil {
-		return "", errors.Wrapf(err, "parsing error")
-	}
-
-	var out strings.Builder
-
-	// replace templated expression with actual values.
-	if err := t.Execute(&out, scheme); err != nil {
 		return "", errors.Wrapf(err, "template execution error")
 	}
 
-	return ExpandedSpecBody(out.String()), nil
+	return ExpandedSpecBody(out), nil
 }

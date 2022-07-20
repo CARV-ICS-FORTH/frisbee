@@ -158,8 +158,8 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		r.Logger.Info("Cleaning up chaos jobs",
 			"cascade", cr.GetName(),
-			"activeJobs", r.state.PendingJobsList(),
-			"successfulJobs", r.state.SuccessfulJobsList(),
+			"activeJobs", r.state.ListPendingJobs(),
+			"successfulJobs", r.state.ListSuccessfulJobs(),
 		)
 
 		/*
@@ -167,7 +167,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			We should not remove the cr descriptor itself, as we need to maintain its
 			status for higher-entities like the Scenario.
 		*/
-		for _, job := range r.state.SuccessfulJobs() {
+		for _, job := range r.state.GetSuccessfulJobs() {
 			common.Delete(ctx, r, job)
 		}
 
@@ -179,20 +179,20 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		r.Logger.Info("Cleaning up chaos jobs",
 			"cascade", cr.GetName(),
-			"successfulJobs", r.state.SuccessfulJobsList(),
-			"activeJobs", r.state.PendingJobsList(),
+			"successfulJobs", r.state.ListSuccessfulJobs(),
+			"activeJobs", r.state.ListPendingJobs(),
 		)
 
 		// Remove the non-failed components. Leave the failed jobs and system jobs for postmortem analysis.
-		for _, job := range r.state.PendingJobs() {
+		for _, job := range r.state.GetPendingJobs() {
 			common.Delete(ctx, r, job)
 		}
 
-		for _, job := range r.state.RunningJobs() {
+		for _, job := range r.state.GetRunningJobs() {
 			common.Delete(ctx, r, job)
 		}
 
-		for _, job := range r.state.SuccessfulJobs() {
+		for _, job := range r.state.GetSuccessfulJobs() {
 			common.Delete(ctx, r, job)
 		}
 

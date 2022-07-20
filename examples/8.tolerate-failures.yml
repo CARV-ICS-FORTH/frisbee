@@ -22,19 +22,26 @@ spec:
     parameters:
       target: localhost
       duration: "60"
+      exit: "false"
   service:
     containers:
       - name: app
         image: czero/iperf2
-        command: [ iperf ]
-        args: [ "-c", "{{.Inputs.Parameters.target}}", "-t", "{{.Inputs.Parameters.duration}}" ]
+        command:
+          - /bin/sh   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
+            # Compare the input, and exit if needed
+            [[ {{.Inputs.Parameters.exit}} == "true" ]] && echo "Force exit" && && exit -1
+            # Otherwise, continue as normal
+            iperf -c {{.Inputs.Parameters.target}} -t {{.Inputs.Parameters.duration}} 
 
 
 ---
 apiVersion: frisbee.dev/v1alpha1
 kind: Scenario
 metadata:
-  name: scheduling
+  name: tolerate-failures
 spec:
   actions:
     - action: Service
@@ -47,10 +54,13 @@ spec:
       depends: { running: [ server ] }
       cluster:
         templateRef: iperf.client
+        instances: 10
         inputs:
-          - { target: server, duration: "10" }
-          - { target: server, duration: "20" }
+          - { target: server, duration: "10"}
+          - { target: server, duration: "20", exit: "true"  }
           - { target: server, duration: "30" }
-        # Schedule the creation of new clients
         schedule:
           cron: "@every 1m"
+        # Tolerate up to 2 failing clients, before the cluster fails itself
+        tolerate:
+          failedJobs: 3

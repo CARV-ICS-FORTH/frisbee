@@ -35,47 +35,47 @@ func ScheduledJobs(queuedJobs int, state lifecycle.ClassifierReader, lf *v1alpha
 
 	autotests := []test{
 		{ // A job has failed during execution.
-			expression: state.FailedJobsNum() > 0,
+			expression: state.NumFailedJobs() > 0,
 			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseFailed,
 				Reason:  "JobHasFailed",
-				Message: fmt.Sprintf("failed jobs: %s", state.FailedJobsList()),
+				Message: fmt.Sprintf("failed jobs: %s", state.ListFailedJobs()),
 			},
 			condition: metav1.Condition{
 				Type:    v1alpha1.ConditionJobUnexpectedTermination.String(),
 				Status:  metav1.ConditionTrue,
 				Reason:  "JobHasFailed",
-				Message: fmt.Sprintf("failed jobs: %s", state.FailedJobsList()),
+				Message: fmt.Sprintf("failed jobs: %s", state.ListFailedJobs()),
 			},
 		},
 
 		{ // All jobs are successfully completed
-			expression: state.SuccessfulJobsNum() == queuedJobs,
+			expression: state.NumSuccessfulJobs() == queuedJobs,
 			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseSuccess,
 				Reason:  "AllJobsCompleted",
-				Message: fmt.Sprintf("successful jobs: %s", state.SuccessfulJobsList()),
+				Message: fmt.Sprintf("successful jobs: %s", state.ListSuccessfulJobs()),
 			},
 			condition: metav1.Condition{
 				Type:    v1alpha1.ConditionAllJobsAreCompleted.String(),
 				Status:  metav1.ConditionTrue,
 				Reason:  "AllJobsCompleted",
-				Message: fmt.Sprintf("successful jobs: %s", state.SuccessfulJobsList()),
+				Message: fmt.Sprintf("successful jobs: %s", state.ListSuccessfulJobs()),
 			},
 		},
 
 		{ // All jobs are created, and at least one is still running
-			expression: state.RunningJobsNum()+state.SuccessfulJobsNum() == queuedJobs,
+			expression: state.NumRunningJobs()+state.NumSuccessfulJobs() == queuedJobs,
 			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseRunning,
 				Reason:  "AllJobsRunning",
-				Message: fmt.Sprintf("running jobs: %s", state.RunningJobsList()),
+				Message: fmt.Sprintf("running jobs: %s", state.ListRunningJobs()),
 			},
 			condition: metav1.Condition{
 				Type:    v1alpha1.ConditionAllJobsAreScheduled.String(),
 				Status:  metav1.ConditionTrue,
 				Reason:  "AllJobsRunning",
-				Message: fmt.Sprintf("running jobs: %s", state.RunningJobsList()),
+				Message: fmt.Sprintf("running jobs: %s", state.ListRunningJobs()),
 			},
 		},
 

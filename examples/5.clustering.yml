@@ -7,9 +7,9 @@ spec:
   service:
     containers:
       - name: app
-        image:  czero/iperf2
-        command: [iperf]
-        args: ["-s", "-f", "m", "-i", "5"]
+        image: czero/iperf2
+        command: [ iperf ]
+        args: [ "-s", "-f", "m", "-i", "5" ]
 
 
 ---
@@ -25,9 +25,9 @@ spec:
   service:
     containers:
       - name: app
-        image:  czero/iperf2
-        command: [iperf]
-        args: ["-c", "{{.Inputs.Parameters.target}}", "-t", "{{.Inputs.Parameters.duration}}"]
+        image: czero/iperf2
+        command: [ iperf ]
+        args: [ "-c", "{{.Inputs.Parameters.target}}", "-t", "{{.Inputs.Parameters.duration}}" ]
 
 
 ---
