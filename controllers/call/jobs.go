@@ -23,7 +23,6 @@ import (
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
-	"github.com/carv-ics-forth/frisbee/controllers/common/labelling"
 	"github.com/carv-ics-forth/frisbee/pkg/structure"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -71,7 +70,7 @@ func (r *Controller) callJob(ctx context.Context, cr *v1alpha1.Call, i int) erro
 		vobject.SetGroupVersionKind(v1alpha1.GroupVersion.WithKind("VirtualObject"))
 		vobject.SetName(fmt.Sprintf("%s-%d", cr.GetName(), i))
 
-		labelling.Propagate(&vobject, cr)
+		v1alpha1.PropagateLabels(&vobject, cr)
 
 		if err := common.Create(ctx, r, cr, &vobject); err != nil {
 			return errors.Wrapf(err, "cannot create virtual object")
@@ -81,101 +80,100 @@ func (r *Controller) callJob(ctx context.Context, cr *v1alpha1.Call, i int) erro
 	serviceName := cr.Spec.Services[i]
 	callable := cr.Status.QueuedJobs[i]
 
-	{ // Perform the actual job
-		r.Info("-> Call", "caller", cr.GetName(), "service", serviceName)
-		defer r.Info("<- Call", "caller", cr.GetName(), "service", serviceName)
+	r.Info("-> Call", "caller", cr.GetName(), "service", serviceName)
+	defer r.Info("<- Call", "caller", cr.GetName(), "service", serviceName)
 
-		pod := types.NamespacedName{
-			Namespace: cr.GetNamespace(),
-			Name:      serviceName,
+	pod := types.NamespacedName{
+		Namespace: cr.GetNamespace(),
+		Name:      serviceName,
+	}
+
+	// Do some hacks to abort the call if the main context is cancelled.
+	quit := make(chan error)
+	var jobError error
+
+	go func() {
+		r.GetEventRecorderFor(vobject.GetName()).Event(cr, corev1.EventTypeNormal, "CallBegin", serviceName)
+
+		defer close(quit)
+
+		res, err := r.executor.Exec(pod, callable.Container, callable.Command, true)
+		if err != nil {
+			quit <- errors.Wrapf(err, "remote command has failed. Out: %s, Err: %s", res.Stdout, res.Stderr)
+
+			return
 		}
 
-		// Do some hacks to abort the call if the main context is cancelled.
-		quit := make(chan error)
+		r.Logger.V(2).Info("Call Output",
+			"job", cr.GetName(),
+			"stdout", res.Stdout,
+			"stderr", res.Stderr,
+		)
 
-		go func() {
-			r.GetEventRecorderFor("").Event(cr, corev1.EventTypeNormal, "CallBegin", serviceName)
-
-			defer close(quit)
-
-			res, err := r.executor.Exec(pod, callable.Container, callable.Command, true)
-			if err != nil {
-				quit <- errors.Wrapf(err, "remote command has failed. Out: %s, Err: %s", res.Stdout, res.Stderr)
-
-				return
-			}
-
-			r.Logger.V(2).Info("Call Output",
+		if cr.Spec.Expect != nil {
+			r.Logger.V(2).Info("Assert Call Output",
 				"job", cr.GetName(),
-				"stdout", res.Stdout,
-				"stderr", res.Stderr,
+				"expect", cr.Spec.Expect,
 			)
 
-			if cr.Spec.Expect != nil {
-				r.Logger.V(2).Info("Assert Call Output",
-					"job", cr.GetName(),
-					"expect", cr.Spec.Expect,
-				)
+			expect := cr.Spec.Expect[i]
 
-				expect := cr.Spec.Expect[i]
+			if expect.Stdout != nil {
+				matchStdout, err := regexp.MatchString(*expect.Stdout, res.Stdout)
+				if err != nil {
+					quit <- errors.Wrapf(err, "regex error")
 
-				if expect.Stdout != nil {
-					matchStdout, err := regexp.MatchString(*expect.Stdout, res.Stdout)
-					if err != nil {
-						quit <- errors.Wrapf(err, "regex error")
-
-						return
-					}
-
-					if !matchStdout {
-						quit <- errors.Errorf("Mismatched stdout. Expected '%s' but got '%s'", *expect.Stdout, res.Stdout)
-
-						return
-					}
+					return
 				}
 
-				if expect.Stderr != nil {
-					matchStderr, err := regexp.MatchString(*expect.Stderr, res.Stderr)
-					if err != nil {
-						quit <- errors.Wrapf(err, "regex error")
+				if !matchStdout {
+					quit <- errors.Errorf("Mismatched stdout. Expected '%s' but got '%s'", *expect.Stdout, res.Stdout)
 
-						return
-					}
-
-					if !matchStderr {
-						quit <- errors.Errorf("Mismatched stderr. Expected '%s' but got '%s'", *expect.Stderr, res.Stderr)
-
-						return
-					}
+					return
 				}
 			}
-		}()
 
-		select {
-		case <-ctx.Done():
-			return errors.Wrapf(ctx.Err(), "cancel operation")
-		case err := <-quit:
-			if err != nil {
-				r.GetEventRecorderFor("").Event(cr, corev1.EventTypeWarning, "CallFailed", serviceName)
+			if expect.Stderr != nil {
+				matchStderr, err := regexp.MatchString(*expect.Stderr, res.Stderr)
+				if err != nil {
+					quit <- errors.Wrapf(err, "regex error")
 
-				return err
+					return
+				}
+
+				if !matchStderr {
+					quit <- errors.Errorf("Mismatched stderr. Expected '%s' but got '%s'", *expect.Stderr, res.Stderr)
+
+					return
+				}
 			}
 		}
+	}()
+
+	select {
+	case <-ctx.Done():
+		jobError = ctx.Err()
+	case jobError = <-quit:
 	}
 
-	r.GetEventRecorderFor("").Event(cr, corev1.EventTypeNormal, "CallSuccess", serviceName)
+	if jobError != nil {
+		r.GetEventRecorderFor(vobject.GetName()).Event(cr, corev1.EventTypeWarning, "CallFailed", serviceName)
 
-	{ // update the status of the mockup. This will be captured by the lifecycle.
+		vobject.SetReconcileStatus(v1alpha1.Lifecycle{
+			Phase:   v1alpha1.PhaseFailed,
+			Reason:  "CallJobHasFailed",
+			Message: fmt.Sprintf("call '%s/%s' error: %s", serviceName, callable, jobError),
+		})
+	} else {
+		r.GetEventRecorderFor(vobject.GetName()).Event(cr, corev1.EventTypeNormal, "CallSuccess", serviceName)
+
 		vobject.SetReconcileStatus(v1alpha1.Lifecycle{
 			Phase:   v1alpha1.PhaseSuccess,
-			Reason:  "AllJobsCalled",
-			Message: "Job is called ",
+			Reason:  "CallJobSuccess",
+			Message: fmt.Sprintf("call '%s/%s'", serviceName, callable),
 		})
-
-		if err := common.UpdateStatus(ctx, r, &vobject); err != nil {
-			return errors.Wrapf(err, "cannot update job status")
-		}
 	}
 
-	return nil
+	// update the status of the mockup. This will be captured by the lifecycle.
+	return common.UpdateStatus(ctx, r, &vobject)
 }

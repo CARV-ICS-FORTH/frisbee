@@ -100,7 +100,7 @@ func (r *Controller) updateLifecycle(t *v1alpha1.Scenario) v1alpha1.Lifecycle {
 	// Step 4. Check if scheduling goes as expected.
 	queuedJobs := len(t.Spec.Actions)
 
-	if check.ScheduledJobs(queuedJobs, gs, &cycle) {
+	if check.ScheduledJobs(queuedJobs, gs, &cycle, nil) {
 		return cycle
 	}
 

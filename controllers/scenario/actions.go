@@ -21,7 +21,6 @@ import (
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	chaosutils "github.com/carv-ics-forth/frisbee/controllers/chaos/utils"
-	"github.com/carv-ics-forth/frisbee/controllers/common/labelling"
 	serviceutils "github.com/carv-ics-forth/frisbee/controllers/service/utils"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -63,14 +62,15 @@ func (r *Controller) service(ctx context.Context, t *v1alpha1.Scenario, action v
 	job.SetName(action.Name)
 
 	// set labels
-	labelling.SetScenario(&job.ObjectMeta, t.GetName())
-	labelling.SetAction(&job.ObjectMeta, action.Name)
+	v1alpha1.SetScenario(&job.ObjectMeta, t.GetName())
+	v1alpha1.SetAction(&job.ObjectMeta, action.Name)
 
 	// The job belongs to a SUT, unless the template is explicitly declared as a System job (SYS)
-	if labelling.SpecForSystemService(&spec) {
-		labelling.SetComponent(&job.ObjectMeta, labelling.ComponentSys)
+	if spec.Decorators != nil && spec.Decorators.Labels != nil &&
+		spec.Decorators.Labels[v1alpha1.LabelComponent] == string(v1alpha1.ComponentSys) {
+		v1alpha1.SetComponent(&job.ObjectMeta, v1alpha1.ComponentSys)
 	} else {
-		labelling.SetComponent(&job.ObjectMeta, labelling.ComponentSUT)
+		v1alpha1.SetComponent(&job.ObjectMeta, v1alpha1.ComponentSUT)
 	}
 
 	spec.DeepCopyInto(&job.Spec)
@@ -90,9 +90,9 @@ func (r *Controller) cluster(ctx context.Context, t *v1alpha1.Scenario, action v
 	job.SetName(action.Name)
 
 	// set labels
-	labelling.SetScenario(&job.ObjectMeta, t.GetName())
-	labelling.SetAction(&job.ObjectMeta, action.Name)
-	labelling.SetComponent(&job.ObjectMeta, labelling.ComponentSUT)
+	v1alpha1.SetScenario(&job.ObjectMeta, t.GetName())
+	v1alpha1.SetAction(&job.ObjectMeta, action.Name)
+	v1alpha1.SetComponent(&job.ObjectMeta, v1alpha1.ComponentSUT)
 
 	action.Cluster.DeepCopyInto(&job.Spec)
 
@@ -120,9 +120,9 @@ func (r *Controller) chaos(ctx context.Context, t *v1alpha1.Scenario, action v1a
 	job.SetNamespace(t.GetNamespace())
 	job.SetName(action.Name)
 
-	labelling.SetScenario(&job.ObjectMeta, t.GetName())
-	labelling.SetAction(&job.ObjectMeta, action.Name)
-	labelling.SetComponent(&job.ObjectMeta, labelling.ComponentSUT)
+	v1alpha1.SetScenario(&job.ObjectMeta, t.GetName())
+	v1alpha1.SetAction(&job.ObjectMeta, action.Name)
+	v1alpha1.SetComponent(&job.ObjectMeta, v1alpha1.ComponentSUT)
 
 	spec.DeepCopyInto(&job.Spec)
 
@@ -140,9 +140,9 @@ func (r *Controller) cascade(ctx context.Context, t *v1alpha1.Scenario, action v
 	job.SetNamespace(t.GetNamespace())
 	job.SetName(action.Name)
 
-	labelling.SetScenario(&job.ObjectMeta, t.GetName())
-	labelling.SetAction(&job.ObjectMeta, action.Name)
-	labelling.SetComponent(&job.ObjectMeta, labelling.ComponentSUT)
+	v1alpha1.SetScenario(&job.ObjectMeta, t.GetName())
+	v1alpha1.SetAction(&job.ObjectMeta, action.Name)
+	v1alpha1.SetComponent(&job.ObjectMeta, v1alpha1.ComponentSUT)
 
 	action.Cascade.DeepCopyInto(&job.Spec)
 
@@ -158,9 +158,9 @@ func (r *Controller) delete(ctx context.Context, t *v1alpha1.Scenario, action v1
 	job.SetNamespace(t.GetNamespace())
 	job.SetName(action.Name)
 
-	labelling.SetScenario(&job.ObjectMeta, t.GetName())
-	labelling.SetAction(&job.ObjectMeta, action.Name)
-	labelling.SetComponent(&job.ObjectMeta, labelling.ComponentSUT)
+	v1alpha1.SetScenario(&job.ObjectMeta, t.GetName())
+	v1alpha1.SetAction(&job.ObjectMeta, action.Name)
+	v1alpha1.SetComponent(&job.ObjectMeta, v1alpha1.ComponentSUT)
 
 	job.SetReconcileStatus(v1alpha1.Lifecycle{
 		Phase:   v1alpha1.PhaseSuccess,
@@ -199,9 +199,9 @@ func (r *Controller) call(ctx context.Context, t *v1alpha1.Scenario, action v1al
 	job.SetNamespace(t.GetNamespace())
 	job.SetName(action.Name)
 
-	labelling.SetScenario(&job.ObjectMeta, t.GetName())
-	labelling.SetAction(&job.ObjectMeta, action.Name)
-	labelling.SetComponent(&job.ObjectMeta, labelling.ComponentSUT)
+	v1alpha1.SetScenario(&job.ObjectMeta, t.GetName())
+	v1alpha1.SetAction(&job.ObjectMeta, action.Name)
+	v1alpha1.SetComponent(&job.ObjectMeta, v1alpha1.ComponentSUT)
 
 	action.Call.DeepCopyInto(&job.Spec)
 

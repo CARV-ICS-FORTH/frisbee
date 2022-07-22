@@ -84,7 +84,7 @@ func (r *Controller) calculateLifecycle(cascade *v1alpha1.Cascade) v1alpha1.Life
 	// Step 4. Check if scheduling goes as expected.
 	queuedJobs := len(cascade.Status.QueuedJobs)
 
-	if check.ScheduledJobs(queuedJobs, gs, &cycle) {
+	if check.ScheduledJobs(queuedJobs, gs, &cycle, nil) {
 		return cycle
 	}
 

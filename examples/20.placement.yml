@@ -1,0 +1,78 @@
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Template
+metadata:
+  name: iperf.server
+spec:
+  service:
+    containers:
+      - name: app
+        image: czero/iperf2
+        command: [ iperf ]
+        args: [ "-s", "-f", "m", "-i", "5" ]
+
+
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Template
+metadata:
+  name: iperf.client
+spec:
+  inputs:
+    parameters:
+      target: localhost
+      duration: "60"
+  service:
+    containers:
+      - name: app
+        image: czero/iperf2
+        command: [ iperf ]
+        args: [ "-c", "{{.Inputs.Parameters.target}}", "-t", "{{.Inputs.Parameters.duration}}" ]
+
+
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Scenario
+metadata:
+  name: placement
+spec:
+  actions:
+    - action: Service
+      name: server
+      service:
+        templateRef: iperf.server
+
+    - action: Cluster
+      name: group-a
+      depends: { running: [ server ] }
+      cluster:
+        templateRef: iperf.client
+        instances: 10
+        inputs:
+          - { target: server, duration: "10" }
+          - { target: server, duration: "20" }
+          - { target: server, duration: "30" }
+        # Place all clients on the same node.
+        # Ensure that the node will be different
+        # from where the server is running
+        placement:
+          collocate: true
+          conflictsWith: [ server ]
+
+
+    - action: Cluster
+      name: group-b
+      depends: { running: [ server ] }
+      cluster:
+        templateRef: iperf.client
+        instances: 10
+        inputs:
+          - { target: server, duration: "10" }
+          - { target: server, duration: "20" }
+          - { target: server, duration: "30" }
+        # Place all clients on the same node.
+        # Ensure that the node will be different
+        # from where the server is running
+        placement:
+          collocate: false
+          conflictsWith: [ server, group-a ]

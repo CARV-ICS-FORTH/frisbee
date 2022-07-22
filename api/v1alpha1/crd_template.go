@@ -110,50 +110,50 @@ type GenerateFromTemplate struct {
 // Prepare automatically fills missing values from the template, according to the following rules:
 // * Without inputs and without instances, there is 1 instance with default values.
 // * Without instances, the number of instances is inferred by the number of inputs.
-func (t *GenerateFromTemplate) Prepare(allowMultipleInputs bool) error {
+func (in *GenerateFromTemplate) Prepare(allowMultipleInputs bool) error {
 	switch {
-	case t.TemplateRef == "":
+	case in.TemplateRef == "":
 		return errors.New("empty templateRef")
 
-	case len(t.Inputs) == 0: // use default parameters for all instances
-		if t.MaxInstances == 0 {
-			t.MaxInstances = 1
+	case len(in.Inputs) == 0: // use default parameters for all instances
+		if in.MaxInstances == 0 {
+			in.MaxInstances = 1
 		}
 
 		return nil
 
-	case !allowMultipleInputs && len(t.Inputs) > 1: // object violation
-		return errors.Errorf("Allowed inputs [%t] but got [%d]", allowMultipleInputs, len(t.Inputs))
+	case !allowMultipleInputs && len(in.Inputs) > 1: // object violation
+		return errors.Errorf("Allowed inputs '%t' but got '%d'", allowMultipleInputs, len(in.Inputs))
 
-	case len(t.Inputs) >= t.MaxInstances: // every instance has its own parameters.
-		t.MaxInstances = len(t.Inputs)
+	case len(in.Inputs) >= in.MaxInstances: // every instance has its own parameters.
+		in.MaxInstances = len(in.Inputs)
 
 		return nil
 
-	case t.MaxInstances > 0: // all instances have the same parameters.
+	case in.MaxInstances > 0: // all instances have the same parameters.
 		return nil
 
 	default:
 		logrus.Warn(
-			"TemplateRef:", t.TemplateRef,
-			" MaxInstances:", t.MaxInstances,
+			"TemplateRef:", in.TemplateRef,
+			" MaxInstances:", in.MaxInstances,
 			" AllowMultipleInputs:", allowMultipleInputs,
-			" Inputs:", t.Inputs,
+			" Inputs:", in.Inputs,
 		)
 
 		panic("unhandled case")
 	}
 }
 
-func (t *GenerateFromTemplate) GetInput(i int) map[string]string {
-	switch len(t.Inputs) {
+func (in *GenerateFromTemplate) GetInput(i int) map[string]string {
+	switch len(in.Inputs) {
 	case 0:
 		// no inputs
 		return nil
 	case 1:
 		copied := make(map[string]string)
 
-		for key, elem := range t.Inputs[0] {
+		for key, elem := range in.Inputs[0] {
 			copied[key] = elem
 		}
 
@@ -161,21 +161,21 @@ func (t *GenerateFromTemplate) GetInput(i int) map[string]string {
 
 	default:
 		// safety is assumed by IterateInputs
-		return t.Inputs[i]
+		return in.Inputs[i]
 	}
 }
 
-func (t *GenerateFromTemplate) IterateInputs(cb func(in map[string]string) error) error {
-	if len(t.Inputs) == 0 {
-		for i := 0; i < t.MaxInstances; i++ {
+func (in *GenerateFromTemplate) IterateInputs(cb func(in map[string]string) error) error {
+	if len(in.Inputs) == 0 {
+		for i := 0; i < in.MaxInstances; i++ {
 			if err := cb(nil); err != nil {
 				return err
 			}
 		}
 	} else {
-		for i := 0; i < t.MaxInstances; i++ {
+		for i := 0; i < in.MaxInstances; i++ {
 			// recursively iterate the input.
-			if err := cb(t.GetInput(i % len(t.Inputs))); err != nil {
+			if err := cb(in.GetInput(i % len(in.Inputs))); err != nil {
 				return err
 			}
 		}

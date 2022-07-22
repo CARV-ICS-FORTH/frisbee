@@ -21,12 +21,11 @@ import (
 	"fmt"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	"github.com/carv-ics-forth/frisbee/controllers/common/labelling"
+	"github.com/carv-ics-forth/frisbee/controllers/common"
 	serviceutils "github.com/carv-ics-forth/frisbee/controllers/service/utils"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 )
 
 // if there is only one instance, it will be named after the group. otherwise, the instances will be named
@@ -39,24 +38,35 @@ func generateName(group *v1alpha1.Cluster, i int) string {
 	return fmt.Sprintf("%s-%d", group.GetName(), i)
 }
 
-func getJob(group *v1alpha1.Cluster, i int) *v1alpha1.Service {
-	var instance v1alpha1.Service
+func (r *Controller) createJob(ctx context.Context, cr *v1alpha1.Cluster, i int) error {
+	var job v1alpha1.Service
 
-	instance.SetName(generateName(group, i))
+	{ // Populate the job
+		job.SetName(generateName(cr, i))
 
-	labelling.SetScenario(&instance.ObjectMeta, labelling.GetScenario(group))
-	labelling.SetAction(&instance.ObjectMeta, labelling.GetAction(group))
-	labelling.SetComponent(&instance.ObjectMeta, labelling.GetComponent(group))
+		v1alpha1.SetScenario(&job.ObjectMeta, v1alpha1.GetScenario(cr))
+		v1alpha1.SetAction(&job.ObjectMeta, v1alpha1.GetAction(cr))
+		v1alpha1.SetComponent(&job.ObjectMeta, v1alpha1.GetComponent(cr))
 
-	// modulo is needed to re-iterate the job list, required for the implementation of "Until".
-	jobSpec := group.Status.QueuedJobs[i%len(group.Status.QueuedJobs)]
+		// modulo is needed to re-iterate the job list, required for the implementation of "Until".
+		jobSpec := cr.Status.QueuedJobs[i%len(cr.Status.QueuedJobs)]
 
-	jobSpec.DeepCopyInto(&instance.Spec)
+		jobSpec.DeepCopyInto(&job.Spec)
+	}
 
-	return &instance
+	{ // Launch the job
+		if err := common.Create(ctx, r, cr, &job); err != nil {
+			return errors.Wrapf(err, "cannot create job")
+		}
+	}
+
+	r.Logger.Info("Create clustered job",
+		"cluster", cr.GetName(),
+		"service", job.GetName(),
+	)
+
+	return nil
 }
-
-const placementLabel = "placement"
 
 func (r *Controller) constructJobSpecList(ctx context.Context, cluster *v1alpha1.Cluster) ([]v1alpha1.ServiceSpec, error) {
 	if err := cluster.Spec.GenerateFromTemplate.Prepare(true); err != nil {
@@ -82,6 +92,13 @@ func (r *Controller) constructJobSpecList(ctx context.Context, cluster *v1alpha1
 
 		if placement.Nodes != nil { // Match pods to a node
 			affinity.NodeAffinity = &corev1.NodeAffinity{
+				/*
+					If the affinity requirements specified by this field are not met at
+					scheduling time, the pod will not be scheduled onto the node.
+					If the affinity requirements specified by this field cease to be met
+					at some point during pod execution (e.g. due to an update), the system
+					 may or may not try to eventually evict the pod from its node.
+				*/
 				RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
 					NodeSelectorTerms: []corev1.NodeSelectorTerm{
 						{
@@ -105,7 +122,7 @@ func (r *Controller) constructJobSpecList(ctx context.Context, cluster *v1alpha1
 						LabelSelector: &metav1.LabelSelector{
 							MatchExpressions: []metav1.LabelSelectorRequirement{
 								{
-									Key:      placementLabel,
+									Key:      v1alpha1.LabelAction,
 									Operator: metav1.LabelSelectorOperator(corev1.NodeSelectorOpIn),
 									Values:   []string{cluster.GetName()},
 								},
@@ -124,7 +141,7 @@ func (r *Controller) constructJobSpecList(ctx context.Context, cluster *v1alpha1
 						LabelSelector: &metav1.LabelSelector{
 							MatchExpressions: []metav1.LabelSelectorRequirement{
 								{
-									Key:      placementLabel,
+									Key:      v1alpha1.LabelAction,
 									Operator: metav1.LabelSelectorOperator(corev1.NodeSelectorOpIn),
 									Values:   placement.ConflictsWith,
 								},
@@ -138,10 +155,7 @@ func (r *Controller) constructJobSpecList(ctx context.Context, cluster *v1alpha1
 
 		// apply affinity rules to all specs
 		for i := 0; i < len(specs); i++ {
-			specs[i].Decorators.Labels = labels.Merge(specs[i].Decorators.Labels, map[string]string{
-				placementLabel: cluster.GetName(),
-			})
-
+			// Apply the current rules.
 			specs[i].Affinity = &affinity
 		}
 	}

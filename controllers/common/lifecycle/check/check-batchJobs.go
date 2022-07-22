@@ -31,24 +31,53 @@ type test struct {
 	condition  metav1.Condition
 }
 
-func ScheduledJobs(queuedJobs int, state lifecycle.ClassifierReader, lf *v1alpha1.Lifecycle) bool {
+func ScheduledJobs(queuedJobs int, state lifecycle.ClassifierReader, lf *v1alpha1.Lifecycle, tolerate *v1alpha1.TolerateSpec) bool {
+	var testSequence []test
 
-	autotests := []test{
-		{ // A job has failed during execution.
-			expression: state.NumFailedJobs() > 0,
+	// When there are failed jobs, we need to differentiate the number of tolerated failures.
+	if tolerate != nil {
+		reason := "TooManyJobsHaveFailed"
+		message := fmt.Sprintf("tolerate: %d. failed: %d (%s)",
+			tolerate.FailedJobs, state.NumFailedJobs(), state.ListFailedJobs())
+
+		// A job has been failed, but it is within the expected toleration.
+		testSequence = append(testSequence, test{
+			expression: state.NumFailedJobs() > tolerate.FailedJobs,
 			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseFailed,
-				Reason:  "JobHasFailed",
-				Message: fmt.Sprintf("failed jobs: %s", state.ListFailedJobs()),
+				Reason:  reason,
+				Message: message,
 			},
 			condition: metav1.Condition{
 				Type:    v1alpha1.ConditionJobUnexpectedTermination.String(),
 				Status:  metav1.ConditionTrue,
-				Reason:  "JobHasFailed",
-				Message: fmt.Sprintf("failed jobs: %s", state.ListFailedJobs()),
+				Reason:  reason,
+				Message: message,
 			},
-		},
+		})
+	} else {
+		reason := "JobHasFailed"
+		message := fmt.Sprintf("failed jobs: %s", state.ListFailedJobs())
 
+		// A job has failed during execution.
+		testSequence = append(testSequence, test{
+			expression: state.NumFailedJobs() > 0,
+			lifecycle: v1alpha1.Lifecycle{
+				Phase:   v1alpha1.PhaseFailed,
+				Reason:  reason,
+				Message: message,
+			},
+			condition: metav1.Condition{
+				Type:    v1alpha1.ConditionJobUnexpectedTermination.String(),
+				Status:  metav1.ConditionTrue,
+				Reason:  reason,
+				Message: message,
+			},
+		})
+	}
+
+	// Generic sequence
+	testSequence = append(testSequence, []test{
 		{ // All jobs are successfully completed
 			expression: state.NumSuccessfulJobs() == queuedJobs,
 			lifecycle: v1alpha1.Lifecycle{
@@ -87,9 +116,9 @@ func ScheduledJobs(queuedJobs int, state lifecycle.ClassifierReader, lf *v1alpha
 				Message: "at least one jobs has not yet created",
 			},
 		},
-	}
+	}...)
 
-	for _, testcase := range autotests {
+	for _, testcase := range testSequence {
 		if testcase.expression {
 			*lf = testcase.lifecycle
 

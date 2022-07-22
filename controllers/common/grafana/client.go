@@ -21,8 +21,8 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
-	"github.com/carv-ics-forth/frisbee/controllers/common/labelling"
 	"github.com/go-logr/logr"
 	notifier "github.com/golanghelper/grafana-webhook"
 	"github.com/grafana-tools/sdk"
@@ -151,7 +151,7 @@ type Client struct {
 // SetClientFor creates a new client for the given object.  It panics if it cannot parse the object's metadata,
 // or if another client is already registers.
 func SetClientFor(obj metav1.Object, c *Client) {
-	scenario := labelling.GetScenario(obj)
+	scenario := v1alpha1.GetScenario(obj)
 
 	clientsLocker.Lock()
 	_, exists := clients[scenario]
@@ -168,12 +168,12 @@ func SetClientFor(obj metav1.Object, c *Client) {
 
 // ClientExistsFor check if a client is registered for the given name. It panics if it cannot parse the object's metadata.
 func ClientExistsFor(obj metav1.Object) bool {
-	if !labelling.HasScenario(obj) {
+	if !v1alpha1.HasScenario(obj) {
 		return false
 	}
 
 	clientsLocker.Lock()
-	_, exists := clients[labelling.GetScenario(obj)]
+	_, exists := clients[v1alpha1.GetScenario(obj)]
 	clientsLocker.Unlock()
 
 	return exists
@@ -182,7 +182,7 @@ func ClientExistsFor(obj metav1.Object) bool {
 // GetClientFor returns the client with the given name. It panics if it cannot parse the object's metadata,
 // if the client does not exist or if the client is empty.
 func GetClientFor(obj metav1.Object) *Client {
-	scenario := labelling.GetScenario(obj)
+	scenario := v1alpha1.GetScenario(obj)
 
 	clientsLocker.Lock()
 	c, exists := clients[scenario]
@@ -201,7 +201,7 @@ func GetClientFor(obj metav1.Object) *Client {
 
 // DeleteClientFor removes the client registered for the given object.
 func DeleteClientFor(obj metav1.Object) {
-	scenario := labelling.GetScenario(obj)
+	scenario := v1alpha1.GetScenario(obj)
 
 	clientsLocker.Lock()
 	delete(clients, scenario)

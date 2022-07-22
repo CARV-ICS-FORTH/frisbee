@@ -4,17 +4,7 @@ kind: Template
 metadata:
   name: iperf.server
 spec:
-  inputs:       # Inputs allows for parameterized resources
-    parameters:
-      memory: ""
-      cpu: ""
-
   service:
-    decorators: # Decorators wrap Pod definitions with some nice features
-      resources:
-        cpu: { { "{{.Inputs.Parameters.cpu}}" } }
-        memory: { { "{{.Inputs.Parameters.memory}}" } }
-
     containers:
       - name: app
         image: czero/iperf2
@@ -32,7 +22,14 @@ spec:
     parameters:
       target: localhost
       duration: "60"
+      memory: ""
+      cpu: ""
+
   service:
+    decorators: # Decorators wrap Pod definitions with some nice features
+      resources:
+        cpu: "{{.Inputs.Parameters.cpu}}"
+        memory: "{{.Inputs.Parameters.memory}}"
     containers:
       - name: app
         image: czero/iperf2
@@ -47,24 +44,19 @@ metadata:
   name: resource-throttling
 spec:
   actions:
-    # Create an iperf server
     - action: Service
       name: server
       service:
         templateRef: iperf.server
 
-    # Create a set of iperf clients
     - action: Cluster
       name: clients
       depends: { running: [ server ] }
-      assert:
-          state: '{{.NumSuccessfulJobs}} >= 6'
       cluster:
         templateRef: iperf.client
-        instances: 10 # Create 10 instances, by reusing the same 3 inputs.
+        instances: 10
+        # Create a variety of clients with different resources
         inputs:
-          - { target: server, duration: "10", cpu: "0.4", memory: "50Mi"  }
-          - { target: server, duration: "20", cpu: "1", memory: "50i"  }
-          - { target: server, duration: "30", cpu: "1.2", memory: "50i"  }
-        schedule:
-          cron: "@every 1m"
+          - { target: server, duration: "120", cpu: "0.4", memory: "48Mi"  }
+          - { target: server, duration: "120", cpu: "1", memory: "49Mi"  }
+          - { target: server, duration: "120", cpu: "1.2", memory: "50Mi"  }

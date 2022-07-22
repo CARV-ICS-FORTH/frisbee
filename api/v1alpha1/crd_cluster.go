@@ -35,15 +35,15 @@ type Cluster struct {
 
 // PlacementSpec defines rules for placing the containers across the available nodes.
 type PlacementSpec struct {
-	// Collocate will place all the services within the same node.
+	// Collocate will place all the Services of this Cluster within the same node.
 	// +optional
 	Collocate bool `json:"collocate"`
 
-	// ConflictsWith points to another cluster whose services cannot be located with this one.
+	// ConflictsWith points to another Cluster whose Services cannot be located with this one.
 	// For example, this is needed for placing the master nodes on a different failure domain than the slave nodes.
 	ConflictsWith []string `json:"conflictsWith,omitempty"`
 
-	// Nodes will place all the services within the same specific node.
+	// Nodes will place all the Services of this Cluster within the specific set of nodes.
 	// +optional
 	Nodes []string `json:"nodes,omitempty"`
 }

@@ -40,27 +40,27 @@ var _ webhook.Validator = &Scenario{}
 // log is for logging in this package.
 var scenariolog = logf.Log.WithName("scenario-resource")
 
-func (r *Scenario) SetupWebhookWithManager(mgr ctrl.Manager) error {
+func (in *Scenario) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
+		For(in).
 		Complete()
 }
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *Scenario) Default() {
-	scenariolog.Info("default", "name", r.Name)
+func (in *Scenario) Default() {
+	scenariolog.Info("default", "name", in.Name)
 
 	// TODO(user): fill in your defaulting logic.
 }
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *Scenario) ValidateCreate() error {
-	legitReferences, err := DependencyGraph(r)
+func (in *Scenario) ValidateCreate() error {
+	legitReferences, err := DependencyGraph(in)
 	if err != nil {
-		return errors.Wrapf(err, "invalid scenario [%s]", r.GetName())
+		return errors.Wrapf(err, "invalid scenario [%s]", in.GetName())
 	}
 
-	for _, action := range r.Spec.Actions {
+	for _, action := range in.Spec.Actions {
 		// Check the referenced dependencies are ok
 		if err := CheckDependencyGraph(&action, legitReferences); err != nil {
 			return errors.Wrapf(err, "dependency error for action [%s]", action.Name)
@@ -167,7 +167,18 @@ func CheckAction(action *Action, references map[string]*Action) error {
 			Spec: *action.EmbedActions.Cluster,
 		}
 
-		return v.ValidateCreate()
+		if err := v.ValidateCreate(); err != nil {
+			return errors.Wrapf(err, "cluster error")
+		}
+
+		if placement := v.Spec.Placement; placement != nil {
+			if err := ValidatePlacement(placement, references); err != nil {
+				return errors.Wrapf(err, "placement error")
+			}
+		}
+
+		return nil
+
 	case ActionChaos:
 		if action.EmbedActions.Chaos == nil {
 			return errors.Errorf("empty chaos definition")
@@ -229,16 +240,16 @@ func CheckAction(action *Action, references map[string]*Action) error {
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *Scenario) ValidateUpdate(old runtime.Object) error {
-	scenariolog.Info("validate update", "name", r.Name)
+func (in *Scenario) ValidateUpdate(old runtime.Object) error {
+	scenariolog.Info("validate update", "name", in.Name)
 
 	// TODO(user): fill in your validation logic upon object update.
 	return nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *Scenario) ValidateDelete() error {
-	scenariolog.Info("validate delete", "name", r.Name)
+func (in *Scenario) ValidateDelete() error {
+	scenariolog.Info("validate delete", "name", in.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.
 	return nil

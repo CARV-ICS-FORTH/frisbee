@@ -37,26 +37,26 @@ var _ webhook.Validator = &Call{}
 // log is for logging in this package.
 var calllog = logf.Log.WithName("call-resource")
 
-func (r *Call) SetupWebhookWithManager(mgr ctrl.Manager) error {
+func (in *Call) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
+		For(in).
 		Complete()
 }
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *Call) Default() {
-	calllog.Info("default", "name", r.Name)
+func (in *Call) Default() {
+	calllog.Info("default", "name", in.Name)
 
 	// TODO(user): fill in your defaulting logic.
 }
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *Call) ValidateCreate() error {
-	calllog.Info("validate create", "name", r.Name)
+func (in *Call) ValidateCreate() error {
+	calllog.Info("validate create", "name", in.Name)
 
-	spec := r.Spec
+	spec := in.Spec
 
 	// Expect field
 	if expect := spec.Expect; expect != nil {
@@ -97,16 +97,16 @@ func (r *Call) ValidateCreate() error {
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *Call) ValidateUpdate(old runtime.Object) error {
-	calllog.Info("validate update", "name", r.Name)
+func (in *Call) ValidateUpdate(old runtime.Object) error {
+	calllog.Info("validate update", "name", in.Name)
 
 	// TODO(user): fill in your validation logic upon object update.
 	return nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *Call) ValidateDelete() error {
-	calllog.Info("validate delete", "name", r.Name)
+func (in *Call) ValidateDelete() error {
+	calllog.Info("validate delete", "name", in.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.
 	return nil

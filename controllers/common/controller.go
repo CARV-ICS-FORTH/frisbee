@@ -21,7 +21,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/carv-ics-forth/frisbee/controllers/common/labelling"
+	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/pkg/debug"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -207,8 +207,8 @@ func Create(ctx context.Context, r Reconciler, parent, child client.Object) erro
 	// owner labels are used by the selectors.
 	// workflow labels are used to select only objects that belong to this experiment.
 	// used to narrow down the scope of fault injection in a common namespace
-	labelling.SetCreatedBy(child, parent)
-	labelling.SetInstance(child)
+	v1alpha1.SetCreatedBy(child, parent)
+	v1alpha1.SetInstance(child)
 
 	child.SetNamespace(parent.GetNamespace())
 
@@ -237,7 +237,7 @@ func Create(ctx context.Context, r Reconciler, parent, child client.Object) erro
 func ListChildren(ctx context.Context, r Reconciler, childJobs client.ObjectList, req types.NamespacedName) error {
 	filters := []client.ListOption{
 		client.InNamespace(req.Namespace),
-		client.MatchingLabels{labelling.LabelCreatedBy: req.Name},
+		client.MatchingLabels{v1alpha1.LabelCreatedBy: req.Name},
 	}
 
 	if err := r.GetClient().List(ctx, childJobs, filters...); err != nil {

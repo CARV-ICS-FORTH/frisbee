@@ -349,20 +349,20 @@ spec:
                             across the available nodes.
                           properties:
                             collocate:
-                              description: Collocate will place all the services within
-                                the same node.
+                              description: Collocate will place all the Services of
+                                this Cluster within the same node.
                               type: boolean
                             conflictsWith:
-                              description: ConflictsWith points to another cluster
-                                whose services cannot be located with this one. For
+                              description: ConflictsWith points to another Cluster
+                                whose Services cannot be located with this one. For
                                 example, this is needed for placing the master nodes
                                 on a different failure domain than the slave nodes.
                               items:
                                 type: string
                               type: array
                             nodes:
-                              description: Nodes will place all the services within
-                                the same specific node.
+                              description: Nodes will place all the Services of this
+                                Cluster within the specific set of nodes.
                               items:
                                 type: string
                               type: array

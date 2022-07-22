@@ -31,7 +31,6 @@ import (
 	"github.com/go-logr/logr"
 	cmap "github.com/orcaman/concurrent-map"
 	"github.com/pkg/errors"
-	k8errors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -59,7 +58,7 @@ type Controller struct {
 
 	gvk schema.GroupVersionKind
 
-	clusterView lifecycle.Classifier
+	view lifecycle.Classifier
 
 	// executor is used to run commands directly into containers
 	executor executor.Executor
@@ -68,7 +67,7 @@ type Controller struct {
 }
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
-// move the current clusterView of the cluster closer to the desired clusterView.
+// move the current view of the cluster closer to the desired view.
 func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	/*
 		1: Load CR by name.
@@ -76,20 +75,31 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	*/
 	var cr v1alpha1.Call
 
-	// Use a slightly different approach than other controllers, since we do not need finalizers.
-	if err := r.GetClient().Get(ctx, req.NamespacedName, &cr); err != nil {
-		// Request object not found, could have been deleted after reconcile request.
-		// We'll ignore not-found errors, since they can't be fixed by an immediate
-		// requeue (we'll need to wait for a new notification), and we can get them
-		// on added / deleted requests.
-		if k8errors.IsNotFound(err) {
-			return common.Stop()
+	var requeue bool
+	result, err := common.Reconcile(ctx, r, req, &cr, &requeue)
+
+	if requeue {
+		return result, errors.Wrapf(err, "initialization error")
+	}
+
+	/*
+
+		// Use a slightly different approach than other controllers, since we do not need finalizers.
+		if err := r.GetClient().Get(ctx, req.NamespacedName, &cr); err != nil {
+			// Request object not found, could have been deleted after reconcile request.
+			// We'll ignore not-found errors, since they can't be fixed by an immediate
+			// requeue (we'll need to wait for a new notification), and we can get them
+			// on added / deleted requests.
+			if k8errors.IsNotFound(err) {
+				return common.Stop()
+			}
+
+			r.Error(err, "obj retrieval")
+
+			return common.RequeueAfter(time.Second)
 		}
 
-		r.Error(err, "obj retrieval")
-
-		return common.RequeueAfter(time.Second)
-	}
+	*/
 
 	r.Logger.Info("-> Reconcile",
 		"kind", reflect.TypeOf(cr),
@@ -107,7 +117,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		)
 	}()
 
-	if err := r.GetClusterView(ctx, req.NamespacedName); err != nil {
+	if err := r.CollectView(ctx, req.NamespacedName); err != nil {
 		return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot get the cluster view for '%s'", req))
 	}
 
@@ -119,7 +129,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		subresource, we'll use the `Status` part of the client, with the `Update`
 		method.
 	*/
-	cr.SetReconcileStatus(calculateLifecycle(&cr, r.clusterView))
+	cr.SetReconcileStatus(r.calculateLifecycle(&cr))
 
 	if err := common.UpdateStatus(ctx, r, &cr); err != nil {
 		r.Info("Reschedule.", "object", cr.GetName(), "UpdateStatusErr", err)
@@ -191,7 +201,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if cr.Status.Phase.Is(v1alpha1.PhaseRunning) ||
 		(cr.Spec.Until == nil && (nextJob >= len(cr.Status.QueuedJobs))) {
 		r.Logger.Info("All jobs are scheduled. Nothing else to do. Waiting for something to happen",
-			"call", cr.GetName(),
+			"name", cr.GetName(),
 		)
 
 		return common.Stop()
@@ -206,7 +216,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		If we've missed a run, and we're still within the deadline to start it, we'll need to run a job.
 	*/
-	if hasJob, requeue, err := scheduler.Schedule(ctx, r, &cr, cr.Spec.Schedule, cr.Status.LastScheduleTime, r.clusterView); !hasJob {
+	if hasJob, requeue, err := scheduler.Schedule(ctx, r, &cr, cr.Spec.Schedule, cr.Status.LastScheduleTime, r.view); !hasJob {
 		return requeue, err
 	}
 
@@ -237,8 +247,46 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	return lifecycle.Pending(ctx, r, &cr, "some jobs are still pending")
 }
 
-func (r *Controller) GetClusterView(ctx context.Context, req types.NamespacedName) error {
-	r.clusterView.Reset()
+func (r *Controller) Initialize(ctx context.Context, cr *v1alpha1.Call) error {
+	/*
+		We construct a list of job specifications based on the CR's template.
+		This list is used by the execution step to create the actual job.
+		If the template is invalid, it should be captured at this stage.
+
+		To specifically update the status subresource, we'll use the `Status` part of the client, with the `ServiceUpdate`
+		method. The status subresource ignores changes to spec, so it's less likely to conflict
+		with any other updates, and can have separate permissions.
+	*/
+	jobList, err := r.constructJobSpecList(ctx, cr)
+	if err != nil {
+		return errors.Wrapf(err, "cannot build joblist")
+	}
+
+	cr.Status.QueuedJobs = jobList
+	cr.Status.ScheduledJobs = -1
+
+	// Metrics-driven execution requires to set alerts on Grafana.
+	if until := cr.Spec.Until; until != nil && until.HasMetricsExpr() {
+		if err := expressions.SetAlert(ctx, cr, until.Metrics); err != nil {
+			return errors.Wrapf(err, "spec.until")
+		}
+	}
+
+	if schedule := cr.Spec.Schedule; schedule != nil && schedule.Event.HasMetricsExpr() {
+		if err := expressions.SetAlert(ctx, cr, schedule.Event.Metrics); err != nil {
+			return errors.Wrapf(err, "spec.schedule")
+		}
+	}
+
+	if _, err := lifecycle.Pending(ctx, r, cr, "submitting job requests"); err != nil {
+		return errors.Wrapf(err, "status update")
+	}
+
+	return nil
+}
+
+func (r *Controller) CollectView(ctx context.Context, req types.NamespacedName) error {
+	r.view.Reset()
 
 	/*
 		2: Load CR's components.
@@ -263,7 +311,7 @@ func (r *Controller) GetClusterView(ctx context.Context, req types.NamespacedNam
 
 		Once we have all the jobs we own, we'll split them into active, successful,
 		and failed jobs, keeping track of the most recent run so that we can record it
-		in status.  Remember, status should be able to be reconstituted from the clusterView
+		in status.  Remember, status should be able to be reconstituted from the view
 		of the world, so it's generally not a good idea to read from the status of the
 		root object.  Instead, you should reconstruct it every run.  That's what we'll
 		do here.
@@ -272,55 +320,17 @@ func (r *Controller) GetClusterView(ctx context.Context, req types.NamespacedNam
 	*/
 
 	for i, job := range childJobs.Items {
-		r.clusterView.Classify(job.GetName(), &childJobs.Items[i])
+		r.view.Classify(job.GetName(), &childJobs.Items[i])
 	}
 
 	return nil
 }
 
-func (r *Controller) Initialize(ctx context.Context, t *v1alpha1.Call) error {
-	/*
-		We construct a list of job specifications based on the CR's template.
-		This list is used by the execution step to create the actual job.
-		If the template is invalid, it should be captured at this stage.
-
-		To specifically update the status subresource, we'll use the `Status` part of the client, with the `ServiceUpdate`
-		method. The status subresource ignores changes to spec, so it's less likely to conflict
-		with any other updates, and can have separate permissions.
-	*/
-	jobList, err := r.constructJobSpecList(ctx, t)
-	if err != nil {
-		return errors.Wrapf(err, "cannot build joblist")
-	}
-
-	t.Status.QueuedJobs = jobList
-	t.Status.ScheduledJobs = -1
-
-	// Metrics-driven execution requires to set alerts on Grafana.
-	if until := t.Spec.Until; until != nil && until.HasMetricsExpr() {
-		if err := expressions.SetAlert(ctx, t, until.Metrics); err != nil {
-			return errors.Wrapf(err, "spec.until")
-		}
-	}
-
-	if schedule := t.Spec.Schedule; schedule != nil && schedule.Event.HasMetricsExpr() {
-		if err := expressions.SetAlert(ctx, t, schedule.Event.Metrics); err != nil {
-			return errors.Wrapf(err, "spec.schedule")
-		}
-	}
-
-	if _, err := lifecycle.Pending(ctx, r, t, "submitting job requests"); err != nil {
-		return errors.Wrapf(err, "status update")
-	}
-
-	return nil
-}
-
-func (r *Controller) HasSucceed(ctx context.Context, t *v1alpha1.Call) error {
+func (r *Controller) HasSucceed(ctx context.Context, cr *v1alpha1.Call) error {
 	r.Logger.Info("CleanOnSuccess",
-		"kind", reflect.TypeOf(t),
-		"name", t.GetName(),
-		"sucessfulJobs", r.clusterView.ListSuccessfulJobs(),
+		"kind", reflect.TypeOf(cr),
+		"name", cr.GetName(),
+		"sucessfulJobs", r.view.ListSuccessfulJobs(),
 	)
 
 	/*
@@ -328,46 +338,42 @@ func (r *Controller) HasSucceed(ctx context.Context, t *v1alpha1.Call) error {
 		We should not remove the cr descriptor itself, as we need to maintain its
 		status for higher-entities like the Scenario.
 	*/
-	for _, job := range r.clusterView.GetSuccessfulJobs() {
+	for _, job := range r.view.GetSuccessfulJobs() {
 		common.Delete(ctx, r, job)
 	}
 
 	return nil
 }
 
-func (r *Controller) HasFailed(ctx context.Context, t *v1alpha1.Call) error {
-	r.Logger.Error(errors.New(t.Status.Reason), t.Status.Message)
+func (r *Controller) HasFailed(ctx context.Context, cr *v1alpha1.Call) error {
+	r.Logger.Error(errors.New(cr.Status.Reason), cr.Status.Message)
 
 	r.Logger.Info("CleanOnFailure",
-		"kind", reflect.TypeOf(t),
-		"name", t.GetName(),
-		"successfulJobs", r.clusterView.ListSuccessfulJobs(),
-		"runningJobs", r.clusterView.ListRunningJobs(),
-		"pendingJobs", r.clusterView.ListPendingJobs(),
+		"kind", reflect.TypeOf(cr),
+		"name", cr.GetName(),
+		"successfulJobs", r.view.ListSuccessfulJobs(),
+		"runningJobs", r.view.ListRunningJobs(),
+		"pendingJobs", r.view.ListPendingJobs(),
 	)
 
 	// Remove the non-failed components. Leave the failed jobs and system jobs for postmortem analysis.
-	for _, job := range r.clusterView.GetPendingJobs() {
+	for _, job := range r.view.GetPendingJobs() {
 		common.Delete(ctx, r, job)
 	}
 
-	for _, job := range r.clusterView.GetRunningJobs() {
+	for _, job := range r.view.GetRunningJobs() {
 		common.Delete(ctx, r, job)
 	}
 
-	for _, job := range r.clusterView.GetSuccessfulJobs() {
+	for _, job := range r.view.GetSuccessfulJobs() {
 		common.Delete(ctx, r, job)
 	}
 
 	// Block from creating further jobs
 	suspend := true
-	t.Spec.Suspend = &suspend
+	cr.Spec.Suspend = &suspend
 
-	if err := common.Update(ctx, r, t); err != nil {
-		return errors.Wrapf(err, "unable to suspend execution for '%s'", t.GetName())
-	}
-
-	return nil
+	return common.Update(ctx, r, cr)
 }
 
 /*

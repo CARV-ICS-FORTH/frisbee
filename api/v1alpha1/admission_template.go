@@ -36,25 +36,25 @@ var _ webhook.Validator = &Template{}
 // log is for logging in this package.
 var templatelog = logf.Log.WithName("template-resource")
 
-func (r *Template) SetupWebhookWithManager(mgr ctrl.Manager) error {
+func (in *Template) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
+		For(in).
 		Complete()
 }
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *Template) Default() {
-	templatelog.Info("default", "name", r.Name)
+func (in *Template) Default() {
+	templatelog.Info("default", "name", in.Name)
 
 	// TODO(user): fill in your defaulting logic.
 }
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *Template) ValidateCreate() error {
-	templatelog.Info("validate create", "name", r.Name)
+func (in *Template) ValidateCreate() error {
+	templatelog.Info("validate create", "name", in.Name)
 
 	{ // Ensure the template is ok and there are no brackets missing.
-		specBody, err := json.Marshal(r.Spec)
+		specBody, err := json.Marshal(in.Spec)
 		if err != nil {
 			return errors.Wrapf(err, "marshal error")
 		}
@@ -62,23 +62,23 @@ func (r *Template) ValidateCreate() error {
 		if _, err := ExprState(specBody).Evaluate(Scheme{
 			Scenario:  "",
 			Namespace: "",
-			Inputs:    r.Spec.Inputs,
+			Inputs:    in.Spec.Inputs,
 		}); err != nil {
 			return errors.Wrapf(err, "Invalid template definition")
 		}
 	}
 
-	if r.Spec.Service != nil {
+	if in.Spec.Service != nil {
 		v := Service{
-			Spec: *r.Spec.Service,
+			Spec: *in.Spec.Service,
 		}
 
 		return v.ValidateCreate()
 	}
 
-	if r.Spec.Chaos != nil {
+	if in.Spec.Chaos != nil {
 		v := Chaos{
-			Spec: *r.Spec.Chaos,
+			Spec: *in.Spec.Chaos,
 		}
 
 		return v.ValidateCreate()
@@ -88,16 +88,16 @@ func (r *Template) ValidateCreate() error {
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *Template) ValidateUpdate(old runtime.Object) error {
-	templatelog.Info("validate update", "name", r.Name)
+func (in *Template) ValidateUpdate(old runtime.Object) error {
+	templatelog.Info("validate update", "name", in.Name)
 
 	// TODO(user): fill in your validation logic upon object update.
 	return nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *Template) ValidateDelete() error {
-	templatelog.Info("validate delete", "name", r.Name)
+func (in *Template) ValidateDelete() error {
+	templatelog.Info("validate delete", "name", in.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.
 	return nil

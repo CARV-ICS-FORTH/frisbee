@@ -21,7 +21,6 @@ import (
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
-	"github.com/carv-ics-forth/frisbee/controllers/common/labelling"
 	"github.com/pkg/errors"
 )
 
@@ -32,7 +31,7 @@ func (r *Controller) inject(ctx context.Context, cr *v1alpha1.Chaos) error {
 		return errors.Wrapf(err, "cannot get manifest for chaos '%s'", cr.GetName())
 	}
 
-	labelling.Propagate(&f, cr)
+	v1alpha1.PropagateLabels(&f, cr)
 
 	f.SetAnnotations(cr.GetAnnotations())
 
