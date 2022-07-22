@@ -19,7 +19,6 @@ spec:
         container: app                                            # Target container
         command:  [ "cowsay", "{{.Inputs.Parameters.message}}" ]  # Function to call
 
-
 ---
 apiVersion: frisbee.dev/v1alpha1
 kind: Scenario

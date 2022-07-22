@@ -17,6 +17,8 @@ limitations under the License.
 package scenario
 
 import (
+	"fmt"
+
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common/expressions"
 	"github.com/carv-ics-forth/frisbee/controllers/common/lifecycle/check"
@@ -34,62 +36,22 @@ func (r *Controller) updateLifecycle(t *v1alpha1.Scenario) v1alpha1.Lifecycle {
 		return cycle
 	}
 
-	// Step 2. Because the assertions belong to the scenario, we must check if the scenario is the
-	// recipient of any fired alert.
-	if _, info, fired := expressions.AlertIsFired(t); fired {
-		cycle = v1alpha1.Lifecycle{
-			Phase:   v1alpha1.PhaseFailed,
-			Reason:  "MetricsAssertion",
-			Message: info,
-		}
+	for actionName, assertion := range t.Status.ExecutedActions {
+		if !assertion.IsZero() {
+			eval := expressions.Condition{Expr: &assertion}
 
-		meta.SetStatusCondition(&cycle.Conditions, metav1.Condition{
-			Type:    v1alpha1.ConditionTerminated.String(),
-			Status:  metav1.ConditionTrue,
-			Reason:  "MetricsAssertion",
-			Message: info,
-		})
-
-		return cycle
-	}
-
-	// Step 3. Check if state-driven assertions are fired
-	for _, assertion := range t.Status.ExecutedActions {
-		if assertion.IsZero() {
-			continue
-		}
-
-		if assertion.HasStateExpr() {
-			info, fired, err := expressions.FiredState(assertion.State, gs)
-			if err != nil {
+			if !eval.IsTrue(gs, t) {
 				cycle = v1alpha1.Lifecycle{
 					Phase:   v1alpha1.PhaseFailed,
-					Reason:  "StateQueryError",
-					Message: err.Error(),
+					Reason:  "AssertError",
+					Message: fmt.Sprintf("AssertError for action '%s'. Info: %s", actionName, eval.Info),
 				}
 
 				meta.SetStatusCondition(&cycle.Conditions, metav1.Condition{
-					Type:    v1alpha1.ConditionTerminated.String(),
+					Type:    v1alpha1.ConditionAssert.String(),
 					Status:  metav1.ConditionTrue,
-					Reason:  "StateQueryError",
-					Message: err.Error(),
-				})
-
-				return cycle
-			}
-
-			if fired {
-				cycle = v1alpha1.Lifecycle{
-					Phase:   v1alpha1.PhaseRunning,
-					Reason:  "StateAssertion",
-					Message: info,
-				}
-
-				meta.SetStatusCondition(&cycle.Conditions, metav1.Condition{
-					Type:    v1alpha1.ConditionTerminated.String(),
-					Status:  metav1.ConditionTrue,
-					Reason:  "StateAssertion",
-					Message: info,
+					Reason:  "AssertError",
+					Message: fmt.Sprintf("AssertError for action '%s'. Info: %s", actionName, eval.Info),
 				})
 
 				return cycle

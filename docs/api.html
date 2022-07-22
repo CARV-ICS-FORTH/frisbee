@@ -91,7 +91,8 @@ ConditionalExpr
 </td>
 <td>
 <em>(Optional)</em>
-<p>Assert defines the conditions under which the Scenario will terminate with a &ldquo;passed&rdquo; or &ldquo;failed&rdquo; message</p>
+<p>Assert defines the conditions that must be maintained after the action has been started.
+If the evaluation of the condition is false, the Scenario will abort immediately.</p>
 </td>
 </tr>
 <tr>
@@ -1215,6 +1216,25 @@ Kubernetes meta/v1.Time
 </tr>
 </tbody>
 </table>
+<h3 id="frisbee.dev/v1alpha1.Component">Component
+(<code>string</code> alias)</h3>
+<div>
+</div>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr><td><p>&#34;SUT&#34;</p></td>
+<td><p>ComponentSUT is a component that belongs to the system under testing</p>
+</td>
+</tr><tr><td><p>&#34;SYS&#34;</p></td>
+<td><p>ComponentSys is a component that belongs to Frisbee. Such components can be excluded from Chaos events.</p>
+</td>
+</tr></tbody>
+</table>
 <h3 id="frisbee.dev/v1alpha1.ConditionType">ConditionType
 (<code>string</code> alias)</h3>
 <div>
@@ -1235,6 +1255,9 @@ Jobs may refer to actions of a scenario, services of a cluster, chaos events of 
 <td><p>ConditionAllJobsAreScheduled indicates that all jobs have been successfully scheduled.
 Jobs may refer to actions of a scenario, services of a cluster, chaos events of a cascade, etc.</p>
 </td>
+</tr><tr><td><p>&#34;Assert&#34;</p></td>
+<td><p>ConditionAssert indicate that an assertion condition is false.</p>
+</td>
 </tr><tr><td><p>&#34;Initialized&#34;</p></td>
 <td><p>ConditionCRInitialized indicates whether the workflow has been initialized</p>
 </td>
@@ -1242,8 +1265,8 @@ Jobs may refer to actions of a scenario, services of a cluster, chaos events of 
 <td><p>ConditionJobUnexpectedTermination is used for a job that has been unexpectedly terminated.
 The termination refers to both Success and Fail.</p>
 </td>
-</tr><tr><td><p>&#34;Terminated&#34;</p></td>
-<td><p>ConditionTerminated indicates the user-defined conditions are met.</p>
+</tr><tr><td><p>&#34;PerformanceAlert&#34;</p></td>
+<td><p>ConditionPerformanceAlert indicates an alert received by Grafana concerning the real-time performance of the system.</p>
 </td>
 </tr></tbody>
 </table>
@@ -2208,7 +2231,7 @@ bool
 </td>
 <td>
 <em>(Optional)</em>
-<p>Collocate will place all the services within the same node.</p>
+<p>Collocate will place all the Services of this Cluster within the same node.</p>
 </td>
 </tr>
 <tr>
@@ -2219,7 +2242,7 @@ bool
 </em>
 </td>
 <td>
-<p>ConflictsWith points to another cluster whose services cannot be located with this one.
+<p>ConflictsWith points to another Cluster whose Services cannot be located with this one.
 For example, this is needed for placing the master nodes on a different failure domain than the slave nodes.</p>
 </td>
 </tr>
@@ -2232,7 +2255,7 @@ For example, this is needed for placing the master nodes on a different failure 
 </td>
 <td>
 <em>(Optional)</em>
-<p>Nodes will place all the services within the same specific node.</p>
+<p>Nodes will place all the Services of this Cluster within the specific set of nodes.</p>
 </td>
 </tr>
 </tbody>
@@ -3384,5 +3407,5 @@ Kubernetes meta/v1.Duration
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>793b683</code>.
+on git commit <code>741a9de</code>.
 </em></p>

@@ -305,22 +305,16 @@ func (r *Controller) InitScenario(ctx context.Context, t *v1alpha1.Scenario) err
 		}
 	}
 
-	{ // Initialize metadata
-		/* Inherit the metadata of the configuration. This is used to automatically delete and remove the
-		resources if the configuration is deleted */
-		// utils.AppendLabels(t, configMeta.GetLabels())
-		// utils.AppendLabels(t, configMeta.GetAnnotations())
+	// Label this resource with the name of the scenario.
+	// This label will be adopted by all children objects of this workflow.
+	v1alpha1.SetScenario(&t.ObjectMeta, t.GetName())
 
-		/* Inherit the metadata of the scenario. This label will be adopted by all children objects of this workflow.
-		 */
-		v1alpha1.SetScenario(&t.ObjectMeta, t.GetName())
-	}
-
-	/* Ensure that the scenario is OK */
+	// Ensure that the scenario is OK
 	if errValidate := r.Validate(ctx, t); errValidate != nil {
 		return errors.Wrapf(errValidate, "validation error")
 	}
 
+	// Start Prometheus + Grafana
 	if errTelemetry := r.StartTelemetry(ctx, t); errTelemetry != nil {
 		return errors.Wrapf(errTelemetry, "cannot create the telemetry stack")
 	}

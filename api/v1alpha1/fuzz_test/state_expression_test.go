@@ -1,4 +1,4 @@
-package expressions
+package fuzz
 
 import (
 	"testing"
@@ -139,7 +139,7 @@ func TestFiredState(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, pass, err := FiredState(tt.args.expr, tt.args.state)
+			pass, err := tt.args.expr.GoValuate(tt.args.state)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FiredState() error = %v, wantErr %v", err, tt.wantErr)
 				return

@@ -55,6 +55,7 @@ func (in *Scenario) Default() {
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (in *Scenario) ValidateCreate() error {
+
 	legitReferences, err := DependencyGraph(in)
 	if err != nil {
 		return errors.Wrapf(err, "invalid scenario [%s]", in.GetName())
@@ -67,8 +68,10 @@ func (in *Scenario) ValidateCreate() error {
 		}
 
 		// Check that expressions used in the assertions are ok
-		if err := CheckAssertions(&action); err != nil {
-			return errors.Wrapf(err, "assertion error for action [%s]", action.Name)
+		if !action.Assert.IsZero() {
+			if err := ValidateExpr(action.Assert); err != nil {
+				return errors.Wrapf(err, "Invalid expr in assertion")
+			}
 		}
 
 		// Ensure that the type of action is supported and is correctly set
@@ -82,7 +85,6 @@ func (in *Scenario) ValidateCreate() error {
 			}
 
 		*/
-
 	}
 
 	return nil
@@ -125,20 +127,6 @@ func CheckDependencyGraph(action *Action, callIndex map[string]*Action) error {
 			if _, ok := callIndex[dep]; !ok {
 				return errors.Errorf("invalid running dependency: [%s]<-[%s]", action.Name, dep)
 			}
-		}
-	}
-
-	return nil
-}
-
-func CheckAssertions(action *Action) error {
-	if assert := action.Assert; !assert.IsZero() {
-		if action.Delete != nil {
-			return errors.Errorf("Delete job cannot have assertion")
-		}
-
-		if err := ValidateExpr(assert); err != nil {
-			return errors.Wrapf(err, "Invalid expr for action %s", action.Name)
 		}
 	}
 

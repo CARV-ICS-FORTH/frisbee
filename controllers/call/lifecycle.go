@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
+	"github.com/carv-ics-forth/frisbee/controllers/common/expressions"
 	"github.com/carv-ics-forth/frisbee/controllers/common/lifecycle/check"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -37,8 +38,24 @@ func (r *Controller) calculateLifecycle(cr *v1alpha1.Call) v1alpha1.Lifecycle {
 	}
 
 	// Step 3. Check if "Until" conditions are met.
-	if until := cr.Spec.Until; until != nil {
-		if check.UntilConditionIsMet(until, gs, cr, &cycle) {
+
+	if !cr.Spec.Until.IsZero() {
+		eval := expressions.Condition{Expr: cr.Spec.Until}
+
+		if eval.IsTrue(gs, cr) {
+			cycle = v1alpha1.Lifecycle{
+				Phase:   v1alpha1.PhaseRunning,
+				Reason:  "UntilCondition",
+				Message: eval.Info,
+			}
+
+			meta.SetStatusCondition(&cycle.Conditions, metav1.Condition{
+				Type:    v1alpha1.ConditionAllJobsAreScheduled.String(),
+				Status:  metav1.ConditionTrue,
+				Reason:  "UntilCondition",
+				Message: eval.Info,
+			})
+
 			suspend := true
 			cr.Spec.Suspend = &suspend
 

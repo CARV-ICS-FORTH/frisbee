@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
+	"github.com/carv-ics-forth/frisbee/controllers/common/expressions"
 	"github.com/carv-ics-forth/frisbee/controllers/common/lifecycle/check"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -27,8 +28,8 @@ import (
 )
 
 // calculateLifecycle returns the update lifecycle of the cascade.
-func (r *Controller) calculateLifecycle(cascade *v1alpha1.Cascade) v1alpha1.Lifecycle {
-	cycle := cascade.Status.Lifecycle
+func (r *Controller) calculateLifecycle(cr *v1alpha1.Cascade) v1alpha1.Lifecycle {
+	cycle := cr.Status.Lifecycle
 	gs := r.state
 
 	// Step 1. Skip any CR which are already completed, or uninitialized.
@@ -37,10 +38,25 @@ func (r *Controller) calculateLifecycle(cascade *v1alpha1.Cascade) v1alpha1.Life
 	}
 
 	// Step 2. Check if "Until" conditions are met.
-	if until := cascade.Spec.Until; until != nil {
-		if check.UntilConditionIsMet(until, gs, cascade, &cycle) {
+	if !cr.Spec.Until.IsZero() {
+		eval := expressions.Condition{Expr: cr.Spec.Until}
+
+		if eval.IsTrue(gs, cr) {
+			cycle = v1alpha1.Lifecycle{
+				Phase:   v1alpha1.PhaseRunning,
+				Reason:  "UntilCondition",
+				Message: eval.Info,
+			}
+
+			meta.SetStatusCondition(&cycle.Conditions, metav1.Condition{
+				Type:    v1alpha1.ConditionAllJobsAreScheduled.String(),
+				Status:  metav1.ConditionTrue,
+				Reason:  "UntilCondition",
+				Message: eval.Info,
+			})
+
 			suspend := true
-			cascade.Spec.Suspend = &suspend
+			cr.Spec.Suspend = &suspend
 
 			return cycle
 		}
@@ -48,10 +64,10 @@ func (r *Controller) calculateLifecycle(cascade *v1alpha1.Cascade) v1alpha1.Life
 		// Event used in conjunction with "Until", instance act as a maximum bound.
 		// If the maximum instances are reached before the Until conditions, we assume that
 		// the experiment never converges, and it fails.
-		if cascade.Spec.MaxInstances > 0 && cascade.Status.ScheduledJobs > cascade.Spec.MaxInstances {
+		if cr.Spec.MaxInstances > 0 && cr.Status.ScheduledJobs > cr.Spec.MaxInstances {
 			msg := fmt.Sprintf(`Cascade [%s] has reached Max instances [%d] before Until conditions are met.
 			Abort the experiment as it too flaky to accept. You can retry without defining instances.`,
-				cascade.GetName(), cascade.Spec.MaxInstances)
+				cr.GetName(), cr.Spec.MaxInstances)
 
 			cycle = v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseFailed,
@@ -82,7 +98,7 @@ func (r *Controller) calculateLifecycle(cascade *v1alpha1.Cascade) v1alpha1.Life
 	}
 
 	// Step 4. Check if scheduling goes as expected.
-	queuedJobs := len(cascade.Status.QueuedJobs)
+	queuedJobs := len(cr.Status.QueuedJobs)
 
 	if check.ScheduledJobs(queuedJobs, gs, &cycle, nil) {
 		return cycle

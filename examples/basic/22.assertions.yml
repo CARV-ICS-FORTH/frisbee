@@ -1,0 +1,63 @@
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Template
+metadata:
+  name: iperf.server
+spec:
+  service:
+    containers:
+      - name: app
+        image: czero/iperf2
+        command:
+          - /bin/sh   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
+            # Run the iperf server in the background
+            iperf -s -f -m -i 5 &
+            
+            # Gracefully terminate after the given period
+            sleep 60 && exit 0
+            
+
+
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Template
+metadata:
+  name: iperf.client
+spec:
+  inputs:
+    parameters:
+      target: localhost
+      duration: "60"
+  service:
+    containers:
+      - name: app
+        image: czero/iperf2
+        command: [ iperf ]
+        args: [ "-c", "{{.Inputs.Parameters.target}}", "-t", "{{.Inputs.Parameters.duration}}" ]
+
+
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Scenario
+metadata:
+  name: assertions
+spec:
+  actions:
+    - action: Service
+      name: server
+      service:
+        templateRef: iperf.server
+
+    - action: Cluster
+      name: clients
+      depends: { running: [ server ] }  # Depends are pre-execution conditions
+      assert:                           # Assert are post-execution conditions
+        state: '{{.IsRunning "server"}}'
+      cluster:
+        templateRef: iperf.client
+        inputs:
+          - { target: server, duration: "400" }
+          - { target: server, duration: "400" }
+          - { target: server, duration: "400" }

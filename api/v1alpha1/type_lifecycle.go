@@ -120,7 +120,16 @@ const (
 	ConditionJobUnexpectedTermination = ConditionType("UnexpectedTermination")
 
 	// ConditionTerminated indicates the user-defined conditions are met.
-	ConditionTerminated = ConditionType("Terminated")
+	// ConditionTerminated = ConditionType("Terminated")
+
+	// ConditionStateTransition indicates the transition of a resource into another state.
+	// ConditionStateTransition = ConditionType("StateTransition")
+
+	// ConditionPerformanceAlert indicates an alert received by Grafana concerning the real-time performance of the system.
+	ConditionPerformanceAlert = ConditionType("PerformanceAlert")
+
+	// ConditionAssert indicate that an assertion condition is false.
+	ConditionAssert = ConditionType("Assert")
 )
 
 // +kubebuilder:object:generate=false

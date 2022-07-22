@@ -32,13 +32,13 @@ func ValidateExpr(expr *ConditionalExpr) error {
 
 	if expr.HasStateExpr() {
 		if _, err := expr.State.GoValuate(DefaultClassifier{}); err != nil {
-			return errors.Wrapf(err, "Invalid state expr")
+			return errors.Wrapf(err, "wrong state expr")
 		}
 	}
 
 	if expr.HasMetricsExpr() {
 		if _, err := expr.Metrics.Parse(); err != nil {
-			return errors.Wrapf(err, "Invalid metrics expr")
+			return errors.Wrapf(err, "wrong metrics expr")
 		}
 	}
 
