@@ -25,7 +25,6 @@ import (
 	"github.com/carv-ics-forth/frisbee/controllers/common"
 	"github.com/carv-ics-forth/frisbee/controllers/common/configuration"
 	"github.com/carv-ics-forth/frisbee/controllers/common/expressions"
-	"github.com/carv-ics-forth/frisbee/controllers/common/labelling"
 	"github.com/carv-ics-forth/frisbee/controllers/common/lifecycle"
 	"github.com/carv-ics-forth/frisbee/controllers/common/watchers"
 	"github.com/go-logr/logr"
@@ -306,22 +305,16 @@ func (r *Controller) InitScenario(ctx context.Context, t *v1alpha1.Scenario) err
 		}
 	}
 
-	{ // Initialize metadata
-		/* Inherit the metadata of the configuration. This is used to automatically delete and remove the
-		resources if the configuration is deleted */
-		// utils.AppendLabels(t, configMeta.GetLabels())
-		// utils.AppendLabels(t, configMeta.GetAnnotations())
+	// Label this resource with the name of the scenario.
+	// This label will be adopted by all children objects of this workflow.
+	v1alpha1.SetScenario(&t.ObjectMeta, t.GetName())
 
-		/* Inherit the metadata of the scenario. This label will be adopted by all children objects of this workflow.
-		 */
-		labelling.SetScenario(&t.ObjectMeta, t.GetName())
-	}
-
-	/* Ensure that the scenario is OK */
+	// Ensure that the scenario is OK
 	if errValidate := r.Validate(ctx, t); errValidate != nil {
 		return errors.Wrapf(errValidate, "validation error")
 	}
 
+	// Start Prometheus + Grafana
 	if errTelemetry := r.StartTelemetry(ctx, t); errTelemetry != nil {
 		return errors.Wrapf(errTelemetry, "cannot create the telemetry stack")
 	}
@@ -346,7 +339,7 @@ func (r *Controller) HasSucceed(ctx context.Context, t *v1alpha1.Scenario) error
 	// We maintain testbed components (e.g, prometheus and grafana) for getting back the test results.
 	// These components are removed by deleting the Scenario.
 	for _, job := range r.clusterView.GetSuccessfulJobs() {
-		if labelling.GetComponent(job) == labelling.ComponentSUT { // System services should not be removed
+		if v1alpha1.GetComponent(job) == v1alpha1.ComponentSUT { // System services should not be removed
 
 			expressions.UnsetAlert(job)
 			common.Delete(ctx, r, job)
@@ -366,7 +359,7 @@ func (r *Controller) HasFailed(ctx context.Context, t *v1alpha1.Scenario) error 
 
 	// Remove the non-failed components. Leave the failed jobs and system jobs for postmortem analysis.
 	for _, job := range r.clusterView.GetPendingJobs() {
-		if labelling.GetComponent(job) == labelling.ComponentSUT { // System jobs should not be deleted
+		if v1alpha1.GetComponent(job) == v1alpha1.ComponentSUT { // System jobs should not be deleted
 			r.GetEventRecorderFor("").Event(job, corev1.EventTypeWarning, "Terminating", t.Status.Message)
 
 			expressions.UnsetAlert(job)
@@ -375,7 +368,7 @@ func (r *Controller) HasFailed(ctx context.Context, t *v1alpha1.Scenario) error 
 	}
 
 	for _, job := range r.clusterView.GetRunningJobs() {
-		if labelling.GetComponent(job) == labelling.ComponentSUT { // System jobs should not be deleted
+		if v1alpha1.GetComponent(job) == v1alpha1.ComponentSUT { // System jobs should not be deleted
 			r.GetEventRecorderFor("").Event(job, corev1.EventTypeWarning, "Terminating", t.Status.Message)
 
 			expressions.UnsetAlert(job)
@@ -384,7 +377,7 @@ func (r *Controller) HasFailed(ctx context.Context, t *v1alpha1.Scenario) error 
 	}
 
 	for _, job := range r.clusterView.GetSuccessfulJobs() { // System jobs should not be deleted
-		if labelling.GetComponent(job) == labelling.ComponentSUT {
+		if v1alpha1.GetComponent(job) == v1alpha1.ComponentSUT {
 			r.GetEventRecorderFor("").Event(job, corev1.EventTypeWarning, "Terminating", t.Status.Message)
 
 			expressions.UnsetAlert(job)

@@ -63,7 +63,8 @@ type Action struct {
 	// +optional
 	DependsOn *WaitSpec `json:"depends,omitempty"`
 
-	// Assert defines the conditions under which the Scenario will terminate with a "passed" or "failed" message
+	// Assert defines the conditions that must be maintained after the action has been started.
+	// If the evaluation of the condition is false, the Scenario will abort immediately.
 	// +optional
 	Assert *ConditionalExpr `json:"assert,omitempty"`
 

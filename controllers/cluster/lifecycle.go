@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
+	"github.com/carv-ics-forth/frisbee/controllers/common/expressions"
 	"github.com/carv-ics-forth/frisbee/controllers/common/lifecycle/check"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -27,27 +28,35 @@ import (
 )
 
 // calculateLifecycle returns the update lifecycle of the cluster.
-func (r *Controller) calculateLifecycle(cluster *v1alpha1.Cluster) v1alpha1.Lifecycle {
-	cycle := cluster.Status.Lifecycle
-	gs := r.state
+func (r *Controller) calculateLifecycle(cr *v1alpha1.Cluster) v1alpha1.Lifecycle {
+	cycle := cr.Status.Lifecycle
+	gs := r.view
 
 	// Step 1. Skip any CR which are already completed, or uninitialized.
 	if cycle.Phase.Is(v1alpha1.PhaseUninitialized, v1alpha1.PhaseSuccess, v1alpha1.PhaseFailed) {
 		return cycle
 	}
 
-	// Step 2. Check if failures violate cluster's toleration.
-	if tolerate := cluster.Spec.Tolerate; tolerate != nil {
-		if check.TolerationExceeded(tolerate, gs, &cycle) {
-			return cycle
-		}
-	}
-
 	// Step 3. Check if "Until" conditions are met.
-	if until := cluster.Spec.Until; until != nil {
-		if check.UntilConditionIsMet(until, gs, cluster, &cycle) {
+	if !cr.Spec.Until.IsZero() {
+		eval := expressions.Condition{Expr: cr.Spec.Until}
+
+		if eval.IsTrue(gs, cr) {
+			cycle = v1alpha1.Lifecycle{
+				Phase:   v1alpha1.PhaseRunning,
+				Reason:  "UntilCondition",
+				Message: eval.Info,
+			}
+
+			meta.SetStatusCondition(&cycle.Conditions, metav1.Condition{
+				Type:    v1alpha1.ConditionAllJobsAreScheduled.String(),
+				Status:  metav1.ConditionTrue,
+				Reason:  "UntilCondition",
+				Message: eval.Info,
+			})
+
 			suspend := true
-			cluster.Spec.Suspend = &suspend
+			cr.Spec.Suspend = &suspend
 
 			return cycle
 		}
@@ -55,10 +64,12 @@ func (r *Controller) calculateLifecycle(cluster *v1alpha1.Cluster) v1alpha1.Life
 		// Event used in conjunction with "Until", instance act as a maximum bound.
 		// If the maximum instances are reached before the Until conditions, we assume that
 		// the experiment never converges, and it fails.
-		if cluster.Spec.MaxInstances > 0 && (cluster.Status.ScheduledJobs > cluster.Spec.MaxInstances) {
-			msg := fmt.Sprintf(`Cluster [%s] has reached Max instances [%d] before Until conditions are met.
+		maxJobs := cr.Spec.MaxInstances
+
+		if maxJobs > 0 && (cr.Status.ScheduledJobs > maxJobs) {
+			msg := fmt.Sprintf(`Resource [%s] has reached Max instances [%d] before Until conditions are met.
 			Abort the experiment as it too flaky to accept. You can retry without defining instances.`,
-				cluster.GetName(), cluster.Spec.MaxInstances)
+				cr.GetName(), maxJobs)
 
 			cycle = v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseFailed,
@@ -89,9 +100,9 @@ func (r *Controller) calculateLifecycle(cluster *v1alpha1.Cluster) v1alpha1.Life
 	}
 
 	// Step 4. Check if scheduling goes as expected.
-	queuedJobs := len(cluster.Status.QueuedJobs)
+	queuedJobs := len(cr.Status.QueuedJobs)
 
-	if check.ScheduledJobs(queuedJobs, gs, &cycle) {
+	if check.ScheduledJobs(queuedJobs, gs, &cycle, cr.Spec.Tolerate) {
 		return cycle
 	}
 

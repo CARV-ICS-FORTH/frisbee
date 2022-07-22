@@ -1,0 +1,53 @@
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Template
+metadata:
+  name: whalesay
+spec:
+  inputs:
+    parameters:
+      message: "hello-world"
+  service:
+    containers:
+      - name: app
+        image: docker/whalesay
+        command: [ "tail", "-f", "/dev/null" ]
+
+    # Alter the container's execution, at runtine
+    callables:
+      launch:
+        container: app                                            # Target container
+        command:  [ "cowsay", "{{.Inputs.Parameters.message}}" ]  # Function to call
+
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Scenario
+metadata:
+  name:  remote-calls
+spec:
+  actions:
+    # Provision a set of idle pods
+    - action: Cluster
+      name: idle
+      cluster:
+        templateRef: whalesay
+        inputs:
+          - { message: "I am A" }
+          - { message: "I am B" }
+          - { message: "I am C" }
+          - { message: "I am D" }
+
+    # Invoke callables into the idle pods
+    - action: Call
+      name: group-a
+      depends: { running: [ idle ] }
+      call:
+        callable: launch                              # Function to call
+        services: [idle-1, idle-2, idle-0, idle-1]    # List of target services
+        expect:
+          - stdout: "I am B"
+          - stdout: "I am C"
+          - stdout: "oops .."
+          - stdout: "I am D"
+        tolerate:                                     # Continue despite an error
+          failedJobs: 1

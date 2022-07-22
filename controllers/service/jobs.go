@@ -25,7 +25,6 @@ import (
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
 	"github.com/carv-ics-forth/frisbee/controllers/common/configuration"
-	"github.com/carv-ics-forth/frisbee/controllers/common/labelling"
 	serviceutils "github.com/carv-ics-forth/frisbee/controllers/service/utils"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -61,7 +60,7 @@ func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Service) error {
 	pod.SetName(cr.GetName())
 
 	// make labels visible to the pod
-	labelling.Propagate(&pod, cr)
+	v1alpha1.PropagateLabels(&pod, cr)
 	pod.SetAnnotations(cr.GetAnnotations())
 
 	cr.Spec.PodSpec.DeepCopyInto(&pod.Spec)
@@ -242,11 +241,21 @@ func decoratePod(ctx context.Context, r *Controller, cr *v1alpha1.Service) error
 		resources := make(map[corev1.ResourceName]resource.Quantity)
 
 		if len(req.CPU) > 0 {
-			resources[corev1.ResourceCPU] = resource.MustParse(req.CPU)
+			q, err := resource.ParseQuantity(req.CPU)
+			if err != nil {
+				return errors.Wrapf(err, "CPU resource error")
+			}
+
+			resources[corev1.ResourceCPU] = q
 		}
 
 		if len(req.Memory) > 0 {
-			resources[corev1.ResourceMemory] = resource.MustParse(req.Memory)
+			q, err := resource.ParseQuantity(req.Memory)
+			if err != nil {
+				return errors.Wrapf(err, "Memory resource error")
+			}
+
+			resources[corev1.ResourceMemory] = q
 		}
 
 		cr.Spec.Containers[0].Resources = corev1.ResourceRequirements{
@@ -313,13 +322,13 @@ func constructDiscoveryService(cr *v1alpha1.Service) (*corev1.Service, error) {
 	kubeService.SetName(cr.GetName())
 
 	// make labels visibile to the dns service
-	labelling.Propagate(&kubeService, cr)
+	v1alpha1.PropagateLabels(&kubeService, cr)
 
 	kubeService.Spec.Ports = allPorts
 	kubeService.Spec.ClusterIP = clusterIP
 
 	// bind service to the pod
-	kubeService.Spec.Selector = labelling.GetInstance(cr)
+	kubeService.Spec.Selector = v1alpha1.GetInstance(cr)
 
 	return &kubeService, nil
 }

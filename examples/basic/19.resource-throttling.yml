@@ -22,25 +22,26 @@ spec:
     parameters:
       target: localhost
       duration: "60"
-      exit: "false"
+      memory: ""
+      cpu: ""
+
   service:
+    decorators: # Decorators wrap Pod definitions with some nice features
+      resources:
+        cpu: "{{.Inputs.Parameters.cpu}}"
+        memory: "{{.Inputs.Parameters.memory}}"
     containers:
       - name: app
         image: czero/iperf2
-        command:
-          - /bin/sh   # Run shell
-          - -c        # Read from string
-          - |         # Multi-line str
-            [[ {{.Inputs.Parameters.exit}} == "true" ]] && exit -1
-            
-            iperf -c {{.Inputs.Parameters.target}} -t {{.Inputs.Parameters.duration}} 
+        command: [ iperf ]
+        args: [ "-c", "{{.Inputs.Parameters.target}}", "-t", "{{.Inputs.Parameters.duration}}" ]
 
 
 ---
 apiVersion: frisbee.dev/v1alpha1
 kind: Scenario
 metadata:
-  name: assertions
+  name: resource-throttling
 spec:
   actions:
     - action: Service
@@ -48,19 +49,14 @@ spec:
       service:
         templateRef: iperf.server
 
-    # Scenario Scope
     - action: Cluster
       name: clients
       depends: { running: [ server ] }
-      assert: # Abort the scenario
-          state: '{{.NumSuccessfulJobs}} >= 2'
-      # Cluster Scope
       cluster:
         templateRef: iperf.client
         instances: 10
+        # Create a variety of clients with different resources
         inputs:
-          - { target: server, duration: "10", exit: "true" }
-          - { target: server, duration: "20" }
-          - { target: server, duration: "30" }
-        schedule: # Suspend the cluster
-          cron: "@every 1m"
+          - { target: server, duration: "120", cpu: "0.4", memory: "48Mi"  }
+          - { target: server, duration: "120", cpu: "1", memory: "49Mi"  }
+          - { target: server, duration: "120", cpu: "1.2", memory: "50Mi"  }

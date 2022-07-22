@@ -18,7 +18,6 @@ package utils
 
 import (
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	"github.com/carv-ics-forth/frisbee/controllers/common/labelling"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -28,7 +27,7 @@ type ExpandedSpecBody string
 func NewScheme(caller metav1.Object, inputs *v1alpha1.Inputs, body []byte) (*v1alpha1.Scheme, error) {
 	var scheme v1alpha1.Scheme
 
-	scheme.Scenario = labelling.GetScenario(caller)
+	scheme.Scenario = v1alpha1.GetScenario(caller)
 	scheme.Namespace = caller.GetNamespace()
 	scheme.Inputs = inputs
 	scheme.Spec = body

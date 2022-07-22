@@ -32,13 +32,13 @@ func ValidateExpr(expr *ConditionalExpr) error {
 
 	if expr.HasStateExpr() {
 		if _, err := expr.State.GoValuate(DefaultClassifier{}); err != nil {
-			return errors.Wrapf(err, "Invalid state expr")
+			return errors.Wrapf(err, "wrong state expr")
 		}
 	}
 
 	if expr.HasMetricsExpr() {
 		if _, err := expr.Metrics.Parse(); err != nil {
-			return errors.Wrapf(err, "Invalid metrics expr")
+			return errors.Wrapf(err, "wrong metrics expr")
 		}
 	}
 
@@ -58,6 +58,35 @@ func ValidateScheduler(sch *SchedulerSpec) error {
 	if conditions := sch.Event; conditions != nil {
 		if err := ValidateExpr(conditions); err != nil {
 			return errors.Wrapf(err, "conditions error")
+		}
+	}
+
+	return nil
+}
+
+// ValidatePlacement validates the placement policy. However, because it may involve references to other
+// services, the validation requires a list of the defined actions.
+func ValidatePlacement(policy *PlacementSpec, callIndex map[string]*Action) error {
+
+	// Validate the name of the references nodes.
+	if policy.Nodes != nil {
+		// TODO: add logic
+	}
+
+	// Validate the presence of the references actions.
+	if policy.ConflictsWith != nil {
+		for _, ref := range policy.ConflictsWith {
+
+			action, exists := callIndex[ref]
+			if !exists {
+				return errors.Errorf("referenced action '%s' does not exist. ", ref)
+			}
+
+			if action.ActionType != ActionCluster && action.ActionType != ActionService {
+				return errors.Errorf("referenced action '%s' is type '%s'. Expected '%s|%s'",
+					ref, action.ActionType, ActionCluster, ActionService)
+			}
+
 		}
 	}
 

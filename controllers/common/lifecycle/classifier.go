@@ -20,7 +20,6 @@ import (
 	"sort"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	"github.com/carv-ics-forth/frisbee/controllers/common/labelling"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -234,7 +233,7 @@ func (in Classifier) IsDeletable(jobName string) (client.Object, bool) {
 
 	if job, exists := in.runningJobs[jobName]; exists {
 		// A system service is not deletabled
-		if labelling.GetComponent(job) == labelling.ComponentSUT {
+		if v1alpha1.GetComponent(job) == v1alpha1.ComponentSUT {
 			return job, true
 		}
 	}

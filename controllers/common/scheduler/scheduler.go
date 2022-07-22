@@ -43,14 +43,12 @@ func Schedule(ctx context.Context, r common.Reconciler, cr client.Object, schedu
 		return timeBased(ctx, r, cr, schedule, lastSchedule)
 	}
 
-	// Metrics-based scheduling
-	if schedule.Event.HasMetricsExpr() {
-		return metricsBased(r, cr, lastSchedule)
-	}
+	if !schedule.Event.IsZero() {
+		eval := expressions.Condition{Expr: schedule.Event}
 
-	// State-based scheduling
-	if schedule.Event.HasStateExpr() {
-		return stateBased(ctx, r, cr, schedule.Event.State, state)
+		if !eval.IsTrue(state, cr) {
+			return false, ctrl.Result{}, nil
+		}
 	}
 
 	return true, ctrl.Result{}, nil
@@ -98,46 +96,6 @@ func timeBased(ctx context.Context, r common.Reconciler, cr client.Object, sched
 	}
 
 	return true, ctrl.Result{}, nil
-}
-
-func stateBased(ctx context.Context, r common.Reconciler, cr client.Object, expr v1alpha1.ExprState, state lifecycle.ClassifierReader) (bool, ctrl.Result, error) {
-	info, fired, err := expressions.FiredState(expr, state)
-	if err != nil {
-		ret, err := lifecycle.Failed(ctx, r, cr, errors.Wrapf(err, "state-driven erro [%s]", info))
-
-		return false, ret, err
-	}
-
-	if fired {
-		r.Info("State-Event fired ", "msg", info)
-		return true, ctrl.Result{}, nil
-	}
-
-	// nothing is fired yet
-	return false, ctrl.Result{}, nil
-}
-
-func metricsBased(r common.Reconciler, cr metav1.Object, lastSchedule *metav1.Time) (bool, ctrl.Result, error) {
-	ts, info, fired := expressions.AlertIsFired(cr)
-	if !fired {
-		// nothing is fired yet
-		return false, ctrl.Result{}, nil
-	}
-
-	// If the alert is fired, we must know if the alert is already handled or if it is the first
-	// time that we see it. To differentiate the cases, we compare the alerting time with the last scheduling time.
-	// If the scheduling time is greater than the alerting time, it means that the alert is handled.
-	if lastSchedule.IsZero() || ts.After(lastSchedule.Time) {
-		// Alert is fired, but not handled
-		r.Info("Alert is fired. First seen.", "msg", info)
-
-		return true, ctrl.Result{}, nil
-	}
-
-	// Alert is fired, but not handled
-	r.V(10).Info("Omit Alert. Already handled. ", "msg", info)
-
-	return false, ctrl.Result{}, nil
 }
 
 // getNextScheduleTime figure out the next times that we need to create jobs at (or anything we missed).

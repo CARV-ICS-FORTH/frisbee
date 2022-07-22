@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package labelling
+package v1alpha1
 
 import (
 	"github.com/pkg/errors"
@@ -43,8 +43,8 @@ const (
 	// LabelName points to the scenario
 	LabelName = "scenario.frisbee.dev/name"
 
-	// LabelPartOf points to the action this resource is part of.
-	LabelPartOf = "scenario.frisbee.dev/action"
+	// LabelAction points to the action this resource is part of.
+	LabelAction = "scenario.frisbee.dev/action"
 
 	// LabelCreatedBy points to the controller who created this resource
 	LabelCreatedBy = "scenario.frisbee.dev/created-by"
@@ -62,7 +62,7 @@ func SetScenario(obj *metav1.ObjectMeta, scenario string) {
 }
 
 func SetAction(obj *metav1.ObjectMeta, action string) {
-	metav1.SetMetaDataLabel(obj, LabelPartOf, action)
+	metav1.SetMetaDataLabel(obj, LabelAction, action)
 }
 
 func SetComponent(obj *metav1.ObjectMeta, kind Component) {
@@ -94,10 +94,10 @@ func GetScenario(obj metav1.Object) string {
 
 // GetAction returns the name of the action the object belongs to.
 func GetAction(obj metav1.Object) string {
-	action, ok := obj.GetLabels()[LabelPartOf]
+	action, ok := obj.GetLabels()[LabelAction]
 	if !ok {
 		panic(errors.Errorf("Cannot extract label '%s' from resource '%s'. Labels: %s",
-			LabelPartOf, obj.GetName(), obj.GetLabels()))
+			LabelAction, obj.GetName(), obj.GetLabels()))
 	}
 
 	return action
@@ -130,10 +130,6 @@ func GetComponent(obj metav1.Object) Component {
 	return v
 }
 
-func Propagate(child client.Object, parent client.Object) {
-	child.SetLabels(labels.Merge(child.GetLabels(), parent.GetLabels()))
-}
-
 func GetInstance(obj metav1.Object) map[string]string {
 	instance, ok := obj.GetLabels()[LabelInstance]
 	if !ok {
@@ -142,4 +138,8 @@ func GetInstance(obj metav1.Object) map[string]string {
 	}
 
 	return map[string]string{LabelInstance: instance}
+}
+
+func PropagateLabels(child client.Object, parent client.Object) {
+	child.SetLabels(labels.Merge(child.GetLabels(), parent.GetLabels()))
 }

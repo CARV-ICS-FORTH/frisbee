@@ -29,7 +29,6 @@ import (
 	"github.com/carv-ics-forth/frisbee/controllers/common/configuration"
 	"github.com/carv-ics-forth/frisbee/controllers/common/expressions"
 	"github.com/carv-ics-forth/frisbee/controllers/common/grafana"
-	"github.com/carv-ics-forth/frisbee/controllers/common/labelling"
 	serviceutils "github.com/carv-ics-forth/frisbee/controllers/service/utils"
 	notifier "github.com/golanghelper/grafana-webhook"
 	"github.com/pkg/errors"
@@ -97,9 +96,9 @@ func (r *Controller) installPrometheus(ctx context.Context, t *v1alpha1.Scenario
 	job.SetName(notRandomPrometheusName)
 
 	// set labels
-	labelling.SetScenario(&job.ObjectMeta, t.GetName())
-	labelling.SetAction(&job.ObjectMeta, job.GetName())
-	labelling.SetComponent(&job.ObjectMeta, labelling.ComponentSys)
+	v1alpha1.SetScenario(&job.ObjectMeta, t.GetName())
+	v1alpha1.SetAction(&job.ObjectMeta, job.GetName())
+	v1alpha1.SetComponent(&job.ObjectMeta, v1alpha1.ComponentSys)
 
 	{ // spec
 		fromtemplate := &v1alpha1.GenerateFromTemplate{
@@ -134,9 +133,9 @@ func (r *Controller) installGrafana(ctx context.Context, t *v1alpha1.Scenario, a
 
 	job.SetName(notRandomGrafanaName)
 
-	labelling.SetScenario(&job.ObjectMeta, t.GetName())
-	labelling.SetAction(&job.ObjectMeta, job.GetName())
-	labelling.SetComponent(&job.ObjectMeta, labelling.ComponentSys)
+	v1alpha1.SetScenario(&job.ObjectMeta, t.GetName())
+	v1alpha1.SetAction(&job.ObjectMeta, job.GetName())
+	v1alpha1.SetComponent(&job.ObjectMeta, v1alpha1.ComponentSys)
 
 	{ // spec
 		fromtemplate := &v1alpha1.GenerateFromTemplate{

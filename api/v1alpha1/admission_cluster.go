@@ -35,24 +35,24 @@ var _ webhook.Validator = &Cluster{}
 // log is for logging in this package.
 var clusterlog = logf.Log.WithName("cluster-resource")
 
-func (r *Cluster) SetupWebhookWithManager(mgr ctrl.Manager) error {
+func (in *Cluster) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
+		For(in).
 		Complete()
 }
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *Cluster) Default() {
-	clusterlog.Info("default", "name", r.Name)
+func (in *Cluster) Default() {
+	clusterlog.Info("default", "name", in.Name)
 
 	// TODO(user): fill in your defaulting logic.
 }
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *Cluster) ValidateCreate() error {
-	clusterlog.Info("validate create", "name", r.Name)
+func (in *Cluster) ValidateCreate() error {
+	clusterlog.Info("validate create", "name", in.Name)
 
-	spec := r.Spec
+	spec := in.Spec
 
 	// Tolerate field
 	if tolerate := spec.Tolerate; tolerate != nil {
@@ -70,8 +70,6 @@ func (r *Cluster) ValidateCreate() error {
 
 	// Schedule field
 	if schedule := spec.Schedule; schedule != nil {
-		clusterlog.Info("Validate Scheduler")
-
 		if err := ValidateScheduler(schedule); err != nil {
 			return errors.Wrapf(err, "until error")
 		}
@@ -80,24 +78,27 @@ func (r *Cluster) ValidateCreate() error {
 	// Suspend Field
 	if suspend := spec.Suspend; suspend != nil {
 		if *suspend {
-			return errors.Errorf("Cannot create a call that is already suspended")
+			return errors.Errorf("Cannot create a cluster that is already suspended")
 		}
 	}
+
+	// Placement Field
+	// -- Validated in the scenario, because it involves references to other actions
 
 	return nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *Cluster) ValidateUpdate(old runtime.Object) error {
-	clusterlog.Info("validate update", "name", r.Name)
+func (in *Cluster) ValidateUpdate(old runtime.Object) error {
+	clusterlog.Info("validate update", "name", in.Name)
 
 	// TODO(user): fill in your validation logic upon object update.
 	return nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *Cluster) ValidateDelete() error {
-	clusterlog.Info("validate delete", "name", r.Name)
+func (in *Cluster) ValidateDelete() error {
+	clusterlog.Info("validate delete", "name", in.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.
 	return nil
