@@ -33,7 +33,7 @@ var _ webhook.Defaulter = &Cluster{}
 var _ webhook.Validator = &Cluster{}
 
 // log is for logging in this package.
-var clusterlog = logf.Log.WithName("cluster-resource")
+var clusterlog = logf.Log.WithName("cluster-hook")
 
 func (in *Cluster) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
@@ -43,14 +43,14 @@ func (in *Cluster) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
 func (in *Cluster) Default() {
-	clusterlog.Info("default", "name", in.Name)
+	clusterlog.V(5).Info("default", "name", in.Name)
 
 	// TODO(user): fill in your defaulting logic.
 }
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (in *Cluster) ValidateCreate() error {
-	clusterlog.Info("validate create", "name", in.Name)
+	clusterlog.V(5).Info("validate create", "name", in.Name)
 
 	spec := in.Spec
 
@@ -90,7 +90,7 @@ func (in *Cluster) ValidateCreate() error {
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
 func (in *Cluster) ValidateUpdate(old runtime.Object) error {
-	clusterlog.Info("validate update", "name", in.Name)
+	clusterlog.V(5).Info("validate update", "name", in.Name)
 
 	// TODO(user): fill in your validation logic upon object update.
 	return nil
@@ -98,7 +98,7 @@ func (in *Cluster) ValidateUpdate(old runtime.Object) error {
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
 func (in *Cluster) ValidateDelete() error {
-	clusterlog.Info("validate delete", "name", in.Name)
+	clusterlog.V(5).Info("validate delete", "name", in.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.
 	return nil

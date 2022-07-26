@@ -200,8 +200,10 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	if cr.Status.Phase.Is(v1alpha1.PhaseRunning) ||
 		(cr.Spec.Until == nil && (nextJob >= len(cr.Status.QueuedJobs))) {
-		r.Logger.Info("All jobs are scheduled. Nothing else to do. Waiting for something to happen",
+
+		r.Logger.Info(".. Awaiting",
 			"name", cr.GetName(),
+			cr.Status.Reason, cr.Status.Message,
 		)
 
 		return common.Stop()
@@ -346,15 +348,13 @@ func (r *Controller) HasSucceed(ctx context.Context, cr *v1alpha1.Call) error {
 }
 
 func (r *Controller) HasFailed(ctx context.Context, cr *v1alpha1.Call) error {
-	r.Logger.Error(errors.New(cr.Status.Reason), cr.Status.Message)
-
-	r.Logger.Info("CleanOnFailure",
-		"kind", reflect.TypeOf(cr),
+	r.Logger.Error(errors.New("Resource has failed"), "CleanOnFailure",
 		"name", cr.GetName(),
 		"successfulJobs", r.view.ListSuccessfulJobs(),
 		"runningJobs", r.view.ListRunningJobs(),
 		"pendingJobs", r.view.ListPendingJobs(),
-	)
+		"reason", cr.Status.Reason,
+		"message", cr.Status.Message)
 
 	// Remove the non-failed components. Leave the failed jobs and system jobs for postmortem analysis.
 	for _, job := range r.view.GetPendingJobs() {

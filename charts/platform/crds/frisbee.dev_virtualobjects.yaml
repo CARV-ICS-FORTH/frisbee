@@ -18,9 +18,9 @@ spec:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: VirtualObject is a wrapper for jobs that do not actually create
-          something on the system. For example, Deletion jobs. These jobs do not have
-          a dedicated controller, but their fields are set manually.
+        description: VirtualObject is a CRD without a dedicated controller. Practically,
+          it is just an entry in the Kubernetes API that is used as placeholder for
+          action like Delete and Call.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation

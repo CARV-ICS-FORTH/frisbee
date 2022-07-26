@@ -27,8 +27,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func GetServiceSpec(ctx context.Context, c client.Client, caller metav1.Object, fromTemplate v1alpha1.GenerateFromTemplate) (v1alpha1.ServiceSpec, error) {
-	template, err := templateutils.GetTemplate(ctx, c, caller, fromTemplate.TemplateRef)
+func GetServiceSpec(ctx context.Context, c client.Client, parent metav1.Object, fromTemplate v1alpha1.GenerateFromTemplate) (v1alpha1.ServiceSpec, error) {
+	template, err := templateutils.GetTemplate(ctx, c, parent, fromTemplate.TemplateRef)
 	if err != nil {
 		return v1alpha1.ServiceSpec{}, errors.Wrapf(err, "template [%s] is not installed", fromTemplate.TemplateRef)
 	}
@@ -39,7 +39,7 @@ func GetServiceSpec(ctx context.Context, c client.Client, caller metav1.Object, 
 		return v1alpha1.ServiceSpec{}, errors.Errorf("cannot marshal service of %s", fromTemplate.TemplateRef)
 	}
 
-	scheme, err := templateutils.NewScheme(caller, template.Spec.Inputs, specBody)
+	scheme, err := templateutils.NewScheme(parent, template.Spec.Inputs, specBody)
 	if err != nil {
 		return v1alpha1.ServiceSpec{}, errors.Wrapf(err, "cannot get scheme for '%s'", fromTemplate.TemplateRef)
 	}
@@ -53,8 +53,8 @@ func GetServiceSpec(ctx context.Context, c client.Client, caller metav1.Object, 
 	return spec, nil
 }
 
-func GetServiceSpecList(ctx context.Context, c client.Client, caller metav1.Object, fromTemplate v1alpha1.GenerateFromTemplate) ([]v1alpha1.ServiceSpec, error) {
-	template, err := templateutils.GetTemplate(ctx, c, caller, fromTemplate.TemplateRef)
+func GetServiceSpecList(ctx context.Context, c client.Client, parent metav1.Object, fromTemplate v1alpha1.GenerateFromTemplate) ([]v1alpha1.ServiceSpec, error) {
+	template, err := templateutils.GetTemplate(ctx, c, parent, fromTemplate.TemplateRef)
 	if err != nil {
 		return nil, errors.Wrapf(err, "template [%s] is not installed", fromTemplate.TemplateRef)
 	}
@@ -69,7 +69,7 @@ func GetServiceSpecList(ctx context.Context, c client.Client, caller metav1.Obje
 	specs := make([]v1alpha1.ServiceSpec, 0, fromTemplate.MaxInstances)
 
 	if err := fromTemplate.IterateInputs(func(userInputs map[string]string) error {
-		scheme, err := templateutils.NewScheme(caller, template.Spec.Inputs, specBody)
+		scheme, err := templateutils.NewScheme(parent, template.Spec.Inputs, specBody)
 		if err != nil {
 			return errors.Wrapf(err, "cannot get scheme for '%s'", fromTemplate.TemplateRef)
 		}

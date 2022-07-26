@@ -617,28 +617,6 @@ spec:
                   - type
                   type: object
                 type: array
-              executedActions:
-                additionalProperties:
-                  description: ConditionalExpr is a source of information about whether
-                    the state of the workflow after a given time is correct or not.
-                    This is needed because some scenarios may run in infinite-horizons.
-                  properties:
-                    metrics:
-                      description: 'Metrics set a Grafana alert that will be triggered
-                        once the condition is met. Parsing: Grafana URL: http://grafana/d/A2EjFbsMk/ycsb-services?editPanel=86
-                        metrics: A2EjFbsMk/86/Average (Panel/Dashboard/Metric)'
-                      nullable: true
-                      type: string
-                    state:
-                      description: State describe the runtime condition that should
-                        be met after the action has been executed Shall be defined
-                        using .Lifecycle() methods. The methods account only jobs
-                        that are managed by the object.
-                      nullable: true
-                      type: string
-                  type: object
-                description: ExecutedActions is a list of executed actions.
-                type: object
               grafanaEndpoint:
                 description: GrafanaEndpoint points to the local Grafana instance
                 type: string
@@ -658,6 +636,12 @@ spec:
                 description: Reason is A brief CamelCase message indicating details
                   about why the service is in this Phase. e.g. 'Evicted'
                 type: string
+              scheduledJobs:
+                description: ScheduledJobs is a list of references to the names of
+                  executed actions.
+                items:
+                  type: string
+                type: array
             type: object
         type: object
     served: true

@@ -1,0 +1,71 @@
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Template
+metadata:
+  name: iperf.server
+spec:
+  service:
+    containers:
+      - name: app
+        image: czero/iperf2
+        command: [ iperf ]
+        args: [ "-s", "-f", "m", "-i", "5" ]
+
+
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Template
+metadata:
+  name: iperf.client
+spec:
+  inputs:
+    parameters:
+      target: localhost
+      duration: "500"
+  service:
+    containers:
+      - name: app
+        image: czero/iperf2
+        command: [ iperf ]
+        args: [ "-c", "{{.Inputs.Parameters.target}}", "-t", "{{.Inputs.Parameters.duration}}" ]
+
+
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Scenario
+metadata:
+  name: deletions
+spec:
+  actions:
+    - action: Service
+      name: server
+      service:
+        templateRef: iperf.server
+
+    # Create a first cluster
+    - action: Cluster
+      name: group-a
+      depends: { running: [ server ] }
+      cluster:
+        templateRef: iperf.client
+        instances: 3
+        inputs:
+          - { target: server }
+
+    # Create a second cluster
+    - action: Cluster
+      name: group-b
+      depends: { running: [ server ] }
+      cluster:
+        templateRef: iperf.client
+        instances: 3
+        inputs:
+          - { target: server }
+
+    # Delete the second cluster.
+    - action: Delete
+      name: delete-group-b
+      depends: { running: [ group-b ],  after: "30s" }
+      delete: # references jobs should be action.
+        jobs: [ group-b ]
+

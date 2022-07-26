@@ -29,6 +29,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
@@ -60,6 +61,8 @@ func RequeueWithError(err error) (ctrl.Result, error) {
 type Reconciler interface {
 	GetClient() client.Client
 	GetCache() cache.Cache
+
+	GetEventRecorderFor(name string) record.EventRecorder
 
 	logr.Logger
 
@@ -153,9 +156,12 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 		controllerutil.RemoveFinalizer(obj, r.Finalizer())
 
 		if err := Update(ctx, r, obj); err != nil {
-			r.Error(err, "resource deletion error")
+			r.Error(err, "cannot remove finalizer. Retry after 5 seconds",
+				"name", obj.GetName(),
+				"finalizer", r.Finalizer(),
+			)
 
-			return RequeueAfter(time.Second)
+			return RequeueAfter(5 * time.Second)
 		}
 
 		// Call reconciliation as the item is being deleted
@@ -177,8 +183,8 @@ func Update(ctx context.Context, r Reconciler, obj client.Object) error {
 	r.Info("OO UpdtMeta",
 		"kind", reflect.TypeOf(obj),
 		"name", obj.GetName(),
-		"caller", debug.GetCallerLine(),
 		"version", obj.GetResourceVersion(),
+		"caller", debug.GetCallerLine(),
 	)
 
 	return updateError
@@ -193,8 +199,8 @@ func UpdateStatus(ctx context.Context, r Reconciler, obj client.Object) error {
 	r.Info("OO UpdtStatus",
 		"kind", reflect.TypeOf(obj),
 		"name", obj.GetName(),
-		"caller", debug.GetCallerLine(),
 		"version", obj.GetResourceVersion(),
+		"caller", debug.GetCallerLine(),
 	)
 
 	return updateError
@@ -207,8 +213,8 @@ func Create(ctx context.Context, r Reconciler, parent, child client.Object) erro
 	// owner labels are used by the selectors.
 	// workflow labels are used to select only objects that belong to this experiment.
 	// used to narrow down the scope of fault injection in a common namespace
-	v1alpha1.SetCreatedBy(child, parent)
-	v1alpha1.SetInstance(child)
+	v1alpha1.SetCreatedByLabel(child, parent)
+	v1alpha1.SetInstanceLabel(child)
 
 	child.SetNamespace(parent.GetNamespace())
 
@@ -224,8 +230,8 @@ func Create(ctx context.Context, r Reconciler, parent, child client.Object) erro
 	r.Info("++ Create",
 		"kind", reflect.TypeOf(child),
 		"name", child.GetName(),
-		"caller", debug.GetCallerLine(),
 		"version", child.GetResourceVersion(),
+		"caller", debug.GetCallerLine(),
 	)
 
 	// If err is nil, Wrapf returns nil.
@@ -253,8 +259,8 @@ func Delete(ctx context.Context, r Reconciler, obj client.Object) {
 	r.Info("-- Delete",
 		"kind", reflect.TypeOf(obj),
 		"name", obj.GetName(),
-		"caller", debug.GetCallerLine(),
 		"version", obj.GetResourceVersion(),
+		"caller", debug.GetCallerLine(),
 	)
 
 	// propagation := metav1.DeletePropagationForeground

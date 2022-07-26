@@ -28,6 +28,8 @@ import (
 	"github.com/carv-ics-forth/frisbee/controllers/service"
 	"github.com/carv-ics-forth/frisbee/controllers/template"
 	"github.com/pkg/errors"
+	"go.uber.org/zap/zapcore"
+
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -68,6 +70,9 @@ func main() {
 		metricsAddr          string
 		enableLeaderElection bool
 		probeAddr            string
+
+		// logger
+		verbose int
 	)
 
 	flag.StringVar(&certDir, "cert-dir", "/tmp/k8s-webhook-server/serving-certs/", "Points to the directory with webhook certificates.")
@@ -87,8 +92,11 @@ func main() {
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
 
+	flag.IntVar(&verbose, "verbosity", int(zapcore.InfoLevel), "A verbosity Level is a logging priority. Higher levels are more important.")
+
 	opts := zap.Options{
 		Development: true,
+		Level:       zapcore.Level(verbose),
 	}
 
 	opts.BindFlags(flag.CommandLine)

@@ -95,6 +95,8 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		client's parses will return the following error: "Object 'Kind' is missing in 'unstructured object has no kind'"
 		To avoid that, we ignore errors if the map is empty -- yielding the same behavior as empty, but valid objects.
 	*/
+
+	// TODO: Make it to support multiple failures
 	var fault GenericFault
 	if err := getRawManifest(&cr, &fault); err != nil {
 		return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot get fault type for chaos '%s'", cr.GetName()))
@@ -144,9 +146,13 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	if cr.Status.Phase.Is(v1alpha1.PhaseFailed) {
-		r.Logger.Error(errors.New(cr.Status.Lifecycle.Reason),
-			"chaos failed",
-			"chaos", cr.GetName())
+		r.Logger.Error(errors.New("Resource has failed"), "CleanOnFailure",
+			"name", cr.GetName(),
+			// "successfulJobs", r.view.ListSuccessfulJobs(),
+			// "runningJobs", r.view.ListRunningJobs(),
+			// "pendingJobs", r.view.ListPendingJobs(),
+			"reason", cr.Status.Reason,
+			"message", cr.Status.Message)
 
 		return common.Stop()
 	}

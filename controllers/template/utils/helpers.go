@@ -24,11 +24,11 @@ import (
 
 type ExpandedSpecBody string
 
-func NewScheme(caller metav1.Object, inputs *v1alpha1.Inputs, body []byte) (*v1alpha1.Scheme, error) {
+func NewScheme(parent metav1.Object, inputs *v1alpha1.Inputs, body []byte) (*v1alpha1.Scheme, error) {
 	var scheme v1alpha1.Scheme
 
-	scheme.Scenario = v1alpha1.GetScenario(caller)
-	scheme.Namespace = caller.GetNamespace()
+	scheme.Scenario = v1alpha1.GetScenarioLabel(parent)
+	scheme.Namespace = parent.GetNamespace()
 	scheme.Inputs = inputs
 	scheme.Spec = body
 

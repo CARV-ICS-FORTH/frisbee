@@ -21,7 +21,7 @@ import (
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common/expressions"
-	"github.com/carv-ics-forth/frisbee/controllers/common/lifecycle/check"
+	"github.com/carv-ics-forth/frisbee/controllers/common/lifecycle"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -102,7 +102,7 @@ func (r *Controller) calculateLifecycle(cr *v1alpha1.Cluster) v1alpha1.Lifecycle
 	// Step 4. Check if scheduling goes as expected.
 	queuedJobs := len(cr.Status.QueuedJobs)
 
-	if check.ScheduledJobs(queuedJobs, gs, &cycle, cr.Spec.Tolerate) {
+	if lifecycle.GroupedJobs(queuedJobs, gs, &cycle, cr.Spec.Tolerate) {
 		return cycle
 	}
 

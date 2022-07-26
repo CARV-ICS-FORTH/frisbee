@@ -34,7 +34,7 @@ var _ webhook.Defaulter = &Template{}
 var _ webhook.Validator = &Template{}
 
 // log is for logging in this package.
-var templatelog = logf.Log.WithName("template-resource")
+var templatelog = logf.Log.WithName("template-hook")
 
 func (in *Template) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
@@ -44,14 +44,14 @@ func (in *Template) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
 func (in *Template) Default() {
-	templatelog.Info("default", "name", in.Name)
+	templatelog.V(5).Info("default", "name", in.Name)
 
 	// TODO(user): fill in your defaulting logic.
 }
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (in *Template) ValidateCreate() error {
-	templatelog.Info("validate create", "name", in.Name)
+	templatelog.V(5).Info("validate create", "name", in.Name)
 
 	{ // Ensure the template is ok and there are no brackets missing.
 		specBody, err := json.Marshal(in.Spec)
@@ -89,7 +89,7 @@ func (in *Template) ValidateCreate() error {
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
 func (in *Template) ValidateUpdate(old runtime.Object) error {
-	templatelog.Info("validate update", "name", in.Name)
+	templatelog.V(5).Info("validate update", "name", in.Name)
 
 	// TODO(user): fill in your validation logic upon object update.
 	return nil
@@ -97,7 +97,7 @@ func (in *Template) ValidateUpdate(old runtime.Object) error {
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
 func (in *Template) ValidateDelete() error {
-	templatelog.Info("validate delete", "name", in.Name)
+	templatelog.V(5).Info("validate delete", "name", in.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.
 	return nil

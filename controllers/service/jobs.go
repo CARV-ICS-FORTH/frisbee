@@ -328,7 +328,7 @@ func constructDiscoveryService(cr *v1alpha1.Service) (*corev1.Service, error) {
 	kubeService.Spec.ClusterIP = clusterIP
 
 	// bind service to the pod
-	kubeService.Spec.Selector = v1alpha1.GetInstance(cr)
+	kubeService.Spec.Selector = v1alpha1.GetInstanceLabel(cr)
 
 	return &kubeService, nil
 }

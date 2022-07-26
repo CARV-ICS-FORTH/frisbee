@@ -96,9 +96,9 @@ func (r *Controller) installPrometheus(ctx context.Context, t *v1alpha1.Scenario
 	job.SetName(notRandomPrometheusName)
 
 	// set labels
-	v1alpha1.SetScenario(&job.ObjectMeta, t.GetName())
-	v1alpha1.SetAction(&job.ObjectMeta, job.GetName())
-	v1alpha1.SetComponent(&job.ObjectMeta, v1alpha1.ComponentSys)
+	v1alpha1.SetScenarioLabel(&job.ObjectMeta, t.GetName())
+	v1alpha1.SetActionLabel(&job.ObjectMeta, job.GetName())
+	v1alpha1.SetComponentLabel(&job.ObjectMeta, v1alpha1.ComponentSys)
 
 	{ // spec
 		fromtemplate := &v1alpha1.GenerateFromTemplate{
@@ -133,9 +133,9 @@ func (r *Controller) installGrafana(ctx context.Context, t *v1alpha1.Scenario, a
 
 	job.SetName(notRandomGrafanaName)
 
-	v1alpha1.SetScenario(&job.ObjectMeta, t.GetName())
-	v1alpha1.SetAction(&job.ObjectMeta, job.GetName())
-	v1alpha1.SetComponent(&job.ObjectMeta, v1alpha1.ComponentSys)
+	v1alpha1.SetScenarioLabel(&job.ObjectMeta, t.GetName())
+	v1alpha1.SetActionLabel(&job.ObjectMeta, job.GetName())
+	v1alpha1.SetComponentLabel(&job.ObjectMeta, v1alpha1.ComponentSys)
 
 	{ // spec
 		fromtemplate := &v1alpha1.GenerateFromTemplate{
@@ -338,7 +338,7 @@ func (r *Controller) CreateWebhookServer(ctx context.Context, alertingPort int) 
 			r.Logger.Info("Shutdown signal received, waiting for webhook server to finish")
 
 		case err := <-idleConnsClosed:
-			r.Logger.Error(err, "Error received. Shutting down the webhook server")
+			r.Logger.Error(err, "Shutting down the webhook server")
 		}
 
 		// need a new background context for the graceful shutdown. the ctx is already cancelled.
@@ -346,7 +346,7 @@ func (r *Controller) CreateWebhookServer(ctx context.Context, alertingPort int) 
 		defer cancel()
 
 		if err := srv.Shutdown(gracefulTimeout); err != nil {
-			r.Logger.Error(err, "error shutting down the webhook server")
+			r.Logger.Error(err, "shutting down the webhook server")
 		}
 		close(idleConnsClosed)
 	}()

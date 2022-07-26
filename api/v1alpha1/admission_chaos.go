@@ -23,8 +23,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
+// +kubebuilder:webhook:path=/mutate-frisbee-dev-v1alpha1-chaos,mutating=true,failurePolicy=fail,sideEffects=None,groups=frisbee.dev,resources=chaos,verbs=create;update,versions=v1alpha1,name=mchaos.kb.io,admissionReviewVersions={v1,v1alpha1}
+
+var _ webhook.Defaulter = &Chaos{}
+
+// TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
+// +kubebuilder:webhook:path=/validate-frisbee-dev-v1alpha1-chaos,mutating=false,failurePolicy=fail,sideEffects=None,groups=frisbee.dev,resources=chaos,verbs=create;update,versions=v1alpha1,name=vchaos.kb.io,admissionReviewVersions={v1,v1alpha1}
+
+var _ webhook.Validator = &Chaos{}
+
 // log is for logging in this package.
-var chaoslog = logf.Log.WithName("chaos-resource")
+var chaoslog = logf.Log.WithName("chaos-hook")
 
 func (r *Chaos) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
@@ -34,25 +43,16 @@ func (r *Chaos) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
-// +kubebuilder:webhook:path=/mutate-frisbee-dev-v1alpha1-chaos,mutating=true,failurePolicy=fail,sideEffects=None,groups=frisbee.dev,resources=chaos,verbs=create;update,versions=v1alpha1,name=mchaos.kb.io,admissionReviewVersions={v1,v1alpha1}
-
-var _ webhook.Defaulter = &Chaos{}
-
 // Default implements webhook.Defaulter so a webhook will be registered for the type
 func (r *Chaos) Default() {
-	chaoslog.Info("default", "name", r.Name)
+	chaoslog.V(5).Info("default", "name", r.Name)
 
 	// TODO(user): fill in your defaulting logic.
 }
 
-// TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// +kubebuilder:webhook:path=/validate-frisbee-dev-v1alpha1-chaos,mutating=false,failurePolicy=fail,sideEffects=None,groups=frisbee.dev,resources=chaos,verbs=create;update,versions=v1alpha1,name=vchaos.kb.io,admissionReviewVersions={v1,v1alpha1}
-
-var _ webhook.Validator = &Chaos{}
-
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (r *Chaos) ValidateCreate() error {
-	chaoslog.Info("validate create", "name", r.Name)
+	chaoslog.V(5).Info("validate create", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object creation.
 	return nil
@@ -60,7 +60,7 @@ func (r *Chaos) ValidateCreate() error {
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
 func (r *Chaos) ValidateUpdate(old runtime.Object) error {
-	chaoslog.Info("validate update", "name", r.Name)
+	chaoslog.V(5).Info("validate update", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object update.
 	return nil
@@ -68,7 +68,7 @@ func (r *Chaos) ValidateUpdate(old runtime.Object) error {
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
 func (r *Chaos) ValidateDelete() error {
-	chaoslog.Info("validate delete", "name", r.Name)
+	chaoslog.V(5).Info("validate delete", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.
 	return nil

@@ -20,11 +20,10 @@ import (
 	"time"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	"github.com/carv-ics-forth/frisbee/controllers/common/lifecycle"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// GetNextLogicalJob returns a list of jobs that meet the logical and time constraints.
+// NextJobs returns a list of jobs that meet the logical and time constraints.
 // That is, either the job has no dependencies, or the dependencies are met.
 //
 // It is possible for the logical dependencies to be met, but the timeout not yet expired.
@@ -32,12 +31,14 @@ import (
 // However, if there are no actions, the workflow will call the reconciliation cycle, and we will miss the
 // next timeout. To handle this scenario, we have to requeue the request with the given duration.
 // In this case, the given duration is the nearest expected timeout.
-func GetNextLogicalJob(timebase metav1.Time, all []v1alpha1.Action, gs lifecycle.ClassifierReader, executed map[string]v1alpha1.ConditionalExpr) ([]v1alpha1.Action, time.Time) {
-	var nextCycle time.Time
+func (r *Controller) NextJobs(cr *v1alpha1.Scenario) ([]v1alpha1.Action, time.Time) {
+	timebase := cr.GetCreationTimestamp()
+	all := cr.Spec.Actions
+	scheduled := cr.Status.ScheduledJobs
 
 	successOK := func(deps *v1alpha1.WaitSpec) bool {
 		for _, dep := range deps.Success {
-			if !gs.IsSuccessful(dep) {
+			if !r.view.IsSuccessful(dep) {
 				return false
 			}
 		}
@@ -47,13 +48,15 @@ func GetNextLogicalJob(timebase metav1.Time, all []v1alpha1.Action, gs lifecycle
 
 	runningOK := func(deps *v1alpha1.WaitSpec) bool {
 		for _, dep := range deps.Running {
-			if !gs.IsRunning(dep) {
+			if !r.view.IsRunning(dep) {
 				return false
 			}
 		}
 
 		return true
 	}
+
+	var nextCycle time.Time
 
 	timeOK := func(deps *v1alpha1.WaitSpec) bool {
 		if dur := deps.After; dur != nil {
@@ -78,13 +81,11 @@ func GetNextLogicalJob(timebase metav1.Time, all []v1alpha1.Action, gs lifecycle
 		return true
 	}
 
-	var schedule []v1alpha1.Action
+	var runNext []v1alpha1.Action
 
-	for _, action := range all {
-		if _, ok := executed[action.Name]; ok {
-			// Not starting action because it is already ok.
-			continue
-		}
+	// continue from the last scheduled action
+	for i := len(scheduled); i < len(all); i++ {
+		action := all[i]
 
 		if deps := action.DependsOn; deps != nil {
 			if !successOK(deps) || !runningOK(deps) || !timeOK(deps) {
@@ -93,8 +94,8 @@ func GetNextLogicalJob(timebase metav1.Time, all []v1alpha1.Action, gs lifecycle
 			}
 		}
 
-		schedule = append(schedule, action)
+		runNext = append(runNext, action)
 	}
 
-	return schedule, nextCycle
+	return runNext, nextCycle
 }

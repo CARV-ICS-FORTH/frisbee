@@ -23,8 +23,8 @@ import (
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-// VirtualObject is a wrapper for jobs that do not actually create something on the system. For example, Deletion jobs.
-// These jobs do not have a dedicated controller, but their fields are set manually.
+// VirtualObject is a CRD without a dedicated controller. Practically, it is just an entry in the Kubernetes API
+// that is used as placeholder for action like Delete and Call.
 type VirtualObject struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

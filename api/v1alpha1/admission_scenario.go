@@ -38,7 +38,7 @@ var _ webhook.Defaulter = &Scenario{}
 var _ webhook.Validator = &Scenario{}
 
 // log is for logging in this package.
-var scenariolog = logf.Log.WithName("scenario-resource")
+var scenariolog = logf.Log.WithName("scenario-hook")
 
 func (in *Scenario) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
@@ -48,7 +48,7 @@ func (in *Scenario) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
 func (in *Scenario) Default() {
-	scenariolog.Info("default", "name", in.Name)
+	scenariolog.V(5).Info("default", "name", in.Name)
 
 	// TODO(user): fill in your defaulting logic.
 }
@@ -202,11 +202,11 @@ func CheckAction(action *Action, references map[string]*Action) error {
 		for _, job := range action.EmbedActions.Delete.Jobs {
 			target, exists := references[job]
 			if !exists {
-				return errors.Errorf("job [%s] of action [%s] does not exist", job, action.Name)
+				return errors.Errorf("referenced job '%s' does not exist", job)
 			}
 
 			if target.ActionType == ActionDelete {
-				return errors.Errorf("cycle deletion. job [%s] of action [%s] is a deletion job", job, action.Name)
+				return errors.Errorf("cycle deletion. referected job '%s' should not be a deletion job", job)
 			}
 		}
 
@@ -229,7 +229,7 @@ func CheckAction(action *Action, references map[string]*Action) error {
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
 func (in *Scenario) ValidateUpdate(old runtime.Object) error {
-	scenariolog.Info("validate update", "name", in.Name)
+	scenariolog.V(5).Info("validate update", "name", in.Name)
 
 	// TODO(user): fill in your validation logic upon object update.
 	return nil
@@ -237,7 +237,7 @@ func (in *Scenario) ValidateUpdate(old runtime.Object) error {
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
 func (in *Scenario) ValidateDelete() error {
-	scenariolog.Info("validate delete", "name", in.Name)
+	scenariolog.V(5).Info("validate delete", "name", in.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.
 	return nil
