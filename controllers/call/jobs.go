@@ -22,10 +22,9 @@ import (
 	"regexp"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	"github.com/carv-ics-forth/frisbee/controllers/common"
+	"github.com/carv-ics-forth/frisbee/controllers/common/lifecycle"
 	"github.com/carv-ics-forth/frisbee/pkg/structure"
 	"github.com/pkg/errors"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -60,23 +59,7 @@ func (r *Controller) constructJobSpecList(ctx context.Context, cr *v1alpha1.Call
 }
 
 func (r *Controller) callJob(ctx context.Context, cr *v1alpha1.Call, i int) error {
-	var vobject v1alpha1.VirtualObject
-	// Call normally does not return anything. This however would break all the pipeline for
-	// managing dependencies between jobs. For that, we return a dummy virtual object without dedicated controller.
-	// Delete normally does not return anything. This however would break all the pipeline for
-	// managing dependencies between jobs. For that, we return a dummy virtual object without dedicated controller.
-	// FIXME: if the call fails, this object will be re-created, and the call will failed with an "existing object" error.
-	{
-		vobject.SetGroupVersionKind(v1alpha1.GroupVersion.WithKind("VirtualObject"))
-		vobject.SetName(fmt.Sprintf("%s-%d", cr.GetName(), i))
-
-		v1alpha1.PropagateLabels(&vobject, cr)
-
-		if err := common.Create(ctx, r, cr, &vobject); err != nil {
-			return errors.Wrapf(err, "cannot create virtual object")
-		}
-	}
-
+	jobName := fmt.Sprintf("%s-%d", cr.GetName(), i)
 	serviceName := cr.Spec.Services[i]
 	callable := cr.Status.QueuedJobs[i]
 
@@ -88,20 +71,15 @@ func (r *Controller) callJob(ctx context.Context, cr *v1alpha1.Call, i int) erro
 		Name:      serviceName,
 	}
 
-	// Do some hacks to abort the call if the main context is cancelled.
-	quit := make(chan error)
-	var jobError error
-
-	go func() {
-		r.GetEventRecorderFor(vobject.GetName()).Event(cr, corev1.EventTypeNormal, "CallBegin", serviceName)
-
-		defer close(quit)
-
+	// Call normally does not return anything. This however would break all the pipeline for
+	// managing dependencies between jobs. For that, we return a dummy virtual object without dedicated controller.
+	// Delete normally does not return anything. This however would break all the pipeline for
+	// managing dependencies between jobs. For that, we return a dummy virtual object without dedicated controller.
+	// FIXME: if the call fails, this object will be re-created, and the call will failed with an "existing object" error.
+	return lifecycle.VExec(ctx, r, cr, jobName, func() error {
 		res, err := r.executor.Exec(pod, callable.Container, callable.Command, true)
 		if err != nil {
-			quit <- errors.Wrapf(err, "remote command has failed. Out: %s, Err: %s", res.Stdout, res.Stderr)
-
-			return
+			return errors.Wrapf(err, "remote command has failed. Out: %s, Err: %s", res.Stdout, res.Stderr)
 		}
 
 		r.Logger.V(2).Info("Call Output",
@@ -121,59 +99,27 @@ func (r *Controller) callJob(ctx context.Context, cr *v1alpha1.Call, i int) erro
 			if expect.Stdout != nil {
 				matchStdout, err := regexp.MatchString(*expect.Stdout, res.Stdout)
 				if err != nil {
-					quit <- errors.Wrapf(err, "regex error")
-
-					return
+					return errors.Wrapf(err, "regex error")
 				}
 
 				if !matchStdout {
-					quit <- errors.Errorf("Mismatched stdout. Expected '%s' but got '%s'", *expect.Stdout, res.Stdout)
-
-					return
+					return errors.Errorf("Mismatched stdout. Expected '%s' but got '%s'", *expect.Stdout, res.Stdout)
 				}
 			}
 
 			if expect.Stderr != nil {
 				matchStderr, err := regexp.MatchString(*expect.Stderr, res.Stderr)
 				if err != nil {
-					quit <- errors.Wrapf(err, "regex error")
-
-					return
+					return errors.Wrapf(err, "regex error")
 				}
 
 				if !matchStderr {
-					quit <- errors.Errorf("Mismatched stderr. Expected '%s' but got '%s'", *expect.Stderr, res.Stderr)
-
-					return
+					return errors.Errorf("Mismatched stderr. Expected '%s' but got '%s'", *expect.Stderr, res.Stderr)
 				}
 			}
+
 		}
-	}()
 
-	select {
-	case <-ctx.Done():
-		jobError = ctx.Err()
-	case jobError = <-quit:
-	}
-
-	if jobError != nil {
-		r.GetEventRecorderFor(vobject.GetName()).Event(cr, corev1.EventTypeWarning, "CallFailed", serviceName)
-
-		vobject.SetReconcileStatus(v1alpha1.Lifecycle{
-			Phase:   v1alpha1.PhaseFailed,
-			Reason:  "CallJobHasFailed",
-			Message: fmt.Sprintf("call '%s/%s' error: %s", serviceName, callable, jobError),
-		})
-	} else {
-		r.GetEventRecorderFor(vobject.GetName()).Event(cr, corev1.EventTypeNormal, "CallSuccess", serviceName)
-
-		vobject.SetReconcileStatus(v1alpha1.Lifecycle{
-			Phase:   v1alpha1.PhaseSuccess,
-			Reason:  "CallJobSuccess",
-			Message: fmt.Sprintf("call '%s/%s'", serviceName, callable),
-		})
-	}
-
-	// update the status of the mockup. This will be captured by the lifecycle.
-	return common.UpdateStatus(ctx, r, &vobject)
+		return nil
+	})
 }

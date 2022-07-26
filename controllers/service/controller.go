@@ -154,7 +154,10 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	if cr.Status.Phase == v1alpha1.PhaseFailed {
-		r.Logger.Error(errors.New(cr.Status.Reason), cr.Status.Message)
+		r.Logger.Error(errors.New("Resource has failed"), "CleanOnFailure",
+			"name", cr.GetName(),
+			"reason", cr.Status.Reason,
+			"message", cr.Status.Message)
 
 		return common.Stop()
 	}

@@ -57,32 +57,32 @@ const (
 	LabelInstance = "scenario.frisbee.dev/instance"
 )
 
-func SetScenario(obj *metav1.ObjectMeta, scenario string) {
+func SetScenarioLabel(obj *metav1.ObjectMeta, scenario string) {
 	metav1.SetMetaDataLabel(obj, LabelName, scenario)
 }
 
-func SetAction(obj *metav1.ObjectMeta, action string) {
+func SetActionLabel(obj *metav1.ObjectMeta, action string) {
 	metav1.SetMetaDataLabel(obj, LabelAction, action)
 }
 
-func SetComponent(obj *metav1.ObjectMeta, kind Component) {
+func SetComponentLabel(obj *metav1.ObjectMeta, kind Component) {
 	metav1.SetMetaDataLabel(obj, LabelComponent, string(kind))
 }
 
-func SetCreatedBy(child client.Object, parent client.Object) {
+func SetCreatedByLabel(child client.Object, parent client.Object) {
 	child.SetLabels(labels.Merge(child.GetLabels(), map[string]string{LabelCreatedBy: parent.GetName()}))
 }
 
-func SetInstance(obj metav1.Object) {
+func SetInstanceLabel(obj metav1.Object) {
 	obj.SetLabels(labels.Merge(obj.GetLabels(), map[string]string{LabelInstance: obj.GetName()}))
 }
 
-func HasScenario(obj metav1.Object) bool {
+func HasScenarioLabel(obj metav1.Object) bool {
 	_, ok := obj.GetLabels()[LabelName]
 	return ok
 }
 
-func GetScenario(obj metav1.Object) string {
+func GetScenarioLabel(obj metav1.Object) string {
 	scenario, ok := obj.GetLabels()[LabelName]
 	if !ok {
 		panic(errors.Errorf("Cannot extract label '%s' from resource '%s'. Labels: %s",
@@ -92,8 +92,8 @@ func GetScenario(obj metav1.Object) string {
 	return scenario
 }
 
-// GetAction returns the name of the action the object belongs to.
-func GetAction(obj metav1.Object) string {
+// GetActionLabel returns the name of the action the object belongs to.
+func GetActionLabel(obj metav1.Object) string {
 	action, ok := obj.GetLabels()[LabelAction]
 	if !ok {
 		panic(errors.Errorf("Cannot extract label '%s' from resource '%s'. Labels: %s",
@@ -103,8 +103,8 @@ func GetAction(obj metav1.Object) string {
 	return action
 }
 
-// GetCreatedBy returns the creator of the resource.
-func GetCreatedBy(obj metav1.Object) string {
+// GetCreatedByLabel returns the creator of the resource.
+func GetCreatedByLabel(obj metav1.Object) string {
 	creator, ok := obj.GetLabels()[LabelCreatedBy]
 	if !ok {
 		panic(errors.Errorf("Cannot extract label '%s' from resource '%s'. Labels: %s",
@@ -114,7 +114,7 @@ func GetCreatedBy(obj metav1.Object) string {
 	return creator
 }
 
-func GetComponent(obj metav1.Object) Component {
+func GetComponentLabel(obj metav1.Object) Component {
 	component, ok := obj.GetLabels()[LabelComponent]
 	if !ok {
 		panic(errors.Errorf("Cannot extract label '%s' from resource '%s'. Labels: %s",
@@ -130,7 +130,7 @@ func GetComponent(obj metav1.Object) Component {
 	return v
 }
 
-func GetInstance(obj metav1.Object) map[string]string {
+func GetInstanceLabel(obj metav1.Object) map[string]string {
 	instance, ok := obj.GetLabels()[LabelInstance]
 	if !ok {
 		panic(errors.Errorf("Cannot extract label '%s' from resource '%s'. Labels: %s",
@@ -140,6 +140,6 @@ func GetInstance(obj metav1.Object) map[string]string {
 	return map[string]string{LabelInstance: instance}
 }
 
-func PropagateLabels(child client.Object, parent client.Object) {
+func PropagateLabels(child metav1.Object, parent metav1.Object) {
 	child.SetLabels(labels.Merge(child.GetLabels(), parent.GetLabels()))
 }

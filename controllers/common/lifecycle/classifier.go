@@ -62,7 +62,10 @@ func (in *Classifier) Classify(name string, obj client.Object) {
 		status := statusAware.GetReconcileStatus()
 
 		switch status.Phase {
-		case v1alpha1.PhaseUninitialized, v1alpha1.PhasePending:
+		case v1alpha1.PhaseUninitialized:
+			// Ignore uninitialized/unscheduled jobs
+
+		case v1alpha1.PhasePending:
 			in.pendingJobs[name] = obj
 
 		case v1alpha1.PhaseSuccess:
@@ -225,17 +228,15 @@ func (in Classifier) GetFailedJobs() []client.Object {
 }
 
 // IsDeletable returns if a service can be deleted or not.
-// Deletable  are only pending or running services, which belong to the SUT (not on the system(
+// Deletable are only pending or running services, which belong to the SUT (not on the system(
 func (in Classifier) IsDeletable(jobName string) (client.Object, bool) {
 	if job, exists := in.pendingJobs[jobName]; exists {
-		return job, true
+		return job, v1alpha1.GetComponentLabel(job) == v1alpha1.ComponentSUT
 	}
 
 	if job, exists := in.runningJobs[jobName]; exists {
 		// A system service is not deletabled
-		if v1alpha1.GetComponent(job) == v1alpha1.ComponentSUT {
-			return job, true
-		}
+		return job, v1alpha1.GetComponentLabel(job) == v1alpha1.ComponentSUT
 	}
 
 	return nil, false

@@ -21,7 +21,7 @@ import (
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common/expressions"
-	"github.com/carv-ics-forth/frisbee/controllers/common/lifecycle/check"
+	"github.com/carv-ics-forth/frisbee/controllers/common/lifecycle"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -30,7 +30,7 @@ import (
 // calculateLifecycle returns the update lifecycle of the cascade.
 func (r *Controller) calculateLifecycle(cr *v1alpha1.Cascade) v1alpha1.Lifecycle {
 	cycle := cr.Status.Lifecycle
-	gs := r.state
+	gs := r.view
 
 	// Step 1. Skip any CR which are already completed, or uninitialized.
 	if cycle.Phase.Is(v1alpha1.PhaseUninitialized, v1alpha1.PhaseSuccess, v1alpha1.PhaseFailed) {
@@ -100,7 +100,7 @@ func (r *Controller) calculateLifecycle(cr *v1alpha1.Cascade) v1alpha1.Lifecycle
 	// Step 4. Check if scheduling goes as expected.
 	queuedJobs := len(cr.Status.QueuedJobs)
 
-	if check.ScheduledJobs(queuedJobs, gs, &cycle, nil) {
+	if lifecycle.GroupedJobs(queuedJobs, gs, &cycle, nil) {
 		return cycle
 	}
 

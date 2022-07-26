@@ -44,11 +44,11 @@ type Controller struct {
 	ctrl.Manager
 	logr.Logger
 
-	state lifecycle.Classifier
+	view lifecycle.Classifier
 }
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
-// move the current state of the cascade closer to the desired state.
+// move the current view of the cascade closer to the desired view.
 func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	/*
 		1: Load CR by name.
@@ -102,17 +102,17 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		Once we have all the jobs we own, we'll split them into active, successful,
 		and failed jobs, keeping track of the most recent run so that we can record it
-		in status.  Remember, status should be able to be reconstituted from the state
+		in status.  Remember, status should be able to be reconstituted from the view
 		of the world, so it's generally not a good idea to read from the status of the
 		root object.  Instead, you should reconstruct it every run.  That's what we'll
 		do here.
 
 		To relief the garbage collector, we use a root structure that we reset at every reconciliation cycle.
 	*/
-	r.state.Reset()
+	r.view.Reset()
 
 	for i, job := range childJobs.Items {
-		r.state.Classify(job.GetName(), &childJobs.Items[i])
+		r.view.Classify(job.GetName(), &childJobs.Items[i])
 	}
 
 	/*
@@ -156,10 +156,9 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		r.GetEventRecorderFor("").Event(&cr, corev1.EventTypeNormal,
 			cr.Status.Lifecycle.Reason, cr.Status.Lifecycle.Message)
 
-		r.Logger.Info("Cleaning up chaos jobs",
-			"cascade", cr.GetName(),
-			"activeJobs", r.state.ListPendingJobs(),
-			"successfulJobs", r.state.ListSuccessfulJobs(),
+		r.Logger.Info("CleanOnSuccess",
+			"name", cr.GetName(),
+			"successfulJobs", r.view.ListSuccessfulJobs(),
 		)
 
 		/*
@@ -167,7 +166,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			We should not remove the cr descriptor itself, as we need to maintain its
 			status for higher-entities like the Scenario.
 		*/
-		for _, job := range r.state.GetSuccessfulJobs() {
+		for _, job := range r.view.GetSuccessfulJobs() {
 			common.Delete(ctx, r, job)
 		}
 
@@ -175,24 +174,24 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	if cr.Status.Phase.Is(v1alpha1.PhaseFailed) {
-		r.Logger.Error(errors.New(cr.Status.Lifecycle.Reason), cr.Status.Lifecycle.Message)
-
-		r.Logger.Info("Cleaning up chaos jobs",
-			"cascade", cr.GetName(),
-			"successfulJobs", r.state.ListSuccessfulJobs(),
-			"activeJobs", r.state.ListPendingJobs(),
-		)
+		r.Logger.Error(errors.New("Resource has failed"), "CleanOnFailure",
+			"name", cr.GetName(),
+			"successfulJobs", r.view.ListSuccessfulJobs(),
+			"runningJobs", r.view.ListRunningJobs(),
+			"pendingJobs", r.view.ListPendingJobs(),
+			"reason", cr.Status.Reason,
+			"message", cr.Status.Message)
 
 		// Remove the non-failed components. Leave the failed jobs and system jobs for postmortem analysis.
-		for _, job := range r.state.GetPendingJobs() {
+		for _, job := range r.view.GetPendingJobs() {
 			common.Delete(ctx, r, job)
 		}
 
-		for _, job := range r.state.GetRunningJobs() {
+		for _, job := range r.view.GetRunningJobs() {
 			common.Delete(ctx, r, job)
 		}
 
-		for _, job := range r.state.GetSuccessfulJobs() {
+		for _, job := range r.view.GetSuccessfulJobs() {
 			common.Delete(ctx, r, job)
 		}
 
@@ -265,8 +264,10 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	if cr.Status.Phase.Is(v1alpha1.PhaseRunning) ||
 		(cr.Spec.Until == nil && (nextExpectedJob >= len(cr.Status.QueuedJobs))) {
-		r.Logger.Info("All jobs are scheduled. Nothing else to do. Waiting for something to happen",
-			"cascade", cr.GetName(),
+
+		r.Logger.Info(".. Awaiting",
+			"name", cr.GetName(),
+			cr.Status.Reason, cr.Status.Message,
 		)
 
 		return common.Stop()
@@ -281,7 +282,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		If we've missed a run, and we're still within the deadline to start it, we'll need to run a job.
 	*/
-	if hasJob, requeue, err := scheduler.Schedule(ctx, r, &cr, cr.Spec.Schedule, cr.Status.LastScheduleTime, r.state); !hasJob {
+	if hasJob, requeue, err := scheduler.Schedule(ctx, r, &cr, cr.Spec.Schedule, cr.Status.LastScheduleTime, r.view); !hasJob {
 		return requeue, err
 	}
 

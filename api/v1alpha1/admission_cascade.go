@@ -34,7 +34,7 @@ var _ webhook.Defaulter = &Cascade{}
 var _ webhook.Validator = &Cascade{}
 
 // log is for logging in this package.
-var cascadelog = logf.Log.WithName("cascade-resource")
+var cascadelog = logf.Log.WithName("cascade-hook")
 
 func (r *Cascade) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
@@ -46,14 +46,14 @@ func (r *Cascade) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
 func (r *Cascade) Default() {
-	cascadelog.Info("default", "name", r.Name)
+	cascadelog.V(5).Info("default", "name", r.Name)
 
 	// TODO(user): fill in your defaulting logic.
 }
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (r *Cascade) ValidateCreate() error {
-	cascadelog.Info("validate create", "name", r.Name)
+	cascadelog.V(5).Info("validate create", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object creation.
 	return nil
@@ -61,7 +61,7 @@ func (r *Cascade) ValidateCreate() error {
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
 func (r *Cascade) ValidateUpdate(old runtime.Object) error {
-	cascadelog.Info("validate update", "name", r.Name)
+	cascadelog.V(5).Info("validate update", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object update.
 	return nil
@@ -69,7 +69,7 @@ func (r *Cascade) ValidateUpdate(old runtime.Object) error {
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
 func (r *Cascade) ValidateDelete() error {
-	cascadelog.Info("validate delete", "name", r.Name)
+	cascadelog.V(5).Info("validate delete", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.
 	return nil

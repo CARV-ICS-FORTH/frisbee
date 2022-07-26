@@ -21,9 +21,10 @@ import (
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	chaosutils "github.com/carv-ics-forth/frisbee/controllers/chaos/utils"
+	"github.com/carv-ics-forth/frisbee/controllers/common"
+	"github.com/carv-ics-forth/frisbee/controllers/common/lifecycle"
 	serviceutils "github.com/carv-ics-forth/frisbee/controllers/service/utils"
 	"github.com/pkg/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -62,15 +63,15 @@ func (r *Controller) service(ctx context.Context, t *v1alpha1.Scenario, action v
 	job.SetName(action.Name)
 
 	// set labels
-	v1alpha1.SetScenario(&job.ObjectMeta, t.GetName())
-	v1alpha1.SetAction(&job.ObjectMeta, action.Name)
+	v1alpha1.SetScenarioLabel(&job.ObjectMeta, t.GetName())
+	v1alpha1.SetActionLabel(&job.ObjectMeta, action.Name)
 
 	// The job belongs to a SUT, unless the template is explicitly declared as a System job (SYS)
 	if spec.Decorators != nil && spec.Decorators.Labels != nil &&
 		spec.Decorators.Labels[v1alpha1.LabelComponent] == string(v1alpha1.ComponentSys) {
-		v1alpha1.SetComponent(&job.ObjectMeta, v1alpha1.ComponentSys)
+		v1alpha1.SetComponentLabel(&job.ObjectMeta, v1alpha1.ComponentSys)
 	} else {
-		v1alpha1.SetComponent(&job.ObjectMeta, v1alpha1.ComponentSUT)
+		v1alpha1.SetComponentLabel(&job.ObjectMeta, v1alpha1.ComponentSUT)
 	}
 
 	spec.DeepCopyInto(&job.Spec)
@@ -90,9 +91,9 @@ func (r *Controller) cluster(ctx context.Context, t *v1alpha1.Scenario, action v
 	job.SetName(action.Name)
 
 	// set labels
-	v1alpha1.SetScenario(&job.ObjectMeta, t.GetName())
-	v1alpha1.SetAction(&job.ObjectMeta, action.Name)
-	v1alpha1.SetComponent(&job.ObjectMeta, v1alpha1.ComponentSUT)
+	v1alpha1.SetScenarioLabel(&job.ObjectMeta, t.GetName())
+	v1alpha1.SetActionLabel(&job.ObjectMeta, action.Name)
+	v1alpha1.SetComponentLabel(&job.ObjectMeta, v1alpha1.ComponentSUT)
 
 	action.Cluster.DeepCopyInto(&job.Spec)
 
@@ -120,9 +121,9 @@ func (r *Controller) chaos(ctx context.Context, t *v1alpha1.Scenario, action v1a
 	job.SetNamespace(t.GetNamespace())
 	job.SetName(action.Name)
 
-	v1alpha1.SetScenario(&job.ObjectMeta, t.GetName())
-	v1alpha1.SetAction(&job.ObjectMeta, action.Name)
-	v1alpha1.SetComponent(&job.ObjectMeta, v1alpha1.ComponentSUT)
+	v1alpha1.SetScenarioLabel(&job.ObjectMeta, t.GetName())
+	v1alpha1.SetActionLabel(&job.ObjectMeta, action.Name)
+	v1alpha1.SetComponentLabel(&job.ObjectMeta, v1alpha1.ComponentSUT)
 
 	spec.DeepCopyInto(&job.Spec)
 
@@ -140,9 +141,9 @@ func (r *Controller) cascade(ctx context.Context, t *v1alpha1.Scenario, action v
 	job.SetNamespace(t.GetNamespace())
 	job.SetName(action.Name)
 
-	v1alpha1.SetScenario(&job.ObjectMeta, t.GetName())
-	v1alpha1.SetAction(&job.ObjectMeta, action.Name)
-	v1alpha1.SetComponent(&job.ObjectMeta, v1alpha1.ComponentSUT)
+	v1alpha1.SetScenarioLabel(&job.ObjectMeta, t.GetName())
+	v1alpha1.SetActionLabel(&job.ObjectMeta, action.Name)
+	v1alpha1.SetComponentLabel(&job.ObjectMeta, v1alpha1.ComponentSUT)
 
 	action.Cascade.DeepCopyInto(&job.Spec)
 
@@ -152,40 +153,24 @@ func (r *Controller) cascade(ctx context.Context, t *v1alpha1.Scenario, action v
 func (r *Controller) delete(ctx context.Context, t *v1alpha1.Scenario, action v1alpha1.Action) (client.Object, error) {
 	// Delete normally does not return anything. This however would break all the pipeline for
 	// managing dependencies between jobs. For that, we return a dummy virtual object without dedicated controller.
-	var job v1alpha1.VirtualObject
+	return nil, lifecycle.VExec(ctx, r, t, action.Name, func() error {
+		for _, refJob := range action.Delete.Jobs {
+			job, deletable := r.view.IsDeletable(refJob)
+			if !deletable {
+				return errors.Errorf("referenced job '%s' is not currently deletable. Inspect Job: '%v'",
+					refJob, job)
+			}
 
-	job.SetGroupVersionKind(v1alpha1.GroupVersion.WithKind("VirtualObject"))
-	job.SetNamespace(t.GetNamespace())
-	job.SetName(action.Name)
+			if err := lifecycle.VExec(ctx, r, t, refJob, func() error {
+				common.Delete(ctx, r, job)
+				return nil
+			}); err != nil {
+				return errors.Wrapf(err, "cannot create mockup for deleted job '%s'", refJob)
+			}
+		}
 
-	v1alpha1.SetScenario(&job.ObjectMeta, t.GetName())
-	v1alpha1.SetAction(&job.ObjectMeta, action.Name)
-	v1alpha1.SetComponent(&job.ObjectMeta, v1alpha1.ComponentSUT)
-
-	job.SetReconcileStatus(v1alpha1.Lifecycle{
-		Phase:   v1alpha1.PhaseSuccess,
-		Reason:  "AllJobsDeleted",
-		Message: "",
+		return nil
 	})
-
-	// delete the jobs in foreground -- jobs are deleted before the function returns.
-	propagation := metav1.DeletePropagationForeground
-	options := client.DeleteOptions{
-		PropagationPolicy: &propagation,
-	}
-
-	for _, name := range action.Delete.Jobs {
-		job, deletable := r.clusterView.IsDeletable(name)
-		if !deletable {
-			return nil, errors.Errorf("job %s is not currently deletable", name)
-		}
-
-		if err := r.GetClient().Delete(ctx, job, &options); err != nil {
-			return nil, errors.Wrapf(err, "unable to delete job %s", job.GetName())
-		}
-	}
-
-	return &job, nil
 }
 
 func (r *Controller) call(ctx context.Context, t *v1alpha1.Scenario, action v1alpha1.Action) (client.Object, error) {
@@ -199,9 +184,9 @@ func (r *Controller) call(ctx context.Context, t *v1alpha1.Scenario, action v1al
 	job.SetNamespace(t.GetNamespace())
 	job.SetName(action.Name)
 
-	v1alpha1.SetScenario(&job.ObjectMeta, t.GetName())
-	v1alpha1.SetAction(&job.ObjectMeta, action.Name)
-	v1alpha1.SetComponent(&job.ObjectMeta, v1alpha1.ComponentSUT)
+	v1alpha1.SetScenarioLabel(&job.ObjectMeta, t.GetName())
+	v1alpha1.SetActionLabel(&job.ObjectMeta, action.Name)
+	v1alpha1.SetComponentLabel(&job.ObjectMeta, v1alpha1.ComponentSUT)
 
 	action.Call.DeepCopyInto(&job.Spec)
 

@@ -14,13 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package check
+package lifecycle
 
 import (
 	"fmt"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	"github.com/carv-ics-forth/frisbee/controllers/common/lifecycle"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -31,7 +30,8 @@ type test struct {
 	condition  metav1.Condition
 }
 
-func ScheduledJobs(queuedJobs int, state lifecycle.ClassifierReader, lf *v1alpha1.Lifecycle, tolerate *v1alpha1.TolerateSpec) bool {
+// GroupedJobs calculate the lifecycle for action with multiple sub-jobs, such as Clusters, Cascade, Calls, ...
+func GroupedJobs(queuedJobs int, state ClassifierReader, lf *v1alpha1.Lifecycle, tolerate *v1alpha1.TolerateSpec) bool {
 	var testSequence []test
 
 	// When there are failed jobs, we need to differentiate the number of tolerated failures.
@@ -98,22 +98,23 @@ func ScheduledJobs(queuedJobs int, state lifecycle.ClassifierReader, lf *v1alpha
 			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseRunning,
 				Reason:  "AllJobsRunning",
-				Message: fmt.Sprintf("running jobs: %s", state.ListRunningJobs()),
+				Message: fmt.Sprintf("running: %s", state.ListRunningJobs()),
 			},
 			condition: metav1.Condition{
 				Type:    v1alpha1.ConditionAllJobsAreScheduled.String(),
 				Status:  metav1.ConditionTrue,
 				Reason:  "AllJobsRunning",
-				Message: fmt.Sprintf("running jobs: %s", state.ListRunningJobs()),
+				Message: fmt.Sprintf("running: %s", state.ListRunningJobs()),
 			},
 		},
 
 		{ // Not all Jobs are yet created
 			expression: lf.Phase == v1alpha1.PhasePending,
 			lifecycle: v1alpha1.Lifecycle{
-				Phase:   v1alpha1.PhasePending,
-				Reason:  "JobIsPending",
-				Message: "at least one jobs has not yet created",
+				Phase:  v1alpha1.PhasePending,
+				Reason: "JobIsPending",
+				Message: fmt.Sprintf("queued:%d pending:%s running:%s successful:%s failed:%s",
+					queuedJobs, state.ListPendingJobs(), state.ListRunningJobs(), state.ListSuccessfulJobs(), state.ListFailedJobs()),
 			},
 		},
 	}...)

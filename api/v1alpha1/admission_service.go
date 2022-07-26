@@ -34,7 +34,7 @@ var _ webhook.Defaulter = &Service{}
 var _ webhook.Validator = &Service{}
 
 // log is for logging in this package.
-var servicelog = logf.Log.WithName("service-resource")
+var servicelog = logf.Log.WithName("service-hook")
 
 func (in *Service) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
@@ -46,14 +46,14 @@ func (in *Service) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
 func (in *Service) Default() {
-	servicelog.Info("default", "name", in.Name)
+	servicelog.V(5).Info("default", "name", in.Name)
 
 	// TODO(user): fill in your defaulting logic.
 }
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (in *Service) ValidateCreate() error {
-	servicelog.Info("validate create", "name", in.Name)
+	servicelog.V(5).Info("validate create", "name", in.Name)
 
 	// TODO(user): fill in your validation logic upon object creation.
 	return nil
@@ -61,7 +61,7 @@ func (in *Service) ValidateCreate() error {
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
 func (in *Service) ValidateUpdate(old runtime.Object) error {
-	servicelog.Info("validate update", "name", in.Name)
+	servicelog.V(5).Info("validate update", "name", in.Name)
 
 	// TODO(user): fill in your validation logic upon object update.
 	return nil
@@ -69,7 +69,7 @@ func (in *Service) ValidateUpdate(old runtime.Object) error {
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
 func (in *Service) ValidateDelete() error {
-	servicelog.Info("validate delete", "name", in.Name)
+	servicelog.V(5).Info("validate delete", "name", in.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.
 	return nil

@@ -23,7 +23,6 @@ import (
 	chaosutils "github.com/carv-ics-forth/frisbee/controllers/chaos/utils"
 	serviceutils "github.com/carv-ics-forth/frisbee/controllers/service/utils"
 	"github.com/pkg/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // Validate validates the execution workflow.
@@ -31,39 +30,30 @@ import (
 // 2. Ensures that there are no two actions with the same name.
 // 3. Ensure that dependencies point to a valid action.
 // 4. Ensure that macros point to a valid action.
-func (r *Controller) Validate(ctx context.Context, scenario *v1alpha1.Scenario) error {
+func (r *Controller) Validate(ctx context.Context, t *v1alpha1.Scenario) error {
 
-	for _, action := range scenario.Spec.Actions {
-		if err := r.CheckTemplateRef(ctx, scenario, &action); err != nil {
-			return errors.Wrapf(err, "template reference error for action [%s]", action.Name)
+	for _, action := range t.Spec.Actions {
+
+		switch action.ActionType {
+		case v1alpha1.ActionService:
+			if _, err := serviceutils.GetServiceSpec(ctx, r.GetClient(), t, *action.Service); err != nil {
+				return errors.Wrapf(err, "service spec error")
+			}
+		case v1alpha1.ActionCluster:
+			if _, err := serviceutils.GetServiceSpec(ctx, r.GetClient(), t, action.Cluster.GenerateFromTemplate); err != nil {
+				return errors.Wrapf(err, "cluster spec error")
+			}
+
+		case v1alpha1.ActionChaos:
+			if _, err := chaosutils.GetChaosSpec(ctx, r.GetClient(), t, *action.Chaos); err != nil {
+				return errors.Wrapf(err, "chaos spec error")
+			}
+
+		case v1alpha1.ActionCascade:
+			if _, err := chaosutils.GetChaosSpec(ctx, r.GetClient(), t, action.Cascade.GenerateFromTemplate); err != nil {
+				return errors.Wrapf(err, "cascade spec error")
+			}
 		}
 	}
-	return nil
-}
-
-func (r *Controller) CheckTemplateRef(ctx context.Context, who metav1.Object, action *v1alpha1.Action) error {
-	switch action.ActionType {
-	case v1alpha1.ActionService:
-		if _, err := serviceutils.GetServiceSpec(ctx, r.GetClient(), who, *action.Service); err != nil {
-			return errors.Wrapf(err, "service spec error")
-		}
-	case v1alpha1.ActionCluster:
-		if _, err := serviceutils.GetServiceSpec(ctx, r.GetClient(), who, action.Cluster.GenerateFromTemplate); err != nil {
-			return errors.Wrapf(err, "cluster spec error")
-		}
-
-	case v1alpha1.ActionChaos:
-		if _, err := chaosutils.GetChaosSpec(ctx, r.GetClient(), who, *action.Chaos); err != nil {
-			return errors.Wrapf(err, "chaos spec error")
-		}
-
-	case v1alpha1.ActionCascade:
-		if _, err := chaosutils.GetChaosSpec(ctx, r.GetClient(), who, action.Cascade.GenerateFromTemplate); err != nil {
-			return errors.Wrapf(err, "cascade spec error")
-		}
-	default:
-		return nil
-	}
-
 	return nil
 }

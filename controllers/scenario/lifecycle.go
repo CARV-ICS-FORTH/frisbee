@@ -21,37 +21,51 @@ import (
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common/expressions"
-	"github.com/carv-ics-forth/frisbee/controllers/common/lifecycle/check"
+	"github.com/carv-ics-forth/frisbee/controllers/common/lifecycle"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// getActionOrDie returns the spec of the referenced action.
+// if the action is not found, it panics.
+func getActionOrDie(t *v1alpha1.Scenario, actionName string) *v1alpha1.Action {
+	for i, match := range t.Spec.Actions {
+		if actionName == match.Name {
+			return &t.Spec.Actions[i]
+		}
+	}
+
+	panic("this should never happen")
+}
+
 func (r *Controller) updateLifecycle(t *v1alpha1.Scenario) v1alpha1.Lifecycle {
 	cycle := t.Status.Lifecycle
-	gs := r.clusterView
+	gs := r.view
 
 	// Step 1. Skip any scenario which are already completed, or uninitialized.
 	if cycle.Phase.Is(v1alpha1.PhaseUninitialized, v1alpha1.PhaseSuccess, v1alpha1.PhaseFailed) {
 		return cycle
 	}
 
-	for actionName, assertion := range t.Status.ExecutedActions {
-		if !assertion.IsZero() {
-			eval := expressions.Condition{Expr: &assertion}
+	for _, actionName := range t.Status.ScheduledJobs {
+		action := getActionOrDie(t, actionName)
+
+		if !action.Assert.IsZero() {
+			eval := expressions.Condition{Expr: action.Assert}
 
 			if !eval.IsTrue(gs, t) {
 				cycle = v1alpha1.Lifecycle{
 					Phase:   v1alpha1.PhaseFailed,
 					Reason:  "AssertError",
-					Message: fmt.Sprintf("AssertError for action '%s'. Info: %s", actionName, eval.Info),
+					Message: fmt.Sprintf("AssertError for actionName '%s'. Info: %s", action.Name, eval.Info),
 				}
 
 				meta.SetStatusCondition(&cycle.Conditions, metav1.Condition{
 					Type:    v1alpha1.ConditionAssert.String(),
 					Status:  metav1.ConditionTrue,
 					Reason:  "AssertError",
-					Message: fmt.Sprintf("AssertError for action '%s'. Info: %s", actionName, eval.Info),
+					Message: fmt.Sprintf("AssertError for actionName '%s'. Info: %s", action.Name, eval.Info),
 				})
 
 				return cycle
@@ -62,7 +76,7 @@ func (r *Controller) updateLifecycle(t *v1alpha1.Scenario) v1alpha1.Lifecycle {
 	// Step 4. Check if scheduling goes as expected.
 	queuedJobs := len(t.Spec.Actions)
 
-	if check.ScheduledJobs(queuedJobs, gs, &cycle, nil) {
+	if lifecycle.GroupedJobs(queuedJobs, gs, &cycle, nil) {
 		return cycle
 	}
 

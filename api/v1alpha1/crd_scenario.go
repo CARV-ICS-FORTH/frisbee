@@ -125,9 +125,9 @@ type ScenarioSpec struct {
 type ScenarioStatus struct {
 	Lifecycle `json:",inline"`
 
-	// ExecutedActions is a list of executed actions.
+	// ScheduledJobs is a list of references to the names of executed actions.
 	// +optional
-	ExecutedActions map[string]ConditionalExpr `json:"executedActions"`
+	ScheduledJobs []string `json:"scheduledJobs,omitempty"`
 
 	// GrafanaEndpoint points to the local Grafana instance
 	GrafanaEndpoint string `json:"grafanaEndpoint,omitempty"`

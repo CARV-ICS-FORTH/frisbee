@@ -1092,12 +1092,10 @@ func (in *ScenarioSpec) DeepCopy() *ScenarioSpec {
 func (in *ScenarioStatus) DeepCopyInto(out *ScenarioStatus) {
 	*out = *in
 	in.Lifecycle.DeepCopyInto(&out.Lifecycle)
-	if in.ExecutedActions != nil {
-		in, out := &in.ExecutedActions, &out.ExecutedActions
-		*out = make(map[string]ConditionalExpr, len(*in))
-		for key, val := range *in {
-			(*out)[key] = val
-		}
+	if in.ScheduledJobs != nil {
+		in, out := &in.ScheduledJobs, &out.ScheduledJobs
+		*out = make([]string, len(*in))
+		copy(*out, *in)
 	}
 }
 

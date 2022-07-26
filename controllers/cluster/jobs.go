@@ -41,31 +41,19 @@ func generateName(group *v1alpha1.Cluster, i int) string {
 func (r *Controller) createJob(ctx context.Context, cr *v1alpha1.Cluster, i int) error {
 	var job v1alpha1.Service
 
-	{ // Populate the job
-		job.SetName(generateName(cr, i))
+	// Populate the job
+	job.SetName(generateName(cr, i))
 
-		v1alpha1.SetScenario(&job.ObjectMeta, v1alpha1.GetScenario(cr))
-		v1alpha1.SetAction(&job.ObjectMeta, v1alpha1.GetAction(cr))
-		v1alpha1.SetComponent(&job.ObjectMeta, v1alpha1.GetComponent(cr))
+	v1alpha1.SetScenarioLabel(&job.ObjectMeta, v1alpha1.GetScenarioLabel(cr))
+	v1alpha1.SetActionLabel(&job.ObjectMeta, v1alpha1.GetActionLabel(cr))
+	v1alpha1.SetComponentLabel(&job.ObjectMeta, v1alpha1.GetComponentLabel(cr))
 
-		// modulo is needed to re-iterate the job list, required for the implementation of "Until".
-		jobSpec := cr.Status.QueuedJobs[i%len(cr.Status.QueuedJobs)]
+	// modulo is needed to re-iterate the job list, required for the implementation of "Until".
+	jobSpec := cr.Status.QueuedJobs[i%len(cr.Status.QueuedJobs)]
 
-		jobSpec.DeepCopyInto(&job.Spec)
-	}
+	jobSpec.DeepCopyInto(&job.Spec)
 
-	{ // Launch the job
-		if err := common.Create(ctx, r, cr, &job); err != nil {
-			return errors.Wrapf(err, "cannot create job")
-		}
-	}
-
-	r.Logger.Info("Create clustered job",
-		"cluster", cr.GetName(),
-		"service", job.GetName(),
-	)
-
-	return nil
+	return common.Create(ctx, r, cr, &job)
 }
 
 func (r *Controller) constructJobSpecList(ctx context.Context, cluster *v1alpha1.Cluster) ([]v1alpha1.ServiceSpec, error) {

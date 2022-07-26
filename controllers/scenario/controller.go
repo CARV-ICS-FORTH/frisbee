@@ -53,7 +53,7 @@ type Controller struct {
 	ctrl.Manager
 	logr.Logger
 
-	clusterView lifecycle.Classifier
+	view lifecycle.Classifier
 
 	alertingPort int
 }
@@ -176,7 +176,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		7: Get the next logical run
 		------------------------------------------------------------------
 	*/
-	actionList, nextRun := GetNextLogicalJob(cr.GetCreationTimestamp(), cr.Spec.Actions, r.clusterView, cr.Status.ExecutedActions)
+	actionList, nextRun := r.NextJobs(&cr)
 
 	if len(actionList) == 0 {
 		if nextRun.IsZero() {
@@ -184,13 +184,15 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			return common.Stop()
 		}
 
-		r.Logger.Info("no upcoming logical execution, sleeping until", "next", nextRun)
+		r.Logger.Info(".. Awaiting",
+			"name", cr.GetName(),
+			"sleep until", nextRun)
 
 		return common.RequeueAfter(time.Until(nextRun))
 	}
 
 	if err := r.RunActions(ctx, &cr, actionList); err != nil {
-		return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot run actions"))
+		return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "actions failed"))
 	}
 
 	return lifecycle.Pending(ctx, r, &cr, "some jobs are still pending")
@@ -205,7 +207,7 @@ func (r *Controller) GetClusterView(ctx context.Context, req types.NamespacedNam
 		to relief garbage collector, we use a common state that is reset at every reconciliation cycle.
 		Be careful since this approach may fail if we run multiple  reconciliation loops simultaneously.
 	*/
-	r.clusterView.Reset()
+	r.view.Reset()
 
 	var serviceJobs v1alpha1.ServiceList
 	{
@@ -216,9 +218,9 @@ func (r *Controller) GetClusterView(ctx context.Context, req types.NamespacedNam
 		for i, job := range serviceJobs.Items {
 			// Do not account telemetry jobs, unless they have failed.
 			if job.GetName() == notRandomGrafanaName || job.GetName() == notRandomPrometheusName {
-				r.clusterView.Exclude(job.GetName(), &serviceJobs.Items[i])
+				r.view.Exclude(job.GetName(), &serviceJobs.Items[i])
 			} else {
-				r.clusterView.Classify(job.GetName(), &serviceJobs.Items[i])
+				r.view.Classify(job.GetName(), &serviceJobs.Items[i])
 			}
 		}
 	}
@@ -230,7 +232,7 @@ func (r *Controller) GetClusterView(ctx context.Context, req types.NamespacedNam
 		}
 
 		for i, job := range clusterJobs.Items {
-			r.clusterView.Classify(job.GetName(), &clusterJobs.Items[i])
+			r.view.Classify(job.GetName(), &clusterJobs.Items[i])
 		}
 	}
 
@@ -241,7 +243,7 @@ func (r *Controller) GetClusterView(ctx context.Context, req types.NamespacedNam
 		}
 
 		for i, job := range chaosJobs.Items {
-			r.clusterView.Classify(job.GetName(), &chaosJobs.Items[i])
+			r.view.Classify(job.GetName(), &chaosJobs.Items[i])
 		}
 	}
 
@@ -252,7 +254,7 @@ func (r *Controller) GetClusterView(ctx context.Context, req types.NamespacedNam
 		}
 
 		for i, job := range cascadeJobs.Items {
-			r.clusterView.Classify(job.GetName(), &cascadeJobs.Items[i])
+			r.view.Classify(job.GetName(), &cascadeJobs.Items[i])
 		}
 	}
 
@@ -263,7 +265,7 @@ func (r *Controller) GetClusterView(ctx context.Context, req types.NamespacedNam
 		}
 
 		for i, job := range virtualJobs.Items {
-			r.clusterView.Classify(job.GetName(), &virtualJobs.Items[i])
+			r.view.Classify(job.GetName(), &virtualJobs.Items[i])
 		}
 	}
 
@@ -274,7 +276,7 @@ func (r *Controller) GetClusterView(ctx context.Context, req types.NamespacedNam
 		}
 
 		for i, job := range callJobs.Items {
-			r.clusterView.Classify(job.GetName(), &callJobs.Items[i])
+			r.view.Classify(job.GetName(), &callJobs.Items[i])
 		}
 	}
 
@@ -307,11 +309,11 @@ func (r *Controller) InitScenario(ctx context.Context, t *v1alpha1.Scenario) err
 
 	// Label this resource with the name of the scenario.
 	// This label will be adopted by all children objects of this workflow.
-	v1alpha1.SetScenario(&t.ObjectMeta, t.GetName())
+	v1alpha1.SetScenarioLabel(&t.ObjectMeta, t.GetName())
 
 	// Ensure that the scenario is OK
 	if errValidate := r.Validate(ctx, t); errValidate != nil {
-		return errors.Wrapf(errValidate, "validation error")
+		return errors.Wrapf(errValidate, "malformed description")
 	}
 
 	// Start Prometheus + Grafana
@@ -334,65 +336,75 @@ func (r *Controller) InitScenario(ctx context.Context, t *v1alpha1.Scenario) err
 	return nil
 }
 
-func (r *Controller) HasSucceed(ctx context.Context, t *v1alpha1.Scenario) error {
+func (r *Controller) HasSucceed(ctx context.Context, cr *v1alpha1.Scenario) error {
+	r.Logger.Info("CleanOnSuccess",
+		"name", cr.GetName(),
+		"successfulJobs", r.view.ListSuccessfulJobs(),
+	)
+
 	// Remove the testing components once the experiment is successfully complete.
 	// We maintain testbed components (e.g, prometheus and grafana) for getting back the test results.
 	// These components are removed by deleting the Scenario.
-	for _, job := range r.clusterView.GetSuccessfulJobs() {
-		if v1alpha1.GetComponent(job) == v1alpha1.ComponentSUT { // System services should not be removed
+	for _, job := range r.view.GetSuccessfulJobs() {
+		if v1alpha1.GetComponentLabel(job) == v1alpha1.ComponentSUT { // System services should not be removed
 
 			expressions.UnsetAlert(job)
 			common.Delete(ctx, r, job)
 		}
 	}
 
-	r.StopTelemetry(t)
+	r.StopTelemetry(cr)
 
 	return nil
 }
 
-func (r *Controller) HasFailed(ctx context.Context, t *v1alpha1.Scenario) error {
+func (r *Controller) HasFailed(ctx context.Context, cr *v1alpha1.Scenario) error {
+	r.Logger.Error(errors.New("Resource has failed"), "CleanOnFailure",
+		"name", cr.GetName(),
+		"successfulJobs", r.view.ListSuccessfulJobs(),
+		"runningJobs", r.view.ListRunningJobs(),
+		"pendingJobs", r.view.ListPendingJobs(),
+		"reason", cr.Status.Reason,
+		"message", cr.Status.Message)
 
 	// TODO: What should we do when a call action fails ? Should we delete all services ?
 
-	r.Logger.Error(errors.New(t.Status.Reason), t.Status.Message)
-
 	// Remove the non-failed components. Leave the failed jobs and system jobs for postmortem analysis.
-	for _, job := range r.clusterView.GetPendingJobs() {
-		if v1alpha1.GetComponent(job) == v1alpha1.ComponentSUT { // System jobs should not be deleted
-			r.GetEventRecorderFor("").Event(job, corev1.EventTypeWarning, "Terminating", t.Status.Message)
+	for _, job := range r.view.GetPendingJobs() {
+		if v1alpha1.GetComponentLabel(job) == v1alpha1.ComponentSUT { // System jobs should not be deleted
+			r.GetEventRecorderFor("").Event(job, corev1.EventTypeWarning, "Terminating", cr.Status.Message)
 
 			expressions.UnsetAlert(job)
 			common.Delete(ctx, r, job)
 		}
 	}
 
-	for _, job := range r.clusterView.GetRunningJobs() {
-		if v1alpha1.GetComponent(job) == v1alpha1.ComponentSUT { // System jobs should not be deleted
-			r.GetEventRecorderFor("").Event(job, corev1.EventTypeWarning, "Terminating", t.Status.Message)
+	for _, job := range r.view.GetRunningJobs() {
+		if v1alpha1.GetComponentLabel(job) == v1alpha1.ComponentSUT { // System jobs should not be deleted
+			r.GetEventRecorderFor("").Event(job, corev1.EventTypeWarning, "Terminating", cr.Status.Message)
 
 			expressions.UnsetAlert(job)
 			common.Delete(ctx, r, job)
 		}
 	}
 
-	for _, job := range r.clusterView.GetSuccessfulJobs() { // System jobs should not be deleted
-		if v1alpha1.GetComponent(job) == v1alpha1.ComponentSUT {
-			r.GetEventRecorderFor("").Event(job, corev1.EventTypeWarning, "Terminating", t.Status.Message)
+	for _, job := range r.view.GetSuccessfulJobs() { // System jobs should not be deleted
+		if v1alpha1.GetComponentLabel(job) == v1alpha1.ComponentSUT {
+			r.GetEventRecorderFor("").Event(job, corev1.EventTypeWarning, "Terminating", cr.Status.Message)
 
 			expressions.UnsetAlert(job)
 			common.Delete(ctx, r, job)
 		}
 	}
 
-	r.StopTelemetry(t)
+	r.StopTelemetry(cr)
 
 	// Suspend the workflow from creating new job.
 	suspend := true
-	t.Spec.Suspend = &suspend
+	cr.Spec.Suspend = &suspend
 
-	if err := common.Update(ctx, r, t); err != nil {
-		return errors.Wrapf(err, "unable to suspend execution for '%s'", t.GetName())
+	if err := common.Update(ctx, r, cr); err != nil {
+		return errors.Wrapf(err, "unable to suspend execution for '%s'", cr.GetName())
 	}
 
 	return nil
@@ -401,8 +413,9 @@ func (r *Controller) HasFailed(ctx context.Context, t *v1alpha1.Scenario) error 
 func (r *Controller) RunActions(ctx context.Context, t *v1alpha1.Scenario, actionList []v1alpha1.Action) error {
 	endpoints := r.supportedActions()
 	for _, action := range actionList {
+
 		if action.Assert.HasMetricsExpr() {
-			// Assertions belong to the top-level workflow. Not to the job
+			// Assert belong to the top-level workflow. Not to the job
 			if err := expressions.SetAlert(ctx, t, action.Assert.Metrics); err != nil {
 				return errors.Wrapf(err, "assertion error")
 			}
@@ -415,11 +428,15 @@ func (r *Controller) RunActions(ctx context.Context, t *v1alpha1.Scenario, actio
 
 		job, err := e(ctx, t, action)
 		if err != nil {
-			return errors.Wrapf(err, "cannot run action [%s]", action.Name)
+			return errors.Wrapf(err, "action failed [%s]", action.Name)
 		}
 
-		if err := common.Create(ctx, r, t, job); err != nil {
-			return errors.Wrapf(err, "execution error for action %s", action.Name)
+		// Some jobs are virtual and do not require something to be created.
+		// Yet, they must be tracked in order to respect the execution dependencies of the graph.
+		if action.ActionType != v1alpha1.ActionDelete {
+			if err := common.Create(ctx, r, t, job); err != nil {
+				return errors.Wrapf(err, "execution error for action %s", action.Name)
+			}
 		}
 
 		/*
@@ -432,15 +449,8 @@ func (r *Controller) RunActions(ctx context.Context, t *v1alpha1.Scenario, actio
 			we might not see our own status update, and then post one again.
 			So, we need to use the job name as a lock to prevent us from making the job twice.
 		*/
-		if t.Status.ExecutedActions == nil {
-			t.Status.ExecutedActions = make(map[string]v1alpha1.ConditionalExpr)
-		}
 
-		if action.Assert.IsZero() {
-			t.Status.ExecutedActions[action.Name] = v1alpha1.ConditionalExpr{}
-		} else {
-			t.Status.ExecutedActions[action.Name] = *action.Assert
-		}
+		t.Status.ScheduledJobs = append(t.Status.ScheduledJobs, action.Name)
 	}
 
 	return nil
