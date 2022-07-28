@@ -18,7 +18,6 @@ spec:
 
     volumes:
       - name: config
-        namespace:
         configMap:
           name: system.telemetry.grafana.config
     containers:

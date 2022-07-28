@@ -5,6 +5,8 @@ metadata:
   name: iperf.server
 spec:
   service:
+    decorators:   # Add support for Telemetry
+      telemetry: [system.telemetry.agent]
     containers:
       - name: app
         image: czero/iperf2
@@ -22,6 +24,10 @@ spec:
     parameters:
       target: localhost
   service:
+    decorators:
+      telemetry:                  # Register Telemetry Agents
+        - system.telemetry.agent  # Collect Generic System's Metrics
+        - iperf2.telemetry.client # Collect App Specific Metrics
     containers:
       - name: app
         image: czero/iperf2
@@ -33,7 +39,7 @@ spec:
 apiVersion: frisbee.dev/v1alpha1
 kind: Scenario
 metadata:
-  name: deletions
+  name: live-monitoring
 spec:
   actions:
     - action: Service

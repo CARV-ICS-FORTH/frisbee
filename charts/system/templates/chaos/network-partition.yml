@@ -45,7 +45,7 @@ metadata:
 spec:
   inputs:
     parameters:
-      targets: "localhost"
+      source: "localhost"
       direction: both
       duration: "2m"
   chaos:
@@ -68,7 +68,7 @@ spec:
           mode: all
           selector:
             pods:
-              {{.Release.Namespace}}: [{{"{{.Inputs.Parameters.targets}}"}}]
+              {{.Release.Namespace}}: [{{"{{.Inputs.Parameters.source}}"}}]
 
 ---
 # system.chaos.network.partition.namespace will separate the target service from every other service in the namespace,
@@ -81,7 +81,7 @@ metadata:
 spec:
   inputs:
     parameters:
-      targets: "localhost"
+      source: "localhost"
       direction: both
       duration: "2m"
   chaos:
@@ -102,5 +102,4 @@ spec:
           mode: all
           selector:
             pods:
-              {{.Release.Namespace}}:
-                - {{"{{.Inputs.Parameters.target}}"}}
+              {{.Release.Namespace}}: [ {{"{{.Inputs.Parameters.source}}"}} ]

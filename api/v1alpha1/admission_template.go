@@ -64,7 +64,7 @@ func (in *Template) ValidateCreate() error {
 			Namespace: "",
 			Inputs:    in.Spec.Inputs,
 		}); err != nil {
-			return errors.Wrapf(err, "Invalid template definition")
+			return errors.Wrapf(err, "ernoneous template '%s'", in.GetName())
 		}
 	}
 

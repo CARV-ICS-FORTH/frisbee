@@ -81,7 +81,7 @@ func (expr ExprState) Evaluate(state interface{}) (string, error) {
 	var out strings.Builder
 
 	if err := t.Execute(&out, state); err != nil {
-		return "", errors.Wrapf(err, "execution error")
+		return "", errors.Wrapf(err, "malformed inputs")
 	}
 
 	return out.String(), nil
