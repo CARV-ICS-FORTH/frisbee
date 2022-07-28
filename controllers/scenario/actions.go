@@ -67,7 +67,7 @@ func (r *Controller) service(ctx context.Context, t *v1alpha1.Scenario, action v
 	v1alpha1.SetActionLabel(&job.ObjectMeta, action.Name)
 
 	// The job belongs to a SUT, unless the template is explicitly declared as a System job (SYS)
-	if spec.Decorators != nil && spec.Decorators.Labels != nil &&
+	if spec.Decorators.Labels != nil &&
 		spec.Decorators.Labels[v1alpha1.LabelComponent] == string(v1alpha1.ComponentSys) {
 		v1alpha1.SetComponentLabel(&job.ObjectMeta, v1alpha1.ComponentSys)
 	} else {

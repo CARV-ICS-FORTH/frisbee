@@ -112,10 +112,13 @@ func (r *Controller) update(e event.UpdateEvent) bool {
 		return false
 	}
 
-	if prev.Status.Phase == latest.Status.Phase {
-		// a controller never initiates a phase change, and so is never asleep waiting for the same.
-		return false
-	}
+	/*
+		if prev.Status.Phase == latest.Status.Phase {
+			// a controller never initiates a phase change, and so is never asleep waiting for the same.
+			return false
+		}
+
+	*/
 
 	r.Logger.Info("** Detected",
 		"Request", "Update",

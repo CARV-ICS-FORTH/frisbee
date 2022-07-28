@@ -5,6 +5,10 @@ metadata:
   name: ycsb.telemetry.client
 spec:
   service:
+    decorators:
+      annotations:
+        "sidecar.frisbee.dev/telemetry": telegraf
+
     containers: # Container(s)
       - name: telegraf
         image: telegraf:1.20.3
@@ -31,11 +35,8 @@ spec:
                export_timestamp = true
                collectors_exclude = ["gocollector","process"]
             EOF
-            telegraf --config /tmp/prometheus.conf &
-            while [ ! -f "/dev/shm/stop" ];
-            do
-              sleep 10
-            done
+
+            telegraf --config /tmp/prometheus.conf
 
 
 ---

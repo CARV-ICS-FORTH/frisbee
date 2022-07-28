@@ -134,7 +134,7 @@
   "fiscalYearStartMonth": 0,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": 11,
+  "id": 1,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -1201,7 +1201,8 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "unit": "none"
         },
         "overrides": []
       },
@@ -1222,14 +1223,34 @@
       "styles": null,
       "targets": [
         {
+          "exemplar": true,
           "expr": "max(up) by (node, instance)",
           "format": "table",
+          "instant": true,
+          "interval": "",
           "intervalFactor": 1,
+          "legendFormat": "",
           "refId": "Used"
         }
       ],
       "title": "Placement Table",
       "transform": "",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "Value": true
+            },
+            "indexByName": {},
+            "renameByName": {
+              "instance": "Instance",
+              "node": "Node"
+            }
+          }
+        }
+      ],
       "type": "table"
     },
     {
@@ -1314,42 +1335,6 @@
       "type": "row"
     },
     {
-      "alert": {
-        "alertRuleTags": {},
-        "conditions": [
-          {
-            "evaluator": {
-              "params": [
-                0.20000000298023224
-              ],
-              "type": "lt"
-            },
-            "operator": {
-              "type": "and"
-            },
-            "query": {
-              "params": [
-                "avg",
-                "30s",
-                "now"
-              ]
-            },
-            "reducer": {
-              "params": [],
-              "type": "avg"
-            },
-            "type": "query"
-          }
-        ],
-        "executionErrorState": "keep_state",
-        "for": "0s",
-        "frequency": "1m",
-        "handler": 1,
-        "message": "Alert [karvdash-fnikol/Cluster/workloads] for object frisbee.dev/v1alpha1, Kind=Cluster workloads has been fired",
-        "name": "karvdash-fnikol/Cluster/workloads",
-        "noDataState": "keep_state",
-        "notifications": []
-      },
       "datasource": null,
       "description": "container_cpu_usage_seconds_total which gives you how long the CPU has been occupied. 1s = a single Core for a whole second.\n\n",
       "editable": false,
@@ -2131,6 +2116,7 @@
         "x": 0,
         "y": 78
       },
+      "heatmap": {},
       "hideZeroBuckets": false,
       "highlightCards": true,
       "id": 106,
@@ -4370,5 +4356,5 @@
   "timezone": "",
   "title": "Frisbee SUT Monitoring (Summary)",
   "uid": "summary",
-  "version": 2
+  "version": 1
 }

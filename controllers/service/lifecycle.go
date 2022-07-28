@@ -44,6 +44,7 @@ func updateLifecycle(cr *v1alpha1.Service, pod *corev1.Pod) v1alpha1.Lifecycle {
 
 // convertLifecycle translates the Pod's Lifecycle to Frisbee Lifecycle.
 func convertLifecycle(pod *corev1.Pod) v1alpha1.Lifecycle {
+
 	switch pod.Status.Phase {
 	case corev1.PodPending:
 		return v1alpha1.Lifecycle{
@@ -53,6 +54,21 @@ func convertLifecycle(pod *corev1.Pod) v1alpha1.Lifecycle {
 		}
 
 	case corev1.PodRunning:
+		// In case that the "main" container is complete, then assume that the entire service is complete.
+		// Sidecars containers will be later on garbage-collected by the service controller.
+		for _, container := range pod.Status.ContainerStatuses {
+			if container.Name == v1alpha1.MainAppContainerName && container.State.Terminated != nil {
+				return v1alpha1.Lifecycle{
+					Phase:   v1alpha1.PhaseSuccess,
+					Reason:  pod.Status.Reason,
+					Message: pod.Status.Message,
+				}
+			}
+
+			// TODO: Should we add the case where a side-car fails before the main container?
+		}
+
+		// All containers are still running
 		return v1alpha1.Lifecycle{
 			Phase:   v1alpha1.PhaseRunning,
 			Reason:  pod.Status.Reason,

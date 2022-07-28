@@ -131,10 +131,10 @@ type Callable struct {
 // ServiceSpec defines the desired state of Service.
 type ServiceSpec struct {
 	// +optional
-	Requirements *Requirements `json:"requirements,omitempty"`
+	Decorators Decorators `json:"decorators,omitempty"`
 
 	// +optional
-	Decorators *Decorators `json:"decorators,omitempty"`
+	Requirements *Requirements `json:"requirements,omitempty"`
 
 	// +optional
 	Callables map[string]Callable `json:"callables,omitempty"`

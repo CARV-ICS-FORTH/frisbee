@@ -143,3 +143,17 @@ func GetInstanceLabel(obj metav1.Object) map[string]string {
 func PropagateLabels(child metav1.Object, parent metav1.Object) {
 	child.SetLabels(labels.Merge(child.GetLabels(), parent.GetLabels()))
 }
+
+const (
+	// SidecarTelemetry is an annotation's value indicating the annotation's key is a telemetry agent.
+	SidecarTelemetry = "sidecar.frisbee.dev/telemetry"
+)
+
+const (
+	// PrometheusDiscoverablePort is a prefix that all telemetry sidecars should use in the naming of
+	// the exposed ports in order to be discoverable by Prometheus.
+	PrometheusDiscoverablePort = "tel-"
+
+	// MainAppContainerName  is the main application that run the service. A service can be either "Main" or "Sidecar".
+	MainAppContainerName = "app"
+)

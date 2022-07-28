@@ -53,6 +53,14 @@ func (in *Template) Default() {
 func (in *Template) ValidateCreate() error {
 	templatelog.V(5).Info("validate create", "name", in.Name)
 
+	if err := in.validateTemplateLanguage(); err != nil {
+		return errors.Wrapf(err, "erroneous template '%s'", in.GetName())
+	}
+
+	return nil
+}
+
+func (in *Template) validateTemplateLanguage() error {
 	{ // Ensure the template is ok and there are no brackets missing.
 		specBody, err := json.Marshal(in.Spec)
 		if err != nil {
@@ -64,7 +72,7 @@ func (in *Template) ValidateCreate() error {
 			Namespace: "",
 			Inputs:    in.Spec.Inputs,
 		}); err != nil {
-			return errors.Wrapf(err, "ernoneous template '%s'", in.GetName())
+			return errors.Wrapf(err, "template language error")
 		}
 	}
 
@@ -73,7 +81,7 @@ func (in *Template) ValidateCreate() error {
 			Spec: *in.Spec.Service,
 		}
 
-		return v.ValidateCreate()
+		return errors.Wrapf(v.ValidateCreate(), "service definition error")
 	}
 
 	if in.Spec.Chaos != nil {
@@ -81,7 +89,7 @@ func (in *Template) ValidateCreate() error {
 			Spec: *in.Spec.Chaos,
 		}
 
-		return v.ValidateCreate()
+		return errors.Wrapf(v.ValidateCreate(), "chaos definition error")
 	}
 
 	return nil

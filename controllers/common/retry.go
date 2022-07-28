@@ -27,10 +27,10 @@ import (
 )
 
 var backoff = wait.Backoff{
-	Duration: 3 * time.Second,
+	Duration: time.Second,
 	Factor:   3,
 	Jitter:   0.1,
-	Steps:    4,
+	Steps:    3,
 }
 
 func AbortAfterRetry(ctx context.Context, logger logr.Logger, cb func() error) bool {
@@ -54,7 +54,7 @@ func AbortAfterRetry(ctx context.Context, logger logr.Logger, cb func() error) b
 
 	// retry until Grafana is ready to receive annotations.
 	if err := retry.OnError(backoff, isRetriable, func() error { return cb() }); err != nil {
-		logger.Info("Abort Retrying", "cause", ctx.Err())
+		logger.Info("Abort Retrying")
 
 		return true // abort
 	}

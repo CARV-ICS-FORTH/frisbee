@@ -30,7 +30,6 @@ spec:
           - |         # Multi-line str
             set -eum
             cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
-            trap "touch /dev/shm/stop" EXIT # Sidecar: use it to terminate itself when this container has exit.
 
             cat > redis.conf <<EOF
               port 6379
@@ -82,7 +81,6 @@ spec:
           - |         # Multi-line str
             set -eum
             cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
-            trap "touch /dev/shm/stop" EXIT # Sidecar: use it to terminate itself when this container has exit.
 
             cat > redis.conf <<EOF
               port 6379
@@ -130,7 +128,6 @@ spec:
           - |         # Multi-line str
             set -eum
             cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
-            trap "touch /dev/shm/stop" EXIT # Sidecar: use it to terminate itself when this container has exit.
 
             echo "Watch {{"{{.Inputs.Parameters.master}}"}}:6379"
 
