@@ -14,7 +14,6 @@ global:
 ## @param operator.enabled Set it to false for running the controller outside the Kubernetes Cluster.
 ## @param operator.name Defines the name of the controller.
 ## @param operator.advertisedHost Defines the Public IP of the controller, when operator.enabled==false.
-## @param operator.filteredPrometheusPort Is a prefix that telemetry sidecars should use in the Ports in order to be discoverable by Prometheus.
 
 
 ## @param operator.webhook.k8s.enabled Enables the Admission webhooks
