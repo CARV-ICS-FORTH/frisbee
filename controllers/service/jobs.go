@@ -73,7 +73,26 @@ func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Service) error {
 }
 
 func setDefaultValues(cr *v1alpha1.Service) {
+	// Set the restart policy
 	cr.Spec.RestartPolicy = corev1.RestartPolicyNever
+
+	// Set the pre/post execution hooks
+	for i := 0; i < len(cr.Spec.Containers); i++ {
+		// Use this for the telemetry sidecar to be able to enter the cgroup of the main container
+		/*
+			cr.Spec.Containers[i].Lifecycle = &corev1.Lifecycle{
+				PostStart: &corev1.Handler{
+					Exec: &corev1.ExecAction{
+						Command: []string{
+							// "/bin/sh", "-c", "|", "cut -d ' ' -f 4 /proc/self/stats > /dev/shm/app",
+						},
+					},
+				},
+				PreStop: nil,
+			}
+
+		*/
+	}
 }
 
 var pathType = netv1.PathTypePrefix
@@ -209,9 +228,6 @@ func setField(cr *v1alpha1.Service, val v1alpha1.SetField) (err error) {
 }
 
 func decoratePod(ctx context.Context, r *Controller, cr *v1alpha1.Service) error {
-	if cr.Spec.Decorators == nil {
-		return nil
-	}
 
 	// set labels
 	if req := cr.Spec.Decorators.Labels; req != nil {

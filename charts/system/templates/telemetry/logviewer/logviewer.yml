@@ -35,7 +35,7 @@ spec:
         command: [ "touch", "/srv/init" ]
 
     containers: # Expose collected logs
-      - name: filebrowser
+      - name: app
         image: filebrowser/filebrowser
         ports:
           - name: http

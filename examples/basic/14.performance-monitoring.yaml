@@ -5,11 +5,20 @@ metadata:
   name: iperf.server
 spec:
   service:
+    decorators:   # Add support for Telemetry
+      telemetry: [system.telemetry.agent]
     containers:
       - name: app
         image: czero/iperf2
-        command: [ iperf ]
-        args: [ "-s", "-f", "m", "-i", "5" ]
+        command:
+          - /bin/sh   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
+              set -eum
+              cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
+              
+              iperf -s -f m -i 5
+
 
 
 ---
@@ -22,18 +31,28 @@ spec:
     parameters:
       target: localhost
   service:
+    decorators:
+      telemetry:                  # Register Telemetry Agents
+        - system.telemetry.agent  # Collect Generic System's Metrics
+        - iperf2.telemetry.client # Collect App Specific Metrics
     containers:
       - name: app
         image: czero/iperf2
-        command: [ iperf ]
-        args: [ "-c", "{{.Inputs.Parameters.target}}", "-t", "500" ]
+        command:
+          - /bin/sh   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
+              set -eum
+              cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
+  
+              iperf -c {{.Inputs.Parameters.target}} -t 500 > /dev/shm/pipe
 
 
 ---
 apiVersion: frisbee.dev/v1alpha1
 kind: Scenario
 metadata:
-  name: deletions
+  name: performance-monitoring
 spec:
   actions:
     - action: Service

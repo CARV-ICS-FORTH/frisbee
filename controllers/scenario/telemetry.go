@@ -250,10 +250,8 @@ func (r *Controller) ImportTelemetryDashboards(ctx context.Context, scenario *v1
 		}
 
 		// firstly store everything on a map to avoid duplicates
-		if spec.Decorators != nil {
-			for _, dashboard := range spec.Decorators.Telemetry {
-				dedup[dashboard] = struct{}{}
-			}
+		for _, dashboard := range spec.Decorators.Telemetry {
+			dedup[dashboard] = struct{}{}
 		}
 	}
 

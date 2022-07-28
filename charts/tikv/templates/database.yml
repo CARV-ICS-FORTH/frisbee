@@ -47,7 +47,6 @@ spec:
           - |         # Multi-line str
             set -eum
             cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
-            trap "touch /dev/shm/stop" EXIT # Sidecar: use it to terminate itself when this container has exit.
 
             rm -rf /store/$${HOSTNAME}
             mkdir -p /store/$${HOSTNAME}/pd
@@ -113,7 +112,6 @@ spec:
           - |         # Multi-line str
             set -eum
             cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
-            trap "touch /dev/shm/stop" EXIT # Sidecar: use it to terminate itself when this container has exit.
 
             # increase the maximum number of open file descriptors
             ulimit -n 82920

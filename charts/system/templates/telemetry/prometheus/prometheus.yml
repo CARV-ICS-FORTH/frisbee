@@ -22,7 +22,7 @@ spec:
           name: system.telemetry.prometheus.config
 
     containers:
-      - name: prometheus
+      - name: app
         image: "prom/prometheus"
         ports:
           - name: http

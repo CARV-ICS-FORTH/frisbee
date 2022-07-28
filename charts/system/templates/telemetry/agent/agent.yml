@@ -13,6 +13,9 @@ metadata:
   name: system.telemetry.agent
 spec:
   service:
+    decorators:
+      annotations:
+        "sidecar.frisbee.dev/telemetry": cadvisor
     containers:
       - name: cadvisor
         image: gcr.io/cadvisor/cadvisor:v0.44.0
@@ -58,14 +61,7 @@ spec:
             --housekeeping_interval=2s            \
             --disable_root_cgroup_stats=false     \
             --disable_metrics=advtcp,cpuLoad,cpu_topology,cpuset,hugetlb,memory_numa,process,referenced_memory,resctrl,sched,percpu,process,perf_event,tcp,udp  \
-            --enable_metrics=cpu,memory,disk,diskIO,network,accelerator,oom_event \
-            &
-
-
-            while [ ! -f "/dev/shm/stop" ];
-            do
-              sleep 10
-            done
+            --enable_metrics=cpu,memory,disk,diskIO,network,accelerator,oom_event
 
 
 ---

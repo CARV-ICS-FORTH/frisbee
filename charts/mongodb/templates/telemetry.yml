@@ -5,6 +5,10 @@ metadata:
   name: mongodb.telemetry.server
 spec:
   service:
+    decorators:
+      annotations:
+        "sidecar.frisbee.dev/telemetry": telegraf
+
     containers:
       - name: telegraf
         image: telegraf:1.20.3
@@ -37,13 +41,7 @@ spec:
                collectors_exclude = ["gocollector","process"]
             EOF
 
-            telegraf --config /tmp/prometheus.conf &
-
-            # When the stop file is added by the container, the process stop
-            while [ ! -f "/dev/shm/stop" ];
-            do
-              sleep 10
-            done
+            telegraf --config /tmp/prometheus.conf
 
 
 ---
@@ -53,6 +51,10 @@ metadata:
   name: mongodb.telemetry.server2
 spec:
   service:
+    decorators:
+      annotations:
+        "sidecar.frisbee.dev/telemetry": exporter
+
     containers:
       - name: exporter
         image: bitnami/mongodb-exporter:latest
@@ -67,13 +69,7 @@ spec:
 
              mongodb_exporter                               \
               --web.listen-address=":9443"                  \
-              --mongodb.uri="mongodb://localhost:27017"     &
-
-            # When the stop file is added by the container, the process stop
-            while [ ! -f "/dev/shm/stop" ];
-            do
-              sleep 10
-            done
+              --mongodb.uri="mongodb://localhost:27017"
 
 
 

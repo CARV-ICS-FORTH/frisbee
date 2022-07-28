@@ -51,7 +51,6 @@ spec:
           - |  # Multi-line str
             set -eum
             cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
-            trap "touch /dev/shm/stop" EXIT # Sidecar: use it to terminate itself when this container has exit.
 
             # Copy the media dataset into the local directory for processing. We use copy in order to avoid sending the
             # I/O through the shared media.

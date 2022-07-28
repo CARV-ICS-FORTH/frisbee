@@ -5,6 +5,10 @@ metadata:
   name: fio.telemetry.client
 spec:
   service:
+    decorators:
+      annotations:
+        "sidecar.frisbee.dev/telemetry": telegraf
+
     containers:
       - name: telegraf
         image: telegraf:1.20.3
@@ -40,13 +44,7 @@ spec:
 
             EOF
 
-            telegraf --config /tmp/fio.conf &
-
-            # When the stop file is added by the container, the process stop
-            while [ ! -f "/dev/shm/stop" ];
-            do
-              sleep 10
-            done
+            telegraf --config /tmp/fio.conf
 
 ---
 apiVersion: v1
