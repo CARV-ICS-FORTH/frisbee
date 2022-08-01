@@ -497,11 +497,11 @@ func NewController(mgr ctrl.Manager, logger logr.Logger, alertingPort int) error
 	return ctrl.NewControllerManagedBy(mgr).
 		Named("scenario").
 		For(&v1alpha1.Scenario{}).
-		Owns(&v1alpha1.Service{}, watchers.Watch(r, gvk)). // Watch Services
-		Owns(&v1alpha1.Cluster{}, watchers.Watch(r, gvk)). // Watch Cluster
-		Owns(&v1alpha1.Chaos{}, watchers.Watch(r, gvk)). // Watch Chaos
-		Owns(&v1alpha1.Cascade{}, watchers.Watch(r, gvk)). // Watch Cascade
+		Owns(&v1alpha1.Service{}, watchers.Watch(r, gvk)).       // Watch Services
+		Owns(&v1alpha1.Cluster{}, watchers.Watch(r, gvk)).       // Watch Cluster
+		Owns(&v1alpha1.Chaos{}, watchers.Watch(r, gvk)).         // Watch Chaos
+		Owns(&v1alpha1.Cascade{}, watchers.Watch(r, gvk)).       // Watch Cascade
 		Owns(&v1alpha1.VirtualObject{}, watchers.Watch(r, gvk)). // Watch VirtualObjects
-		Owns(&v1alpha1.Call{}, watchers.Watch(r, gvk)). // Watch Calls
+		Owns(&v1alpha1.Call{}, watchers.Watch(r, gvk)).          // Watch Calls
 		Complete(r)
 }

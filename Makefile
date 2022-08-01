@@ -121,9 +121,6 @@ api-docs: gen-crd-api-reference-docs	## Generate API reference documentation
 
 .PHONY: certs
 certs:  ## Download certs under 'certs' folder
-	# @echo "===> Generate Certs <==="
-	# WEBHOOK_DIR=${WEBHOOK_DIR} $(CURDIR)/hack/gen_cert.sh
-
 	@echo "===> Download Certs <==="
 	@mkdir -p ${CERTS_DIR}
 	@kubectl get secret webhook-tls -o json | jq -r '.data["tls.key"]' | base64 -d > ${CERTS_DIR}/tls.key
