@@ -111,13 +111,97 @@ func GroupedJobs(queuedJobs int, state ClassifierReader, lf *v1alpha1.Lifecycle,
 		{ // Not all Jobs are yet created
 			expression: lf.Phase == v1alpha1.PhasePending,
 			lifecycle: v1alpha1.Lifecycle{
-				Phase:  v1alpha1.PhasePending,
-				Reason: "JobIsPending",
-				Message: fmt.Sprintf("queued:%d pending:%s running:%s successful:%s failed:%s",
-					queuedJobs, state.ListPendingJobs(), state.ListRunningJobs(), state.ListSuccessfulJobs(), state.ListFailedJobs()),
+				Phase:   v1alpha1.PhasePending,
+				Reason:  "JobIsPending",
+				Message: fmt.Sprintf("queued:%d \n %s", queuedJobs, state.ListAll()),
 			},
 		},
 	}...)
+
+	for _, testcase := range testSequence {
+		if testcase.expression {
+			*lf = testcase.lifecycle
+
+			if testcase.condition != (metav1.Condition{}) {
+				meta.SetStatusCondition(&lf.Conditions, testcase.condition)
+			}
+
+			return true
+		}
+	}
+
+	return false
+}
+
+func SingleJob(state ClassifierReader, lf *v1alpha1.Lifecycle) bool {
+	// There is not a known state
+	if state.NumPendingJobs()+
+		state.NumRunningJobs()+
+		state.NumSuccessfulJobs()+
+		state.NumFailedJobs() == 0 {
+		panic("unknown state")
+	}
+
+	// The object exists in more than one known states
+	if state.NumPendingJobs()+
+		state.NumRunningJobs()+
+		state.NumSuccessfulJobs()+
+		state.NumFailedJobs() > 1 {
+		panic("invalid transition")
+	}
+
+	testSequence := []test{
+		{ // Pending
+			expression: state.NumPendingJobs() > 0,
+			lifecycle: v1alpha1.Lifecycle{
+				Phase:   v1alpha1.PhasePending,
+				Reason:  "JobIsPending",
+				Message: state.NumAll(),
+			},
+		},
+		{ // Running
+			expression: state.NumRunningJobs() > 0,
+			lifecycle: v1alpha1.Lifecycle{
+				Phase:   v1alpha1.PhaseRunning,
+				Reason:  "AllJobsRunning",
+				Message: fmt.Sprintf("running: %s", state.ListRunningJobs()),
+			},
+			condition: metav1.Condition{
+				Type:    v1alpha1.ConditionAllJobsAreScheduled.String(),
+				Status:  metav1.ConditionTrue,
+				Reason:  "AllJobsRunning",
+				Message: fmt.Sprintf("running: %s", state.ListRunningJobs()),
+			},
+		},
+		{ // Successful
+			expression: state.NumSuccessfulJobs() > 0,
+			lifecycle: v1alpha1.Lifecycle{
+				Phase:   v1alpha1.PhaseSuccess,
+				Reason:  "AllJobsCompleted",
+				Message: fmt.Sprintf("successful jobs: %s", state.ListSuccessfulJobs()),
+			},
+			condition: metav1.Condition{
+				Type:    v1alpha1.ConditionAllJobsAreCompleted.String(),
+				Status:  metav1.ConditionTrue,
+				Reason:  "AllJobsCompleted",
+				Message: fmt.Sprintf("successful jobs: %s", state.ListSuccessfulJobs()),
+			},
+		},
+		{
+			expression: state.NumFailedJobs() > 0,
+			lifecycle: v1alpha1.Lifecycle{
+				Phase:   v1alpha1.PhaseFailed,
+				Reason:  "JobHasFailed",
+				Message: fmt.Sprintf("failed jobs: %s", state.ListFailedJobs()),
+			},
+			condition: metav1.Condition{
+				Type:    v1alpha1.ConditionJobUnexpectedTermination.String(),
+				Status:  metav1.ConditionTrue,
+				Reason:  "JobHasFailed",
+				Message: fmt.Sprintf("failed jobs: %s", state.ListFailedJobs()),
+			},
+		},
+	}
 
 	for _, testcase := range testSequence {
 		if testcase.expression {

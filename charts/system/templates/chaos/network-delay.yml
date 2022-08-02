@@ -12,7 +12,6 @@ spec:
       correlation: "25"
       jitter: "90ms"
   chaos:
-    type: raw
     raw: |
       apiVersion: chaos-mesh.org/v1alpha1
       kind: NetworkChaos

@@ -18,36 +18,29 @@ package cascade
 
 import (
 	"context"
-	"fmt"
+	"github.com/carv-ics-forth/frisbee/controllers/common"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	chaosutils "github.com/carv-ics-forth/frisbee/controllers/chaos/utils"
 	"github.com/pkg/errors"
 )
 
-// if there is only one instance, it will be named after the group. otherwise, the instances will be named
-// as Master-0, Master-1, ...
-func generateName(group *v1alpha1.Cascade, i int) string {
-	if group.Spec.MaxInstances == 1 {
-		return group.GetName()
-	}
+func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Cascade, i int) error {
+	var job v1alpha1.Chaos
 
-	return fmt.Sprintf("%s-%d", group.GetName(), i)
-}
+	// Populate the job
+	job.SetName(common.GenerateName(cr, i, cr.Spec.MaxInstances))
 
-func getJob(group *v1alpha1.Cascade, i int) *v1alpha1.Chaos {
-	var instance v1alpha1.Chaos
-
-	instance.SetName(generateName(group, i))
-
-	v1alpha1.PropagateLabels(&instance, group)
+	v1alpha1.SetScenarioLabel(&job.ObjectMeta, v1alpha1.GetScenarioLabel(cr))
+	v1alpha1.SetActionLabel(&job.ObjectMeta, v1alpha1.GetActionLabel(cr))
+	v1alpha1.SetComponentLabel(&job.ObjectMeta, v1alpha1.GetComponentLabel(cr))
 
 	// modulo is needed to re-iterate the job list, required for the implementation of "Until".
-	jobSpec := group.Status.QueuedJobs[i%len(group.Status.QueuedJobs)]
+	jobSpec := cr.Status.QueuedJobs[i%len(cr.Status.QueuedJobs)]
 
-	jobSpec.DeepCopyInto(&instance.Spec)
+	jobSpec.DeepCopyInto(&job.Spec)
 
-	return &instance
+	return common.Create(ctx, r, cr, &job)
 }
 
 func (r *Controller) constructJobSpecList(ctx context.Context, group *v1alpha1.Cascade) ([]v1alpha1.ChaosSpec, error) {

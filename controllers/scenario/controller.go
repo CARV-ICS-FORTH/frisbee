@@ -30,8 +30,6 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -60,7 +58,7 @@ type Controller struct {
 
 func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	/*
-		1: Load CR by name.
+		1: Load CR by name and extract the Desired State
 		------------------------------------------------------------------
 	*/
 	var cr v1alpha1.Scenario
@@ -88,35 +86,41 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		)
 	}()
 
-	if err := r.GetClusterView(ctx, req.NamespacedName); err != nil {
-		return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot get the cluster view for '%s'", req))
+	/*
+		2: Load CR's children and classify their current state (view)
+		------------------------------------------------------------------
+	*/
+	if err := r.PopulateView(ctx, req.NamespacedName); err != nil {
+		return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot populate view for '%s'", req))
 	}
 
 	/*
-		4: Update the CR status using the data we've gathered
+		3: Use the view to update the CR's lifecycle.
 		------------------------------------------------------------------
-
-		The Update at this step serves two functions.
-		First, it is like "journaling" for the upcoming operations.
-		Second, it is a roadblock for stall (queued) requests.
-
-		However, due to the multiple updates, it is possible for this function to
-		be in conflict. We fix this issue by re-queueing the request.
-		We also suppress verbose error reporting as to avoid polluting the output.
+		The Update serves as "journaling" for the upcoming operations,
+		and as a roadblock for stall (queued) requests.
 	*/
-	cr.SetReconcileStatus(r.updateLifecycle(&cr))
+	r.updateLifecycle(&cr)
 
 	if err := common.UpdateStatus(ctx, r, &cr); err != nil {
-		r.Info("Reschedule.", "object", cr.GetName(), "UpdateStatusErr", err)
+		// due to the multiple updates, it is possible for this function to
+		// be in conflict. We fix this issue by re-queueing the request.
 		return common.RequeueAfter(time.Second)
 	}
 
 	/*
-		If this object is suspended, we don't want to run any jobs, so we'll call now.
-		This is useful if something's broken with the job we're running, and we want to
-		pause runs to investigate or putz with the cluster, without deleting the object.
+		4: Make the world matching what we want in our spec.
+		------------------------------------------------------------------
 	*/
+
 	if cr.Spec.Suspend != nil && *cr.Spec.Suspend {
+		// If this object is suspended, we don't want to run any jobs, so we'll stop now.
+		// This is useful if something's broken with the job we're running, and we want to
+		// pause runs to investigate the cluster, without deleting the object.
+
+		r.GetEventRecorderFor(cr.GetName()).Event(&cr, corev1.EventTypeNormal,
+			"Suspend", cr.Status.Lifecycle.Message)
+
 		r.Logger.Info("Suspended",
 			"scenario", cr.GetName(),
 			"reason", cr.Status.Reason,
@@ -126,87 +130,111 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return common.Stop()
 	}
 
-	/*
-		5: Clean up the controller from finished jobs
-		------------------------------------------------------------------
+	// Label this resource with the name of the scenario.
+	// This label will be adopted by all children objects of this workflow.
+	v1alpha1.SetScenarioLabel(&cr.ObjectMeta, cr.GetName())
 
-		First, we'll try to clean up old jobs, so that we don't leave too many lying
-		around.
-	*/
+	switch cr.Status.Phase {
 
-	if cr.Status.Phase.Is(v1alpha1.PhaseSuccess) {
+	case v1alpha1.PhaseSuccess:
 		if err := r.HasSucceed(ctx, &cr); err != nil {
 			return common.RequeueAfter(time.Second)
 		}
 
 		return common.Stop()
-	}
 
-	if cr.Status.Phase.Is(v1alpha1.PhaseFailed) {
+	case v1alpha1.PhaseFailed:
 		if err := r.HasFailed(ctx, &cr); err != nil {
 			return common.RequeueAfter(time.Second)
 		}
 
 		return common.Stop()
-	}
 
-	if cr.Status.Phase.Is(v1alpha1.PhaseRunning) {
+	case v1alpha1.PhaseRunning:
+		// Nothing to do. Just wait for something to happen.
+		r.Logger.Info(".. Awaiting",
+			"name", cr.GetName(),
+			cr.Status.Reason, cr.Status.Message,
+		)
+
 		return common.Stop()
-	}
 
-	if cr.Status.Phase.Is(v1alpha1.PhaseUninitialized) {
-		if err := r.InitScenario(ctx, &cr); err != nil {
+	case v1alpha1.PhaseUninitialized:
+		if err := r.Initialize(ctx, &cr); err != nil {
 			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "scenario initialization error"))
 		}
 
 		return lifecycle.Pending(ctx, r, &cr, "The Scenario is ready to start submitting jobs.")
-	}
 
-	/*
-		6: Make the world matching what we want in our spec
-		------------------------------------------------------------------
+	case v1alpha1.PhasePending:
+		actionList, nextRun := r.NextJobs(&cr)
 
-		Once we've updated our status, we can move on to ensuring that the status of
-		the world matches what we want in our spec.
+		if len(actionList) == 0 {
+			if nextRun.IsZero() {
+				// nothing to do on this cycle. wait the next cycle trigger by watchers.
+				return common.Stop()
+			}
 
-		We may delete the service, add a pod, or wait for existing pod to change its status.
-	*/
+			r.Logger.Info(".. Awaiting",
+				"name", cr.GetName(),
+				"sleep until", nextRun)
 
-	/*
-		7: Get the next logical run
-		------------------------------------------------------------------
-	*/
-	actionList, nextRun := r.NextJobs(&cr)
-
-	if len(actionList) == 0 {
-		if nextRun.IsZero() {
-			// nothing to do on this cycle. wait the next cycle trigger by watchers.
-			return common.Stop()
+			return common.RequeueAfter(time.Until(nextRun))
 		}
 
-		r.Logger.Info(".. Awaiting",
-			"name", cr.GetName(),
-			"sleep until", nextRun)
+		if err := r.RunActions(ctx, &cr, actionList); err != nil {
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "actions failed"))
+		}
 
-		return common.RequeueAfter(time.Until(nextRun))
+		return lifecycle.Pending(ctx, r, &cr, "some jobs are still pending")
+
 	}
 
-	if err := r.RunActions(ctx, &cr, actionList); err != nil {
-		return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "actions failed"))
+	panic(errors.New("This should never happen"))
+}
+
+func (r *Controller) Initialize(ctx context.Context, cr *v1alpha1.Scenario) error {
+	/* Clone system configuration, needed to retrieve telemetry, chaos, etc  */
+	sysconf, err := configuration.Get(ctx, r.GetClient(), r.Logger)
+	if err != nil {
+		return errors.Wrapf(err, "cannot get system configuration")
 	}
 
-	return lifecycle.Pending(ctx, r, &cr, "some jobs are still pending")
+	/* FIXME: we set the configuration be global here. is there any better way ? */
+	configuration.SetGlobal(sysconf)
+
+	{
+		/*  Not the best place, but the webhook should start after we get the configuration parameters.
+		Given that, we need to start it here, and only once. An alternative solution would be to get
+		the webhook port and developer mode as parameters on the executable.
+		*/
+		startWebhookOnce.Do(func() {
+			err = r.CreateWebhookServer(ctx, r.alertingPort)
+		})
+
+		if err != nil {
+			return errors.Wrapf(err, "cannot create grafana webhook")
+		}
+	}
+
+	// Ensure that the scenario is OK
+	if errValidate := r.Validate(ctx, cr); errValidate != nil {
+		return errors.Wrapf(errValidate, "malformed description")
+	}
+
+	// Start Prometheus + Grafana
+	if errTelemetry := r.StartTelemetry(ctx, cr); errTelemetry != nil {
+		return errors.Wrapf(errTelemetry, "cannot create the telemetry stack")
+	}
+
+	return nil
 }
 
 /*
-	GetClusterView list all child objects in this namespace that belong to this scenario, and split them into
+	PopulateView list all child objects in this namespace that belong to this scenario, and split them into
 	active, successful, and failed jobs.
 */
-func (r *Controller) GetClusterView(ctx context.Context, req types.NamespacedName) error {
-	/*
-		to relief garbage collector, we use a common state that is reset at every reconciliation cycle.
-		Be careful since this approach may fail if we run multiple  reconciliation loops simultaneously.
-	*/
+func (r *Controller) PopulateView(ctx context.Context, req types.NamespacedName) error {
 	r.view.Reset()
 
 	var serviceJobs v1alpha1.ServiceList
@@ -283,60 +311,10 @@ func (r *Controller) GetClusterView(ctx context.Context, req types.NamespacedNam
 	return nil
 }
 
-func (r *Controller) InitScenario(ctx context.Context, t *v1alpha1.Scenario) error {
-	/* Clone system configuration, needed to retrieve telemetry, chaos, etc  */
-	sysconf, err := configuration.Get(ctx, r.GetClient(), r.Logger)
-	if err != nil {
-		return errors.Wrapf(err, "cannot get system configuration")
-	}
-
-	/* FIXME: we set the configuration be global here. is there any better way ? */
-	configuration.SetGlobal(sysconf)
-
-	{
-		/*  Not the best place, but the webhook should start after we get the configuration parameters.
-		Given that, we need to start it here, and only once. An alternative solution would be to get
-		the webhook port and developer mode as parameters on the executable.
-		*/
-		startWebhookOnce.Do(func() {
-			err = r.CreateWebhookServer(ctx, r.alertingPort)
-		})
-
-		if err != nil {
-			return errors.Wrapf(err, "cannot create grafana webhook")
-		}
-	}
-
-	// Label this resource with the name of the scenario.
-	// This label will be adopted by all children objects of this workflow.
-	v1alpha1.SetScenarioLabel(&t.ObjectMeta, t.GetName())
-
-	// Ensure that the scenario is OK
-	if errValidate := r.Validate(ctx, t); errValidate != nil {
-		return errors.Wrapf(errValidate, "malformed description")
-	}
-
-	// Start Prometheus + Grafana
-	if errTelemetry := r.StartTelemetry(ctx, t); errTelemetry != nil {
-		return errors.Wrapf(errTelemetry, "cannot create the telemetry stack")
-	}
-
-	meta.SetStatusCondition(&t.Status.Conditions, metav1.Condition{
-		Type:    v1alpha1.ConditionCRInitialized.String(),
-		Status:  metav1.ConditionTrue,
-		Reason:  "ScenarioInitialized",
-		Message: "The Scenario has been initialized. Start running actions",
-	})
-
-	// Update() is different than UpdateStatus(). Update() is used to update the metadata (e.g, labels).
-	if errUpdate := common.Update(ctx, r, t); errUpdate != nil {
-		return errors.Wrap(errUpdate, "cannot update metadata")
-	}
-
-	return nil
-}
-
 func (r *Controller) HasSucceed(ctx context.Context, cr *v1alpha1.Scenario) error {
+	r.GetEventRecorderFor(cr.GetName()).Event(cr, corev1.EventTypeNormal,
+		cr.Status.Lifecycle.Reason, cr.Status.Lifecycle.Message)
+
 	r.Logger.Info("CleanOnSuccess",
 		"name", cr.GetName(),
 		"successfulJobs", r.view.ListSuccessfulJobs(),
@@ -353,12 +331,13 @@ func (r *Controller) HasSucceed(ctx context.Context, cr *v1alpha1.Scenario) erro
 		}
 	}
 
-	r.StopTelemetry(cr)
-
 	return nil
 }
 
 func (r *Controller) HasFailed(ctx context.Context, cr *v1alpha1.Scenario) error {
+	r.GetEventRecorderFor(cr.GetName()).Event(cr, corev1.EventTypeWarning,
+		cr.Status.Lifecycle.Reason, cr.Status.Lifecycle.Message)
+
 	r.Logger.Error(errors.New("Resource has failed"), "CleanOnFailure",
 		"name", cr.GetName(),
 		"successfulJobs", r.view.ListSuccessfulJobs(),
@@ -435,7 +414,7 @@ func (r *Controller) RunActions(ctx context.Context, t *v1alpha1.Scenario, actio
 		// Yet, they must be tracked in order to respect the execution dependencies of the graph.
 		if action.ActionType != v1alpha1.ActionDelete {
 			if err := common.Create(ctx, r, t, job); err != nil {
-				return errors.Wrapf(err, "execution error for action %s", action.Name)
+				return errors.Wrapf(err, "execution error for action '%s'", action.Name)
 			}
 		}
 
@@ -449,6 +428,7 @@ func (r *Controller) RunActions(ctx context.Context, t *v1alpha1.Scenario, actio
 			we might not see our own status update, and then post one again.
 			So, we need to use the job name as a lock to prevent us from making the job twice.
 		*/
+		r.GetEventRecorderFor(t.GetName()).Event(t, corev1.EventTypeNormal, "Scheduled", action.Name)
 
 		t.Status.ScheduledJobs = append(t.Status.ScheduledJobs, action.Name)
 	}
@@ -471,6 +451,8 @@ func (r *Controller) Finalize(obj client.Object) error {
 		"name", obj.GetName(),
 		"version", obj.GetResourceVersion(),
 	)
+
+	r.StopTelemetry(obj.(*v1alpha1.Scenario))
 
 	return nil
 }

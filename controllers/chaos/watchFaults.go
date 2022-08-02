@@ -116,7 +116,7 @@ func (r *Controller) delete(e event.DeleteEvent) bool {
 
 	annotator, ok := r.regionAnnotations.Get(e.Object.GetName())
 	if !ok {
-		// this is a stall condition that happens when the controller is restarted. just ignore it
+		// this is a stall expression that happens when the controller is restarted. just ignore it
 		return false
 	}
 

@@ -8,7 +8,6 @@ spec:
     parameters:
       target: localhost
   chaos:
-    type: raw
     raw: |
       apiVersion: chaos-mesh.org/v1alpha1
       kind: PodChaos

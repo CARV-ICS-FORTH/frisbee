@@ -18,8 +18,6 @@ package cluster
 
 import (
 	"context"
-	"fmt"
-
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
 	serviceutils "github.com/carv-ics-forth/frisbee/controllers/service/utils"
@@ -28,21 +26,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// if there is only one instance, it will be named after the group. otherwise, the instances will be named
-// as Master-0, Master-1, ...
-func generateName(group *v1alpha1.Cluster, i int) string {
-	if group.Spec.MaxInstances == 1 {
-		return group.GetName()
-	}
-
-	return fmt.Sprintf("%s-%d", group.GetName(), i)
-}
-
-func (r *Controller) createJob(ctx context.Context, cr *v1alpha1.Cluster, i int) error {
+func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Cluster, i int) error {
 	var job v1alpha1.Service
 
 	// Populate the job
-	job.SetName(generateName(cr, i))
+	job.SetName(common.GenerateName(cr, i, cr.Spec.MaxInstances))
 
 	v1alpha1.SetScenarioLabel(&job.ObjectMeta, v1alpha1.GetScenarioLabel(cr))
 	v1alpha1.SetActionLabel(&job.ObjectMeta, v1alpha1.GetActionLabel(cr))
@@ -53,7 +41,13 @@ func (r *Controller) createJob(ctx context.Context, cr *v1alpha1.Cluster, i int)
 
 	jobSpec.DeepCopyInto(&job.Spec)
 
-	return common.Create(ctx, r, cr, &job)
+	if err := common.Create(ctx, r, cr, &job); err != nil {
+		return err
+	}
+
+	r.GetEventRecorderFor(cr.GetName()).Event(cr, corev1.EventTypeNormal, "Scheduled", job.GetName())
+
+	return nil
 }
 
 func (r *Controller) constructJobSpecList(ctx context.Context, cluster *v1alpha1.Cluster) ([]v1alpha1.ServiceSpec, error) {

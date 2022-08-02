@@ -65,14 +65,33 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	/*
-		2: Update the CR status using the data we've gathered
-		------------------------------------------------------------------
-	*/
-	if err := common.UpdateStatus(ctx, r, &cr); err != nil {
-		r.Info("Reschedule.", "object", cr.GetName(), "UpdateStatusErr", err)
+		r.Logger.Info("-> Reconcile",
+			"kind", reflect.TypeOf(cr),
+			"name", cr.GetName(),
+			"lifecycle", cr.Status.Phase,
+			"version", cr.GetResourceVersion(),
+		)
 
-		return common.RequeueAfter(time.Second)
-	}
+		defer func() {
+			r.Logger.Info("<- Reconcile",
+				"kind", reflect.TypeOf(cr),
+				"name", cr.GetName(),
+				"lifecycle", cr.Status.Phase,
+				"version", cr.GetResourceVersion(),
+			)
+		}()
+
+		/*
+			2: Update the CR status using the data we've gathered
+			------------------------------------------------------------------
+
+		if err := common.UpdateStatus(ctx, r, &cr); err != nil {
+			r.Info("Reschedule", "object", cr.GetName(), "UpdateStatusErr", err)
+
+			return common.RequeueAfter(time.Second)
+		}
+
+	*/
 
 	/*
 		3: Clean up the controller from finished jobs
@@ -90,7 +109,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	if cr.Status.Lifecycle.Phase.Is(v1alpha1.PhaseUninitialized) {
-		r.Logger.Info("Import Group",
+		r.Logger.Info("Add Template",
 			"name", req.NamespacedName,
 		)
 

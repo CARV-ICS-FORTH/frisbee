@@ -18,6 +18,8 @@ package chaos
 
 import (
 	"fmt"
+	"github.com/carv-ics-forth/frisbee/controllers/common/lifecycle"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/mitchellh/mapstructure"
@@ -25,12 +27,21 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+func (r *Controller) updateLifecycle(cr *v1alpha1.Chaos) {
+	// Skip any CR which are already completed, or uninitialized.
+	if cr.Status.Phase.Is(v1alpha1.PhaseUninitialized, v1alpha1.PhaseSuccess, v1alpha1.PhaseFailed) {
+		return
+	}
+
+	lifecycle.SingleJob(r.view, &cr.Status.Lifecycle)
+}
+
 // ConditionType ...
 type ConditionType string
 
 const (
 	// ConditionSelected indicates the chaos experiment had correctly selected the target pods
-	// where to inject chaos actions.
+	// where to runJob chaos actions.
 	ConditionSelected ConditionType = "Selected"
 
 	// ConditionAllInjected indicates the faults have been successfully injected to all target pods.
@@ -79,7 +90,7 @@ type ExperimentStatus struct {
 }
 
 type v1alpha1ChaosStatus struct {
-	// Conditions represents the current global condition of the chaos experiment.
+	// Conditions represents the current global expression of the chaos experiment.
 	// The actual status of current chaos experiments can be inferred from these conditions.
 	// +optional
 	Conditions []Condition
@@ -105,42 +116,17 @@ func (s v1alpha1ChaosStatus) Extract() (phase DesiredPhase, selected, allInjecte
 		case ConditionPaused:
 			paused = s.Conditions[i]
 		default:
-			panic(errors.Errorf("unknown condition: %v", condition))
+			panic(errors.Errorf("unknown expression: %v", condition))
 		}
 	}
 
 	return
 }
 
-func calculateLifecycle(cr *v1alpha1.Chaos, fault *GenericFault) v1alpha1.Lifecycle {
-	// Skip any CR which are already completed, or uninitialized.
-	if cr.Status.Phase.Is(v1alpha1.PhaseUninitialized, v1alpha1.PhaseSuccess, v1alpha1.PhaseFailed) {
-		return cr.Status.Lifecycle
-	}
-
-	return convertLifecycle(fault)
-}
-
-/*
-ConvertLifecycle infers the Frisbee Lifecycle from the of a Chaos-Mesh experiment.
-
-In Chaos Mesh, the life cycle of a chaos experiment is divided into four steps, according to its running process:
-
-	* Injecting: Chaos experiment is in the process of fault injection. Normally, this step lasts for a short time.
-	If the "Injecting" step lasts a long time, it may be due to some exceptions in the chaos experiment.
-
-	* Running: State the faults have been successfully injected into all target pods, the chaos experiment starts running.
-
-	* Paused: when executing a paused process for a running chaos experiment, Chaos Mesh restores the injected
-	faults from all target pods, which indicates the experiment is paused.
-
-	* Finished: if the duration parameter of the experiment is configured, and when the experiment runs it up,
-	Chaos Mesh restores the injected faults from all target pods, which indicates that the experiment is finished.
-*/
-func convertLifecycle(fault *GenericFault) v1alpha1.Lifecycle {
+func convertChaosLifecycle(obj client.Object) v1alpha1.Lifecycle {
 	var parsed v1alpha1ChaosStatus
 
-	if err := mapstructure.Decode(fault.Object["status"], &parsed); err != nil {
+	if err := mapstructure.Decode(obj.(*GenericFault).Object["status"], &parsed); err != nil {
 		return v1alpha1.Lifecycle{
 			Phase:   v1alpha1.PhaseFailed,
 			Reason:  "Interoperability",
@@ -158,19 +144,19 @@ func convertLifecycle(fault *GenericFault) v1alpha1.Lifecycle {
 
 	/*
 		There is a lot of duplication in our tests.
-		For each test case only the condition, the expected outcome, and name of the test case change.
+		For each test case only the expression, the expected lifecycle, and name of the test case change.
 		Everything else is boilerplate.
 		For this reason, we prefer table driven testing.
 	*/
 	phase, selected, allInjected, allRecovered, paused := parsed.Extract()
 
 	tests := []struct {
-		condition bool
-		outcome   v1alpha1.Lifecycle
+		expression bool
+		lifecycle  v1alpha1.Lifecycle
 	}{
 		{ // The experiment is paused. No currently supported
-			condition: paused.True(),
-			outcome: v1alpha1.Lifecycle{
+			expression: paused.True(),
+			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseFailed,
 				Reason:  "UnsupportedAction",
 				Message: "chaos pausing is not yet supported",
@@ -178,8 +164,8 @@ func convertLifecycle(fault *GenericFault) v1alpha1.Lifecycle {
 		},
 
 		{ // Starting the experiment
-			condition: selected.False() && allInjected.False() && allRecovered.False(),
-			outcome: v1alpha1.Lifecycle{
+			expression: selected.False() && allInjected.False() && allRecovered.False(),
+			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhasePending,
 				Reason:  "ChaosReStarting",
 				Message: "Re-starting Chaos from clean slate",
@@ -187,8 +173,8 @@ func convertLifecycle(fault *GenericFault) v1alpha1.Lifecycle {
 		},
 
 		{ // Starting the experiment
-			condition: phase.Run() && selected.False() && allInjected.True() && allRecovered.True(),
-			outcome: v1alpha1.Lifecycle{
+			expression: phase.Run() && selected.False() && allInjected.True() && allRecovered.True(),
+			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhasePending,
 				Reason:  "ChaosSelectingTargets",
 				Message: "Selecting the target pods",
@@ -196,8 +182,8 @@ func convertLifecycle(fault *GenericFault) v1alpha1.Lifecycle {
 		},
 
 		{ // Injecting faults into targets
-			condition: phase.Run() && selected.True() && allInjected.False() && allRecovered.False(),
-			outcome: v1alpha1.Lifecycle{
+			expression: phase.Run() && selected.True() && allInjected.False() && allRecovered.False(),
+			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhasePending,
 				Reason:  "ChaosInjecting",
 				Message: "Chaos experiment is in the process of fault injection.",
@@ -205,10 +191,10 @@ func convertLifecycle(fault *GenericFault) v1alpha1.Lifecycle {
 		},
 
 		{
-			// This condition happens when you delete the experiment during a network partition.
+			// This expression happens when you delete the experiment during a network partition.
 			// FIXME: Perhaps it could return a failure.
-			condition: phase.Run() && selected.True() && allInjected.False() && allRecovered.True(),
-			outcome: v1alpha1.Lifecycle{
+			expression: phase.Run() && selected.True() && allInjected.False() && allRecovered.True(),
+			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhasePending,
 				Reason:  "ChaosInjecting",
 				Message: "Chaos experiment is in the process of fault injection.",
@@ -216,8 +202,8 @@ func convertLifecycle(fault *GenericFault) v1alpha1.Lifecycle {
 		},
 
 		{ // All Faults are injected to all targets.
-			condition: phase.Run() && selected.True() && allInjected.True() && allRecovered.False(),
-			outcome: v1alpha1.Lifecycle{
+			expression: phase.Run() && selected.True() && allInjected.True() && allRecovered.False(),
+			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseRunning,
 				Reason:  "ChaosRunning",
 				Message: "The faults have been successfully injected into all target pods",
@@ -225,8 +211,8 @@ func convertLifecycle(fault *GenericFault) v1alpha1.Lifecycle {
 		},
 
 		{ // Stopping the experiment
-			condition: phase.Stop() && selected.True() && allInjected.True() && allRecovered.False(),
-			outcome: v1alpha1.Lifecycle{
+			expression: phase.Stop() && selected.True() && allInjected.True() && allRecovered.False(),
+			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseRunning,
 				Reason:  "ChaosTearingDown",
 				Message: "removing all the injected faults",
@@ -234,8 +220,8 @@ func convertLifecycle(fault *GenericFault) v1alpha1.Lifecycle {
 		},
 
 		{ // Faults are stopped but not yet recovered
-			condition: phase.Stop() && selected.True() && allInjected.False() && allRecovered.False(),
-			outcome: v1alpha1.Lifecycle{
+			expression: phase.Stop() && selected.True() && allInjected.False() && allRecovered.False(),
+			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseRunning,
 				Reason:  "ChaosTearingDown",
 				Message: "all faults are removed",
@@ -243,8 +229,8 @@ func convertLifecycle(fault *GenericFault) v1alpha1.Lifecycle {
 		},
 
 		{ // All faults are removed from all targets
-			condition: phase.Stop() && selected.True() && allInjected.False() && allRecovered.True(),
-			outcome: v1alpha1.Lifecycle{
+			expression: phase.Stop() && selected.True() && allInjected.False() && allRecovered.True(),
+			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseSuccess,
 				Reason:  "ChaosFinished",
 				Message: "all faults are recovered",
@@ -252,8 +238,8 @@ func convertLifecycle(fault *GenericFault) v1alpha1.Lifecycle {
 		},
 
 		{ // All faults are removed from all targets
-			condition: phase.Stop() && selected.False() && allInjected.True() && allRecovered.True(),
-			outcome: v1alpha1.Lifecycle{
+			expression: phase.Stop() && selected.False() && allInjected.True() && allRecovered.True(),
+			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseFailed,
 				Reason:  "TargetNotFound",
 				Message: fmt.Sprintf("%v", parsed),
@@ -262,11 +248,11 @@ func convertLifecycle(fault *GenericFault) v1alpha1.Lifecycle {
 	}
 
 	for _, testcase := range tests {
-		if testcase.condition {
-			return testcase.outcome
+		if testcase.expression {
+			return testcase.lifecycle
 		}
 	}
 
 	panic(errors.Errorf("unhandled lifecycle conditions. \nphase: %v, \n%v, \n%v, \n%v, \nraw: %v",
-		phase, selected, allInjected, allRecovered, fault))
+		phase, selected, allInjected, allRecovered, obj))
 }

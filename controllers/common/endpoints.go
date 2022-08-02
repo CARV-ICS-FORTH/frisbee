@@ -18,6 +18,7 @@ package common
 
 import (
 	"fmt"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/carv-ics-forth/frisbee/controllers/common/configuration"
 )
@@ -30,4 +31,14 @@ func InternalEndpoint(name string, planName string, port int64) string {
 // ExternalEndpoint creates an endpoint for accessing the service outside the cluster.
 func ExternalEndpoint(name, planName string) string {
 	return fmt.Sprintf("%s-%s.%s", name, planName, configuration.Global.DomainName)
+}
+
+// GenerateName names the children of a given resource. if there is only one instance, it will be named after the group.
+// otherwise, the instances will be named as Master-0, Master-1, ...
+func GenerateName(group metav1.Object, i int, max int) string {
+	if max == 1 {
+		return group.GetName()
+	}
+
+	return fmt.Sprintf("%s-%d", group.GetName(), i)
 }

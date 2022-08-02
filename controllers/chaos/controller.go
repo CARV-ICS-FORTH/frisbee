@@ -18,6 +18,8 @@ package chaos
 
 import (
 	"context"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"reflect"
 	"time"
 
@@ -49,7 +51,7 @@ type Controller struct {
 
 	gvk schema.GroupVersionKind
 
-	chaosView lifecycle.Classifier
+	view lifecycle.Classifier
 
 	// because the range annotator has state (uid), we need to save in the controller's store.
 	regionAnnotations cmap.ConcurrentMap
@@ -59,7 +61,7 @@ type Controller struct {
 // move the current state of the cluster closer to the desired state.
 func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	/*
-		1: Load CR by name.
+		1: Load CR by name and extract the Desired State
 		------------------------------------------------------------------
 	*/
 	var cr v1alpha1.Chaos
@@ -88,106 +90,188 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}()
 
 	/*
-		2: Load CR's components.
+		2: Load CR's children and classify their current state (view)
 		------------------------------------------------------------------
-
-		Because we use the unstructured type,  Get will return an empty if there is no object. In turn, the
-		client's parses will return the following error: "Object 'Kind' is missing in 'unstructured object has no kind'"
-		To avoid that, we ignore errors if the map is empty -- yielding the same behavior as empty, but valid objects.
 	*/
-
-	// TODO: Make it to support multiple failures
-	var fault GenericFault
-	if err := getRawManifest(&cr, &fault); err != nil {
-		return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot get fault type for chaos '%s'", cr.GetName()))
-	}
-
-	{
-		key := client.ObjectKeyFromObject(&cr)
-
-		if err := r.GetClient().Get(ctx, key, &fault); client.IgnoreNotFound(err) != nil {
-			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "retrieve chaos"))
-		}
+	if err := r.PopulateView(ctx, req.NamespacedName); err != nil {
+		return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot populate view for '%s'", req))
 	}
 
 	/*
-		3: Update the CR status using the data we've gathered
+		3: Use the view to update the CR's lifecycle.
 		------------------------------------------------------------------
-
-		The Update at this step serves two functions.
-		First, it is like "journaling" for the upcoming operations.
-		Second, it is a roadblock for stall (queued) requests.
-
-		However, due to the multiple updates, it is possible for this function to
-		be in conflict. We fix this issue by re-queueing the request.
-		We also suppress verbose error reporting as to avoid polluting the output.
+		The Update serves as "journaling" for the upcoming operations,
+		and as a roadblock for stall (queued) requests.
 	*/
-	cr.SetReconcileStatus(calculateLifecycle(&cr, &fault))
+	r.updateLifecycle(&cr)
 
 	if err := common.UpdateStatus(ctx, r, &cr); err != nil {
-		r.Info("Reschedule.", "object", cr.GetName(), "UpdateStatusErr", err)
+		// due to the multiple updates, it is possible for this function to
+		// be in conflict. We fix this issue by re-queueing the request.
 		return common.RequeueAfter(time.Second)
 	}
 
 	/*
-		4: Clean up the controller from finished jobs
+		4: Make the world matching what we want in our spec.
 		------------------------------------------------------------------
-
-		First, we'll try to clean up old jobs, so that we don't leave too many lying
-		around.
 	*/
-	if cr.Status.Phase.Is(v1alpha1.PhaseSuccess) {
-		// Remove cr children once the cr is successfully complete.
-		// We should not remove the cr descriptor itself, as we need to maintain its
-		// status for higher-entities like the Scenario.
-		common.Delete(ctx, r, &fault)
+	switch cr.Status.Phase {
+	case v1alpha1.PhaseSuccess:
+		if err := r.HasSucceed(ctx, &cr); err != nil {
+			return common.RequeueAfter(time.Second)
+		}
 
 		return common.Stop()
-	}
 
-	if cr.Status.Phase.Is(v1alpha1.PhaseFailed) {
-		r.Logger.Error(errors.New("Resource has failed"), "CleanOnFailure",
+	case v1alpha1.PhaseFailed:
+		if err := r.HasFailed(ctx, &cr); err != nil {
+			return common.RequeueAfter(time.Second)
+		}
+
+		return common.Stop()
+
+	case v1alpha1.PhaseRunning:
+		// Nothing to do. Just wait for something to happen.
+		r.Logger.Info(".. Awaiting",
 			"name", cr.GetName(),
-			// "successfulJobs", r.view.ListSuccessfulJobs(),
-			// "runningJobs", r.view.ListRunningJobs(),
-			// "pendingJobs", r.view.ListPendingJobs(),
-			"reason", cr.Status.Reason,
-			"message", cr.Status.Message)
+			cr.Status.Reason, cr.Status.Message,
+		)
 
 		return common.Stop()
+
+	case v1alpha1.PhaseUninitialized, v1alpha1.PhasePending:
+
+		// Avoid re-scheduling a scheduled job
+		if cr.Status.LastScheduleTime != nil {
+			return common.Stop()
+		}
+
+		// Build the job in kubernetes
+		if err := r.runJob(ctx, &cr); err != nil {
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "injection failed"))
+		}
+
+		// Update the scheduling information
+		cr.Status.LastScheduleTime = &metav1.Time{Time: time.Now()}
+
+		return lifecycle.Pending(ctx, r, &cr, "injecting fault")
 	}
 
-	/*
-		5: Make the world matching what we want in our spec
-		------------------------------------------------------------------
+	panic(errors.New("This should never happen"))
 
-		Once we've updated our status, we can move on to ensuring that the status of
-		the world matches what we want in our spec.
+}
 
-		We may delete the cr, add a pod, or wait for existing pod to change its status.
-	*/
-	if cr.Status.LastScheduleTime != nil {
-		// next reconciliation cycle will be trigger by the watchers
-		return common.Stop()
+func (r *Controller) PopulateView(ctx context.Context, req types.NamespacedName) error {
+	r.view.Reset()
+
+	// Because we use the unstructured type,  Get will return an empty if there is no object. In turn, the
+	// client's parses will return the following error: "Object 'Kind' is missing in 'unstructured object has no kind'"
+	// To avoid that, we ignore errors if the map is empty -- yielding the same behavior as empty, but valid objects.
+	var networkChaosList GenericFaultList
+	networkChaosList.SetGroupVersionKind(NetworkChaosGVK)
+	{
+		if err := common.ListChildren(ctx, r, &networkChaosList, req); err != nil {
+			return errors.Wrapf(err, "unable to list children for '%s'", req)
+		}
+
+		for i, job := range networkChaosList.Items {
+			r.view.ClassifyExternal(job.GetName(), &networkChaosList.Items[i], convertChaosLifecycle)
+		}
 	}
 
-	if err := r.inject(ctx, &cr); err != nil {
-		return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "injection failed"))
+	var podChaosList GenericFaultList
+	podChaosList.SetGroupVersionKind(PodChaosGVK)
+	{
+		if err := common.ListChildren(ctx, r, &podChaosList, req); err != nil {
+			return errors.Wrapf(err, "unable to list children for '%s'", req)
+		}
+
+		for i, job := range podChaosList.Items {
+			r.view.ClassifyExternal(job.GetName(), &podChaosList.Items[i], convertChaosLifecycle)
+		}
 	}
 
-	/*
-		6: Avoid double actions
-		------------------------------------------------------------------
+	var ioChaosList GenericFaultList
+	ioChaosList.SetGroupVersionKind(IOChaosGVK)
+	{
+		if err := common.ListChildren(ctx, r, &ioChaosList, req); err != nil {
+			return errors.Wrapf(err, "unable to list children for '%s'", req)
+		}
 
-		If this process restarts at this point (after posting a job, but
-		before updating the status), then we might try to start the job on
-		the next time.  Actually, if we re-list the Jobs on the next cycle
-		we might not see our own status update, and then post one again.
-		So, we need to use the job name as a lock to prevent us from making the job twice.
-	*/
-	cr.Status.LastScheduleTime = &metav1.Time{Time: time.Now()}
+		for i, job := range ioChaosList.Items {
+			r.view.ClassifyExternal(job.GetName(), &ioChaosList.Items[i], convertChaosLifecycle)
+		}
+	}
 
-	return lifecycle.Pending(ctx, r, &cr, "injecting fault")
+	var kernelChaosList GenericFaultList
+	kernelChaosList.SetGroupVersionKind(KernelChaosGVK)
+	{
+		if err := common.ListChildren(ctx, r, &kernelChaosList, req); err != nil {
+			return errors.Wrapf(err, "unable to list children for '%s'", req)
+		}
+
+		for i, job := range kernelChaosList.Items {
+			r.view.ClassifyExternal(job.GetName(), &kernelChaosList.Items[i], convertChaosLifecycle)
+		}
+	}
+
+	var timeChaosList GenericFaultList
+	timeChaosList.SetGroupVersionKind(TimeChaosGVK)
+	{
+		if err := common.ListChildren(ctx, r, &timeChaosList, req); err != nil {
+			return errors.Wrapf(err, "unable to list children for '%s'", req)
+		}
+
+		for i, job := range timeChaosList.Items {
+			r.view.ClassifyExternal(job.GetName(), &timeChaosList.Items[i], convertChaosLifecycle)
+		}
+	}
+
+	return nil
+}
+
+func (r *Controller) HasSucceed(ctx context.Context, cr *v1alpha1.Chaos) error {
+	r.GetEventRecorderFor(cr.GetName()).Event(cr, corev1.EventTypeNormal,
+		cr.Status.Lifecycle.Reason, cr.Status.Lifecycle.Message)
+
+	r.Logger.Info("CleanOnSuccess",
+		"name", cr.GetName(),
+		"successfulJobs", r.view.ListSuccessfulJobs(),
+	)
+
+	for _, job := range r.view.GetSuccessfulJobs() {
+		common.Delete(ctx, r, job)
+	}
+
+	return nil
+}
+
+func (r *Controller) HasFailed(ctx context.Context, cr *v1alpha1.Chaos) error {
+	r.GetEventRecorderFor(cr.GetName()).Event(cr, corev1.EventTypeWarning,
+		cr.Status.Lifecycle.Reason, cr.Status.Lifecycle.Message)
+
+	r.Logger.Error(errors.New("Resource has failed"), "CleanOnFailure",
+		"name", cr.GetName(),
+		"successfulJobs", r.view.ListSuccessfulJobs(),
+		"runningJobs", r.view.ListRunningJobs(),
+		"pendingJobs", r.view.ListPendingJobs(),
+		"reason", cr.Status.Reason,
+		"message", cr.Status.Message)
+
+	// Remove the non-failed components. Leave the failed jobs and system jobs for postmortem analysis.
+	for _, job := range r.view.GetPendingJobs() {
+		common.Delete(ctx, r, job)
+	}
+
+	for _, job := range r.view.GetRunningJobs() {
+		common.Delete(ctx, r, job)
+	}
+
+	for _, job := range r.view.GetSuccessfulJobs() {
+		common.Delete(ctx, r, job)
+	}
+
+	return nil
 }
 
 /*

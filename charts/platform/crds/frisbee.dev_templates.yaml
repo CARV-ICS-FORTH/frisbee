@@ -40,15 +40,6 @@ spec:
                 properties:
                   raw:
                     type: string
-                  type:
-                    description: Type indicate the type of the injected fault
-                    enum:
-                    - partition
-                    - kill
-                    - raw
-                    type: string
-                required:
-                - type
                 type: object
               inputs:
                 description: Inputs are dynamic fields that populate the spec.

@@ -156,12 +156,13 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 		controllerutil.RemoveFinalizer(obj, r.Finalizer())
 
 		if err := Update(ctx, r, obj); err != nil {
-			r.Error(err, "cannot remove finalizer. Retry after 5 seconds",
+			r.Info("Requeue.",
 				"name", obj.GetName(),
-				"finalizer", r.Finalizer(),
+				"version", obj.GetResourceVersion(),
+				"cannot remove finalizer", r.Finalizer(),
 			)
 
-			return RequeueAfter(5 * time.Second)
+			return RequeueAfter(time.Second)
 		}
 
 		// Call reconciliation as the item is being deleted

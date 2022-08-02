@@ -109,9 +109,12 @@ func (a *RangeAnnotation) Add(obj client.Object, tags ...Tag) {
 		tags = []Tag{TagRun}
 	}
 
+	// In order to make the annotation open-ended, I added a date in the future.
+	// The date (January 19, 2038), is the last date that can be described by  32-bit Unix/Linux-based systems.
+	// FIXME: Random guy in the future, thanks for maintaining this code.
 	ga := sdk.CreateAnnotationRequest{
 		Time:    obj.GetCreationTimestamp().UnixMilli(),
-		TimeEnd: 0,
+		TimeEnd: time.Date(2039, 1, 19, 14, 30, 45, 100, time.Local).UnixMilli(),
 		Tags:    tags,
 		Text:    fmt.Sprintf("Job Added. Kind:%s Name:%s", reflect.TypeOf(obj), obj.GetName()),
 	}
@@ -182,7 +185,7 @@ func (c *Client) SetAnnotation(ga sdk.CreateAnnotationRequest) (reqID uint) {
 
 		return nil
 	}) {
-		c.logger.Info("cannot set annotation", "request", ga)
+		c.logger.Info("AnnotationError", "operation", "Set", "request", ga)
 
 		return 0
 	}
@@ -211,6 +214,6 @@ func (c *Client) PatchAnnotation(reqID uint, ga sdk.PatchAnnotationRequest) {
 
 		return nil
 	}) {
-		c.logger.Info("cannot patch annotation", "request", ga)
+		c.logger.Info("AnnotationError", "operation", "Patch", "request", ga)
 	}
 }

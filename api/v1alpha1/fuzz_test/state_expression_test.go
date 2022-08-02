@@ -12,44 +12,44 @@ func setJobs(state *lifecycle.Classifier) {
 		var job v1alpha1.Service
 
 		job.SetName("service0")
-		job.SetReconcileStatus(v1alpha1.Lifecycle{
-			Phase:   v1alpha1.PhaseSuccess,
-			Reason:  "MockSuccess",
-			Message: "mocking the success condition",
-		})
+
+		job.Status.Lifecycle.Phase = v1alpha1.PhaseSuccess
+		job.Status.Lifecycle.Reason = "MockSuccess"
+		job.Status.Lifecycle.Message = "mocking the success condition"
+
 		state.Classify(job.GetName(), &job)
 	}
 	{
 		var job v1alpha1.Service
 
 		job.SetName("service1")
-		job.SetReconcileStatus(v1alpha1.Lifecycle{
-			Phase:   v1alpha1.PhaseFailed,
-			Reason:  "MockFailure",
-			Message: "mocking the failure condition",
-		})
+
+		job.Status.Lifecycle.Phase = v1alpha1.PhaseFailed
+		job.Status.Lifecycle.Reason = "MockFailure"
+		job.Status.Lifecycle.Message = "mocking the failure condition"
+
 		state.Classify(job.GetName(), &job)
 	}
 	{
 		var job v1alpha1.Service
 
 		job.SetName("service2")
-		job.SetReconcileStatus(v1alpha1.Lifecycle{
-			Phase:   v1alpha1.PhaseRunning,
-			Reason:  "MockRunning",
-			Message: "mocking the running condition",
-		})
+
+		job.Status.Lifecycle.Phase = v1alpha1.PhaseRunning
+		job.Status.Lifecycle.Reason = "MockRunning"
+		job.Status.Lifecycle.Message = "mocking the running condition"
+
 		state.Classify(job.GetName(), &job)
 	}
 	{
 		var job v1alpha1.Service
 
 		job.SetName("service3")
-		job.SetReconcileStatus(v1alpha1.Lifecycle{
-			Phase:   v1alpha1.PhaseRunning,
-			Reason:  "MockRunning",
-			Message: "mocking the running condition",
-		})
+
+		job.Status.Lifecycle.Phase = v1alpha1.PhaseRunning
+		job.Status.Lifecycle.Reason = "MockRunning"
+		job.Status.Lifecycle.Message = "mocking the running condition"
+
 		state.Classify(job.GetName(), &job)
 	}
 }

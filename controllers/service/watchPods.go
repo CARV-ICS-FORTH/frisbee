@@ -22,21 +22,12 @@ import (
 
 	"github.com/carv-ics-forth/frisbee/controllers/common"
 	"github.com/carv-ics-forth/frisbee/controllers/common/grafana"
-	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
-
-func printWrongType(logger logr.Logger, expected interface{}, got client.Object) {
-	logger.Error(errors.New("invalid type"), "invalid conversion",
-		"expected", reflect.TypeOf(expected),
-		"got", reflect.TypeOf(got),
-	)
-}
 
 func (r *Controller) Watchers() predicate.Funcs {
 	return predicate.Funcs{
@@ -98,19 +89,8 @@ func (r *Controller) update(e event.UpdateEvent) bool {
 	}
 
 	// if the status is the same, there is no need to inform the service
-	prev, ok := e.ObjectOld.(*corev1.Pod)
-	if !ok {
-		printWrongType(r.Logger, corev1.Pod{}, e.ObjectOld)
-
-		return false
-	}
-
-	latest, ok := e.ObjectNew.(*corev1.Pod)
-	if !ok {
-		printWrongType(r.Logger, corev1.Pod{}, e.ObjectNew)
-
-		return false
-	}
+	prev := e.ObjectOld.(*corev1.Pod)
+	latest := e.ObjectNew.(*corev1.Pod)
 
 	/*
 		if prev.Status.Phase == latest.Status.Phase {

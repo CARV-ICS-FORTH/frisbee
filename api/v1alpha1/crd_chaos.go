@@ -33,22 +33,9 @@ type Chaos struct {
 	Status ChaosStatus `json:"status,omitempty"`
 }
 
-type FaultType string
-
-type RawSpec string
-
-type EmbedFaultType struct {
-	// +optional
-	Raw *RawSpec `json:"raw,omitempty"`
-}
-
 // ChaosSpec defines the desired state of Chaos.
 type ChaosSpec struct {
-	// Type indicate the type of the injected fault
-	// +kubebuilder:validation:Enum=partition;kill;raw;
-	Type FaultType `json:"type"`
-
-	*EmbedFaultType `json:",inline"`
+	Raw string `json:"raw,omitempty"`
 }
 
 // ChaosStatus defines the observed state of Chaos.

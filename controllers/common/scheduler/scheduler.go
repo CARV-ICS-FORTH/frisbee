@@ -18,11 +18,11 @@ package scheduler
 
 import (
 	"context"
+	"github.com/carv-ics-forth/frisbee/controllers/common/expressions"
 	"time"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
-	"github.com/carv-ics-forth/frisbee/controllers/common/expressions"
 	"github.com/carv-ics-forth/frisbee/controllers/common/lifecycle"
 	"github.com/pkg/errors"
 	"github.com/robfig/cron/v3"
@@ -31,30 +31,33 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// Schedule calculate the next scheduled run, and whether we've got a run that we haven't processed yet  (or anything we missed).
+// If we've missed a run, and we're still within the deadline to start it, we'll need to run a job.
+// time-based and event-driven scheduling can be used in conjunction.
 func Schedule(ctx context.Context, r common.Reconciler, cr client.Object, schedule *v1alpha1.SchedulerSpec,
-	lastSchedule *metav1.Time,
-	state lifecycle.ClassifierReader) (bool, ctrl.Result, error) {
+	lastSchedule *metav1.Time, state lifecycle.ClassifierReader) (bool, ctrl.Result, error) {
+	// no schedule.
 	if schedule == nil {
 		return true, ctrl.Result{}, nil
 	}
 
-	// Time-based scheduling
-	if schedule.Cron != nil {
-		return timeBased(ctx, r, cr, schedule, lastSchedule)
-	}
-
+	// Event-based scheduling
 	if !schedule.Event.IsZero() {
 		eval := expressions.Condition{Expr: schedule.Event}
-
-		if !eval.IsTrue(state, cr) {
-			return false, ctrl.Result{}, nil
+		if eval.IsTrue(state, cr) {
+			return true, ctrl.Result{}, nil
 		}
 	}
 
-	return true, ctrl.Result{}, nil
+	// Time-based scheduling
+	if schedule.Cron != nil {
+		return timeBasedWithDeadline(ctx, r, cr, schedule, lastSchedule)
+	}
+
+	return false, ctrl.Result{}, nil
 }
 
-func timeBased(ctx context.Context, r common.Reconciler, cr client.Object, schedule *v1alpha1.SchedulerSpec, lastSchedule *metav1.Time) (bool, ctrl.Result, error) {
+func timeBasedWithDeadline(ctx context.Context, r common.Reconciler, cr client.Object, schedule *v1alpha1.SchedulerSpec, lastSchedule *metav1.Time) (bool, ctrl.Result, error) {
 	missedRun, nextRun, err := getNextScheduleTime(cr, schedule, lastSchedule)
 	if err != nil {
 		/*
@@ -71,10 +74,9 @@ func timeBased(ctx context.Context, r common.Reconciler, cr client.Object, sched
 			return false, ctrl.Result{}, nil
 		}
 
-		r.Info("too early in the schedule. requeue request for next tick.",
+		r.Info("Requeue. ",
 			"object", cr.GetName(),
-			"next", nextRun,
-			"waitFor", time.Until(nextRun).String(),
+			"too early in the schedule. sleep for:", time.Until(nextRun).String(),
 		)
 
 		return false, ctrl.Result{

@@ -18,6 +18,7 @@ package common
 
 import (
 	"context"
+	"github.com/pkg/errors"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -27,7 +28,7 @@ import (
 )
 
 var backoff = wait.Backoff{
-	Duration: time.Second,
+	Duration: 3 * time.Second,
 	Factor:   3,
 	Jitter:   0.1,
 	Steps:    3,
@@ -42,19 +43,15 @@ func AbortAfterRetry(ctx context.Context, logger logr.Logger, cb func() error) b
 		// TODO: explicitly separate the NotFound from other types of errors.
 		select {
 		case <-ctx.Done():
-			logger.Info("Abort Retrying", "cause", ctx.Err())
-
 			return false // non-retriable
 		default:
-			logger.Info("Retry", "cause", err)
-
 			return true // retriable
 		}
 	}
 
 	// retry until Grafana is ready to receive annotations.
 	if err := retry.OnError(backoff, isRetriable, func() error { return cb() }); err != nil {
-		logger.Info("Abort Retrying")
+		logger.Info("Abort Retrying", "cause", errors.Cause(err))
 
 		return true // abort
 	}
