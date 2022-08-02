@@ -210,15 +210,6 @@ spec:
                   properties:
                     raw:
                       type: string
-                    type:
-                      description: Type indicate the type of the injected fault
-                      enum:
-                      - partition
-                      - kill
-                      - raw
-                      type: string
-                  required:
-                  - type
                   type: object
                 type: array
               reason:

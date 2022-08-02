@@ -45,6 +45,7 @@ const (
 */
 
 type GenericFault = unstructured.Unstructured
+type GenericFaultList = unstructured.UnstructuredList
 
 var (
 	NetworkChaosGVK = schema.GroupVersionKind{
@@ -90,7 +91,7 @@ var (
 func getRawManifest(cr *v1alpha1.Chaos, f *GenericFault) error {
 	var body map[string]interface{}
 
-	if err := yaml.Unmarshal([]byte(*cr.Spec.Raw), &body); err != nil {
+	if err := yaml.Unmarshal([]byte(cr.Spec.Raw), &body); err != nil {
 		return errors.Wrapf(err, "cannot unmarshal manifest")
 	}
 

@@ -28,13 +28,12 @@ import (
 )
 
 // calculateLifecycle returns the update lifecycle of the cluster.
-func (r *Controller) calculateLifecycle(cr *v1alpha1.Call) v1alpha1.Lifecycle {
-	cycle := cr.Status.Lifecycle
+func (r *Controller) calculateLifecycle(cr *v1alpha1.Call) {
 	gs := r.view
 
 	// Step 1. Skip any CR which are already completed, or uninitialized.
-	if cycle.Phase.Is(v1alpha1.PhaseUninitialized, v1alpha1.PhaseSuccess, v1alpha1.PhaseFailed) {
-		return cycle
+	if cr.Status.Phase.Is(v1alpha1.PhaseUninitialized, v1alpha1.PhaseSuccess, v1alpha1.PhaseFailed) {
+		return
 	}
 
 	// Step 3. Check if "Until" conditions are met.
@@ -43,13 +42,11 @@ func (r *Controller) calculateLifecycle(cr *v1alpha1.Call) v1alpha1.Lifecycle {
 		eval := expressions.Condition{Expr: cr.Spec.Until}
 
 		if eval.IsTrue(gs, cr) {
-			cycle = v1alpha1.Lifecycle{
-				Phase:   v1alpha1.PhaseRunning,
-				Reason:  "UntilCondition",
-				Message: eval.Info,
-			}
+			cr.Status.Lifecycle.Phase = v1alpha1.PhaseRunning
+			cr.Status.Lifecycle.Reason = "UntilCondition"
+			cr.Status.Lifecycle.Message = eval.Info
 
-			meta.SetStatusCondition(&cycle.Conditions, metav1.Condition{
+			meta.SetStatusCondition(&cr.Status.Conditions, metav1.Condition{
 				Type:    v1alpha1.ConditionAllJobsAreScheduled.String(),
 				Status:  metav1.ConditionTrue,
 				Reason:  "UntilCondition",
@@ -59,7 +56,7 @@ func (r *Controller) calculateLifecycle(cr *v1alpha1.Call) v1alpha1.Lifecycle {
 			suspend := true
 			cr.Spec.Suspend = &suspend
 
-			return cycle
+			return
 		}
 
 		// Event used in conjunction with "Until", instance act as a maximum bound.
@@ -72,39 +69,35 @@ func (r *Controller) calculateLifecycle(cr *v1alpha1.Call) v1alpha1.Lifecycle {
 			Abort the experiment as it too flaky to accept. You can retry without defining instances.`,
 				cr.GetName(), maxJobs)
 
-			cycle = v1alpha1.Lifecycle{
-				Phase:   v1alpha1.PhaseFailed,
-				Reason:  "MaxInstancesReached",
-				Message: msg,
-			}
+			cr.Status.Lifecycle.Phase = v1alpha1.PhaseFailed
+			cr.Status.Lifecycle.Reason = "MaxInstancesReached"
+			cr.Status.Lifecycle.Message = msg
 
-			meta.SetStatusCondition(&cycle.Conditions, metav1.Condition{
+			meta.SetStatusCondition(&cr.Status.Conditions, metav1.Condition{
 				Type:    v1alpha1.ConditionJobUnexpectedTermination.String(),
 				Status:  metav1.ConditionTrue,
 				Reason:  "MaxInstancesReached",
 				Message: msg,
 			})
 
-			return cycle
+			return
 		}
 
 		// A side effect of "Until" is that queued jobs will be reused,
 		// until the conditions are met. In that sense, they resemble mostly a pool of jobs
 		// rather than e queue.
-		cycle = v1alpha1.Lifecycle{
-			Phase:   v1alpha1.PhasePending,
-			Reason:  "SpawnUntilEvent",
-			Message: "Assertion is not yet satisfied.",
-		}
+		cr.Status.Lifecycle.Phase = v1alpha1.PhasePending
+		cr.Status.Lifecycle.Reason = "SpawnUntilEvent"
+		cr.Status.Lifecycle.Message = "Assertion is not yet satisfied."
 
-		return cycle
+		return
 	}
 
 	// Step 4. Check if scheduling goes as expected.
 	queuedJobs := len(cr.Spec.Services)
 
-	if lifecycle.GroupedJobs(queuedJobs, gs, &cycle, cr.Spec.Tolerate) {
-		return cycle
+	if lifecycle.GroupedJobs(queuedJobs, gs, &cr.Status.Lifecycle, cr.Spec.Tolerate) {
+		return
 	}
 
 	panic(errors.Errorf(`unhandled lifecycle conditions.
@@ -114,5 +107,5 @@ func (r *Controller) calculateLifecycle(cr *v1alpha1.Call) v1alpha1.Lifecycle {
 		runningJobs: %s,
 		successfulJobs: %s,
 		failedJobs: %s
-	`, cycle, queuedJobs, gs.ListPendingJobs(), gs.ListRunningJobs(), gs.ListSuccessfulJobs(), gs.ListFailedJobs()))
+	`, cr.Status.Lifecycle, queuedJobs, gs.ListPendingJobs(), gs.ListRunningJobs(), gs.ListSuccessfulJobs(), gs.ListFailedJobs()))
 }

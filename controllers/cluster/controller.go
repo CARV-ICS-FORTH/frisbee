@@ -18,6 +18,7 @@ package cluster
 
 import (
 	"context"
+	corev1 "k8s.io/api/core/v1"
 	"reflect"
 	"time"
 
@@ -51,7 +52,7 @@ type Controller struct {
 // move the current view of the cluster closer to the desired view.
 func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	/*
-		1: Load CR by name.
+		1: Load CR by name and extract the Desired State
 		------------------------------------------------------------------
 	*/
 	var cr v1alpha1.Cluster
@@ -79,140 +80,113 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		)
 	}()
 
-	if err := r.CollectView(ctx, req.NamespacedName); err != nil {
-		return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot get the cluster view for '%s'", req))
+	/*
+		2: Load CR's children and classify their current state (view)
+		------------------------------------------------------------------
+	*/
+	if err := r.PopulateView(ctx, req.NamespacedName); err != nil {
+		return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot populate view for '%s'", req))
 	}
 
 	/*
-		4: Update the CR status using the data we've gathered
+		3: Use the view to update the CR's lifecycle.
 		------------------------------------------------------------------
-
-		Just like before, we use our client.  To specifically update the status
-		subresource, we'll use the `Status` part of the client, with the `Update`
-		method.
+		The Update serves as "journaling" for the upcoming operations,
+		and as a roadblock for stall (queued) requests.
 	*/
-	cr.SetReconcileStatus(r.calculateLifecycle(&cr))
+	r.calculateLifecycle(&cr)
 
 	if err := common.UpdateStatus(ctx, r, &cr); err != nil {
 		// due to the multiple updates, it is possible for this function to
 		// be in conflict. We fix this issue by re-queueing the request.
-		// We also omit verbose error re
-		// porting as to avoid polluting the output.
 		return common.RequeueAfter(time.Second)
 	}
 
 	/*
-		If this object is suspended, we don't want to run any jobs, so we'll stop now.
-		This is useful if something's broken with the job we're running, and we want to
-		pause runs to investigate the cluster, without deleting the object.
+		4: Make the world matching what we want in our spec.
+		------------------------------------------------------------------
 	*/
+
 	if cr.Spec.Suspend != nil && *cr.Spec.Suspend {
+		// If this object is suspended, we don't want to run any jobs, so we'll stop now.
+		// This is useful if something's broken with the job we're running, and we want to
+		// pause runs to investigate the cluster, without deleting the object.
 		r.Logger.Info("Suspended",
-			"cluster", cr.GetName(),
+			"resource", cr.GetName(),
 			"reason", cr.Status.Reason,
 			"message", cr.Status.Message,
 		)
 
+		r.GetEventRecorderFor(cr.GetName()).Event(&cr, corev1.EventTypeNormal,
+			"Suspend", cr.Status.Lifecycle.Message)
+
 		return common.Stop()
 	}
 
-	/*
-		5: Clean up the controller from finished jobs
-		------------------------------------------------------------------
+	switch cr.Status.Phase {
 
-		First, we'll try to clean up old jobs, so that we don't leave too many lying
-		around.
-	*/
-	if cr.Status.Phase.Is(v1alpha1.PhaseSuccess) {
+	case v1alpha1.PhaseSuccess:
 		if err := r.HasSucceed(ctx, &cr); err != nil {
 			return common.RequeueAfter(time.Second)
 		}
 
 		return common.Stop()
-	}
 
-	if cr.Status.Phase.Is(v1alpha1.PhaseFailed) {
+	case v1alpha1.PhaseFailed:
 		if err := r.HasFailed(ctx, &cr); err != nil {
 			return common.RequeueAfter(time.Second)
 		}
 
 		return common.Stop()
-	}
 
-	/*
-		6: Make the world matching what we want in our spec
-		------------------------------------------------------------------
-
-		Once we've updated our status, we can move on to ensuring that the status of
-		the world matches what we want in our spec.
-
-		We may delete the service, add a pod, or wait for existing pod to change its status.
-	*/
-	if cr.Status.Phase.Is(v1alpha1.PhaseUninitialized) {
-		if err := r.Initialize(ctx, &cr); err != nil {
-			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot initialize"))
-		}
-
-		return lifecycle.Pending(ctx, r, &cr, "The Call is ready to start submitting jobs.")
-	}
-
-	/*
-		If all jobs are scheduled, we have nothing else to do.
-		If all jobs are scheduled but are not in the Running phase, they may be in the Pending phase.
-		In both cases, we have nothing else to do but waiting for the next reconciliation cycle.
-	*/
-	nextJob := cr.Status.ScheduledJobs + 1
-
-	if cr.Status.Phase.Is(v1alpha1.PhaseRunning) ||
-		(cr.Spec.Until == nil && (nextJob >= len(cr.Status.QueuedJobs))) {
-
+	case v1alpha1.PhaseRunning:
+		// Nothing to do. Just wait for something to happen.
 		r.Logger.Info(".. Awaiting",
 			"name", cr.GetName(),
 			cr.Status.Reason, cr.Status.Message,
 		)
 
 		return common.Stop()
+
+	case v1alpha1.PhaseUninitialized:
+		if err := r.Initialize(ctx, &cr); err != nil {
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot initialize"))
+		}
+
+		return lifecycle.Pending(ctx, r, &cr, "ready to start submitting jobs.")
+
+	case v1alpha1.PhasePending:
+		nextJob := cr.Status.ScheduledJobs + 1
+
+		//	If all jobs are scheduled but are not in the Running phase, they may be in the Pending phase.
+		//	In both cases, we have nothing else to do but waiting for the next reconciliation cycle.
+		if cr.Spec.Until == nil && (nextJob >= len(cr.Status.QueuedJobs)) {
+			r.Logger.Info(".. Awaiting",
+				"name", cr.GetName(),
+				cr.Status.Reason, cr.Status.Message,
+			)
+
+			return common.Stop()
+		}
+
+		// Get the next scheduled job
+		if hasJob, requeue, err := scheduler.Schedule(ctx, r, &cr, cr.Spec.Schedule, cr.Status.LastScheduleTime, r.view); !hasJob {
+			return requeue, err
+		}
+
+		// Build the job in kubernetes
+		if err := r.runJob(ctx, &cr, nextJob); err != nil {
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot create job"))
+		}
+
+		// Update the scheduling information
+		cr.Status.ScheduledJobs = nextJob
+		cr.Status.LastScheduleTime = &metav1.Time{Time: time.Now()}
+
+		return lifecycle.Pending(ctx, r, &cr, "some jobs are still pending")
 	}
 
-	/*
-		7: Get the next scheduled run
-		------------------------------------------------------------------
-
-		If we're not paused, we'll need to calculate the next scheduled run, and whether
-		we've got a run that we haven't processed yet  (or anything we missed).
-
-		If we've missed a run, and we're still within the deadline to start it, we'll need to run a job.
-	*/
-	if hasJob, requeue, err := scheduler.Schedule(ctx, r, &cr, cr.Spec.Schedule, cr.Status.LastScheduleTime, r.view); !hasJob {
-		return requeue, err
-	}
-
-	/*
-		8: Construct our desired job and create it on Kubernetes
-		------------------------------------------------------------------
-
-		We need to construct a job based on our Cluster's template. Since we have prepared these jobs at
-		initialization, all we need is to get a pointer to the next job.
-	*/
-
-	if err := r.createJob(ctx, &cr, nextJob); err != nil {
-		return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot create job"))
-	}
-
-	/*
-		9: Avoid double actions
-		------------------------------------------------------------------
-
-		If this process restarts at this point (after posting a job, but
-		before updating the status), then we might try to start the job on
-		the next time.  Actually, if we re-list the Jobs on the next cycle
-		we might not see our own status update, and then post one again.
-		So, we need to use the job name as a lock to prevent us from making the job twice.
-	*/
-	cr.Status.ScheduledJobs = nextJob
-	cr.Status.LastScheduleTime = &metav1.Time{Time: time.Now()}
-
-	return lifecycle.Pending(ctx, r, &cr, "some jobs are still pending")
+	panic(errors.New("This should never happen"))
 }
 
 func (r *Controller) Initialize(ctx context.Context, cr *v1alpha1.Cluster) error {
@@ -220,10 +194,6 @@ func (r *Controller) Initialize(ctx context.Context, cr *v1alpha1.Cluster) error
 		We construct a list of job specifications based on the CR's template.
 		This list is used by the execution step to create the actual job.
 		If the template is invalid, it should be captured at this stage.
-
-		To specifically update the status subresource, we'll use the `Status` part of the client, with the `ServiceUpdate`
-		method. The status subresource ignores changes to spec, so it's less likely to conflict
-		with any other updates, and can have separate permissions.
 	*/
 	jobList, err := r.constructJobSpecList(ctx, cr)
 	if err != nil {
@@ -253,48 +223,27 @@ func (r *Controller) Initialize(ctx context.Context, cr *v1alpha1.Cluster) error
 	return nil
 }
 
-func (r *Controller) CollectView(ctx context.Context, req types.NamespacedName) error {
+func (r *Controller) PopulateView(ctx context.Context, req types.NamespacedName) error {
 	r.view.Reset()
 
-	/*
-		2: Load CR's components.
-		------------------------------------------------------------------
+	var serviceJobs v1alpha1.ServiceList
+	{
+		if err := common.ListChildren(ctx, r, &serviceJobs, req); err != nil {
+			return errors.Wrapf(err, "unable to list children for '%s'", req)
+		}
 
-		To fully update our status, we'll need to list all child objects in this namespace that belong to this CR.
-
-		As our number of services increases, looking these up can become quite slow as we have to filter through all
-		of them. For a more efficient lookup, these services will be indexed locally on the controller's name.
-		A jobOwnerKey field is added to the cached job objects, which references the owning controller.
-		Check how we configure the manager to actually index this field.
-	*/
-	var childJobs v1alpha1.ServiceList
-
-	if err := common.ListChildren(ctx, r, &childJobs, req); err != nil {
-		return errors.Wrapf(err, "unable to list children for '%s'", req)
-	}
-
-	/*
-		3: Classify CR's components.
-		------------------------------------------------------------------
-
-		Once we have all the jobs we own, we'll split them into active, successful,
-		and failed jobs, keeping track of the most recent run so that we can record it
-		in status.  Remember, status should be able to be reconstituted from the view
-		of the world, so it's generally not a good idea to read from the status of the
-		root object.  Instead, you should reconstruct it every run.  That's what we'll
-		do here.
-
-		To relief the garbage collector, we use a root structure that we reset at every reconciliation cycle.
-	*/
-
-	for i, job := range childJobs.Items {
-		r.view.Classify(job.GetName(), &childJobs.Items[i])
+		for i, job := range serviceJobs.Items {
+			r.view.Classify(job.GetName(), &serviceJobs.Items[i])
+		}
 	}
 
 	return nil
 }
 
 func (r *Controller) HasSucceed(ctx context.Context, cr *v1alpha1.Cluster) error {
+	r.GetEventRecorderFor(cr.GetName()).Event(cr, corev1.EventTypeNormal,
+		cr.Status.Lifecycle.Reason, cr.Status.Lifecycle.Message)
+
 	r.Logger.Info("CleanOnSuccess",
 		"name", cr.GetName(),
 		"successfulJobs", r.view.ListSuccessfulJobs(),
@@ -313,6 +262,9 @@ func (r *Controller) HasSucceed(ctx context.Context, cr *v1alpha1.Cluster) error
 }
 
 func (r *Controller) HasFailed(ctx context.Context, cr *v1alpha1.Cluster) error {
+	r.GetEventRecorderFor(cr.GetName()).Event(cr, corev1.EventTypeWarning,
+		cr.Status.Lifecycle.Reason, cr.Status.Lifecycle.Message)
+
 	r.Logger.Error(errors.New("Resource has failed"), "CleanOnFailure",
 		"name", cr.GetName(),
 		"successfulJobs", r.view.ListSuccessfulJobs(),

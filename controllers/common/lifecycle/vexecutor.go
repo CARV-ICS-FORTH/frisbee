@@ -78,19 +78,16 @@ func VExec(ctx context.Context, r common.Reconciler, parent client.Object, jobNa
 	if jobErr != nil {
 		r.GetEventRecorderFor(parent.GetName()).Event(parent, corev1.EventTypeWarning, "VExecFailed", jobName)
 
-		vJob.SetReconcileStatus(v1alpha1.Lifecycle{
-			Phase:   v1alpha1.PhaseFailed,
-			Reason:  "JobHasFailed",
-			Message: jobErr.Error(),
-		})
+		vJob.Status.Lifecycle.Phase = v1alpha1.PhaseFailed
+		vJob.Status.Lifecycle.Reason = "JobHasFailed"
+		vJob.Status.Lifecycle.Message = jobErr.Error()
+
 	} else {
 		r.GetEventRecorderFor(parent.GetName()).Event(parent, corev1.EventTypeNormal, "VExecSuccess", jobName)
 
-		vJob.SetReconcileStatus(v1alpha1.Lifecycle{
-			Phase:   v1alpha1.PhaseSuccess,
-			Reason:  "JobSuccess",
-			Message: "Yoohoo",
-		})
+		vJob.Status.Lifecycle.Phase = v1alpha1.PhaseSuccess
+		vJob.Status.Lifecycle.Reason = "JobSuccess"
+		vJob.Status.Lifecycle.Message = "Yoohoo"
 	}
 
 	// Step 4. Update the status of the mockup. This will be captured by the lifecycle.

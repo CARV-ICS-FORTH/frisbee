@@ -37,15 +37,6 @@ spec:
             properties:
               raw:
                 type: string
-              type:
-                description: Type indicate the type of the injected fault
-                enum:
-                - partition
-                - kill
-                - raw
-                type: string
-            required:
-            - type
             type: object
           status:
             description: ChaosStatus defines the observed state of Chaos.

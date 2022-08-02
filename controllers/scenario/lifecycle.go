@@ -39,45 +39,42 @@ func getActionOrDie(t *v1alpha1.Scenario, actionName string) *v1alpha1.Action {
 	panic("this should never happen")
 }
 
-func (r *Controller) updateLifecycle(t *v1alpha1.Scenario) v1alpha1.Lifecycle {
-	cycle := t.Status.Lifecycle
+func (r *Controller) updateLifecycle(cr *v1alpha1.Scenario) {
 	gs := r.view
 
 	// Step 1. Skip any scenario which are already completed, or uninitialized.
-	if cycle.Phase.Is(v1alpha1.PhaseUninitialized, v1alpha1.PhaseSuccess, v1alpha1.PhaseFailed) {
-		return cycle
+	if cr.Status.Lifecycle.Phase.Is(v1alpha1.PhaseUninitialized, v1alpha1.PhaseSuccess, v1alpha1.PhaseFailed) {
+		return
 	}
 
-	for _, actionName := range t.Status.ScheduledJobs {
-		action := getActionOrDie(t, actionName)
+	for _, actionName := range cr.Status.ScheduledJobs {
+		action := getActionOrDie(cr, actionName)
 
 		if !action.Assert.IsZero() {
 			eval := expressions.Condition{Expr: action.Assert}
 
-			if !eval.IsTrue(gs, t) {
-				cycle = v1alpha1.Lifecycle{
-					Phase:   v1alpha1.PhaseFailed,
-					Reason:  "AssertError",
-					Message: fmt.Sprintf("AssertError for actionName '%s'. Info: %s", action.Name, eval.Info),
-				}
+			if !eval.IsTrue(gs, cr) {
+				cr.Status.Lifecycle.Phase = v1alpha1.PhaseFailed
+				cr.Status.Lifecycle.Reason = "AssertError"
+				cr.Status.Lifecycle.Message = fmt.Sprintf("AssertError for action '%s'. Info: %s", action.Name, eval.Info)
 
-				meta.SetStatusCondition(&cycle.Conditions, metav1.Condition{
+				meta.SetStatusCondition(&cr.Status.Lifecycle.Conditions, metav1.Condition{
 					Type:    v1alpha1.ConditionAssert.String(),
 					Status:  metav1.ConditionTrue,
 					Reason:  "AssertError",
-					Message: fmt.Sprintf("AssertError for actionName '%s'. Info: %s", action.Name, eval.Info),
+					Message: fmt.Sprintf("AssertError for action '%s'. Info: %s", action.Name, eval.Info),
 				})
 
-				return cycle
+				return
 			}
 		}
 	}
 
 	// Step 4. Check if scheduling goes as expected.
-	queuedJobs := len(t.Spec.Actions)
+	queuedJobs := len(cr.Spec.Actions)
 
-	if lifecycle.GroupedJobs(queuedJobs, gs, &cycle, nil) {
-		return cycle
+	if lifecycle.GroupedJobs(queuedJobs, gs, &cr.Status.Lifecycle, nil) {
+		return
 	}
 
 	panic(errors.Errorf(`unhandled lifecycle conditions.
@@ -87,5 +84,5 @@ func (r *Controller) updateLifecycle(t *v1alpha1.Scenario) v1alpha1.Lifecycle {
 		runningJobs: %s,
 		successfulJobs: %s,
 		failedJobs: %s
-	`, cycle, queuedJobs, gs.ListPendingJobs(), gs.ListRunningJobs(), gs.ListSuccessfulJobs(), gs.ListFailedJobs()))
+	`, cr.Status.Lifecycle, queuedJobs, gs.ListPendingJobs(), gs.ListRunningJobs(), gs.ListSuccessfulJobs(), gs.ListFailedJobs()))
 }

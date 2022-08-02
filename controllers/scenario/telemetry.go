@@ -306,7 +306,7 @@ const alertingWebhook = "alerting-service"
 func (r *Controller) CreateWebhookServer(ctx context.Context, alertingPort int) error {
 	WebhookURL = fmt.Sprintf("http://%s:%d", alertingWebhook, alertingPort)
 
-	r.Logger.Info("Controller Webhook", "URL", WebhookURL)
+	r.Logger.Info("StartWebhook", "URL", WebhookURL)
 
 	webhook := http.DefaultServeMux
 

@@ -82,7 +82,7 @@ func (in *Call) ValidateCreate() error {
 	// Schedule field
 	if schedule := spec.Schedule; schedule != nil {
 		if err := ValidateScheduler(schedule); err != nil {
-			return errors.Wrapf(err, "until error")
+			return errors.Wrapf(err, "schedule error")
 		}
 	}
 

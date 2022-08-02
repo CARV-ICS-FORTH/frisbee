@@ -34,7 +34,7 @@ spec:
 apiVersion: frisbee.dev/v1alpha1
 kind: Scenario
 metadata:
-  name: conditionals
+  name: loops
 spec:
   actions:
     - action: Service
@@ -50,9 +50,10 @@ spec:
         instances: 10
         inputs:
           - { target: server, duration: "10" }
+          - { target: server, duration: "20" }
           - { target: server, duration: "30" }
-          - { target: server, duration: "60" }
         schedule:
-          cron: "@every 1m"   # Schedule one client every minute
-          event:
-            state: '{{.NumPendingJobs}} >= 2'
+          cron: "@every 1m"
+        # Suspend the execution if more than 6 clients are created
+        until:
+          state: '{{.NumSuccessfulJobs}} >= 6'

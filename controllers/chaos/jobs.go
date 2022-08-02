@@ -24,7 +24,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (r *Controller) inject(ctx context.Context, cr *v1alpha1.Chaos) error {
+func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Chaos) error {
 	var f GenericFault
 
 	if err := getRawManifest(cr, &f); err != nil {

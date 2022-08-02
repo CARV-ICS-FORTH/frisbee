@@ -17,11 +17,11 @@ limitations under the License.
 package lifecycle
 
 import (
-	"sort"
-
+	"fmt"
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sort"
 )
 
 type ClassifierReader interface {
@@ -30,24 +30,25 @@ type ClassifierReader interface {
 	// IsDeletable returns true if a job is deletable: it is pending or running
 	IsDeletable(job string) (client.Object, bool)
 
+	// ListAll returns a printable form of the names of classified objects
+	ListAll() string
+
+	// NumAll returns a printable form of the cardinality of classified objects
+	NumAll() string
+
 	GetPendingJobs() []client.Object
 	GetRunningJobs() []client.Object
 	GetSuccessfulJobs() []client.Object
 	GetFailedJobs() []client.Object
 }
 
+// Classifier splits jobs into Pending, Running, Successful, and Failed.
+// To relief the garbage collector, we use a embeddable structure that we reset at every reconciliation cycle.
 type Classifier struct {
 	pendingJobs    map[string]client.Object
 	runningJobs    map[string]client.Object
 	successfulJobs map[string]client.Object
 	failedJobs     map[string]client.Object
-}
-
-func (in Classifier) IsZero() bool {
-	return len(in.pendingJobs) == 0 &&
-		len(in.runningJobs) == 0 &&
-		len(in.successfulJobs) == 0 &&
-		len(in.failedJobs) == 0
 }
 
 func (in *Classifier) Reset() {
@@ -57,6 +58,34 @@ func (in *Classifier) Reset() {
 	in.failedJobs = make(map[string]client.Object)
 }
 
+type Convertor func(object client.Object) v1alpha1.Lifecycle
+
+// ClassifyExternal classifies the object based on the custom lifecycle.
+func (in *Classifier) ClassifyExternal(name string, obj client.Object, conv Convertor) {
+	status := conv(obj)
+
+	switch status.Phase {
+	case v1alpha1.PhaseUninitialized:
+		// Ignore uninitialized/unscheduled jobs
+
+	case v1alpha1.PhasePending:
+		in.pendingJobs[name] = obj
+
+	case v1alpha1.PhaseSuccess:
+		in.successfulJobs[name] = obj
+
+	case v1alpha1.PhaseFailed:
+		in.failedJobs[name] = obj
+
+	case v1alpha1.PhaseRunning:
+		in.runningJobs[name] = obj
+
+	default:
+		panic("unhandled lifecycle condition")
+	}
+}
+
+// Classify the object based on the  standard Frisbee lifecycle.
 func (in *Classifier) Classify(name string, obj client.Object) {
 	if statusAware, getStatus := obj.(ReconcileStatusAware); getStatus {
 		status := statusAware.GetReconcileStatus()
@@ -99,6 +128,13 @@ func (in *Classifier) Exclude(name string, obj client.Object) {
 	}
 }
 
+func (in Classifier) IsZero() bool {
+	return len(in.pendingJobs) == 0 &&
+		len(in.runningJobs) == 0 &&
+		len(in.successfulJobs) == 0 &&
+		len(in.failedJobs) == 0
+}
+
 func (in Classifier) IsPending(jobName string) bool {
 	_, ok := in.pendingJobs[jobName]
 
@@ -137,6 +173,16 @@ func (in Classifier) NumSuccessfulJobs() int {
 
 func (in Classifier) NumFailedJobs() int {
 	return len(in.failedJobs)
+}
+
+func (in Classifier) NumAll() string {
+	return fmt.Sprint(
+		"\n * Pending:", in.NumPendingJobs(),
+		"\n * Running:", in.NumRunningJobs(),
+		"\n * Success:", in.NumSuccessfulJobs(),
+		"\n * Failed:", in.NumFailedJobs(),
+		"\n",
+	)
 }
 
 func (in Classifier) ListPendingJobs() []string {
@@ -185,6 +231,16 @@ func (in Classifier) ListFailedJobs() []string {
 	sort.Strings(list)
 
 	return list
+}
+
+func (in Classifier) ListAll() string {
+	return fmt.Sprint(
+		"\n * Pending:", in.ListPendingJobs(),
+		"\n * Running:", in.ListRunningJobs(),
+		"\n * Success:", in.ListSuccessfulJobs(),
+		"\n * Failed:", in.ListFailedJobs(),
+		"\n",
+	)
 }
 
 func (in Classifier) GetPendingJobs() []client.Object {

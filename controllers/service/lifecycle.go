@@ -18,18 +18,26 @@ package service
 
 import (
 	"fmt"
+	"github.com/carv-ics-forth/frisbee/controllers/common/lifecycle"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 )
 
 // updateLifecycle returns the update lifecycle of the cluster.
-func updateLifecycle(cr *v1alpha1.Service, pod *corev1.Pod) v1alpha1.Lifecycle {
+func (r *Controller) updateLifecycle(cr *v1alpha1.Service) {
 	// Skip any CR which are already completed, or uninitialized.
 	if cr.Status.Phase.Is(v1alpha1.PhaseUninitialized, v1alpha1.PhaseSuccess, v1alpha1.PhaseFailed) {
-		return cr.Status.Lifecycle
+		return
 	}
+
+	lifecycle.SingleJob(r.view, &cr.Status.Lifecycle)
+}
+
+// convertPodLifecycle translates the Pod's Lifecycle to Frisbee Lifecycle.
+func convertPodLifecycle(obj client.Object) v1alpha1.Lifecycle {
+	pod := obj.(*corev1.Pod)
 
 	if pod.CreationTimestamp.IsZero() {
 		return v1alpha1.Lifecycle{
@@ -38,12 +46,6 @@ func updateLifecycle(cr *v1alpha1.Service, pod *corev1.Pod) v1alpha1.Lifecycle {
 			Message: fmt.Sprintf("Pod %s is probably killed.", pod.GetLabels()),
 		}
 	}
-
-	return convertLifecycle(pod)
-}
-
-// convertLifecycle translates the Pod's Lifecycle to Frisbee Lifecycle.
-func convertLifecycle(pod *corev1.Pod) v1alpha1.Lifecycle {
 
 	switch pod.Status.Phase {
 	case corev1.PodPending:
@@ -108,8 +110,6 @@ func convertLifecycle(pod *corev1.Pod) v1alpha1.Lifecycle {
 			Message: pod.Status.Message,
 		}
 	default:
-		logrus.Warn("DEBUG ", pod)
-
 		panic("unhandled lifecycle condition")
 	}
 }

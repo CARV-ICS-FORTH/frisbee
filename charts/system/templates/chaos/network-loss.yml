@@ -11,7 +11,6 @@ spec:
       loss: "25"
       correlation: "25"
   chaos:
-    type: raw
     raw: |
       apiVersion: chaos-mesh.org/v1alpha1
       kind: NetworkChaos

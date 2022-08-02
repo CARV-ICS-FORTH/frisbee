@@ -58,7 +58,7 @@ func (r *Controller) constructJobSpecList(ctx context.Context, cr *v1alpha1.Call
 	return specs, nil
 }
 
-func (r *Controller) callJob(ctx context.Context, cr *v1alpha1.Call, i int) error {
+func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Call, i int) error {
 	jobName := fmt.Sprintf("%s-%d", cr.GetName(), i)
 	serviceName := cr.Spec.Services[i]
 	callable := cr.Status.QueuedJobs[i]
