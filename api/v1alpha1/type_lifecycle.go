@@ -138,19 +138,31 @@ const (
 type StateAggregationFunctions interface {
 	IsZero() bool
 
+	// IsPending returns true if the given job is Pending phase
 	IsPending(job string) bool
+	// IsRunning returns true if the given job is Running phase
 	IsRunning(job string) bool
+	// IsSuccessful returns true if the given job is Successful phase
 	IsSuccessful(job string) bool
+	// IsFailed returns true if the given job is Failed phase
 	IsFailed(job string) bool
 
+	// NumPendingJobs returns the number of jobs in Pending Phase
 	NumPendingJobs() int
+	// NumRunningJobs returns the number of jobs in Running Phase
 	NumRunningJobs() int
+	// NumSuccessfulJobs returns the number of jobs in Successful Phase
 	NumSuccessfulJobs() int
+	// NumFailedJobs returns the number of jobs in Failed Phase
 	NumFailedJobs() int
 
+	// ListPendingJobs returns the name of jobs in Pending Phase
 	ListPendingJobs() []string
+	// ListRunningJobs returns the name of jobs in Running Phase
 	ListRunningJobs() []string
+	// ListSuccessfulJobs returns the name of jobs in Successful Phase
 	ListSuccessfulJobs() []string
+	// ListFailedJobs returns the name of jobs in Failed Phase
 	ListFailedJobs() []string
 }
 

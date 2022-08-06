@@ -161,7 +161,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	case v1alpha1.PhaseUninitialized:
 		if err := r.Initialize(ctx, &cr); err != nil {
-			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "scenario initialization error"))
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "initialization error"))
 		}
 
 		return lifecycle.Pending(ctx, r, &cr, "The Scenario is ready to start submitting jobs.")
@@ -224,8 +224,10 @@ func (r *Controller) Initialize(ctx context.Context, cr *v1alpha1.Scenario) erro
 
 	// Start Prometheus + Grafana
 	if errTelemetry := r.StartTelemetry(ctx, cr); errTelemetry != nil {
-		return errors.Wrapf(errTelemetry, "cannot create the telemetry stack")
+		return errors.Wrapf(errTelemetry, "start telemetry")
 	}
+
+	r.GetEventRecorderFor(cr.GetName()).Event(cr, corev1.EventTypeNormal, "Initialized", "Start scheduling jobs")
 
 	return nil
 }
@@ -340,11 +342,9 @@ func (r *Controller) HasFailed(ctx context.Context, cr *v1alpha1.Scenario) error
 
 	r.Logger.Error(errors.New("Resource has failed"), "CleanOnFailure",
 		"name", cr.GetName(),
-		"successfulJobs", r.view.ListSuccessfulJobs(),
-		"runningJobs", r.view.ListRunningJobs(),
-		"pendingJobs", r.view.ListPendingJobs(),
 		"reason", cr.Status.Reason,
-		"message", cr.Status.Message)
+		"message", cr.Status.Message,
+	)
 
 	// TODO: What should we do when a call action fails ? Should we delete all services ?
 
@@ -428,8 +428,6 @@ func (r *Controller) RunActions(ctx context.Context, t *v1alpha1.Scenario, actio
 			we might not see our own status update, and then post one again.
 			So, we need to use the job name as a lock to prevent us from making the job twice.
 		*/
-		r.GetEventRecorderFor(t.GetName()).Event(t, corev1.EventTypeNormal, "Scheduled", action.Name)
-
 		t.Status.ScheduledJobs = append(t.Status.ScheduledJobs, action.Name)
 	}
 

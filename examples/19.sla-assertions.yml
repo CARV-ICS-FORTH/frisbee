@@ -5,21 +5,26 @@ metadata:
   name: iperf.server
 spec:
   service:
-    decorators:   # Add support for Telemetry
-      telemetry: [system.telemetry.agent]
+    decorators:
+      telemetry:
+        - system.telemetry.agent
+      resources:
+        cpu: "1"
+        memory: "48Mi"
     containers:
       - name: app
         image: czero/iperf2
+        ports:
+          - name: listen
+            containerPort: 5001
         command:
-          - /bin/sh   # Run shell
-          - -c        # Read from string
-          - |         # Multi-line str
+          - /bin/sh
+          - -c
+          - |         
               set -eum
               cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
               
               iperf -s -f m -i 5
-
-
 
 ---
 apiVersion: frisbee.dev/v1alpha1
@@ -32,9 +37,11 @@ spec:
       target: localhost
   service:
     decorators:
-      telemetry:                  # Register Telemetry Agents
-        - system.telemetry.agent  # Collect Generic System's Metrics
-        - iperf2.telemetry.client # Collect App Specific Metrics
+      telemetry:
+        - system.telemetry.agent
+      resources:
+        cpu: "0.2"
+        memory: "48Mi"
     containers:
       - name: app
         image: czero/iperf2
@@ -43,16 +50,15 @@ spec:
           - -c        # Read from string
           - |         # Multi-line str
               set -eum
-              cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
-  
-              iperf -c {{.Inputs.Parameters.target}} -t 500 > /dev/shm/pipe
-
+              cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app
+    
+              iperf -c {{.Inputs.Parameters.target}} -t 5000
 
 ---
 apiVersion: frisbee.dev/v1alpha1
 kind: Scenario
 metadata:
-  name: performance-monitoring
+  name: sla-assertions
 spec:
   actions:
     - action: Service
@@ -60,30 +66,24 @@ spec:
       service:
         templateRef: iperf.server
 
-    # Create a first cluster
-    - action: Cluster
-      name: group-a
+    - action: Service
+      name: client
       depends: { running: [ server ] }
-      cluster:
+      assert:
+        metrics: "avg() of query(summary/152/rx-max, 1m, now) is below(-3000000000)"
+      service:
         templateRef: iperf.client
-        instances: 3
         inputs:
           - { target: server }
 
-    # Create a second cluster
+    # Create a cluster of noisy neighbors
     - action: Cluster
-      name: group-b
+      name: noisy-neighbors
       depends: { running: [ server ] }
       cluster:
         templateRef: iperf.client
-        instances: 3
+        instances: 5
         inputs:
           - { target: server }
-
-    # Delete the second cluster.
-    - action: Delete
-      name: delete-group-b
-      depends: { running: [ group-b ],  after: "30s" }
-      delete: # references jobs should be action.
-        jobs: [ group-b ]
-
+        schedule:
+          cron: "@every 1m"

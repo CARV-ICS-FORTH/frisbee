@@ -18,6 +18,7 @@ package chaos
 
 import (
 	"fmt"
+	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"reflect"
 
 	"github.com/carv-ics-forth/frisbee/controllers/common"
@@ -55,11 +56,15 @@ func (r *Controller) create(e event.CreateEvent) bool {
 		"version", e.Object.GetResourceVersion(),
 	)
 
-	// because the range annotator has state (uid), we need to save in the controller's store.
-	annotator := &grafana.RangeAnnotation{}
-	annotator.Add(e.Object, grafana.TagFailure)
+	if v1alpha1.DrawRegion(e.Object) {
+		annotation := &grafana.RangeAnnotation{}
+		annotation.Add(e.Object, grafana.TagFailure)
 
-	r.regionAnnotations.Set(e.Object.GetName(), annotator)
+		r.regionAnnotations.Set(e.Object.GetName(), annotation)
+	} else {
+		annotation := &grafana.PointAnnotation{}
+		annotation.Add(e.Object, grafana.TagFailure)
+	}
 
 	return true
 }
@@ -114,15 +119,20 @@ func (r *Controller) delete(e event.DeleteEvent) bool {
 		"version", e.Object.GetResourceVersion(),
 	)
 
-	annotator, ok := r.regionAnnotations.Get(e.Object.GetName())
-	if !ok {
-		// this is a stall expression that happens when the controller is restarted. just ignore it
-		return false
+	if v1alpha1.DrawRegion(e.Object) {
+		annotation, ok := r.regionAnnotations.Get(e.Object.GetName())
+		if !ok {
+			// this is a stall condition that happens when the controller is restarted. just ignore it
+			return false
+		}
+
+		annotation.(*grafana.RangeAnnotation).Delete(e.Object, grafana.TagFailure)
+
+		r.regionAnnotations.Remove(e.Object.GetName())
+	} else {
+		annotation := &grafana.PointAnnotation{}
+		annotation.Delete(e.Object, grafana.TagFailure)
 	}
-
-	annotator.(*grafana.RangeAnnotation).Delete(e.Object, grafana.TagFailure)
-
-	r.regionAnnotations.Remove(e.Object.GetName())
 
 	return true
 }

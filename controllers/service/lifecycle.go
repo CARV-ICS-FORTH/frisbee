@@ -60,10 +60,21 @@ func convertPodLifecycle(obj client.Object) v1alpha1.Lifecycle {
 		// Sidecars containers will be later on garbage-collected by the service controller.
 		for _, container := range pod.Status.ContainerStatuses {
 			if container.Name == v1alpha1.MainAppContainerName && container.State.Terminated != nil {
-				return v1alpha1.Lifecycle{
-					Phase:   v1alpha1.PhaseSuccess,
-					Reason:  pod.Status.Reason,
-					Message: pod.Status.Message,
+
+				// Following the Linux convention, we assume that is the container has exit with zero code,
+				// everything has been smoothly. If the exit code is other than 0, then there is an error.
+				if container.State.Terminated.ExitCode == 0 {
+					return v1alpha1.Lifecycle{
+						Phase:   v1alpha1.PhaseSuccess,
+						Reason:  container.State.Terminated.Reason,
+						Message: container.State.Terminated.Message,
+					}
+				} else {
+					return v1alpha1.Lifecycle{
+						Phase:   v1alpha1.PhaseFailed,
+						Reason:  container.State.Terminated.Reason,
+						Message: container.State.Terminated.Message,
+					}
 				}
 			}
 

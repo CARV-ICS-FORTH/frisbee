@@ -184,14 +184,14 @@ const notifyChannelError = "SOMETHING IS WRONG WITH THE ALERTING MECHANISMS"
 
 func AlertIsFired(job metav1.Object) (*time.Time, string, bool) {
 	if job == nil {
-		return nil, "", false
+		return nil, "EMPTYJOB", false
 	}
 
 	annotations := job.GetAnnotations()
 
 	// Step 0. Check if an alert has been dispatched to the given job.
 	if _, exists := annotations[alertName]; !exists {
-		return nil, "", false
+		return nil, "NoAlert", false
 	}
 
 	// Step 1. Decide if the alert is spurious, enabled, or disabled.
@@ -226,7 +226,7 @@ func AlertIsFired(job metav1.Object) (*time.Time, string, bool) {
 		 This is the equivalent of revoking an alert. It happens when, after sending an Alert, decides
 		 that the latest evaluation no longer matches the given rule.
 		*/
-		return nil, "", false
+		return nil, "OK", false
 	}
 
 	panic("Should never reach this point")

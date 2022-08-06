@@ -5,15 +5,19 @@ metadata:
   name: iperf.server
 spec:
   service:
-    decorators:   # Add support for Telemetry
-      telemetry: [system.telemetry.agent]
+    decorators:
+      telemetry:
+        - system.telemetry.agent
     containers:
       - name: app
         image: czero/iperf2
+        ports:
+          - name: listen
+            containerPort: 5001
         command:
-          - /bin/sh   # Run shell
-          - -c        # Read from string
-          - |         # Multi-line str
+          - /bin/sh
+          - -c
+          - |         
               set -eum
               cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
               
@@ -30,27 +34,26 @@ spec:
       target: localhost
   service:
     decorators:
-      telemetry:                  # Register Telemetry Agents
-        - system.telemetry.agent  # Collect Generic System's Metrics
-        - iperf2.telemetry.client # Collect App Specific Metrics
+      telemetry:
+        - system.telemetry.agent
     containers:
       - name: app
         image: czero/iperf2
+        ports:
         command:
           - /bin/sh   # Run shell
           - -c        # Read from string
           - |         # Multi-line str
               set -eum
-              cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
-  
-              iperf -c {{.Inputs.Parameters.target}} -t 500 > /dev/shm/pipe
-
+              cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app
+    
+              iperf -c {{.Inputs.Parameters.target}} -t 500
 
 ---
 apiVersion: frisbee.dev/v1alpha1
 kind: Scenario
 metadata:
-  name: simulate-network-faults
+  name: revoke-failure
 spec:
   actions:
     - action: Service
@@ -58,21 +61,26 @@ spec:
       service:
         templateRef: iperf.server
 
-    # Create a cluster of clients
-    - action: Cluster
-      name: clients
+    - action: Service
+      name: client
       depends: { running: [ server ] }
-      cluster:
+      service:
         templateRef: iperf.client
-        instances: 3
         inputs:
           - { target: server }
 
-    # Partition server from the clients; clients can reach the server, but server cannot reach the clients
+    # Inject a network failure, after 1 minute
     - action: Chaos
-      name: partition
-      depends: { running: [ clients ],  after: "30s" }
+      name: fault
+      depends: { running: [ client ], after: "1m" }
       chaos:
         templateRef: system.chaos.network.partition.partial
-        inputs: # Handle the chaos template much like a service template.
-          - { source: server, duration: 2m , direction: "to", dst: "clients-0, clients-1, clients-3" }
+        inputs:
+          - { source: server, dst: client }
+
+    # Repair the partition (by deleting the chaos job), after 3 minutes
+    - action: Delete
+      name: delete-fault
+      depends: { after: "3m" }
+      delete:
+        jobs: [ fault ]

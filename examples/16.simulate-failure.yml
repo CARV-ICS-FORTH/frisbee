@@ -1,0 +1,81 @@
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Template
+metadata:
+  name: iperf.server
+spec:
+  service:
+    decorators:   # Add support for Telemetry
+      telemetry: [system.telemetry.agent]
+    containers:
+      - name: app
+        image: czero/iperf2
+        ports:
+          - name: listen
+            containerPort: 5001
+        command:
+          - /bin/sh   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
+              set -eum
+              cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
+              
+              iperf -s -f m -i 5
+
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Template
+metadata:
+  name: iperf.client
+spec:
+  inputs:
+    parameters:
+      target: localhost
+  service:
+    decorators:
+      telemetry:                  # Register Telemetry Agents
+        - system.telemetry.agent  # Collect Generic System's Metrics
+        - iperf2.telemetry.client # Collect App Specific Metrics
+    containers:
+      - name: app
+        image: czero/iperf2
+        command:
+          - /bin/sh   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
+              set -eum
+              cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
+  
+              iperf -c {{.Inputs.Parameters.target}} -t 500 > /dev/shm/pipe
+
+
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Scenario
+metadata:
+  name: simulate-failure
+spec:
+  actions:
+    - action: Service
+      name: server
+      service:
+        templateRef: iperf.server
+
+    # Create a cluster of clients
+    - action: Cluster
+      name: clients
+      depends: { running: [ server ] }
+      cluster:
+        templateRef: iperf.client
+        instances: 3
+        inputs:
+          - { target: server }
+
+    # Partition server from the clients; clients can reach the server, but server cannot reach the clients
+    - action: Chaos
+      name: partition
+      depends: { running: [ clients ],  after: "30s" }
+      chaos:
+        templateRef: system.chaos.network.partition.partial
+        inputs: # Handle the chaos template much like a service template.
+          - { source: server, duration: 2m , direction: "to", dst: "clients-0, clients-1, clients-3" }

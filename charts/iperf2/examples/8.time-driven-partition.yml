@@ -29,4 +29,4 @@ spec:
       chaos:
         templateRef: system.chaos.network.delay
         inputs:
-          - { target: .service.server.one, duration: "2m" }
+          - { source: .service.server.one, duration: "2m" }

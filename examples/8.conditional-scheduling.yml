@@ -8,6 +8,9 @@ spec:
     containers:
       - name: app
         image: czero/iperf2
+        ports:
+          - name: listen
+            containerPort: 5001
         command: [ iperf ]
         args: [ "-s", "-f", "m", "-i", "5" ]
 
@@ -34,7 +37,7 @@ spec:
 apiVersion: frisbee.dev/v1alpha1
 kind: Scenario
 metadata:
-  name: loops
+  name: conditional-scheduling
 spec:
   actions:
     - action: Service

@@ -35,7 +35,6 @@ spec:
             # Needed to fix DNS issues
             echo "$( cat /etc/resolv.conf | sed 's/ndots:5/ndots:1/')"  >  /etc/resolv.conf
 
-
             # Add a newer version of nsenter that supports cgroup
             apk add util-linux --no-cache
 
