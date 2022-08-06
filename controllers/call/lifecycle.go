@@ -29,8 +29,6 @@ import (
 
 // calculateLifecycle returns the update lifecycle of the cluster.
 func (r *Controller) calculateLifecycle(cr *v1alpha1.Call) {
-	gs := r.view
-
 	// Step 1. Skip any CR which are already completed, or uninitialized.
 	if cr.Status.Phase.Is(v1alpha1.PhaseUninitialized, v1alpha1.PhaseSuccess, v1alpha1.PhaseFailed) {
 		return
@@ -41,7 +39,7 @@ func (r *Controller) calculateLifecycle(cr *v1alpha1.Call) {
 	if !cr.Spec.Until.IsZero() {
 		eval := expressions.Condition{Expr: cr.Spec.Until}
 
-		if eval.IsTrue(gs, cr) {
+		if eval.IsTrue(r.view, cr) {
 			cr.Status.Lifecycle.Phase = v1alpha1.PhaseRunning
 			cr.Status.Lifecycle.Reason = "UntilCondition"
 			cr.Status.Lifecycle.Message = eval.Info
@@ -96,16 +94,13 @@ func (r *Controller) calculateLifecycle(cr *v1alpha1.Call) {
 	// Step 4. Check if scheduling goes as expected.
 	queuedJobs := len(cr.Spec.Services)
 
-	if lifecycle.GroupedJobs(queuedJobs, gs, &cr.Status.Lifecycle, cr.Spec.Tolerate) {
+	if lifecycle.GroupedJobs(queuedJobs, r.view, &cr.Status.Lifecycle, cr.Spec.Tolerate) {
 		return
 	}
 
 	panic(errors.Errorf(`unhandled lifecycle conditions.
 		current: %v,
 		total: %d,
-		pendingJobs: %s,
-		runningJobs: %s,
-		successfulJobs: %s,
-		failedJobs: %s
-	`, cr.Status.Lifecycle, queuedJobs, gs.ListPendingJobs(), gs.ListRunningJobs(), gs.ListSuccessfulJobs(), gs.ListFailedJobs()))
+		jobs:  %s,
+	`, cr.Status.Lifecycle, queuedJobs, r.view.ListAll()))
 }

@@ -144,6 +144,10 @@ func PropagateLabels(child metav1.Object, parent metav1.Object) {
 	child.SetLabels(labels.Merge(child.GetLabels(), parent.GetLabels()))
 }
 
+/////////////////////////////////////////////
+//		Telemetry Agents
+/////////////////////////////////////////////
+
 const (
 	// SidecarTelemetry is an annotation's value indicating the annotation's key is a telemetry agent.
 	SidecarTelemetry = "sidecar.frisbee.dev/telemetry"
@@ -157,3 +161,24 @@ const (
 	// MainAppContainerName  is the main application that run the service. A service can be either "Main" or "Sidecar".
 	MainAppContainerName = "app"
 )
+
+/////////////////////////////////////////////
+//		Grafana Visualization
+/////////////////////////////////////////////
+
+const (
+	// DrawAs hints how to mark points on the Grafana dashboard.
+	DrawAs string = "grafana.frisbee.dev/draw"
+	// DrawAsPoint will mark the creation and deletion of a service as distinct events.
+	DrawAsPoint string = "point"
+	// DrawAsRegion will draw a region starting from the creation of a service and ending to the deletion of the service.
+	DrawAsRegion string = "range"
+)
+
+func DrawRegion(obj metav1.Object) bool {
+	return obj.GetAnnotations()[DrawAs] == DrawAsRegion
+}
+
+func DrawPoint(obj metav1.Object) bool {
+	return obj.GetAnnotations()[DrawAs] == DrawAsPoint
+}

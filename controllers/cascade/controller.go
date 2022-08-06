@@ -117,6 +117,9 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			"message", cr.Status.Message,
 		)
 
+		r.GetEventRecorderFor(cr.GetName()).Event(&cr, corev1.EventTypeNormal,
+			"Suspend", cr.Status.Lifecycle.Message)
+
 		return common.Stop()
 	}
 
@@ -263,11 +266,9 @@ func (r *Controller) HasFailed(ctx context.Context, cr *v1alpha1.Cascade) error 
 
 	r.Logger.Error(errors.New("Resource has failed"), "CleanOnFailure",
 		"name", cr.GetName(),
-		"successfulJobs", r.view.ListSuccessfulJobs(),
-		"runningJobs", r.view.ListRunningJobs(),
-		"pendingJobs", r.view.ListPendingJobs(),
 		"reason", cr.Status.Reason,
-		"message", cr.Status.Message)
+		"message", cr.Status.Message,
+	)
 
 	// Remove the non-failed components. Leave the failed jobs and system jobs for postmortem analysis.
 	for _, job := range r.view.GetPendingJobs() {

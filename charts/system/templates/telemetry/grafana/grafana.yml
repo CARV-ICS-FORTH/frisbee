@@ -10,7 +10,7 @@ spec:
         service:
           name: self
           port:
-            number: {{.Values.grafana.port}}
+            number: {{.Values.telemetry.grafana.port}}
 
     decorators:
       labels:
@@ -25,7 +25,7 @@ spec:
         image: "grafana/grafana-oss:8.2.3"
         ports:
           - name: http
-            containerPort: {{.Values.grafana.port}}
+            containerPort: {{.Values.telemetry.grafana.port}}
         resources:
           requests:
             memory: "4Gi"
@@ -74,7 +74,7 @@ data:
         type: prometheus
         access: proxy
         orgId: 1
-        url: "http://{{.Values.prometheus.name}}:{{.Values.prometheus.port}}"
+        url: "http://{{.Values.telemetry.prometheus.name}}:{{.Values.telemetry.prometheus.port}}"
         basicAuth: false
         isDefault: true
         editable: true

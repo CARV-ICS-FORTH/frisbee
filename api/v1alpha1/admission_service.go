@@ -17,14 +17,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"strings"
-
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"strings"
 )
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
@@ -60,7 +59,6 @@ func (in *Service) ValidateCreate() error {
 	servicelog.V(5).Info("validate create", "name", in.GetName())
 
 	for _, container := range in.Spec.Containers {
-
 		if container.Name == MainAppContainerName { // Validate Main container(s)
 			if err := in.validateMainContainer(&container); err != nil {
 				return errors.Wrapf(err, "error in service template '%s'", in.GetName())

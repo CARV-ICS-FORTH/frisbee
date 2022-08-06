@@ -23,7 +23,7 @@ spec:
 apiVersion: frisbee.dev/v1alpha1
 kind: Scenario
 metadata:
-  name:  remote-calls
+  name: callables
 spec:
   actions:
     # Provision a set of idle pods

@@ -36,12 +36,10 @@ func getActionOrDie(t *v1alpha1.Scenario, actionName string) *v1alpha1.Action {
 		}
 	}
 
-	panic("this should never happen")
+	panic(errors.Errorf("cannot find action '%s'", actionName))
 }
 
 func (r *Controller) updateLifecycle(cr *v1alpha1.Scenario) {
-	gs := r.view
-
 	// Step 1. Skip any scenario which are already completed, or uninitialized.
 	if cr.Status.Lifecycle.Phase.Is(v1alpha1.PhaseUninitialized, v1alpha1.PhaseSuccess, v1alpha1.PhaseFailed) {
 		return
@@ -53,16 +51,16 @@ func (r *Controller) updateLifecycle(cr *v1alpha1.Scenario) {
 		if !action.Assert.IsZero() {
 			eval := expressions.Condition{Expr: action.Assert}
 
-			if !eval.IsTrue(gs, cr) {
+			if !eval.IsTrue(r.view, cr) {
 				cr.Status.Lifecycle.Phase = v1alpha1.PhaseFailed
 				cr.Status.Lifecycle.Reason = "AssertError"
-				cr.Status.Lifecycle.Message = fmt.Sprintf("AssertError for action '%s'. Info: %s", action.Name, eval.Info)
+				cr.Status.Lifecycle.Message = fmt.Sprintf("AssertError for action '%s'. Info: '%s'", action.Name, eval.Info)
 
 				meta.SetStatusCondition(&cr.Status.Lifecycle.Conditions, metav1.Condition{
 					Type:    v1alpha1.ConditionAssert.String(),
 					Status:  metav1.ConditionTrue,
 					Reason:  "AssertError",
-					Message: fmt.Sprintf("AssertError for action '%s'. Info: %s", action.Name, eval.Info),
+					Message: fmt.Sprintf("AssertError for action '%s'. Info: '%s'", action.Name, eval.Info),
 				})
 
 				return
@@ -73,16 +71,13 @@ func (r *Controller) updateLifecycle(cr *v1alpha1.Scenario) {
 	// Step 4. Check if scheduling goes as expected.
 	queuedJobs := len(cr.Spec.Actions)
 
-	if lifecycle.GroupedJobs(queuedJobs, gs, &cr.Status.Lifecycle, nil) {
+	if lifecycle.GroupedJobs(queuedJobs, r.view, &cr.Status.Lifecycle, nil) {
 		return
 	}
 
 	panic(errors.Errorf(`unhandled lifecycle conditions.
-		current: %v,
-		total: %d,
-		pendingJobs: %s,
-		runningJobs: %s,
-		successfulJobs: %s,
-		failedJobs: %s
-	`, cr.Status.Lifecycle, queuedJobs, gs.ListPendingJobs(), gs.ListRunningJobs(), gs.ListSuccessfulJobs(), gs.ListFailedJobs()))
+		current: '%v',
+		total: '%d',
+		jobs: '%s',
+	`, cr.Status.Lifecycle, queuedJobs, r.view.ListAll()))
 }

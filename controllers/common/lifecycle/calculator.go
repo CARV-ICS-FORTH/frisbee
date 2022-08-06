@@ -18,8 +18,8 @@ package lifecycle
 
 import (
 	"fmt"
-
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
+	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -134,20 +134,14 @@ func GroupedJobs(queuedJobs int, state ClassifierReader, lf *v1alpha1.Lifecycle,
 }
 
 func SingleJob(state ClassifierReader, lf *v1alpha1.Lifecycle) bool {
-	// There is not a known state
-	if state.NumPendingJobs()+
-		state.NumRunningJobs()+
-		state.NumSuccessfulJobs()+
-		state.NumFailedJobs() == 0 {
-		panic("unknown state")
-	}
 
 	// The object exists in more than one known states
 	if state.NumPendingJobs()+
 		state.NumRunningJobs()+
 		state.NumSuccessfulJobs()+
 		state.NumFailedJobs() > 1 {
-		panic("invalid transition")
+
+		panic(errors.Errorf("invalid state transition: %s", state.ListAll()))
 	}
 
 	testSequence := []test{

@@ -53,4 +53,4 @@ spec:
       chaos:
         templateRef: system.chaos.network.loss
         inputs:
-          - { target: server, duration: 5m }
+          - { source: server, duration: 5m }

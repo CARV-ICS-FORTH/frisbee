@@ -18,6 +18,7 @@ package service
 
 import (
 	"fmt"
+	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"reflect"
 
 	"github.com/carv-ics-forth/frisbee/controllers/common"
@@ -56,7 +57,7 @@ func (r *Controller) create(e event.CreateEvent) bool {
 		"version", e.Object.GetResourceVersion(),
 	)
 
-	if e.Object.GetAnnotations()[grafana.DrawAs] == grafana.DrawAsRegion {
+	if v1alpha1.DrawRegion(e.Object) {
 		annotation := &grafana.RangeAnnotation{}
 		annotation.Add(e.Object)
 
@@ -133,7 +134,7 @@ func (r *Controller) delete(e event.DeleteEvent) bool {
 		"version", e.Object.GetResourceVersion(),
 	)
 
-	if e.Object.GetAnnotations()[grafana.DrawAs] == grafana.DrawAsRegion {
+	if v1alpha1.DrawRegion(e.Object) {
 		annotation, ok := r.regionAnnotations.Get(e.Object.GetName())
 		if !ok {
 			// this is a stall condition that happens when the controller is restarted. just ignore it

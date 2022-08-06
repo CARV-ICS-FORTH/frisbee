@@ -75,7 +75,7 @@ func (r *Controller) StartTelemetry(ctx context.Context, t *v1alpha1.Scenario) e
 	}
 
 	if err := r.connectToGrafana(ctx, t); err != nil {
-		return errors.Wrapf(err, "cannot communicate with the telemetry stack")
+		return errors.Wrapf(err, "connect to grafana")
 	}
 
 	return nil

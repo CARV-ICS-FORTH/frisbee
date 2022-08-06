@@ -66,7 +66,7 @@ func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Service) error {
 	cr.Spec.PodSpec.DeepCopyInto(&pod.Spec)
 
 	if err := common.Create(ctx, r, cr, &pod); err != nil {
-		return errors.Wrapf(err, "cannot create pod")
+		return errors.Wrapf(err, "create pod")
 	}
 
 	return nil
