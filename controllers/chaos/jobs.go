@@ -18,6 +18,7 @@ package chaos
 
 import (
 	"context"
+	"k8s.io/apimachinery/pkg/labels"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
@@ -31,9 +32,8 @@ func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Chaos) error {
 		return errors.Wrapf(err, "cannot get manifest for chaos '%s'", cr.GetName())
 	}
 
-	v1alpha1.PropagateLabels(&f, cr)
-
-	f.SetAnnotations(cr.GetAnnotations())
+	f.SetLabels(labels.Merge(f.GetLabels(), cr.GetLabels()))
+	f.SetAnnotations(labels.Merge(f.GetAnnotations(), cr.GetAnnotations()))
 
 	if err := common.Create(ctx, r, cr, &f); err != nil {
 		return errors.Wrapf(err, "cannot inject fault for chaos '%s'", cr.GetName())

@@ -51,10 +51,9 @@ func (c *Condition) IsTrue(state lifecycle.ClassifierReader, job metav1.Object) 
 
 		c.Info = fmt.Sprintf("Alert '%s' is %s", c.Expr.Metrics, info)
 
-		if fired {
-			return true
-		}
-
+		// non-fired mean that the condition is still true.
+		// fired means that the condition is violated, and should return false
+		return !fired
 	}
 
 	return false

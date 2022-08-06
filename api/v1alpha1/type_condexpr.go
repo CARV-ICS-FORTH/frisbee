@@ -157,12 +157,14 @@ func (query ExprMetrics) Parse() ([]string, error) {
 			- 'avg() of query(wpFnYRwGk/2/bitrate, 15m, now) is withinrange(4, 88)'
 			- 'avg() of query(wpFnYRwGk/2/bitrate, 15m, now) is withinrange(4, 88) for (1m)'
 			- 'avg() of query(wpFnYRwGk/2/bitrate, 15m, now) is withinrange(4, 88) for (1m) every(1m)'
+			- 'avg() of query(summary/152/tx-avg, 1m, now) is below(5000)'
+			- 'avg() of query(summary/152/tx-avg, 1m, now) is below(-5000)'
 
-		Prepare your expressions at: https://regex101.com/r/sIspYb/1/`, query)
+		Prepare your expressions at: https://regex101.com/r/8JrgyI/1`, query)
 	}
 
 	return matches, nil
 }
 
-// ExprMetricsValidator expressions evaluated with https://regex101.com/r/ZB8rPs/1
-var ExprMetricsValidator = regexp.MustCompile(`(?m)^(?P<reducer>\w+)\(\)\s+of\s+query\((?P<dashboardUID>\w+)\/(?P<panelID>\d+)\/(?P<metric>\w+),\s+(?P<from>\w+),\s+(?P<to>\w+)\)\s+is\s+(?P<evaluator>\w+)\((?P<params>\d*[\.,\s]*\d*)\)\s*(for\s+\((?P<for>\w+)\))*\s*(every\((?P<every>\w+)\))*\s*$`)
+// ExprMetricsValidator expressions evaluated with https://regex101.com/r/8JrgyI/1
+var ExprMetricsValidator = regexp.MustCompile(`(?m)^(?P<reducer>\w+)\(\)\s+of\s+query\((?P<dashboardUID>\w+)\/(?P<panelID>\d+)\/(?P<metric>.+),\s+(?P<from>\w+),\s+(?P<to>\w+)\)\s+is\s+(?P<evaluator>\w+)\((?P<params>-*\d*[\.,\s]*\d*)\)\s*(for\s+\((?P<for>\w+)\))*\s*(every\((?P<every>\w+)\))*\s*$`)

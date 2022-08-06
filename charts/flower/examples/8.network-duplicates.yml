@@ -52,4 +52,4 @@ spec:
       chaos:
         templateRef: system.chaos.network.duplicate
         inputs:
-          - { target: server, duration: 5m }
+          - { source: server, duration: 5m }

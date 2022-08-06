@@ -8,6 +8,9 @@ spec:
     containers:
       - name: app
         image: czero/iperf2
+        ports:
+          - name: listen
+            containerPort: 5001
         command: [ iperf ]
         args: [ "-s", "-f", "m", "-i", "5" ]
 
@@ -21,29 +24,27 @@ spec:
   inputs:
     parameters:
       target: localhost
-      duration: "60"
   service:
     containers:
       - name: app
         image: czero/iperf2
         command: [ iperf ]
-        args: [ "-c", "{{.Inputs.Parameters.target}}", "-t", "{{.Inputs.Parameters.duration}}" ]
+        args: [ "-c", "{{.Inputs.Parameters.target}}", "-t", "500" ]
 
 
 ---
 apiVersion: frisbee.dev/v1alpha1
 kind: Scenario
 metadata:
-  name: clustering
+  name: delete-job
 spec:
   actions:
-    # Create an iperf server
     - action: Service
       name: server
       service:
         templateRef: iperf.server
 
-    # Create an iperf client
+    # Create a Client
     - action: Service
       name: client
       depends: { running: [ server ] }
@@ -51,3 +52,11 @@ spec:
         templateRef: iperf.client
         inputs:
           - { target: server }
+
+    # Delete the client, after 2 minutes
+    - action: Delete
+      name: delete-action
+      depends: { after: "2m" }
+      delete: # references jobs should be action.
+        jobs: [ client ]
+

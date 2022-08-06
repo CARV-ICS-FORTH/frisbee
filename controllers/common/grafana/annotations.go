@@ -29,19 +29,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const (
-	// DrawAs hints how to mark points on the Grafana dashboard.
-	DrawAs string = "grafana.frisbee.dev/draw"
-	// DrawAsPoint will mark the creation and deletion of a service as distinct events.
-	DrawAsPoint string = "point"
-	// DrawAsRegion will draw a region starting from the creation of a service and ending to the deletion of the service.
-	DrawAsRegion string = "range"
-)
-
-// ///////////////////////////////////////////
-//		Grafana Annotations
-// ///////////////////////////////////////////
-
 type Tag = string
 
 const (
@@ -63,11 +50,15 @@ type Annotation interface {
 
 type PointAnnotation struct{}
 
-func (a *PointAnnotation) Add(obj client.Object) {
+func (a *PointAnnotation) Add(obj client.Object, tags ...Tag) {
+	if tags == nil {
+		tags = []Tag{TagRun}
+	}
+
 	ga := sdk.CreateAnnotationRequest{
 		Time:    obj.GetCreationTimestamp().UnixMilli(),
 		TimeEnd: 0,
-		Tags:    []string{TagRun},
+		Tags:    tags,
 		Text:    fmt.Sprintf("Job added. Kind:%s Name:%s", reflect.TypeOf(obj), obj.GetName()),
 	}
 
@@ -76,7 +67,11 @@ func (a *PointAnnotation) Add(obj client.Object) {
 	}
 }
 
-func (a *PointAnnotation) Delete(obj client.Object) {
+func (a *PointAnnotation) Delete(obj client.Object, tags ...Tag) {
+	if tags == nil {
+		tags = []Tag{TagExit}
+	}
+
 	delTime := obj.GetDeletionTimestamp()
 	if delTime == nil {
 		delTime = &metav1.Time{Time: time.Now()}
@@ -85,7 +80,7 @@ func (a *PointAnnotation) Delete(obj client.Object) {
 	ga := sdk.CreateAnnotationRequest{
 		Time:    delTime.UnixMilli(),
 		TimeEnd: 0,
-		Tags:    []string{TagExit},
+		Tags:    tags,
 		Text:    fmt.Sprintf("Job Deleted. Kind:%s Name:%s", reflect.TypeOf(obj), obj.GetName()),
 	}
 

@@ -252,11 +252,9 @@ func (r *Controller) HasFailed(ctx context.Context, cr *v1alpha1.Chaos) error {
 
 	r.Logger.Error(errors.New("Resource has failed"), "CleanOnFailure",
 		"name", cr.GetName(),
-		"successfulJobs", r.view.ListSuccessfulJobs(),
-		"runningJobs", r.view.ListRunningJobs(),
-		"pendingJobs", r.view.ListPendingJobs(),
 		"reason", cr.Status.Reason,
-		"message", cr.Status.Message)
+		"message", cr.Status.Message,
+	)
 
 	// Remove the non-failed components. Leave the failed jobs and system jobs for postmortem analysis.
 	for _, job := range r.view.GetPendingJobs() {

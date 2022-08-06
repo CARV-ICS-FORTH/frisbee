@@ -8,6 +8,9 @@ spec:
     containers:
       - name: app
         image: czero/iperf2
+        ports:
+          - name: listen
+            containerPort: 5001
         command:
           - /bin/sh   # Run shell
           - -c        # Read from string

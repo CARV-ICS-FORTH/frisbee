@@ -108,16 +108,15 @@ func New(ctx context.Context, setters ...Option) error {
 
 			return nil
 		}) {
-			return errors.Errorf("grafana is unreachable")
+			return errors.Errorf("endpoint '%s' is unreachable", *args.HTTPEndpoint)
 		}
 
-		args.Logger.Info("Connection to Grafana established.", "endpoint", *args.HTTPEndpoint)
 		client.Conn = conn
 	}
 
 	// connect Grafana to controller for receiving alerts.
 	if args.WebhookURL != nil {
-		args.Logger.Info("Connecting to Notification Service ...", "endpoint", args.WebhookURL)
+		args.Logger.Info("Setting Notification Channel ...", "endpoint", args.WebhookURL)
 
 		// Although the notification channel is backed by the Grafana Pod, the Grafana Service is different
 		// from the Alerting Service. For this reason, we must be sure that both Services are linked to the Grafana Pod.
@@ -126,8 +125,6 @@ func New(ctx context.Context, setters ...Option) error {
 		}) {
 			return errors.Errorf("notification channel error")
 		}
-
-		args.Logger.Info("Connection to Notification service established.", "endpoint", *args.WebhookURL)
 	}
 
 	// Register the client. It will be used by GetClient(), ClientExistsFor()...

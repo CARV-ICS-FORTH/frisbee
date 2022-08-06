@@ -53,4 +53,4 @@ spec:
       chaos:
         templateRef: system.chaos.network.delay
         inputs:
-          - { target: server, duration: 5m, latency: "120ms",  jitter: "50ms" }
+          - { source: server, duration: 5m, latency: "120ms",  jitter: "50ms" }

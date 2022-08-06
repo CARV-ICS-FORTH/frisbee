@@ -19,6 +19,7 @@ package cascade
 import (
 	"context"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
+	corev1 "k8s.io/api/core/v1"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	chaosutils "github.com/carv-ics-forth/frisbee/controllers/chaos/utils"
@@ -40,7 +41,13 @@ func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Cascade, i int) er
 
 	jobSpec.DeepCopyInto(&job.Spec)
 
-	return common.Create(ctx, r, cr, &job)
+	if err := common.Create(ctx, r, cr, &job); err != nil {
+		return err
+	}
+
+	r.GetEventRecorderFor(cr.GetName()).Event(cr, corev1.EventTypeNormal, "Scheduled", job.GetName())
+
+	return nil
 }
 
 func (r *Controller) constructJobSpecList(ctx context.Context, group *v1alpha1.Cascade) ([]v1alpha1.ChaosSpec, error) {

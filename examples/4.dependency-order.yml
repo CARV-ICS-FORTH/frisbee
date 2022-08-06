@@ -8,6 +8,9 @@ spec:
     containers:
       - name: app
         image: czero/iperf2
+        ports:
+          - name: listen
+            containerPort: 5001
         command: [ iperf ]
         args: [ "-s", "-f", "m", "-i", "5" ]
 
@@ -22,14 +25,7 @@ spec:
     parameters:
       target: localhost
       duration: "60"
-      memory: ""
-      cpu: ""
-
   service:
-    decorators: # Decorators wrap Pod definitions with some nice features
-      resources:
-        cpu: "{{.Inputs.Parameters.cpu}}"
-        memory: "{{.Inputs.Parameters.memory}}"
     containers:
       - name: app
         image: czero/iperf2
@@ -41,22 +37,20 @@ spec:
 apiVersion: frisbee.dev/v1alpha1
 kind: Scenario
 metadata:
-  name: resource-throttling
+  name: clustering
 spec:
   actions:
+    # Create an iperf server
     - action: Service
       name: server
       service:
         templateRef: iperf.server
 
-    - action: Cluster
-      name: clients
+    # Create an iperf client
+    - action: Service
+      name: client
       depends: { running: [ server ] }
-      cluster:
+      service:
         templateRef: iperf.client
-        instances: 10
-        # Create a variety of clients with different resources
         inputs:
-          - { target: server, duration: "120", cpu: "0.4", memory: "48Mi"  }
-          - { target: server, duration: "120", cpu: "1", memory: "49Mi"  }
-          - { target: server, duration: "120", cpu: "1.2", memory: "50Mi"  }
+          - { target: server }

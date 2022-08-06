@@ -10,7 +10,7 @@ spec:
         service:
           name: self
           port:
-            number: {{.Values.prometheus.port}}
+            number: {{.Values.telemetry.prometheus.port}}
 
     decorators:
       labels:
@@ -45,7 +45,7 @@ spec:
 
             # Run Prometheus with the new modified configuration
             ./envsubst-Linux-x86_64 -i /etc/prometheus/prometheus.yml -o ./prometheus.yml
-            /bin/prometheus --config.file=./prometheus.yml --query.lookback-delta={{.Values.prometheus.queryLookbackDelta}}
+            /bin/prometheus --config.file=./prometheus.yml --query.lookback-delta={{.Values.telemetry.prometheus.queryLookbackDelta}}
 
 
 ---
@@ -77,7 +77,7 @@ data:
 
         honor_labels: true
         # Set it to false in order to avoid time drifts
-        honor_timestamps: {{.Values.prometheus.honorTimestamp}}
+        honor_timestamps: {{.Values.telemetry.prometheus.honorTimestamp}}
 
         scheme: http
 

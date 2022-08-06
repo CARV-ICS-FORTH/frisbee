@@ -1,29 +1,67 @@
-## @section Grafana
 
-## @param grafana.port Listening port for Grafana
-grafana:
-  port: 3000
+## @section Telemetry
+
+## @param telemetry.grafana.port Listening port for Grafana
+## @param telemetry.prometheus.name The name of the prometheus service
+## @param telemetry.prometheus.port Listening port for Prometheus
+## @param telemetry.prometheus.honorTimestamp Use the timestamps of the metrics exposed by the agent (time-drifts)
+## @param telemetry.prometheus.queryLookbackDelta The maximum duration for retrieving metrics for considering the source as stale.
+## @param telemetry.logviewer.port Listening port for Logviewer
+telemetry:
+
+  grafana:
+    port: 3000
+
+  prometheus:
+    name: prometheus
+    port: 9090
+
+    honorTimestamp: true
+
+    queryLookbackDelta: 1m
+
+  logviewer:
+    port: 80
 
 
-## @section Prometheus
+## @section Chaos
 
-## @param prometheus.name The name of the prometheus service
-## @param prometheus.port Listening port for Prometheus
-## @param prometheus.honorTimestamp Use the timestamps of the metrics exposed by the agent (time-drifts)
-## @param prometheus.queryLookbackDelta The maximum duration for retrieving metrics for considering the source as stale.
-prometheus:
-  name: prometheus
-  port: 9090
+## @param chaos.network.generic.source A list of comma separated services to apply the fault
+## @param chaos.network.generic.duration The duration of the fault
+## @param chaos.network.partition.partial.dst A list of comma seperated services that will be partitioned from the source servies.
+## @param chaos.network.partition.partial.direction The direction of the network partition fault
+## @param chaos.network.duplicate.duplicate  Percent of Duplicate packets
+## @param chaos.network.duplicate.correlation  Affinity to last packet. Emulates packet burst duplicates.
+## @param chaos.network.loss.loss Percent of Random packet loss
+## @param chaos.network.loss.correlation  Affinity to last packet. Emulates packet burst losses.
+## @param chaos.network.delay.latency  Per-Packet Latency
+## @param chaos.network.delay.correlation  Affinity to last packet. Emulates packet burst delays.
+## @param chaos.network.delay.jitter Add randomness in the delay
+## @param chaos.pod.kill.target Service to kill
+chaos:
+  network:
+    generic:
+      source: ""
+      duration: "2m"
 
-  honorTimestamp: true
+    partition:
+      partial:
+        dst: ""
+        direction: both
 
-  queryLookbackDelta: 1m
+    duplicate:
+      duplicate: "40"
+      correlation: "25"
 
+    loss:
+      loss: "25"
+      correlation: "25"
 
+    delay:
+      latency: "90ms"
+      correlation: "25"
+      jitter: "90ms"
 
-## @section Logviewer
-
-## @param logviewer.port Listening port for Logviewer
-logviewer:
-  port: 80
-
+  pod:
+    kill:
+      target: localhost
