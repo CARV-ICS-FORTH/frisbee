@@ -153,6 +153,28 @@ type ScenarioList struct {
 	Items           []Scenario `json:"items"`
 }
 
+// Table returns a tabular form of the structure for pretty printing.
+func (s ScenarioList) Table() (header []string, data [][]string) {
+
+	header = []string{
+		"Name",
+		"Namespace",
+		"Create",
+		"Phase",
+	}
+
+	for _, item := range s.Items {
+		data = append(data, []string{
+			item.GetName(),
+			item.GetNamespace(),
+			item.GetCreationTimestamp().String(),
+			item.Status.Phase.String(),
+		})
+	}
+
+	return header, data
+}
+
 func init() {
 	SchemeBuilder.Register(&Scenario{}, &ScenarioList{})
 }

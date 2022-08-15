@@ -34,9 +34,10 @@ var backoff = wait.Backoff{
 	Steps:    3,
 }
 
-func AbortAfterRetry(ctx context.Context, logger logr.Logger, cb func() error) bool {
+func AbortAfterRetry(ctx context.Context, logger *logr.Logger, cb func() error) bool {
 	if logger == nil {
-		logger = ctrl.Log.WithName("default-logger")
+		defaultLogger := ctrl.Log.WithName("default-logger")
+		logger = &defaultLogger
 	}
 
 	isRetriable := func(err error) bool {

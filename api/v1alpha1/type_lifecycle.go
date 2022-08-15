@@ -64,6 +64,14 @@ func (p Phase) Is(refs ...Phase) bool {
 	return false
 }
 
+func (p Phase) String() string {
+	if p == "" {
+		return string("NotInitialized")
+	}
+
+	return string(p)
+}
+
 type Lifecycle struct {
 	// Phase is a simple, high-level summary of where the Object is in its lifecycle.
 	// The conditions array, the reason and message fields, and the individual container status
@@ -93,6 +101,13 @@ func (in *Lifecycle) String() string {
 	}
 
 	return fmt.Sprintf("phase:%s ", in.Phase)
+}
+
+type ReconcileStatusAware interface {
+	metav1.Object
+
+	GetReconcileStatus() Lifecycle
+	SetReconcileStatus(Lifecycle)
 }
 
 // ConditionType is a valid value for WorkflowCondition.Type

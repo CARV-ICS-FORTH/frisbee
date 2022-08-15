@@ -18,11 +18,11 @@ package watchers
 
 import (
 	"fmt"
+	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"reflect"
 
 	"github.com/carv-ics-forth/frisbee/controllers/common"
 	"github.com/carv-ics-forth/frisbee/controllers/common/grafana"
-	"github.com/carv-ics-forth/frisbee/controllers/common/lifecycle"
 	cmap "github.com/orcaman/concurrent-map"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -101,8 +101,8 @@ func (w *watchWithRangeAnnotator) watchUpdate(r common.Reconciler, gvk schema.Gr
 		}
 
 		// if the status is the same, there is no need to inform the service
-		prev := e.ObjectOld.(lifecycle.ReconcileStatusAware)
-		latest := e.ObjectNew.(lifecycle.ReconcileStatusAware)
+		prev := e.ObjectOld.(v1alpha1.ReconcileStatusAware)
+		latest := e.ObjectNew.(v1alpha1.ReconcileStatusAware)
 
 		if prev.GetReconcileStatus().Phase == latest.GetReconcileStatus().Phase {
 			// a controller never initiates a phase change, and so is never asleep waiting for the same.

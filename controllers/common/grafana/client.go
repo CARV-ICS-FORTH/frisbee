@@ -37,7 +37,7 @@ type Options struct {
 
 	RegisterFor metav1.Object
 
-	Logger logr.Logger
+	Logger *logr.Logger
 
 	HTTPEndpoint *string
 }
@@ -59,7 +59,7 @@ func WithRegisterFor(obj metav1.Object) Option {
 }
 
 // WithLogger will use the given logger for printing info.
-func WithLogger(r logr.Logger) Option {
+func WithLogger(r *logr.Logger) Option {
 	return func(args *Options) {
 		args.Logger = r
 	}
@@ -140,7 +140,7 @@ var clients = map[string]*Client{}
 
 type Client struct {
 	ctx    context.Context
-	logger logr.Logger
+	logger *logr.Logger
 
 	Conn *sdk.Client
 }

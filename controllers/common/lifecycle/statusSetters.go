@@ -28,13 +28,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-type ReconcileStatusAware interface {
-	GetResourceVersion() string
-
-	GetReconcileStatus() v1alpha1.Lifecycle
-	SetReconcileStatus(v1alpha1.Lifecycle)
-}
-
 /******************************************************
 			Lifecycle Setters
 /******************************************************/
@@ -51,7 +44,7 @@ func Pending(ctx context.Context, r common.Reconciler, obj client.Object, reason
 		Message: reason,
 	}
 
-	if statusAware, updateStatus := obj.(ReconcileStatusAware); updateStatus {
+	if statusAware, updateStatus := obj.(v1alpha1.ReconcileStatusAware); updateStatus {
 		statusAware.SetReconcileStatus(status)
 
 		if err := common.UpdateStatus(ctx, r, obj); err != nil {
@@ -80,7 +73,7 @@ func Running(ctx context.Context, r common.Reconciler, obj client.Object, reason
 		Message: reason,
 	}
 
-	if statusAware, updateStatus := obj.(ReconcileStatusAware); updateStatus {
+	if statusAware, updateStatus := obj.(v1alpha1.ReconcileStatusAware); updateStatus {
 		statusAware.SetReconcileStatus(status)
 
 		if err := common.UpdateStatus(ctx, r, obj); err != nil {
@@ -109,7 +102,7 @@ func Success(ctx context.Context, r common.Reconciler, obj client.Object, reason
 		Message: reason,
 	}
 
-	if statusAware, updateStatus := obj.(ReconcileStatusAware); updateStatus {
+	if statusAware, updateStatus := obj.(v1alpha1.ReconcileStatusAware); updateStatus {
 		statusAware.SetReconcileStatus(status)
 
 		if err := common.UpdateStatus(ctx, r, obj); err != nil {
@@ -146,7 +139,7 @@ func Failed(ctx context.Context, r common.Reconciler, obj client.Object, issue e
 			obj.GetNamespace(), obj.GetName(), obj.GetResourceVersion()).Error(),
 	}
 
-	if statusAware, updateStatus := obj.(ReconcileStatusAware); updateStatus {
+	if statusAware, updateStatus := obj.(v1alpha1.ReconcileStatusAware); updateStatus {
 		statusAware.SetReconcileStatus(status)
 
 		if err := common.UpdateStatus(ctx, r, obj); err != nil {

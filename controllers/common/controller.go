@@ -64,7 +64,10 @@ type Reconciler interface {
 
 	GetEventRecorderFor(name string) record.EventRecorder
 
-	logr.Logger
+	// Logging
+	Error(err error, msg string, keysAndValues ...interface{})
+	Info(msg string, keysAndValues ...interface{})
+	V(level int) logr.Logger
 
 	Finalizer() string
 

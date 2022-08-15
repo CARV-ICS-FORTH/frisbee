@@ -59,7 +59,7 @@ func (in *Service) ValidateCreate() error {
 	servicelog.V(5).Info("validate create", "name", in.GetName())
 
 	for _, container := range in.Spec.Containers {
-		if container.Name == MainAppContainerName { // Validate Main container(s)
+		if container.Name == MainContainerName { // Validate Main container(s)
 			if err := in.validateMainContainer(&container); err != nil {
 				return errors.Wrapf(err, "error in service template '%s'", in.GetName())
 			}
@@ -94,7 +94,7 @@ func (in *Service) validateSidecarContainer(c *corev1.Container) error {
 
 	// Ensure that there are no sidecar decorations
 	if value, exists := in.Spec.Decorators.Annotations[SidecarTelemetry]; exists {
-		if value == MainAppContainerName {
+		if value == MainContainerName {
 			return errors.Errorf("Follow either the Main container or the Sidecar container rules. Not both")
 		}
 

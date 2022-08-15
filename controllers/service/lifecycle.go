@@ -59,7 +59,7 @@ func convertPodLifecycle(obj client.Object) v1alpha1.Lifecycle {
 		// In case that the "main" container is complete, then assume that the entire service is complete.
 		// Sidecars containers will be later on garbage-collected by the service controller.
 		for _, container := range pod.Status.ContainerStatuses {
-			if container.Name == v1alpha1.MainAppContainerName && container.State.Terminated != nil {
+			if container.Name == v1alpha1.MainContainerName && container.State.Terminated != nil {
 
 				// Following the Linux convention, we assume that is the container has exit with zero code,
 				// everything has been smoothly. If the exit code is other than 0, then there is an error.

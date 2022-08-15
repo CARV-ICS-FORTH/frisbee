@@ -17,7 +17,13 @@ limitations under the License.
 package executor
 
 import (
+	"bufio"
+	"bytes"
+	"context"
+	"github.com/sirupsen/logrus"
+	"io"
 	"net/http"
+	"strings"
 
 	"github.com/armon/circbuf"
 	"github.com/pkg/errors"
@@ -104,4 +110,109 @@ func (e *Executor) Exec(pod types.NamespacedName, containerID string, command []
 	}
 
 	return result, nil
+}
+
+// GetPodLogs returns pod logs bytes
+func (e *Executor) GetPodLogs(ctx context.Context, pod corev1.Pod, logLinesCount ...int64) (logs []byte, err error) {
+	count := int64(100)
+	if len(logLinesCount) > 0 {
+		count = logLinesCount[0]
+	}
+
+	var containers []string
+	for _, container := range pod.Spec.InitContainers {
+		containers = append(containers, container.Name)
+	}
+
+	for _, container := range pod.Spec.Containers {
+		containers = append(containers, container.Name)
+	}
+
+	for _, container := range containers {
+		podLogOptions := corev1.PodLogOptions{
+			Follow:    false,
+			TailLines: &count,
+			Container: container,
+		}
+
+		podLogRequest := e.KubeClient.CoreV1().
+			Pods(pod.GetNamespace()).
+			GetLogs(pod.GetName(), &podLogOptions)
+
+		stream, err := podLogRequest.Stream(ctx)
+		if err != nil {
+			if len(logs) != 0 && strings.Contains(err.Error(), "PodInitializing") {
+				return logs, nil
+			}
+
+			return logs, err
+		}
+
+		defer stream.Close()
+
+		buf := new(bytes.Buffer)
+		_, err = io.Copy(buf, stream)
+		if err != nil {
+			if len(logs) != 0 && strings.Contains(err.Error(), "PodInitializing") {
+				return logs, nil
+			}
+
+			return logs, err
+		}
+
+		logs = append(logs, buf.Bytes()...)
+	}
+
+	return logs, nil
+}
+
+func (e *Executor) TailPodLogs(ctx context.Context, pod corev1.Pod, logs chan []byte) (err error) {
+	count := int64(1)
+
+	var containers []string
+	for _, container := range pod.Spec.InitContainers {
+		containers = append(containers, container.Name)
+	}
+
+	for _, container := range pod.Spec.Containers {
+		containers = append(containers, container.Name)
+	}
+
+	go func() {
+		defer close(logs)
+
+		for _, container := range containers {
+			podLogOptions := corev1.PodLogOptions{
+				Follow:    true,
+				TailLines: &count,
+				Container: container,
+			}
+
+			podLogRequest := e.KubeClient.CoreV1().
+				Pods(pod.GetNamespace()).
+				GetLogs(pod.GetName(), &podLogOptions)
+
+			stream, err := podLogRequest.Stream(ctx)
+			if err != nil {
+				logrus.Error("stream error", "error", err)
+				continue
+			}
+
+			scanner := bufio.NewScanner(stream)
+
+			// set default bufio scanner buffer (to limit bufio.Scanner: token too long errors on very long lines)
+			buf := make([]byte, 0, 64*1024)
+			scanner.Buffer(buf, 1024*1024)
+
+			for scanner.Scan() {
+				logrus.Debug("TailPodLogs stream scan", "out", scanner.Text(), "pod", pod.Name)
+				logs <- scanner.Bytes()
+			}
+
+			if scanner.Err() != nil {
+				logrus.Error("scanner error", "error", scanner.Err())
+			}
+		}
+	}()
+	return
 }

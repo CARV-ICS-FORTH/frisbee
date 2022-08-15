@@ -87,7 +87,7 @@ func (in *Classifier) ClassifyExternal(name string, obj client.Object, conv Conv
 
 // Classify the object based on the  standard Frisbee lifecycle.
 func (in *Classifier) Classify(name string, obj client.Object) {
-	if statusAware, getStatus := obj.(ReconcileStatusAware); getStatus {
+	if statusAware, getStatus := obj.(v1alpha1.ReconcileStatusAware); getStatus {
 		status := statusAware.GetReconcileStatus()
 
 		switch status.Phase {
@@ -117,7 +117,7 @@ func (in *Classifier) Classify(name string, obj client.Object) {
 // Exclude registers a system service.
 // Services classified by this function are not accounted in the lifecycle, unless they have failed.
 func (in *Classifier) Exclude(name string, obj client.Object) {
-	if statusAware, getStatus := obj.(ReconcileStatusAware); getStatus {
+	if statusAware, getStatus := obj.(v1alpha1.ReconcileStatusAware); getStatus {
 		status := statusAware.GetReconcileStatus()
 
 		if status.Phase.Is(v1alpha1.PhaseFailed) {

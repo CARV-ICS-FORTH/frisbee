@@ -122,16 +122,17 @@ api-docs: gen-crd-api-reference-docs	## Generate API reference documentation
 .PHONY: certs
 certs:  ## Download certs under 'certs' folder
 	@echo "===> Download Certs <==="
+	@echo "CertDir ${CERTS_DIR}"
 	@mkdir -p ${CERTS_DIR}
 	@kubectl get secret webhook-tls -o json | jq -r '.data["tls.key"]' | base64 -d > ${CERTS_DIR}/tls.key
 	@kubectl get secret webhook-tls -o json | jq -r '.data["tls.crt"]' | base64 -d > ${CERTS_DIR}/tls.crt
 
 build: generate fmt vet ## Build manager binary.
-	go build -o bin/manager main.go
+	go build -o bin/manager cmd/manager/main.go
 
 run: generate fmt vet certs ## Run a controller from your host.
 	@echo "===> Run Frisbee <==="
-	go run -race ./main.go -cert-dir=${CERTS_DIR}
+	go run -race ./cmd/manager/main.go -cert-dir=${CERTS_DIR}
 
 docker-build: test ## Build docker image for the Frisbee controller.
 	@echo "===> Build Frisbee Container <==="
