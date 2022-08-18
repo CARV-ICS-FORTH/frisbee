@@ -27,13 +27,13 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func (r *Controller) updateLifecycle(cr *v1alpha1.Chaos) {
+func (r *Controller) updateLifecycle(cr *v1alpha1.Chaos) bool {
 	// Skip any CR which are already completed, or uninitialized.
 	if cr.Status.Phase.Is(v1alpha1.PhaseUninitialized, v1alpha1.PhaseSuccess, v1alpha1.PhaseFailed) {
-		return
+		return false
 	}
 
-	lifecycle.SingleJob(r.view, &cr.Status.Lifecycle)
+	return lifecycle.SingleJob(r.view, &cr.Status.Lifecycle)
 }
 
 // ConditionType ...
@@ -130,7 +130,7 @@ func convertChaosLifecycle(obj client.Object) v1alpha1.Lifecycle {
 		return v1alpha1.Lifecycle{
 			Phase:   v1alpha1.PhaseFailed,
 			Reason:  "Interoperability",
-			Message: "unable to parse chaos message",
+			Message: "cannot parse chaos message",
 		}
 	}
 

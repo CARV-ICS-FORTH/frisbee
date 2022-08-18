@@ -158,8 +158,8 @@ const (
 	// the exposed ports in order to be discoverable by Prometheus.
 	PrometheusDiscoverablePort = "tel-"
 
-	// MainAppContainerName  is the main application that run the service. A service can be either "Main" or "Sidecar".
-	MainAppContainerName = "app"
+	// MainContainerName  is the main application that run the service. A service can be either "Main" or "Sidecar".
+	MainContainerName = "app"
 )
 
 /////////////////////////////////////////////

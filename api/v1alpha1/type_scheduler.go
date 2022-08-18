@@ -16,9 +16,6 @@ limitations under the License.
 
 package v1alpha1
 
-type OnTime struct {
-}
-
 // SchedulerSpec defines information about schedule of the chaos experiment.
 // The scheduler will schedule up to spec.GenerateFromTemplate.Instances or spec.GenerateFromTemplate.Until.
 type SchedulerSpec struct {

@@ -22,7 +22,6 @@ import (
 	"time"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	"github.com/carv-ics-forth/frisbee/pkg/debug"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	k8errors "k8s.io/apimachinery/pkg/api/errors"
@@ -30,7 +29,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -64,7 +62,10 @@ type Reconciler interface {
 
 	GetEventRecorderFor(name string) record.EventRecorder
 
-	logr.Logger
+	// Logging
+	Error(err error, msg string, keysAndValues ...interface{})
+	Info(msg string, keysAndValues ...interface{})
+	V(level int) logr.Logger
 
 	Finalizer() string
 
@@ -78,11 +79,13 @@ type Reconciler interface {
 }
 
 // Reconcile provides the most common functions for all the Reconcilers. That includes acquisition of the CR object
-//  and management of the CR (Custom Resource) finalizers.
+//
+//	and management of the CR (Custom Resource) finalizers.
 //
 // Bool indicate whether the caller should return immediately (true) or continue (false).
 // The reconciliation cycle is where the framework gives us back control after a watch has passed up an event.
 func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.Object, requeue *bool) (ctrl.Result, error) {
+	// make the calling controller to return
 	*requeue = true
 
 	/*
@@ -110,35 +113,41 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 	}
 
 	/*
-		### 2: Manage the instance validity
-		It is better to reject an invalid CR rather than to accept it in etcd and then manage the error condition.
-		TODO: ...
-	*/
-
-	/*
-		### 3: Manage Resource initialization
+		### Manage Resource initialization
 		Finalizers provide a mechanism to inform the Kubernetes control plane that an action needs to take place
 		before the standard Kubernetes garbage collection logic can be performed.
 	*/
 
 	// examine DeletionTimestamp to determine if object is under deletion
 	if obj.GetDeletionTimestamp().IsZero() {
+		// Nothing to do
+		if r.Finalizer() == "" {
+			*requeue = false
+			return Stop()
+		}
 
 		// The object is not being deleted, so if it does not have our finalizer,
 		// then lets add the finalizer and Update the object. This is equivalent
 		// registering our finalizer.
 		if !controllerutil.ContainsFinalizer(obj, r.Finalizer()) {
-			controllerutil.AddFinalizer(obj, r.Finalizer())
+			if controllerutil.AddFinalizer(obj, r.Finalizer()) {
+				r.Info("Add Finalizer",
+					"obj", client.ObjectKeyFromObject(obj),
+					"version", obj.GetResourceVersion(),
+					"finalizer", r.Finalizer())
 
-			if err := Update(ctx, r, obj); err != nil {
-				r.Error(err, "unable to add finalizers", "object", obj.GetName())
+				if err := Update(ctx, r, obj); err != nil {
+					return RequeueAfter(time.Second)
+				}
 
-				return RequeueAfter(time.Second)
+				return Stop()
 			}
 		}
+
 	} else {
 		// The object is being deleted
 		if !controllerutil.ContainsFinalizer(obj, r.Finalizer()) {
+			*requeue = false
 			return Stop()
 		}
 
@@ -147,29 +156,26 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 			// Run finalization logic to remove external dependencies.
 			// If the finalization logic fails, don't remove the finalizer
 			// so that we can retry during the next reconciliation.
-			r.Error(err, "unable to finalize instance", "object", obj.GetName())
+			r.Error(err, "cannot finalize instance", "object", obj.GetName())
 
 			return RequeueAfter(time.Second)
 		}
 
 		// Once all finalizers have been removed, the object will be deleted.
-		controllerutil.RemoveFinalizer(obj, r.Finalizer())
-
-		if err := Update(ctx, r, obj); err != nil {
-			r.Info("Requeue.",
-				"name", obj.GetName(),
+		if controllerutil.RemoveFinalizer(obj, r.Finalizer()) {
+			r.Info("Remove Finalizer",
+				"object", client.ObjectKeyFromObject(obj),
 				"version", obj.GetResourceVersion(),
-				"cannot remove finalizer", r.Finalizer(),
-			)
+				"finalizer", r.Finalizer())
 
-			return RequeueAfter(time.Second)
+			if err := Update(ctx, r, obj); err != nil {
+				return RequeueAfter(time.Second)
+			}
 		}
-
-		// Call reconciliation as the item is being deleted
-		return Stop()
 	}
 
-	// delegate reconciliation logic to the concrete controller.
+	// panic("should never happen")
+
 	*requeue = false
 
 	return Stop()
@@ -177,34 +183,23 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 
 // Update will update the metadata and the spec of the Object. If there is a conflict, it will retry again.
 func Update(ctx context.Context, r Reconciler, obj client.Object) error {
-	updateError := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		return r.GetClient().Update(ctx, obj)
-	})
-
 	r.Info("OO UpdtMeta",
-		"kind", reflect.TypeOf(obj),
-		"name", obj.GetName(),
+		"obj", client.ObjectKeyFromObject(obj),
 		"version", obj.GetResourceVersion(),
-		"caller", debug.GetCallerLine(),
 	)
 
-	return updateError
+	return r.GetClient().Update(ctx, obj)
 }
 
 // UpdateStatus will update the status of the Object. If there is a conflict, it will retry again.
 func UpdateStatus(ctx context.Context, r Reconciler, obj client.Object) error {
-	updateError := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		return r.GetClient().Status().Update(ctx, obj)
-	})
-
 	r.Info("OO UpdtStatus",
-		"kind", reflect.TypeOf(obj),
-		"name", obj.GetName(),
+		"obj", client.ObjectKeyFromObject(obj),
 		"version", obj.GetResourceVersion(),
-		"caller", debug.GetCallerLine(),
+		"become", obj.(v1alpha1.ReconcileStatusAware).GetReconcileStatus().Phase,
 	)
 
-	return updateError
+	return r.GetClient().Status().Update(ctx, obj)
 }
 
 // Create ignores existing objects.
@@ -221,7 +216,7 @@ func Create(ctx context.Context, r Reconciler, parent, child client.Object) erro
 
 	// SetControllerReference sets owner as a Controller OwnerReference on controlled.
 	// This is used for garbage collection of the controlled object and for
-	// reconciling the owner object on changes to controlled (with a Watch + EnqueueRequestForOwner).
+	// reconciling the owner object on changes to controlled (with a Logs + EnqueueRequestForOwner).
 	// Since only one OwnerReference can be a controller, it returns an error if
 	// there is another OwnerReference with Controller flag set.
 	if err := controllerutil.SetControllerReference(parent, child, r.GetClient().Scheme()); err != nil {
@@ -230,15 +225,18 @@ func Create(ctx context.Context, r Reconciler, parent, child client.Object) erro
 
 	r.Info("++ Create",
 		"kind", reflect.TypeOf(child),
-		"name", child.GetName(),
-		"version", child.GetResourceVersion(),
-		"caller", debug.GetCallerLine(),
+		"obj", client.ObjectKeyFromObject(parent),
 	)
 
-	// If err is nil, Wrapf returns nil.
 	err := r.GetClient().Create(ctx, child)
-
-	return errors.Wrapf(err, "creation failed")
+	switch {
+	case k8errors.IsAlreadyExists(err):
+		return err
+	case err != nil:
+		return err
+	default:
+		return nil
+	}
 }
 
 func ListChildren(ctx context.Context, r Reconciler, childJobs client.ObjectList, req types.NamespacedName) error {
@@ -259,9 +257,8 @@ func ListChildren(ctx context.Context, r Reconciler, childJobs client.ObjectList
 func Delete(ctx context.Context, r Reconciler, obj client.Object) {
 	r.Info("-- Delete",
 		"kind", reflect.TypeOf(obj),
-		"name", obj.GetName(),
+		"obj", client.ObjectKeyFromObject(obj),
 		"version", obj.GetResourceVersion(),
-		"caller", debug.GetCallerLine(),
 	)
 
 	// propagation := metav1.DeletePropagationForeground
@@ -270,8 +267,14 @@ func Delete(ctx context.Context, r Reconciler, obj client.Object) {
 		PropagationPolicy: &propagation,
 	}
 
-	if err := r.GetClient().Delete(ctx, obj, &options); client.IgnoreNotFound(err) != nil {
-		r.Error(err, "unable to delete", "obj", obj)
+	err := r.GetClient().Delete(ctx, obj, &options)
+	switch {
+	case k8errors.IsNotFound(err):
+	// Ignore
+	case err != nil:
+		r.Error(err, "deletion error", "obj", client.ObjectKeyFromObject(obj))
+	default:
+		return
 	}
 }
 

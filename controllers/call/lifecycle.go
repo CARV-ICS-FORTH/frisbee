@@ -22,16 +22,15 @@ import (
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common/expressions"
 	"github.com/carv-ics-forth/frisbee/controllers/common/lifecycle"
-	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // calculateLifecycle returns the update lifecycle of the cluster.
-func (r *Controller) calculateLifecycle(cr *v1alpha1.Call) {
+func (r *Controller) calculateLifecycle(cr *v1alpha1.Call) bool {
 	// Step 1. Skip any CR which are already completed, or uninitialized.
 	if cr.Status.Phase.Is(v1alpha1.PhaseUninitialized, v1alpha1.PhaseSuccess, v1alpha1.PhaseFailed) {
-		return
+		return false
 	}
 
 	// Step 3. Check if "Until" conditions are met.
@@ -54,7 +53,7 @@ func (r *Controller) calculateLifecycle(cr *v1alpha1.Call) {
 			suspend := true
 			cr.Spec.Suspend = &suspend
 
-			return
+			return true
 		}
 
 		// Event used in conjunction with "Until", instance act as a maximum bound.
@@ -78,7 +77,7 @@ func (r *Controller) calculateLifecycle(cr *v1alpha1.Call) {
 				Message: msg,
 			})
 
-			return
+			return true
 		}
 
 		// A side effect of "Until" is that queued jobs will be reused,
@@ -88,19 +87,11 @@ func (r *Controller) calculateLifecycle(cr *v1alpha1.Call) {
 		cr.Status.Lifecycle.Reason = "SpawnUntilEvent"
 		cr.Status.Lifecycle.Message = "Assertion is not yet satisfied."
 
-		return
+		return true
 	}
 
 	// Step 4. Check if scheduling goes as expected.
 	queuedJobs := len(cr.Spec.Services)
 
-	if lifecycle.GroupedJobs(queuedJobs, r.view, &cr.Status.Lifecycle, cr.Spec.Tolerate) {
-		return
-	}
-
-	panic(errors.Errorf(`unhandled lifecycle conditions.
-		current: %v,
-		total: %d,
-		jobs:  %s,
-	`, cr.Status.Lifecycle, queuedJobs, r.view.ListAll()))
+	return lifecycle.GroupedJobs(queuedJobs, r.view, &cr.Status.Lifecycle, cr.Spec.Tolerate)
 }

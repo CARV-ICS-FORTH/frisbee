@@ -18,10 +18,11 @@ package watchers
 
 import (
 	"fmt"
+	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"reflect"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/carv-ics-forth/frisbee/controllers/common"
-	"github.com/carv-ics-forth/frisbee/controllers/common/lifecycle"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"
@@ -63,7 +64,7 @@ func (w *simpleWatch) watchCreate(r common.Reconciler, gvk schema.GroupVersionKi
 		r.Info("** Detected",
 			"Request", "Create",
 			"kind", reflect.TypeOf(e.Object),
-			"name", e.Object.GetName(),
+			"obj", client.ObjectKeyFromObject(e.Object),
 			"version", e.Object.GetResourceVersion(),
 		)
 
@@ -92,8 +93,8 @@ func (w *simpleWatch) watchUpdate(r common.Reconciler, gvk schema.GroupVersionKi
 		}
 
 		// if the status is the same, there is no need to inform the service
-		prev := e.ObjectOld.(lifecycle.ReconcileStatusAware)
-		latest := e.ObjectNew.(lifecycle.ReconcileStatusAware)
+		prev := e.ObjectOld.(v1alpha1.ReconcileStatusAware)
+		latest := e.ObjectNew.(v1alpha1.ReconcileStatusAware)
 
 		if prev.GetReconcileStatus().Phase == latest.GetReconcileStatus().Phase {
 			// a controller never initiates a phase change, and so is never asleep waiting for the same.
@@ -103,7 +104,7 @@ func (w *simpleWatch) watchUpdate(r common.Reconciler, gvk schema.GroupVersionKi
 		r.Info("** Detected",
 			"Request", "Update",
 			"kind", reflect.TypeOf(e.ObjectNew),
-			"name", e.ObjectNew.GetName(),
+			"obj", client.ObjectKeyFromObject(e.ObjectNew),
 			"from", prev.GetReconcileStatus().Phase,
 			"to", latest.GetReconcileStatus().Phase,
 			"version", fmt.Sprintf("%s -> %s", prev.GetResourceVersion(), latest.GetResourceVersion()),
@@ -131,7 +132,7 @@ func (w *simpleWatch) watchDelete(r common.Reconciler, gvk schema.GroupVersionKi
 		r.Info("** Detected",
 			"Request", "Delete",
 			"kind", reflect.TypeOf(e.Object),
-			"name", e.Object.GetName(),
+			"obj", client.ObjectKeyFromObject(e.Object),
 			"version", e.Object.GetResourceVersion(),
 		)
 

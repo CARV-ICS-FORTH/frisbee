@@ -51,7 +51,7 @@ type Controller struct {
 	ctrl.Manager
 	logr.Logger
 
-	view lifecycle.Classifier
+	view *lifecycle.Classifier
 
 	alertingPort int
 }
@@ -71,17 +71,15 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	r.Logger.Info("-> Reconcile",
-		"kind", reflect.TypeOf(cr),
-		"name", cr.GetName(),
-		"lifecycle", cr.Status.Phase,
+		"obj", client.ObjectKeyFromObject(&cr),
+		"phase", cr.Status.Phase,
 		"version", cr.GetResourceVersion(),
 	)
 
 	defer func() {
 		r.Logger.Info("<- Reconcile",
-			"kind", reflect.TypeOf(cr),
-			"name", cr.GetName(),
-			"lifecycle", cr.Status.Phase,
+			"obj", client.ObjectKeyFromObject(&cr),
+			"phase", cr.Status.Phase,
 			"version", cr.GetResourceVersion(),
 		)
 	}()
@@ -101,7 +99,6 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		and as a roadblock for stall (queued) requests.
 	*/
 	r.updateLifecycle(&cr)
-
 	if err := common.UpdateStatus(ctx, r, &cr); err != nil {
 		// due to the multiple updates, it is possible for this function to
 		// be in conflict. We fix this issue by re-queueing the request.
@@ -233,8 +230,8 @@ func (r *Controller) Initialize(ctx context.Context, cr *v1alpha1.Scenario) erro
 }
 
 /*
-	PopulateView list all child objects in this namespace that belong to this scenario, and split them into
-	active, successful, and failed jobs.
+PopulateView list all child objects in this namespace that belong to this scenario, and split them into
+active, successful, and failed jobs.
 */
 func (r *Controller) PopulateView(ctx context.Context, req types.NamespacedName) error {
 	r.view.Reset()
@@ -242,7 +239,7 @@ func (r *Controller) PopulateView(ctx context.Context, req types.NamespacedName)
 	var serviceJobs v1alpha1.ServiceList
 	{
 		if err := common.ListChildren(ctx, r, &serviceJobs, req); err != nil {
-			return errors.Wrapf(err, "unable to list child services for '%s'", req)
+			return errors.Wrapf(err, "cannot list child services for '%s'", req)
 		}
 
 		for i, job := range serviceJobs.Items {
@@ -258,7 +255,7 @@ func (r *Controller) PopulateView(ctx context.Context, req types.NamespacedName)
 	var clusterJobs v1alpha1.ClusterList
 	{
 		if err := common.ListChildren(ctx, r, &clusterJobs, req); err != nil {
-			return errors.Wrapf(err, "unable to list child clusters for '%s'", req)
+			return errors.Wrapf(err, "cannot list child clusters for '%s'", req)
 		}
 
 		for i, job := range clusterJobs.Items {
@@ -269,7 +266,7 @@ func (r *Controller) PopulateView(ctx context.Context, req types.NamespacedName)
 	var chaosJobs v1alpha1.ChaosList
 	{
 		if err := common.ListChildren(ctx, r, &chaosJobs, req); err != nil {
-			return errors.Wrapf(err, "unable to list child chaos for '%s'", req)
+			return errors.Wrapf(err, "cannot list child chaos for '%s'", req)
 		}
 
 		for i, job := range chaosJobs.Items {
@@ -280,7 +277,7 @@ func (r *Controller) PopulateView(ctx context.Context, req types.NamespacedName)
 	var cascadeJobs v1alpha1.CascadeList
 	{
 		if err := common.ListChildren(ctx, r, &cascadeJobs, req); err != nil {
-			return errors.Wrapf(err, "unable to list child cascades for '%s'", req)
+			return errors.Wrapf(err, "cannot list child cascades for '%s'", req)
 		}
 
 		for i, job := range cascadeJobs.Items {
@@ -291,7 +288,7 @@ func (r *Controller) PopulateView(ctx context.Context, req types.NamespacedName)
 	var virtualJobs v1alpha1.VirtualObjectList
 	{
 		if err := common.ListChildren(ctx, r, &virtualJobs, req); err != nil {
-			return errors.Wrapf(err, "unable to list child virtualobjects for '%s'", req)
+			return errors.Wrapf(err, "cannot list child virtualobjects for '%s'", req)
 		}
 
 		for i, job := range virtualJobs.Items {
@@ -302,7 +299,7 @@ func (r *Controller) PopulateView(ctx context.Context, req types.NamespacedName)
 	var callJobs v1alpha1.CallList
 	{
 		if err := common.ListChildren(ctx, r, &callJobs, req); err != nil {
-			return errors.Wrapf(err, "unable to list child calls for '%s'", req)
+			return errors.Wrapf(err, "cannot list child calls for '%s'", req)
 		}
 
 		for i, job := range callJobs.Items {
@@ -383,7 +380,7 @@ func (r *Controller) HasFailed(ctx context.Context, cr *v1alpha1.Scenario) error
 	cr.Spec.Suspend = &suspend
 
 	if err := common.Update(ctx, r, cr); err != nil {
-		return errors.Wrapf(err, "unable to suspend execution for '%s'", cr.GetName())
+		return errors.Wrapf(err, "cannot suspend execution for '%s'", cr.GetName())
 	}
 
 	return nil
@@ -412,9 +409,12 @@ func (r *Controller) RunActions(ctx context.Context, t *v1alpha1.Scenario, actio
 
 		// Some jobs are virtual and do not require something to be created.
 		// Yet, they must be tracked in order to respect the execution dependencies of the graph.
-		if action.ActionType != v1alpha1.ActionDelete {
+		switch action.ActionType {
+		case v1alpha1.ActionDelete:
+			break
+		default:
 			if err := common.Create(ctx, r, t, job); err != nil {
-				return errors.Wrapf(err, "execution error for action '%s'", action.Name)
+				return errors.Wrapf(err, "cannot run action '%s'", action.Name)
 			}
 		}
 
@@ -470,6 +470,7 @@ func NewController(mgr ctrl.Manager, logger logr.Logger, alertingPort int) error
 		Manager:      mgr,
 		Logger:       logger.WithName("scenario"),
 		alertingPort: alertingPort,
+		view:         &lifecycle.Classifier{},
 	}
 
 	gvk := v1alpha1.GroupVersion.WithKind("Scenario")
@@ -477,11 +478,11 @@ func NewController(mgr ctrl.Manager, logger logr.Logger, alertingPort int) error
 	return ctrl.NewControllerManagedBy(mgr).
 		Named("scenario").
 		For(&v1alpha1.Scenario{}).
-		Owns(&v1alpha1.Service{}, watchers.Watch(r, gvk)).       // Watch Services
-		Owns(&v1alpha1.Cluster{}, watchers.Watch(r, gvk)).       // Watch Cluster
-		Owns(&v1alpha1.Chaos{}, watchers.Watch(r, gvk)).         // Watch Chaos
-		Owns(&v1alpha1.Cascade{}, watchers.Watch(r, gvk)).       // Watch Cascade
-		Owns(&v1alpha1.VirtualObject{}, watchers.Watch(r, gvk)). // Watch VirtualObjects
-		Owns(&v1alpha1.Call{}, watchers.Watch(r, gvk)).          // Watch Calls
+		Owns(&v1alpha1.Service{}, watchers.Watch(r, gvk)).       // Logs Services
+		Owns(&v1alpha1.Cluster{}, watchers.Watch(r, gvk)).       // Logs Cluster
+		Owns(&v1alpha1.Chaos{}, watchers.Watch(r, gvk)).         // Logs Chaos
+		Owns(&v1alpha1.Cascade{}, watchers.Watch(r, gvk)).       // Logs Cascade
+		Owns(&v1alpha1.VirtualObject{}, watchers.Watch(r, gvk)). // Logs VirtualObjects
+		Owns(&v1alpha1.Call{}, watchers.Watch(r, gvk)).          // Logs Calls
 		Complete(r)
 }

@@ -61,6 +61,8 @@ func (c *ConditionalExpr) HasStateExpr() bool {
 	Validate State Expressions
 */
 
+// +kubebuilder:object:generate=false
+
 var sprigFuncMap = sprig.TxtFuncMap() // a singleton for better performance
 
 type ExprState string
@@ -143,6 +145,11 @@ func (expr ExprState) GoValuate(state interface{}) (bool, error) {
 	Validate Metrics Expressions
 */
 
+// +kubebuilder:object:generate=false
+
+// ExprMetricsValidator expressions evaluated with https://regex101.com/r/8JrgyI/1
+var ExprMetricsValidator = regexp.MustCompile(`(?m)^(?P<reducer>\w+)\(\)\s+of\s+query\((?P<dashboardUID>\w+)\/(?P<panelID>\d+)\/(?P<metric>.+),\s+(?P<from>\w+),\s+(?P<to>\w+)\)\s+is\s+(?P<evaluator>\w+)\((?P<params>-*\d*[\.,\s]*\d*)\)\s*(for\s+\((?P<for>\w+)\))*\s*(every\((?P<every>\w+)\))*\s*$`)
+
 type ExprMetrics string
 
 func (query ExprMetrics) Parse() ([]string, error) {
@@ -165,6 +172,3 @@ func (query ExprMetrics) Parse() ([]string, error) {
 
 	return matches, nil
 }
-
-// ExprMetricsValidator expressions evaluated with https://regex101.com/r/8JrgyI/1
-var ExprMetricsValidator = regexp.MustCompile(`(?m)^(?P<reducer>\w+)\(\)\s+of\s+query\((?P<dashboardUID>\w+)\/(?P<panelID>\d+)\/(?P<metric>.+),\s+(?P<from>\w+),\s+(?P<to>\w+)\)\s+is\s+(?P<evaluator>\w+)\((?P<params>-*\d*[\.,\s]*\d*)\)\s*(for\s+\((?P<for>\w+)\))*\s*(every\((?P<every>\w+)\))*\s*$`)

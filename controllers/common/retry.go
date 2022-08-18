@@ -18,7 +18,6 @@ package common
 
 import (
 	"context"
-	"github.com/pkg/errors"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -34,9 +33,10 @@ var backoff = wait.Backoff{
 	Steps:    3,
 }
 
-func AbortAfterRetry(ctx context.Context, logger logr.Logger, cb func() error) bool {
+func AbortAfterRetry(ctx context.Context, logger *logr.Logger, cb func() error) bool {
 	if logger == nil {
-		logger = ctrl.Log.WithName("default-logger")
+		defaultLogger := ctrl.Log.WithName("default-logger")
+		logger = &defaultLogger
 	}
 
 	isRetriable := func(err error) bool {
@@ -51,7 +51,7 @@ func AbortAfterRetry(ctx context.Context, logger logr.Logger, cb func() error) b
 
 	// retry until Grafana is ready to receive annotations.
 	if err := retry.OnError(backoff, isRetriable, func() error { return cb() }); err != nil {
-		logger.Info("Abort Retrying", "cause", errors.Cause(err))
+		logger.Info("Abort Retrying", "cause", err)
 
 		return true // abort
 	}

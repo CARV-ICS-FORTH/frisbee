@@ -39,6 +39,7 @@ telemetry:
 ## @param chaos.network.delay.jitter Add randomness in the delay
 ## @param chaos.pod.kill.target Service to kill
 chaos:
+
   network:
     generic:
       source: ""

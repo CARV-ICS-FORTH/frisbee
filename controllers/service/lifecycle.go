@@ -26,13 +26,13 @@ import (
 )
 
 // updateLifecycle returns the update lifecycle of the cluster.
-func (r *Controller) updateLifecycle(cr *v1alpha1.Service) {
+func (r *Controller) updateLifecycle(cr *v1alpha1.Service) bool {
 	// Skip any CR which are already completed, or uninitialized.
 	if cr.Status.Phase.Is(v1alpha1.PhaseUninitialized, v1alpha1.PhaseSuccess, v1alpha1.PhaseFailed) {
-		return
+		return false
 	}
 
-	lifecycle.SingleJob(r.view, &cr.Status.Lifecycle)
+	return lifecycle.SingleJob(r.view, &cr.Status.Lifecycle)
 }
 
 // convertPodLifecycle translates the Pod's Lifecycle to Frisbee Lifecycle.
@@ -59,7 +59,7 @@ func convertPodLifecycle(obj client.Object) v1alpha1.Lifecycle {
 		// In case that the "main" container is complete, then assume that the entire service is complete.
 		// Sidecars containers will be later on garbage-collected by the service controller.
 		for _, container := range pod.Status.ContainerStatuses {
-			if container.Name == v1alpha1.MainAppContainerName && container.State.Terminated != nil {
+			if container.Name == v1alpha1.MainContainerName && container.State.Terminated != nil {
 
 				// Following the Linux convention, we assume that is the container has exit with zero code,
 				// everything has been smoothly. If the exit code is other than 0, then there is an error.
@@ -114,12 +114,6 @@ func convertPodLifecycle(obj client.Object) v1alpha1.Lifecycle {
 			Message: message,
 		}
 
-	case corev1.PodUnknown:
-		return v1alpha1.Lifecycle{
-			Phase:   v1alpha1.PhaseFailed,
-			Reason:  "unknown state",
-			Message: pod.Status.Message,
-		}
 	default:
 		panic("unhandled lifecycle condition")
 	}

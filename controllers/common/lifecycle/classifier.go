@@ -87,7 +87,7 @@ func (in *Classifier) ClassifyExternal(name string, obj client.Object, conv Conv
 
 // Classify the object based on the  standard Frisbee lifecycle.
 func (in *Classifier) Classify(name string, obj client.Object) {
-	if statusAware, getStatus := obj.(ReconcileStatusAware); getStatus {
+	if statusAware, getStatus := obj.(v1alpha1.ReconcileStatusAware); getStatus {
 		status := statusAware.GetReconcileStatus()
 
 		switch status.Phase {
@@ -117,7 +117,7 @@ func (in *Classifier) Classify(name string, obj client.Object) {
 // Exclude registers a system service.
 // Services classified by this function are not accounted in the lifecycle, unless they have failed.
 func (in *Classifier) Exclude(name string, obj client.Object) {
-	if statusAware, getStatus := obj.(ReconcileStatusAware); getStatus {
+	if statusAware, getStatus := obj.(v1alpha1.ReconcileStatusAware); getStatus {
 		status := statusAware.GetReconcileStatus()
 
 		if status.Phase.Is(v1alpha1.PhaseFailed) {
@@ -128,46 +128,47 @@ func (in *Classifier) Exclude(name string, obj client.Object) {
 	}
 }
 
-func (in Classifier) IsZero() bool {
-	return len(in.pendingJobs) == 0 &&
-		len(in.runningJobs) == 0 &&
-		len(in.successfulJobs) == 0 &&
-		len(in.failedJobs) == 0
+func (in *Classifier) IsZero() bool {
+	return in == nil ||
+		(len(in.pendingJobs) == 0 &&
+			len(in.runningJobs) == 0 &&
+			len(in.successfulJobs) == 0 &&
+			len(in.failedJobs) == 0)
 }
 
-func (in Classifier) IsPending(jobName string) bool {
+func (in *Classifier) IsPending(jobName string) bool {
 	_, ok := in.pendingJobs[jobName]
 
 	return ok
 }
 
-func (in Classifier) IsRunning(name string) bool {
+func (in *Classifier) IsRunning(name string) bool {
 	_, ok := in.runningJobs[name]
 
 	return ok
 }
 
-func (in Classifier) IsSuccessful(name string) bool {
+func (in *Classifier) IsSuccessful(name string) bool {
 	_, ok := in.successfulJobs[name]
 
 	return ok
 }
 
-func (in Classifier) IsFailed(name string) bool {
+func (in *Classifier) IsFailed(name string) bool {
 	_, ok := in.failedJobs[name]
 
 	return ok
 }
 
-func (in Classifier) NumPendingJobs() int {
+func (in *Classifier) NumPendingJobs() int {
 	return len(in.pendingJobs)
 }
 
-func (in Classifier) NumRunningJobs() int {
+func (in *Classifier) NumRunningJobs() int {
 	return len(in.runningJobs)
 }
 
-func (in Classifier) NumSuccessfulJobs() int {
+func (in *Classifier) NumSuccessfulJobs() int {
 	return len(in.successfulJobs)
 }
 
@@ -175,7 +176,7 @@ func (in Classifier) NumFailedJobs() int {
 	return len(in.failedJobs)
 }
 
-func (in Classifier) NumAll() string {
+func (in *Classifier) NumAll() string {
 	return fmt.Sprint(
 		"\n * Pending:", in.NumPendingJobs(),
 		"\n * Running:", in.NumRunningJobs(),
@@ -185,7 +186,7 @@ func (in Classifier) NumAll() string {
 	)
 }
 
-func (in Classifier) ListPendingJobs() []string {
+func (in *Classifier) ListPendingJobs() []string {
 	list := make([]string, 0, len(in.pendingJobs))
 
 	for jobName := range in.pendingJobs {
@@ -197,7 +198,7 @@ func (in Classifier) ListPendingJobs() []string {
 	return list
 }
 
-func (in Classifier) ListRunningJobs() []string {
+func (in *Classifier) ListRunningJobs() []string {
 	list := make([]string, 0, len(in.runningJobs))
 
 	for jobName := range in.runningJobs {
@@ -209,7 +210,7 @@ func (in Classifier) ListRunningJobs() []string {
 	return list
 }
 
-func (in Classifier) ListSuccessfulJobs() []string {
+func (in *Classifier) ListSuccessfulJobs() []string {
 	list := make([]string, 0, len(in.successfulJobs))
 
 	for jobName := range in.successfulJobs {
@@ -221,7 +222,7 @@ func (in Classifier) ListSuccessfulJobs() []string {
 	return list
 }
 
-func (in Classifier) ListFailedJobs() []string {
+func (in *Classifier) ListFailedJobs() []string {
 	list := make([]string, 0, len(in.failedJobs))
 
 	for jobName := range in.failedJobs {
@@ -233,7 +234,7 @@ func (in Classifier) ListFailedJobs() []string {
 	return list
 }
 
-func (in Classifier) ListAll() string {
+func (in *Classifier) ListAll() string {
 	return fmt.Sprint(
 		"\n * Pending:", in.ListPendingJobs(),
 		"\n * Running:", in.ListRunningJobs(),
@@ -243,7 +244,7 @@ func (in Classifier) ListAll() string {
 	)
 }
 
-func (in Classifier) GetPendingJobs() []client.Object {
+func (in *Classifier) GetPendingJobs() []client.Object {
 	list := make([]client.Object, 0, len(in.pendingJobs))
 
 	for _, job := range in.pendingJobs {
@@ -253,7 +254,7 @@ func (in Classifier) GetPendingJobs() []client.Object {
 	return list
 }
 
-func (in Classifier) GetRunningJobs() []client.Object {
+func (in *Classifier) GetRunningJobs() []client.Object {
 	list := make([]client.Object, 0, len(in.runningJobs))
 
 	for _, job := range in.runningJobs {
@@ -263,7 +264,7 @@ func (in Classifier) GetRunningJobs() []client.Object {
 	return list
 }
 
-func (in Classifier) GetSuccessfulJobs() []client.Object {
+func (in *Classifier) GetSuccessfulJobs() []client.Object {
 	list := make([]client.Object, 0, len(in.successfulJobs))
 
 	for _, job := range in.successfulJobs {
@@ -273,7 +274,7 @@ func (in Classifier) GetSuccessfulJobs() []client.Object {
 	return list
 }
 
-func (in Classifier) GetFailedJobs() []client.Object {
+func (in *Classifier) GetFailedJobs() []client.Object {
 	list := make([]client.Object, 0, len(in.failedJobs))
 
 	for _, job := range in.failedJobs {
@@ -285,7 +286,7 @@ func (in Classifier) GetFailedJobs() []client.Object {
 
 // IsDeletable returns if a service can be deleted or not.
 // Deletable are only pending or running services, which belong to the SUT (not on the system(
-func (in Classifier) IsDeletable(jobName string) (client.Object, bool) {
+func (in *Classifier) IsDeletable(jobName string) (client.Object, bool) {
 	if job, exists := in.pendingJobs[jobName]; exists {
 		return job, v1alpha1.GetComponentLabel(job) == v1alpha1.ComponentSUT
 	}

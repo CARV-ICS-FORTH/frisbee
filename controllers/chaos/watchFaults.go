@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"reflect"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/carv-ics-forth/frisbee/controllers/common"
 	"github.com/carv-ics-forth/frisbee/controllers/common/grafana"
@@ -52,7 +53,7 @@ func (r *Controller) create(e event.CreateEvent) bool {
 	r.Logger.Info("** Detected",
 		"Request", "Create",
 		"kind", reflect.TypeOf(e.Object),
-		"name", e.Object.GetName(),
+		"obj", client.ObjectKeyFromObject(e.Object),
 		"version", e.Object.GetResourceVersion(),
 	)
 
@@ -91,7 +92,7 @@ func (r *Controller) update(e event.UpdateEvent) bool {
 	r.Logger.Info("** Detected",
 		"Request", "Update",
 		"kind", reflect.TypeOf(e.ObjectNew),
-		"name", e.ObjectNew.GetName(),
+		"obj", client.ObjectKeyFromObject(e.ObjectNew),
 		"version", fmt.Sprintf("%s -> %s", e.ObjectOld.GetResourceVersion(), e.ObjectNew.GetResourceVersion()),
 	)
 
@@ -115,7 +116,7 @@ func (r *Controller) delete(e event.DeleteEvent) bool {
 	r.Logger.Info("** Detected",
 		"Request", "Delete",
 		"kind", reflect.TypeOf(e.Object),
-		"name", e.Object.GetName(),
+		"obj", client.ObjectKeyFromObject(e.Object),
 		"version", e.Object.GetResourceVersion(),
 	)
 

@@ -51,7 +51,7 @@ type Controller struct {
 
 	gvk schema.GroupVersionKind
 
-	view lifecycle.Classifier
+	view *lifecycle.Classifier
 
 	// because the range annotator has state (uid), we need to save in the controller's store.
 	regionAnnotations cmap.ConcurrentMap
@@ -74,17 +74,15 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	r.Logger.Info("-> Reconcile",
-		"kind", reflect.TypeOf(cr),
-		"name", cr.GetName(),
-		"lifecycle", cr.Status.Phase,
+		"obj", client.ObjectKeyFromObject(&cr),
+		"phase", cr.Status.Phase,
 		"version", cr.GetResourceVersion(),
 	)
 
 	defer func() {
 		r.Logger.Info("<- Reconcile",
-			"kind", reflect.TypeOf(cr),
-			"name", cr.GetName(),
-			"lifecycle", cr.Status.Phase,
+			"obj", client.ObjectKeyFromObject(&cr),
+			"phase", cr.Status.Phase,
 			"version", cr.GetResourceVersion(),
 		)
 	}()
@@ -104,7 +102,6 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		and as a roadblock for stall (queued) requests.
 	*/
 	r.updateLifecycle(&cr)
-
 	if err := common.UpdateStatus(ctx, r, &cr); err != nil {
 		// due to the multiple updates, it is possible for this function to
 		// be in conflict. We fix this issue by re-queueing the request.
@@ -171,7 +168,7 @@ func (r *Controller) PopulateView(ctx context.Context, req types.NamespacedName)
 	networkChaosList.SetGroupVersionKind(NetworkChaosGVK)
 	{
 		if err := common.ListChildren(ctx, r, &networkChaosList, req); err != nil {
-			return errors.Wrapf(err, "unable to list children for '%s'", req)
+			return errors.Wrapf(err, "cannot list children for '%s'", req)
 		}
 
 		for i, job := range networkChaosList.Items {
@@ -183,7 +180,7 @@ func (r *Controller) PopulateView(ctx context.Context, req types.NamespacedName)
 	podChaosList.SetGroupVersionKind(PodChaosGVK)
 	{
 		if err := common.ListChildren(ctx, r, &podChaosList, req); err != nil {
-			return errors.Wrapf(err, "unable to list children for '%s'", req)
+			return errors.Wrapf(err, "cannot list children for '%s'", req)
 		}
 
 		for i, job := range podChaosList.Items {
@@ -195,7 +192,7 @@ func (r *Controller) PopulateView(ctx context.Context, req types.NamespacedName)
 	ioChaosList.SetGroupVersionKind(IOChaosGVK)
 	{
 		if err := common.ListChildren(ctx, r, &ioChaosList, req); err != nil {
-			return errors.Wrapf(err, "unable to list children for '%s'", req)
+			return errors.Wrapf(err, "cannot list children for '%s'", req)
 		}
 
 		for i, job := range ioChaosList.Items {
@@ -207,7 +204,7 @@ func (r *Controller) PopulateView(ctx context.Context, req types.NamespacedName)
 	kernelChaosList.SetGroupVersionKind(KernelChaosGVK)
 	{
 		if err := common.ListChildren(ctx, r, &kernelChaosList, req); err != nil {
-			return errors.Wrapf(err, "unable to list children for '%s'", req)
+			return errors.Wrapf(err, "cannot list children for '%s'", req)
 		}
 
 		for i, job := range kernelChaosList.Items {
@@ -219,7 +216,7 @@ func (r *Controller) PopulateView(ctx context.Context, req types.NamespacedName)
 	timeChaosList.SetGroupVersionKind(TimeChaosGVK)
 	{
 		if err := common.ListChildren(ctx, r, &timeChaosList, req); err != nil {
-			return errors.Wrapf(err, "unable to list children for '%s'", req)
+			return errors.Wrapf(err, "cannot list children for '%s'", req)
 		}
 
 		for i, job := range timeChaosList.Items {
@@ -305,6 +302,7 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 		Logger:            logger.WithName("chaos"),
 		gvk:               v1alpha1.GroupVersion.WithKind("Chaos"),
 		regionAnnotations: cmap.New(),
+		view:              &lifecycle.Classifier{},
 	}
 
 	var networkChaos GenericFault

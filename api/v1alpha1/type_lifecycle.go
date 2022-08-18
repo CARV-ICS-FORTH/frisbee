@@ -18,8 +18,44 @@ package v1alpha1
 
 import (
 	"fmt"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+// ConditionType is a valid value for WorkflowCondition.Type
+type ConditionType string
+
+func (t ConditionType) String() string {
+	return string(t)
+}
+
+// These are valid conditions of pod.
+const (
+	// ConditionCRInitialized indicates whether the workflow has been initialized
+	ConditionCRInitialized = ConditionType("Initialized")
+
+	// ConditionAllJobsAreScheduled indicates that all jobs have been successfully scheduled.
+	// Jobs may refer to actions of a scenario, services of a cluster, chaos events of a cascade, etc.
+	ConditionAllJobsAreScheduled = ConditionType("AllJobsAreScheduled")
+
+	// ConditionAllJobsAreCompleted indicates that all jobs have been successfully completed.
+	// Jobs may refer to actions of a scenario, services of a cluster, chaos events of a cascade, etc.
+	ConditionAllJobsAreCompleted = ConditionType("AllJobsAreCompleted")
+
+	// ConditionJobUnexpectedTermination is used for a job that has been unexpectedly terminated.
+	// The termination refers to both Success and Fail.
+	ConditionJobUnexpectedTermination = ConditionType("UnexpectedTermination")
+
+	// ConditionTerminated indicates the user-defined conditions are met.
+	// ConditionTerminated = ConditionType("Terminated")
+
+	// ConditionStateTransition indicates the transition of a resource into another state.
+	// ConditionStateTransition = ConditionType("StateTransition")
+
+	// ConditionPerformanceAlert indicates an alert received by Grafana concerning the real-time performance of the system.
+	ConditionPerformanceAlert = ConditionType("PerformanceAlert")
+
+	// ConditionAssert indicate that an assertion condition is false.
+	ConditionAssert = ConditionType("Assert")
 )
 
 // Phase is a simple, high-level summary of where the Object is in its lifecycle.
@@ -64,6 +100,14 @@ func (p Phase) Is(refs ...Phase) bool {
 	return false
 }
 
+func (p Phase) String() string {
+	if p == "" {
+		return "NotInitialized"
+	}
+
+	return string(p)
+}
+
 type Lifecycle struct {
 	// Phase is a simple, high-level summary of where the Object is in its lifecycle.
 	// The conditions array, the reason and message fields, and the individual container status
@@ -95,42 +139,32 @@ func (in *Lifecycle) String() string {
 	return fmt.Sprintf("phase:%s ", in.Phase)
 }
 
-// ConditionType is a valid value for WorkflowCondition.Type
-type ConditionType string
+func (in Lifecycle) Table() (header []string, data [][]string) {
+	header = []string{
+		"Phase",
+		"Reason",
+		"Message",
+		"Conditions",
+	}
 
-func (t ConditionType) String() string {
-	return string(t)
+	data = append(data, []string{
+		in.Phase.String(),
+		in.Reason,
+		in.Message,
+		fmt.Sprint(in.Conditions),
+	})
+
+	return header, data
 }
 
-// These are valid conditions of pod.
-const (
-	// ConditionCRInitialized indicates whether the workflow has been initialized
-	ConditionCRInitialized = ConditionType("Initialized")
+// +kubebuilder:object:generate=false
 
-	// ConditionAllJobsAreScheduled indicates that all jobs have been successfully scheduled.
-	// Jobs may refer to actions of a scenario, services of a cluster, chaos events of a cascade, etc.
-	ConditionAllJobsAreScheduled = ConditionType("AllJobsAreScheduled")
+type ReconcileStatusAware interface {
+	metav1.Object
 
-	// ConditionAllJobsAreCompleted indicates that all jobs have been successfully completed.
-	// Jobs may refer to actions of a scenario, services of a cluster, chaos events of a cascade, etc.
-	ConditionAllJobsAreCompleted = ConditionType("AllJobsAreCompleted")
-
-	// ConditionJobUnexpectedTermination is used for a job that has been unexpectedly terminated.
-	// The termination refers to both Success and Fail.
-	ConditionJobUnexpectedTermination = ConditionType("UnexpectedTermination")
-
-	// ConditionTerminated indicates the user-defined conditions are met.
-	// ConditionTerminated = ConditionType("Terminated")
-
-	// ConditionStateTransition indicates the transition of a resource into another state.
-	// ConditionStateTransition = ConditionType("StateTransition")
-
-	// ConditionPerformanceAlert indicates an alert received by Grafana concerning the real-time performance of the system.
-	ConditionPerformanceAlert = ConditionType("PerformanceAlert")
-
-	// ConditionAssert indicate that an assertion condition is false.
-	ConditionAssert = ConditionType("Assert")
-)
+	GetReconcileStatus() Lifecycle
+	SetReconcileStatus(Lifecycle)
+}
 
 // +kubebuilder:object:generate=false
 

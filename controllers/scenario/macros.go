@@ -214,7 +214,7 @@ func selectServices(ctx context.Context, r common.Reconciler, ss *v1alpha1.Match
 				}
 
 				if err := r.GetClient().Get(ctx, key, &service); err != nil {
-					return nil, errors.Wrapf(err, "unable to find service %s", key)
+					return nil, errors.Wrapf(err, "cannot find service %s", key)
 				}
 
 				// use only running services

@@ -39,10 +39,10 @@ func getActionOrDie(t *v1alpha1.Scenario, actionName string) *v1alpha1.Action {
 	panic(errors.Errorf("cannot find action '%s'", actionName))
 }
 
-func (r *Controller) updateLifecycle(cr *v1alpha1.Scenario) {
+func (r *Controller) updateLifecycle(cr *v1alpha1.Scenario) bool {
 	// Step 1. Skip any scenario which are already completed, or uninitialized.
 	if cr.Status.Lifecycle.Phase.Is(v1alpha1.PhaseUninitialized, v1alpha1.PhaseSuccess, v1alpha1.PhaseFailed) {
-		return
+		return false
 	}
 
 	for _, actionName := range cr.Status.ScheduledJobs {
@@ -63,7 +63,7 @@ func (r *Controller) updateLifecycle(cr *v1alpha1.Scenario) {
 					Message: fmt.Sprintf("AssertError for action '%s'. Info: '%s'", action.Name, eval.Info),
 				})
 
-				return
+				return true
 			}
 		}
 	}
@@ -71,13 +71,5 @@ func (r *Controller) updateLifecycle(cr *v1alpha1.Scenario) {
 	// Step 4. Check if scheduling goes as expected.
 	queuedJobs := len(cr.Spec.Actions)
 
-	if lifecycle.GroupedJobs(queuedJobs, r.view, &cr.Status.Lifecycle, nil) {
-		return
-	}
-
-	panic(errors.Errorf(`unhandled lifecycle conditions.
-		current: '%v',
-		total: '%d',
-		jobs: '%s',
-	`, cr.Status.Lifecycle, queuedJobs, r.view.ListAll()))
+	return lifecycle.GroupedJobs(queuedJobs, r.view, &cr.Status.Lifecycle, nil)
 }
