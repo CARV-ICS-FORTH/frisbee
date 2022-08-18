@@ -17,26 +17,34 @@ limitations under the License.
 package commands
 
 import (
-	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/tests"
+	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/install"
 	"github.com/carv-ics-forth/frisbee/pkg/ui"
 	"github.com/spf13/cobra"
 )
 
-func NewWatchCmd() *cobra.Command {
+func NewInstallCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "watch <resourceName>",
-		Aliases: []string{"r", "start"},
-		Short:   "Watch tests or test suites",
+		Use:     "install",
+		Short:   "Install Frisbee to current kubectl context",
+		Aliases: []string{"i", "deploy"},
 		Run: func(cmd *cobra.Command, args []string) {
+			ui.Logo()
+
 			err := cmd.Help()
 			ui.PrintOnError("Displaying help", err)
 		},
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			// validator.PersistentPreRunVersionCheck(cmd, common.Version)
-		}}
+		},
+		PostRun: func(cmd *cobra.Command, args []string) {
+			ui.NL()
+			ui.Info(" Happy Testing! 🚀")
+			ui.NL()
+		},
+	}
 
-	cmd.AddCommand(tests.NewWatchTestCmd())
-	// cmd.AddCommand(testsuites.NewWatchTestSuiteExecutionCmd())
+	cmd.AddCommand(install.NewInstallDevelopmentCmd())
+	cmd.AddCommand(install.NewInstallProductionCmd())
 
 	return cmd
 }

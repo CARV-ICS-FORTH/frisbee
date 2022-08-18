@@ -55,10 +55,10 @@ func setJobs(state *lifecycle.Classifier) {
 }
 
 func TestFiredState(t *testing.T) {
-	state := lifecycle.Classifier{}
+	state := new(lifecycle.Classifier)
 	state.Reset()
 
-	setJobs(&state)
+	setJobs(state)
 
 	type args struct {
 		expr  v1alpha1.ExprState
@@ -75,7 +75,7 @@ func TestFiredState(t *testing.T) {
 			name: "empty expression",
 			args: args{
 				expr:  "",
-				state: lifecycle.Classifier{},
+				state: new(lifecycle.Classifier),
 			},
 			wantErr:  false,
 			wantPass: true,
@@ -85,7 +85,7 @@ func TestFiredState(t *testing.T) {
 			name: "invalid objects",
 			args: args{
 				expr:  `{{.IsSuccessful "service0"}} == true`,
-				state: lifecycle.Classifier{},
+				state: new(lifecycle.Classifier),
 			},
 			wantErr:  false,
 			wantPass: false,

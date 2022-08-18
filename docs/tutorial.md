@@ -28,11 +28,11 @@ This tutorial will guide you through deploying and running Frisbee on a local Ku
 #### 1. Kubernetes and & Helm
 
 * [Microk8s](https://microk8s.io/docs)  is the simplest production-grade conformant K8s.  **It runs entirely on your
-workstation or edge device.**
+  workstation or edge device.**
 
 * [Helm](https://helm.sh/docs/intro/install/)  is a package manager for Kubernetes. Helm uses **a packaging format
-called
-charts**.
+  called
+  charts**.
 
 ```bash
 # Install microk8s v.1.24
@@ -61,7 +61,6 @@ helm repo add jetstack https://charts.jetstack.io
 helm repo update
 helm upgrade --install cert-manager jetstack/cert-manager --version v1.8.2 --set installCRDs=true
 ```
-
 
 Although Frisbee can be installed in a similar Helm-ish way, for demonstration purposes, we favor the git-based method.
 
@@ -166,12 +165,12 @@ scenario.frisbee.dev/cockroach-bitrot created
 **Event-based**: Consumes information from the Kubernetes API
 
 * [Dashboard](https://dashboard-frisbee.localhost/#/pod?namespace=mytest):  is a web-based Kubernetes user interface.
-You can use Dashboard to deploy containerized applications to a Kubernetes cluster, troubleshoot your containerized
-application, and manage the cluster resources.
+  You can use Dashboard to deploy containerized applications to a Kubernetes cluster, troubleshoot your containerized
+  application, and manage the cluster resources.
 
 * [Chaos Dashboard](http://chaos-frisbee.localhost/experiments): is a one-step web UI for managing, designing, and
-monitoring chaos experiments on *Chaos Mesh*. It will ask for a token. You can get it from the config
-via `grep token  ~/.kube/config`.
+  monitoring chaos experiments on *Chaos Mesh*. It will ask for a token. You can get it from the config
+  via `grep token  ~/.kube/config`.
 
 ----------------------------------------------
 

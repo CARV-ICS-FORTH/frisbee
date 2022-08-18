@@ -29,7 +29,7 @@ func GetClient(cmd *cobra.Command) client.Client {
 	}
 
 	client, err := client.GetClient(client.ClientDirect, options)
-	ui.ExitOnError("setting up client type", err)
+	ui.ExitOnError("Setting up client type", err)
 
 	return client
 }

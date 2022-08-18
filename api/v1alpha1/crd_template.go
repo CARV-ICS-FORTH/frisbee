@@ -84,6 +84,8 @@ func init() {
 	SchemeBuilder.Register(&Template{}, &TemplateList{})
 }
 
+// +kubebuilder:object:generate=false
+
 // GenerateFromTemplate generates a spec by parameterizing the templateRef with the given inputs.
 type GenerateFromTemplate struct {
 	// TemplateRef refers to a  template (e.g, iperf-server).
@@ -183,6 +185,8 @@ func (in *GenerateFromTemplate) IterateInputs(cb func(in map[string]string) erro
 
 	return nil
 }
+
+// +kubebuilder:object:generate=false
 
 type Scheme struct {
 	// Scenario returns the name of the scenario that invokes the template.

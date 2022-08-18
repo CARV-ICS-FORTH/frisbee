@@ -21,8 +21,8 @@ import (
 	"fmt"
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/pkg/executor"
+	"github.com/carv-ics-forth/frisbee/pkg/ui"
 	"github.com/kubeshop/testkube/pkg/executor/output"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -58,7 +58,7 @@ func (c TestInspectionClient) Logs(testName string) (out chan output.Output, err
 
 	go func() {
 		defer func() {
-			logrus.Warn("closing JobExecutor.Logs out log")
+			ui.Debug("closing JobExecutor.Log out log")
 			close(out)
 		}()
 
@@ -66,6 +66,8 @@ func (c TestInspectionClient) Logs(testName string) (out chan output.Output, err
 			out <- output.NewOutputError(err)
 			return
 		}
+
+		logrus.Warn("POUSAKIA ", len(logs))
 
 		for l := range logs {
 			entry, err := output.GetLogEntry(l)
@@ -75,6 +77,9 @@ func (c TestInspectionClient) Logs(testName string) (out chan output.Output, err
 			}
 			out <- entry
 		}
+
+		logrus.Warn("<OUSAKIA ")
+
 	}()
 
 	return
@@ -82,25 +87,35 @@ func (c TestInspectionClient) Logs(testName string) (out chan output.Output, err
 
 // TailTestLogs - locates logs for job pod(s)
 func (c TestInspectionClient) TailTestLogs(testName string, logs chan []byte) (err error) {
-
-	var pods corev1.PodList
-
 	ctx := context.Background()
 
 	filters := &client.ListOptions{
 		Namespace: testName,
 	}
 
-	if err := c.client.List(ctx, &pods, filters); err != nil {
-		close(logs)
+	var pods corev1.PodList
 
-		return errors.Wrapf(err, "cannot list pods")
+	if err := wait.PollImmediate(pollInterval, pollTimeout, func() (done bool, err error) {
+		c.client.List(ctx, &pods, filters)
+		switch {
+		case err != nil: // Abort operation
+			close(logs)
+
+			return true, err
+		case len(pods.Items) == 0: // Retry
+			ui.Debug("List pods in test", testName)
+
+			return false, nil
+		default: // ok
+			return true, nil
+		}
+	}); err != nil {
+		return err
 	}
 
 	for _, pod := range pods.Items {
-		if v1alpha1.GetScenarioLabel(&pod) == testName {
-
-			logrus.Warn("podNamespace", pod.Namespace, "podName", pod.Name, "podStatus", pod.Status)
+		if v1alpha1.HasScenarioLabel(&pod) {
+			ui.Debug("pod", pod.GetNamespace()+"/"+pod.GetName(), "status", string(pod.Status.Phase))
 
 			switch pod.Status.Phase {
 
@@ -116,7 +131,8 @@ func (c TestInspectionClient) TailTestLogs(testName string, logs chan []byte) (e
 			default:
 				logrus.Debug("tailing job logs: waiting for pod to be ready")
 				if err = wait.PollImmediate(pollInterval, pollTimeout, IsPodReady(ctx, c.client, client.ObjectKeyFromObject(&pod))); err != nil {
-					logrus.Error("poll immediate error when tailing logs", "error", err)
+					ui.ExitOnError("poll immediate error when tailing logs", err)
+
 					return c.GetLastLogLineError(ctx, pod)
 				}
 
@@ -169,4 +185,74 @@ func IsPodReady(ctx context.Context, c client.Client, key types.NamespacedName) 
 		}
 		return false, nil
 	}
+}
+
+/*
+
+/*
+func TailLogs(c client.Client, testName string) {
+	ui.Info("Getting pod logs")
+
+	logs, err := c.Logs(testName)
+	ui.ExitOnError("getting logs from executor", err)
+
+	for l := range logs {
+		switch l.Type_ {
+		case output.TypeError:
+			ui.UseStderr()
+			ui.Errf(l.Content)
+
+			if l.Result != nil {
+				ui.Errf("Error: %s", l.Result.ErrorMessage)
+				ui.Debug("Output: %s", l.Result.Output)
+			}
+
+			uiShellGetExecution(testName)
+			os.Exit(1)
+			return
+
+		case output.TypeResult:
+			ui.Info("Execution completed", l.Result.Output)
+		default:
+			ui.LogLine(l.String())
+		}
+	}
+
+	ui.NL()
+
+	// TODO Websocket research + plug into Event bus (EventEmitter)
+	// watch for success | error status - in case of connection error on logs watch need fix in 0.8
+	for range time.Tick(time.Second) {
+		scenario, err := c.GetTest(testName)
+		ui.ExitOnError("getting test status "+testName, err)
+
+		if scenario == nil {
+			ui.ExitOnError("validate test", errors.Errorf("test '%s' is nil", testName))
+		}
+
+		if scenario.Status.Phase.Is(v1alpha1.PhaseSuccess, v1alpha1.PhaseFailed) {
+			fmt.Println()
+
+			uiShellGetExecution(testName)
+
+			return
+		}
+	}
+
+	uiShellGetExecution(testName)
+}
+
+*/
+
+func uiShellGetExecution(id string) {
+	ui.ShellCommand(
+		"Use following command to get test execution details",
+		"kubectl frisbee get execution "+id,
+	)
+
+	ui.NL()
+}
+
+func WaitTest(ctx context.Context, c client.Client, testName string) error {
+	panic("wait is not yet supported")
 }

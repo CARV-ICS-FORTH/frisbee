@@ -1,5 +1,5 @@
 /*
-Copyright 2021 ICS-FORTH.
+Copyright 2022 ICS-FORTH.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -29,6 +29,8 @@ func NewGetCmd() *cobra.Command {
 		Short:   "Get resources",
 		Long:    `Get available resources, get single item or list`,
 		Run: func(cmd *cobra.Command, args []string) {
+			ui.Logo()
+
 			err := cmd.Help()
 			ui.PrintOnError("Displaying help", err)
 		},

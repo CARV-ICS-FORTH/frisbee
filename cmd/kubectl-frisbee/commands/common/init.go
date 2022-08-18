@@ -14,17 +14,26 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package validator
+package common
 
-import (
-	"errors"
+import "os/exec"
 
-	"github.com/spf13/cobra"
+var (
+	Kubectl string
+	Helm    string
 )
 
-func TestName(cmd *cobra.Command, args []string) error {
-	if len(args) < 1 {
-		return errors.New("please pass test name as argument")
+func init() {
+	kubectlPath, err := exec.LookPath("kubectl")
+	if err != nil {
+		panic(err)
 	}
-	return nil
+
+	helmPath, err := exec.LookPath("helm")
+	if err != nil {
+		panic(err)
+	}
+
+	Kubectl = kubectlPath
+	Helm = helmPath
 }

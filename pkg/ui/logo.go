@@ -39,12 +39,6 @@ func logo() string {
 {{ .AnsiColor.BrightRed }}
 {{ .Title "Frisbee" "" 4 }}
 {{ .AnsiColor.BrightGreen }}
-GoVersion: {{ .GoVersion }}
-GOOS: {{ .GOOS }}
-GOARCH: {{ .GOARCH }}
-NumCPU: {{ .NumCPU }}
-GOPATH: {{ .GOPATH }}
-GOROOT: {{ .GOROOT }}
 	`
 
 	banner.InitString(buf, true, true, templ)

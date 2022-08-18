@@ -97,6 +97,7 @@ func main() {
 	opts := zap.Options{
 		Development: true,
 		Level:       zapcore.Level(verbose),
+		TimeEncoder: zapcore.EpochNanosTimeEncoder,
 	}
 
 	opts.BindFlags(flag.CommandLine)
@@ -116,50 +117,50 @@ func main() {
 		LeaderElectionID:       "233dac68.frisbee.dev",
 	})
 	if err != nil {
-		setupLog.Error(err, "unable to start manager")
+		setupLog.Error(err, "cannot start manager")
 		os.Exit(1)
 	}
 
 	// Add controllers
 	{
 		if err := template.NewController(mgr, setupLog); err != nil {
-			utilruntime.HandleError(errors.Wrapf(err, "unable to create Templates controller"))
+			utilruntime.HandleError(errors.Wrapf(err, "cannot create Templates controller"))
 
 			os.Exit(1)
 		}
 
 		if err := service.NewController(mgr, setupLog); err != nil {
-			utilruntime.HandleError(errors.Wrapf(err, "unable to create Service controller"))
+			utilruntime.HandleError(errors.Wrapf(err, "cannot create Service controller"))
 
 			os.Exit(1)
 		}
 
 		if err := cluster.NewController(mgr, setupLog); err != nil {
-			utilruntime.HandleError(errors.Wrapf(err, "unable to create Cluster controller"))
+			utilruntime.HandleError(errors.Wrapf(err, "cannot create Cluster controller"))
 
 			os.Exit(1)
 		}
 
 		if err := chaos.NewController(mgr, setupLog); err != nil {
-			utilruntime.HandleError(errors.Wrapf(err, "unable to create Chaos controller"))
+			utilruntime.HandleError(errors.Wrapf(err, "cannot create Chaos controller"))
 
 			os.Exit(1)
 		}
 
 		if err := cascade.NewController(mgr, setupLog); err != nil {
-			utilruntime.HandleError(errors.Wrapf(err, "unable to create Cascade controller"))
+			utilruntime.HandleError(errors.Wrapf(err, "cannot create Cascade controller"))
 
 			os.Exit(1)
 		}
 
 		if err := call.NewController(mgr, setupLog); err != nil {
-			utilruntime.HandleError(errors.Wrapf(err, "unable to create Call controller"))
+			utilruntime.HandleError(errors.Wrapf(err, "cannot create Call controller"))
 
 			os.Exit(1)
 		}
 
 		if err := scenario.NewController(mgr, setupLog, alertingPort); err != nil {
-			utilruntime.HandleError(errors.Wrapf(err, "unable to create Scenario controller"))
+			utilruntime.HandleError(errors.Wrapf(err, "cannot create Scenario controller"))
 
 			os.Exit(1)
 		}
@@ -167,38 +168,38 @@ func main() {
 
 	{
 		if err = (&frisbeev1alpha1.Template{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "Template")
+			setupLog.Error(err, "cannot create webhook", "webhook", "Template")
 			os.Exit(1)
 		}
 
 		if err = (&frisbeev1alpha1.Service{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "Service")
+			setupLog.Error(err, "cannot create webhook", "webhook", "Service")
 			os.Exit(1)
 		}
 
 		if err = (&frisbeev1alpha1.Cluster{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "Cluster")
+			setupLog.Error(err, "cannot create webhook", "webhook", "Cluster")
 			os.Exit(1)
 		}
 
 		if err = (&frisbeev1alpha1.Chaos{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "Chaos")
+			setupLog.Error(err, "cannot create webhook", "webhook", "Chaos")
 			os.Exit(1)
 		}
 
 		if err = (&frisbeev1alpha1.Cascade{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "Cascade")
+			setupLog.Error(err, "cannot create webhook", "webhook", "Cascade")
 			os.Exit(1)
 		}
 
 		if err = (&frisbeev1alpha1.Scenario{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "Scenario")
+			setupLog.Error(err, "cannot create webhook", "webhook", "Scenario")
 
 			os.Exit(1)
 		}
 
 		if err = (&frisbeev1alpha1.Call{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "Call")
+			setupLog.Error(err, "cannot create webhook", "webhook", "Call")
 
 			os.Exit(1)
 		}
@@ -207,12 +208,12 @@ func main() {
 	// +kubebuilder:scaffold:builder
 	{ // Add manager monitoring
 		if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
-			setupLog.Error(err, "unable to set up health check")
+			setupLog.Error(err, "cannot set up health check")
 			os.Exit(1)
 		}
 
 		if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
-			setupLog.Error(err, "unable to set up ready check")
+			setupLog.Error(err, "cannot set up ready check")
 			os.Exit(1)
 		}
 
@@ -221,7 +222,7 @@ func main() {
 			go func() {
 				err := http.ListenAndServe("localhost:6060", nil)
 				if err != nil {
-					runtimeutil.HandleError(errors.Wrapf(err, "unable to start profiling server"))
+					runtimeutil.HandleError(errors.Wrapf(err, "cannot start profiling server"))
 				}
 
 				setupLog.Info("Profiler started", "addr", "localhost:6060")

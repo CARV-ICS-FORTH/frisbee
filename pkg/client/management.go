@@ -65,15 +65,14 @@ func (c TestManagementClient) GetTest(id string) (scenario *v1alpha1.Scenario, e
 		return nil, errors.Wrapf(err, "cannot list resources")
 	}
 
-	switch {
-	case len(scenarios.Items) == 0:
+	switch numItems := len(scenarios.Items); numItems {
+	case 0:
 		return nil, nil
-
-	case len(scenarios.Items) != 1:
-		return nil, errors.Errorf("test '%s' has %d scenarios", id, len(scenarios.Items))
+	case 1:
+		return &scenarios.Items[0], nil
+	default:
+		return nil, errors.Errorf("test '%s' has %d scenarios", id, numItems)
 	}
-
-	return &scenarios.Items[0], nil
 }
 
 // ListTests list all tests
@@ -105,11 +104,24 @@ func (c TestManagementClient) ListTests(selector string) (tests v1alpha1.Scenari
 			return tests, errors.Wrapf(err, "cannot list resources")
 		}
 
-		if len(scenarios.Items) != 1 {
-			return tests, errors.Errorf("test '%s' has %d scenarios", nm.GetName(), len(scenarios.Items))
+		switch numItems := len(scenarios.Items); numItems {
+		case 0:
+			if !nm.GetDeletionTimestamp().IsZero() {
+				// Just wait and it will be removed.
+			} else {
+				return v1alpha1.ScenarioList{}, errors.Errorf("detected stall test '%s'", nm.GetName())
+			}
+
+		case 1:
+			if !nm.GetDeletionTimestamp().IsZero() { // Some rewrite for output to make more sense
+				scenarios.Items[0].Status.Phase = "Terminating"
+			}
+
+			tests.Items = append(tests.Items, scenarios.Items[0])
+		default:
+			return v1alpha1.ScenarioList{}, errors.Errorf("test '%s' has %d scenarios", nm.GetName(), numItems)
 		}
 
-		tests.Items = append(tests.Items, scenarios.Items[0])
 	}
 
 	return tests, nil
@@ -205,23 +217,21 @@ func (c TestManagementClient) SubmitTestFromFile(id string, manifestPath string)
 		resourceNames = append(resourceNames, resource.GetNamespace()+"/"+resource.GetName())
 	}
 
-	// create namespace for hosting the scenario
+	// ensure the namespace for hosting the scenario
 	{
 		var namespace corev1.Namespace
 		namespace.SetName(id)
 		namespace.SetLabels(ManagedNamespace)
 
-		if err := c.client.Create(ctx, &namespace); err != nil {
-			return resourceNames, errors.Wrapf(err, "create namespace %s", id)
+		if err := c.client.Get(ctx, client.ObjectKeyFromObject(&namespace), &namespace); err != nil {
+			if err := c.client.Create(ctx, &namespace); err != nil {
+				return resourceNames, errors.Wrapf(err, "create namespace %s", id)
+			}
 		}
 	}
 
 	// create the resources. if a resource with similar name exists, it is deleted.
 	for i, resource := range resources {
-		if err := c.client.Delete(ctx, &resources[i]); client.IgnoreNotFound(err) != nil {
-			return resourceNames, errors.Wrapf(err, "delete resource %s", resource.GetName())
-		}
-
 		if err := c.client.Create(ctx, &resources[i]); err != nil {
 			return resourceNames, errors.Wrapf(err, "create resource %s", resource.GetName())
 		}

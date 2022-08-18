@@ -1,6 +1,3 @@
-// +k8s:deepcopy-gen=package,register
-// +groupName=frisbee.dev
-
 /*
 Copyright 2021 ICS-FORTH.
 
@@ -20,6 +17,7 @@ limitations under the License.
 // Package v1alpha1 contains API Schema definitions for the Frisbee v1alpha1 API group
 // +kubebuilder:object:generate=true
 // +groupName=frisbee.dev
+// +k8s:deepcopy-gen=package,register
 package v1alpha1
 
 import (

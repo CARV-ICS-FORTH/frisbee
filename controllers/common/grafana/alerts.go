@@ -273,7 +273,7 @@ func (c *Client) SetAlert(ctx context.Context, alert *Alert, name string, msg st
 		return nil
 	}
 
-	return errors.Errorf("unable to set alert [%v]", res)
+	return errors.Errorf("cannot set alert [%v]", res)
 }
 
 // UnsetAlert removes an alert from Grafana.

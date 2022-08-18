@@ -18,13 +18,13 @@ The Frisbee community abides by this [code of conduct](CODE_OF_CONDUCT.md).
 ## Community Roles
 
 * **Users:** Members that engage with the Frisbee community via any medium
-(Slack, GitHub, mailing lists, etc.).
+  (Slack, GitHub, mailing lists, etc.).
 * **Contributors:** Do regular contributions to the Frisbee project
-(documentation, code reviews, responding to issues, participating in proposal
-discussions, contributing code, etc.).
+  (documentation, code reviews, responding to issues, participating in proposal
+  discussions, contributing code, etc.).
 * **Maintainers**: Responsible for the overall health and direction of the
-project. They are the final reviewers of PRs and responsible for Frisbee
-releases.
+  project. They are the final reviewers of PRs and responsible for Frisbee
+  releases.
 
 ### Contributors
 
@@ -73,7 +73,6 @@ A supermajority is defined as two-thirds of members in the group.
 
 The code of conduct is overseen by the Frisbee project maintainers. Possible code
 of conduct violations should be emailed to the project maintainers at fnikol@ics.forth.gr
-
 
 If the possible violation is against one of the project maintainers that member
 will be recused from voting on the issue. Such issues must be escalated to the

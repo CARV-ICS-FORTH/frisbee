@@ -22,11 +22,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewSubmitCmd() *cobra.Command {
+func NewInspectCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "submit <resourceName>",
-		Aliases: []string{"r", "start"},
-		Short:   "Submit tests or test suites for execution",
+		Use: "inspect <resourceName>",
+		// Aliases: []string{"r", "start"},
+		Short: "Inspect tests or test suites",
 		Run: func(cmd *cobra.Command, args []string) {
 			ui.Logo()
 
@@ -37,8 +37,11 @@ func NewSubmitCmd() *cobra.Command {
 			// validator.PersistentPreRunVersionCheck(cmd, common.Version)
 		}}
 
-	cmd.AddCommand(tests.NewSubmitTestCmd())
-	// cmd.AddCommand(testsuites.NewRunTestSuiteCmd())
+	cmd.AddCommand(tests.NewInspectTestCmd())
+	// cmd.AddCommand(testsuites.NewWatchTestSuiteExecutionCmd())
 
 	return cmd
 }
+
+// kubectl frisbee inspect test skata --events
+// kubectl frisbee inspect test skata --logs

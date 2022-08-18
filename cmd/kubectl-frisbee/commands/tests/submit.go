@@ -25,11 +25,7 @@ import (
 )
 
 func NewSubmitTestCmd() *cobra.Command {
-	var (
-		wait  bool
-		watch bool
-		log   bool
-	)
+	var options TestSubmitOptions
 
 	cmd := &cobra.Command{
 		Use:     "test <NAME> <FILE>",
@@ -37,13 +33,13 @@ func NewSubmitTestCmd() *cobra.Command {
 		Short:   "Submit a new test",
 		Long:    `Submit starts new test based on Test Custom Resource name, returns results to console`,
 		Example: `# Submit multiple workflows from files:
-  kubectl-frisbee submit test my-wf.yaml
+  kubectl frisbee submit test my-wf.yaml
 # Submit and wait for completion:
-  kubectl-frisbee submit test --wait my-wf.yaml
+  kubectl frisbee submit test --wait my-wf.yaml
 # Submit and watch until completion:
-  kubectl-frisbee submit test --watch my-wf.yaml
+  kubectl frisbee submit test --watch my-wf.yaml
 # Submit and tail logs until completion:
-  kubectl-frisbee submit test --log my-wf.yaml
+  kubectl frisbee submit test --log my-wf.yaml
 `,
 
 		Run: func(cmd *cobra.Command, args []string) {
@@ -74,6 +70,7 @@ func NewSubmitTestCmd() *cobra.Command {
 					os.Exit(1)
 				}
 
+				// Submit test
 				resources, err := client.SubmitTestFromFile(testName, testFile)
 				for _, r := range resources {
 					ui.Debug("Create", r)
@@ -81,15 +78,36 @@ func NewSubmitTestCmd() *cobra.Command {
 
 				ui.ExitOnError("starting test execution "+testName, err)
 
+				// Control test output
+				ControlOutput(testName, &options)
+
 			default:
 				ui.Failf("Pass Test Name and Test File Path")
 			}
 		},
 	}
 
-	cmd.Flags().BoolVarP(&wait, "wait", "w", false, "wait for the scenario to complete")
-	cmd.Flags().BoolVar(&watch, "watch", false, "watch the scenario until it completes")
-	cmd.Flags().BoolVar(&log, "log", false, "log the scenario until it completes")
+	PopulateTestSubmitFlags(cmd, &options)
 
 	return cmd
+}
+
+type TestSubmitOptions struct {
+	Wait, Log bool
+}
+
+func PopulateTestSubmitFlags(cmd *cobra.Command, options *TestSubmitOptions) {
+	cmd.Flags().BoolVarP(&options.Wait, "wait", "w", false, "wait for the scenario to complete")
+	cmd.Flags().BoolVarP(&options.Log, "log", "l", false, "tail logs until completion")
+}
+
+func ControlOutput(testName string, options *TestSubmitOptions) {
+	if options.Wait {
+		err := common.WaitTestSuccess(testName)
+		ui.ExitOnError("waiting test completion "+testName, err)
+
+	} else if options.Log {
+		err := common.Logs(testName, true)
+		ui.ExitOnError("getting logs", err)
+	}
 }

@@ -65,7 +65,7 @@ type Controller struct {
 
 	gvk schema.GroupVersionKind
 
-	view lifecycle.Classifier
+	view *lifecycle.Classifier
 
 	// because the range annotator has state (uid), we need to save in the controller's store.
 	regionAnnotations cmap.ConcurrentMap
@@ -88,17 +88,15 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	r.Logger.Info("-> Reconcile",
-		"kind", reflect.TypeOf(cr),
-		"name", cr.GetName(),
-		"lifecycle", cr.Status.Phase,
+		"obj", client.ObjectKeyFromObject(&cr),
+		"phase", cr.Status.Phase,
 		"version", cr.GetResourceVersion(),
 	)
 
 	defer func() {
 		r.Logger.Info("<- Reconcile",
-			"kind", reflect.TypeOf(cr),
-			"name", cr.GetName(),
-			"lifecycle", cr.Status.Phase,
+			"obj", client.ObjectKeyFromObject(&cr),
+			"phase", cr.Status.Phase,
 			"version", cr.GetResourceVersion(),
 		)
 	}()
@@ -118,7 +116,6 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		and as a roadblock for stall (queued) requests.
 	*/
 	r.updateLifecycle(&cr)
-
 	if err := common.UpdateStatus(ctx, r, &cr); err != nil {
 		// due to the multiple updates, it is possible for this function to
 		// be in conflict. We fix this issue by re-queueing the request.
@@ -154,7 +151,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		return common.Stop()
 
-	case v1alpha1.PhaseUninitialized, v1alpha1.PhasePending:
+	case v1alpha1.PhaseUninitialized:
 		// Avoid re-scheduling a scheduled job
 		if cr.Status.LastScheduleTime != nil {
 			// next reconciliation cycle will be trigger by the watchers
@@ -163,13 +160,17 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		// Build the job in kubernetes
 		if err := r.runJob(ctx, &cr); err != nil {
-			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "runjob"))
+			return lifecycle.Failed(ctx, r, &cr, err)
 		}
 
 		// Update the scheduling information
 		cr.Status.LastScheduleTime = &metav1.Time{Time: time.Now()}
 
 		return lifecycle.Pending(ctx, r, &cr, "create pod")
+
+	case v1alpha1.PhasePending:
+		// Nothing to do
+		return common.Stop()
 	}
 
 	panic(errors.New("This should never happen"))
@@ -181,7 +182,7 @@ func (r *Controller) PopulateView(ctx context.Context, req types.NamespacedName)
 	var podJobs corev1.PodList
 	{
 		if err := common.ListChildren(ctx, r, &podJobs, req); err != nil {
-			return errors.Wrapf(err, "unable to list children for '%s'", req)
+			return errors.Wrapf(err, "cannot list children for '%s'", req)
 		}
 
 		for i, job := range podJobs.Items {
@@ -268,6 +269,7 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 		Manager:           mgr,
 		Logger:            logger.WithName("service"),
 		gvk:               v1alpha1.GroupVersion.WithKind("Service"),
+		view:              &lifecycle.Classifier{},
 		regionAnnotations: cmap.New(),
 	}
 

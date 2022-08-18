@@ -39,7 +39,7 @@ func NewGetTestsCmd() *cobra.Command {
 
 			if len(args) == 0 { // All tests
 				tests, err := client.ListTests(strings.Join(selectors, ","))
-				ui.ExitOnError("getting all tests ", err)
+				ui.ExitOnError("Getting all tests ", err)
 
 				err = common.RenderList(cmd, tests, os.Stdout)
 				ui.PrintOnError("Rendering list", err)
@@ -49,15 +49,14 @@ func NewGetTestsCmd() *cobra.Command {
 
 			for _, testName := range args { // Specific test
 				test, err := client.GetTest(testName)
-				ui.ExitOnError("getting test "+testName, err)
-
 				if test != nil {
 					ui.NL()
-					ui.Info("Test:")
+					ui.Info("Test:", testName)
 
-					common.RenderObject(test)
-					ui.ExitOnError("rendering obj "+testName, err)
+					ui.Table(test.Status, os.Stdout)
 				}
+
+				ui.ExitOnError("Getting test "+testName, err)
 			}
 		},
 	}

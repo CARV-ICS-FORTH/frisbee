@@ -45,7 +45,7 @@ type Controller struct {
 	ctrl.Manager
 	logr.Logger
 
-	view lifecycle.Classifier
+	view *lifecycle.Classifier
 }
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
@@ -65,17 +65,15 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	r.Logger.Info("-> Reconcile",
-		"kind", reflect.TypeOf(cr),
-		"name", cr.GetName(),
-		"lifecycle", cr.Status.Phase,
+		"obj", client.ObjectKeyFromObject(&cr),
+		"phase", cr.Status.Phase,
 		"version", cr.GetResourceVersion(),
 	)
 
 	defer func() {
 		r.Logger.Info("<- Reconcile",
-			"kind", reflect.TypeOf(cr),
-			"name", cr.GetName(),
-			"lifecycle", cr.Status.Phase,
+			"obj", client.ObjectKeyFromObject(&cr),
+			"phase", cr.Status.Phase,
 			"version", cr.GetResourceVersion(),
 		)
 	}()
@@ -94,12 +92,12 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		The Update serves as "journaling" for the upcoming operations,
 		and as a roadblock for stall (queued) requests.
 	*/
-	r.calculateLifecycle(&cr)
-
-	if err := common.UpdateStatus(ctx, r, &cr); err != nil {
-		// due to the multiple updates, it is possible for this function to
-		// be in conflict. We fix this issue by re-queueing the request.
-		return common.RequeueAfter(time.Second)
+	if r.calculateLifecycle(&cr) {
+		if err := common.UpdateStatus(ctx, r, &cr); err != nil {
+			// due to the multiple updates, it is possible for this function to
+			// be in conflict. We fix this issue by re-queueing the request.
+			return common.RequeueAfter(time.Second)
+		}
 	}
 
 	/*
@@ -229,7 +227,7 @@ func (r *Controller) PopulateView(ctx context.Context, req types.NamespacedName)
 	var serviceJobs v1alpha1.ServiceList
 	{
 		if err := common.ListChildren(ctx, r, &serviceJobs, req); err != nil {
-			return errors.Wrapf(err, "unable to list children for '%s'", req)
+			return errors.Wrapf(err, "cannot list children for '%s'", req)
 		}
 
 		for i, job := range serviceJobs.Items {
@@ -327,6 +325,7 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 	r := &Controller{
 		Manager: mgr,
 		Logger:  logger.WithName("cluster"),
+		view:    &lifecycle.Classifier{},
 	}
 
 	gvk := v1alpha1.GroupVersion.WithKind("Cluster")

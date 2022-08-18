@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"reflect"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/carv-ics-forth/frisbee/controllers/common"
 	"github.com/pkg/errors"
@@ -63,7 +64,7 @@ func (w *simpleWatch) watchCreate(r common.Reconciler, gvk schema.GroupVersionKi
 		r.Info("** Detected",
 			"Request", "Create",
 			"kind", reflect.TypeOf(e.Object),
-			"name", e.Object.GetName(),
+			"obj", client.ObjectKeyFromObject(e.Object),
 			"version", e.Object.GetResourceVersion(),
 		)
 
@@ -103,7 +104,7 @@ func (w *simpleWatch) watchUpdate(r common.Reconciler, gvk schema.GroupVersionKi
 		r.Info("** Detected",
 			"Request", "Update",
 			"kind", reflect.TypeOf(e.ObjectNew),
-			"name", e.ObjectNew.GetName(),
+			"obj", client.ObjectKeyFromObject(e.ObjectNew),
 			"from", prev.GetReconcileStatus().Phase,
 			"to", latest.GetReconcileStatus().Phase,
 			"version", fmt.Sprintf("%s -> %s", prev.GetResourceVersion(), latest.GetResourceVersion()),
@@ -131,7 +132,7 @@ func (w *simpleWatch) watchDelete(r common.Reconciler, gvk schema.GroupVersionKi
 		r.Info("** Detected",
 			"Request", "Delete",
 			"kind", reflect.TypeOf(e.Object),
-			"name", e.Object.GetName(),
+			"obj", client.ObjectKeyFromObject(e.Object),
 			"version", e.Object.GetResourceVersion(),
 		)
 

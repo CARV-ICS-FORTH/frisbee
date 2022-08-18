@@ -38,20 +38,20 @@ func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Service) error {
 	setDefaultValues(cr)
 
 	if err := handleRequirements(ctx, r, cr); err != nil {
-		return errors.Wrapf(err, "requirements error")
+		return errors.Wrapf(err, "cannot satisfy requirements")
 	}
 
 	if err := decoratePod(ctx, r, cr); err != nil {
-		return errors.Wrapf(err, "decorator error")
+		return errors.Wrapf(err, "cannot set pod decorators")
 	}
 
 	discovery, err := constructDiscoveryService(cr)
 	if err != nil {
-		return errors.Wrapf(err, "DNS service error")
+		return errors.Wrapf(err, "cannot build DNS service")
 	}
 
 	if err := common.Create(ctx, r, cr, discovery); err != nil {
-		return errors.Wrapf(err, "cannot create discovery service")
+		return errors.Wrapf(err, "cannot create DNS service")
 	}
 
 	// finally, create the pod
@@ -66,7 +66,7 @@ func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Service) error {
 	cr.Spec.PodSpec.DeepCopyInto(&pod.Spec)
 
 	if err := common.Create(ctx, r, cr, &pod); err != nil {
-		return errors.Wrapf(err, "create pod")
+		return errors.Wrapf(err, "cannot create pod")
 	}
 
 	return nil

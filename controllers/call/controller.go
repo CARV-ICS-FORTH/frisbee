@@ -59,7 +59,7 @@ type Controller struct {
 
 	gvk schema.GroupVersionKind
 
-	view lifecycle.Classifier
+	view *lifecycle.Classifier
 
 	// executor is used to run commands directly into containers
 	executor executor.Executor
@@ -84,17 +84,15 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	r.Logger.Info("-> Reconcile",
-		"kind", reflect.TypeOf(cr),
-		"name", cr.GetName(),
-		"lifecycle", cr.Status.Phase,
+		"obj", client.ObjectKeyFromObject(&cr),
+		"phase", cr.Status.Phase,
 		"version", cr.GetResourceVersion(),
 	)
 
 	defer func() {
 		r.Logger.Info("<- Reconcile",
-			"kind", reflect.TypeOf(cr),
-			"name", cr.GetName(),
-			"lifecycle", cr.Status.Phase,
+			"obj", client.ObjectKeyFromObject(&cr),
+			"phase", cr.Status.Phase,
 			"version", cr.GetResourceVersion(),
 		)
 	}()
@@ -113,12 +111,12 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		The Update serves as "journaling" for the upcoming operations,
 		and as a roadblock for stall (queued) requests.
 	*/
-	r.calculateLifecycle(&cr)
-
-	if err := common.UpdateStatus(ctx, r, &cr); err != nil {
-		// due to the multiple updates, it is possible for this function to
-		// be in conflict. We fix this issue by re-queueing the request.
-		return common.RequeueAfter(time.Second)
+	if r.calculateLifecycle(&cr) {
+		if err := common.UpdateStatus(ctx, r, &cr); err != nil {
+			// due to the multiple updates, it is possible for this function to
+			// be in conflict. We fix this issue by re-queueing the request.
+			return common.RequeueAfter(time.Second)
+		}
 	}
 
 	/*
@@ -246,7 +244,7 @@ func (r *Controller) PopulateView(ctx context.Context, req types.NamespacedName)
 	var streamJobs v1alpha1.VirtualObjectList
 	{
 		if err := common.ListChildren(ctx, r, &streamJobs, req); err != nil {
-			return errors.Wrapf(err, "unable to list children for '%s'", req)
+			return errors.Wrapf(err, "cannot list children for '%s'", req)
 		}
 
 		for i, job := range streamJobs.Items {
@@ -345,6 +343,7 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 		Manager:           mgr,
 		Logger:            logger.WithName("call"),
 		gvk:               v1alpha1.GroupVersion.WithKind("Call"),
+		view:              &lifecycle.Classifier{},
 		executor:          executor.NewExecutor(mgr.GetConfig()),
 		regionAnnotations: cmap.New(),
 	}

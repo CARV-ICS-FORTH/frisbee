@@ -17,28 +17,29 @@ limitations under the License.
 package commands
 
 import (
-	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/tests"
 	"github.com/carv-ics-forth/frisbee/pkg/ui"
+	"github.com/kubeshop/testkube/pkg/process"
 	"github.com/spf13/cobra"
 )
 
-func NewSubmitCmd() *cobra.Command {
+func NewUninstallCmd() *cobra.Command {
+	var name, namespace string
+
 	cmd := &cobra.Command{
-		Use:     "submit <resourceName>",
-		Aliases: []string{"r", "start"},
-		Short:   "Submit tests or test suites for execution",
+		Use:   "uninstall",
+		Short: "Uninstall Frisbee from current kubectl context",
 		Run: func(cmd *cobra.Command, args []string) {
 			ui.Logo()
 
-			err := cmd.Help()
-			ui.PrintOnError("Displaying help", err)
-		},
-		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			// validator.PersistentPreRunVersionCheck(cmd, common.Version)
-		}}
+			ui.Verbose = true
 
-	cmd.AddCommand(tests.NewSubmitTestCmd())
-	// cmd.AddCommand(testsuites.NewRunTestSuiteCmd())
+			_, err := process.Execute("helm", "uninstall", "--namespace", namespace, name)
+			ui.PrintOnError("uninstalling frisbee", err)
+		},
+	}
+
+	cmd.Flags().StringVar(&name, "name", "frisbee", "installation name")
+	cmd.Flags().StringVar(&namespace, "namespace", "frisbee", "namespace where to install")
 
 	return cmd
 }

@@ -6,6 +6,7 @@ require (
 	github.com/Knetic/govaluate v3.0.0+incompatible
 	github.com/Masterminds/sprig/v3 v3.2.2
 	github.com/armon/circbuf v0.0.0-20150827004946-bbbad097214e
+	github.com/chromedp/cdproto v0.0.0-20210706234513-2bc298e8be7f
 	github.com/dimiro1/banner v1.1.0
 	github.com/go-logr/logr v1.2.3
 	github.com/golanghelper/grafana-webhook v0.0.0-20180512191629-e0da26114467
@@ -18,6 +19,7 @@ require (
 	github.com/onsi/gomega v1.18.1
 	github.com/orcaman/concurrent-map v0.0.0-20210501183033-44dafcb38ecc
 	github.com/pkg/errors v0.9.1
+	github.com/r3labs/diff/v3 v3.0.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/cobra v1.5.0
@@ -41,6 +43,7 @@ require (
 	github.com/Masterminds/semver/v3 v3.1.1 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
+	github.com/chromedp/sysutil v1.0.0 // indirect
 	github.com/common-nighthawk/go-figure v0.0.0-20200609044655-c4b36f998cf2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dustinkirkland/golang-petname v0.0.0-20191129215211-8e5a1ed0cff0 // indirect
@@ -85,6 +88,7 @@ require (
 	github.com/shopspring/decimal v1.2.0 // indirect
 	github.com/spf13/cast v1.3.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/vmihailenco/msgpack v4.0.4+incompatible // indirect
 	github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778 // indirect
 	go.mongodb.org/mongo-driver v1.10.1 // indirect
 	go.uber.org/atomic v1.9.0 // indirect

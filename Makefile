@@ -13,6 +13,7 @@ endif
 # VERSION defines the project version for the operator.
 # Update this value when you upgrade the version of your project.
 FrisbeeVersion=$(shell cat VERSION)
+FRISBEE_NAMESPACE := frisbee
 
 CRD_DIR ?=	charts/platform/crds
 WEBHOOK_DIR ?= charts/platform/templates/webhook
@@ -114,7 +115,7 @@ test: generate fmt vet envtest ## Run tests.
 ##@ Documentation
 
 api-docs: gen-crd-api-reference-docs	## Generate API reference documentation
-	$(API_GEN) -api-dir=./api/v1alpha1 -config=./hack/api-docs/config.json -template-dir=./hack/api-docs/template -out-file=./docs/api.html
+	$(API_GEN) -api-dir=./api/v1alpha1 -config=./hack/api-docs/config.json -template-dir=./hack/api-docs/template -out-file=./docs/api.html -v=10
 
 
 ##@ Build
@@ -124,8 +125,8 @@ certs:  ## Download certs under 'certs' folder
 	@echo "===> Download Certs <==="
 	@echo "CertDir ${CERTS_DIR}"
 	@mkdir -p ${CERTS_DIR}
-	@kubectl get secret webhook-tls -o json | jq -r '.data["tls.key"]' | base64 -d > ${CERTS_DIR}/tls.key
-	@kubectl get secret webhook-tls -o json | jq -r '.data["tls.crt"]' | base64 -d > ${CERTS_DIR}/tls.crt
+	@kubectl get secret webhook-tls -n ${FRISBEE_NAMESPACE} -o json | jq -r '.data["tls.key"]' | base64 -d > ${CERTS_DIR}/tls.key
+	@kubectl get secret webhook-tls -n ${FRISBEE_NAMESPACE} -o json | jq -r '.data["tls.crt"]' | base64 -d > ${CERTS_DIR}/tls.crt
 
 build: generate fmt vet ## Build manager binary.
 	go build -o bin/manager cmd/manager/main.go

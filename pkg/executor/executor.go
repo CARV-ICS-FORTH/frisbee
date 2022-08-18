@@ -178,41 +178,42 @@ func (e *Executor) TailPodLogs(ctx context.Context, pod corev1.Pod, logs chan []
 		containers = append(containers, container.Name)
 	}
 
-	go func() {
-		defer close(logs)
+	// go func() {
+	defer close(logs)
 
-		for _, container := range containers {
-			podLogOptions := corev1.PodLogOptions{
-				Follow:    true,
-				TailLines: &count,
-				Container: container,
-			}
-
-			podLogRequest := e.KubeClient.CoreV1().
-				Pods(pod.GetNamespace()).
-				GetLogs(pod.GetName(), &podLogOptions)
-
-			stream, err := podLogRequest.Stream(ctx)
-			if err != nil {
-				logrus.Error("stream error", "error", err)
-				continue
-			}
-
-			scanner := bufio.NewScanner(stream)
-
-			// set default bufio scanner buffer (to limit bufio.Scanner: token too long errors on very long lines)
-			buf := make([]byte, 0, 64*1024)
-			scanner.Buffer(buf, 1024*1024)
-
-			for scanner.Scan() {
-				logrus.Debug("TailPodLogs stream scan", "out", scanner.Text(), "pod", pod.Name)
-				logs <- scanner.Bytes()
-			}
-
-			if scanner.Err() != nil {
-				logrus.Error("scanner error", "error", scanner.Err())
-			}
+	for _, container := range containers {
+		podLogOptions := corev1.PodLogOptions{
+			Follow:    true,
+			TailLines: &count,
+			Container: container,
 		}
-	}()
+
+		podLogRequest := e.KubeClient.CoreV1().
+			Pods(pod.GetNamespace()).
+			GetLogs(pod.GetName(), &podLogOptions)
+
+		stream, err := podLogRequest.Stream(ctx)
+		if err != nil {
+			logrus.Error("stream error", "error", err)
+			continue
+		}
+
+		scanner := bufio.NewScanner(stream)
+
+		// set default bufio scanner buffer (to limit bufio.Scanner: token too long errors on very long lines)
+		buf := make([]byte, 0, 64*1024)
+		scanner.Buffer(buf, 1024*1024)
+
+		for scanner.Scan() {
+			logrus.Debug("TailPodLogs stream scan", "out", scanner.Text(), "pod", pod.Name)
+			logs <- scanner.Bytes()
+		}
+
+		if scanner.Err() != nil {
+			return errors.Wrapf(scanner.Err(), "scanner error")
+		}
+	}
+	// }()
+
 	return
 }

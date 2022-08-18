@@ -101,7 +101,7 @@ func New(ctx context.Context, setters ...Option) error {
 		if common.AbortAfterRetry(ctx, args.Logger, func() error {
 			resp, errHealth := conn.GetHealth(ctx)
 			if errHealth != nil {
-				return errHealth
+				return errors.Wrapf(errHealth, "cannot get GrafanaHealth")
 			}
 
 			args.Logger.Info("Grafana Health status", "details", resp)

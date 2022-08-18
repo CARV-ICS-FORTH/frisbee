@@ -5,6 +5,7 @@
 </div>
 
 #
+
 <div align="center">Frisbee – Kubernetes Native Testbed</div>
 
 The effort being put in automating tests should not take over delivering value to users. Frisbee makes it possible to:
@@ -18,7 +19,6 @@ The effort being put in automating tests should not take over delivering value t
 🏗️ Combine Chaos Engineering with large-scale performance testing!
 
 🕹️ Assert actual program behavior and side effects
-
 
 ## :compass: Scenarios
 
@@ -39,7 +39,7 @@ The effort being put in automating tests should not take over delivering value t
 # TL;DR
 
 1. Make sure that [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/)
-and  [Helm](https://helm.sh/docs/intro/install/) are installed on your system.
+   and  [Helm](https://helm.sh/docs/intro/install/) are installed on your system.
 
 2. Update Helm repo.
 
@@ -88,10 +88,10 @@ Frisbee addresses the key pain points developers and QA engineers face when test
 earlier stages of the software lifecycle. We make it possible to:
 
 * **Run tests:**  create temporary containers for application dependencies, setup their initial state and clean them up
-in the end.
+  in the end.
 * **Write tests:** describe complex topologies, dynamic operating conditions, Chaos Events, and distributed assertions.
 * **Debug tests:** integrate application-specific metrics, monitor site-wide health metrics, and raise notifications on
-SLA violations.
+  SLA violations.
 
 For more information, Frisbee installation and reference documents are available at:
 

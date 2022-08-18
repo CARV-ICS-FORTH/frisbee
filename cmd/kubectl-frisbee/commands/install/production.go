@@ -14,31 +14,34 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package commands
+package install
 
 import (
-	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/tests"
+	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/common"
 	"github.com/carv-ics-forth/frisbee/pkg/ui"
 	"github.com/spf13/cobra"
 )
 
-func NewSubmitCmd() *cobra.Command {
+func NewInstallProductionCmd() *cobra.Command {
+	var options common.HelmUpgradeOrInstallFrisbeeOptions
+
 	cmd := &cobra.Command{
-		Use:     "submit <resourceName>",
-		Aliases: []string{"r", "start"},
-		Short:   "Submit tests or test suites for execution",
+		Use:   "production",
+		Short: "Install Frisbee in production mode.",
+		Long:  "Install all Frisbee components, including the controller.",
 		Run: func(cmd *cobra.Command, args []string) {
-			ui.Logo()
+			ui.Info("Helm installing frisbee framework")
 
-			err := cmd.Help()
-			ui.PrintOnError("Displaying help", err)
+			common.UpdateHelmRepo()
+
+			command := []string{"upgrade", "--install", "--wait", "--create-namespace", "--namespace", options.Namespace}
+			command = append(command, options.Name, options.Chart)
+
+			common.HelmInstall(command, &options)
 		},
-		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			// validator.PersistentPreRunVersionCheck(cmd, common.Version)
-		}}
+	}
 
-	cmd.AddCommand(tests.NewSubmitTestCmd())
-	// cmd.AddCommand(testsuites.NewRunTestSuiteCmd())
+	common.PopulateUpgradeInstallFlags(cmd, &options)
 
 	return cmd
 }

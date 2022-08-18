@@ -166,7 +166,7 @@ func (c *Client) SetAnnotation(ga sdk.CreateAnnotationRequest) (reqID uint) {
 	if common.AbortAfterRetry(ctx, c.logger, func() error {
 		gaResp, err := c.Conn.CreateAnnotation(ctx, ga)
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "cannot create annotation")
 		}
 
 		if gaResp.Message == nil {

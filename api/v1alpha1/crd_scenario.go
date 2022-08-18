@@ -154,19 +154,18 @@ type ScenarioList struct {
 }
 
 // Table returns a tabular form of the structure for pretty printing.
-func (s ScenarioList) Table() (header []string, data [][]string) {
-
+func (in ScenarioList) Table() (header []string, data [][]string) {
 	header = []string{
-		"Name",
-		"Namespace",
-		"Create",
+		"Test",
+		"Scenario",
+		"Created",
 		"Phase",
 	}
 
-	for _, item := range s.Items {
+	for _, item := range in.Items {
 		data = append(data, []string{
-			item.GetName(),
 			item.GetNamespace(),
+			item.GetName(),
 			item.GetCreationTimestamp().String(),
 			item.Status.Phase.String(),
 		})

@@ -23,7 +23,6 @@ import (
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
-	"github.com/carv-ics-forth/frisbee/controllers/common/lifecycle"
 	"github.com/go-logr/logr"
 	k8errors "k8s.io/apimachinery/pkg/api/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -64,24 +63,21 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return common.RequeueAfter(time.Second)
 	}
 
-	/*
-		r.Logger.Info("-> Reconcile",
-			"kind", reflect.TypeOf(cr),
-			"name", cr.GetName(),
-			"lifecycle", cr.Status.Phase,
+	r.Logger.Info("-> Reconcile",
+		"obj", client.ObjectKeyFromObject(&cr),
+		"phase", cr.Status.Phase,
+		"version", cr.GetResourceVersion(),
+	)
+
+	defer func() {
+		r.Logger.Info("<- Reconcile",
+			"obj", client.ObjectKeyFromObject(&cr),
+			"phase", cr.Status.Phase,
 			"version", cr.GetResourceVersion(),
 		)
+	}()
 
-		defer func() {
-			r.Logger.Info("<- Reconcile",
-				"kind", reflect.TypeOf(cr),
-				"name", cr.GetName(),
-				"lifecycle", cr.Status.Phase,
-				"version", cr.GetResourceVersion(),
-			)
-		}()
-
-		/*
+	/*
 			2: Update the CR status using the data we've gathered
 			------------------------------------------------------------------
 
@@ -104,19 +100,14 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		4: Make the world matching what we want in our spec
 		------------------------------------------------------------------
 	*/
-	if cr.Status.Lifecycle.Phase.Is(v1alpha1.PhaseRunning) {
+	switch cr.Status.Lifecycle.Phase {
+	case v1alpha1.PhaseUninitialized:
+		r.Logger.Info("Register", "obj", req.NamespacedName)
+
 		return common.Stop()
+	default:
+		panic("Should never happen: " + cr.Status.Lifecycle.Phase)
 	}
-
-	if cr.Status.Lifecycle.Phase.Is(v1alpha1.PhaseUninitialized) {
-		r.Logger.Info("Add Template",
-			"name", req.NamespacedName,
-		)
-
-		return lifecycle.Running(ctx, r, &cr, "all templates are loaded")
-	}
-
-	return common.Stop()
 }
 
 /*

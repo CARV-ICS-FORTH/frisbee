@@ -1,11 +1,9 @@
-
-
-The plugin 
+The plugin
 
 Example:
 https://github.com/kubernetes/sample-cli-plugin
 
-The plugin should be placed in 
+The plugin should be placed in
 /usr/local/bin
 ~/.local/bin
 $GOPATH/bin
