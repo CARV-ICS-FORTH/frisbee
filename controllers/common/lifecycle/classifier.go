@@ -36,11 +36,16 @@ type ClassifierReader interface {
 	// NumAll returns a printable form of the cardinality of classified objects
 	NumAll() string
 
+	// Count returns the number of all registered entities.
+	Count() int
+
 	GetPendingJobs() []client.Object
 	GetRunningJobs() []client.Object
 	GetSuccessfulJobs() []client.Object
 	GetFailedJobs() []client.Object
 }
+
+var _ ClassifierReader = (*Classifier)(nil)
 
 // Classifier splits jobs into Pending, Running, Successful, and Failed.
 // To relief the garbage collector, we use a embeddable structure that we reset at every reconciliation cycle.
@@ -129,35 +134,58 @@ func (in *Classifier) Exclude(name string, obj client.Object) {
 }
 
 func (in *Classifier) IsZero() bool {
-	return in == nil ||
-		(len(in.pendingJobs) == 0 &&
-			len(in.runningJobs) == 0 &&
-			len(in.successfulJobs) == 0 &&
-			len(in.failedJobs) == 0)
+	return in == nil || in.Count() == 0
 }
 
-func (in *Classifier) IsPending(jobName string) bool {
-	_, ok := in.pendingJobs[jobName]
-
-	return ok
+func (in *Classifier) Count() int {
+	return len(in.pendingJobs) +
+		len(in.runningJobs) +
+		len(in.successfulJobs) +
+		len(in.failedJobs)
 }
 
-func (in *Classifier) IsRunning(name string) bool {
-	_, ok := in.runningJobs[name]
+func (in *Classifier) IsPending(job ...string) bool {
+	for _, name := range job {
+		_, ok := in.pendingJobs[name]
+		if !ok {
+			return false
+		}
+	}
 
-	return ok
+	return true
 }
 
-func (in *Classifier) IsSuccessful(name string) bool {
-	_, ok := in.successfulJobs[name]
+func (in *Classifier) IsRunning(job ...string) bool {
+	for _, name := range job {
+		_, ok := in.runningJobs[name]
+		if !ok {
+			return false
+		}
+	}
 
-	return ok
+	return true
 }
 
-func (in *Classifier) IsFailed(name string) bool {
-	_, ok := in.failedJobs[name]
+func (in *Classifier) IsSuccessful(job ...string) bool {
+	for _, name := range job {
+		_, ok := in.successfulJobs[name]
+		if !ok {
+			return false
+		}
+	}
 
-	return ok
+	return true
+}
+
+func (in *Classifier) IsFailed(job ...string) bool {
+	for _, name := range job {
+		_, ok := in.failedJobs[name]
+		if !ok {
+			return false
+		}
+	}
+
+	return true
 }
 
 func (in *Classifier) NumPendingJobs() int {

@@ -81,9 +81,7 @@ func New(ctx context.Context, setters ...Option) error {
 		setter(&args)
 	}
 
-	client := &Client{
-		ctx: ctx,
-	}
+	client := &Client{ctx: ctx}
 
 	if args.Logger != nil {
 		client.logger = args.Logger
@@ -104,7 +102,7 @@ func New(ctx context.Context, setters ...Option) error {
 				return errors.Wrapf(errHealth, "cannot get GrafanaHealth")
 			}
 
-			args.Logger.Info("Grafana Health status", "details", resp)
+			args.Logger.Info("Connected to Grafana", "healthStatus", resp)
 
 			return nil
 		}) {

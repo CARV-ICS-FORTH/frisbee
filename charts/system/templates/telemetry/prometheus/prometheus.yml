@@ -38,7 +38,7 @@ spec:
             # Create local envs that will be used to substitute the configuration placeholders
             export NAMESPACE={{"{{.Namespace}}"}}
             export SCENARIO={{"{{.Scenario}}"}}
-
+            
             # Use envsubst to replace ${var} or $var according to the values of the current environment variables.
             wget https://github.com/a8m/envsubst/releases/download/v1.2.0/envsubst-Linux-x86_64
             chmod +x envsubst-Linux-x86_64
@@ -47,6 +47,12 @@ spec:
             ./envsubst-Linux-x86_64 -i /etc/prometheus/prometheus.yml -o ./prometheus.yml
             /bin/prometheus --config.file=./prometheus.yml --query.lookback-delta={{.Values.telemetry.prometheus.queryLookbackDelta}}
 
+        startupProbe:
+          httpGet:
+            path: /ready
+            port: http
+          failureThreshold: 30
+          periodSeconds: 10
 
 ---
 apiVersion: v1

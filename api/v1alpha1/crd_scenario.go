@@ -17,7 +17,9 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"fmt"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"strings"
 )
 
 // +kubebuilder:object:root=true
@@ -31,6 +33,33 @@ type Scenario struct {
 
 	Spec   ScenarioSpec   `json:"spec,omitempty"`
 	Status ScenarioStatus `json:"status,omitempty"`
+}
+
+func (in *Scenario) Table() (header []string, data [][]string) {
+	header = []string{
+		"Test",
+		"Scenario",
+		"Created",
+		"Actions",
+		"Phase",
+	}
+
+	var scheduled string
+	if in.Spec.Suspend != nil && *in.Spec.Suspend {
+		scheduled = fmt.Sprintf("%d/%d (Suspended)", len(in.Status.ScheduledJobs), len(in.Spec.Actions))
+	} else {
+		scheduled = fmt.Sprintf("%d/%d", len(in.Status.ScheduledJobs), len(in.Spec.Actions))
+	}
+
+	data = append(data, []string{
+		in.GetNamespace(),
+		in.GetName(),
+		in.GetCreationTimestamp().String(),
+		scheduled,
+		in.Status.Phase.String(),
+	})
+
+	return header, data
 }
 
 type ActionType string
@@ -136,6 +165,39 @@ type ScenarioStatus struct {
 	PrometheusEndpoint string `json:"prometheusEndpoint,omitempty"`
 }
 
+func (in ScenarioStatus) Table() (header []string, data [][]string) {
+	header = []string{
+		"Scheduled",
+		"Phase",
+		"Reason",
+		"Message",
+		"Conditions",
+	}
+
+	var conditions strings.Builder
+	{
+		if len(in.Conditions) > 0 {
+			for _, condition := range in.Conditions {
+				if condition.Status == metav1.ConditionTrue {
+					conditions.WriteString(condition.Type)
+				}
+			}
+		} else {
+			conditions.WriteString("\t----")
+		}
+	}
+
+	data = append(data, []string{
+		strings.Join(in.ScheduledJobs, "\n"),
+		in.Phase.String(),
+		in.Reason,
+		in.Message,
+		conditions.String(),
+	})
+
+	return header, data
+}
+
 func (in *Scenario) GetReconcileStatus() Lifecycle {
 	return in.Status.Lifecycle
 }
@@ -159,16 +221,14 @@ func (in ScenarioList) Table() (header []string, data [][]string) {
 		"Test",
 		"Scenario",
 		"Created",
+		"Actions",
 		"Phase",
 	}
 
-	for _, item := range in.Items {
-		data = append(data, []string{
-			item.GetNamespace(),
-			item.GetName(),
-			item.GetCreationTimestamp().String(),
-			item.Status.Phase.String(),
-		})
+	for _, scenario := range in.Items {
+		_, scenarioData := scenario.Table()
+
+		data = append(data, scenarioData...)
 	}
 
 	return header, data

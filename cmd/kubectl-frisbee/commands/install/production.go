@@ -23,7 +23,7 @@ import (
 )
 
 func NewInstallProductionCmd() *cobra.Command {
-	var options common.HelmUpgradeOrInstallFrisbeeOptions
+	var options common.HelmInstallFrisbeeOptions
 
 	cmd := &cobra.Command{
 		Use:   "production",
@@ -32,12 +32,12 @@ func NewInstallProductionCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			ui.Info("Helm installing frisbee framework")
 
-			common.UpdateHelmRepo()
+			common.UpdateHelmFrisbeeRepo()
 
 			command := []string{"upgrade", "--install", "--wait", "--create-namespace", "--namespace", options.Namespace}
 			command = append(command, options.Name, options.Chart)
 
-			common.HelmInstall(command, &options)
+			common.HelmInstallFrisbee(command, &options)
 		},
 	}
 

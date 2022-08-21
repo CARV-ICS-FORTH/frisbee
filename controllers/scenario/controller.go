@@ -18,6 +18,7 @@ package scenario
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"time"
 
@@ -67,7 +68,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	result, err := common.Reconcile(ctx, r, req, &cr, &requeue)
 
 	if requeue {
-		return result, errors.Wrapf(err, "initialization error")
+		return result, err
 	}
 
 	r.Logger.Info("-> Reconcile",
@@ -115,15 +116,6 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		// This is useful if something's broken with the job we're running, and we want to
 		// pause runs to investigate the cluster, without deleting the object.
 
-		r.GetEventRecorderFor(cr.GetName()).Event(&cr, corev1.EventTypeNormal,
-			"Suspend", cr.Status.Lifecycle.Message)
-
-		r.Logger.Info("Suspended",
-			"scenario", cr.GetName(),
-			"reason", cr.Status.Reason,
-			"message", cr.Status.Message,
-		)
-
 		return common.Stop()
 	}
 
@@ -150,7 +142,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	case v1alpha1.PhaseRunning:
 		// Nothing to do. Just wait for something to happen.
 		r.Logger.Info(".. Awaiting",
-			"name", cr.GetName(),
+			"obj", client.ObjectKeyFromObject(&cr),
 			cr.Status.Reason, cr.Status.Message,
 		)
 
@@ -161,11 +153,10 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "initialization error"))
 		}
 
-		return lifecycle.Pending(ctx, r, &cr, "The Scenario is ready to start submitting jobs.")
+		return lifecycle.Pending(ctx, r, &cr, "Scenario is ready to start running actions.")
 
 	case v1alpha1.PhasePending:
 		actionList, nextRun := r.NextJobs(&cr)
-
 		if len(actionList) == 0 {
 			if nextRun.IsZero() {
 				// nothing to do on this cycle. wait the next cycle trigger by watchers.
@@ -173,7 +164,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			}
 
 			r.Logger.Info(".. Awaiting",
-				"name", cr.GetName(),
+				"obj", client.ObjectKeyFromObject(&cr),
 				"sleep until", nextRun)
 
 			return common.RequeueAfter(time.Until(nextRun))
@@ -183,8 +174,8 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "actions failed"))
 		}
 
-		return lifecycle.Pending(ctx, r, &cr, "some jobs are still pending")
-
+		return lifecycle.Pending(ctx, r, &cr, fmt.Sprintf("'%d/%d' jobs are scheduled",
+			len(cr.Status.ScheduledJobs), len(cr.Spec.Actions)))
 	}
 
 	panic(errors.New("This should never happen"))
@@ -315,7 +306,7 @@ func (r *Controller) HasSucceed(ctx context.Context, cr *v1alpha1.Scenario) erro
 		cr.Status.Lifecycle.Reason, cr.Status.Lifecycle.Message)
 
 	r.Logger.Info("CleanOnSuccess",
-		"name", cr.GetName(),
+		"obj", client.ObjectKeyFromObject(cr).String(),
 		"successfulJobs", r.view.ListSuccessfulJobs(),
 	)
 
@@ -334,22 +325,14 @@ func (r *Controller) HasSucceed(ctx context.Context, cr *v1alpha1.Scenario) erro
 }
 
 func (r *Controller) HasFailed(ctx context.Context, cr *v1alpha1.Scenario) error {
-	r.GetEventRecorderFor(cr.GetName()).Event(cr, corev1.EventTypeWarning,
-		cr.Status.Lifecycle.Reason, cr.Status.Lifecycle.Message)
-
-	r.Logger.Error(errors.New("Resource has failed"), "CleanOnFailure",
-		"name", cr.GetName(),
-		"reason", cr.Status.Reason,
-		"message", cr.Status.Message,
-	)
+	r.Logger.Error(fmt.Errorf(cr.Status.Message), "!! "+cr.Status.Reason,
+		"obj", client.ObjectKeyFromObject(cr).String())
 
 	// TODO: What should we do when a call action fails ? Should we delete all services ?
 
 	// Remove the non-failed components. Leave the failed jobs and system jobs for postmortem analysis.
 	for _, job := range r.view.GetPendingJobs() {
 		if v1alpha1.GetComponentLabel(job) == v1alpha1.ComponentSUT { // System jobs should not be deleted
-			r.GetEventRecorderFor("").Event(job, corev1.EventTypeWarning, "Terminating", cr.Status.Message)
-
 			expressions.UnsetAlert(job)
 			common.Delete(ctx, r, job)
 		}
@@ -357,8 +340,6 @@ func (r *Controller) HasFailed(ctx context.Context, cr *v1alpha1.Scenario) error
 
 	for _, job := range r.view.GetRunningJobs() {
 		if v1alpha1.GetComponentLabel(job) == v1alpha1.ComponentSUT { // System jobs should not be deleted
-			r.GetEventRecorderFor("").Event(job, corev1.EventTypeWarning, "Terminating", cr.Status.Message)
-
 			expressions.UnsetAlert(job)
 			common.Delete(ctx, r, job)
 		}
@@ -366,8 +347,6 @@ func (r *Controller) HasFailed(ctx context.Context, cr *v1alpha1.Scenario) error
 
 	for _, job := range r.view.GetSuccessfulJobs() { // System jobs should not be deleted
 		if v1alpha1.GetComponentLabel(job) == v1alpha1.ComponentSUT {
-			r.GetEventRecorderFor("").Event(job, corev1.EventTypeWarning, "Terminating", cr.Status.Message)
-
 			expressions.UnsetAlert(job)
 			common.Delete(ctx, r, job)
 		}
@@ -379,11 +358,19 @@ func (r *Controller) HasFailed(ctx context.Context, cr *v1alpha1.Scenario) error
 	suspend := true
 	cr.Spec.Suspend = &suspend
 
-	if err := common.Update(ctx, r, cr); err != nil {
-		return errors.Wrapf(err, "cannot suspend execution for '%s'", cr.GetName())
+	r.Logger.Info("Suspended",
+		"obj", client.ObjectKeyFromObject(cr),
+		"reason", cr.Status.Reason,
+		"message", cr.Status.Message,
+	)
+
+	if cr.GetDeletionTimestamp().IsZero() {
+		r.GetEventRecorderFor(cr.GetName()).Event(cr, corev1.EventTypeNormal,
+			"Suspended", cr.Status.Lifecycle.Message)
 	}
 
-	return nil
+	// Update is needed since we modify the spec.suspend
+	return common.Update(ctx, r, cr)
 }
 
 func (r *Controller) RunActions(ctx context.Context, t *v1alpha1.Scenario, actionList []v1alpha1.Action) error {

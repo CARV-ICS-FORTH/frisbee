@@ -79,7 +79,7 @@ func VExec(ctx context.Context, r common.Reconciler, parent client.Object, jobNa
 		r.GetEventRecorderFor(parent.GetName()).Event(parent, corev1.EventTypeWarning, "VExecFailed", jobName)
 
 		vJob.Status.Lifecycle.Phase = v1alpha1.PhaseFailed
-		vJob.Status.Lifecycle.Reason = "JobHasFailed"
+		vJob.Status.Lifecycle.Reason = "AJobHasFailed"
 		vJob.Status.Lifecycle.Message = jobErr.Error()
 
 	} else {

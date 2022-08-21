@@ -6,13 +6,13 @@ require (
 	github.com/Knetic/govaluate v3.0.0+incompatible
 	github.com/Masterminds/sprig/v3 v3.2.2
 	github.com/armon/circbuf v0.0.0-20150827004946-bbbad097214e
-	github.com/chromedp/cdproto v0.0.0-20210706234513-2bc298e8be7f
 	github.com/dimiro1/banner v1.1.0
 	github.com/go-logr/logr v1.2.3
 	github.com/golanghelper/grafana-webhook v0.0.0-20180512191629-e0da26114467
 	github.com/gookit/color v1.5.1
 	github.com/grafana-tools/sdk v0.0.0-20211015115518-56cdea6a09d6
 	github.com/kubeshop/testkube v1.4.21
+	github.com/mattn/go-tty v0.0.4
 	github.com/mitchellh/mapstructure v1.4.1
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/onsi/ginkgo v1.16.5
@@ -43,7 +43,6 @@ require (
 	github.com/Masterminds/semver/v3 v3.1.1 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
-	github.com/chromedp/sysutil v1.0.0 // indirect
 	github.com/common-nighthawk/go-figure v0.0.0-20200609044655-c4b36f998cf2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dustinkirkland/golang-petname v0.0.0-20191129215211-8e5a1ed0cff0 // indirect

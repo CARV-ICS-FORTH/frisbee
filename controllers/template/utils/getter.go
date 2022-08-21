@@ -20,7 +20,6 @@ import (
 	"context"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	"github.com/carv-ics-forth/frisbee/controllers/common/configuration"
 	"github.com/pkg/errors"
 	k8errors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -41,22 +40,12 @@ func GetTemplate(ctx context.Context, c client.Client, who metav1.Object, ref st
 	err := c.Get(ctx, key, &template)
 	switch {
 	case k8errors.IsNotFound(err):
-		if who.GetNamespace() == configuration.Global.Namespace {
-			return nil, errors.Wrapf(err, "cannot find template [%s]", key.String())
-		}
-
-		// If it not found on the default namespace, try with the installation namespace
-		key.Namespace = configuration.Global.Namespace
-
-		if err := c.Get(ctx, key, &template); err != nil {
-			return nil, errors.Wrapf(err, "failed to discover '%s' at both test '%s' and installation '%s' namespaces",
-				ref, who.GetNamespace(), configuration.Global.Namespace)
-		}
+		return nil, errors.Wrapf(err, "cannot find '%s at namespace '%s", ref, who.GetNamespace())
 	case err != nil:
 		return nil, errors.Wrapf(err, "cannot retrieve template [%s]", key.String())
+	default:
+		return &template, nil
 	}
-
-	return &template, nil
 }
 
 func GenerateFromScheme(spec interface{}, scheme *v1alpha1.Scheme, userInputs map[string]string) error {

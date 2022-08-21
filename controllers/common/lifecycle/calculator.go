@@ -25,6 +25,45 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// Reasons for Failure
+const (
+	// AtLeastOneJobHasFailed is used when at least one job has failed, and there is toleration defined.
+	AtLeastOneJobHasFailed = "AtLeastOneJobHasFailed"
+
+	// TooManyJobsHaveFailed is used when the number of failures exceed the number of toleration.
+	TooManyJobsHaveFailed = "TooManyJobsHaveFailed"
+
+	// ExactlyOneJobIsFailed indicate that the only scheduled job is in the Failed Phase
+	ExactlyOneJobIsFailed = "ExactlyOneJobIsFailed"
+)
+
+// Reasons for Success
+const (
+	// AllJobsAreSuccessful is when all the scheduled jobs are successfully completed.
+	AllJobsAreSuccessful = "AllJobsAreSuccessful"
+
+	// ExactlyOneJobIsSuccessful indicate that the only scheduled job is in the Success Phase
+	ExactlyOneJobIsSuccessful = "ExactlyOneJobIsSuccessful"
+)
+
+// Reasons for Running
+const (
+	// AtLeastOneJobIsRunning indicate that  all jobs are created, and at least one is still running.
+	AtLeastOneJobIsRunning = "AtLeastOneJobIsRunning"
+
+	// ExactlyOneJobIsRunning indicate that the only scheduled job is in the Running phase
+	ExactlyOneJobIsRunning = "ExactlyOneJobIsRunning"
+)
+
+// Reasons for Pending
+const (
+	// AtLeastOneJobIsNotScheduled indicate that there is at least one job that is not yet scheduled.
+	AtLeastOneJobIsNotScheduled = "AtLeastOneJobIsNotScheduled"
+
+	// ExactlyOneJobIsPending indicate that the only scheduled job is in the Pending phase
+	ExactlyOneJobIsPending = "ExactlyOneJobIsPending"
+)
+
 type test struct {
 	expression bool
 	lifecycle  v1alpha1.Lifecycle
@@ -49,7 +88,6 @@ func GroupedJobs(queuedJobs int, state ClassifierReader, lf *v1alpha1.Lifecycle,
 
 	// When there are failed jobs, we need to differentiate the number of tolerated failures.
 	if tolerate != nil {
-		reason := "TooManyJobsHaveFailed"
 		message := fmt.Sprintf("tolerate: %d. failed: %d (%s)",
 			tolerate.FailedJobs, state.NumFailedJobs(), state.ListFailedJobs())
 
@@ -58,32 +96,31 @@ func GroupedJobs(queuedJobs int, state ClassifierReader, lf *v1alpha1.Lifecycle,
 			expression: state.NumFailedJobs() > tolerate.FailedJobs,
 			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseFailed,
-				Reason:  reason,
+				Reason:  TooManyJobsHaveFailed,
 				Message: message,
 			},
 			condition: metav1.Condition{
 				Type:    v1alpha1.ConditionJobUnexpectedTermination.String(),
 				Status:  metav1.ConditionTrue,
-				Reason:  reason,
+				Reason:  TooManyJobsHaveFailed,
 				Message: message,
 			},
 		})
 	} else {
-		reason := "JobHasFailed"
-		message := fmt.Sprintf("failed jobs: %s", state.ListFailedJobs())
+		message := fmt.Sprintf("failed: %s", state.ListFailedJobs())
 
 		// A job has failed during execution.
 		testSequence = append(testSequence, test{
 			expression: state.NumFailedJobs() > 0,
 			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseFailed,
-				Reason:  reason,
+				Reason:  AtLeastOneJobHasFailed,
 				Message: message,
 			},
 			condition: metav1.Condition{
 				Type:    v1alpha1.ConditionJobUnexpectedTermination.String(),
 				Status:  metav1.ConditionTrue,
-				Reason:  reason,
+				Reason:  AtLeastOneJobHasFailed,
 				Message: message,
 			},
 		})
@@ -95,14 +132,14 @@ func GroupedJobs(queuedJobs int, state ClassifierReader, lf *v1alpha1.Lifecycle,
 			expression: state.NumSuccessfulJobs() == queuedJobs,
 			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseSuccess,
-				Reason:  "AllJobsCompleted",
-				Message: fmt.Sprintf("successful jobs: %s", state.ListSuccessfulJobs()),
+				Reason:  AllJobsAreSuccessful,
+				Message: fmt.Sprintf("successful: %s", state.ListSuccessfulJobs()),
 			},
 			condition: metav1.Condition{
 				Type:    v1alpha1.ConditionAllJobsAreCompleted.String(),
 				Status:  metav1.ConditionTrue,
-				Reason:  "AllJobsCompleted",
-				Message: fmt.Sprintf("successful jobs: %s", state.ListSuccessfulJobs()),
+				Reason:  AllJobsAreSuccessful,
+				Message: fmt.Sprintf("successful: %s", state.ListSuccessfulJobs()),
 			},
 		},
 
@@ -110,13 +147,13 @@ func GroupedJobs(queuedJobs int, state ClassifierReader, lf *v1alpha1.Lifecycle,
 			expression: state.NumRunningJobs()+state.NumSuccessfulJobs() == queuedJobs,
 			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseRunning,
-				Reason:  "AllJobsRunning",
+				Reason:  AtLeastOneJobIsRunning,
 				Message: fmt.Sprintf("running: %s", state.ListRunningJobs()),
 			},
 			condition: metav1.Condition{
 				Type:    v1alpha1.ConditionAllJobsAreScheduled.String(),
 				Status:  metav1.ConditionTrue,
-				Reason:  "AllJobsRunning",
+				Reason:  AtLeastOneJobIsRunning,
 				Message: fmt.Sprintf("running: %s", state.ListRunningJobs()),
 			},
 		},
@@ -125,8 +162,8 @@ func GroupedJobs(queuedJobs int, state ClassifierReader, lf *v1alpha1.Lifecycle,
 			expression: lf.Phase == v1alpha1.PhasePending,
 			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhasePending,
-				Reason:  "JobIsPending",
-				Message: fmt.Sprintf("queued:%d", queuedJobs),
+				Reason:  AtLeastOneJobIsNotScheduled,
+				Message: fmt.Sprintf("scheduled:%d/%d", state.Count(), queuedJobs),
 			},
 		},
 	}...)
@@ -156,11 +193,7 @@ func GroupedJobs(queuedJobs int, state ClassifierReader, lf *v1alpha1.Lifecycle,
 
 func SingleJob(state ClassifierReader, lf *v1alpha1.Lifecycle) bool {
 	// The object exists in more than one known states
-	if state.NumPendingJobs()+
-		state.NumRunningJobs()+
-		state.NumSuccessfulJobs()+
-		state.NumFailedJobs() > 1 {
-
+	if state.Count() > 1 {
 		panic(errors.Errorf("invalid state transition: %s", state.ListAll()))
 	}
 
@@ -171,59 +204,59 @@ func SingleJob(state ClassifierReader, lf *v1alpha1.Lifecycle) bool {
 
 	testSequence := []test{
 		{ // Failed
-			expression: state.NumFailedJobs() > 0,
+			expression: state.NumFailedJobs() == 1,
 			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseFailed,
-				Reason:  "JobHasFailed",
-				Message: fmt.Sprintf("failed jobs: %s", state.ListFailedJobs()),
+				Reason:  ExactlyOneJobIsFailed,
+				Message: fmt.Sprintf("failed: %s", state.ListFailedJobs()),
 			},
 			condition: metav1.Condition{
 				Type:    v1alpha1.ConditionJobUnexpectedTermination.String(),
 				Status:  metav1.ConditionTrue,
-				Reason:  "JobHasFailed",
-				Message: fmt.Sprintf("failed jobs: %s", state.ListFailedJobs()),
+				Reason:  ExactlyOneJobIsFailed,
+				Message: fmt.Sprintf("failed: %s", state.ListFailedJobs()),
 			},
 		},
 		{ // Successful
-			expression: state.NumSuccessfulJobs() > 0,
+			expression: state.NumSuccessfulJobs() == 1,
 			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseSuccess,
-				Reason:  "AllJobsCompleted",
-				Message: fmt.Sprintf("successful jobs: %s", state.ListSuccessfulJobs()),
+				Reason:  ExactlyOneJobIsSuccessful,
+				Message: fmt.Sprintf("successful: %s", state.ListSuccessfulJobs()),
 			},
 			condition: metav1.Condition{
 				Type:    v1alpha1.ConditionAllJobsAreCompleted.String(),
 				Status:  metav1.ConditionTrue,
-				Reason:  "AllJobsCompleted",
-				Message: fmt.Sprintf("successful jobs: %s", state.ListSuccessfulJobs()),
+				Reason:  ExactlyOneJobIsSuccessful,
+				Message: fmt.Sprintf("successful: %s", state.ListSuccessfulJobs()),
 			},
 		},
 		{ // Running
-			expression: state.NumRunningJobs() > 0,
+			expression: state.NumRunningJobs() == 1,
 			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseRunning,
-				Reason:  "AllJobsRunning",
+				Reason:  ExactlyOneJobIsRunning,
 				Message: fmt.Sprintf("running: %s", state.ListRunningJobs()),
 			},
 			condition: metav1.Condition{
 				Type:    v1alpha1.ConditionAllJobsAreScheduled.String(),
 				Status:  metav1.ConditionTrue,
-				Reason:  "AllJobsRunning",
+				Reason:  ExactlyOneJobIsRunning,
 				Message: fmt.Sprintf("running: %s", state.ListRunningJobs()),
 			},
 		},
 		{ // Pending
-			expression: state.NumPendingJobs() > 0,
+			expression: state.NumPendingJobs() == 1,
 			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhasePending,
-				Reason:  "JobIsPending",
-				Message: state.NumAll(),
+				Reason:  ExactlyOneJobIsPending,
+				Message: fmt.Sprintf("pending: %s", state.ListPendingJobs()),
 			},
 			condition: metav1.Condition{
 				Type:    v1alpha1.ConditionCRInitialized.String(),
 				Status:  metav1.ConditionTrue,
-				Reason:  "DetectedByLifecycle",
-				Message: fmt.Sprintf("pending jobs: %s", state.ListPendingJobs()),
+				Reason:  ExactlyOneJobIsPending,
+				Message: fmt.Sprintf("pending: %s", state.ListPendingJobs()),
 			},
 		},
 	}

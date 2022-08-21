@@ -17,6 +17,7 @@ limitations under the License.
 package scenario
 
 import (
+	"github.com/carv-ics-forth/frisbee/pkg/structure"
 	"time"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
@@ -31,37 +32,12 @@ import (
 // However, if there are no actions, the workflow will call the reconciliation cycle, and we will miss the
 // next timeout. To handle this scenario, we have to requeue the request with the given duration.
 // In this case, the given duration is the nearest expected timeout.
-func (r *Controller) NextJobs(cr *v1alpha1.Scenario) ([]v1alpha1.Action, time.Time) {
-	timebase := cr.GetCreationTimestamp()
-	all := cr.Spec.Actions
-	scheduled := cr.Status.ScheduledJobs
-
-	successOK := func(deps *v1alpha1.WaitSpec) bool {
-		for _, dep := range deps.Success {
-			if !r.view.IsSuccessful(dep) {
-				return false
-			}
-		}
-
-		return true
-	}
-
-	runningOK := func(deps *v1alpha1.WaitSpec) bool {
-		for _, dep := range deps.Running {
-			if !r.view.IsRunning(dep) {
-				return false
-			}
-		}
-
-		return true
-	}
-
-	var nextCycle time.Time
+func (r *Controller) NextJobs(cr *v1alpha1.Scenario) (runNext []v1alpha1.Action, nextCycle time.Time) {
 
 	timeOK := func(deps *v1alpha1.WaitSpec) bool {
 		if dur := deps.After; dur != nil {
 			cur := metav1.Now()
-			deadline := timebase.Add(dur.Duration)
+			deadline := cr.GetCreationTimestamp().Add(dur.Duration)
 
 			// the deadline has expired.
 			if deadline.Before(cur.Time) {
@@ -81,20 +57,26 @@ func (r *Controller) NextJobs(cr *v1alpha1.Scenario) ([]v1alpha1.Action, time.Ti
 		return true
 	}
 
-	var runNext []v1alpha1.Action
+	// check what actions are eligible for execution in this cycle.
+	all := cr.Spec.Actions
+	scheduled := cr.Status.ScheduledJobs
 
-	// continue from the last scheduled action
-	for i := len(scheduled); i < len(all); i++ {
-		action := all[i]
-
-		if deps := action.DependsOn; deps != nil {
-			if !successOK(deps) || !runningOK(deps) || !timeOK(deps) {
-				// some conditions are not met
-				continue
-			}
+	for _, action := range all {
+		// ignore scheduled jobs
+		if structure.ContainsStrings(scheduled, action.Name) {
+			continue
 		}
 
-		runNext = append(runNext, action)
+		// a job is eligible for scheduling if there are no dependencies, or if defined dependencies are satisfied.
+		deps := action.DependsOn
+		if deps == nil {
+			runNext = append(runNext, action)
+		} else {
+			if r.view.IsSuccessful(deps.Success...) && r.view.IsRunning(deps.Running...) && timeOK(deps) {
+				// conditions are met
+				runNext = append(runNext, action)
+			}
+		}
 	}
 
 	return runNext, nextCycle

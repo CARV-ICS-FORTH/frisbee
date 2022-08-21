@@ -30,13 +30,13 @@ import (
 func GetServiceSpec(ctx context.Context, c client.Client, parent metav1.Object, fromTemplate v1alpha1.GenerateFromTemplate) (v1alpha1.ServiceSpec, error) {
 	template, err := templateutils.GetTemplate(ctx, c, parent, fromTemplate.TemplateRef)
 	if err != nil {
-		return v1alpha1.ServiceSpec{}, errors.Wrapf(err, "template [%s] is not installed", fromTemplate.TemplateRef)
+		return v1alpha1.ServiceSpec{}, errors.Wrapf(err, "template '%s' is not installed", fromTemplate.TemplateRef)
 	}
 
 	// convert the service to a json and then expand templated values.
 	specBody, err := json.Marshal(template.Spec.Service)
 	if err != nil {
-		return v1alpha1.ServiceSpec{}, errors.Errorf("cannot marshal service of %s", fromTemplate.TemplateRef)
+		return v1alpha1.ServiceSpec{}, errors.Errorf("cannot marshal service of '%s'", fromTemplate.TemplateRef)
 	}
 
 	scheme, err := templateutils.NewScheme(parent, template.Spec.Inputs, specBody)
@@ -56,13 +56,13 @@ func GetServiceSpec(ctx context.Context, c client.Client, parent metav1.Object, 
 func GetServiceSpecList(ctx context.Context, c client.Client, parent metav1.Object, fromTemplate v1alpha1.GenerateFromTemplate) ([]v1alpha1.ServiceSpec, error) {
 	template, err := templateutils.GetTemplate(ctx, c, parent, fromTemplate.TemplateRef)
 	if err != nil {
-		return nil, errors.Wrapf(err, "template [%s] is not installed", fromTemplate.TemplateRef)
+		return nil, errors.Wrapf(err, "template '%s' is not installed", fromTemplate.TemplateRef)
 	}
 
 	// convert the service to a json and then expand templated values.
 	specBody, err := json.Marshal(template.Spec.Service)
 	if err != nil {
-		return nil, errors.Errorf("cannot marshal service of %s", fromTemplate.TemplateRef)
+		return nil, errors.Errorf("cannot marshal service of '%s'", fromTemplate.TemplateRef)
 
 	}
 

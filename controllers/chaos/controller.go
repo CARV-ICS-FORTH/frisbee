@@ -18,7 +18,7 @@ package chaos
 
 import (
 	"context"
-	corev1 "k8s.io/api/core/v1"
+	"fmt"
 	"k8s.io/apimachinery/pkg/types"
 	"reflect"
 	"time"
@@ -70,7 +70,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	result, err := common.Reconcile(ctx, r, req, &cr, &requeue)
 
 	if requeue {
-		return result, errors.Wrapf(err, "initialization error")
+		return result, err
 	}
 
 	r.Logger.Info("-> Reconcile",
@@ -130,7 +130,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	case v1alpha1.PhaseRunning:
 		// Nothing to do. Just wait for something to happen.
 		r.Logger.Info(".. Awaiting",
-			"name", cr.GetName(),
+			"obj", client.ObjectKeyFromObject(&cr),
 			cr.Status.Reason, cr.Status.Message,
 		)
 
@@ -228,11 +228,9 @@ func (r *Controller) PopulateView(ctx context.Context, req types.NamespacedName)
 }
 
 func (r *Controller) HasSucceed(ctx context.Context, cr *v1alpha1.Chaos) error {
-	r.GetEventRecorderFor(cr.GetName()).Event(cr, corev1.EventTypeNormal,
-		cr.Status.Lifecycle.Reason, cr.Status.Lifecycle.Message)
 
 	r.Logger.Info("CleanOnSuccess",
-		"name", cr.GetName(),
+		"obj", client.ObjectKeyFromObject(cr).String(),
 		"successfulJobs", r.view.ListSuccessfulJobs(),
 	)
 
@@ -244,14 +242,9 @@ func (r *Controller) HasSucceed(ctx context.Context, cr *v1alpha1.Chaos) error {
 }
 
 func (r *Controller) HasFailed(ctx context.Context, cr *v1alpha1.Chaos) error {
-	r.GetEventRecorderFor(cr.GetName()).Event(cr, corev1.EventTypeWarning,
-		cr.Status.Lifecycle.Reason, cr.Status.Lifecycle.Message)
 
-	r.Logger.Error(errors.New("Resource has failed"), "CleanOnFailure",
-		"name", cr.GetName(),
-		"reason", cr.Status.Reason,
-		"message", cr.Status.Message,
-	)
+	r.Logger.Error(fmt.Errorf(cr.Status.Message), "!! "+cr.Status.Reason,
+		"obj", client.ObjectKeyFromObject(cr).String())
 
 	// Remove the non-failed components. Leave the failed jobs and system jobs for postmortem analysis.
 	for _, job := range r.view.GetPendingJobs() {

@@ -18,6 +18,7 @@ package cluster
 
 import (
 	"context"
+	"fmt"
 	corev1 "k8s.io/api/core/v1"
 	"reflect"
 	"time"
@@ -61,7 +62,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	result, err := common.Reconcile(ctx, r, req, &cr, &requeue)
 
 	if requeue {
-		return result, errors.Wrapf(err, "initialization error")
+		return result, err
 	}
 
 	r.Logger.Info("-> Reconcile",
@@ -92,12 +93,11 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		The Update serves as "journaling" for the upcoming operations,
 		and as a roadblock for stall (queued) requests.
 	*/
-	if r.calculateLifecycle(&cr) {
-		if err := common.UpdateStatus(ctx, r, &cr); err != nil {
-			// due to the multiple updates, it is possible for this function to
-			// be in conflict. We fix this issue by re-queueing the request.
-			return common.RequeueAfter(time.Second)
-		}
+	r.calculateLifecycle(&cr)
+	if err := common.UpdateStatus(ctx, r, &cr); err != nil {
+		// due to the multiple updates, it is possible for this function to
+		// be in conflict. We fix this issue by re-queueing the request.
+		return common.RequeueAfter(time.Second)
 	}
 
 	/*
@@ -109,14 +109,6 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		// If this object is suspended, we don't want to run any jobs, so we'll stop now.
 		// This is useful if something's broken with the job we're running, and we want to
 		// pause runs to investigate the cluster, without deleting the object.
-		r.Logger.Info("Suspended",
-			"resource", cr.GetName(),
-			"reason", cr.Status.Reason,
-			"message", cr.Status.Message,
-		)
-
-		r.GetEventRecorderFor(cr.GetName()).Event(&cr, corev1.EventTypeNormal,
-			"Suspend", cr.Status.Lifecycle.Message)
 
 		return common.Stop()
 	}
@@ -140,7 +132,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	case v1alpha1.PhaseRunning:
 		// Nothing to do. Just wait for something to happen.
 		r.Logger.Info(".. Awaiting",
-			"name", cr.GetName(),
+			"obj", client.ObjectKeyFromObject(&cr),
 			cr.Status.Reason, cr.Status.Message,
 		)
 
@@ -160,7 +152,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		//	In both cases, we have nothing else to do but waiting for the next reconciliation cycle.
 		if cr.Spec.Until == nil && (nextJob >= len(cr.Status.QueuedJobs)) {
 			r.Logger.Info(".. Awaiting",
-				"name", cr.GetName(),
+				"obj", client.ObjectKeyFromObject(&cr),
 				cr.Status.Reason, cr.Status.Message,
 			)
 
@@ -181,7 +173,8 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		cr.Status.ScheduledJobs = nextJob
 		cr.Status.LastScheduleTime = &metav1.Time{Time: time.Now()}
 
-		return lifecycle.Pending(ctx, r, &cr, "some jobs are still pending")
+		return lifecycle.Pending(ctx, r, &cr, fmt.Sprintf("'%d/%d' jobs are scheduled",
+			cr.Status.ScheduledJobs, cr.Spec.MaxInstances))
 	}
 
 	panic(errors.New("This should never happen"))
@@ -239,11 +232,9 @@ func (r *Controller) PopulateView(ctx context.Context, req types.NamespacedName)
 }
 
 func (r *Controller) HasSucceed(ctx context.Context, cr *v1alpha1.Cluster) error {
-	r.GetEventRecorderFor(cr.GetName()).Event(cr, corev1.EventTypeNormal,
-		cr.Status.Lifecycle.Reason, cr.Status.Lifecycle.Message)
 
 	r.Logger.Info("CleanOnSuccess",
-		"name", cr.GetName(),
+		"obj", client.ObjectKeyFromObject(cr).String(),
 		"successfulJobs", r.view.ListSuccessfulJobs(),
 	)
 
@@ -260,14 +251,9 @@ func (r *Controller) HasSucceed(ctx context.Context, cr *v1alpha1.Cluster) error
 }
 
 func (r *Controller) HasFailed(ctx context.Context, cr *v1alpha1.Cluster) error {
-	r.GetEventRecorderFor(cr.GetName()).Event(cr, corev1.EventTypeWarning,
-		cr.Status.Lifecycle.Reason, cr.Status.Lifecycle.Message)
 
-	r.Logger.Error(errors.New("Resource has failed"), "CleanOnFailure",
-		"name", cr.GetName(),
-		"reason", cr.Status.Reason,
-		"message", cr.Status.Message,
-	)
+	r.Logger.Error(fmt.Errorf(cr.Status.Message), "!! "+cr.Status.Reason,
+		"obj", client.ObjectKeyFromObject(cr).String())
 
 	// Remove the non-failed components. Leave the failed jobs and system jobs for postmortem analysis.
 	for _, job := range r.view.GetPendingJobs() {
@@ -286,6 +272,18 @@ func (r *Controller) HasFailed(ctx context.Context, cr *v1alpha1.Cluster) error 
 	suspend := true
 	cr.Spec.Suspend = &suspend
 
+	r.Logger.Info("Suspended",
+		"obj", client.ObjectKeyFromObject(cr),
+		"reason", cr.Status.Reason,
+		"message", cr.Status.Message,
+	)
+
+	if cr.GetDeletionTimestamp().IsZero() {
+		r.GetEventRecorderFor(cr.GetName()).Event(cr, corev1.EventTypeNormal,
+			"Suspended", cr.Status.Lifecycle.Message)
+	}
+
+	// Update is needed since we modify the spec.suspend
 	return common.Update(ctx, r, cr)
 }
 

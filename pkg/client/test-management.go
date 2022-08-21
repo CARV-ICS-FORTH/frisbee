@@ -33,8 +33,7 @@ import (
 )
 
 var (
-	ManagedNamespace = map[string]string{"app.kubernetes.io/managed-by": "Frisbee"}
-	yamlSeparator    = regexp.MustCompile(`\n---`)
+	yamlSeparator = regexp.MustCompile(`\n---`)
 )
 
 // NewTestManagementClient creates new Test client
@@ -87,7 +86,7 @@ func (c TestManagementClient) ListTests(selector string) (tests v1alpha1.Scenari
 
 	// find namespaces where tests are running
 	filters := &client.ListOptions{
-		LabelSelector: labels.SelectorFromValidatedSet(labels.Merge(ManagedNamespace, set)),
+		LabelSelector: labels.SelectorFromValidatedSet(set),
 	}
 
 	var namespaces corev1.NamespaceList
@@ -109,7 +108,18 @@ func (c TestManagementClient) ListTests(selector string) (tests v1alpha1.Scenari
 			if !nm.GetDeletionTimestamp().IsZero() {
 				// Just wait and it will be removed.
 			} else {
-				return v1alpha1.ScenarioList{}, errors.Errorf("detected stall test '%s'", nm.GetName())
+				// There is a namespace but no scenario. This may happen due to a scenario being
+				// externally deleted. In this case, create a dummy object just to continue with the listing.
+				var dummy v1alpha1.Scenario
+				dummy.SetName("----")
+				dummy.SetNamespace(nm.GetName())
+				dummy.SetReconcileStatus(v1alpha1.Lifecycle{
+					Phase:   "----",
+					Reason:  "NoScenario",
+					Message: "No Scenario is found in namespace",
+				})
+
+				tests.Items = append(tests.Items, dummy)
 			}
 
 		case 1:
@@ -128,6 +138,7 @@ func (c TestManagementClient) ListTests(selector string) (tests v1alpha1.Scenari
 }
 
 // DeleteTests deletes all tests
+// Deprecated: Use the respective kubectl command
 func (c TestManagementClient) DeleteTests(selector string) (testNames []string, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -139,7 +150,7 @@ func (c TestManagementClient) DeleteTests(selector string) (testNames []string, 
 
 	// find namespaces where tests are running
 	filters := &client.ListOptions{
-		LabelSelector: labels.SelectorFromValidatedSet(labels.Merge(ManagedNamespace, set)),
+		LabelSelector: labels.SelectorFromValidatedSet(set),
 	}
 
 	var namespaces corev1.NamespaceList
@@ -164,6 +175,7 @@ func (c TestManagementClient) DeleteTests(selector string) (testNames []string, 
 }
 
 // DeleteTest deletes single test by name
+// Deprecated: Use the respective kubectl command
 func (c TestManagementClient) DeleteTest(id string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -177,12 +189,12 @@ func (c TestManagementClient) DeleteTest(id string) error {
 
 	var namespace corev1.Namespace
 	namespace.SetName(id)
-	namespace.SetLabels(ManagedNamespace)
 
 	return c.client.Delete(ctx, &namespace, &client.DeleteOptions{PropagationPolicy: &propagation})
 }
 
 // SubmitTestFromFile applies the scenario from the given file.
+// Deprecated: Use the respective kubectl command
 func (c TestManagementClient) SubmitTestFromFile(id string, manifestPath string) (resourceNames []string, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -215,19 +227,6 @@ func (c TestManagementClient) SubmitTestFromFile(id string, manifestPath string)
 		resource.SetNamespace(id)
 		resources = append(resources, resource)
 		resourceNames = append(resourceNames, resource.GetNamespace()+"/"+resource.GetName())
-	}
-
-	// ensure the namespace for hosting the scenario
-	{
-		var namespace corev1.Namespace
-		namespace.SetName(id)
-		namespace.SetLabels(ManagedNamespace)
-
-		if err := c.client.Get(ctx, client.ObjectKeyFromObject(&namespace), &namespace); err != nil {
-			if err := c.client.Create(ctx, &namespace); err != nil {
-				return resourceNames, errors.Wrapf(err, "create namespace %s", id)
-			}
-		}
 	}
 
 	// create the resources. if a resource with similar name exists, it is deleted.

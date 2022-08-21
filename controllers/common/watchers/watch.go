@@ -96,19 +96,19 @@ func (w *simpleWatch) watchUpdate(r common.Reconciler, gvk schema.GroupVersionKi
 		prev := e.ObjectOld.(v1alpha1.ReconcileStatusAware)
 		latest := e.ObjectNew.(v1alpha1.ReconcileStatusAware)
 
-		if prev.GetReconcileStatus().Phase == latest.GetReconcileStatus().Phase {
-			// a controller never initiates a phase change, and so is never asleep waiting for the same.
-			return false
-		}
-
 		r.Info("** Detected",
 			"Request", "Update",
 			"kind", reflect.TypeOf(e.ObjectNew),
 			"obj", client.ObjectKeyFromObject(e.ObjectNew),
-			"from", prev.GetReconcileStatus().Phase,
-			"to", latest.GetReconcileStatus().Phase,
+			"phase", fmt.Sprintf("%s -> %s", prev.GetReconcileStatus().Phase, latest.GetReconcileStatus().Phase),
 			"version", fmt.Sprintf("%s -> %s", prev.GetResourceVersion(), latest.GetResourceVersion()),
 		)
+
+		// a controller never initiates a phase change, and so is never asleep waiting for the same.
+		if prev.GetReconcileStatus().Phase == latest.GetReconcileStatus().Phase {
+			r.Info("Ignore Update", "obj", client.ObjectKeyFromObject(e.ObjectNew))
+			return false
+		}
 
 		return true
 	}

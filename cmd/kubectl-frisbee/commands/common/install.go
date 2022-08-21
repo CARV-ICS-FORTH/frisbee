@@ -29,13 +29,13 @@ const (
 	JetstackRepo = "https://charts.jetstack.io"
 )
 
-type HelmUpgradeOrInstallFrisbeeOptions struct {
+type HelmInstallFrisbeeOptions struct {
 	Name, Namespace, Chart, Values string
 	NoJetstack                     bool
 	Verbose                        bool
 }
 
-func PopulateUpgradeInstallFlags(cmd *cobra.Command, options *HelmUpgradeOrInstallFrisbeeOptions) {
+func PopulateUpgradeInstallFlags(cmd *cobra.Command, options *HelmInstallFrisbeeOptions) {
 	cmd.Flags().StringVar(&options.Chart, "chart", "frisbee/platform", "chart name")
 	cmd.Flags().StringVar(&options.Name, "name", "frisbee", "installation name")
 	cmd.Flags().StringVar(&options.Namespace, "namespace", "frisbee", "namespace where to install")
@@ -43,7 +43,7 @@ func PopulateUpgradeInstallFlags(cmd *cobra.Command, options *HelmUpgradeOrInsta
 	cmd.Flags().BoolVar(&options.NoJetstack, "no-jetstack", false, "don't install Jetstack")
 }
 
-func UpdateHelmRepo() {
+func UpdateHelmFrisbeeRepo() {
 	_, err := process.Execute(Helm, "repo", "add", "frisbee", FrisbeeRepo)
 	if err != nil && !strings.Contains(err.Error(), "Error: repository name (frisbee) already exists, please specify a different name") {
 		ui.WarnOnError("adding frisbee repo", err)
@@ -53,10 +53,10 @@ func UpdateHelmRepo() {
 	ui.ExitOnError("Updating helm repositories", err)
 }
 
-func HelmInstall(command []string, options *HelmUpgradeOrInstallFrisbeeOptions) {
+func HelmInstallFrisbee(command []string, options *HelmInstallFrisbeeOptions) {
 	// Install dependencies
 	if !options.NoJetstack {
-		err := installCertManager(Helm, options)
+		err := installCertManager(options)
 		ui.ExitOnError("Helm install cert-manager", err)
 	}
 
@@ -84,7 +84,7 @@ func HelmInstall(command []string, options *HelmUpgradeOrInstallFrisbeeOptions) 
 	}
 }
 
-func installCertManager(helmPath string, options *HelmUpgradeOrInstallFrisbeeOptions) error {
+func installCertManager(options *HelmInstallFrisbeeOptions) error {
 	_, err := process.Execute(Kubectl, "get", "crds", "certificates.cert-manager.io")
 	if err != nil && !strings.Contains(err.Error(), "Error from server (NotFound)") {
 		return err
@@ -92,12 +92,12 @@ func installCertManager(helmPath string, options *HelmUpgradeOrInstallFrisbeeOpt
 
 	if err != nil {
 		ui.Info("Helm installing jetstack cert manager.")
-		_, err = process.Execute(helmPath, "repo", "add", "jetstack", JetstackRepo)
+		_, err = process.Execute(Helm, "repo", "add", "jetstack", JetstackRepo)
 		if err != nil && !strings.Contains(err.Error(), "Error: repository name (jetstack) already exists") {
 			return err
 		}
 
-		_, err = process.Execute(helmPath, "repo", "update")
+		_, err = process.Execute(Helm, "repo", "update")
 		if err != nil {
 			return err
 		}
@@ -112,16 +112,16 @@ func installCertManager(helmPath string, options *HelmUpgradeOrInstallFrisbeeOpt
 		if options.Verbose {
 			command = append(command, "--debug")
 
-			ui.Info(helmPath, command...)
+			ui.Info(Helm, command...)
 
-			out, err := process.LoggedExecuteInDir("", os.Stdout, helmPath, command...)
+			out, err := process.LoggedExecuteInDir("", os.Stdout, Helm, command...)
 			if err != nil {
 				return err
 			}
 
 			ui.Info("Helm install jetstack output", string(out))
 		} else {
-			out, err := process.Execute(helmPath, command...)
+			out, err := process.Execute(Helm, command...)
 			if err != nil {
 				return err
 			}

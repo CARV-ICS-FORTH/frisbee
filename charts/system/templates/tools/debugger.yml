@@ -2,12 +2,16 @@
 apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
-  name: default.tools.debugger
+  name: system.tools.busybox
 spec:
   service:
+    decorators:
+      labels:
+        scenario.frisbee.dev/component: SYS
+
     containers: # Container(s)
       - name: app
-        image: busybox
+        image: busybox:latest
         securityContext:
           privileged: true
         command:
@@ -18,3 +22,31 @@ spec:
             cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
 
             tail -f /dev/null
+
+    callables:
+      internet:
+        container: app
+        command:
+          - /bin/sh   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
+            set -eum
+            ping -c1 172.217.169.164
+
+      dns:
+        container: app
+        command:
+          - /bin/sh   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
+            set -eum
+            nslookup www.google.com
+
+      http:
+        container: app
+        command:
+          - /bin/sh   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
+            set -eum
+            wget www.google.comech

@@ -19,74 +19,134 @@ package tests
 import (
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/common"
 	"github.com/carv-ics-forth/frisbee/pkg/ui"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"os"
 )
 
 type InspectOptions struct {
-	NoStatus, NoLogs, NoDashboards, NoEvents bool
+	NoDashboards, NoStatus, Events, Logs, NoResources, Charts bool
+	All, NoHint                                               bool
+	Interactive                                               string
 }
 
 func PopulateInspectFlags(cmd *cobra.Command, options *InspectOptions) {
 	cmd.Flags().BoolVar(&options.NoStatus, "no-status", false, "disable status from scenario")
-	cmd.Flags().BoolVar(&options.NoLogs, "no-logs", false, "disable logs output from executor pod")
 	cmd.Flags().BoolVar(&options.NoDashboards, "no-dashboards", false, "disable information about dashboards")
-	cmd.Flags().BoolVar(&options.NoEvents, "no-events", false, "disable events showing what's happening")
+	cmd.Flags().BoolVar(&options.NoResources, "no-resources", false, "disable listing resources")
+	cmd.Flags().BoolVar(&options.Events, "events", false, "show events hinting what's happening")
+	cmd.Flags().BoolVar(&options.Logs, "logs", false, "show logs output from executor pod")
+	cmd.Flags().BoolVar(&options.Charts, "charts", false, "show installed templates from dependent Helm charts")
+
+	cmd.Flags().BoolVar(&options.All, "all", false, "enable all no-* features ")
+	cmd.Flags().StringVar(&options.Interactive, "interactive", "", "opens a shell to a running container")
+	cmd.Flags().BoolVar(&options.NoHint, "no-hint", false, "disable hints")
+}
+
+func Hint(options *InspectOptions, msg string, sub ...string) {
+	if !options.NoHint {
+		ui.Success(msg, sub...)
+	}
 }
 
 func NewInspectTestCmd() *cobra.Command {
 	var options InspectOptions
 
 	cmd := &cobra.Command{
-		Use:     "test <testName>",
+		Use:     "test <testName> [--interactive podName [-- ShellArgs]]",
 		Aliases: []string{"tests", "t"},
 		Short:   "Get all available test information",
 		Long:    "Gets test execution details, until it's in success/error state, blocks until gets complete state",
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) < 1 {
-				return errors.New("please pass test name as argument")
+				ui.Failf("Please Pass Test name as argument")
 			}
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			client := common.GetClient(cmd)
+
 			testName := args[0]
 
-			if !options.NoDashboards {
+			// Interactive is exclusive
+			if options.Interactive != "" {
 				ui.NL()
-				ui.Info("Dashboards:")
 
-				err := common.Dashboards(testName)
-				ui.ExitOnError("Getting Dashboards", err)
+				err := common.OpenShell(testName, options.Interactive, args[1:]...)
+				ui.ExitOnError("Opening Shell", err)
+
+				return
 			}
 
-			if !options.NoStatus {
+			if !options.NoStatus || options.All {
 				test, err := client.GetTest(testName)
-				ui.ExitOnError("Getting Scenario Status", err)
+				ui.ExitOnError("Getting Test Information", err)
 
 				if test != nil {
 					ui.NL()
-					ui.Info("Test:")
+					err = common.RenderList(cmd, test, os.Stdout)
+					ui.ExitOnError("== Scenario Overview ==", err)
 
-					ui.Table(test.Status, os.Stdout)
+					ui.NL()
+					err = common.RenderList(cmd, test.Status, os.Stdout)
+					ui.ExitOnError("== Scenario Status ==", err)
+
+					Hint(&options, "For more information use:", "kubectl describe scenario -n", testName)
+				} else {
+					ui.SuccessAndExit("no such test:", testName)
 				}
 			}
 
-			if !options.NoEvents {
+			if !options.NoResources || options.All {
 				ui.NL()
-				ui.Info("Events:")
+				err := common.GetFrisbeeResources(cmd, testName)
+				ui.ExitOnError("== Active Frisbee Resources ==", err)
+				Hint(&options, "For more Frisbee Resource information use:",
+					"kubectl describe <Kind> [Names...] -n", testName)
 
-				err := common.Events(testName)
-				ui.ExitOnError("Getting Events", err)
+				ui.NL()
+				err = common.GetK8sResources(cmd, testName)
+				ui.ExitOnError("== Active K8s Resources ==", err)
+
+				Hint(&options, "For more K8s Resource information use:",
+					"kubectl describe <Kind> [Names...] -n", testName)
 			}
 
-			if !options.NoLogs {
+			if !options.NoDashboards || options.All {
 				ui.NL()
-				ui.Info("Logs:")
 
-				err := common.Logs(testName, false)
-				ui.ExitOnError("Getting Logs", err)
+				err := common.Dashboards(cmd, testName)
+				ui.ExitOnError("== Visualization Dashboards ==", err)
+			}
+
+			if options.Charts || options.All {
+				ui.NL()
+				err := common.GetTemplateResources(cmd, testName)
+				ui.ExitOnError("== Frisbee Templates ==", err)
+				Hint(&options, "For more Template info use:",
+					"kubectl describe templates -n", testName, "[template...]")
+
+				/*
+					ui.NL()
+					err = common.ListHelm(cmd, testName)
+					ui.ExitOnError("== Helm Charts ==", err)
+					ui.Success("For more Helm info use:", "helm list -a -n", testName)
+				*/
+			}
+
+			if options.Events || options.All {
+				ui.NL()
+				err := common.Events(testName)
+				ui.ExitOnError("== Events ==", err)
+
+				Hint(&options, "For more events use:", "kubectl get events -n", testName)
+			}
+
+			if options.Logs || options.All {
+				ui.NL()
+				err := common.Logs(cmd, testName, false)
+				ui.ExitOnError("== Logs ==", err)
+
+				Hint(&options, "For more logs use:", "kubectl logs -n", testName, "pod/<podName>")
 			}
 		},
 	}

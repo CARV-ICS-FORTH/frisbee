@@ -104,7 +104,7 @@ func Get(ctx context.Context, c client.Client, logger logr.Logger) (Configuratio
 	}
 
 	logger.Info("LoadGlobalConf",
-		"source", PlatformConfigurationName,
+		"config", PlatformConfigurationName,
 		"parameters", sysConf,
 	)
 
