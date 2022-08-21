@@ -127,7 +127,7 @@ type Lifecycle struct {
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
-func (in *Lifecycle) String() string {
+func (in Lifecycle) String() string {
 	if in.Phase == PhaseFailed {
 		if in.Reason == "" {
 			in.Reason = "check the logs"
@@ -137,24 +137,6 @@ func (in *Lifecycle) String() string {
 	}
 
 	return fmt.Sprintf("phase:%s ", in.Phase)
-}
-
-func (in Lifecycle) Table() (header []string, data [][]string) {
-	header = []string{
-		"Phase",
-		"Reason",
-		"Message",
-		"Conditions",
-	}
-
-	data = append(data, []string{
-		in.Phase.String(),
-		in.Reason,
-		in.Message,
-		fmt.Sprint(in.Conditions),
-	})
-
-	return header, data
 }
 
 // +kubebuilder:object:generate=false
@@ -173,13 +155,13 @@ type StateAggregationFunctions interface {
 	IsZero() bool
 
 	// IsPending returns true if the given job is Pending phase
-	IsPending(job string) bool
+	IsPending(job ...string) bool
 	// IsRunning returns true if the given job is Running phase
-	IsRunning(job string) bool
+	IsRunning(job ...string) bool
 	// IsSuccessful returns true if the given job is Successful phase
-	IsSuccessful(job string) bool
+	IsSuccessful(job ...string) bool
 	// IsFailed returns true if the given job is Failed phase
-	IsFailed(job string) bool
+	IsFailed(job ...string) bool
 
 	// NumPendingJobs returns the number of jobs in Pending Phase
 	NumPendingJobs() int
@@ -206,19 +188,19 @@ func (DefaultClassifier) IsZero() bool {
 	return true
 }
 
-func (DefaultClassifier) IsPending(_ string) bool {
+func (DefaultClassifier) IsPending(_ ...string) bool {
 	return false
 }
 
-func (DefaultClassifier) IsRunning(_ string) bool {
+func (DefaultClassifier) IsRunning(_ ...string) bool {
 	return false
 }
 
-func (DefaultClassifier) IsSuccessful(_ string) bool {
+func (DefaultClassifier) IsSuccessful(_ ...string) bool {
 	return false
 }
 
-func (DefaultClassifier) IsFailed(_ string) bool {
+func (DefaultClassifier) IsFailed(_ ...string) bool {
 	return false
 }
 

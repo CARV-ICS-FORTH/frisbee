@@ -134,6 +134,8 @@ func handleRequirements(ctx context.Context, r *Controller, cr *v1alpha1.Service
 		ingressClassName := configuration.Global.IngressClassName
 
 		ingress.SetName(cr.GetName())
+		v1alpha1.PropagateLabels(&ingress, cr)
+
 		ingress.Spec = netv1.IngressSpec{
 			IngressClassName: &ingressClassName,
 			Rules: []netv1.IngressRule{

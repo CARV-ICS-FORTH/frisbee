@@ -25,39 +25,30 @@ import (
 )
 
 func NewGetTestsCmd() *cobra.Command {
-	var (
-		selectors []string
-	)
+	var selectors []string
 
 	cmd := &cobra.Command{
 		Use:     "test <testName>",
 		Aliases: []string{"tests", "t"},
 		Short:   "Get all available tests",
 		Long:    `Getting all available tests from given namespace - if no namespace given "frisbee" namespace is used`,
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) > 0 {
+				ui.Failf("To get information for a test use: `kubectl frisbee inspect test <testName>`")
+			}
+			return nil
+		},
+
 		Run: func(cmd *cobra.Command, args []string) {
 			client := common.GetClient(cmd)
 
-			if len(args) == 0 { // All tests
-				tests, err := client.ListTests(strings.Join(selectors, ","))
-				ui.ExitOnError("Getting all tests ", err)
+			selectors = append(selectors, common.ManagedNamespace)
 
-				err = common.RenderList(cmd, tests, os.Stdout)
-				ui.PrintOnError("Rendering list", err)
+			tests, err := client.ListTests(strings.Join(selectors, ","))
+			ui.ExitOnError("Getting all tests ", err)
 
-				return
-			}
-
-			for _, testName := range args { // Specific test
-				test, err := client.GetTest(testName)
-				if test != nil {
-					ui.NL()
-					ui.Info("Test:", testName)
-
-					ui.Table(test.Status, os.Stdout)
-				}
-
-				ui.ExitOnError("Getting test "+testName, err)
-			}
+			err = common.RenderList(cmd, tests, os.Stdout)
+			ui.PrintOnError("Rendering list", err)
 		},
 	}
 

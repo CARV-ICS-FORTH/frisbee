@@ -209,8 +209,8 @@ func (r *Controller) importDashboards(ctx context.Context, t *v1alpha1.Scenario,
 
 		// mount the volume
 		for file := range dashboards.Data {
-			r.Logger.Info("Import",
-				"configMap", dashboards.GetName(),
+			r.Logger.Info("LoadDashboard",
+				"obj", client.ObjectKeyFromObject(&dashboards),
 				"file", file)
 
 			spec.Containers[0].VolumeMounts = append(spec.Containers[0].VolumeMounts, corev1.VolumeMount{
@@ -322,11 +322,11 @@ func (r *Controller) CreateWebhookServer(ctx context.Context, alertingPort int) 
 		Handler: webhook,
 	}
 
-	idleConnsClosed := make(chan error)
+	idleConnectionsClosed := make(chan error)
 
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			idleConnsClosed <- err
+			idleConnectionsClosed <- err
 		}
 	}()
 
@@ -335,7 +335,7 @@ func (r *Controller) CreateWebhookServer(ctx context.Context, alertingPort int) 
 		case <-ctx.Done():
 			r.Logger.Info("Shutdown signal received, waiting for webhook server to finish")
 
-		case err := <-idleConnsClosed:
+		case err := <-idleConnectionsClosed:
 			r.Logger.Error(err, "Shutting down the webhook server")
 		}
 
@@ -346,7 +346,7 @@ func (r *Controller) CreateWebhookServer(ctx context.Context, alertingPort int) 
 		if err := srv.Shutdown(gracefulTimeout); err != nil {
 			r.Logger.Error(err, "shutting down the webhook server")
 		}
-		close(idleConnsClosed)
+		close(idleConnectionsClosed)
 	}()
 
 	return nil

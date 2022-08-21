@@ -17,7 +17,6 @@ limitations under the License.
 package tests
 
 import (
-	"fmt"
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/common"
 	"github.com/carv-ics-forth/frisbee/pkg/ui"
 	"github.com/spf13/cobra"
@@ -32,30 +31,37 @@ func NewDeleteTestsCmd() *cobra.Command {
 		Use:     "test <testName>",
 		Aliases: []string{"t", "tests"},
 		Short:   "Delete Test",
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) == 0 && !deleteAll {
+				ui.Failf("Pass Test name, --all flag to delete all or labels to delete by labels")
+			}
+			return nil
+		},
 		Run: func(cmd *cobra.Command, args []string) {
-			client := common.GetClient(cmd)
-
 			if deleteAll {
-				tests, err := client.DeleteTests("")
-				ui.ExitOnError("delete all tests", err)
-				ui.SuccessAndExit("Successfully deleted all tests", fmt.Sprint(tests))
+				err := common.DeleteTests(common.ManagedNamespace, nil)
+				ui.ExitOnError("Delete all tests", err)
+
+				return
 			}
 
 			if len(args) > 0 {
-				name := args[0]
-				err := client.DeleteTest(name)
-				ui.ExitOnError("delete test "+name, err)
-				ui.SuccessAndExit("Successfully deleted test", name)
+				err := common.DeleteTests("", args)
+
+				ui.ExitOnError("Delete tests", err)
+
+				return
 			}
 
 			if len(selectors) != 0 {
+				selectors = append(selectors, common.ManagedNamespace)
 				selector := strings.Join(selectors, ",")
-				tests, err := client.DeleteTests(selector)
-				ui.ExitOnError("deleting tests by labels: "+selector, err)
-				ui.SuccessAndExit("Successfully deleted tests by labels", selector, "tests", fmt.Sprint(tests))
-			}
 
-			ui.Failf("Pass Test name, --all flag to delete all or labels to delete by labels")
+				err := common.DeleteTests(selector, nil)
+				ui.ExitOnError("Deleting tests by labels: "+selector, err)
+
+				return
+			}
 		},
 	}
 

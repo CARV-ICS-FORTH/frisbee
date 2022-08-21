@@ -24,9 +24,9 @@ import (
 
 func NewInspectCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "inspect <resourceName>",
-		// Aliases: []string{"r", "start"},
-		Short: "Inspect tests or test suites",
+		Use:     "inspect <resourceName>",
+		Aliases: []string{"show"},
+		Short:   "Inspect tests or test suites",
 		Run: func(cmd *cobra.Command, args []string) {
 			ui.Logo()
 
@@ -39,6 +39,8 @@ func NewInspectCmd() *cobra.Command {
 
 	cmd.AddCommand(tests.NewInspectTestCmd())
 	// cmd.AddCommand(testsuites.NewWatchTestSuiteExecutionCmd())
+
+	cmd.PersistentFlags().StringP("output", "o", "pretty", "output type can be one of json|yaml|pretty|go-template")
 
 	return cmd
 }

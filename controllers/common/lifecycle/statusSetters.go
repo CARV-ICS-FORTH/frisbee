@@ -18,11 +18,11 @@ package lifecycle
 
 import (
 	"context"
+	corev1 "k8s.io/api/core/v1"
 	"time"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
-	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -39,7 +39,7 @@ func Pending(ctx context.Context, r common.Reconciler, obj client.Object, msg st
 
 	status := v1alpha1.Lifecycle{
 		Phase:   v1alpha1.PhasePending,
-		Reason:  "SetToPending",
+		Reason:  v1alpha1.PhasePending.String(),
 		Message: msg,
 	}
 
@@ -47,7 +47,9 @@ func Pending(ctx context.Context, r common.Reconciler, obj client.Object, msg st
 		statusAware.SetReconcileStatus(status)
 
 		if err := common.UpdateStatus(ctx, r, obj); err != nil {
-			r.Info("Retry set lifecycle", "object", obj.GetName(), "phase", status.Phase)
+			r.Info("SetLifecycle",
+				"obj", client.ObjectKeyFromObject(obj),
+				"phase", status.Phase)
 
 			return common.RequeueAfter(time.Second)
 		}
@@ -56,6 +58,8 @@ func Pending(ctx context.Context, r common.Reconciler, obj client.Object, msg st
 			"obj", obj.GetName(), "status", status,
 		)
 	}
+
+	r.GetEventRecorderFor(obj.GetName()).Event(obj, corev1.EventTypeNormal, status.Reason, status.Message)
 
 	return common.Stop()
 }
@@ -68,7 +72,7 @@ func Running(ctx context.Context, r common.Reconciler, obj client.Object, msg st
 
 	status := v1alpha1.Lifecycle{
 		Phase:   v1alpha1.PhaseRunning,
-		Reason:  "SetToRunning",
+		Reason:  v1alpha1.PhaseRunning.String(),
 		Message: msg,
 	}
 
@@ -76,7 +80,9 @@ func Running(ctx context.Context, r common.Reconciler, obj client.Object, msg st
 		statusAware.SetReconcileStatus(status)
 
 		if err := common.UpdateStatus(ctx, r, obj); err != nil {
-			r.Info("Retry set lifecycle", "object", obj.GetName(), "phase", status.Phase)
+			r.Info("SetLifecycle",
+				"obj", client.ObjectKeyFromObject(obj),
+				"phase", status.Phase)
 
 			return common.RequeueAfter(time.Second)
 		}
@@ -85,6 +91,8 @@ func Running(ctx context.Context, r common.Reconciler, obj client.Object, msg st
 			"obj", obj.GetName(), "status", status,
 		)
 	}
+
+	r.GetEventRecorderFor(obj.GetName()).Event(obj, corev1.EventTypeNormal, status.Reason, status.Message)
 
 	return common.Stop()
 }
@@ -97,7 +105,7 @@ func Success(ctx context.Context, r common.Reconciler, obj client.Object, msg st
 
 	status := v1alpha1.Lifecycle{
 		Phase:   v1alpha1.PhaseSuccess,
-		Reason:  "SetToSuccess",
+		Reason:  v1alpha1.PhaseSuccess.String(),
 		Message: msg,
 	}
 
@@ -105,7 +113,9 @@ func Success(ctx context.Context, r common.Reconciler, obj client.Object, msg st
 		statusAware.SetReconcileStatus(status)
 
 		if err := common.UpdateStatus(ctx, r, obj); err != nil {
-			r.Info("Retry set lifecycle", "object", obj.GetName(), "phase", status.Phase)
+			r.Info("SetLifecycle",
+				"obj", client.ObjectKeyFromObject(obj),
+				"phase", status.Phase)
 
 			return common.RequeueAfter(time.Second)
 		}
@@ -116,6 +126,8 @@ func Success(ctx context.Context, r common.Reconciler, obj client.Object, msg st
 		)
 	}
 
+	r.GetEventRecorderFor(obj.GetName()).Event(obj, corev1.EventTypeNormal, status.Reason, status.Message)
+
 	return common.Stop()
 }
 
@@ -125,19 +137,19 @@ func Failed(ctx context.Context, r common.Reconciler, obj client.Object, issue e
 		panic("invalid args")
 	}
 
-	r.Error(issue, "resource failed", "obj", client.ObjectKeyFromObject(obj))
-
 	status := v1alpha1.Lifecycle{
 		Phase:   v1alpha1.PhaseFailed,
-		Reason:  "SetToFailed",
-		Message: errors.Wrapf(issue, "execution error (rv = %s)", obj.GetResourceVersion()).Error(),
+		Reason:  v1alpha1.PhaseFailed.String(),
+		Message: issue.Error(),
 	}
 
 	if statusAware, updateStatus := obj.(v1alpha1.ReconcileStatusAware); updateStatus {
 		statusAware.SetReconcileStatus(status)
 
 		if err := common.UpdateStatus(ctx, r, obj); err != nil {
-			r.Info("Retry set lifecycle", "object", obj.GetName(), "phase", status.Phase)
+			r.Info("SetLifecycle",
+				"obj", client.ObjectKeyFromObject(obj),
+				"phase", status.Phase)
 
 			return common.RequeueAfter(time.Second)
 		}
@@ -145,6 +157,12 @@ func Failed(ctx context.Context, r common.Reconciler, obj client.Object, issue e
 		r.Info("Object does not support RecocileStatusAware interface. Not setting status",
 			"obj", obj.GetName(), "status", status,
 		)
+	}
+
+	if !obj.GetDeletionTimestamp().IsZero() {
+		// If the object is deleted, then probably the namespace is deleted as well and pushing
+		// a notification will raise warnings.
+		r.GetEventRecorderFor(obj.GetName()).Event(obj, corev1.EventTypeWarning, status.Reason, status.Message)
 	}
 
 	return common.Stop()

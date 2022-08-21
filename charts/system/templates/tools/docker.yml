@@ -2,9 +2,13 @@
 apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
-  name: tools.docker
+  name: system.tools.docker
 spec:
   service:
+    decorators:
+      labels:
+        scenario.frisbee.dev/component: SYS
+
     volumes:
       - name: docker-sock
         hostPath:

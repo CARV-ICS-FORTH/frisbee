@@ -208,7 +208,7 @@ Status:
 Conditions:
 Last Transition Time:  2022-06-11T18:16:37Z
 Message:               failed jobs: [run-workload]
-Reason:                JobHasFailed
+Reason:                JobFailed
 Status:                True
 Type:                  UnexpectedTermination
 Executed Actions:
@@ -221,7 +221,7 @@ Grafana Endpoint:     grafana-mytest.localhost
 Message:              failed jobs: [run-workload]
 Phase:                Failed
 Prometheus Endpoint:  prometheus-mytest.localhost
-Reason:               JobHasFailed
+Reason:               JobFailed
 ```
 
 We are interested in the `Phase` and `Conditions` fields that provides information about the present status of a test.

@@ -31,7 +31,7 @@ const (
 )
 
 func NewInstallDevelopmentCmd() *cobra.Command {
-	var options common.HelmUpgradeOrInstallFrisbeeOptions
+	var options common.HelmInstallFrisbeeOptions
 	var chartPath string
 	var publicIP net.IP
 
@@ -57,14 +57,14 @@ func NewInstallDevelopmentCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			ui.Info("Helm installing frisbee framework")
 
-			common.UpdateHelmRepo()
+			common.UpdateHelmFrisbeeRepo()
 
 			command := []string{"upgrade", "--install", "--wait", "--create-namespace", "--namespace", options.Namespace}
 			command = append(command, "--set", fmt.Sprintf("operator.enabled=%t", false))
 			command = append(command, "--set", fmt.Sprintf("operator.advertisedHost=%s", publicIP))
 			command = append(command, options.Name, chartPath)
 
-			common.HelmInstall(command, &options)
+			common.HelmInstallFrisbee(command, &options)
 		},
 		PersistentPostRun: func(cmd *cobra.Command, args []string) {
 			ui.NL()

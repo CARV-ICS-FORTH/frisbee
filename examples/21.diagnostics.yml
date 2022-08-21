@@ -1,0 +1,33 @@
+
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Scenario
+metadata:
+  name: diagnostics
+spec:
+  actions:
+    - action: Service
+      name: idle
+      service:
+        templateRef: system.tools.busybox
+
+    - action: Call
+      name: internet
+      depends: { running: [ idle ] }
+      call:
+        callable: internet
+        services: [idle]
+
+    - action: Call
+      name: dns
+      depends: { running: [ idle ] }
+      call:
+        callable: dns
+        services: [idle]
+
+    - action: Call
+      name: http
+      depends: { running: [ idle ] }
+      call:
+        callable: http
+        services: [idle]

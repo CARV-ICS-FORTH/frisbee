@@ -79,7 +79,7 @@ func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Call, i int) error
 	return lifecycle.VExec(ctx, r, cr, jobName, func() error {
 		res, err := r.executor.Exec(pod, callable.Container, callable.Command, true)
 		if err != nil {
-			return errors.Wrapf(err, "remote command has failed. Out: %s, Err: %s", res.Stdout, res.Stderr)
+			return errors.Wrapf(err, "callable '%s/%s' has failed", callable.Container, jobName)
 		}
 
 		r.Logger.V(2).Info("Call Output",

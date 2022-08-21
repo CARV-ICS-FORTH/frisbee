@@ -40,8 +40,8 @@ const (
 
 // https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/
 const (
-	// LabelName points to the scenario
-	LabelName = "scenario.frisbee.dev/name"
+	// LabelScenario points to the scenario
+	LabelScenario = "scenario.frisbee.dev/name"
 
 	// LabelAction points to the action this resource is part of.
 	LabelAction = "scenario.frisbee.dev/action"
@@ -58,7 +58,7 @@ const (
 )
 
 func SetScenarioLabel(obj *metav1.ObjectMeta, scenario string) {
-	metav1.SetMetaDataLabel(obj, LabelName, scenario)
+	metav1.SetMetaDataLabel(obj, LabelScenario, scenario)
 }
 
 func SetActionLabel(obj *metav1.ObjectMeta, action string) {
@@ -78,15 +78,15 @@ func SetInstanceLabel(obj metav1.Object) {
 }
 
 func HasScenarioLabel(obj metav1.Object) bool {
-	_, ok := obj.GetLabels()[LabelName]
+	_, ok := obj.GetLabels()[LabelScenario]
 	return ok
 }
 
 func GetScenarioLabel(obj metav1.Object) string {
-	scenario, ok := obj.GetLabels()[LabelName]
+	scenario, ok := obj.GetLabels()[LabelScenario]
 	if !ok {
 		panic(errors.Errorf("Cannot extract label '%s' from resource '%s'. Labels: %s",
-			LabelName, obj.GetName(), obj.GetLabels()))
+			LabelScenario, obj.GetName(), obj.GetLabels()))
 	}
 
 	return scenario

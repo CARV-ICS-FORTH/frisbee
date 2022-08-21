@@ -28,15 +28,16 @@ var (
 )
 
 func init() {
-	// Installation
+	// Platform Installation
 	RootCmd.AddCommand(NewInstallCmd())
 	RootCmd.AddCommand(NewUninstallCmd())
 
-	// New commands
+	// Test Management
 	RootCmd.AddCommand(NewSubmitCmd())
 	RootCmd.AddCommand(NewGetCmd())
 	RootCmd.AddCommand(NewDeleteCmd())
 
+	// Test Runtime
 	RootCmd.AddCommand(NewInspectCmd())
 }
 

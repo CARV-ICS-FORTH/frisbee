@@ -69,8 +69,6 @@ spec:
             apt-get install -y lighttpd
             lighttpd -f /etc/lighttpd/lighttpd.conf
 
-            sleep 3600
-
             # Start the client in coverage mode
             echo "Run the client"
             coverage run client.py &

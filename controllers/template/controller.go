@@ -63,19 +63,22 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return common.RequeueAfter(time.Second)
 	}
 
-	r.Logger.Info("-> Reconcile",
-		"obj", client.ObjectKeyFromObject(&cr),
-		"phase", cr.Status.Phase,
-		"version", cr.GetResourceVersion(),
-	)
-
-	defer func() {
-		r.Logger.Info("<- Reconcile",
+	/*
+		r.Logger.Info("-> Reconcile",
 			"obj", client.ObjectKeyFromObject(&cr),
 			"phase", cr.Status.Phase,
 			"version", cr.GetResourceVersion(),
 		)
-	}()
+
+		defer func() {
+			r.Logger.Info("<- Reconcile",
+				"obj", client.ObjectKeyFromObject(&cr),
+				"phase", cr.Status.Phase,
+				"version", cr.GetResourceVersion(),
+			)
+		}()
+
+	*/
 
 	/*
 			2: Update the CR status using the data we've gathered
@@ -102,7 +105,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	*/
 	switch cr.Status.Lifecycle.Phase {
 	case v1alpha1.PhaseUninitialized:
-		r.Logger.Info("Register", "obj", req.NamespacedName)
+		r.Logger.Info("Import", "obj", req.NamespacedName)
 
 		return common.Stop()
 	default:

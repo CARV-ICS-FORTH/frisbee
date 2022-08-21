@@ -85,18 +85,12 @@ type Reconciler interface {
 // Bool indicate whether the caller should return immediately (true) or continue (false).
 // The reconciliation cycle is where the framework gives us back control after a watch has passed up an event.
 func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.Object, requeue *bool) (ctrl.Result, error) {
+
 	// make the calling controller to return
 	*requeue = true
 
 	/*
 		### 1: Retrieve the CR by name
-
-		We'll fetch the obj using our client.  All client methods take a
-		context (to allow for cancellation) as their first argument, and the object
-		in question as their last.  Get is a bit special, in that it takes a
-		[`NamespacedName`](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/client?tab=doc#ObjectKey)
-		as the middle argument (most don't have a middle argument, as we'll see
-		below).
 	*/
 	if err := r.GetClient().Get(ctx, req.NamespacedName, obj); err != nil {
 		// Request object not found, could have been deleted after reconcile request.
@@ -107,33 +101,49 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 			return Stop()
 		}
 
-		r.Error(err, "obj retrieval")
-
-		return RequeueAfter(time.Second)
+		return RequeueWithError(err)
 	}
 
 	/*
-		### Manage Resource initialization
+		### 2: Manage Resource initialization
 		Finalizers provide a mechanism to inform the Kubernetes control plane that an action needs to take place
 		before the standard Kubernetes garbage collection logic can be performed.
 	*/
 
-	// examine DeletionTimestamp to determine if object is under deletion
 	if obj.GetDeletionTimestamp().IsZero() {
-		// Nothing to do
-		if r.Finalizer() == "" {
-			*requeue = false
-			return Stop()
-		}
-
 		// The object is not being deleted, so if it does not have our finalizer,
 		// then lets add the finalizer and Update the object. This is equivalent
 		// registering our finalizer.
-		if !controllerutil.ContainsFinalizer(obj, r.Finalizer()) {
-			if controllerutil.AddFinalizer(obj, r.Finalizer()) {
-				r.Info("Add Finalizer",
+		if controllerutil.AddFinalizer(obj, r.Finalizer()) {
+			r.Info("AddFinalizer",
+				"obj", client.ObjectKeyFromObject(obj),
+				"finalizer", r.Finalizer())
+
+			if err := Update(ctx, r, obj); err != nil {
+				return RequeueWithError(err)
+			}
+			return Stop()
+		}
+
+	} else {
+		// The object is being deleted
+		if controllerutil.ContainsFinalizer(obj, r.Finalizer()) {
+			// our finalizer is present, so lets handle any external dependency.
+			if err := r.Finalize(obj); err != nil {
+				// Run finalization logic to remove external dependencies.
+				// If the finalization logic fails, don't remove the finalizer
+				// so that we can retry during the next reconciliation.
+				r.Error(err, "Finalize error",
 					"obj", client.ObjectKeyFromObject(obj),
-					"version", obj.GetResourceVersion(),
+					"finalizer", r.Finalizer())
+
+				return RequeueWithError(err)
+			}
+
+			// Once all finalizers have been removed, the object will be deleted.
+			if controllerutil.RemoveFinalizer(obj, r.Finalizer()) {
+				r.Info("RemoveFinalizer",
+					"obj", client.ObjectKeyFromObject(obj),
 					"finalizer", r.Finalizer())
 
 				if err := Update(ctx, r, obj); err != nil {
@@ -143,38 +153,7 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 				return Stop()
 			}
 		}
-
-	} else {
-		// The object is being deleted
-		if !controllerutil.ContainsFinalizer(obj, r.Finalizer()) {
-			*requeue = false
-			return Stop()
-		}
-
-		// our finalizer is present, so lets handle any external dependency.
-		if err := r.Finalize(obj); err != nil {
-			// Run finalization logic to remove external dependencies.
-			// If the finalization logic fails, don't remove the finalizer
-			// so that we can retry during the next reconciliation.
-			r.Error(err, "cannot finalize instance", "object", obj.GetName())
-
-			return RequeueAfter(time.Second)
-		}
-
-		// Once all finalizers have been removed, the object will be deleted.
-		if controllerutil.RemoveFinalizer(obj, r.Finalizer()) {
-			r.Info("Remove Finalizer",
-				"object", client.ObjectKeyFromObject(obj),
-				"version", obj.GetResourceVersion(),
-				"finalizer", r.Finalizer())
-
-			if err := Update(ctx, r, obj); err != nil {
-				return RequeueAfter(time.Second)
-			}
-		}
 	}
-
-	// panic("should never happen")
 
 	*requeue = false
 
@@ -183,6 +162,7 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 
 // Update will update the metadata and the spec of the Object. If there is a conflict, it will retry again.
 func Update(ctx context.Context, r Reconciler, obj client.Object) error {
+
 	r.Info("OO UpdtMeta",
 		"obj", client.ObjectKeyFromObject(obj),
 		"version", obj.GetResourceVersion(),
@@ -225,15 +205,15 @@ func Create(ctx context.Context, r Reconciler, parent, child client.Object) erro
 
 	r.Info("++ Create",
 		"kind", reflect.TypeOf(child),
-		"obj", client.ObjectKeyFromObject(parent),
+		"obj", client.ObjectKeyFromObject(child),
 	)
 
 	err := r.GetClient().Create(ctx, child)
 	switch {
 	case k8errors.IsAlreadyExists(err):
-		return err
+		panic(err) // This should never happen under normal conditions
 	case err != nil:
-		return err
+		return errors.Wrapf(err, "creation error")
 	default:
 		return nil
 	}

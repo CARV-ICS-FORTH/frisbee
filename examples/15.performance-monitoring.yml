@@ -89,4 +89,3 @@ spec:
       depends: { running: [ group-b ],  after: "30s" }
       delete: # references jobs should be action.
         jobs: [ group-b ]
-

@@ -23,11 +23,10 @@ import (
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/retry"
-	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 var backoff = wait.Backoff{
-	Duration: 3 * time.Second,
+	Duration: 5 * time.Second,
 	Factor:   5,
 	Jitter:   0.1,
 	Steps:    3,
@@ -35,8 +34,7 @@ var backoff = wait.Backoff{
 
 func AbortAfterRetry(ctx context.Context, logger *logr.Logger, cb func() error) bool {
 	if logger == nil {
-		defaultLogger := ctrl.Log.WithName("default-logger")
-		logger = &defaultLogger
+		panic("empty logger")
 	}
 
 	isRetriable := func(err error) bool {
@@ -51,7 +49,7 @@ func AbortAfterRetry(ctx context.Context, logger *logr.Logger, cb func() error) 
 
 	// retry until Grafana is ready to receive annotations.
 	if err := retry.OnError(backoff, isRetriable, func() error { return cb() }); err != nil {
-		logger.Info("Abort Retrying", "cause", err)
+		logger.Info("AbortRetry", "err", err.Error())
 
 		return true // abort
 	}
