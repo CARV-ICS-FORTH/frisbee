@@ -28,6 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"regexp"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sort"
 	"strings"
 	"time"
 )
@@ -134,7 +135,40 @@ func (c TestManagementClient) ListTests(selector string) (tests v1alpha1.Scenari
 
 	}
 
+	// arrange in descending order (latest created goes first)
+	sort.SliceStable(tests.Items, func(i, j int) bool {
+		tsI := tests.Items[i].GetCreationTimestamp()
+		tsJ := tests.Items[j].GetCreationTimestamp()
+
+		return tsI.After(tsJ.Time)
+	})
+
 	return tests, nil
+}
+
+// ListVirtualObjects list all virtual objects
+func (c TestManagementClient) ListVirtualObjects(namespace string, selectors ...string) (list v1alpha1.VirtualObjectList, err error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	var filter client.ListOptions
+	filter.Namespace = namespace
+
+	if selectors != nil {
+		set, err := labels.ConvertSelectorToLabelsMap(strings.Join(selectors, ","))
+		if err != nil {
+			return v1alpha1.VirtualObjectList{}, errors.Wrapf(err, "invalid selector")
+		}
+
+		// find namespaces where tests are running
+		filter.LabelSelector = labels.SelectorFromValidatedSet(set)
+	}
+
+	if err = c.client.List(ctx, &list, &filter); err != nil {
+		return v1alpha1.VirtualObjectList{}, errors.Wrapf(err, "cannot list resources")
+	}
+
+	return list, err
 }
 
 // DeleteTests deletes all tests

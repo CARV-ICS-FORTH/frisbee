@@ -60,20 +60,12 @@ func NotFound(testName, out string) bool {
 	return out == fmt.Sprintf("No resources found in %s namespace.\n", testName)
 }
 
-func Logs(cmd *cobra.Command, testName string, tail bool) error {
+func GetPodLogs(cmd *cobra.Command, testName string, tail bool) error {
 	command := []string{"logs", "-n", testName,
 		"-l", fmt.Sprintf("%s", v1alpha1.LabelScenario),
 		"-c", v1alpha1.MainContainerName,
 		"--prefix=true",
 		fmt.Sprintf("--follow=%t", tail),
-	}
-
-	// restricted format supported by Kubectl
-	outputType := OutputType(cmd.Flag("output").Value.String())
-	if outputType == "table" ||
-		outputType == "json" ||
-		outputType == "yaml" {
-		command = append(command, "-o", string(outputType))
 	}
 
 	getLogs := func() (done bool, err error) {
@@ -148,9 +140,46 @@ const (
 	Templates      = "templates.frisbee.dev"
 )
 
+var CallableInspectionFields = strings.Join([]string{
+	"custom-columns=Kind:.kind",
+	"Job:.metadata.name",
+	"Phase:.status.phase",
+	"Stdout:.status.data.stdout",
+	"Stderr:.status.data.stderr",
+}, ",")
+
+func GetCallableLogs(cmd *cobra.Command, testName string, tail bool) error {
+	command := []string{"get", "-n", testName,
+		"--show-kind=true",
+		"-l", fmt.Sprintf("%s", v1alpha1.LabelScenario)}
+
+	command = append(command, VirtualObjects)
+
+	// restricted format supported by Kubectl
+	outputType := OutputType(cmd.Flag("output").Value.String())
+	if outputType == "table" ||
+		outputType == "json" ||
+		outputType == "yaml" {
+		command = append(command, "-o", string(outputType))
+	}
+
+	command = append(command, "-o", CallableInspectionFields)
+
+	out, err := process.Execute(Kubectl, command...)
+	switch {
+	case NotFound(testName, string(out)): // resource not found
+		return nil
+	case err != nil: // execution error
+		return err
+	default: // completed
+		ui.Info(string(out))
+		return nil
+	}
+}
+
 var ResourceInspectionFields = strings.Join([]string{
-	"custom-columns=Job:.metadata.name",
-	"Kind:.kind",
+	"custom-columns=Kind:.kind",
+	"Job:.metadata.name",
 	"Component:.metadata.labels.scenario\\.frisbee\\.dev\\/component",
 	"Phase:.status.phase",
 	"Reason:.status.reason",
@@ -161,6 +190,8 @@ var ResourceInspectionFields = strings.Join([]string{
 func GetFrisbeeResources(cmd *cobra.Command, testName string) error {
 	command := []string{"get", "-n", testName,
 		"--show-kind=true",
+		"--sort-by=.metadata.creationTimestamp",
+		// "--sort-by=.status.phase",
 		"-l", fmt.Sprintf("%s", v1alpha1.LabelScenario)}
 
 	command = append(command, strings.Join([]string{

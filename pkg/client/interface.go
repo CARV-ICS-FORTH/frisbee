@@ -18,7 +18,6 @@ package client
 
 import (
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	"github.com/kubeshop/testkube/pkg/executor/output"
 )
 
 // Client is the Frisbee API client abstraction
@@ -35,29 +34,17 @@ type TestManagementAPI interface {
 	// ListTests queries the Kubernetes API the selected labels.
 	ListTests(selector string) (tests v1alpha1.ScenarioList, err error)
 
+	// ListVirtualObjects  list all virtual objects with the given selector
+	ListVirtualObjects(namespace string, selectors ...string) (list v1alpha1.VirtualObjectList, err error)
+
 	// DeleteTest deletes single test by name
 	DeleteTest(testName string) error
 
 	// DeleteTests deletes all tests with the selected labels.
 	DeleteTests(selector string) (testNames []string, err error)
-
-	// SubmitTestFromFile submits the given scenario file (YAML) to the Kubernetes API
-	SubmitTestFromFile(testName, filepath string) (resourceNames []string, err error)
-
-	/*
-		GetTest(id string) (test testkube.Test, err error)
-		GetTestWithExecution(id string) (test testkube.TestWithExecution, err error)
-		CreateTest(options UpsertTestOptions) (test testkube.Test, err error)
-		UpdateTest(options UpsertTestOptions) (test testkube.Test, err error)
-		ListTests(selector string) (tests testkube.Tests, err error)
-		ListTestWithExecutions(selector string) (tests testkube.TestWithExecutions, err error)
-		ExecuteTest(id, executionName string, options ExecuteTestOptions) (executions testkube.Execution, err error)
-		ExecuteTests(selector string, concurrencyLevel int, options ExecuteTestOptions) (executions []testkube.Execution, err error)
-
-	*/
 }
 
 type TestInspectionAPI interface {
 	// Logs returns logs stream from job pods, based on job pods logs
-	Logs(testName string) (logs chan output.Output, err error)
+	// Logs(testName string) (logs chan output.Output, err error)
 }

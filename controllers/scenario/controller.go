@@ -315,7 +315,6 @@ func (r *Controller) HasSucceed(ctx context.Context, cr *v1alpha1.Scenario) erro
 	// These components are removed by deleting the Scenario.
 	for _, job := range r.view.GetSuccessfulJobs() {
 		if v1alpha1.GetComponentLabel(job) == v1alpha1.ComponentSUT { // System services should not be removed
-
 			expressions.UnsetAlert(job)
 			common.Delete(ctx, r, job)
 		}
@@ -348,7 +347,7 @@ func (r *Controller) HasFailed(ctx context.Context, cr *v1alpha1.Scenario) error
 	for _, job := range r.view.GetSuccessfulJobs() { // System jobs should not be deleted
 		if v1alpha1.GetComponentLabel(job) == v1alpha1.ComponentSUT {
 			expressions.UnsetAlert(job)
-			common.Delete(ctx, r, job)
+			// common.Delete(ctx, r, job) Keep it commented for debugging
 		}
 	}
 

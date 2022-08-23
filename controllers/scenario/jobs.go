@@ -153,7 +153,7 @@ func (r *Controller) cascade(ctx context.Context, t *v1alpha1.Scenario, action v
 func (r *Controller) delete(ctx context.Context, t *v1alpha1.Scenario, action v1alpha1.Action) (client.Object, error) {
 	// Delete normally does not return anything. This however would break all the pipeline for
 	// managing dependencies between jobs. For that, we return a dummy virtual object without dedicated controller.
-	return nil, lifecycle.VExec(ctx, r, t, action.Name, func() error {
+	return nil, lifecycle.VirtualExecution(ctx, r, t, action.Name, func(_ *v1alpha1.VirtualObject) error {
 		for _, refJob := range action.Delete.Jobs {
 			job, deletable := r.view.IsDeletable(refJob)
 			if !deletable {
@@ -161,7 +161,7 @@ func (r *Controller) delete(ctx context.Context, t *v1alpha1.Scenario, action v1
 					refJob, job)
 			}
 
-			if err := lifecycle.VExec(ctx, r, t, refJob, func() error {
+			if err := lifecycle.VirtualExecution(ctx, r, t, refJob, func(_ *v1alpha1.VirtualObject) error {
 				common.Delete(ctx, r, job)
 				return nil
 			}); err != nil {

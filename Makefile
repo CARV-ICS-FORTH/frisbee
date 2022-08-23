@@ -132,7 +132,7 @@ build: generate fmt vet ## Build manager binary.
 	go build -o bin/manager cmd/manager/main.go
 
 run: generate fmt vet certs ## Run a controller from your host.
-	@echo "===> Run Frisbee <==="
+	@echo "===> Run Frisbee Controller on Namespace ${FRISBEE_NAMESPACE} <==="
 	go run -race ./cmd/manager/main.go -cert-dir=${CERTS_DIR}
 
 docker-build: test ## Build docker image for the Frisbee controller.

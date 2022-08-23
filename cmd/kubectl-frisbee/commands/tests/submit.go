@@ -151,7 +151,7 @@ func ControlOutput(cmd *cobra.Command, testName string, options *TestSubmitOptio
 		ui.ExitOnError("waiting test completion "+testName, err)
 
 	} else if options.Log {
-		err := common.Logs(cmd, testName, true)
+		err := common.GetPodLogs(cmd, testName, true)
 		ui.ExitOnError("getting logs", err)
 	}
 }

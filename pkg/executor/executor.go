@@ -91,22 +91,25 @@ func (e *Executor) Exec(pod types.NamespacedName, containerID string, command []
 
 	// Connect this process' std{in,out,err} to the remote shell process.
 	if err := exec.Stream(remotecommand.StreamOptions{Stdout: stdoutBuffer, Stderr: stderrBuffer}); err != nil {
-		return Result{stdoutBuffer.String(), stderrBuffer.String()}, errors.Wrapf(err, "streaming error on %v/%v", pod.Namespace, pod.Name)
+		return Result{Stdout: stdoutBuffer.String(), Stderr: stderrBuffer.String()}, err
 	}
 
 	var result Result
 
 	if stdoutBuffer.TotalWritten() > MaxStdoutLen {
 		result.Stdout = "<... some data truncated by circular buffer; go to artifacts for details ...>\n" + stdoutBuffer.String()
-	} else {
+	} else if stdoutBuffer.TotalWritten() > 0 {
 		result.Stdout = stdoutBuffer.String()
+	} else {
+		result.Stdout = ""
 	}
 
 	if stderrBuffer.TotalWritten() > MaxStderrLen {
 		result.Stderr = "<... some data truncated by circular buffer; go to artifacts for details ...>\n" + stderrBuffer.String()
-
-	} else {
+	} else if stderrBuffer.TotalWritten() > 0 {
 		result.Stderr = stderrBuffer.String()
+	} else {
+		result.Stdout = ""
 	}
 
 	return result, nil

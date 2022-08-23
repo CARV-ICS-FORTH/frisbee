@@ -24,26 +24,26 @@ import (
 )
 
 type InspectOptions struct {
-	NoDashboards, NoStatus, Events, Logs, NoResources, Charts bool
-	All, NoHint                                               bool
-	Interactive                                               string
+	Dashboards, NoStatus, Events, Logs, NoResources, Charts bool
+	All, Hints                                              bool
+	Shell                                                   string
 }
 
 func PopulateInspectFlags(cmd *cobra.Command, options *InspectOptions) {
 	cmd.Flags().BoolVar(&options.NoStatus, "no-status", false, "disable status from scenario")
-	cmd.Flags().BoolVar(&options.NoDashboards, "no-dashboards", false, "disable information about dashboards")
+	cmd.Flags().BoolVar(&options.Dashboards, "dashboards", false, "show information about dashboards")
 	cmd.Flags().BoolVar(&options.NoResources, "no-resources", false, "disable listing resources")
 	cmd.Flags().BoolVar(&options.Events, "events", false, "show events hinting what's happening")
 	cmd.Flags().BoolVar(&options.Logs, "logs", false, "show logs output from executor pod")
 	cmd.Flags().BoolVar(&options.Charts, "charts", false, "show installed templates from dependent Helm charts")
 
 	cmd.Flags().BoolVar(&options.All, "all", false, "enable all no-* features ")
-	cmd.Flags().StringVar(&options.Interactive, "interactive", "", "opens a shell to a running container")
-	cmd.Flags().BoolVar(&options.NoHint, "no-hint", false, "disable hints")
+	cmd.Flags().StringVar(&options.Shell, "shell", "", "opens a shell to a running container")
+	cmd.Flags().BoolVar(&options.Hints, "hints", false, "provide hints for helpful commands")
 }
 
 func Hint(options *InspectOptions, msg string, sub ...string) {
-	if !options.NoHint {
+	if options.Hints {
 		ui.Success(msg, sub...)
 	}
 }
@@ -68,10 +68,10 @@ func NewInspectTestCmd() *cobra.Command {
 			testName := args[0]
 
 			// Interactive is exclusive
-			if options.Interactive != "" {
+			if options.Shell != "" {
 				ui.NL()
 
-				err := common.OpenShell(testName, options.Interactive, args[1:]...)
+				err := common.OpenShell(testName, options.Shell, args[1:]...)
 				ui.ExitOnError("Opening Shell", err)
 
 				return
@@ -103,15 +103,18 @@ func NewInspectTestCmd() *cobra.Command {
 				Hint(&options, "For more Frisbee Resource information use:",
 					"kubectl describe <Kind> [Names...] -n", testName)
 
-				ui.NL()
-				err = common.GetK8sResources(cmd, testName)
-				ui.ExitOnError("== Active K8s Resources ==", err)
+				/*
+					ui.NL()
+					err = common.GetK8sResources(cmd, testName)
+					ui.ExitOnError("== Active K8s Resources ==", err)
 
-				Hint(&options, "For more K8s Resource information use:",
-					"kubectl describe <Kind> [Names...] -n", testName)
+					Hint(&options, "For more K8s Resource information use:",
+						"kubectl describe <Kind> [Names...] -n", testName)
+
+				*/
 			}
 
-			if !options.NoDashboards || options.All {
+			if options.Dashboards || options.All {
 				ui.NL()
 
 				err := common.Dashboards(cmd, testName)
@@ -143,8 +146,19 @@ func NewInspectTestCmd() *cobra.Command {
 
 			if options.Logs || options.All {
 				ui.NL()
-				err := common.Logs(cmd, testName, false)
-				ui.ExitOnError("== Logs ==", err)
+				vobjects, err := client.ListVirtualObjects(testName)
+
+				for _, vobject := range vobjects.Items {
+					if err := common.RenderList(cmd, vobject, os.Stdout); err != nil {
+						ui.ExitOnError(vobject.GetName(), err)
+					}
+				}
+
+				ui.ExitOnError("== Logs From Virtual Objects ==", err)
+
+				ui.NL()
+				err = common.GetPodLogs(cmd, testName, false)
+				ui.ExitOnError("== Logs From Pods ==", err)
 
 				Hint(&options, "For more logs use:", "kubectl logs -n", testName, "pod/<podName>")
 			}

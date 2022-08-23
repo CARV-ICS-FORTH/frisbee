@@ -44,13 +44,14 @@ func buildVirtualObject(parent metav1.Object, name string) *v1alpha1.VirtualObje
 	return &vobject
 }
 
-// VExec wraps a call into a virtual object. This is used for operations that do not create external resources.
+// VirtualExecution wraps a call into a virtual object. This is used for operations that do not create external resources.
 // Examples: Deletions, Calls, ...
-// The behavior of VExec is practically asynchronous.
+// The behavior of VirtualExecution is practically asynchronous.
 // If the callback function fails, it will be reflected in the created virtual jobs and should be captured
-// by the parent's lifecycle. The VExec will return nil.
-// If the VExec fails (e.g, cannot create a virtual object), it will return an error.
-func VExec(ctx context.Context, r common.Reconciler, parent client.Object, jobName string, cb func() error) error {
+// by the parent's lifecycle. The VirtualExecution will return nil.
+// If the VirtualExecution fails (e.g, cannot create a virtual object), it will return an error.
+func VirtualExecution(ctx context.Context, r common.Reconciler, parent client.Object, jobName string,
+	cb func(vobj *v1alpha1.VirtualObject) error) error {
 	// Step 1. Create the object in the Kubernetes API
 	vJob := buildVirtualObject(parent, jobName)
 
@@ -63,7 +64,7 @@ func VExec(ctx context.Context, r common.Reconciler, parent client.Object, jobNa
 	// Step 2. Run the callback function with support for context cancelling
 	quit := make(chan error)
 	go func() {
-		quit <- errors.Wrapf(cb(), "vexec failed")
+		quit <- cb(vJob)
 		close(quit)
 	}()
 
@@ -79,14 +80,14 @@ func VExec(ctx context.Context, r common.Reconciler, parent client.Object, jobNa
 		r.GetEventRecorderFor(parent.GetName()).Event(parent, corev1.EventTypeWarning, "VExecFailed", jobName)
 
 		vJob.Status.Lifecycle.Phase = v1alpha1.PhaseFailed
-		vJob.Status.Lifecycle.Reason = "AJobHasFailed"
-		vJob.Status.Lifecycle.Message = jobErr.Error()
+		vJob.Status.Lifecycle.Reason = "VExecFailed"
+		vJob.Status.Lifecycle.Message = errors.Wrapf(jobErr, "Check logs on VirtualObject/%s", jobName).Error()
 
 	} else {
 		r.GetEventRecorderFor(parent.GetName()).Event(parent, corev1.EventTypeNormal, "VExecSuccess", jobName)
 
 		vJob.Status.Lifecycle.Phase = v1alpha1.PhaseSuccess
-		vJob.Status.Lifecycle.Reason = "JobSuccess"
+		vJob.Status.Lifecycle.Reason = "VExecSuccess"
 		vJob.Status.Lifecycle.Message = "Yoohoo"
 	}
 

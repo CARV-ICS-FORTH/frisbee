@@ -17,16 +17,7 @@ limitations under the License.
 package client
 
 import (
-	"context"
-	"fmt"
-	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/pkg/executor"
-	"github.com/carv-ics-forth/frisbee/pkg/ui"
-	"github.com/kubeshop/testkube/pkg/executor/output"
-	"github.com/sirupsen/logrus"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"time"
 )
@@ -51,6 +42,7 @@ type TestInspectionClient struct {
 	options  Options
 }
 
+/*
 // Logs returns logs stream from job pods, based on job pods logs
 func (c TestInspectionClient) Logs(testName string) (out chan output.Output, err error) {
 	out = make(chan output.Output)
@@ -67,8 +59,6 @@ func (c TestInspectionClient) Logs(testName string) (out chan output.Output, err
 			return
 		}
 
-		logrus.Warn("POUSAKIA ", len(logs))
-
 		for l := range logs {
 			entry, err := output.GetLogEntry(l)
 			if err != nil {
@@ -77,8 +67,6 @@ func (c TestInspectionClient) Logs(testName string) (out chan output.Output, err
 			}
 			out <- entry
 		}
-
-		logrus.Warn("<OUSAKIA ")
 
 	}()
 
@@ -242,8 +230,6 @@ func TailLogs(c client.Client, testName string) {
 	uiShellGetExecution(testName)
 }
 
-*/
-
 func uiShellGetExecution(id string) {
 	ui.ShellCommand(
 		"Use following command to get test execution details",
@@ -256,3 +242,6 @@ func uiShellGetExecution(id string) {
 func WaitTest(ctx context.Context, c client.Client, testName string) error {
 	panic("wait is not yet supported")
 }
+
+
+*/

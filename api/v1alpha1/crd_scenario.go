@@ -167,7 +167,6 @@ type ScenarioStatus struct {
 
 func (in ScenarioStatus) Table() (header []string, data [][]string) {
 	header = []string{
-		"Scheduled",
 		"Phase",
 		"Reason",
 		"Message",
@@ -188,7 +187,6 @@ func (in ScenarioStatus) Table() (header []string, data [][]string) {
 	}
 
 	data = append(data, []string{
-		strings.Join(in.ScheduledJobs, "\n"),
 		in.Phase.String(),
 		in.Reason,
 		in.Message,

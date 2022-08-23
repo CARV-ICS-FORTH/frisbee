@@ -48,7 +48,7 @@ func (r *Controller) constructJobSpecList(ctx context.Context, cr *v1alpha1.Call
 		// find callable
 		callable, ok := service.Spec.Callables[cr.Spec.Callable]
 		if !ok {
-			return nil, errors.Errorf("cannot find callable '%s' on service '%s'. Available: %s",
+			return nil, errors.Errorf("callable '%s/%s' not found. Available: %s",
 				cr.Spec.Callable, serviceName, structure.MapKeys(service.Spec.Callables))
 		}
 
@@ -76,10 +76,13 @@ func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Call, i int) error
 	// Delete normally does not return anything. This however would break all the pipeline for
 	// managing dependencies between jobs. For that, we return a dummy virtual object without dedicated controller.
 	// FIXME: if the call fails, this object will be re-created, and the call will failed with an "existing object" error.
-	return lifecycle.VExec(ctx, r, cr, jobName, func() error {
+	return lifecycle.VirtualExecution(ctx, r, cr, jobName, func(vjob *v1alpha1.VirtualObject) error {
 		res, err := r.executor.Exec(pod, callable.Container, callable.Command, true)
-		if err != nil {
-			return errors.Wrapf(err, "callable '%s/%s' has failed", callable.Container, jobName)
+
+		// Use the payload to keep the operation logs.
+		vjob.Status.Data = map[string]string{
+			"stdout": res.Stdout,
+			"stderr": res.Stderr,
 		}
 
 		r.Logger.V(2).Info("Call Output",
@@ -87,6 +90,10 @@ func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Call, i int) error
 			"stdout", res.Stdout,
 			"stderr", res.Stderr,
 		)
+
+		if err != nil {
+			return errors.Wrapf(err, "call [%s/%s] has failed", serviceName, callable.Container)
+		}
 
 		if cr.Spec.Expect != nil {
 			r.Logger.V(2).Info("Assert Call Output",

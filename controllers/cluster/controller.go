@@ -140,7 +140,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	case v1alpha1.PhaseUninitialized:
 		if err := r.Initialize(ctx, &cr); err != nil {
-			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot initialize"))
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "initialization error"))
 		}
 
 		return lifecycle.Pending(ctx, r, &cr, "ready to start submitting jobs.")
@@ -188,7 +188,7 @@ func (r *Controller) Initialize(ctx context.Context, cr *v1alpha1.Cluster) error
 	*/
 	jobList, err := r.constructJobSpecList(ctx, cr)
 	if err != nil {
-		return errors.Wrapf(err, "cannot build joblist")
+		return errors.Wrapf(err, "building joblist")
 	}
 
 	cr.Status.QueuedJobs = jobList
@@ -261,10 +261,6 @@ func (r *Controller) HasFailed(ctx context.Context, cr *v1alpha1.Cluster) error 
 	}
 
 	for _, job := range r.view.GetRunningJobs() {
-		common.Delete(ctx, r, job)
-	}
-
-	for _, job := range r.view.GetSuccessfulJobs() {
 		common.Delete(ctx, r, job)
 	}
 
