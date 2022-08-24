@@ -23,7 +23,6 @@ spec:
               iperf -s -f m -i 5
 
 
-
 ---
 apiVersion: frisbee.dev/v1alpha1
 kind: Template

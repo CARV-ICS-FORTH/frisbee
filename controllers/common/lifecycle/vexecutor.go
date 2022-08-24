@@ -18,9 +18,10 @@ package lifecycle
 
 import (
 	"context"
-
+	"fmt"
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
+	"github.com/carv-ics-forth/frisbee/pkg/structure"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -81,20 +82,22 @@ func VirtualExecution(ctx context.Context, r common.Reconciler, parent client.Ob
 
 		vJob.Status.Lifecycle.Phase = v1alpha1.PhaseFailed
 		vJob.Status.Lifecycle.Reason = "VExecFailed"
-		vJob.Status.Lifecycle.Message = errors.Wrapf(jobErr, "Check logs on VirtualObject/%s", jobName).Error()
-
+		vJob.Status.Lifecycle.Message = errors.Wrapf(jobErr, "Job failed").Error()
 	} else {
+
 		r.GetEventRecorderFor(parent.GetName()).Event(parent, corev1.EventTypeNormal, "VExecSuccess", jobName)
 
 		vJob.Status.Lifecycle.Phase = v1alpha1.PhaseSuccess
 		vJob.Status.Lifecycle.Reason = "VExecSuccess"
-		vJob.Status.Lifecycle.Message = "Yoohoo"
+		vJob.Status.Lifecycle.Message = fmt.Sprintf("Job completed")
 	}
 
-	// Step 4. Update the status of the mockup. This will be captured by the lifecycle.
-	if err := common.UpdateStatus(ctx, r, vJob); err != nil {
-		return errors.Wrapf(err, "vexec status update error")
+	// Step 4. Append information for stored data, if any
+	if len(vJob.Status.Data) > 0 {
+		vJob.Status.Message = fmt.Sprintf("%s. Stored Data: '%s'", vJob.Status.Message, structure.MapKeys(vJob.Status.Data))
 	}
 
-	return nil
+	// Step 5. Update the status of the mockup. This will be captured by the lifecycle.
+	err := common.UpdateStatus(ctx, r, vJob)
+	return errors.Wrapf(err, "vexec status update error")
 }

@@ -10,7 +10,7 @@ spec:
       cluster:
         templateRef: system.tools.debugger
         inputs:
-          - {"neigh": node-1} # node-0 will ping node-1
+          - {cni0: "10.1.96.192", host: "192.168.178.3"}
           - {"neigh": node-0} # node-1 will ping node-0
 
 
@@ -20,7 +20,7 @@ spec:
       depends: { running: [ node ]}
       call:
         callable: localhost
-        services: [ node-0]
+        services: [node-0]
 
 
     # Test Container-To-Host Network
@@ -29,7 +29,7 @@ spec:
       depends: { running: [ node ]}
       call:
         callable: cni
-        services: [ node-0]
+        services: [node-0]
 
     # Test Container-To-Container Connectivity (Host Bridging + local DNS)
     - action: Call
@@ -37,7 +37,7 @@ spec:
       depends: { running: [ node ] }
       call:
         callable: neigh
-        services: [ node-0 ]
+        services: [node-1]
 
 
     # Test Container-To-Network Connectivity (Host Forwarding)
@@ -46,7 +46,7 @@ spec:
       depends: { running: [ node ]}
       call:
         callable: host
-        services: [ node-0]
+        services: [node-0]
 
 
     # Test Container-To-Internet Connectivity (Fixed IP)
@@ -55,7 +55,7 @@ spec:
       depends: { running: [ node ]}
       call:
         callable: public
-        services: [ node-0]
+        services: [node-0]
 
 
     # Test Container-To-Internet Connectivity (DNS Name)
@@ -64,4 +64,4 @@ spec:
       depends: { running: [ node ]}
       call:
         callable: dns
-        services: [ node-0]
+        services: [node-0]

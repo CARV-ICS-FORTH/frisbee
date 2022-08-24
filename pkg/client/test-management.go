@@ -50,14 +50,12 @@ type TestManagementClient struct {
 	options Options
 }
 
-// GetTest returns single test by id
-func (c TestManagementClient) GetTest(id string) (scenario *v1alpha1.Scenario, err error) {
+// GetScenario returns single scenario by id
+func (c TestManagementClient) GetScenario(id string) (scenario *v1alpha1.Scenario, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	filters := &client.ListOptions{
-		Namespace: id,
-	}
+	filters := &client.ListOptions{Namespace: id}
 
 	var scenarios v1alpha1.ScenarioList
 
@@ -75,17 +73,17 @@ func (c TestManagementClient) GetTest(id string) (scenario *v1alpha1.Scenario, e
 	}
 }
 
-// ListTests list all tests
-func (c TestManagementClient) ListTests(selector string) (tests v1alpha1.ScenarioList, err error) {
+// ListScenarios list all scenarios
+func (c TestManagementClient) ListScenarios(selector string) (scenarios v1alpha1.ScenarioList, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	set, err := labels.ConvertSelectorToLabelsMap(selector)
 	if err != nil {
-		return tests, errors.Wrapf(err, "invalid selector")
+		return scenarios, errors.Wrapf(err, "invalid selector")
 	}
 
-	// find namespaces where tests are running
+	// find namespaces where scenarios are running
 	filters := &client.ListOptions{
 		LabelSelector: labels.SelectorFromValidatedSet(set),
 	}
@@ -93,57 +91,62 @@ func (c TestManagementClient) ListTests(selector string) (tests v1alpha1.Scenari
 	var namespaces corev1.NamespaceList
 
 	if err := c.client.List(ctx, &namespaces, filters); err != nil {
-		return tests, errors.Wrapf(err, "cannot list resource")
+		return scenarios, errors.Wrapf(err, "cannot list resource")
 	}
 
 	// extract scenarios from the namespaces
 	for _, nm := range namespaces.Items {
-		var scenarios v1alpha1.ScenarioList
+		var localList v1alpha1.ScenarioList
 
-		if err := c.client.List(ctx, &scenarios, &client.ListOptions{Namespace: nm.GetName()}); err != nil {
-			return tests, errors.Wrapf(err, "cannot list resources")
+		if err := c.client.List(ctx, &localList, &client.ListOptions{Namespace: nm.GetName()}); err != nil {
+			return scenarios, errors.Wrapf(err, "cannot list resources")
 		}
 
-		switch numItems := len(scenarios.Items); numItems {
+		switch numItems := len(localList.Items); numItems {
 		case 0:
+			// There is a namespace but no scenario. This may happen due to a scenario being
+			// externally deleted. In this case, create a dummy object just to continue with the listing.
+			var dummy v1alpha1.Scenario
+			dummy.SetName("----")
+			dummy.SetNamespace(nm.GetName())
+			dummy.SetCreationTimestamp(nm.GetCreationTimestamp())
+
 			if !nm.GetDeletionTimestamp().IsZero() {
-				// Just wait and it will be removed.
+				dummy.SetReconcileStatus(v1alpha1.Lifecycle{
+					Phase:   "Terminating",
+					Reason:  "NoScenario",
+					Message: "No Scenario is found in namespace, and the namespace is terminating",
+				})
 			} else {
-				// There is a namespace but no scenario. This may happen due to a scenario being
-				// externally deleted. In this case, create a dummy object just to continue with the listing.
-				var dummy v1alpha1.Scenario
-				dummy.SetName("----")
-				dummy.SetNamespace(nm.GetName())
 				dummy.SetReconcileStatus(v1alpha1.Lifecycle{
 					Phase:   "----",
 					Reason:  "NoScenario",
 					Message: "No Scenario is found in namespace",
 				})
-
-				tests.Items = append(tests.Items, dummy)
 			}
+
+			scenarios.Items = append(scenarios.Items, dummy)
 
 		case 1:
 			if !nm.GetDeletionTimestamp().IsZero() { // Some rewrite for output to make more sense
 				scenarios.Items[0].Status.Phase = "Terminating"
 			}
 
-			tests.Items = append(tests.Items, scenarios.Items[0])
+			scenarios.Items = append(scenarios.Items, localList.Items[0])
 		default:
 			return v1alpha1.ScenarioList{}, errors.Errorf("test '%s' has %d scenarios", nm.GetName(), numItems)
 		}
-
 	}
 
 	// arrange in descending order (latest created goes first)
-	sort.SliceStable(tests.Items, func(i, j int) bool {
-		tsI := tests.Items[i].GetCreationTimestamp()
-		tsJ := tests.Items[j].GetCreationTimestamp()
+	sort.SliceStable(scenarios.Items, func(i, j int) bool {
+		tsI := scenarios.Items[i].GetCreationTimestamp()
+		tsJ := scenarios.Items[j].GetCreationTimestamp()
 
 		return tsI.After(tsJ.Time)
 	})
 
-	return tests, nil
+	return scenarios, nil
 }
 
 // ListVirtualObjects list all virtual objects

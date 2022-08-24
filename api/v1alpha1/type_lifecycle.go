@@ -17,7 +17,6 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"fmt"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -48,8 +47,8 @@ const (
 	// ConditionTerminated indicates the user-defined conditions are met.
 	// ConditionTerminated = ConditionType("Terminated")
 
-	// ConditionStateTransition indicates the transition of a resource into another state.
-	// ConditionStateTransition = ConditionType("StateTransition")
+	// ConditionInvalidStateTransition indicates the transition of a resource into another state.
+	ConditionInvalidStateTransition = ConditionType("InvalidStateTransition")
 
 	// ConditionPerformanceAlert indicates an alert received by Grafana concerning the real-time performance of the system.
 	ConditionPerformanceAlert = ConditionType("PerformanceAlert")
@@ -127,6 +126,7 @@ type Lifecycle struct {
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
+/*
 func (in Lifecycle) String() string {
 	if in.Phase == PhaseFailed {
 		if in.Reason == "" {
@@ -138,6 +138,8 @@ func (in Lifecycle) String() string {
 
 	return fmt.Sprintf("phase:%s ", in.Phase)
 }
+
+*/
 
 // +kubebuilder:object:generate=false
 

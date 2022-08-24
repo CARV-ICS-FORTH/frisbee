@@ -75,7 +75,7 @@ func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Call, i int) error
 	// managing dependencies between jobs. For that, we return a dummy virtual object without dedicated controller.
 	// Delete normally does not return anything. This however would break all the pipeline for
 	// managing dependencies between jobs. For that, we return a dummy virtual object without dedicated controller.
-	// FIXME: if the call fails, this object will be re-created, and the call will failed with an "existing object" error.
+	// FIXME: if the call fails, this object will be re-created, and the call will fail with an "existing object" error.
 	return lifecycle.VirtualExecution(ctx, r, cr, jobName, func(vjob *v1alpha1.VirtualObject) error {
 		res, err := r.executor.Exec(pod, callable.Container, callable.Command, true)
 

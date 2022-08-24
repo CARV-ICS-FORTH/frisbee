@@ -162,7 +162,6 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 
 // Update will update the metadata and the spec of the Object. If there is a conflict, it will retry again.
 func Update(ctx context.Context, r Reconciler, obj client.Object) error {
-
 	r.Info("OO UpdtMeta",
 		"obj", client.ObjectKeyFromObject(obj),
 		"version", obj.GetResourceVersion(),

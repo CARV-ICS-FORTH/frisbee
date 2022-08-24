@@ -28,11 +28,11 @@ type Client interface {
 
 // TestManagementAPI describes scenario api methods
 type TestManagementAPI interface {
-	// GetTest queries the Kubernetes API for the given Scenario id.
-	GetTest(testName string) (scenario *v1alpha1.Scenario, err error)
+	// GetScenario queries the Kubernetes API for the given Scenario id.
+	GetScenario(testName string) (scenario *v1alpha1.Scenario, err error)
 
-	// ListTests queries the Kubernetes API the selected labels.
-	ListTests(selector string) (tests v1alpha1.ScenarioList, err error)
+	// ListScenarios queries the Kubernetes API the selected labels.
+	ListScenarios(selector string) (tests v1alpha1.ScenarioList, err error)
 
 	// ListVirtualObjects  list all virtual objects with the given selector
 	ListVirtualObjects(namespace string, selectors ...string) (list v1alpha1.VirtualObjectList, err error)

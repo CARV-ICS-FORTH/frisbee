@@ -7,7 +7,7 @@ spec:
   inputs:
     parameters:
       # connectivity
-      cni0: "10.1.100.1"              # my cni0 interface address
+      cni0: "10.1.96.192"              # my cni0 interface address
       host: "192.168.178.3"           # my host IP on local network, on wlo1 interface
       neigh: "10.1.100.254"           # any other machine on my local network
       public: "216.239.34.10"         # any other public IP

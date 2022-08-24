@@ -31,7 +31,7 @@ const (
 
 type HelmInstallFrisbeeOptions struct {
 	Name, Namespace, Chart, Values string
-	NoJetstack                     bool
+	NoCertManager                  bool
 	Verbose                        bool
 }
 
@@ -40,7 +40,7 @@ func PopulateUpgradeInstallFlags(cmd *cobra.Command, options *HelmInstallFrisbee
 	cmd.Flags().StringVar(&options.Name, "name", "frisbee", "installation name")
 	cmd.Flags().StringVar(&options.Namespace, "namespace", "frisbee", "namespace where to install")
 	cmd.Flags().StringVar(&options.Values, "values", "", "path to Helm values file")
-	cmd.Flags().BoolVar(&options.NoJetstack, "no-jetstack", false, "don't install Jetstack")
+	cmd.Flags().BoolVar(&options.NoCertManager, "no-cert-manager", false, "don't install cert-manager")
 }
 
 func UpdateHelmFrisbeeRepo() {
@@ -55,7 +55,7 @@ func UpdateHelmFrisbeeRepo() {
 
 func HelmInstallFrisbee(command []string, options *HelmInstallFrisbeeOptions) {
 	// Install dependencies
-	if !options.NoJetstack {
+	if !options.NoCertManager {
 		err := installCertManager(options)
 		ui.ExitOnError("Helm install cert-manager", err)
 	}

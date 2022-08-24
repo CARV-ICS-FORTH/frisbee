@@ -211,7 +211,7 @@ func TailLogs(c client.Client, testName string) {
 	// TODO Websocket research + plug into Event bus (EventEmitter)
 	// watch for success | error status - in case of connection error on logs watch need fix in 0.8
 	for range time.Tick(time.Second) {
-		scenario, err := c.GetTest(testName)
+		scenario, err := c.GetScenario(testName)
 		ui.ExitOnError("getting test status "+testName, err)
 
 		if scenario == nil {

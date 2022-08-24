@@ -24,9 +24,10 @@ import (
 )
 
 type InspectOptions struct {
-	Dashboards, NoStatus, Events, Logs, NoResources, Charts bool
-	All, Hints                                              bool
-	Shell                                                   string
+	Dashboards, NoStatus, Events, NoResources, Charts bool
+	All, Hints                                        bool
+	Shell                                             string
+	Logs                                              []string
 }
 
 func PopulateInspectFlags(cmd *cobra.Command, options *InspectOptions) {
@@ -34,12 +35,13 @@ func PopulateInspectFlags(cmd *cobra.Command, options *InspectOptions) {
 	cmd.Flags().BoolVar(&options.Dashboards, "dashboards", false, "show information about dashboards")
 	cmd.Flags().BoolVar(&options.NoResources, "no-resources", false, "disable listing resources")
 	cmd.Flags().BoolVar(&options.Events, "events", false, "show events hinting what's happening")
-	cmd.Flags().BoolVar(&options.Logs, "logs", false, "show logs output from executor pod")
 	cmd.Flags().BoolVar(&options.Charts, "charts", false, "show installed templates from dependent Helm charts")
 
 	cmd.Flags().BoolVar(&options.All, "all", false, "enable all no-* features ")
 	cmd.Flags().StringVar(&options.Shell, "shell", "", "opens a shell to a running container")
 	cmd.Flags().BoolVar(&options.Hints, "hints", false, "provide hints for helpful commands")
+
+	cmd.Flags().StringSliceVar(&options.Logs, "logs", nil, "show logs output from executor pod")
 }
 
 func Hint(options *InspectOptions, msg string, sub ...string) {
@@ -78,7 +80,7 @@ func NewInspectTestCmd() *cobra.Command {
 			}
 
 			if !options.NoStatus || options.All {
-				test, err := client.GetTest(testName)
+				test, err := client.GetScenario(testName)
 				ui.ExitOnError("Getting Test Information", err)
 
 				if test != nil {
@@ -91,8 +93,6 @@ func NewInspectTestCmd() *cobra.Command {
 					ui.ExitOnError("== Scenario Status ==", err)
 
 					Hint(&options, "For more information use:", "kubectl describe scenario -n", testName)
-				} else {
-					ui.SuccessAndExit("no such test:", testName)
 				}
 			}
 
@@ -101,7 +101,7 @@ func NewInspectTestCmd() *cobra.Command {
 				err := common.GetFrisbeeResources(cmd, testName)
 				ui.ExitOnError("== Active Frisbee Resources ==", err)
 				Hint(&options, "For more Frisbee Resource information use:",
-					"kubectl describe <Kind> [Names...] -n", testName)
+					"kubectl describe <Kind>.frisbee.dev [Names...] -n", testName)
 
 				/*
 					ui.NL()
@@ -144,7 +144,7 @@ func NewInspectTestCmd() *cobra.Command {
 				Hint(&options, "For more events use:", "kubectl get events -n", testName)
 			}
 
-			if options.Logs || options.All {
+			if options.Logs != nil || options.All {
 				ui.NL()
 				vobjects, err := client.ListVirtualObjects(testName)
 
@@ -157,10 +157,10 @@ func NewInspectTestCmd() *cobra.Command {
 				ui.ExitOnError("== Logs From Virtual Objects ==", err)
 
 				ui.NL()
-				err = common.GetPodLogs(cmd, testName, false)
+				err = common.GetPodLogs(testName, false, options.Logs...)
 				ui.ExitOnError("== Logs From Pods ==", err)
 
-				Hint(&options, "For more logs use:", "kubectl logs -n", testName, "pod/<podName>")
+				Hint(&options, "For more logs use:", "kubectl logs -n", testName, "<podNames>")
 			}
 		},
 	}

@@ -34,7 +34,7 @@ func NewUninstallCmd() *cobra.Command {
 
 			ui.Verbose = true
 
-			err := common.DeleteTests(common.ManagedNamespace, nil)
+			err := common.DeleteNamespaces(common.ManagedNamespace)
 			ui.ExitOnError("Deleting test-cases", err)
 
 			_, err = process.Execute("helm", "uninstall", "--namespace", namespace, name)

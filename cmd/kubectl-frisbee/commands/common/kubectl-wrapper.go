@@ -19,8 +19,11 @@ package common
 import (
 	"fmt"
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
+	"github.com/carv-ics-forth/frisbee/pkg/structure"
 	"github.com/carv-ics-forth/frisbee/pkg/ui"
 	"github.com/kubeshop/testkube/pkg/process"
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/utils/exec"
@@ -34,6 +37,57 @@ var (
 )
 
 var Execute = process.Execute
+
+func SetQuota(testName string, cpu, memory string) error {
+	if cpu == "" && memory == "" {
+		return nil
+	}
+
+	// Create quota specification
+	scheme := v1alpha1.Scheme{
+		Inputs: &v1alpha1.Inputs{Parameters: map[string]string{"CPU": cpu, "Memory": memory}},
+		Spec: []byte(`
+---
+apiVersion: v1			
+kind: ResourceQuota
+metadata:
+ name: mem-cpu-quota
+spec:
+ hard:
+  {{- if .Inputs.Parameters.CPU}}
+    requests.cpu: {{.Inputs.Parameters.CPU}}
+    limits.cpu: {{.Inputs.Parameters.CPU}}
+  {{- end}}
+  {{- if .Inputs.Parameters.Memory}}
+    requests.memory: {{.Inputs.Parameters.Memory}}
+    limits.memory: {{.Inputs.Parameters.Memory}}
+   {{- end}}
+`)}
+
+	quota, err := v1alpha1.ExprState(scheme.Spec).Evaluate(scheme)
+	if err != nil {
+		return errors.Wrapf(err, "cannot set quota")
+	}
+
+	// Create random file
+	f, err := os.CreateTemp("/tmp", testName)
+	if err != nil {
+		return errors.Wrapf(err, "cannot create quota file")
+	}
+
+	if _, err := f.WriteString(quota); err != nil {
+		return errors.Wrapf(err, "cannot store quota file")
+	}
+
+	if err := f.Sync(); err != nil {
+		return errors.Wrapf(err, "cannot sync quota file")
+	}
+
+	command := []string{"apply", "--wait", "-n", testName, "-f", f.Name()}
+
+	_, err = process.Execute(Kubectl, command...)
+	return err
+}
 
 func WaitTestSuccess(testName string) error {
 	command := []string{"wait", "-n", testName,
@@ -60,12 +114,31 @@ func NotFound(testName, out string) bool {
 	return out == fmt.Sprintf("No resources found in %s namespace.\n", testName)
 }
 
-func GetPodLogs(cmd *cobra.Command, testName string, tail bool) error {
+func GetPodLogs(testName string, tail bool, pods ...string) error {
 	command := []string{"logs", "-n", testName,
-		"-l", fmt.Sprintf("%s", v1alpha1.LabelScenario),
 		"-c", v1alpha1.MainContainerName,
 		"--prefix=true",
-		fmt.Sprintf("--follow=%t", tail),
+	}
+
+	if tail {
+		// If tail, print everything
+		command = append(command, fmt.Sprintf("--follow=true"))
+	} else {
+		command = append(command, fmt.Sprintf("--tail=5"))
+	}
+
+	switch {
+	// Run with --logs all pod1 ...
+	case len(pods) > 1 && structure.ContainsStrings(pods, "all"):
+		return errors.Errorf("expects either 'all' or pod names")
+	// Run with --logs all
+	case len(pods) == 1 && pods[0] == "all":
+		command = append(command, "-l", fmt.Sprintf("%s", v1alpha1.LabelScenario))
+		// Run with --logs pod1 pod2 ...
+	case pods != nil:
+		command = append(command, pods...)
+	default:
+		return errors.Errorf("invalid pod arguments: '%v'", pods)
 	}
 
 	getLogs := func() (done bool, err error) {
@@ -74,7 +147,10 @@ func GetPodLogs(cmd *cobra.Command, testName string, tail bool) error {
 		case NotFound(testName, string(out)): // resource not found
 			return false, nil
 		case err != nil: // execution error
-			return false, err
+			if tail { // on tail, we want to ignore errors and continue
+				return false, nil
+			}
+			return false, err // without tail, we want to return the error immediately
 		default: // completed
 			return true, nil
 		}
@@ -325,22 +401,6 @@ func RunTest(testName string, testFile string, dryrun bool) error {
 	return err
 }
 
-func DeleteTests(selector string, testNames []string) error {
-	command := []string{"delete", "namespace",
-		// "--dry-run=client",
-		"--cascade=foreground",
-	}
-
-	if selector != "" {
-		command = append(command, "-l", ManagedNamespace)
-	} else {
-		command = append(command, testNames...)
-	}
-
-	_, err := process.LoggedExecuteInDir("", os.Stdout, Kubectl, command...)
-	return err
-}
-
 func ListHelm(cmd *cobra.Command, testName string) error {
 	command := []string{"list", "-n", testName}
 
@@ -356,4 +416,83 @@ func ListHelm(cmd *cobra.Command, testName string) error {
 
 	ui.Info(string(out))
 	return err
+}
+
+func CreateNamespace(name string, labels ...string) error {
+	// Create namespace
+	command := []string{"create", "namespace", name}
+
+	_, err := process.Execute(Kubectl, command...)
+	if err != nil {
+		return errors.Wrapf(err, "cannot create namespace")
+	}
+
+	// Label namespace
+	if labels != nil {
+		command = []string{"label", "namespaces", name, "--overwrite=true",
+			strings.Join(labels, ",")}
+
+		_, err := process.Execute(Kubectl, command...)
+		if err != nil {
+			return errors.Wrapf(err, "cannot label namespace")
+		}
+	}
+
+	return nil
+}
+
+func DeleteNamespaces(selector string, testNames ...string) error {
+	command := []string{"delete", "namespace",
+		// "--dry-run=client",
+		"--cascade=foreground",
+	}
+
+	if selector != "" {
+		command = append(command, "-l", ManagedNamespace)
+	} else {
+		command = append(command, testNames...)
+	}
+
+	_, err := process.Execute(Kubectl, command...)
+	return errors.Wrapf(err, "cannot delete namespace")
+}
+
+var K8SRemoveFinalizer = []string{
+	"--patch=\\'[", "{",
+	"op:", "remove,",
+	"path:", "/metadata/finalizers",
+	"}", "]\\'",
+}
+
+// ForceDelete iterates the Frisbee CRDs and remove its finalizers.
+func ForceDelete(testName string) error {
+
+	crds := []string{Scenarios, Clusters, Services, Chaos, Cascades, Calls, VirtualObjects, Templates}
+
+	for _, crd := range crds {
+		resourceQuery := []string{"get", crd, "-n", testName, "-o", "jsonpath='{.items[*].metadata.name}'"}
+
+		resources, err := process.Execute(Kubectl, resourceQuery...)
+
+		logrus.Warn("Resources:", resources, " a ", string(resources))
+
+		switch {
+		case err != nil:
+			ui.Debug("skip operation", crd, err.Error())
+		case string(resources) == "''":
+			ui.Debug(crd, " resources are deleted.")
+		default:
+			patch := []string{"patch", crd, "-n", testName, "--type", "json"}
+			patch = append(patch, K8SRemoveFinalizer...)
+			patch = append(patch, string(resources))
+
+			ui.Debug("Use patch", Kubectl, strings.Join(patch, " "))
+
+			if _, err := process.Execute(Kubectl, patch...); err != nil {
+				return errors.Wrapf(err, "cannot patch '%s' finalizers", crd)
+			}
+		}
+	}
+
+	return nil
 }
