@@ -18,13 +18,14 @@ package scenario
 
 import (
 	"context"
-
+	"fmt"
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	chaosutils "github.com/carv-ics-forth/frisbee/controllers/chaos/utils"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
 	"github.com/carv-ics-forth/frisbee/controllers/common/lifecycle"
 	serviceutils "github.com/carv-ics-forth/frisbee/controllers/service/utils"
 	"github.com/pkg/errors"
+	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -80,12 +81,29 @@ func (r *Controller) service(ctx context.Context, t *v1alpha1.Scenario, action v
 }
 
 func (r *Controller) cluster(ctx context.Context, t *v1alpha1.Scenario, action v1alpha1.Action) (client.Object, error) {
+	{ // Validate job requirements
+		if action.Cluster.Placement != nil {
+			// ensure there are at least two physical nodes for placement to make sense
+			var nodes corev1.NodeList
+
+			if err := r.GetClient().List(ctx, &nodes); err != nil {
+				return nil, errors.Wrapf(err, "cannot list physical nodes")
+			}
+
+			if len(nodes.Items) < 2 {
+				return nil, errors.Errorf("placement policies require at least two physical nodes. '%d' nodes were found", len(nodes.Items))
+			}
+
+			// TODO: check compatibility with labels and taints
+		}
+	}
+
 	if err := expandMapInputs(ctx, r, t.GetNamespace(), &action.Cluster.Inputs); err != nil {
 		return nil, errors.Wrapf(err, "input error")
 	}
 
 	var job v1alpha1.Cluster
-
+	// Create job specification
 	job.SetGroupVersionKind(v1alpha1.GroupVersion.WithKind("Cluster"))
 	job.SetNamespace(t.GetNamespace())
 	job.SetName(action.Name)
@@ -150,22 +168,100 @@ func (r *Controller) cascade(ctx context.Context, t *v1alpha1.Scenario, action v
 	return &job, nil
 }
 
+/*
+
+func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Call, i int) error {
+
+	// Call normally does not return anything. This however would break all the pipeline for
+	// managing dependencies between jobs. For that, we return a dummy virtual object without dedicated controller.
+	// FIXME: if the call fails, this object will be re-created, and the call will fail with an "existing object" error.
+	return lifecycle.VirtualExecution(ctx, r, cr, jobName, func(vjob *v1alpha1.VirtualObject) error {
+		res, err := r.executor.Exec(pod, callable.Container, callable.Command, true)
+
+		defer func() {
+			// Use the virtual object to store the remote execution logs.
+			vjob.Status.Data = map[string]string{
+				"info":   fmt.Sprintf("Callable '%s/%s'", serviceName, callable.Container),
+				"stdout": res.Stdout,
+				"stderr": res.Stderr,
+			}
+		}()
+
+		r.Logger.Info("CallOutput",
+			"job", client.ObjectKeyFromObject(cr),
+			"stdout", res.Stdout,
+			"stderr", res.Stderr,
+		)
+
+		if err != nil {
+			return errors.Wrapf(err, "call [%s/%s] has failed", serviceName, callable.Container)
+		}
+
+		if cr.Spec.Expect != nil {
+			r.Logger.Info("AssertCall",
+				"job", client.ObjectKeyFromObject(cr),
+				"expect", cr.Spec.Expect,
+			)
+
+			expect := cr.Spec.Expect[i]
+
+			if expect.Stdout != nil {
+				matchStdout, err := regexp.MatchString(*expect.Stdout, res.Stdout)
+				if err != nil {
+					return errors.Wrapf(err, "regex error")
+				}
+
+				if !matchStdout {
+					return errors.Errorf("Mismatched stdout. Expected: '%s' but got: '%s' --", *expect.Stdout, res.Stdout)
+				}
+			}
+
+			if expect.Stderr != nil {
+				matchStderr, err := regexp.MatchString(*expect.Stderr, res.Stderr)
+				if err != nil {
+					return errors.Wrapf(err, "regex error")
+				}
+
+				if !matchStderr {
+					return errors.Errorf("Mismatched stderr. Expected: '%s' but got '%s' --", *expect.Stderr, res.Stderr)
+				}
+			}
+		}
+
+		return nil
+	})
+}
+
+*/
+
 func (r *Controller) delete(ctx context.Context, t *v1alpha1.Scenario, action v1alpha1.Action) (client.Object, error) {
+	r.Info("-> Delete", "obj", action.Name, "targets", action.Delete.Jobs)
+	defer r.Info("<- Delete", "obj", action.Name, "targets", action.Delete.Jobs)
+
+	// ensure that all references jobs are deletable
+	deletableJobs := make([]client.Object, 0, len(action.Delete.Jobs))
+	for _, refJob := range action.Delete.Jobs {
+		job, deletable := r.view.IsDeletable(refJob)
+		if !deletable {
+			return nil, errors.Errorf("job '%s' is not currently deletable. Inspect Job: '%v'", refJob, job)
+		}
+
+		deletableJobs = append(deletableJobs, job)
+	}
+
 	// Delete normally does not return anything. This however would break all the pipeline for
 	// managing dependencies between jobs. For that, we return a dummy virtual object without dedicated controller.
 	return nil, lifecycle.VirtualExecution(ctx, r, t, action.Name, func(_ *v1alpha1.VirtualObject) error {
-		for _, refJob := range action.Delete.Jobs {
-			job, deletable := r.view.IsDeletable(refJob)
-			if !deletable {
-				return errors.Errorf("referenced job '%s' is not currently deletable. Inspect Job: '%v'",
-					refJob, job)
-			}
 
-			if err := lifecycle.VirtualExecution(ctx, r, t, refJob, func(_ *v1alpha1.VirtualObject) error {
-				common.Delete(ctx, r, job)
+		for _, deletableJob := range deletableJobs {
+			// a descriptive name makes it easy to follow the deletion flow from the cli.
+			deleteJobName := fmt.Sprintf("%s-%s", action.Name, deletableJob.GetName())
+
+			if err := lifecycle.VirtualExecution(ctx, r, t, deleteJobName, func(_ *v1alpha1.VirtualObject) error {
+				common.Delete(ctx, r, deletableJob)
 				return nil
 			}); err != nil {
-				return errors.Wrapf(err, "cannot create mockup for deleted job '%s'", refJob)
+				return errors.Wrapf(err, "virtual-execution error '%s'", deleteJobName)
 			}
 		}
 

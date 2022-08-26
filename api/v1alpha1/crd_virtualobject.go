@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"github.com/carv-ics-forth/frisbee/pkg/structure"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/json"
 )
@@ -63,11 +64,11 @@ type VirtualObjectStatus struct {
 func (in VirtualObjectStatus) Table() (header []string, data [][]string) {
 	var values []string
 
-	for key, value := range in.Data {
+	for _, key := range structure.SortedMapKeys(in.Data) {
 		header = append(header, key)
 
 		// encode it to escape newlines and all that stuff that destroy the nice printing.
-		encValue, _ := json.Marshal(value)
+		encValue, _ := json.Marshal(in.Data[key])
 
 		values = append(values, string(encValue))
 	}

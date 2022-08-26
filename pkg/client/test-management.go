@@ -129,7 +129,7 @@ func (c TestManagementClient) ListScenarios(selector string) (scenarios v1alpha1
 
 		case 1:
 			if !nm.GetDeletionTimestamp().IsZero() { // Some rewrite for output to make more sense
-				scenarios.Items[0].Status.Phase = "Terminating"
+				localList.Items[0].Status.Phase = "Terminating"
 			}
 
 			scenarios.Items = append(scenarios.Items, localList.Items[0])

@@ -19,6 +19,7 @@ package grafana
 import (
 	"context"
 	"fmt"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sync"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
@@ -37,7 +38,7 @@ type Options struct {
 
 	RegisterFor metav1.Object
 
-	Logger *logr.Logger
+	Logger logr.Logger
 
 	HTTPEndpoint *string
 }
@@ -59,7 +60,7 @@ func WithRegisterFor(obj metav1.Object) Option {
 }
 
 // WithLogger will use the given logger for printing info.
-func WithLogger(r *logr.Logger) Option {
+func WithLogger(r logr.Logger) Option {
 	return func(args *Options) {
 		args.Logger = r
 	}
@@ -83,7 +84,10 @@ func New(ctx context.Context, setters ...Option) error {
 
 	client := &Client{ctx: ctx}
 
-	if args.Logger != nil {
+	if args.Logger == (logr.Logger{}) {
+		client.logger = zap.New(zap.UseDevMode(true))
+		client.logger = client.logger.WithName("default.grafana")
+	} else {
 		client.logger = args.Logger
 	}
 
@@ -133,12 +137,12 @@ func New(ctx context.Context, setters ...Option) error {
 	return nil
 }
 
-var clientsLocker sync.Mutex
+var clientsLocker sync.RWMutex
 var clients = map[string]*Client{}
 
 type Client struct {
 	ctx    context.Context
-	logger *logr.Logger
+	logger logr.Logger
 
 	Conn *sdk.Client
 }
@@ -148,9 +152,9 @@ type Client struct {
 func SetClientFor(obj metav1.Object, c *Client) {
 	scenario := v1alpha1.GetScenarioLabel(obj)
 
-	clientsLocker.Lock()
+	clientsLocker.RLock()
 	_, exists := clients[scenario]
-	clientsLocker.Unlock()
+	clientsLocker.RUnlock()
 
 	if exists {
 		panic(errors.Errorf("client is already registered for scenario '%s'", scenario))
@@ -167,9 +171,9 @@ func ClientExistsFor(obj metav1.Object) bool {
 		return false
 	}
 
-	clientsLocker.Lock()
+	clientsLocker.RLock()
 	_, exists := clients[v1alpha1.GetScenarioLabel(obj)]
-	clientsLocker.Unlock()
+	clientsLocker.RUnlock()
 
 	return exists
 }
@@ -179,11 +183,12 @@ func ClientExistsFor(obj metav1.Object) bool {
 func GetClientFor(obj metav1.Object) *Client {
 	scenario := v1alpha1.GetScenarioLabel(obj)
 
-	clientsLocker.Lock()
+	clientsLocker.RLock()
 	c, exists := clients[scenario]
-	clientsLocker.Unlock()
+	clientsLocker.RUnlock()
 
 	if !exists {
+		// TODO: this may panic on a restarted controller as it loses state about Grafana clients.
 		panic(errors.Errorf("Grafana client for scenario '%s' does not exist", scenario))
 	}
 

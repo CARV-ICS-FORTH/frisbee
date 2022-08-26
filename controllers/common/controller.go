@@ -117,11 +117,15 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 		if controllerutil.AddFinalizer(obj, r.Finalizer()) {
 			r.Info("AddFinalizer",
 				"obj", client.ObjectKeyFromObject(obj),
-				"finalizer", r.Finalizer())
+				"finalizer", r.Finalizer(),
+				"current", obj.GetFinalizers())
 
-			if err := Update(ctx, r, obj); err != nil {
-				return RequeueWithError(err)
+			if AbortAfterRetry(ctx, r.V(0), func() error {
+				return Update(ctx, r, obj)
+			}) {
+				r.Info("Abort retrying to remove finalizer", "obj", client.ObjectKeyFromObject(obj))
 			}
+
 			return Stop()
 		}
 
@@ -144,10 +148,14 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 			if controllerutil.RemoveFinalizer(obj, r.Finalizer()) {
 				r.Info("RemoveFinalizer",
 					"obj", client.ObjectKeyFromObject(obj),
-					"finalizer", r.Finalizer())
+					"finalizer", r.Finalizer(),
+					"current", obj.GetFinalizers(),
+				)
 
-				if err := Update(ctx, r, obj); err != nil {
-					return RequeueAfter(time.Second)
+				if AbortAfterRetry(ctx, r.V(0), func() error {
+					return Update(ctx, r, obj)
+				}) {
+					r.Info("Abort retrying to remove finalizer", "obj", client.ObjectKeyFromObject(obj))
 				}
 
 				return Stop()

@@ -32,10 +32,7 @@ var backoff = wait.Backoff{
 	Steps:    3,
 }
 
-func AbortAfterRetry(ctx context.Context, logger *logr.Logger, cb func() error) bool {
-	if logger == nil {
-		panic("empty logger")
-	}
+func AbortAfterRetry(ctx context.Context, logger logr.Logger, cb func() error) bool {
 
 	isRetriable := func(err error) bool {
 		// TODO: explicitly separate the NotFound from other types of errors.

@@ -83,7 +83,7 @@ func ValidatePlacement(policy *PlacementSpec, callIndex map[string]*Action) erro
 			}
 
 			if action.ActionType != ActionCluster && action.ActionType != ActionService {
-				return errors.Errorf("referenced action '%s' is type '%s'. Expected '%s|%s'",
+				return errors.Errorf("referenced action '%s' is type '%s'. Expected: '%s|%s'",
 					ref, action.ActionType, ActionCluster, ActionService)
 			}
 

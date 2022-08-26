@@ -89,7 +89,7 @@ func (expr ExprState) Evaluate(state interface{}) (string, error) {
 	return out.String(), nil
 }
 
-// GoValuate  wraps the Evaluate function to the GoValuate expressions.
+// GoValuate wraps the Evaluate function to the GoValuate expressions.
 func (expr ExprState) GoValuate(state interface{}) (bool, error) {
 	if expr == "" {
 		return true, nil
@@ -102,11 +102,7 @@ func (expr ExprState) GoValuate(state interface{}) (bool, error) {
 
 	expression, err := govaluate.NewEvaluableExpression(out)
 	if err != nil {
-		if strings.Contains(err.Error(), "Invalid token") {
-			return false, errors.Wrapf(err, "Invalid  expression '%s'.", expr)
-		}
-
-		return false, errors.Wrapf(err, "Invalid 'expr' expression '%s': %v", expr, err)
+		return false, errors.Wrapf(err, "Invalid  expression '%s'.", expr)
 	}
 
 	// The following loop converts govaluate variables (which we don't use), into strings. This

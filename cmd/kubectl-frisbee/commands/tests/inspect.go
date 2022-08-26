@@ -24,16 +24,16 @@ import (
 )
 
 type InspectOptions struct {
-	Dashboards, NoStatus, Events, NoResources, Charts bool
-	All, Hints                                        bool
-	Shell                                             string
-	Logs                                              []string
+	Dashboards, NoStatus, Events, ExternalResources, Charts bool
+	All, Hints                                              bool
+	Shell                                                   string
+	Logs                                                    []string
 }
 
 func PopulateInspectFlags(cmd *cobra.Command, options *InspectOptions) {
 	cmd.Flags().BoolVar(&options.NoStatus, "no-status", false, "disable status from scenario")
 	cmd.Flags().BoolVar(&options.Dashboards, "dashboards", false, "show information about dashboards")
-	cmd.Flags().BoolVar(&options.NoResources, "no-resources", false, "disable listing resources")
+	cmd.Flags().BoolVar(&options.ExternalResources, "all-resources", false, "list Chaos and K8s resources")
 	cmd.Flags().BoolVar(&options.Events, "events", false, "show events hinting what's happening")
 	cmd.Flags().BoolVar(&options.Charts, "charts", false, "show installed templates from dependent Helm charts")
 
@@ -79,6 +79,8 @@ func NewInspectTestCmd() *cobra.Command {
 				return
 			}
 
+			// Always-on functions
+
 			if !options.NoStatus || options.All {
 				test, err := client.GetScenario(testName)
 				ui.ExitOnError("Getting Test Information", err)
@@ -91,27 +93,30 @@ func NewInspectTestCmd() *cobra.Command {
 					ui.NL()
 					err = common.RenderList(cmd, test.Status, os.Stdout)
 					ui.ExitOnError("== Scenario Status ==", err)
-
-					Hint(&options, "For more information use:", "kubectl describe scenario -n", testName)
 				}
-			}
 
-			if !options.NoResources || options.All {
 				ui.NL()
-				err := common.GetFrisbeeResources(cmd, testName)
+				err = common.GetFrisbeeResources(cmd, testName)
 				ui.ExitOnError("== Active Frisbee Resources ==", err)
 				Hint(&options, "For more Frisbee Resource information use:",
 					"kubectl describe <Kind>.frisbee.dev [Names...] -n", testName)
 
-				/*
-					ui.NL()
-					err = common.GetK8sResources(cmd, testName)
-					ui.ExitOnError("== Active K8s Resources ==", err)
+				Hint(&options, "For more information use:", "kubectl describe scenario -n", testName)
+			}
 
-					Hint(&options, "For more K8s Resource information use:",
-						"kubectl describe <Kind> [Names...] -n", testName)
+			if options.ExternalResources || options.All {
+				ui.NL()
+				err := common.GetChaosResources(cmd, testName)
+				ui.ExitOnError("== Active Chaos Resources ==", err)
+				Hint(&options, "For more Chaos Resource information use:",
+					"kubectl describe <Kind>.chaos-mesh.org [Names...] -n", testName)
 
-				*/
+				ui.NL()
+				err = common.GetK8sResources(cmd, testName)
+				ui.ExitOnError("== Active K8s Resources ==", err)
+
+				Hint(&options, "For more K8s Resource information use:",
+					"kubectl describe <Kind> [Names...] -n", testName)
 			}
 
 			if options.Dashboards || options.All {

@@ -94,7 +94,7 @@ func VirtualExecution(ctx context.Context, r common.Reconciler, parent client.Ob
 
 	// Step 4. Append information for stored data, if any
 	if len(vJob.Status.Data) > 0 {
-		vJob.Status.Message = fmt.Sprintf("%s. Stored Data: '%s'", vJob.Status.Message, structure.MapKeys(vJob.Status.Data))
+		vJob.Status.Message = fmt.Sprintf("%s. <StoredData>: '%s'", vJob.Status.Message, structure.SortedMapKeys(vJob.Status.Data))
 	}
 
 	// Step 5. Update the status of the mockup. This will be captured by the lifecycle.

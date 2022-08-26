@@ -20,6 +20,7 @@ import (
 	"fmt"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"strings"
+	"time"
 )
 
 // +kubebuilder:object:root=true
@@ -39,7 +40,7 @@ func (in *Scenario) Table() (header []string, data [][]string) {
 	header = []string{
 		"Test",
 		"Scenario",
-		"Created",
+		"Age",
 		"Actions",
 		"Phase",
 	}
@@ -54,7 +55,7 @@ func (in *Scenario) Table() (header []string, data [][]string) {
 	data = append(data, []string{
 		in.GetNamespace(),
 		in.GetName(),
-		in.GetCreationTimestamp().String(),
+		time.Now().Sub(in.GetCreationTimestamp().Time).Round(time.Second).String(),
 		scheduled,
 		in.Status.Phase.String(),
 	})
@@ -218,7 +219,7 @@ func (in ScenarioList) Table() (header []string, data [][]string) {
 	header = []string{
 		"Test",
 		"Scenario",
-		"Created",
+		"Age",
 		"Actions",
 		"Phase",
 	}

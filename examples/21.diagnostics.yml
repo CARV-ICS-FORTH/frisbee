@@ -65,3 +65,11 @@ spec:
       call:
         callable: dns
         services: [node-0]
+
+
+    # When all actions are done, delete looping servers to gracefully exit the experiment
+    - action: Delete
+      name: delete-servers
+      depends: { running: [ node ], success: [dns]}
+      delete:
+        jobs: [ node ]

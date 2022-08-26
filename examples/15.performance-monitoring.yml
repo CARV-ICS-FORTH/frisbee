@@ -86,5 +86,12 @@ spec:
     - action: Delete
       name: delete-group-b
       depends: { running: [ group-b ],  after: "30s" }
-      delete: # references jobs should be action.
+      delete: # referenced jobs should be actions.
         jobs: [ group-b ]
+
+    # When all actions are done, delete looping servers to gracefully exit the experiment
+    - action: Delete
+      name: teardown
+      depends: { running: [ server ], success: [delete-group-b]}
+      delete:
+        jobs: [ server ]

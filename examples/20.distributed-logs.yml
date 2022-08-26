@@ -62,7 +62,7 @@ spec:
               set -eum
               cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app
     
-              iperf -c {{.Inputs.Parameters.target}} -t 5000 -i 5  >> /logs/${HOSTNAME}
+              iperf -c {{.Inputs.Parameters.target}} -t 360 -i 5  >> /logs/${HOSTNAME}
 
 ---
 # In order to have shared logs, we must first create a network volume.
@@ -112,3 +112,11 @@ spec:
           - { target: server, logClaimName: logs  }
         schedule:
           cron: "@every 1m"
+
+
+    # When all actions are done, delete looping servers to gracefully exit the experiment
+    - action: Delete
+      name: teardown
+      depends: { running: [ server, logviewer], success: [clients] } # Notice: We want the logviewer to remain running
+      delete:
+        jobs: [ server ]

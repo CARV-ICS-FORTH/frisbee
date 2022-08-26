@@ -25,7 +25,7 @@ operator:
 
   name: "frisbee-operator"
 
-  advertisedHost: "139.91.92.82"
+  advertisedHost: "10.1.96.192"
 
   webhook:
     k8s:

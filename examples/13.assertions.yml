@@ -57,10 +57,18 @@ spec:
       name: clients
       depends: { running: [ server ] }  # Depends are pre-execution conditions
       assert:                           # Assert are post-execution conditions
-        state: '{{.IsRunning "server"}}'
+        state: '{{.IsRunning "server"}} || {{.IsTerminating "server"}}'
       cluster:
         templateRef: iperf.client
         inputs:
-          - { target: server, duration: "400" }
-          - { target: server, duration: "400" }
-          - { target: server, duration: "400" }
+          - { target: server, duration: "120" }
+          - { target: server, duration: "120" }
+          - { target: server, duration: "120" }
+
+
+    # When all actions are done, delete looping servers to gracefully exit the experiment
+    - action: Delete
+      name: teardown
+      depends: { running: [server], success: [clients]}
+      delete:
+        jobs: [ server ]

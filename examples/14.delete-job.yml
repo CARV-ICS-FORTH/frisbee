@@ -53,10 +53,17 @@ spec:
         inputs:
           - { target: server }
 
-    # Delete the client, after 2 minutes
+    # Delete the client, after 1 minute
     - action: Delete
-      name: delete-action
-      depends: { after: "2m" }
-      delete: # references jobs should be action.
+      name: delete-client
+      depends: { after: "1m" }
+      delete: # referenced jobs should be actions.
         jobs: [ client ]
 
+
+    # When all actions are done, delete looping servers to gracefully exit the experiment
+    - action: Delete
+      name: teardown
+      depends: { running: [server], success: [delete-client]} # # Notice: dependency to a Delete action.
+      delete:
+        jobs: [ server ]

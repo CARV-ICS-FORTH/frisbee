@@ -108,13 +108,13 @@ func main() {
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme: scheme,
 		// Namespace:              namespace,
-		MetricsBindAddress: metricsAddr,
-		//		Host:                   "0.0.0.0",
+		//	MetricsBindAddress: metricsAddr,
+		Host:                   "0.0.0.0",
 		Port:                   webhookPort,
 		CertDir:                certDir,
 		HealthProbeBindAddress: probeAddr,
-		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "233dac68.frisbee.dev",
+		//	LeaderElection:         enableLeaderElection,
+		//	LeaderElectionID:       "233dac68.frisbee.dev",
 	})
 	if err != nil {
 		setupLog.Error(err, "cannot start manager")

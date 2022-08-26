@@ -19,6 +19,7 @@ package expressions
 import (
 	"context"
 	"fmt"
+	"github.com/go-logr/logr"
 	"reflect"
 	"strings"
 	"time"
@@ -58,7 +59,7 @@ type endpoint struct {
 	Name      string
 }
 
-func (e endpoint) String() string {
+func (e *endpoint) String() string {
 	return fmt.Sprintf("%s/%s/%s", e.Namespace, e.Kind, e.Name)
 }
 
@@ -79,17 +80,17 @@ func (e *endpoint) Fields() int {
 	return reflect.TypeOf(*e).NumField()
 }
 
-func SetAlert(ctx context.Context, job client.Object, expr v1alpha1.ExprMetrics) error {
+func SetAlert(ctx context.Context, logger logr.Logger, job client.Object, expr v1alpha1.ExprMetrics) error {
 	alert, err := grafana.ParseAlertExpr(expr)
 	if err != nil {
 		return errors.Wrapf(err, "invalid alert expression")
 	}
 
-	name := endpoint{
+	name := (&endpoint{
 		Namespace: job.GetNamespace(),
 		Kind:      job.GetObjectKind().GroupVersionKind().Kind,
 		Name:      job.GetName(),
-	}.String()
+	}).String()
 
 	msg := fmt.Sprintf("Alert [%s] for object %s %s has been fired", name,
 		job.GetObjectKind().GroupVersionKind(),
@@ -97,7 +98,7 @@ func SetAlert(ctx context.Context, job client.Object, expr v1alpha1.ExprMetrics)
 
 	// push the alert to grafana. Due to the distributed nature, the requested dashboard may not be in Grafana yet.
 	// If the dashboard is not found, retry a few times before failing.
-	if common.AbortAfterRetry(ctx, nil, func() error {
+	if common.AbortAfterRetry(ctx, logger, func() error {
 		return grafana.GetClientFor(job).SetAlert(ctx, alert, name, msg)
 	}) {
 		return errors.Errorf("cannot set the alarm")

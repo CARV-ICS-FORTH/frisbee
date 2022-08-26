@@ -52,7 +52,7 @@ spec:
               set -eum
               cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app
     
-              iperf -c {{.Inputs.Parameters.target}} -t 5000
+              iperf -c {{.Inputs.Parameters.target}} -t 360
 
 ---
 apiVersion: frisbee.dev/v1alpha1
@@ -87,3 +87,11 @@ spec:
           - { target: server }
         schedule:
           cron: "@every 1m"
+
+
+    # When all actions are done, delete looping servers to gracefully exit the experiment
+    - action: Delete
+      name: teardown
+      depends: { running: [ server], success: [client, noisy-neighbors] } # Notice: Killing is regarded as a 'looping' action.
+      delete:
+        jobs: [ server ]

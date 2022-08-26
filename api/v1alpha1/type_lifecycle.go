@@ -53,8 +53,8 @@ const (
 	// ConditionPerformanceAlert indicates an alert received by Grafana concerning the real-time performance of the system.
 	ConditionPerformanceAlert = ConditionType("PerformanceAlert")
 
-	// ConditionAssert indicate that an assertion condition is false.
-	ConditionAssert = ConditionType("Assert")
+	// ConditionAssertionError indicate that an assertion condition is false.
+	ConditionAssertionError = ConditionType("AssertError")
 )
 
 // Phase is a simple, high-level summary of where the Object is in its lifecycle.
@@ -154,41 +154,43 @@ type ReconcileStatusAware interface {
 
 // StateAggregationFunctions is a set of aggregation functions for managing the lifecycle of different resources.
 type StateAggregationFunctions interface {
-	IsZero() bool
-
-	// IsPending returns true if the given job is Pending phase
+	// IsPending returns true if the given jobs are Pending phase.
 	IsPending(job ...string) bool
-	// IsRunning returns true if the given job is Running phase
+	// IsRunning returns true if the given jobs are Running phase.
 	IsRunning(job ...string) bool
-	// IsSuccessful returns true if the given job is Successful phase
+	// IsSuccessful returns true if the given jobs are Successful phase.
 	IsSuccessful(job ...string) bool
-	// IsFailed returns true if the given job is Failed phase
+	// IsFailed returns true if the given jobs are in the Failed phase.
 	IsFailed(job ...string) bool
+	// IsTerminating returns true if the given jobs are being deleted.
+	IsTerminating(job ...string) bool
 
-	// NumPendingJobs returns the number of jobs in Pending Phase
+	// NumPendingJobs returns the number of jobs in Pending Phase.
 	NumPendingJobs() int
-	// NumRunningJobs returns the number of jobs in Running Phase
+	// NumRunningJobs returns the number of jobs in Running Phase.
 	NumRunningJobs() int
-	// NumSuccessfulJobs returns the number of jobs in Successful Phase
+	// NumSuccessfulJobs returns the number of jobs in Successful Phase.
 	NumSuccessfulJobs() int
-	// NumFailedJobs returns the number of jobs in Failed Phase
+	// NumFailedJobs returns the number of jobs in Failed Phase.
 	NumFailedJobs() int
+	// NumTerminatingJobs returns the number of jobs that are being deleted.
+	NumTerminatingJobs() int
 
-	// ListPendingJobs returns the name of jobs in Pending Phase
+	// ListPendingJobs returns the name of jobs in Pending Phase.
 	ListPendingJobs() []string
-	// ListRunningJobs returns the name of jobs in Running Phase
+	// ListRunningJobs returns the name of jobs in Running Phase.
 	ListRunningJobs() []string
-	// ListSuccessfulJobs returns the name of jobs in Successful Phase
+	// ListSuccessfulJobs returns the name of jobs in Successful Phase.
 	ListSuccessfulJobs() []string
-	// ListFailedJobs returns the name of jobs in Failed Phase
+	// ListFailedJobs returns the name of jobs in Failed Phase.
 	ListFailedJobs() []string
+	// ListTerminatingJobs returns the name of jobs that are being deleted.
+	ListTerminatingJobs() []string
 }
+
+var _ StateAggregationFunctions = (*DefaultClassifier)(nil)
 
 type DefaultClassifier struct{}
-
-func (DefaultClassifier) IsZero() bool {
-	return true
-}
 
 func (DefaultClassifier) IsPending(_ ...string) bool {
 	return false
@@ -203,6 +205,10 @@ func (DefaultClassifier) IsSuccessful(_ ...string) bool {
 }
 
 func (DefaultClassifier) IsFailed(_ ...string) bool {
+	return false
+}
+
+func (DefaultClassifier) IsTerminating(_ ...string) bool {
 	return false
 }
 
@@ -222,6 +228,10 @@ func (DefaultClassifier) NumFailedJobs() int {
 	return 0
 }
 
+func (DefaultClassifier) NumTerminatingJobs() int {
+	return 0
+}
+
 func (DefaultClassifier) ListPendingJobs() []string {
 	return nil
 }
@@ -235,5 +245,9 @@ func (DefaultClassifier) ListSuccessfulJobs() []string {
 }
 
 func (DefaultClassifier) ListFailedJobs() []string {
+	return nil
+}
+
+func (DefaultClassifier) ListTerminatingJobs() []string {
 	return nil
 }

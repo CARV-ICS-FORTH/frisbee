@@ -16,8 +16,8 @@ spec:
     # Alter the container's execution, at runtine
     callables:
       launch:
-        container: app                                            # Target container
-        command:  [ "cowsay", "{{.Inputs.Parameters.message}}" ]  # Function to call
+        container: app                                          # Target container
+        command:  [ "echo", "{{.Inputs.Parameters.message}}" ]  # Function to call
 
 ---
 apiVersion: frisbee.dev/v1alpha1
@@ -43,7 +43,7 @@ spec:
       depends: { running: [ idle ] }
       call:
         callable: launch                              # Function to call
-        services: [idle-1, idle-2, idle-0, idle-1]    # List of target services
+        services: [idle-1, idle-2, idle-0, idle-3]    # List of target services
         expect:
           - stdout: "I am B"
           - stdout: "I am C"
@@ -51,3 +51,11 @@ spec:
           - stdout: "I am D"
         tolerate:                                     # Continue despite an error
           failedJobs: 1
+
+
+    # When all actions are done, delete looping servers to gracefully exit the experiment
+    - action: Delete
+      name: teardown
+      depends: { running: [idle], success: [group-a]}
+      delete:
+        jobs: [ idle ]

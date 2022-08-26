@@ -19,6 +19,7 @@ package scenario
 import (
 	"context"
 	"fmt"
+	"github.com/carv-ics-forth/frisbee/pkg/structure"
 	"net/http"
 	"path/filepath"
 	"sync"
@@ -57,9 +58,9 @@ var (
 )
 
 func (r *Controller) StartTelemetry(ctx context.Context, t *v1alpha1.Scenario) error {
-	telemetryAgents, err := r.ImportTelemetryDashboards(ctx, t)
+	telemetryAgents, err := r.ReferencedTelemetryAgents(ctx, t)
 	if err != nil {
-		return errors.Wrapf(err, "errors with importing dashboards")
+		return errors.Wrapf(err, "importing dashboards")
 	}
 
 	if len(telemetryAgents) == 0 { // there is no need to import the stack of the is no dashboard.
@@ -183,7 +184,7 @@ func (r *Controller) importDashboards(ctx context.Context, t *v1alpha1.Scenario,
 		}
 
 		if err := r.GetClient().Get(ctx, key, &dashboards); err != nil {
-			return errors.Wrapf(err, "cannot find configmap with telemetry agents '%s'", key)
+			return errors.Wrapf(err, "configmap '%s' is missing", key)
 		}
 
 		// avoid duplicates that may be caused when multiple agents share the same dashboard
@@ -225,15 +226,13 @@ func (r *Controller) importDashboards(ctx context.Context, t *v1alpha1.Scenario,
 	return nil
 }
 
-// ImportTelemetryDashboards iterates the referenced services (directly via Service or indirectly via Cluster) and list
+// ReferencedTelemetryAgents iterates the referenced services (directly via Service or indirectly via Cluster) and list
 // all telemetry dashboards that need to be imported
-func (r *Controller) ImportTelemetryDashboards(ctx context.Context, scenario *v1alpha1.Scenario) ([]string, error) {
+func (r *Controller) ReferencedTelemetryAgents(ctx context.Context, scenario *v1alpha1.Scenario) ([]string, error) {
 	dedup := make(map[string]struct{})
 
-	var fromTemplate *v1alpha1.GenerateFromTemplate
-
 	for _, action := range scenario.Spec.Actions {
-		fromTemplate = nil
+		var fromTemplate *v1alpha1.GenerateFromTemplate
 
 		switch action.ActionType {
 		case v1alpha1.ActionService:
@@ -249,19 +248,13 @@ func (r *Controller) ImportTelemetryDashboards(ctx context.Context, scenario *v1
 			return nil, errors.Wrapf(err, "cannot retrieve service spec")
 		}
 
-		// firstly store everything on a map to avoid duplicates
+		// store everything on a map to avoid duplicates
 		for _, dashboard := range spec.Decorators.Telemetry {
 			dedup[dashboard] = struct{}{}
 		}
 	}
 
-	// secondly, return a de-duplicated array
-	imports := make([]string, 0, len(dedup))
-	for dashboard := range dedup {
-		imports = append(imports, dashboard)
-	}
-
-	return imports, nil
+	return structure.SortedMapKeys(dedup), nil
 }
 
 // connectToGrafana creates a dedicated link between the scenario controller and the Grafana service.
@@ -287,9 +280,9 @@ func (r *Controller) connectToGrafana(ctx context.Context, t *v1alpha1.Scenario)
 	}
 
 	return grafana.New(ctx,
-		grafana.WithHTTP(endpoint),    // Connect to ...
-		grafana.WithRegisterFor(t),    // Used by grafana.GetClient(), grafana.ClientExistsFor(), ...
-		grafana.WithLogger(&r.Logger), // Log info
+		grafana.WithHTTP(endpoint),   // Connect to ...
+		grafana.WithRegisterFor(t),   // Used by grafana.GetClient(), grafana.ClientExistsFor(), ...
+		grafana.WithLogger(r.Logger), // Log info
 		grafana.WithNotifications(WebhookURL),
 	)
 }
