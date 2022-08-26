@@ -39,7 +39,6 @@ func buildVirtualObject(parent metav1.Object, name string) *v1alpha1.VirtualObje
 	v1alpha1.PropagateLabels(&vobject, parent)
 
 	v1alpha1.SetScenarioLabel(&vobject.ObjectMeta, parent.GetName())
-	v1alpha1.SetActionLabel(&vobject.ObjectMeta, name)
 	v1alpha1.SetComponentLabel(&vobject.ObjectMeta, v1alpha1.ComponentSUT)
 
 	return &vobject

@@ -19,9 +19,6 @@ package grafana
 import (
 	"context"
 	"fmt"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-	"sync"
-
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
 	"github.com/go-logr/logr"
@@ -29,6 +26,9 @@ import (
 	"github.com/grafana-tools/sdk"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"sync"
 )
 
 type Options struct {
@@ -100,16 +100,16 @@ func New(ctx context.Context, setters ...Option) error {
 			return errors.Wrapf(err, "conn error")
 		}
 
-		if common.AbortAfterRetry(ctx, args.Logger, func() error {
+		if err := wait.ExponentialBackoffWithContext(ctx, common.BackoffForServiceEndpoint, func() (done bool, err error) {
 			resp, errHealth := conn.GetHealth(ctx)
-			if errHealth != nil {
-				return errors.Wrapf(errHealth, "cannot get GrafanaHealth")
+			switch {
+			case errHealth != nil: // API connection error. Just retry
+				return false, nil
+			default:
+				args.Logger.Info("Connected to Grafana", "healthStatus", resp)
+				return true, nil
 			}
-
-			args.Logger.Info("Connected to Grafana", "healthStatus", resp)
-
-			return nil
-		}) {
+		}); err != nil {
 			return errors.Errorf("endpoint '%s' is unreachable", *args.HTTPEndpoint)
 		}
 
@@ -122,9 +122,15 @@ func New(ctx context.Context, setters ...Option) error {
 
 		// Although the notification channel is backed by the Grafana Pod, the Grafana Service is different
 		// from the Alerting Service. For this reason, we must be sure that both Services are linked to the Grafana Pod.
-		if common.AbortAfterRetry(ctx, args.Logger, func() error {
-			return client.SetNotificationChannel(*args.WebhookURL)
-		}) {
+		if err := wait.ExponentialBackoffWithContext(ctx, common.BackoffForServiceEndpoint, func() (done bool, err error) {
+			errCh := client.SetNotificationChannel(*args.WebhookURL)
+			switch {
+			case errCh != nil: // API connection error. Just retry
+				return false, nil
+			default:
+				return true, nil
+			}
+		}); err != nil {
 			return errors.Errorf("notification channel error")
 		}
 	}

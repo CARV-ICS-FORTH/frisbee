@@ -87,6 +87,7 @@ kind: Scenario
 metadata:
   name: distributed-logs
 spec:
+
   actions:
     # Step 0. Enable the log viewer
     - action: Service

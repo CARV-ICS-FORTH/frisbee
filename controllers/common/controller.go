@@ -18,6 +18,7 @@ package common
 
 import (
 	"context"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"reflect"
 	"time"
 
@@ -120,10 +121,14 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 				"finalizer", r.Finalizer(),
 				"current", obj.GetFinalizers())
 
-			if AbortAfterRetry(ctx, r.V(0), func() error {
-				return Update(ctx, r, obj)
-			}) {
-				r.Info("Abort retrying to remove finalizer", "obj", client.ObjectKeyFromObject(obj))
+			if err := wait.ExponentialBackoffWithContext(ctx, BackoffForK8sEndpoint, func() (done bool, err error) {
+				if errUpdate := Update(ctx, r, obj); errUpdate != nil {
+					return false, nil
+				} else {
+					return true, nil
+				}
+			}); err != nil {
+				r.Error(err, "Abort retrying to add finalizer", "obj", client.ObjectKeyFromObject(obj))
 			}
 
 			return Stop()
@@ -152,10 +157,14 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 					"current", obj.GetFinalizers(),
 				)
 
-				if AbortAfterRetry(ctx, r.V(0), func() error {
-					return Update(ctx, r, obj)
-				}) {
-					r.Info("Abort retrying to remove finalizer", "obj", client.ObjectKeyFromObject(obj))
+				if err := wait.ExponentialBackoffWithContext(ctx, BackoffForK8sEndpoint, func() (done bool, err error) {
+					if errUpdate := Update(ctx, r, obj); errUpdate != nil {
+						return false, nil
+					} else {
+						return true, nil
+					}
+				}); err != nil {
+					r.Error(err, "Abort retrying to remove finalizer", "obj", client.ObjectKeyFromObject(obj))
 				}
 
 				return Stop()
@@ -193,11 +202,8 @@ func UpdateStatus(ctx context.Context, r Reconciler, obj client.Object) error {
 // if the next reconciliation cycle happens faster than the API update, it is possible to
 // reschedule the creation of a Job. To avoid that, get if the Job is already submitted.
 func Create(ctx context.Context, r Reconciler, parent, child client.Object) error {
-	// owner labels are used by the selectors.
-	// workflow labels are used to select only objects that belong to this experiment.
-	// used to narrow down the scope of fault injection in a common namespace
+	// Create a searchable link between the parent and the children.
 	v1alpha1.SetCreatedByLabel(child, parent)
-	v1alpha1.SetInstanceLabel(child)
 
 	child.SetNamespace(parent.GetNamespace())
 

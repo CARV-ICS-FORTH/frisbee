@@ -98,7 +98,6 @@ func (r *Controller) installPrometheus(ctx context.Context, t *v1alpha1.Scenario
 
 	// set labels
 	v1alpha1.SetScenarioLabel(&job.ObjectMeta, t.GetName())
-	v1alpha1.SetActionLabel(&job.ObjectMeta, job.GetName())
 	v1alpha1.SetComponentLabel(&job.ObjectMeta, v1alpha1.ComponentSys)
 
 	{ // spec
@@ -135,7 +134,6 @@ func (r *Controller) installGrafana(ctx context.Context, t *v1alpha1.Scenario, a
 	job.SetName(notRandomGrafanaName)
 
 	v1alpha1.SetScenarioLabel(&job.ObjectMeta, t.GetName())
-	v1alpha1.SetActionLabel(&job.ObjectMeta, job.GetName())
 	v1alpha1.SetComponentLabel(&job.ObjectMeta, v1alpha1.ComponentSys)
 
 	{ // spec

@@ -98,13 +98,7 @@ func SetAlert(ctx context.Context, logger logr.Logger, job client.Object, expr v
 
 	// push the alert to grafana. Due to the distributed nature, the requested dashboard may not be in Grafana yet.
 	// If the dashboard is not found, retry a few times before failing.
-	if common.AbortAfterRetry(ctx, logger, func() error {
-		return grafana.GetClientFor(job).SetAlert(ctx, alert, name, msg)
-	}) {
-		return errors.Errorf("cannot set the alarm")
-	}
-
-	return nil
+	return grafana.GetClientFor(job).SetAlert(ctx, alert, name, msg)
 }
 
 // DispatchAlert informs an object about the fired alert by updating the metadata of that object.

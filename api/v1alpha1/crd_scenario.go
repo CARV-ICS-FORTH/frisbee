@@ -18,6 +18,7 @@ package v1alpha1
 
 import (
 	"fmt"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"strings"
 	"time"
@@ -140,8 +141,16 @@ type EmbedActions struct {
 	Call *CallSpec `json:"call,omitempty"`
 }
 
+type ScenarioOptions struct {
+	SharedStorage *v1.PersistentVolumeClaim `json:"shared-storage"`
+}
+
 // ScenarioSpec defines the desired state of Scenario.
 type ScenarioSpec struct {
+	// Options define some additional automations on the experiment
+	// +optional
+	Options *ScenarioOptions `json:"options,omitempty"`
+
 	// Actions are the tasks that will be taken.
 	Actions []Action `json:"actions"`
 

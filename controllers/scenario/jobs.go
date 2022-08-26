@@ -65,7 +65,6 @@ func (r *Controller) service(ctx context.Context, t *v1alpha1.Scenario, action v
 
 	// set labels
 	v1alpha1.SetScenarioLabel(&job.ObjectMeta, t.GetName())
-	v1alpha1.SetActionLabel(&job.ObjectMeta, action.Name)
 
 	// The job belongs to a SUT, unless the template is explicitly declared as a System job (SYS)
 	if spec.Decorators.Labels != nil &&
@@ -110,7 +109,6 @@ func (r *Controller) cluster(ctx context.Context, t *v1alpha1.Scenario, action v
 
 	// set labels
 	v1alpha1.SetScenarioLabel(&job.ObjectMeta, t.GetName())
-	v1alpha1.SetActionLabel(&job.ObjectMeta, action.Name)
 	v1alpha1.SetComponentLabel(&job.ObjectMeta, v1alpha1.ComponentSUT)
 
 	action.Cluster.DeepCopyInto(&job.Spec)
@@ -140,7 +138,6 @@ func (r *Controller) chaos(ctx context.Context, t *v1alpha1.Scenario, action v1a
 	job.SetName(action.Name)
 
 	v1alpha1.SetScenarioLabel(&job.ObjectMeta, t.GetName())
-	v1alpha1.SetActionLabel(&job.ObjectMeta, action.Name)
 	v1alpha1.SetComponentLabel(&job.ObjectMeta, v1alpha1.ComponentSUT)
 
 	spec.DeepCopyInto(&job.Spec)
@@ -160,7 +157,6 @@ func (r *Controller) cascade(ctx context.Context, t *v1alpha1.Scenario, action v
 	job.SetName(action.Name)
 
 	v1alpha1.SetScenarioLabel(&job.ObjectMeta, t.GetName())
-	v1alpha1.SetActionLabel(&job.ObjectMeta, action.Name)
 	v1alpha1.SetComponentLabel(&job.ObjectMeta, v1alpha1.ComponentSUT)
 
 	action.Cascade.DeepCopyInto(&job.Spec)
@@ -281,7 +277,6 @@ func (r *Controller) call(ctx context.Context, t *v1alpha1.Scenario, action v1al
 	job.SetName(action.Name)
 
 	v1alpha1.SetScenarioLabel(&job.ObjectMeta, t.GetName())
-	v1alpha1.SetActionLabel(&job.ObjectMeta, action.Name)
 	v1alpha1.SetComponentLabel(&job.ObjectMeta, v1alpha1.ComponentSUT)
 
 	action.Call.DeepCopyInto(&job.Spec)

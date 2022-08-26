@@ -19,6 +19,7 @@ package grafana
 import (
 	"context"
 	"fmt"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"reflect"
 	"time"
 
@@ -149,8 +150,6 @@ func (a *RangeAnnotation) Delete(obj client.Object, tags ...Tag) {
 //		Grafana Annotator
 // ///////////////////////////////////////////
 
-var annotationTimeout = 10 * time.Second
-
 const (
 	statusAnnotationAdded = "Annotation added"
 
@@ -159,30 +158,24 @@ const (
 
 // SetAnnotation inserts a new annotation to Grafana.
 func (c *Client) SetAnnotation(ga sdk.CreateAnnotationRequest) (reqID uint) {
-	ctx, cancel := context.WithTimeout(c.ctx, annotationTimeout)
-	defer cancel()
+	ctx := context.Background()
 
 	// retry until Grafana is ready to receive annotations.
-	if common.AbortAfterRetry(ctx, c.logger, func() error {
+	if err := wait.ExponentialBackoff(common.BackoffForServiceEndpoint, func() (done bool, err error) {
 		gaResp, err := c.Conn.CreateAnnotation(ctx, ga)
-		if err != nil {
-			return errors.Wrapf(err, "cannot create annotation")
+		switch {
+		case err != nil: // API connection error. Just retry
+			return false, nil
+		case gaResp.Message == nil: // Server error. Abort
+			return false, errors.Errorf("empty annotation response")
+		case *gaResp.Message != statusAnnotationAdded: // Unexpected response
+			return false, errors.Errorf("expected message '%s', but got '%s'", statusAnnotationAdded, *gaResp.Message)
+		default: // Done
+			reqID = *gaResp.ID
+			return true, nil
 		}
-
-		if gaResp.Message == nil {
-			return errors.Errorf("empty annotation response")
-		} else if *gaResp.Message != statusAnnotationAdded {
-			return errors.Errorf("expected message '%s', but got '%s'",
-				statusAnnotationAdded, *gaResp.Message)
-		}
-
-		reqID = *gaResp.ID
-
-		return nil
-	}) {
-		c.logger.Info("AnnotationError", "operation", "Set", "request", ga)
-
-		return 0
+	}); err != nil {
+		c.logger.Error(err, "AnnotationError", "operation", "Set", "request", ga)
 	}
 
 	return reqID
@@ -190,25 +183,22 @@ func (c *Client) SetAnnotation(ga sdk.CreateAnnotationRequest) (reqID uint) {
 
 // PatchAnnotation updates an existing annotation to Grafana.
 func (c *Client) PatchAnnotation(reqID uint, ga sdk.PatchAnnotationRequest) {
-	ctx, cancel := context.WithTimeout(c.ctx, annotationTimeout)
-	defer cancel()
+	ctx := context.Background()
 
 	// retry until Grafana is ready to receive annotations.
-	if common.AbortAfterRetry(ctx, c.logger, func() error {
+	if err := wait.ExponentialBackoffWithContext(ctx, common.BackoffForServiceEndpoint, func() (done bool, err error) {
 		gaResp, err := c.Conn.PatchAnnotation(ctx, reqID, ga)
-		if err != nil {
-			return errors.Wrapf(err, "patch error")
+		switch {
+		case err != nil: // API connection error. Just retry
+			return false, nil
+		case gaResp.Message == nil: // Server error. Abort
+			return false, errors.Errorf("empty annotation response")
+		case *gaResp.Message != statusAnnotationPatched: // Unexpected response
+			return false, errors.Errorf("expected message '%s', but got '%s'", statusAnnotationPatched, *gaResp.Message)
+		default: // Done
+			return true, nil
 		}
-
-		if gaResp.Message == nil {
-			return errors.Wrapf(err, "empty annotation response")
-		} else if *gaResp.Message != statusAnnotationPatched {
-			return errors.Wrapf(err, "expected message '%s', but got '%s'",
-				statusAnnotationPatched, *gaResp.Message)
-		}
-
-		return nil
-	}) {
-		c.logger.Info("AnnotationError", "operation", "Patch", "request", ga)
+	}); err != nil {
+		c.logger.Error(err, "AnnotationError", "operation", "Patch", "request", ga)
 	}
 }
