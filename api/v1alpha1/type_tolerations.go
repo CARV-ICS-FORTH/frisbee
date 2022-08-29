@@ -30,7 +30,7 @@ type TolerateSpec struct {
 	FailedJobs int `json:"failedJobs"`
 }
 
-func (in TolerateSpec) String() string {
+func (in *TolerateSpec) String() string {
 	if in.FailedJobs == 0 {
 		return "None"
 	}

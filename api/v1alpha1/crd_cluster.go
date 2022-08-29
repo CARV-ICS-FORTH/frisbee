@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -51,6 +52,9 @@ type PlacementSpec struct {
 // ClusterSpec defines the desired state of Cluster.
 type ClusterSpec struct {
 	GenerateFromTemplate `json:",inline"`
+
+	// TestData defines a volume that will be mounted across the Scenario's Services.
+	TestData *v1.PersistentVolumeClaimVolumeSource `json:"testData,omitempty"`
 
 	// Tolerate specifies the conditions under which the cluster will fail. If undefined, the cluster fails
 	// immediately when a service has failed.

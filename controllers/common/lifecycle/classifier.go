@@ -18,10 +18,12 @@ package lifecycle
 
 import (
 	"fmt"
+	"sort"
+
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
+	"github.com/pkg/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sort"
 )
 
 type ClassifierReader interface {
@@ -39,6 +41,9 @@ type ClassifierReader interface {
 	// Count returns the number of all registered entities.
 	Count() int
 
+	// SystemState returns the state of the SYS services. If all services are running, it should return (false, nil).
+	SystemState() (abort bool, err error)
+
 	GetPendingJobs() []client.Object
 	GetRunningJobs() []client.Object
 	GetSuccessfulJobs() []client.Object
@@ -55,6 +60,7 @@ type Classifier struct {
 	successfulJobs  map[string]client.Object
 	failedJobs      map[string]client.Object
 	terminatingJobs map[string]client.Object
+	systemJobs      map[string]client.Object
 }
 
 func (in *Classifier) Reset() {
@@ -63,6 +69,7 @@ func (in *Classifier) Reset() {
 	in.successfulJobs = make(map[string]client.Object)
 	in.failedJobs = make(map[string]client.Object)
 	in.terminatingJobs = make(map[string]client.Object)
+	in.systemJobs = make(map[string]client.Object)
 }
 
 type Convertor func(object client.Object) v1alpha1.Lifecycle
@@ -107,6 +114,21 @@ func (in *Classifier) Classify(name string, obj client.Object) {
 	if statusAware, getStatus := obj.(v1alpha1.ReconcileStatusAware); getStatus {
 		status := statusAware.GetReconcileStatus()
 
+		// == Handle System resources. ==
+		// Resources of this type have the following rules:
+		// 1) Are ignored by Pending(), Running(), and Successful() calls, as well as from Count().
+		// 2) If they have Failed, they are returned Failed().
+		// 3) If they are Running, they are returned by the SystemOK().
+		if v1alpha1.GetComponentLabel(obj) == v1alpha1.ComponentSys {
+			if status.Phase.Is(v1alpha1.PhaseFailed) {
+				in.failedJobs[name] = obj
+			} else {
+				in.systemJobs[name] = obj
+			}
+			return
+		}
+
+		// Handle SUT resources
 		switch status.Phase {
 		case v1alpha1.PhaseUninitialized:
 			// Ignore uninitialized/unscheduled jobs
@@ -131,18 +153,24 @@ func (in *Classifier) Classify(name string, obj client.Object) {
 	}
 }
 
-// Exclude registers a system service.
-// Services classified by this function are not accounted in the lifecycle, unless they have failed.
-func (in *Classifier) Exclude(name string, obj client.Object) {
-	if statusAware, getStatus := obj.(v1alpha1.ReconcileStatusAware); getStatus {
-		status := statusAware.GetReconcileStatus()
+func (in *Classifier) SystemState() (abort bool, err error) {
+	for _, job := range in.systemJobs {
+		phase := job.(v1alpha1.ReconcileStatusAware).GetReconcileStatus().Phase
 
-		if status.Phase.Is(v1alpha1.PhaseFailed) {
-			in.failedJobs[name] = obj
+		switch phase {
+		case v1alpha1.PhaseFailed:
+			return true, errors.Errorf("System Job '%s' has failed", job.GetName())
+		case v1alpha1.PhaseSuccess:
+			return true, errors.Errorf("System Job '%s' has terminated", job.GetName())
+		case v1alpha1.PhasePending:
+			return false, errors.Errorf("System Job '%s' is still pending", job.GetName())
+		case v1alpha1.PhaseUninitialized:
+			return false, errors.Errorf("System Job '%s' is not yet initialized", job.GetName())
 		}
-	} else {
-		ctrl.Log.Info("Object does not implement RecocileStatusAware interface.", "object", obj.GetName())
 	}
+
+	// All system jobs are running
+	return false, nil
 }
 
 func (in *Classifier) Count() int {

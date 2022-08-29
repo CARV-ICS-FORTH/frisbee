@@ -57,7 +57,7 @@ func GenerateFromScheme(spec interface{}, scheme *v1alpha1.Scheme, userInputs ma
 		for key, value := range userInputs {
 			_, exists := scheme.Inputs.Parameters[key]
 			if !exists {
-				return errors.Errorf("parameter [%s] does not exist", key)
+				return errors.Errorf("parameter '%s' does not exist", key)
 			}
 
 			scheme.Inputs.Parameters[key] = value

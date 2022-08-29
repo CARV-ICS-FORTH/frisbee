@@ -19,9 +19,10 @@ package grafana
 import (
 	"context"
 	"fmt"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"reflect"
 	"time"
+
+	"k8s.io/apimachinery/pkg/util/wait"
 
 	"github.com/carv-ics-forth/frisbee/controllers/common"
 	"github.com/grafana-tools/sdk"
@@ -63,9 +64,7 @@ func (a *PointAnnotation) Add(obj client.Object, tags ...Tag) {
 		Text:    fmt.Sprintf("Job added. Kind:%s Name:%s", reflect.TypeOf(obj), obj.GetName()),
 	}
 
-	if ClientExistsFor(obj) {
-		_ = GetClientFor(obj).SetAnnotation(ga)
-	}
+	GetClientFor(obj).SetAnnotation(ga)
 }
 
 func (a *PointAnnotation) Delete(obj client.Object, tags ...Tag) {
@@ -85,9 +84,7 @@ func (a *PointAnnotation) Delete(obj client.Object, tags ...Tag) {
 		Text:    fmt.Sprintf("Job Deleted. Kind:%s Name:%s", reflect.TypeOf(obj), obj.GetName()),
 	}
 
-	if ClientExistsFor(obj) {
-		_ = GetClientFor(obj).SetAnnotation(ga)
-	}
+	GetClientFor(obj).SetAnnotation(ga)
 }
 
 // RangeAnnotation uses range annotations to indicate the duration of a Chaos.
@@ -115,9 +112,7 @@ func (a *RangeAnnotation) Add(obj client.Object, tags ...Tag) {
 		Text:    fmt.Sprintf("Job Added. Kind:%s Name:%s", reflect.TypeOf(obj), obj.GetName()),
 	}
 
-	if ClientExistsFor(obj) {
-		a.reqID = GetClientFor(obj).SetAnnotation(ga)
-	}
+	a.reqID = GetClientFor(obj).SetAnnotation(ga)
 }
 
 func (a *RangeAnnotation) Delete(obj client.Object, tags ...Tag) {
@@ -141,9 +136,7 @@ func (a *RangeAnnotation) Delete(obj client.Object, tags ...Tag) {
 		Text:    fmt.Sprintf("Job Deleted. Kind:%s Name:%s", reflect.TypeOf(obj), obj.GetName()),
 	}
 
-	if ClientExistsFor(obj) {
-		GetClientFor(obj).PatchAnnotation(a.reqID, ga)
-	}
+	GetClientFor(obj).PatchAnnotation(a.reqID, ga)
 }
 
 // ///////////////////////////////////////////
@@ -158,6 +151,11 @@ const (
 
 // SetAnnotation inserts a new annotation to Grafana.
 func (c *Client) SetAnnotation(ga sdk.CreateAnnotationRequest) (reqID uint) {
+	if c == nil {
+		defaultLogger.Info("NilGrafanaClient", "operation", "Set", "request", ga)
+		return 0
+	}
+
 	ctx := context.Background()
 
 	// retry until Grafana is ready to receive annotations.
@@ -175,7 +173,7 @@ func (c *Client) SetAnnotation(ga sdk.CreateAnnotationRequest) (reqID uint) {
 			return true, nil
 		}
 	}); err != nil {
-		c.logger.Error(err, "AnnotationError", "operation", "Set", "request", ga)
+		c.logger.Info("AnnotationError", "operation", "Set", "request", ga, "err", err)
 	}
 
 	return reqID
@@ -183,6 +181,11 @@ func (c *Client) SetAnnotation(ga sdk.CreateAnnotationRequest) (reqID uint) {
 
 // PatchAnnotation updates an existing annotation to Grafana.
 func (c *Client) PatchAnnotation(reqID uint, ga sdk.PatchAnnotationRequest) {
+	if c == nil {
+		defaultLogger.Info("NilGrafanaClient", "operation", "Patch", "request", ga)
+		return
+	}
+
 	ctx := context.Background()
 
 	// retry until Grafana is ready to receive annotations.
@@ -199,6 +202,6 @@ func (c *Client) PatchAnnotation(reqID uint, ga sdk.PatchAnnotationRequest) {
 			return true, nil
 		}
 	}); err != nil {
-		c.logger.Error(err, "AnnotationError", "operation", "Patch", "request", ga)
+		c.logger.Info("AnnotationError", "operation", "Patch", "request", ga, "err", err)
 	}
 }

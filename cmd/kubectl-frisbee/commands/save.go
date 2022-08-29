@@ -14,37 +14,32 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package common
+package commands
 
 import (
-	"os/exec"
-
+	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/tests"
 	"github.com/carv-ics-forth/frisbee/pkg/ui"
 	"github.com/spf13/cobra"
 )
 
-var (
-	Kubectl string
-	Helm    string
-)
+func NewSaveCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "save <resourceName>",
+		Aliases: []string{"s"},
+		Short:   "Save locally the data generated throughout the test execution",
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			ui.SetVerbose(verbose)
+		},
+		Run: func(cmd *cobra.Command, args []string) {
+			ui.Logo()
 
-func init() {
-	kubectlPath, err := exec.LookPath("kubectl")
-	if err != nil {
-		panic(err)
+			err := cmd.Help()
+			ui.PrintOnError("Displaying help", err)
+		},
 	}
 
-	helmPath, err := exec.LookPath("helm")
-	if err != nil {
-		panic(err)
-	}
+	cmd.AddCommand(tests.NewSaveTestsCmd())
+	// cmd.AddCommand(testsuites.NewRunTestSuiteCmd())
 
-	Kubectl = kubectlPath
-	Helm = helmPath
-}
-
-func Hint(cmd *cobra.Command, msg string, sub ...string) {
-	if ok, _ := cmd.Flags().GetBool("hints"); ok {
-		ui.Success(msg, sub...)
-	}
+	return cmd
 }

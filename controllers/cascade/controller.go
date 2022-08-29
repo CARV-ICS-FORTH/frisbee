@@ -19,9 +19,10 @@ package cascade
 import (
 	"context"
 	"fmt"
-	"k8s.io/apimachinery/pkg/types"
 	"reflect"
 	"time"
+
+	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
@@ -194,13 +195,13 @@ func (r *Controller) Initialize(ctx context.Context, cr *v1alpha1.Cascade) error
 
 	// Metrics-driven execution requires to set alerts on Grafana.
 	if until := cr.Spec.Until; until != nil && until.HasMetricsExpr() {
-		if err := expressions.SetAlert(ctx, r.Logger, cr, until.Metrics); err != nil {
+		if err := expressions.SetAlert(ctx, cr, until.Metrics); err != nil {
 			return errors.Wrapf(err, "spec.until")
 		}
 	}
 
 	if schedule := cr.Spec.Schedule; schedule != nil && schedule.Event.HasMetricsExpr() {
-		if err := expressions.SetAlert(ctx, r.Logger, cr, schedule.Event.Metrics); err != nil {
+		if err := expressions.SetAlert(ctx, cr, schedule.Event.Metrics); err != nil {
 			return errors.Wrapf(err, "spec.schedule")
 		}
 	}

@@ -45,7 +45,8 @@ spec:
 
             # Run Prometheus with the new modified configuration
             ./envsubst-Linux-x86_64 -i /etc/prometheus/prometheus.yml -o ./prometheus.yml
-            /bin/prometheus --config.file=./prometheus.yml --query.lookback-delta={{.Values.telemetry.prometheus.queryLookbackDelta}}
+            /bin/prometheus --config.file=./prometheus.yml    \
+            --query.lookback-delta={{.Values.telemetry.prometheus.queryLookbackDelta}}
 
         startupProbe:
           httpGet:

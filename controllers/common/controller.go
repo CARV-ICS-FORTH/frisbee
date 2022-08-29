@@ -18,9 +18,10 @@ package common
 
 import (
 	"context"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"reflect"
 	"time"
+
+	"k8s.io/apimachinery/pkg/util/wait"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/go-logr/logr"
@@ -159,7 +160,7 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 
 				if err := wait.ExponentialBackoffWithContext(ctx, BackoffForK8sEndpoint, func() (done bool, err error) {
 					if errUpdate := Update(ctx, r, obj); errUpdate != nil {
-						return false, nil
+						return false, err
 					} else {
 						return true, nil
 					}

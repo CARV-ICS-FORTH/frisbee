@@ -101,7 +101,7 @@ func (p Phase) Is(refs ...Phase) bool {
 
 func (p Phase) String() string {
 	if p == "" {
-		return "NotInitialized"
+		return "Initializing"
 	}
 
 	return string(p)

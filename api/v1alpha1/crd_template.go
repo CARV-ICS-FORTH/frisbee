@@ -193,10 +193,10 @@ type Scheme struct {
 	// Returns the namespace where the scenario is running
 	Namespace string `json:"namespace,omitempty"`
 
+	// Spec is the body whose Inputs.Parameters will be expanded.
+	Spec []byte `json:"spec"`
+
 	// Inputs are dynamic fields that populate the spec.
 	// +optional
 	Inputs *Inputs `json:"inputs,omitempty"`
-
-	// Spec is the specification whose values will be replaced by parameters.
-	Spec []byte `json:"spec"`
 }

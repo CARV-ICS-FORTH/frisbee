@@ -28,6 +28,7 @@ import (
 )
 
 func GetServiceSpec(ctx context.Context, c client.Client, parent metav1.Object, fromTemplate v1alpha1.GenerateFromTemplate) (v1alpha1.ServiceSpec, error) {
+	// get the template
 	template, err := templateutils.GetTemplate(ctx, c, parent, fromTemplate.TemplateRef)
 	if err != nil {
 		return v1alpha1.ServiceSpec{}, errors.Wrapf(err, "template '%s' is not installed", fromTemplate.TemplateRef)
@@ -39,15 +40,11 @@ func GetServiceSpec(ctx context.Context, c client.Client, parent metav1.Object, 
 		return v1alpha1.ServiceSpec{}, errors.Errorf("cannot marshal service of '%s'", fromTemplate.TemplateRef)
 	}
 
-	scheme, err := templateutils.NewScheme(parent, template.Spec.Inputs, specBody)
-	if err != nil {
-		return v1alpha1.ServiceSpec{}, errors.Wrapf(err, "cannot get scheme for '%s'", fromTemplate.TemplateRef)
-	}
-
-	var spec v1alpha1.ServiceSpec
+	spec := v1alpha1.ServiceSpec{}
+	scheme := templateutils.NewScheme(parent, template.Spec.Inputs, specBody)
 
 	if err := templateutils.GenerateFromScheme(&spec, scheme, fromTemplate.GetInput(0)); err != nil {
-		return v1alpha1.ServiceSpec{}, errors.Wrapf(err, "cannot create spec")
+		return v1alpha1.ServiceSpec{}, errors.Wrapf(err, "evaluation of template '%s' has failed", fromTemplate.TemplateRef)
 	}
 
 	return spec, nil
@@ -69,12 +66,9 @@ func GetServiceSpecList(ctx context.Context, c client.Client, parent metav1.Obje
 	specs := make([]v1alpha1.ServiceSpec, 0, fromTemplate.MaxInstances)
 
 	if err := fromTemplate.IterateInputs(func(userInputs map[string]string) error {
-		scheme, err := templateutils.NewScheme(parent, template.Spec.Inputs, specBody)
-		if err != nil {
-			return errors.Wrapf(err, "cannot get scheme for '%s'", fromTemplate.TemplateRef)
-		}
 
-		var spec v1alpha1.ServiceSpec
+		spec := v1alpha1.ServiceSpec{}
+		scheme := templateutils.NewScheme(parent, template.Spec.Inputs, specBody)
 
 		if err := templateutils.GenerateFromScheme(&spec, scheme, userInputs); err != nil {
 			return errors.Wrapf(err, "macro expansion failed")

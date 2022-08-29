@@ -180,8 +180,8 @@ const (
 /////////////////////////////////////////////
 
 const (
-	// DrawAs hints how to mark points on the Grafana dashboard.
-	DrawAs string = "grafana.frisbee.dev/draw"
+	// DrawMethod hints how to mark points on the Grafana dashboard.
+	DrawMethod string = "grafana.frisbee.dev/draw"
 	// DrawAsPoint will mark the creation and deletion of a service as distinct events.
 	DrawAsPoint string = "point"
 	// DrawAsRegion will draw a region starting from the creation of a service and ending to the deletion of the service.
@@ -189,9 +189,9 @@ const (
 )
 
 func DrawRegion(obj metav1.Object) bool {
-	return obj.GetAnnotations()[DrawAs] == DrawAsRegion
+	return obj.GetAnnotations()[DrawMethod] == DrawAsRegion
 }
 
 func DrawPoint(obj metav1.Object) bool {
-	return obj.GetAnnotations()[DrawAs] == DrawAsPoint
+	return obj.GetAnnotations()[DrawMethod] == DrawAsPoint
 }

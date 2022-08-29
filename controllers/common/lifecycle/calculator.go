@@ -18,13 +18,12 @@ package lifecycle
 
 import (
 	"fmt"
+
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/r3labs/diff/v3"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/json"
-	"strings"
 )
 
 // Reasons for Failure
@@ -68,15 +67,6 @@ const (
 	// ExactlyOneJobIsPending indicate that the only scheduled job is in the Pending phase
 	ExactlyOneJobIsPending = "ExactlyOneJobIsPending"
 )
-
-func mustGetJson(v interface{}) string {
-	var data strings.Builder
-
-	if err := json.NewEncoder(&data).Encode(v); err != nil {
-		panic(err)
-	}
-	return data.String()
-}
 
 type test struct {
 	expression bool
@@ -193,13 +183,13 @@ func GroupedJobs(totalJobs int, state ClassifierReader, lf *v1alpha1.Lifecycle, 
 			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseFailed,
 				Reason:  v1alpha1.ConditionInvalidStateTransition.String(),
-				Message: fmt.Sprintf("prev: %v, current: %s", mustGetJson(lf), mustGetJson(state.ListAll())),
+				Message: fmt.Sprintf("prev: '%v', current: '%s'", lf, state.ListAll()),
 			},
 			condition: metav1.Condition{
 				Type:    v1alpha1.ConditionInvalidStateTransition.String(),
 				Status:  metav1.ConditionTrue,
 				Reason:  AtLeastOneJobHasFailed,
-				Message: fmt.Sprintf("prev: %v, current: %s", mustGetJson(lf), mustGetJson(state.ListAll())),
+				Message: fmt.Sprintf("prev: '%v', current: '%s'", lf, state.ListAll()),
 			},
 		},
 	}...)
@@ -301,13 +291,13 @@ func SingleJob(state ClassifierReader, lf *v1alpha1.Lifecycle) bool {
 			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseFailed,
 				Reason:  v1alpha1.ConditionInvalidStateTransition.String(),
-				Message: fmt.Sprintf("prev: %v, current: %s", mustGetJson(lf), mustGetJson(state.ListAll())),
+				Message: fmt.Sprintf("prev: '%v', current: '%s'", lf, state.ListAll()),
 			},
 			condition: metav1.Condition{
 				Type:    v1alpha1.ConditionInvalidStateTransition.String(),
 				Status:  metav1.ConditionTrue,
 				Reason:  AtLeastOneJobHasFailed,
-				Message: fmt.Sprintf("prev: %v, current: %s", mustGetJson(lf), mustGetJson(state.ListAll())),
+				Message: fmt.Sprintf("prev: '%v', current: '%s'", lf, state.ListAll()),
 			},
 		},
 	}

@@ -35,6 +35,45 @@ type Service struct {
 	Status ServiceStatus `json:"status,omitempty"`
 }
 
+func (s *Service) AttachTestDataVolume(source *corev1.PersistentVolumeClaimVolumeSource, useSubPath bool) {
+	if source == nil {
+		return
+	}
+
+	// add volume to the pod
+	s.Spec.Volumes = append(s.Spec.Volumes, corev1.Volume{
+		Name: source.ClaimName,
+		VolumeSource: corev1.VolumeSource{
+			PersistentVolumeClaim: source,
+		},
+	})
+
+	subpath := ""
+	if useSubPath {
+		subpath = s.GetName()
+	}
+
+	// mount volume to initContainers
+	for i := 0; i < len(s.Spec.InitContainers); i++ {
+		s.Spec.InitContainers[i].VolumeMounts = append(s.Spec.InitContainers[i].VolumeMounts, corev1.VolumeMount{
+			Name:      source.ClaimName, // Name of a Volume.
+			ReadOnly:  source.ReadOnly,
+			MountPath: "/testdata", // Path within the container
+			SubPath:   subpath,     //  Path within the volume
+		})
+	}
+
+	// mount volume to application containers
+	for i := 0; i < len(s.Spec.Containers); i++ {
+		s.Spec.Containers[i].VolumeMounts = append(s.Spec.Containers[i].VolumeMounts, corev1.VolumeMount{
+			Name:      source.ClaimName, // Name of a Volume.
+			ReadOnly:  source.ReadOnly,
+			MountPath: "/testdata", // Path within the container
+			SubPath:   subpath,     //  Path within the volume
+		})
+	}
+}
+
 // EphemeralVolumeSpec defines an ephemeral volume that has the  lifetime of a pod,
 // It's use for application that need additional storage but don't care whether
 // that data is stored persistently across restarts.

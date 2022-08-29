@@ -18,6 +18,7 @@ package cluster
 
 import (
 	"context"
+
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
 	serviceutils "github.com/carv-ics-forth/frisbee/controllers/service/utils"
@@ -40,6 +41,8 @@ func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Cluster, i int) er
 
 	jobSpec.DeepCopyInto(&job.Spec)
 
+	job.AttachTestDataVolume(cr.Spec.TestData, true)
+
 	if err := common.Create(ctx, r, cr, &job); err != nil {
 		return err
 	}
@@ -54,9 +57,20 @@ func (r *Controller) constructJobSpecList(ctx context.Context, cluster *v1alpha1
 		return nil, errors.Wrapf(err, "template validation")
 	}
 
-	specs, err := serviceutils.GetServiceSpecList(ctx, r.GetClient(), cluster, cluster.Spec.GenerateFromTemplate)
+	serviceSpecs, err := serviceutils.GetServiceSpecList(ctx, r.GetClient(), cluster, cluster.Spec.GenerateFromTemplate)
 	if err != nil {
-		return nil, errors.Wrapf(err, "cannot get specs")
+		return nil, errors.Wrapf(err, "cannot get serviceSpecs")
+	}
+
+	SetPlacement(cluster, serviceSpecs)
+
+	return serviceSpecs, nil
+}
+
+func SetPlacement(cluster *v1alpha1.Cluster, services []v1alpha1.ServiceSpec) {
+	placement := cluster.Spec.Placement
+	if placement == nil {
+		return
 	}
 
 	/*
@@ -67,79 +81,74 @@ func (r *Controller) constructJobSpecList(ctx context.Context, cluster *v1alpha1
 
 		See: https://www.cncf.io/blog/2021/07/27/advanced-kubernetes-pod-to-node-scheduling/
 	*/
+	var affinity corev1.Affinity
 
-	if placement := cluster.Spec.Placement; placement != nil {
-		var affinity corev1.Affinity
-
-		if placement.Nodes != nil { // Match pods to a node
-			affinity.NodeAffinity = &corev1.NodeAffinity{
-				/*
-					If the affinity requirements specified by this field are not met at
-					scheduling time, the pod will not be scheduled onto the node.
-					If the affinity requirements specified by this field cease to be met
-					at some point during pod execution (e.g. due to an update), the system
-					 may or may not try to eventually evict the pod from its node.
-				*/
-				RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
-					NodeSelectorTerms: []corev1.NodeSelectorTerm{
-						{
-							MatchExpressions: []corev1.NodeSelectorRequirement{
-								{
-									Key:      "kubernetes.io/hostname",
-									Operator: corev1.NodeSelectorOpIn,
-									Values:   placement.Nodes,
-								},
-							},
-						},
-					},
-				},
-			}
-		}
-
-		if placement.Collocate { // Place together all the Pods that belong to this cluster
-			affinity.PodAffinity = &corev1.PodAffinity{
-				RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
+	if placement.Nodes != nil { // Match pods to a node
+		affinity.NodeAffinity = &corev1.NodeAffinity{
+			/*
+				If the affinity requirements specified by this field are not met at
+				scheduling time, the pod will not be scheduled onto the node.
+				If the affinity requirements specified by this field cease to be met
+				at some point during pod execution (e.g. due to an update), the system
+				 may or may not try to eventually evict the pod from its node.
+			*/
+			RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+				NodeSelectorTerms: []corev1.NodeSelectorTerm{
 					{
-						LabelSelector: &metav1.LabelSelector{
-							MatchExpressions: []metav1.LabelSelectorRequirement{
-								{
-									Key:      v1alpha1.LabelAction,
-									Operator: metav1.LabelSelectorOperator(corev1.NodeSelectorOpIn),
-									Values:   []string{cluster.GetName()},
-								},
+						MatchExpressions: []corev1.NodeSelectorRequirement{
+							{
+								Key:      "kubernetes.io/hostname",
+								Operator: corev1.NodeSelectorOpIn,
+								Values:   placement.Nodes,
 							},
 						},
-						TopologyKey: "kubernetes.io/hostname",
 					},
 				},
-			}
-		}
-
-		if placement.ConflictsWith != nil { // Stay away from Pods that belong on  other clusters
-			affinity.PodAntiAffinity = &corev1.PodAntiAffinity{
-				RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
-					{
-						LabelSelector: &metav1.LabelSelector{
-							MatchExpressions: []metav1.LabelSelectorRequirement{
-								{
-									Key:      v1alpha1.LabelAction,
-									Operator: metav1.LabelSelectorOperator(corev1.NodeSelectorOpIn),
-									Values:   placement.ConflictsWith,
-								},
-							},
-						},
-						TopologyKey: "kubernetes.io/hostname",
-					},
-				},
-			}
-		}
-
-		// apply affinity rules to all specs
-		for i := 0; i < len(specs); i++ {
-			// Apply the current rules.
-			specs[i].Affinity = &affinity
+			},
 		}
 	}
 
-	return specs, nil
+	if placement.Collocate { // Place together all the Pods that belong to this cluster
+		affinity.PodAffinity = &corev1.PodAffinity{
+			RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
+				{
+					LabelSelector: &metav1.LabelSelector{
+						MatchExpressions: []metav1.LabelSelectorRequirement{
+							{
+								Key:      v1alpha1.LabelAction,
+								Operator: metav1.LabelSelectorOperator(corev1.NodeSelectorOpIn),
+								Values:   []string{cluster.GetName()},
+							},
+						},
+					},
+					TopologyKey: "kubernetes.io/hostname",
+				},
+			},
+		}
+	}
+
+	if placement.ConflictsWith != nil { // Stay away from Pods that belong on  other clusters
+		affinity.PodAntiAffinity = &corev1.PodAntiAffinity{
+			RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
+				{
+					LabelSelector: &metav1.LabelSelector{
+						MatchExpressions: []metav1.LabelSelectorRequirement{
+							{
+								Key:      v1alpha1.LabelAction,
+								Operator: metav1.LabelSelectorOperator(corev1.NodeSelectorOpIn),
+								Values:   placement.ConflictsWith,
+							},
+						},
+					},
+					TopologyKey: "kubernetes.io/hostname",
+				},
+			},
+		}
+	}
+
+	// apply affinity rules to all specs
+	for i := 0; i < len(services); i++ {
+		// Apply the current rules.
+		services[i].Affinity = &affinity
+	}
 }

@@ -27,14 +27,14 @@ func NewDeleteCmd() *cobra.Command {
 		Use:     "delete <resourceName>",
 		Aliases: []string{"remove"},
 		Short:   "Delete resources",
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			ui.SetVerbose(verbose)
+		},
 		Run: func(cmd *cobra.Command, args []string) {
 			ui.Logo()
 
 			err := cmd.Help()
 			ui.PrintOnError("Displaying help", err)
-		},
-		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			// validator.PersistentPreRunVersionCheck(cmd, common.Version)
 		}}
 
 	cmd.PersistentFlags().BoolVarP(&verbose, "verbose", "", false, "should I show additional debug messages")

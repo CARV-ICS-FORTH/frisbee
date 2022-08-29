@@ -19,7 +19,6 @@ package expressions
 import (
 	"context"
 	"fmt"
-	"github.com/go-logr/logr"
 	"reflect"
 	"strings"
 	"time"
@@ -80,7 +79,7 @@ func (e *endpoint) Fields() int {
 	return reflect.TypeOf(*e).NumField()
 }
 
-func SetAlert(ctx context.Context, logger logr.Logger, job client.Object, expr v1alpha1.ExprMetrics) error {
+func SetAlert(ctx context.Context, job client.Object, expr v1alpha1.ExprMetrics) error {
 	alert, err := grafana.ParseAlertExpr(expr)
 	if err != nil {
 		return errors.Wrapf(err, "invalid alert expression")

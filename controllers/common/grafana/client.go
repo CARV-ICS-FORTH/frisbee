@@ -19,17 +19,23 @@ package grafana
 import (
 	"context"
 	"fmt"
+	"reflect"
+	"sync"
+
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
 	"github.com/go-logr/logr"
 	notifier "github.com/golanghelper/grafana-webhook"
 	"github.com/grafana-tools/sdk"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-	"sync"
 )
+
+var defaultLogger = zap.New(zap.UseDevMode(true)).WithName("default.grafana")
 
 type Options struct {
 	WebhookURL *string
@@ -62,6 +68,10 @@ func WithRegisterFor(obj metav1.Object) Option {
 // WithLogger will use the given logger for printing info.
 func WithLogger(r logr.Logger) Option {
 	return func(args *Options) {
+		if r == (logr.Logger{}) {
+			panic("trying to pass empty logger")
+		}
+
 		args.Logger = r
 	}
 }
@@ -85,8 +95,7 @@ func New(ctx context.Context, setters ...Option) error {
 	client := &Client{ctx: ctx}
 
 	if args.Logger == (logr.Logger{}) {
-		client.logger = zap.New(zap.UseDevMode(true))
-		client.logger = client.logger.WithName("default.grafana")
+		client.logger = defaultLogger
 	} else {
 		client.logger = args.Logger
 	}
@@ -122,16 +131,8 @@ func New(ctx context.Context, setters ...Option) error {
 
 		// Although the notification channel is backed by the Grafana Pod, the Grafana Service is different
 		// from the Alerting Service. For this reason, we must be sure that both Services are linked to the Grafana Pod.
-		if err := wait.ExponentialBackoffWithContext(ctx, common.BackoffForServiceEndpoint, func() (done bool, err error) {
-			errCh := client.SetNotificationChannel(*args.WebhookURL)
-			switch {
-			case errCh != nil: // API connection error. Just retry
-				return false, nil
-			default:
-				return true, nil
-			}
-		}); err != nil {
-			return errors.Errorf("notification channel error")
+		if err := client.SetNotificationChannel(ctx, *args.WebhookURL); err != nil {
+			return errors.Wrapf(err, "notification channel error")
 		}
 	}
 
@@ -144,7 +145,7 @@ func New(ctx context.Context, setters ...Option) error {
 }
 
 var clientsLocker sync.RWMutex
-var clients = map[string]*Client{}
+var clients = map[types.NamespacedName]*Client{}
 
 type Client struct {
 	ctx    context.Context
@@ -153,63 +154,63 @@ type Client struct {
 	Conn *sdk.Client
 }
 
+func getKey(obj metav1.Object) types.NamespacedName {
+	if !v1alpha1.HasScenarioLabel(obj) {
+		panic(errors.Errorf("Object '%s/%s' does not have Scenario labels", obj.GetNamespace(), obj.GetName()))
+	}
+
+	// The key structure is as follows:
+	// Namespaces: provides separation between test-cases
+	// Scenario: Is a flag that is propagated all over the test-cases.
+	return types.NamespacedName{
+		Namespace: obj.GetNamespace(),
+		Name:      v1alpha1.GetScenarioLabel(obj),
+	}
+}
+
 // SetClientFor creates a new client for the given object.  It panics if it cannot parse the object's metadata,
 // or if another client is already registers.
 func SetClientFor(obj metav1.Object, c *Client) {
-	scenario := v1alpha1.GetScenarioLabel(obj)
+
+	key := getKey(obj)
 
 	clientsLocker.RLock()
-	_, exists := clients[scenario]
+	_, exists := clients[key]
 	clientsLocker.RUnlock()
 
 	if exists {
-		panic(errors.Errorf("client is already registered for scenario '%s'", scenario))
+		panic(errors.Errorf("client is already registered for '%s'", key))
 	}
 
 	clientsLocker.Lock()
-	clients[scenario] = c
+	clients[key] = c
 	clientsLocker.Unlock()
-}
 
-// ClientExistsFor check if a client is registered for the given name. It panics if it cannot parse the object's metadata.
-func ClientExistsFor(obj metav1.Object) bool {
-	if !v1alpha1.HasScenarioLabel(obj) {
-		return false
-	}
-
-	clientsLocker.RLock()
-	_, exists := clients[v1alpha1.GetScenarioLabel(obj)]
-	clientsLocker.RUnlock()
-
-	return exists
+	c.logger.Info("Set Grafana client for", "obj", key)
 }
 
 // GetClientFor returns the client with the given name. It panics if it cannot parse the object's metadata,
 // if the client does not exist or if the client is empty.
 func GetClientFor(obj metav1.Object) *Client {
-	scenario := v1alpha1.GetScenarioLabel(obj)
+	if !v1alpha1.HasScenarioLabel(obj) {
+		logrus.Warn("No Scenario FOR ", obj.GetName(), " type ", reflect.TypeOf(obj))
+		return nil
+	}
+
+	key := getKey(obj)
 
 	clientsLocker.RLock()
-	c, exists := clients[scenario]
+	c := clients[key]
 	clientsLocker.RUnlock()
-
-	if !exists {
-		// TODO: this may panic on a restarted controller as it loses state about Grafana clients.
-		panic(errors.Errorf("Grafana client for scenario '%s' does not exist", scenario))
-	}
-
-	if c == nil {
-		panic(errors.Errorf("Grafana client for scenario '%s' exists but is nil", scenario))
-	}
 
 	return c
 }
 
 // DeleteClientFor removes the client registered for the given object.
 func DeleteClientFor(obj metav1.Object) {
-	scenario := v1alpha1.GetScenarioLabel(obj)
+	key := getKey(obj)
 
 	clientsLocker.Lock()
-	delete(clients, scenario)
+	delete(clients, key)
 	clientsLocker.Unlock()
 }

@@ -19,11 +19,12 @@ package scenario
 import (
 	"context"
 	"fmt"
-	"github.com/carv-ics-forth/frisbee/pkg/structure"
 	"net/http"
 	"path/filepath"
 	"sync"
 	"time"
+
+	"github.com/carv-ics-forth/frisbee/pkg/structure"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
@@ -42,15 +43,17 @@ import (
 
 const (
 	// grafana specific.
-	grafanaDashboards = "/etc/grafana/provisioning/dashboards"
+	defaultPathToGrafanaDashboards = "/etc/grafana/provisioning/dashboards"
 )
 
 const (
 	// Prometheus should be a fixed name because it is used within the Grafana configuration.
 	// Otherwise, we should find a way to replace the value.
-	notRandomPrometheusName = "prometheus"
+	defaultPrometheusName = "prometheus"
 
-	notRandomGrafanaName = "grafana"
+	defaultGrafanaName = "grafana"
+
+	defaultLogViewerName = "logviewer"
 )
 
 var (
@@ -58,7 +61,7 @@ var (
 )
 
 func (r *Controller) StartTelemetry(ctx context.Context, t *v1alpha1.Scenario) error {
-	telemetryAgents, err := r.ReferencedTelemetryAgents(ctx, t)
+	telemetryAgents, err := r.ListTelemetryAgents(ctx, t)
 	if err != nil {
 		return errors.Wrapf(err, "importing dashboards")
 	}
@@ -67,16 +70,16 @@ func (r *Controller) StartTelemetry(ctx context.Context, t *v1alpha1.Scenario) e
 		return nil
 	}
 
+	if err := r.installLogviewer(ctx, t); err != nil {
+		return errors.Wrapf(err, "storage preparation")
+	}
+
 	if err := r.installPrometheus(ctx, t); err != nil {
 		return errors.Wrapf(err, "prometheus error")
 	}
 
 	if err := r.installGrafana(ctx, t, telemetryAgents); err != nil {
 		return errors.Wrapf(err, "grafana error")
-	}
-
-	if err := r.connectToGrafana(ctx, t); err != nil {
-		return errors.Wrapf(err, "connect to grafana")
 	}
 
 	return nil
@@ -91,10 +94,55 @@ func (r *Controller) StopTelemetry(t *v1alpha1.Scenario) {
 	}
 }
 
+func (r *Controller) installLogviewer(ctx context.Context, t *v1alpha1.Scenario) error {
+	// the filebrowser makes sense only if test data are enabled.
+	if t.Spec.TestData == nil {
+		return nil
+	}
+
+	var job v1alpha1.Service
+
+	job.SetName(defaultLogViewerName)
+
+	// set labels
+	v1alpha1.SetScenarioLabel(&job.ObjectMeta, t.GetName())
+	v1alpha1.SetComponentLabel(&job.ObjectMeta, v1alpha1.ComponentSys)
+
+	{ // spec
+		fromtemplate := &v1alpha1.GenerateFromTemplate{
+			TemplateRef:  configuration.LogviewerTemplate,
+			MaxInstances: 1,
+			Inputs:       nil,
+		}
+
+		if err := fromtemplate.Prepare(false); err != nil {
+			return errors.Wrapf(err, "template validation")
+		}
+
+		spec, err := serviceutils.GetServiceSpec(ctx, r.GetClient(), t, *fromtemplate)
+		if err != nil {
+			return errors.Wrapf(err, "cannot get spec")
+		}
+
+		spec.DeepCopyInto(&job.Spec)
+
+		// the logviewer is the only service that has complete access to the volume's content.
+		job.AttachTestDataVolume(t.Spec.TestData, false)
+	}
+
+	if err := common.Create(ctx, r, t, &job); err != nil {
+		return errors.Wrapf(err, "cannot create %s", job.GetName())
+	}
+
+	t.Status.LogviewerEndpoint = common.ExternalEndpoint(defaultLogViewerName, t.GetNamespace())
+
+	return nil
+}
+
 func (r *Controller) installPrometheus(ctx context.Context, t *v1alpha1.Scenario) error {
 	var job v1alpha1.Service
 
-	job.SetName(notRandomPrometheusName)
+	job.SetName(defaultPrometheusName)
 
 	// set labels
 	v1alpha1.SetScenarioLabel(&job.ObjectMeta, t.GetName())
@@ -117,13 +165,18 @@ func (r *Controller) installPrometheus(ctx context.Context, t *v1alpha1.Scenario
 		}
 
 		spec.DeepCopyInto(&job.Spec)
+
+		// NOTICE: Prometheus does not support NFS or other distributed filesystems. It returns
+		// panic: Unable to create mmap-ed active query log
+		// We have this line here commented, just to make the point of **DO NOT UNCOMMENT IT**.
+		// job.AttachTestDataVolume(t.Spec.TestData, true)
 	}
 
 	if err := common.Create(ctx, r, t, &job); err != nil {
 		return errors.Wrapf(err, "cannot create %s", job.GetName())
 	}
 
-	t.Status.PrometheusEndpoint = common.ExternalEndpoint(notRandomPrometheusName, t.GetNamespace())
+	t.Status.PrometheusEndpoint = common.ExternalEndpoint(defaultPrometheusName, t.GetNamespace())
 
 	return nil
 }
@@ -131,7 +184,7 @@ func (r *Controller) installPrometheus(ctx context.Context, t *v1alpha1.Scenario
 func (r *Controller) installGrafana(ctx context.Context, t *v1alpha1.Scenario, agentRefs []string) error {
 	var job v1alpha1.Service
 
-	job.SetName(notRandomGrafanaName)
+	job.SetName(defaultGrafanaName)
 
 	v1alpha1.SetScenarioLabel(&job.ObjectMeta, t.GetName())
 	v1alpha1.SetComponentLabel(&job.ObjectMeta, v1alpha1.ComponentSys)
@@ -154,6 +207,8 @@ func (r *Controller) installGrafana(ctx context.Context, t *v1alpha1.Scenario, a
 
 		spec.DeepCopyInto(&job.Spec)
 
+		job.AttachTestDataVolume(t.Spec.TestData, true)
+
 		if err := r.importDashboards(ctx, t, &job.Spec, agentRefs); err != nil {
 			return errors.Wrapf(err, "import dashboards")
 		}
@@ -163,7 +218,7 @@ func (r *Controller) installGrafana(ctx context.Context, t *v1alpha1.Scenario, a
 		return errors.Wrapf(err, "cannot create %s", job.GetName())
 	}
 
-	t.Status.GrafanaEndpoint = common.ExternalEndpoint(notRandomGrafanaName, t.GetNamespace())
+	t.Status.GrafanaEndpoint = common.ExternalEndpoint(defaultGrafanaName, t.GetNamespace())
 
 	return nil
 }
@@ -171,22 +226,21 @@ func (r *Controller) installGrafana(ctx context.Context, t *v1alpha1.Scenario, a
 func (r *Controller) importDashboards(ctx context.Context, t *v1alpha1.Scenario, spec *v1alpha1.ServiceSpec, telemetryAgents []string) error {
 	imported := make(map[string]struct{})
 
-	// iterate monitoring services
 	for _, agentRef := range telemetryAgents {
-
+		// Every Telemetry agent must be accompanied by a configMap that contains the visualization dashboards.
+		// The dashboards are expected to be named {{.TelemetryAgentName}}.config
 		var dashboards corev1.ConfigMap
-
-		key := client.ObjectKey{
-			Namespace: t.GetNamespace(),
-			Name:      agentRef + ".config",
-		}
-
-		if err := r.GetClient().Get(ctx, key, &dashboards); err != nil {
-			return errors.Wrapf(err, "configmap '%s' is missing", key)
-		}
-
-		// avoid duplicates that may be caused when multiple agents share the same dashboard
 		{
+			key := client.ObjectKey{
+				Namespace: t.GetNamespace(),
+				Name:      agentRef + ".config",
+			}
+
+			if err := r.GetClient().Get(ctx, key, &dashboards); err != nil {
+				return errors.Wrapf(err, "configmap '%s' is missing", key)
+			}
+
+			// avoid duplicates that may be caused when multiple agents share the same dashboard
 			if _, exists := imported[dashboards.GetName()]; exists {
 				continue
 			}
@@ -194,44 +248,51 @@ func (r *Controller) importDashboards(ctx context.Context, t *v1alpha1.Scenario,
 			imported[dashboards.GetName()] = struct{}{}
 		}
 
-		volumeName := fmt.Sprintf("vol-%d", len(spec.Volumes))
-
-		// associate volume to grafana
-		spec.Volumes = append(spec.Volumes, corev1.Volume{
-			Name: volumeName,
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{Name: dashboards.GetName()},
+		// The  visualizations Dashboards should be loaded to Grafana.
+		{
+			// create a Pod volume from the config map
+			volumeName := fmt.Sprintf("vol-%d", len(spec.Volumes))
+			spec.Volumes = append(spec.Volumes, corev1.Volume{
+				Name: volumeName,
+				VolumeSource: corev1.VolumeSource{
+					ConfigMap: &corev1.ConfigMapVolumeSource{
+						LocalObjectReference: corev1.LocalObjectReference{Name: dashboards.GetName()},
+					},
 				},
-			},
-		})
-
-		// mount the volume
-		for file := range dashboards.Data {
-			r.Logger.Info("LoadDashboard",
-				"obj", client.ObjectKeyFromObject(&dashboards),
-				"file", file)
-
-			spec.Containers[0].VolumeMounts = append(spec.Containers[0].VolumeMounts, corev1.VolumeMount{
-				Name:      volumeName, // Name of a Volume.
-				ReadOnly:  true,
-				MountPath: filepath.Join(grafanaDashboards, file), // Path within the container
-				SubPath:   file,                                   //  Path within the volume
 			})
+
+			// mount the Pod volume to the main Grafana container.
+			if len(spec.Containers) != 1 {
+				return errors.Errorf("Grafana expected a single '%s' but found '%d' containers",
+					v1alpha1.MainContainerName, len(spec.Containers))
+			}
+			mainContainer := &spec.Containers[0]
+
+			for file := range dashboards.Data {
+				mainContainer.VolumeMounts = append(mainContainer.VolumeMounts, corev1.VolumeMount{
+					Name:      volumeName, // Name of a Volume.
+					ReadOnly:  true,
+					MountPath: filepath.Join(defaultPathToGrafanaDashboards, file), // Path within the container
+					SubPath:   file,                                                //  Path within the volume
+				})
+
+				r.Logger.Info("LoadDashboard", "obj", client.ObjectKeyFromObject(&dashboards), "file", file)
+			}
 		}
 	}
 
 	return nil
 }
 
-// ReferencedTelemetryAgents iterates the referenced services (directly via Service or indirectly via Cluster) and list
+// ListTelemetryAgents iterates the referenced services (directly via Service or indirectly via Cluster) and list
 // all telemetry dashboards that need to be imported
-func (r *Controller) ReferencedTelemetryAgents(ctx context.Context, scenario *v1alpha1.Scenario) ([]string, error) {
+func (r *Controller) ListTelemetryAgents(ctx context.Context, scenario *v1alpha1.Scenario) ([]string, error) {
 	dedup := make(map[string]struct{})
 
 	for _, action := range scenario.Spec.Actions {
 		var fromTemplate *v1alpha1.GenerateFromTemplate
 
+		// only Services and Clusters may container Telemetry Agents.
 		switch action.ActionType {
 		case v1alpha1.ActionService:
 			fromTemplate = action.Service
@@ -263,18 +324,24 @@ func (r *Controller) connectToGrafana(ctx context.Context, t *v1alpha1.Scenario)
 		return nil
 	}
 
-	if grafana.ClientExistsFor(t) {
+	// if a client exists, return the client directly.
+	if c := grafana.GetClientFor(t); c != nil {
 		return nil
 	}
+
+	// otherwise, re-create a client.
+	// this condition captures both the cases:
+	// 1) this is the first time we create a client to the controller
+	// 2) the controller has been restarted and lost all of the create controllers.
 
 	var endpoint string
 
 	if configuration.Global.DeveloperMode {
 		/* If in developer mode, the operator runs outside the cluster, and will reach Grafana via the ingress */
-		endpoint = common.ExternalEndpoint(notRandomGrafanaName, t.GetNamespace())
+		endpoint = common.ExternalEndpoint(defaultGrafanaName, t.GetNamespace())
 	} else {
 		/* If the operator runs within the cluster, it will reach Grafana via the service */
-		endpoint = common.InternalEndpoint(notRandomGrafanaName, t.GetNamespace(), GrafanaPort)
+		endpoint = common.InternalEndpoint(defaultGrafanaName, t.GetNamespace(), GrafanaPort)
 	}
 
 	return grafana.New(ctx,

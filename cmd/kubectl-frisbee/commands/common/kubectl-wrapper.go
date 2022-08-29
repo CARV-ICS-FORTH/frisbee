@@ -18,6 +18,10 @@ package common
 
 import (
 	"fmt"
+	"os"
+	"strings"
+	"time"
+
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/pkg/structure"
 	"github.com/carv-ics-forth/frisbee/pkg/ui"
@@ -26,9 +30,6 @@ import (
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/utils/exec"
-	"os"
-	"strings"
-	"time"
 )
 
 const (
@@ -41,9 +42,24 @@ func NotFound(testName, out string) bool {
 	return out == fmt.Sprintf("No resources found in %s namespace.\n", testName)
 }
 
-//////////////////////////////////////
+func KubectlPrint(testName string, arguments ...string) error {
+	arguments = append(arguments, "-n", testName)
+
+	out, err := process.Execute(Kubectl, arguments...)
+	switch {
+	case NotFound(testName, string(out)): // resource not found
+		return nil
+	case err != nil: // execution error
+		return err
+	default: // completed
+		ui.Info(string(out))
+		return nil
+	}
+}
+
+// ////////////////////////////////////
 // 			Frisbee Resources
-//////////////////////////////////////
+// ////////////////////////////////////
 
 const (
 	Scenarios      = "scenarios.frisbee.dev"
@@ -67,7 +83,7 @@ var FrisbeeResourceInspectionFields = strings.Join([]string{
 }, ",")
 
 func GetFrisbeeResources(cmd *cobra.Command, testName string) error {
-	command := []string{"get", "-n", testName,
+	command := []string{"get",
 		"--show-kind=true",
 		"--sort-by=.metadata.creationTimestamp",
 		"-l", fmt.Sprintf("%s", v1alpha1.LabelScenario)}
@@ -86,16 +102,7 @@ func GetFrisbeeResources(cmd *cobra.Command, testName string) error {
 
 	command = append(command, "-o", FrisbeeResourceInspectionFields)
 
-	out, err := process.Execute(Kubectl, command...)
-	switch {
-	case NotFound(testName, string(out)): // resource not found
-		return nil
-	case err != nil: // execution error
-		return err
-	default: // completed
-		ui.Info(string(out))
-		return nil
-	}
+	return KubectlPrint(testName, command...)
 }
 
 var TemplateInspectionFields = strings.Join([]string{
@@ -106,7 +113,7 @@ var TemplateInspectionFields = strings.Join([]string{
 }, ",")
 
 func GetTemplateResources(cmd *cobra.Command, testName string) error {
-	command := []string{"get", "-n", testName}
+	command := []string{"get"}
 
 	command = append(command, Templates)
 
@@ -120,37 +127,22 @@ func GetTemplateResources(cmd *cobra.Command, testName string) error {
 
 	command = append(command, "-o", TemplateInspectionFields)
 
-	out, err := process.Execute(Kubectl, command...)
-	switch {
-	case NotFound(testName, string(out)): // resource not found
-		return nil
-	case err != nil: // execution error
-		return err
-	default: // completed
-		ui.Info(string(out))
-		return nil
-	}
+	return KubectlPrint(testName, command...)
 }
 
 func WaitTestSuccess(testName string) error {
-	command := []string{"wait", "-n", testName,
+	command := []string{"wait",
 		"scenario", "--all=true",
 		"--for=jsonpath=.status.phase=Success",
 	}
 
-	out, err := process.Execute(Kubectl, command...)
-	if err != nil {
-		return err
-	}
-
-	ui.Info("Waiting for test completion", string(out))
-
-	return nil
+	ui.Info("Waiting for test completion...")
+	return KubectlPrint(testName, command...)
 }
 
-//////////////////////////////////////
+// ////////////////////////////////////
 // 			CHAOS Resources
-//////////////////////////////////////
+// ////////////////////////////////////
 
 const (
 	NetworkChaos = "networkchaos.chaos-mesh.org"
@@ -169,7 +161,7 @@ var ChaosResourceInspectionFields = strings.Join([]string{
 }, ",")
 
 func GetChaosResources(cmd *cobra.Command, testName string) error {
-	command := []string{"get", "-n", testName,
+	command := []string{"get",
 		"--show-kind=true",
 		"--sort-by=.metadata.creationTimestamp",
 		"-l", fmt.Sprintf("%s", v1alpha1.LabelScenario)}
@@ -186,31 +178,22 @@ func GetChaosResources(cmd *cobra.Command, testName string) error {
 
 	command = append(command, "-o", ChaosResourceInspectionFields)
 
-	out, err := process.Execute(Kubectl, command...)
-	switch {
-	case NotFound(testName, string(out)): // resource not found
-		return nil
-	case err != nil: // execution error
-		return err
-	default: // completed
-		ui.Info(string(out))
-		return nil
-	}
+	return KubectlPrint(testName, command...)
 }
 
-//////////////////////////////////////
+// ////////////////////////////////////
 // 			K8s Resources
-//////////////////////////////////////
+// ////////////////////////////////////
 
 const (
 	K8PODs            = "pods"
-	K8SVCs            = "services"
 	K8PVCs            = "persistentvolumeclaims"
 	K8PVs             = "persistentvolumes"
 	K8SStorageClasses = "storageclasses.storage.k8s.io"
+
+	// K8SVCs            = "services"
 )
 
-/*
 var K8SResourceInspectionFields = strings.Join([]string{
 	"custom-columns=API:.apiVersion",
 	"Kind:.kind",
@@ -222,12 +205,9 @@ var K8SResourceInspectionFields = strings.Join([]string{
 	"Message*:.status.message",
 }, ",")
 
-*/
-
 func GetK8sResources(cmd *cobra.Command, testName string) error {
 	// Filter out pods that belong to a scenario
-	command := []string{"get", "-n", testName,
-		"--show-kind=true"}
+	command := []string{"get", "--show-kind=true"}
 
 	command = append(command, strings.Join([]string{K8PODs, K8PVCs, K8PVs, K8SStorageClasses}, ","))
 
@@ -239,18 +219,9 @@ func GetK8sResources(cmd *cobra.Command, testName string) error {
 		command = append(command, "-o", string(outputType))
 	}
 
-	// command = append(command, "-o", K8SResourceInspectionFields)
+	command = append(command, "-o", K8SResourceInspectionFields)
 
-	out, err := process.Execute(Kubectl, command...)
-	switch {
-	case NotFound(testName, string(out)): // resource not found
-		return nil
-	case err != nil: // execution error
-		return err
-	default: // completed
-		ui.Info(string(out))
-		return nil
-	}
+	return KubectlPrint(testName, command...)
 }
 
 func GetPodLogs(testName string, tail bool, pods ...string) error {
@@ -307,18 +278,7 @@ func GetPodLogs(testName string, tail bool, pods ...string) error {
 }
 
 func Events(testName string) error {
-	command := []string{"get", "events", "-n", testName}
-
-	out, err := process.Execute(Kubectl, command...)
-	switch {
-	case NotFound(testName, string(out)): // resource not found
-		return nil
-	case err != nil: // execution error
-		return err
-	default: // completed
-		ui.Info(string(out))
-		return nil
-	}
+	return KubectlPrint(testName, "get", "events")
 }
 
 func OpenShell(testName string, podName string, shellArgs ...string) error {
@@ -342,21 +302,17 @@ func OpenShell(testName string, podName string, shellArgs ...string) error {
 }
 
 func RunTest(testName string, testFile string, dryrun bool) error {
-	command := []string{"apply", "--wait",
-		"-n", testName,
-		"-f", testFile}
+	command := []string{"apply", "--wait", "-f", testFile}
 
 	if dryrun {
 		command = append(command, "--dry-run=client")
 	}
 
-	_, err := process.Execute(Kubectl, command...)
-	return err
+	return KubectlPrint(testName, command...)
 }
 
 func Dashboards(cmd *cobra.Command, testName string) error {
 	command := []string{"get", "ingress",
-		"-n", testName,
 		"-l", fmt.Sprintf("%s", v1alpha1.LabelScenario),
 	}
 
@@ -368,16 +324,7 @@ func Dashboards(cmd *cobra.Command, testName string) error {
 		command = append(command, "-o", string(outputType))
 	}
 
-	out, err := process.Execute(Kubectl, command...)
-	switch {
-	case NotFound(testName, string(out)): // resource not found
-		return nil
-	case err != nil: // execution error
-		return err
-	default: // completed
-		ui.Info(string(out))
-		return nil
-	}
+	return KubectlPrint(testName, command...)
 }
 
 func CreateNamespace(name string, labels ...string) error {
@@ -501,15 +448,14 @@ spec:
 		return errors.Wrapf(err, "cannot sync quota file")
 	}
 
-	command := []string{"apply", "--wait", "-n", testName, "-f", f.Name()}
+	command := []string{"apply", "--wait", "-f", f.Name()}
 
-	_, err = process.Execute(Kubectl, command...)
-	return err
+	return KubectlPrint(testName, command...)
 }
 
-//////////////////////////////////////
+// ////////////////////////////////////
 // 			Helm Resources
-//////////////////////////////////////
+// ////////////////////////////////////
 
 func ListHelm(cmd *cobra.Command, testName string) error {
 	command := []string{"list", "-n", testName}

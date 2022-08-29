@@ -19,7 +19,6 @@ spec:
         memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
         cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
 
-    volumes:
     containers: # Container
       - name: app
         image: icsforth/fl-demo:latest

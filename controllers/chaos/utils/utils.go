@@ -39,15 +39,11 @@ func GetChaosSpec(ctx context.Context, c client.Client, caller metav1.Object, fr
 		return v1alpha1.ChaosSpec{}, errors.Errorf("cannot marshal chaos of %s", fromTemplate.TemplateRef)
 	}
 
-	scheme, err := templateutils.NewScheme(caller, template.Spec.Inputs, specBody)
-	if err != nil {
-		return v1alpha1.ChaosSpec{}, errors.Wrapf(err, "cannot get scheme for '%s'", fromTemplate.TemplateRef)
-	}
-
-	var spec v1alpha1.ChaosSpec
+	spec := v1alpha1.ChaosSpec{}
+	scheme := templateutils.NewScheme(caller, template.Spec.Inputs, specBody)
 
 	if err := templateutils.GenerateFromScheme(&spec, scheme, fromTemplate.GetInput(0)); err != nil {
-		return v1alpha1.ChaosSpec{}, errors.Wrapf(err, "cannot create spec")
+		return v1alpha1.ChaosSpec{}, errors.Wrapf(err, "evaluation of template '%s' has failed", fromTemplate.TemplateRef)
 	}
 
 	return spec, nil
@@ -68,12 +64,9 @@ func GetChaosSpecList(ctx context.Context, c client.Client, caller metav1.Object
 	specs := make([]v1alpha1.ChaosSpec, 0, fromTemplate.MaxInstances)
 
 	if err := fromTemplate.IterateInputs(func(userInputs map[string]string) error {
-		scheme, err := templateutils.NewScheme(caller, template.Spec.Inputs, specBody)
-		if err != nil {
-			return errors.Wrapf(err, "cannot get scheme for '%s'", fromTemplate.TemplateRef)
-		}
 
-		var spec v1alpha1.ChaosSpec
+		spec := v1alpha1.ChaosSpec{}
+		scheme := templateutils.NewScheme(caller, template.Spec.Inputs, specBody)
 
 		if err := templateutils.GenerateFromScheme(&spec, scheme, userInputs); err != nil {
 			return errors.Wrapf(err, "macro expansion failed")

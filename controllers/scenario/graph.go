@@ -37,21 +37,21 @@ func (r *Controller) Validate(ctx context.Context, t *v1alpha1.Scenario) error {
 		switch action.ActionType {
 		case v1alpha1.ActionService:
 			if _, err := serviceutils.GetServiceSpec(ctx, r.GetClient(), t, *action.Service); err != nil {
-				return errors.Wrapf(err, "service spec error")
+				return errors.Wrapf(err, "service '%s' error", action.Name)
 			}
 		case v1alpha1.ActionCluster:
 			if _, err := serviceutils.GetServiceSpec(ctx, r.GetClient(), t, action.Cluster.GenerateFromTemplate); err != nil {
-				return errors.Wrapf(err, "cluster spec error")
+				return errors.Wrapf(err, "cluster '%s' error", action.Name)
 			}
 
 		case v1alpha1.ActionChaos:
 			if _, err := chaosutils.GetChaosSpec(ctx, r.GetClient(), t, *action.Chaos); err != nil {
-				return errors.Wrapf(err, "chaos spec error")
+				return errors.Wrapf(err, "chaos '%s' error", action.Name)
 			}
 
 		case v1alpha1.ActionCascade:
 			if _, err := chaosutils.GetChaosSpec(ctx, r.GetClient(), t, action.Cascade.GenerateFromTemplate); err != nil {
-				return errors.Wrapf(err, "cascade spec error")
+				return errors.Wrapf(err, "cascade '%s' error", action.Name)
 			}
 		}
 	}
