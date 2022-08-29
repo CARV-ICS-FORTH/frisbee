@@ -255,10 +255,6 @@ func (r *Controller) HasFailed(ctx context.Context, cr *v1alpha1.Chaos) error {
 		common.Delete(ctx, r, job)
 	}
 
-	for _, job := range r.view.GetSuccessfulJobs() {
-		common.Delete(ctx, r, job)
-	}
-
 	return nil
 }
 

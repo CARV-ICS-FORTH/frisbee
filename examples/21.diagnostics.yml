@@ -1,4 +1,3 @@
-
 ---
 apiVersion: frisbee.dev/v1alpha1
 kind: Scenario
@@ -6,28 +5,71 @@ metadata:
   name: diagnostics
 spec:
   actions:
-    - action: Service
-      name: idle
-      service:
-        templateRef: system.tools.busybox
+    - action: Cluster
+      name: node
+      cluster:
+        templateRef: system.tools.debugger
+        inputs:
+          - {cni0: "10.1.96.192", host: "192.168.178.3"}
+          - {"neigh": node-0} # node-1 will ping node-0
 
+
+    # Test Localhost Connectivity
+    - action: Call
+      name: localhost
+      depends: { running: [ node ]}
+      call:
+        callable: localhost
+        services: [node-0]
+
+
+    # Test Container-To-Host Network
+    - action: Call
+      name: cni
+      depends: { running: [ node ]}
+      call:
+        callable: cni
+        services: [node-0]
+
+    # Test Container-To-Container Connectivity (Host Bridging + local DNS)
+    - action: Call
+      name: neigh
+      depends: { running: [ node ] }
+      call:
+        callable: neigh
+        services: [node-1]
+
+
+    # Test Container-To-Network Connectivity (Host Forwarding)
+    - action: Call
+      name: host
+      depends: { running: [ node ]}
+      call:
+        callable: host
+        services: [node-0]
+
+
+    # Test Container-To-Internet Connectivity (Fixed IP)
     - action: Call
       name: internet
-      depends: { running: [ idle ] }
+      depends: { running: [ node ]}
       call:
-        callable: internet
-        services: [idle]
+        callable: public
+        services: [node-0]
 
+
+    # Test Container-To-Internet Connectivity (DNS Name)
     - action: Call
       name: dns
-      depends: { running: [ idle ] }
+      depends: { running: [ node ]}
       call:
         callable: dns
-        services: [idle]
+        services: [node-0]
 
-    - action: Call
-      name: http
-      depends: { running: [ idle ] }
-      call:
-        callable: http
-        services: [idle]
+
+    # When all actions are done, delete looping servers to gracefully exit the experiment
+    - action: Delete
+      name: delete-servers
+      depends: { running: [ node ], success: [dns]}
+      delete:
+        jobs: [ node ]

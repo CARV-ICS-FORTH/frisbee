@@ -16,10 +16,6 @@ limitations under the License.
 
 package structure
 
-import (
-	"reflect"
-)
-
 // ContainsStrings searches a slice of strings for a case-sensitive match
 func ContainsStrings(slice []string, item string) bool {
 	for _, a := range slice {
@@ -30,14 +26,18 @@ func ContainsStrings(slice []string, item string) bool {
 	return false
 }
 
-func MapKeys(m interface{}) []string {
-	keyVals := reflect.ValueOf(m).MapKeys()
-
-	keys := make([]string, 0, len(keyVals))
-
-	for _, key := range keyVals {
-		keys = append(keys, key.String())
+/*
+// RemoveDuplicate returns a deduplicated version of the slice.
+// The implementation is based on Generics which require >= Go v1.18
+func RemoveDuplicate[T string | int](sliceList []T) []T {
+	allKeys := make(map[T]bool)
+	list := []T{}
+	for _, item := range sliceList {
+		if _, value := allKeys[item]; !value {
+			allKeys[item] = true
+			list = append(list, item)
+		}
 	}
-
-	return keys
+	return list
 }
+*/

@@ -44,7 +44,7 @@ func NewGetTestsCmd() *cobra.Command {
 
 			selectors = append(selectors, common.ManagedNamespace)
 
-			tests, err := client.ListTests(strings.Join(selectors, ","))
+			tests, err := client.ListScenarios(strings.Join(selectors, ","))
 			ui.ExitOnError("Getting all tests ", err)
 
 			err = common.RenderList(cmd, tests, os.Stdout)

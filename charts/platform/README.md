@@ -14,7 +14,7 @@
 | ------------------------------- | -------------------------------------------------------------------------- | ------------------ |
 | `operator.enabled`              | Set it to false for running the controller outside the Kubernetes Cluster. | `true`             |
 | `operator.name`                 | Defines the name of the controller.                                        | `frisbee-operator` |
-| `operator.advertisedHost`       | Defines the Public IP of the controller, when operator.enabled==false.     | `139.91.92.82`     |
+| `operator.advertisedHost`       | Defines the Public IP of the controller, when operator.enabled==false.     | `10.1.96.192`      |
 | `operator.webhook.k8s.enabled`  | Enables the Admission webhooks                                             | `true`             |
 | `operator.webhook.k8s.port`     | Sets the port for the Admission/Mutation  webhook server.                  | `9443`             |
 | `operator.webhook.grafana.port` | Sets the port for the telemetry webhook server.                            | `6666`             |

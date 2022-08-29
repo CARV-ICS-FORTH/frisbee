@@ -673,9 +673,12 @@
       "sparkline": {},
       "targets": [
         {
+          "exemplar": true,
           "expr": "sum(process_resident_memory_bytes{})",
           "format": "time_series",
+          "interval": "",
           "intervalFactor": 1,
+          "legendFormat": "",
           "refId": "allocations"
         }
       ],
@@ -741,7 +744,7 @@
         "orientation": "horizontal",
         "reduceOptions": {
           "calcs": [
-            "lastNotNull"
+            "last"
           ],
           "fields": "",
           "values": false

@@ -18,6 +18,7 @@ package common
 
 import (
 	"context"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"reflect"
 	"time"
 
@@ -117,11 +118,19 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 		if controllerutil.AddFinalizer(obj, r.Finalizer()) {
 			r.Info("AddFinalizer",
 				"obj", client.ObjectKeyFromObject(obj),
-				"finalizer", r.Finalizer())
+				"finalizer", r.Finalizer(),
+				"current", obj.GetFinalizers())
 
-			if err := Update(ctx, r, obj); err != nil {
-				return RequeueWithError(err)
+			if err := wait.ExponentialBackoffWithContext(ctx, BackoffForK8sEndpoint, func() (done bool, err error) {
+				if errUpdate := Update(ctx, r, obj); errUpdate != nil {
+					return false, nil
+				} else {
+					return true, nil
+				}
+			}); err != nil {
+				r.Error(err, "Abort retrying to add finalizer", "obj", client.ObjectKeyFromObject(obj))
 			}
+
 			return Stop()
 		}
 
@@ -144,10 +153,18 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 			if controllerutil.RemoveFinalizer(obj, r.Finalizer()) {
 				r.Info("RemoveFinalizer",
 					"obj", client.ObjectKeyFromObject(obj),
-					"finalizer", r.Finalizer())
+					"finalizer", r.Finalizer(),
+					"current", obj.GetFinalizers(),
+				)
 
-				if err := Update(ctx, r, obj); err != nil {
-					return RequeueAfter(time.Second)
+				if err := wait.ExponentialBackoffWithContext(ctx, BackoffForK8sEndpoint, func() (done bool, err error) {
+					if errUpdate := Update(ctx, r, obj); errUpdate != nil {
+						return false, nil
+					} else {
+						return true, nil
+					}
+				}); err != nil {
+					r.Error(err, "Abort retrying to remove finalizer", "obj", client.ObjectKeyFromObject(obj))
 				}
 
 				return Stop()
@@ -162,7 +179,6 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 
 // Update will update the metadata and the spec of the Object. If there is a conflict, it will retry again.
 func Update(ctx context.Context, r Reconciler, obj client.Object) error {
-
 	r.Info("OO UpdtMeta",
 		"obj", client.ObjectKeyFromObject(obj),
 		"version", obj.GetResourceVersion(),
@@ -186,11 +202,8 @@ func UpdateStatus(ctx context.Context, r Reconciler, obj client.Object) error {
 // if the next reconciliation cycle happens faster than the API update, it is possible to
 // reschedule the creation of a Job. To avoid that, get if the Job is already submitted.
 func Create(ctx context.Context, r Reconciler, parent, child client.Object) error {
-	// owner labels are used by the selectors.
-	// workflow labels are used to select only objects that belong to this experiment.
-	// used to narrow down the scope of fault injection in a common namespace
+	// Create a searchable link between the parent and the children.
 	v1alpha1.SetCreatedByLabel(child, parent)
-	v1alpha1.SetInstanceLabel(child)
 
 	child.SetNamespace(parent.GetNamespace())
 

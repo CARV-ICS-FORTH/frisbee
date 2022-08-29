@@ -79,3 +79,11 @@ spec:
         templateRef: system.chaos.network.partition.partial
         inputs: # Handle the chaos template much like a service template.
           - { source: server, duration: 2m , direction: "to", dst: "clients-0, clients-1, clients-3" }
+
+
+    # When all actions are done, delete looping servers to gracefully exit the experiment
+    - action: Delete
+      name: teardown
+      depends: { running: [ server, clients ], success: [partition]} # Notice: dependency to a Chaos action.
+      delete:
+        jobs: [ server, clients ]

@@ -48,8 +48,8 @@ func (r *Controller) constructJobSpecList(ctx context.Context, cr *v1alpha1.Call
 		// find callable
 		callable, ok := service.Spec.Callables[cr.Spec.Callable]
 		if !ok {
-			return nil, errors.Errorf("cannot find callable '%s' on service '%s'. Available: %s",
-				cr.Spec.Callable, serviceName, structure.MapKeys(service.Spec.Callables))
+			return nil, errors.Errorf("callable '%s/%s' not found. Available: %s",
+				cr.Spec.Callable, serviceName, structure.SortedMapKeys(service.Spec.Callables))
 		}
 
 		specs = append(specs, callable)
@@ -73,24 +73,32 @@ func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Call, i int) error
 
 	// Call normally does not return anything. This however would break all the pipeline for
 	// managing dependencies between jobs. For that, we return a dummy virtual object without dedicated controller.
-	// Delete normally does not return anything. This however would break all the pipeline for
-	// managing dependencies between jobs. For that, we return a dummy virtual object without dedicated controller.
-	// FIXME: if the call fails, this object will be re-created, and the call will failed with an "existing object" error.
-	return lifecycle.VExec(ctx, r, cr, jobName, func() error {
+	// FIXME: if the call fails, this object will be re-created, and the call will fail with an "existing object" error.
+	return lifecycle.VirtualExecution(ctx, r, cr, jobName, func(task *v1alpha1.VirtualObject) error {
 		res, err := r.executor.Exec(pod, callable.Container, callable.Command, true)
-		if err != nil {
-			return errors.Wrapf(err, "callable '%s/%s' has failed", callable.Container, jobName)
-		}
 
-		r.Logger.V(2).Info("Call Output",
-			"job", cr.GetName(),
+		defer func() {
+			// Use the virtual object to store the remote execution logs.
+			task.Status.Data = map[string]string{
+				"info":   fmt.Sprintf("Callable '%s/%s'", serviceName, callable.Container),
+				"stdout": res.Stdout,
+				"stderr": res.Stderr,
+			}
+		}()
+
+		r.Logger.Info("CallOutput",
+			"job", client.ObjectKeyFromObject(cr),
 			"stdout", res.Stdout,
 			"stderr", res.Stderr,
 		)
 
+		if err != nil {
+			return errors.Wrapf(err, "call [%s/%s] has failed", serviceName, callable.Container)
+		}
+
 		if cr.Spec.Expect != nil {
-			r.Logger.V(2).Info("Assert Call Output",
-				"job", cr.GetName(),
+			r.Logger.Info("AssertCall",
+				"job", client.ObjectKeyFromObject(cr),
 				"expect", cr.Spec.Expect,
 			)
 
@@ -103,7 +111,7 @@ func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Call, i int) error
 				}
 
 				if !matchStdout {
-					return errors.Errorf("Mismatched stdout. Expected '%s' but got '%s'", *expect.Stdout, res.Stdout)
+					return errors.Errorf("Mismatched stdout. Expected: '%s' but got: '%s' --", *expect.Stdout, res.Stdout)
 				}
 			}
 
@@ -114,10 +122,9 @@ func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Call, i int) error
 				}
 
 				if !matchStderr {
-					return errors.Errorf("Mismatched stderr. Expected '%s' but got '%s'", *expect.Stderr, res.Stderr)
+					return errors.Errorf("Mismatched stderr. Expected: '%s' but got '%s' --", *expect.Stderr, res.Stderr)
 				}
 			}
-
 		}
 
 		return nil

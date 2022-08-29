@@ -60,3 +60,10 @@ spec:
         # Suspend the execution if more than 6 clients are created
         until:
           state: '{{.NumSuccessfulJobs}} >= 6'
+
+    # When all actions are done, delete looping servers to gracefully exit the experiment
+    - action: Delete
+      name: teardown
+      depends: { running: [server], success: [clients]}
+      delete:
+        jobs: [ server ]

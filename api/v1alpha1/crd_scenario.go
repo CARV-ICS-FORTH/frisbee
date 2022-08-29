@@ -18,8 +18,10 @@ package v1alpha1
 
 import (
 	"fmt"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"strings"
+	"time"
 )
 
 // +kubebuilder:object:root=true
@@ -39,7 +41,7 @@ func (in *Scenario) Table() (header []string, data [][]string) {
 	header = []string{
 		"Test",
 		"Scenario",
-		"Created",
+		"Age",
 		"Actions",
 		"Phase",
 	}
@@ -54,7 +56,7 @@ func (in *Scenario) Table() (header []string, data [][]string) {
 	data = append(data, []string{
 		in.GetNamespace(),
 		in.GetName(),
-		in.GetCreationTimestamp().String(),
+		time.Now().Sub(in.GetCreationTimestamp().Time).Round(time.Second).String(),
 		scheduled,
 		in.Status.Phase.String(),
 	})
@@ -139,8 +141,16 @@ type EmbedActions struct {
 	Call *CallSpec `json:"call,omitempty"`
 }
 
+type ScenarioOptions struct {
+	SharedStorage *v1.PersistentVolumeClaim `json:"shared-storage"`
+}
+
 // ScenarioSpec defines the desired state of Scenario.
 type ScenarioSpec struct {
+	// Options define some additional automations on the experiment
+	// +optional
+	Options *ScenarioOptions `json:"options,omitempty"`
+
 	// Actions are the tasks that will be taken.
 	Actions []Action `json:"actions"`
 
@@ -167,7 +177,6 @@ type ScenarioStatus struct {
 
 func (in ScenarioStatus) Table() (header []string, data [][]string) {
 	header = []string{
-		"Scheduled",
 		"Phase",
 		"Reason",
 		"Message",
@@ -188,7 +197,6 @@ func (in ScenarioStatus) Table() (header []string, data [][]string) {
 	}
 
 	data = append(data, []string{
-		strings.Join(in.ScheduledJobs, "\n"),
 		in.Phase.String(),
 		in.Reason,
 		in.Message,
@@ -220,7 +228,7 @@ func (in ScenarioList) Table() (header []string, data [][]string) {
 	header = []string{
 		"Test",
 		"Scenario",
-		"Created",
+		"Age",
 		"Actions",
 		"Phase",
 	}

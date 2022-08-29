@@ -71,7 +71,7 @@ spec:
 
     # Inject a network failure, after 1 minute
     - action: Chaos
-      name: fault
+      name: partition
       depends: { running: [ client ], after: "1m" }
       chaos:
         templateRef: system.chaos.network.partition.partial
@@ -80,7 +80,15 @@ spec:
 
     # Repair the partition (by deleting the chaos job), after 3 minutes
     - action: Delete
-      name: delete-fault
+      name: repair-partition
       depends: { after: "3m" }
       delete:
-        jobs: [ fault ]
+        jobs: [ partition ]
+
+
+    # When all actions are done, delete looping servers to gracefully exit the experiment
+    - action: Delete
+      name: teardown
+      depends: { running: [ server, client], success: [repair-partition]} # Notice: Partition is a finite action
+      delete:
+        jobs: [ server, client ]

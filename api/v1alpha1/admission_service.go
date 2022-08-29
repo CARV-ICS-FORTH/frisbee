@@ -99,7 +99,7 @@ func (in *Service) validateSidecarContainer(c *corev1.Container) error {
 		}
 
 		if value != c.Name {
-			return errors.Errorf("Invalid annotation. Expected '%s:%s' but got '%s:%s'",
+			return errors.Errorf("Invalid annotation. Expected: '%s:%s' but got '%s:%s'",
 				SidecarTelemetry, c.Name,
 				SidecarTelemetry, value)
 		}

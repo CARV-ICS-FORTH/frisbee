@@ -339,14 +339,16 @@ func constructDiscoveryService(cr *v1alpha1.Service) (*corev1.Service, error) {
 
 	kubeService.SetName(cr.GetName())
 
-	// make labels visibile to the dns service
+	// make labels visible to the dns service
 	v1alpha1.PropagateLabels(&kubeService, cr)
 
 	kubeService.Spec.Ports = allPorts
 	kubeService.Spec.ClusterIP = clusterIP
 
-	// bind service to the pod
-	kubeService.Spec.Selector = v1alpha1.GetInstanceLabel(cr)
+	// select pods that are created by the same v1alpha1.Service as this corev1.Service
+	kubeService.Spec.Selector = map[string]string{
+		v1alpha1.LabelCreatedBy: cr.GetName(),
+	}
 
 	return &kubeService, nil
 }

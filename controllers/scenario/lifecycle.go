@@ -54,13 +54,13 @@ func (r *Controller) updateLifecycle(cr *v1alpha1.Scenario) bool {
 			if !eval.IsTrue(r.view, cr) {
 				cr.Status.Lifecycle.Phase = v1alpha1.PhaseFailed
 				cr.Status.Lifecycle.Reason = "AssertError"
-				cr.Status.Lifecycle.Message = fmt.Sprintf("AssertError for action '%s'. Info: '%s'", action.Name, eval.Info)
+				cr.Status.Lifecycle.Message = fmt.Sprintf("action '%s' failed due to:'%s'", action.Name, eval.Info)
 
 				meta.SetStatusCondition(&cr.Status.Lifecycle.Conditions, metav1.Condition{
-					Type:    v1alpha1.ConditionAssert.String(),
+					Type:    v1alpha1.ConditionAssertionError.String(),
 					Status:  metav1.ConditionTrue,
 					Reason:  "AssertError",
-					Message: fmt.Sprintf("AssertError for action '%s'. Info: '%s'", action.Name, eval.Info),
+					Message: fmt.Sprintf("action '%s' failed due to:'%s'", action.Name, eval.Info),
 				})
 
 				return true

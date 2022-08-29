@@ -17,6 +17,7 @@ limitations under the License.
 package commands
 
 import (
+	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/common"
 	"github.com/carv-ics-forth/frisbee/pkg/ui"
 	"github.com/kubeshop/testkube/pkg/process"
 	"github.com/spf13/cobra"
@@ -33,8 +34,11 @@ func NewUninstallCmd() *cobra.Command {
 
 			ui.Verbose = true
 
-			_, err := process.Execute("helm", "uninstall", "--namespace", namespace, name)
-			ui.PrintOnError("uninstalling frisbee", err)
+			err := common.DeleteNamespaces(common.ManagedNamespace)
+			ui.ExitOnError("Deleting test-cases", err)
+
+			_, err = process.Execute("helm", "uninstall", "--namespace", namespace, name)
+			ui.ExitOnError("Uninstalling  platform", err)
 		},
 	}
 

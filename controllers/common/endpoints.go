@@ -19,9 +19,25 @@ package common
 import (
 	"fmt"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"time"
 
 	"github.com/carv-ics-forth/frisbee/controllers/common/configuration"
 )
+
+var BackoffForK8sEndpoint = wait.Backoff{
+	Duration: 1 * time.Second,
+	Factor:   5,
+	Jitter:   0.1,
+	Steps:    3,
+}
+
+var BackoffForServiceEndpoint = wait.Backoff{
+	Duration: 5 * time.Second,
+	Factor:   5,
+	Jitter:   0.1,
+	Steps:    3,
+}
 
 // InternalEndpoint creates an endpoint for accessing the service within the cluster.
 func InternalEndpoint(name string, planName string, port int64) string {

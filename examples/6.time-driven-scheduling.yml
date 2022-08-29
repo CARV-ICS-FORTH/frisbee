@@ -57,3 +57,10 @@ spec:
         # Schedule the creation of new clients
         schedule:
           cron: "@every 1m"
+
+    # When all actions are done, delete looping servers to gracefully exit the experiment
+    - action: Delete
+      name: teardown
+      depends: { running: [server], success: [clients]}
+      delete:
+        jobs: [ server ]

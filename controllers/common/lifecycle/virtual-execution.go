@@ -18,9 +18,10 @@ package lifecycle
 
 import (
 	"context"
-
+	"fmt"
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
+	"github.com/carv-ics-forth/frisbee/pkg/structure"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -38,19 +39,19 @@ func buildVirtualObject(parent metav1.Object, name string) *v1alpha1.VirtualObje
 	v1alpha1.PropagateLabels(&vobject, parent)
 
 	v1alpha1.SetScenarioLabel(&vobject.ObjectMeta, parent.GetName())
-	v1alpha1.SetActionLabel(&vobject.ObjectMeta, name)
 	v1alpha1.SetComponentLabel(&vobject.ObjectMeta, v1alpha1.ComponentSUT)
 
 	return &vobject
 }
 
-// VExec wraps a call into a virtual object. This is used for operations that do not create external resources.
+// VirtualExecution wraps a call into a virtual object. This is used for operations that do not create external resources.
 // Examples: Deletions, Calls, ...
-// The behavior of VExec is practically asynchronous.
+// The behavior of VirtualExecution is practically asynchronous.
 // If the callback function fails, it will be reflected in the created virtual jobs and should be captured
-// by the parent's lifecycle. The VExec will return nil.
-// If the VExec fails (e.g, cannot create a virtual object), it will return an error.
-func VExec(ctx context.Context, r common.Reconciler, parent client.Object, jobName string, cb func() error) error {
+// by the parent's lifecycle. The VirtualExecution will return nil.
+// If the VirtualExecution fails (e.g, cannot create a virtual object), it will return an error.
+func VirtualExecution(ctx context.Context, r common.Reconciler, parent client.Object, jobName string,
+	cb func(vobj *v1alpha1.VirtualObject) error) error {
 	// Step 1. Create the object in the Kubernetes API
 	vJob := buildVirtualObject(parent, jobName)
 
@@ -63,7 +64,7 @@ func VExec(ctx context.Context, r common.Reconciler, parent client.Object, jobNa
 	// Step 2. Run the callback function with support for context cancelling
 	quit := make(chan error)
 	go func() {
-		quit <- errors.Wrapf(cb(), "vexec failed")
+		quit <- cb(vJob)
 		close(quit)
 	}()
 
@@ -79,21 +80,23 @@ func VExec(ctx context.Context, r common.Reconciler, parent client.Object, jobNa
 		r.GetEventRecorderFor(parent.GetName()).Event(parent, corev1.EventTypeWarning, "VExecFailed", jobName)
 
 		vJob.Status.Lifecycle.Phase = v1alpha1.PhaseFailed
-		vJob.Status.Lifecycle.Reason = "AJobHasFailed"
-		vJob.Status.Lifecycle.Message = jobErr.Error()
-
+		vJob.Status.Lifecycle.Reason = "VExecFailed"
+		vJob.Status.Lifecycle.Message = errors.Wrapf(jobErr, "Job failed").Error()
 	} else {
+
 		r.GetEventRecorderFor(parent.GetName()).Event(parent, corev1.EventTypeNormal, "VExecSuccess", jobName)
 
 		vJob.Status.Lifecycle.Phase = v1alpha1.PhaseSuccess
-		vJob.Status.Lifecycle.Reason = "JobSuccess"
-		vJob.Status.Lifecycle.Message = "Yoohoo"
+		vJob.Status.Lifecycle.Reason = "VExecSuccess"
+		vJob.Status.Lifecycle.Message = fmt.Sprintf("Job completed")
 	}
 
-	// Step 4. Update the status of the mockup. This will be captured by the lifecycle.
-	if err := common.UpdateStatus(ctx, r, vJob); err != nil {
-		return errors.Wrapf(err, "vexec status update error")
+	// Step 4. Append information for stored data, if any
+	if len(vJob.Status.Data) > 0 {
+		vJob.Status.Message = fmt.Sprintf("%s. <StoredData>: '%s'", vJob.Status.Message, structure.SortedMapKeys(vJob.Status.Data))
 	}
 
-	return nil
+	// Step 5. Update the status of the mockup. This will be captured by the lifecycle.
+	err := common.UpdateStatus(ctx, r, vJob)
+	return errors.Wrapf(err, "vexec status update error")
 }

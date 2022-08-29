@@ -56,14 +56,20 @@ func (in *Scenario) Default() {
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (in *Scenario) ValidateCreate() error {
 
-	legitReferences, err := DependencyGraph(in)
+	legitReferences, err := BuildDependencyGraph(in)
 	if err != nil {
 		return errors.Wrapf(err, "invalid scenario [%s]", in.GetName())
 	}
 
+	// Use transactions as a means to detect looping containers that never terminate within
+	// the lifespan of the scenario. If so, the experiment never ends and waste resources.
+	// The idea is find which Actions (Services, Clusters, ...) are not referenced by a
+	// terminal dependency condition (e.g, success), and mark as suspects for looping.
+	txIndex := make(map[string]bool, len(legitReferences))
+
 	for _, action := range in.Spec.Actions {
 		// Check the referenced dependencies are ok
-		if err := CheckDependencyGraph(&action, legitReferences); err != nil {
+		if err := CheckDependencyGraph(&action, legitReferences, txIndex); err != nil {
 			return errors.Wrapf(err, "dependency error for action [%s]", action.Name)
 		}
 
@@ -87,12 +93,19 @@ func (in *Scenario) ValidateCreate() error {
 		*/
 	}
 
+	// raise a warning if there are opened looping services that remain active after all actions are scheduled.
+	for actionName, completed := range txIndex {
+		if !completed {
+			return errors.Errorf("Action '%s' remains unbounded at the end of the scenario.", actionName)
+		}
+	}
+
 	return nil
 }
 
-func DependencyGraph(scenario *Scenario) (map[string]*Action, error) {
-
-	callIndex := make(map[string]*Action)
+func BuildDependencyGraph(scenario *Scenario) (map[string]*Action, error) {
+	// callIndex maintains a map of all the action in the scenario
+	callIndex := make(map[string]*Action, len(scenario.Spec.Actions))
 
 	// prepare a dependency graph
 	for i, action := range scenario.Spec.Actions {
@@ -104,29 +117,44 @@ func DependencyGraph(scenario *Scenario) (map[string]*Action, error) {
 			return nil, errors.Wrapf(err, "invalid actioname %s", action.Name)
 		}
 
-		_, ok := callIndex[action.Name]
-		if ok {
+		// update calling map
+		if _, exists := callIndex[action.Name]; !exists {
+			callIndex[action.Name] = &scenario.Spec.Actions[i]
+		} else {
 			return nil, errors.Errorf("Duplicate action '%s'", action.Name)
 		}
-
-		callIndex[action.Name] = &scenario.Spec.Actions[i]
 	}
 
 	return callIndex, nil
 }
 
-func CheckDependencyGraph(action *Action, callIndex map[string]*Action) error {
+func CheckDependencyGraph(action *Action, callIndex map[string]*Action, txIndex map[string]bool) error {
+	// find invalid dependency and update txIndex with completed actions.
 	if deps := action.DependsOn; deps != nil {
-		for _, dep := range deps.Success {
-			if _, ok := callIndex[dep]; !ok {
-				return errors.Errorf("invalid success dependency [%s]<-[%s]", action.Name, dep)
+		for _, dep := range deps.Running {
+			if _, exists := callIndex[dep]; !exists {
+				return errors.Errorf("invalid running dependency: [%s]<-[%s]", action.Name, dep)
+			}
+
+			// In general, we assume that an Action A with a "Running" dependency to Action B,
+			// will leave the Action B unchanged, after Action A is complete. Exception to this is "Delete" Action,
+			// which will delete (and therefore 'complete') the Action B.
+			if action.ActionType != ActionDelete {
+				// mark the action as opened
+				txIndex[dep] = false
+			} else {
+				// mark the action as completed
+				txIndex[dep] = true
 			}
 		}
 
-		for _, dep := range deps.Running {
-			if _, ok := callIndex[dep]; !ok {
-				return errors.Errorf("invalid running dependency: [%s]<-[%s]", action.Name, dep)
+		for _, dep := range deps.Success {
+			if _, exists := callIndex[dep]; !exists {
+				return errors.Errorf("invalid success dependency [%s]<-[%s]", action.Name, dep)
 			}
+
+			// mark the action as completed.
+			txIndex[dep] = true
 		}
 	}
 

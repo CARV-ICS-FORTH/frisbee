@@ -108,6 +108,15 @@ spec:
                   - type
                   type: object
                 type: array
+              data:
+                additionalProperties:
+                  type: string
+                description: Data contains the configuration data. Each key must consist
+                  of alphanumeric characters, '-', '_' or '.'. Values with non-UTF-8
+                  byte sequences must use the BinaryData field. The keys stored in
+                  Data must not overlap with the keys in the BinaryData field, this
+                  is enforced during validation process.
+                type: object
               message:
                 description: Message provides more details for understanding the Reason.
                 type: string

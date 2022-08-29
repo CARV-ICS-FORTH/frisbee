@@ -18,24 +18,33 @@ package v1alpha1
 
 import (
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+/////////////////////////////////////////////
+//		System Configuration
+/////////////////////////////////////////////
+
+const (
+	// ResourceDiscoveryLabel is used to discover Frisbee resources across different namespaces
+	ResourceDiscoveryLabel = "discover.frisbee.dev/name"
+)
+
+/////////////////////////////////////////////
+//		Resource Identification
+/////////////////////////////////////////////
+
 type Component string
 
 const (
-	// ComponentSys is a component that belongs to Frisbee. Such components can be excluded from Chaos events.
+	// ComponentSys is a Frisbee component that is necessary for the execution of a test (e.g, Chaos, Grafana, ...)
 	ComponentSys = Component("SYS")
 
-	// ComponentSUT is a component that belongs to the system under testing
+	// ComponentSUT is a component that belongs to the system under testing.
 	ComponentSUT = Component("SUT")
-)
-
-const (
-	// ResourceDiscoveryLabel is used to discover frisbee resources across different namespaces
-	ResourceDiscoveryLabel = "discover.frisbee.dev/name"
 )
 
 // https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/
@@ -46,35 +55,64 @@ const (
 	// LabelAction points to the action this resource is part of.
 	LabelAction = "scenario.frisbee.dev/action"
 
-	// LabelCreatedBy points to the controller who created this resource
+	// LabelCreatedBy points to the controller who created this resource. It is used for listing children resources.
 	LabelCreatedBy = "scenario.frisbee.dev/created-by"
 
-	// LabelComponent describes the role of the component within the architecture.
-	// It can be SUT (for system under service) or SYS (if it's a frisbee component like Grafana).
+	// LabelComponent describes the role of the component within the architecture (e.g, SUT or SYS).
+	// It is used to handle differently the SUT resources from the SYS resources (e.g, delete the actions but not grafana).
 	LabelComponent = "scenario.frisbee.dev/component"
-
-	// LabelInstance contains a unique name identifying the instance of the  resource
-	LabelInstance = "scenario.frisbee.dev/instance"
 )
 
 func SetScenarioLabel(obj *metav1.ObjectMeta, scenario string) {
-	metav1.SetMetaDataLabel(obj, LabelScenario, scenario)
+	oldScenario, exists := obj.GetLabels()[scenario]
+	if !exists {
+		metav1.SetMetaDataLabel(obj, LabelScenario, scenario)
+		return
+	}
+
+	if oldScenario == scenario {
+		logrus.Warnf("Overwriting scenario '%s' on object '%s'", scenario, obj.GetName())
+	} else {
+		panic(errors.Errorf("setting scenario '%s' failed. obj: '%s' already has scenario '%s'.",
+			scenario, obj.GetName(), oldScenario,
+		))
+	}
 }
 
-func SetActionLabel(obj *metav1.ObjectMeta, action string) {
-	metav1.SetMetaDataLabel(obj, LabelAction, action)
-}
+func SetComponentLabel(obj *metav1.ObjectMeta, componentType Component) {
+	oldType, exists := obj.GetLabels()[string(componentType)]
+	if !exists {
+		metav1.SetMetaDataLabel(obj, LabelComponent, string(componentType))
+		return
+	}
 
-func SetComponentLabel(obj *metav1.ObjectMeta, kind Component) {
-	metav1.SetMetaDataLabel(obj, LabelComponent, string(kind))
+	if oldType == string(componentType) {
+		logrus.Warnf("Overwriting component type '%s' on object '%s'", componentType, obj.GetName())
+	} else {
+		panic(errors.Errorf("setting component type '%s' failed. obj: '%s' already has type '%s'.",
+			componentType, obj.GetName(), oldType,
+		))
+	}
 }
 
 func SetCreatedByLabel(child client.Object, parent client.Object) {
-	child.SetLabels(labels.Merge(child.GetLabels(), map[string]string{LabelCreatedBy: parent.GetName()}))
+	oldParent, exists := child.GetLabels()[parent.GetName()]
+	if !exists {
+		child.SetLabels(labels.Merge(child.GetLabels(), map[string]string{LabelCreatedBy: parent.GetName()}))
+		return
+	}
+
+	if oldParent == parent.GetName() {
+		logrus.Warnf("Overwriting parent '%s' on object '%s'", parent.GetName(), child.GetName())
+	} else {
+		panic(errors.Errorf("setting parent '%s' failed. obj: '%s' already has type '%s'.",
+			parent.GetName(), child.GetName(), oldParent,
+		))
+	}
 }
 
-func SetInstanceLabel(obj metav1.Object) {
-	obj.SetLabels(labels.Merge(obj.GetLabels(), map[string]string{LabelInstance: obj.GetName()}))
+func PropagateLabels(child metav1.Object, parent metav1.Object) {
+	child.SetLabels(labels.Merge(child.GetLabels(), parent.GetLabels()))
 }
 
 func HasScenarioLabel(obj metav1.Object) bool {
@@ -92,26 +130,15 @@ func GetScenarioLabel(obj metav1.Object) string {
 	return scenario
 }
 
-// GetActionLabel returns the name of the action the object belongs to.
-func GetActionLabel(obj metav1.Object) string {
-	action, ok := obj.GetLabels()[LabelAction]
-	if !ok {
-		panic(errors.Errorf("Cannot extract label '%s' from resource '%s'. Labels: %s",
-			LabelAction, obj.GetName(), obj.GetLabels()))
-	}
-
-	return action
-}
-
 // GetCreatedByLabel returns the creator of the resource.
-func GetCreatedByLabel(obj metav1.Object) string {
+func GetCreatedByLabel(obj metav1.Object) map[string]string {
 	creator, ok := obj.GetLabels()[LabelCreatedBy]
 	if !ok {
 		panic(errors.Errorf("Cannot extract label '%s' from resource '%s'. Labels: %s",
 			LabelCreatedBy, obj.GetName(), obj.GetLabels()))
 	}
 
-	return creator
+	return map[string]string{LabelCreatedBy: creator}
 }
 
 func GetComponentLabel(obj metav1.Object) Component {
@@ -128,20 +155,6 @@ func GetComponentLabel(obj metav1.Object) Component {
 	}
 
 	return v
-}
-
-func GetInstanceLabel(obj metav1.Object) map[string]string {
-	instance, ok := obj.GetLabels()[LabelInstance]
-	if !ok {
-		panic(errors.Errorf("Cannot extract label '%s' from resource '%s'. Labels: %s",
-			LabelInstance, obj.GetName(), obj.GetLabels()))
-	}
-
-	return map[string]string{LabelInstance: instance}
-}
-
-func PropagateLabels(child metav1.Object, parent metav1.Object) {
-	child.SetLabels(labels.Merge(child.GetLabels(), parent.GetLabels()))
 }
 
 /////////////////////////////////////////////
@@ -163,7 +176,7 @@ const (
 )
 
 /////////////////////////////////////////////
-//		Grafana Visualization
+//		Grafana Visualization (Annotations)
 /////////////////////////////////////////////
 
 const (

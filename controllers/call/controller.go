@@ -158,7 +158,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	case v1alpha1.PhaseUninitialized:
 		if err := r.Initialize(ctx, &cr); err != nil {
-			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot initialize"))
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "initialization error"))
 		}
 
 		return lifecycle.Pending(ctx, r, &cr, "ready to start submitting jobs.")
@@ -193,8 +193,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		cr.Status.ScheduledJobs = nextJob
 		cr.Status.LastScheduleTime = &metav1.Time{Time: time.Now()}
 
-		return lifecycle.Pending(ctx, r, &cr, fmt.Sprintf("'%d/%d' jobs are scheduled",
-			cr.Status.ScheduledJobs, len(cr.Spec.Services)))
+		return lifecycle.Pending(ctx, r, &cr, fmt.Sprintf("Scheduled jobs: '%d'", cr.Status.ScheduledJobs))
 	}
 
 	panic(errors.New("This should never happen"))
@@ -208,7 +207,7 @@ func (r *Controller) Initialize(ctx context.Context, cr *v1alpha1.Call) error {
 	*/
 	jobList, err := r.constructJobSpecList(ctx, cr)
 	if err != nil {
-		return errors.Wrapf(err, "cannot build joblist")
+		return errors.Wrapf(err, "building joblist")
 	}
 
 	cr.Status.QueuedJobs = jobList
@@ -216,13 +215,13 @@ func (r *Controller) Initialize(ctx context.Context, cr *v1alpha1.Call) error {
 
 	// Metrics-driven execution requires to set alerts on Grafana.
 	if until := cr.Spec.Until; until != nil && until.HasMetricsExpr() {
-		if err := expressions.SetAlert(ctx, cr, until.Metrics); err != nil {
+		if err := expressions.SetAlert(ctx, r.Logger, cr, until.Metrics); err != nil {
 			return errors.Wrapf(err, "spec.until")
 		}
 	}
 
 	if schedule := cr.Spec.Schedule; schedule != nil && schedule.Event.HasMetricsExpr() {
-		if err := expressions.SetAlert(ctx, cr, schedule.Event.Metrics); err != nil {
+		if err := expressions.SetAlert(ctx, r.Logger, cr, schedule.Event.Metrics); err != nil {
 			return errors.Wrapf(err, "spec.schedule")
 		}
 	}
@@ -280,10 +279,6 @@ func (r *Controller) HasFailed(ctx context.Context, cr *v1alpha1.Call) error {
 	}
 
 	for _, job := range r.view.GetRunningJobs() {
-		common.Delete(ctx, r, job)
-	}
-
-	for _, job := range r.view.GetSuccessfulJobs() {
 		common.Delete(ctx, r, job)
 	}
 

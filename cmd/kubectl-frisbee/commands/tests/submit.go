@@ -31,10 +31,13 @@ import (
 )
 
 type TestSubmitOptions struct {
-	Wait, Log bool
+	CPUQuota, MemoryQuota string
+	Wait, Log             bool
 }
 
 func PopulateTestSubmitFlags(cmd *cobra.Command, options *TestSubmitOptions) {
+	cmd.Flags().StringVar(&options.CPUQuota, "cpu", "", "set quotas for the total CPUs (e.g, 0.5) that can be used by all Pods running in the test.")
+	cmd.Flags().StringVar(&options.MemoryQuota, "memory", "", "set quotas for the total Memory (e.g, 100Mi) that can be used by all Pods running in the test.")
 	cmd.Flags().BoolVarP(&options.Wait, "wait", "w", false, "wait for the scenario to complete")
 	cmd.Flags().BoolVarP(&options.Log, "log", "l", false, "tail logs until completion")
 }
@@ -78,7 +81,7 @@ func NewSubmitTestCmd() *cobra.Command {
 
 			// Query Kubernetes API for conflicting tests
 			{
-				scenario, err := client.GetTest(testName)
+				scenario, err := client.GetScenario(testName)
 				if err != nil && !k8errors.IsNotFound(errors.Cause(err)) {
 					ui.UseStderr()
 					ui.Errf("Can't query Kubernetes API for test with name '%s'", testName)
@@ -106,12 +109,14 @@ func NewSubmitTestCmd() *cobra.Command {
 
 			// Ensure the namespace for hosting the scenario
 			{
-				_, err := common.Execute(common.Kubectl, "create", "namespace", testName)
-				ui.ExitOnError("Creating namespace", err)
+				err := common.CreateNamespace(testName, common.ManagedNamespace)
+				ui.ExitOnError("Creating managed namespace", err)
 
-				_, err = common.Execute(common.Kubectl, "label", "namespaces", testName,
-					common.ManagedNamespace, "--overwrite=true")
-				ui.ExitOnError("Labelling namespace", err)
+				if options.CPUQuota != "" || options.MemoryQuota != "" {
+					err := common.SetQuota(testName, options.CPUQuota, options.MemoryQuota)
+					ui.ExitOnError("Setting namespace quotas", err)
+				}
+
 			}
 
 			// Install Helm Dependencies, if any
@@ -136,7 +141,7 @@ func NewSubmitTestCmd() *cobra.Command {
 			}
 
 			// Control test output
-			ControlOutput(cmd, testName, &options)
+			ControlOutput(testName, &options)
 		},
 	}
 
@@ -145,13 +150,13 @@ func NewSubmitTestCmd() *cobra.Command {
 	return cmd
 }
 
-func ControlOutput(cmd *cobra.Command, testName string, options *TestSubmitOptions) {
+func ControlOutput(testName string, options *TestSubmitOptions) {
 	if options.Wait {
 		err := common.WaitTestSuccess(testName)
 		ui.ExitOnError("waiting test completion "+testName, err)
 
 	} else if options.Log {
-		err := common.Logs(cmd, testName, true)
+		err := common.GetPodLogs(testName, true, "all")
 		ui.ExitOnError("getting logs", err)
 	}
 }

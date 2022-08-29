@@ -19,8 +19,6 @@ package grafana
 import (
 	"context"
 	"fmt"
-	"sync"
-
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
 	"github.com/go-logr/logr"
@@ -28,6 +26,9 @@ import (
 	"github.com/grafana-tools/sdk"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"sync"
 )
 
 type Options struct {
@@ -37,7 +38,7 @@ type Options struct {
 
 	RegisterFor metav1.Object
 
-	Logger *logr.Logger
+	Logger logr.Logger
 
 	HTTPEndpoint *string
 }
@@ -59,7 +60,7 @@ func WithRegisterFor(obj metav1.Object) Option {
 }
 
 // WithLogger will use the given logger for printing info.
-func WithLogger(r *logr.Logger) Option {
+func WithLogger(r logr.Logger) Option {
 	return func(args *Options) {
 		args.Logger = r
 	}
@@ -83,7 +84,10 @@ func New(ctx context.Context, setters ...Option) error {
 
 	client := &Client{ctx: ctx}
 
-	if args.Logger != nil {
+	if args.Logger == (logr.Logger{}) {
+		client.logger = zap.New(zap.UseDevMode(true))
+		client.logger = client.logger.WithName("default.grafana")
+	} else {
 		client.logger = args.Logger
 	}
 
@@ -96,16 +100,16 @@ func New(ctx context.Context, setters ...Option) error {
 			return errors.Wrapf(err, "conn error")
 		}
 
-		if common.AbortAfterRetry(ctx, args.Logger, func() error {
+		if err := wait.ExponentialBackoffWithContext(ctx, common.BackoffForServiceEndpoint, func() (done bool, err error) {
 			resp, errHealth := conn.GetHealth(ctx)
-			if errHealth != nil {
-				return errors.Wrapf(errHealth, "cannot get GrafanaHealth")
+			switch {
+			case errHealth != nil: // API connection error. Just retry
+				return false, nil
+			default:
+				args.Logger.Info("Connected to Grafana", "healthStatus", resp)
+				return true, nil
 			}
-
-			args.Logger.Info("Connected to Grafana", "healthStatus", resp)
-
-			return nil
-		}) {
+		}); err != nil {
 			return errors.Errorf("endpoint '%s' is unreachable", *args.HTTPEndpoint)
 		}
 
@@ -118,9 +122,15 @@ func New(ctx context.Context, setters ...Option) error {
 
 		// Although the notification channel is backed by the Grafana Pod, the Grafana Service is different
 		// from the Alerting Service. For this reason, we must be sure that both Services are linked to the Grafana Pod.
-		if common.AbortAfterRetry(ctx, args.Logger, func() error {
-			return client.SetNotificationChannel(*args.WebhookURL)
-		}) {
+		if err := wait.ExponentialBackoffWithContext(ctx, common.BackoffForServiceEndpoint, func() (done bool, err error) {
+			errCh := client.SetNotificationChannel(*args.WebhookURL)
+			switch {
+			case errCh != nil: // API connection error. Just retry
+				return false, nil
+			default:
+				return true, nil
+			}
+		}); err != nil {
 			return errors.Errorf("notification channel error")
 		}
 	}
@@ -133,12 +143,12 @@ func New(ctx context.Context, setters ...Option) error {
 	return nil
 }
 
-var clientsLocker sync.Mutex
+var clientsLocker sync.RWMutex
 var clients = map[string]*Client{}
 
 type Client struct {
 	ctx    context.Context
-	logger *logr.Logger
+	logger logr.Logger
 
 	Conn *sdk.Client
 }
@@ -148,9 +158,9 @@ type Client struct {
 func SetClientFor(obj metav1.Object, c *Client) {
 	scenario := v1alpha1.GetScenarioLabel(obj)
 
-	clientsLocker.Lock()
+	clientsLocker.RLock()
 	_, exists := clients[scenario]
-	clientsLocker.Unlock()
+	clientsLocker.RUnlock()
 
 	if exists {
 		panic(errors.Errorf("client is already registered for scenario '%s'", scenario))
@@ -167,9 +177,9 @@ func ClientExistsFor(obj metav1.Object) bool {
 		return false
 	}
 
-	clientsLocker.Lock()
+	clientsLocker.RLock()
 	_, exists := clients[v1alpha1.GetScenarioLabel(obj)]
-	clientsLocker.Unlock()
+	clientsLocker.RUnlock()
 
 	return exists
 }
@@ -179,11 +189,12 @@ func ClientExistsFor(obj metav1.Object) bool {
 func GetClientFor(obj metav1.Object) *Client {
 	scenario := v1alpha1.GetScenarioLabel(obj)
 
-	clientsLocker.Lock()
+	clientsLocker.RLock()
 	c, exists := clients[scenario]
-	clientsLocker.Unlock()
+	clientsLocker.RUnlock()
 
 	if !exists {
+		// TODO: this may panic on a restarted controller as it loses state about Grafana clients.
 		panic(errors.Errorf("Grafana client for scenario '%s' does not exist", scenario))
 	}
 

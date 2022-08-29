@@ -18,6 +18,7 @@ package scenario
 
 import (
 	"github.com/carv-ics-forth/frisbee/pkg/structure"
+	"github.com/pkg/errors"
 	"time"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
@@ -32,7 +33,7 @@ import (
 // However, if there are no actions, the workflow will call the reconciliation cycle, and we will miss the
 // next timeout. To handle this scenario, we have to requeue the request with the given duration.
 // In this case, the given duration is the nearest expected timeout.
-func (r *Controller) NextJobs(cr *v1alpha1.Scenario) (runNext []v1alpha1.Action, nextCycle time.Time) {
+func (r *Controller) NextJobs(cr *v1alpha1.Scenario) (runNext []v1alpha1.Action, nextCycle time.Time, err error) {
 
 	timeOK := func(deps *v1alpha1.WaitSpec) bool {
 		if dur := deps.After; dur != nil {
@@ -72,6 +73,15 @@ func (r *Controller) NextJobs(cr *v1alpha1.Scenario) (runNext []v1alpha1.Action,
 		if deps == nil {
 			runNext = append(runNext, action)
 		} else {
+			// check a dependent "running" is not already terminated, as it will cause the scenario
+			// to loop forever
+			for _, dep := range deps.Running {
+				if r.view.IsSuccessful(dep) || r.view.IsFailed(dep) {
+					err := errors.Errorf("action '%s' has a Running dependency on completed job '%s'", action.Name, dep)
+					return nil, time.Now(), err
+				}
+			}
+
 			if r.view.IsSuccessful(deps.Success...) && r.view.IsRunning(deps.Running...) && timeOK(deps) {
 				// conditions are met
 				runNext = append(runNext, action)
@@ -79,5 +89,5 @@ func (r *Controller) NextJobs(cr *v1alpha1.Scenario) (runNext []v1alpha1.Action,
 		}
 	}
 
-	return runNext, nextCycle
+	return runNext, nextCycle, nil
 }

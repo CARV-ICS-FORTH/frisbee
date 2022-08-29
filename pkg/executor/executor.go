@@ -86,27 +86,30 @@ func (e *Executor) Exec(pod types.NamespacedName, containerID string, command []
 		return Result{}, errors.Wrapf(err, "Failed executing command %s on %v/%v", command, pod.Namespace, pod.Name)
 	}
 
-	stdoutBuffer, _ := circbuf.NewBuffer(4096)
-	stderrBuffer, _ := circbuf.NewBuffer(4096)
+	stdOutBuffer, _ := circbuf.NewBuffer(4096)
+	stdErrBuffer, _ := circbuf.NewBuffer(4096)
 
 	// Connect this process' std{in,out,err} to the remote shell process.
-	if err := exec.Stream(remotecommand.StreamOptions{Stdout: stdoutBuffer, Stderr: stderrBuffer}); err != nil {
-		return Result{stdoutBuffer.String(), stderrBuffer.String()}, errors.Wrapf(err, "streaming error on %v/%v", pod.Namespace, pod.Name)
+	if err := exec.Stream(remotecommand.StreamOptions{Stdout: stdOutBuffer, Stderr: stdErrBuffer}); err != nil {
+		return Result{Stdout: stdOutBuffer.String(), Stderr: stdErrBuffer.String()}, err
 	}
 
 	var result Result
 
-	if stdoutBuffer.TotalWritten() > MaxStdoutLen {
-		result.Stdout = "<... some data truncated by circular buffer; go to artifacts for details ...>\n" + stdoutBuffer.String()
+	if stdOutBuffer.TotalWritten() > MaxStdoutLen {
+		result.Stdout = "<... some data truncated by circular buffer; go to artifacts for details ...>\n" + stdOutBuffer.String()
+	} else if stdOutBuffer.TotalWritten() > 0 {
+		result.Stdout = stdOutBuffer.String()
 	} else {
-		result.Stdout = stdoutBuffer.String()
+		result.Stdout = ""
 	}
 
-	if stderrBuffer.TotalWritten() > MaxStderrLen {
-		result.Stderr = "<... some data truncated by circular buffer; go to artifacts for details ...>\n" + stderrBuffer.String()
-
+	if stdErrBuffer.TotalWritten() > MaxStderrLen {
+		result.Stderr = "<... some data truncated by circular buffer; go to artifacts for details ...>\n" + stdErrBuffer.String()
+	} else if stdErrBuffer.TotalWritten() > 0 {
+		result.Stderr = stdErrBuffer.String()
 	} else {
-		result.Stderr = stderrBuffer.String()
+		result.Stderr = ""
 	}
 
 	return result, nil

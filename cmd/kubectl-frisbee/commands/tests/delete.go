@@ -23,50 +23,71 @@ import (
 	"strings"
 )
 
+type TestDeleteOptions struct {
+	DeleteAll, Force bool
+	Selectors        []string
+	string
+}
+
+func PopulateTestDeleteFlags(cmd *cobra.Command, options *TestDeleteOptions) {
+	cmd.Flags().BoolVar(&options.DeleteAll, "all", false, "Delete all tests")
+	cmd.Flags().StringSliceVarP(&options.Selectors, "label", "l", nil, "label key value pair: --label key1=value1")
+
+	cmd.Flags().BoolVar(&options.Force, "force", false, "Force delete a stalled test")
+}
+
 func NewDeleteTestsCmd() *cobra.Command {
-	var deleteAll bool
-	var selectors []string
+	var options TestDeleteOptions
 
 	cmd := &cobra.Command{
 		Use:     "test <testName>",
 		Aliases: []string{"t", "tests"},
 		Short:   "Delete Test",
 		Args: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 && !deleteAll {
-				ui.Failf("Pass Test name, --all flag to delete all or labels to delete by labels")
+			if len(args) == 0 && !options.DeleteAll {
+				ui.Failf("Pass Test name, --all flag to delete all or labels to delete by labels.")
 			}
+
+			if options.DeleteAll && options.Force {
+				ui.Failf("Choose only one of --all or --force.")
+			}
+
+			if len(args) > 1 && options.Force {
+				ui.Failf("To prevent intended deletions, --force is applicable at one test at a time.")
+			}
+
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			if deleteAll {
-				err := common.DeleteTests(common.ManagedNamespace, nil)
+
+			switch {
+			case options.Force:
+				testName := args[0]
+
+				err := common.ForceDelete(testName)
+				ui.ExitOnError("Force Delete "+testName, err)
+
+			case options.DeleteAll:
+				err := common.DeleteNamespaces(common.ManagedNamespace)
 				ui.ExitOnError("Delete all tests", err)
 
-				return
-			}
-
-			if len(args) > 0 {
-				err := common.DeleteTests("", args)
-
+			case len(args) > 0:
+				err := common.DeleteNamespaces("", args...)
 				ui.ExitOnError("Delete tests", err)
 
-				return
-			}
+			case len(options.Selectors) != 0:
+				options.Selectors = append(options.Selectors, common.ManagedNamespace)
+				selector := strings.Join(options.Selectors, ",")
 
-			if len(selectors) != 0 {
-				selectors = append(selectors, common.ManagedNamespace)
-				selector := strings.Join(selectors, ",")
-
-				err := common.DeleteTests(selector, nil)
+				err := common.DeleteNamespaces(selector)
 				ui.ExitOnError("Deleting tests by labels: "+selector, err)
-
-				return
+			default:
+				cmd.Help()
 			}
 		},
 	}
 
-	cmd.Flags().BoolVar(&deleteAll, "all", false, "Delete all tests")
-	cmd.Flags().StringSliceVarP(&selectors, "label", "l", nil, "label key value pair: --label key1=value1")
+	PopulateTestDeleteFlags(cmd, &options)
 
 	return cmd
 }

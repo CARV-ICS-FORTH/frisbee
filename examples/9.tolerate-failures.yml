@@ -35,7 +35,8 @@ spec:
           - -c        # Read from string
           - |         # Multi-line str
             # Compare the input, and exit if needed
-            [[ {{.Inputs.Parameters.exit}} == "true" ]] && echo "Force exit" && && exit -1
+            [[ {{.Inputs.Parameters.exit}} == "true" ]] && echo "Force exit" && exit -1
+            
             # Otherwise, continue as normal
             iperf -c {{.Inputs.Parameters.target}} -t {{.Inputs.Parameters.duration}} 
 
@@ -67,3 +68,11 @@ spec:
         # Tolerate up to 2 failing clients, before the cluster fails itself
         tolerate:
           failedJobs: 3
+
+
+    # When all actions are done, delete looping servers to gracefully exit the experiment
+    - action: Delete
+      name: teardown
+      depends: { running: [server], success: [clients]}
+      delete:
+        jobs: [ server ]

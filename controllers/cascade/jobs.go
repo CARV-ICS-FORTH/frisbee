@@ -33,7 +33,6 @@ func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Cascade, i int) er
 	job.SetName(common.GenerateName(cr, i, cr.Spec.MaxInstances))
 
 	v1alpha1.SetScenarioLabel(&job.ObjectMeta, v1alpha1.GetScenarioLabel(cr))
-	v1alpha1.SetActionLabel(&job.ObjectMeta, v1alpha1.GetActionLabel(cr))
 	v1alpha1.SetComponentLabel(&job.ObjectMeta, v1alpha1.GetComponentLabel(cr))
 
 	// modulo is needed to re-iterate the job list, required for the implementation of "Until".

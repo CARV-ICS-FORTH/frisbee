@@ -18,6 +18,8 @@ package grafana
 
 import (
 	"context"
+	"github.com/carv-ics-forth/frisbee/controllers/common"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"strconv"
 	"strings"
 
@@ -206,6 +208,8 @@ const (
 	Alerting = "alerting"
 )
 
+const StatusSuccess = "success"
+
 // SetAlert adds a new alert to Grafana.
 func (c *Client) SetAlert(ctx context.Context, alert *Alert, name string, msg string) error {
 	if alert == nil {
@@ -264,16 +268,23 @@ func (c *Client) SetAlert(ctx context.Context, alert *Alert, name string, msg st
 		PreserveId: true,
 	}
 
-	res, err := c.Conn.SetDashboard(ctx, board, params)
-	if err != nil {
-		return errors.Wrap(err, "set dashboard")
+	if err := wait.ExponentialBackoffWithContext(ctx, common.BackoffForServiceEndpoint, func() (done bool, err error) {
+		resp, errReq := c.Conn.SetDashboard(ctx, board, params)
+		switch {
+		case errReq != nil: // API connection error. Just retry
+			return false, nil
+		case resp.Message == nil: // Server error. Abort
+			return false, errors.Errorf("empty response")
+		case *resp.Message != StatusSuccess: // Unexpected response
+			return false, errors.Errorf("expected message '%s', but got '%s'", StatusSuccess, *resp.Message)
+		default: // Done
+			return true, nil
+		}
+	}); err != nil {
+		return errors.Errorf("cannot set alert '%s'", name)
 	}
 
-	if *res.Status == "success" {
-		return nil
-	}
-
-	return errors.Errorf("cannot set alert [%v]", res)
+	return nil
 }
 
 // UnsetAlert removes an alert from Grafana.

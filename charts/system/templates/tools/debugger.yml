@@ -2,8 +2,19 @@
 apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
-  name: system.tools.busybox
+  name: system.tools.debugger
 spec:
+  inputs:
+    parameters:
+      # connectivity
+      cni0: "10.1.96.192"              # my cni0 interface address
+      host: "192.168.178.3"           # my host IP on local network, on wlo1 interface
+      neigh: "10.1.100.254"           # any other machine on my local network
+      public: "216.239.34.10"         # any other public IP
+
+      # dns
+      web: "www.google.com"          # public domain name
+
   service:
     decorators:
       labels:
@@ -24,29 +35,26 @@ spec:
             tail -f /dev/null
 
     callables:
-      internet:
+      localhost:
         container: app
-        command:
-          - /bin/sh   # Run shell
-          - -c        # Read from string
-          - |         # Multi-line str
-            set -eum
-            ping -c1 172.217.169.164
+        command: ["ping", "-c1", "127.0.0.1"]
+
+      cni:
+        container: app
+        command: ["ping", "-c1", {{"{{.Inputs.Parameters.cni0}}" | quote }}]
+
+      host:
+        container: app
+        command: ["ping", "-c1", {{"{{.Inputs.Parameters.host}}" | quote }}]
+
+      neigh:
+        container: app
+        command: ["ping", "-c1", {{"{{.Inputs.Parameters.neigh}}" | quote }}]
+
+      public:
+        container: app
+        command: ["ping", "-c1", {{"{{.Inputs.Parameters.public}}" | quote }}]
 
       dns:
         container: app
-        command:
-          - /bin/sh   # Run shell
-          - -c        # Read from string
-          - |         # Multi-line str
-            set -eum
-            nslookup www.google.com
-
-      http:
-        container: app
-        command:
-          - /bin/sh   # Run shell
-          - -c        # Read from string
-          - |         # Multi-line str
-            set -eum
-            wget www.google.comech
+        command: ["ping", "-c1", {{"{{.Inputs.Parameters.web}}" | quote }}]

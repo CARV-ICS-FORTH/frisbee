@@ -18,7 +18,6 @@ package expressions
 
 import (
 	"fmt"
-
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common/lifecycle"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -34,16 +33,14 @@ func (c *Condition) IsTrue(state lifecycle.ClassifierReader, job metav1.Object) 
 	if c.Expr.HasStateExpr() {
 		pass, err := c.Expr.State.GoValuate(state)
 		if err != nil {
-			c.Info = err.Error()
+			c.Info = fmt.Sprintf("Err: '%s'. DebugInfo: '%s'", err, state.ListAll())
 
 			return false
 		}
 
 		c.Info = fmt.Sprintf("State '%s' is %t", c.Expr.State, pass)
 
-		if pass {
-			return true
-		}
+		return pass
 	}
 
 	if c.Expr.HasMetricsExpr() {

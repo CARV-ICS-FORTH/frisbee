@@ -156,7 +156,11 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return lifecycle.Pending(ctx, r, &cr, "Scenario is ready to start running actions.")
 
 	case v1alpha1.PhasePending:
-		actionList, nextRun := r.NextJobs(&cr)
+		actionList, nextRun, err := r.NextJobs(&cr)
+		if err != nil {
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "scheduling error"))
+		}
+
 		if len(actionList) == 0 {
 			if nextRun.IsZero() {
 				// nothing to do on this cycle. wait the next cycle trigger by watchers.
@@ -174,8 +178,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "actions failed"))
 		}
 
-		return lifecycle.Pending(ctx, r, &cr, fmt.Sprintf("'%d/%d' jobs are scheduled",
-			len(cr.Status.ScheduledJobs), len(cr.Spec.Actions)))
+		return lifecycle.Pending(ctx, r, &cr, fmt.Sprintf("Scheduled jobs: '%d'", len(cr.Status.ScheduledJobs)))
 	}
 
 	panic(errors.New("This should never happen"))
@@ -212,7 +215,7 @@ func (r *Controller) Initialize(ctx context.Context, cr *v1alpha1.Scenario) erro
 
 	// Start Prometheus + Grafana
 	if errTelemetry := r.StartTelemetry(ctx, cr); errTelemetry != nil {
-		return errors.Wrapf(errTelemetry, "start telemetry")
+		return errors.Wrapf(errTelemetry, "telemetry error")
 	}
 
 	r.GetEventRecorderFor(cr.GetName()).Event(cr, corev1.EventTypeNormal, "Initialized", "Start scheduling jobs")
@@ -235,6 +238,7 @@ func (r *Controller) PopulateView(ctx context.Context, req types.NamespacedName)
 
 		for i, job := range serviceJobs.Items {
 			// Do not account telemetry jobs, unless they have failed.
+			// FIXME: if v1alpha1.GetComponentLabel(&job) == v1alpha1.ComponentSys {
 			if job.GetName() == notRandomGrafanaName || job.GetName() == notRandomPrometheusName {
 				r.view.Exclude(job.GetName(), &serviceJobs.Items[i])
 			} else {
@@ -315,7 +319,6 @@ func (r *Controller) HasSucceed(ctx context.Context, cr *v1alpha1.Scenario) erro
 	// These components are removed by deleting the Scenario.
 	for _, job := range r.view.GetSuccessfulJobs() {
 		if v1alpha1.GetComponentLabel(job) == v1alpha1.ComponentSUT { // System services should not be removed
-
 			expressions.UnsetAlert(job)
 			common.Delete(ctx, r, job)
 		}
@@ -348,7 +351,7 @@ func (r *Controller) HasFailed(ctx context.Context, cr *v1alpha1.Scenario) error
 	for _, job := range r.view.GetSuccessfulJobs() { // System jobs should not be deleted
 		if v1alpha1.GetComponentLabel(job) == v1alpha1.ComponentSUT {
 			expressions.UnsetAlert(job)
-			common.Delete(ctx, r, job)
+			// common.Delete(ctx, r, job) Keep it commented for debugging
 		}
 	}
 
@@ -379,7 +382,7 @@ func (r *Controller) RunActions(ctx context.Context, t *v1alpha1.Scenario, actio
 
 		if action.Assert.HasMetricsExpr() {
 			// Assert belong to the top-level workflow. Not to the job
-			if err := expressions.SetAlert(ctx, t, action.Assert.Metrics); err != nil {
+			if err := expressions.SetAlert(ctx, r.Logger, t, action.Assert.Metrics); err != nil {
 				return errors.Wrapf(err, "assertion error")
 			}
 		}

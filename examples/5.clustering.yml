@@ -59,3 +59,11 @@ spec:
           - { target: server, duration: "10" }
           - { target: server, duration: "20" }
           - { target: server, duration: "30" }
+
+
+    # When all actions are done, delete looping servers to gracefully exit the experiment
+    - action: Delete
+      name: teardown
+      depends: { running: [server], success: [clients]}
+      delete:
+        jobs: [ server ]
