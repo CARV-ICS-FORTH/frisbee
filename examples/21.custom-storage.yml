@@ -87,11 +87,17 @@ kind: Scenario
 metadata:
   name: distributed-logs
 spec:
-  sharedStorage:
-    claimName: logs
-
   actions:
+    # Step 0. Enable the log viewer
     - action: Service
+      name: logviewer
+      service:
+        templateRef: system.telemetry.logviewer.template
+        inputs:
+          - { logClaimName: logs }
+
+    - action: Service
+      depends: { running: [ logviewer ] }
       name: server
       service:
         templateRef: iperf.server
@@ -111,6 +117,6 @@ spec:
     # When all actions are done, delete looping servers to gracefully exit the experiment
     - action: Delete
       name: teardown
-      depends: { running: [ server], success: [clients] } # Notice: We want the logviewer to remain running
+      depends: { running: [ server, logviewer], success: [clients] } # Notice: We want the logviewer to remain running
       delete:
         jobs: [ server ]

@@ -141,15 +141,10 @@ type EmbedActions struct {
 	Call *CallSpec `json:"call,omitempty"`
 }
 
-type ScenarioOptions struct {
-	SharedStorage *v1.PersistentVolumeClaim `json:"shared-storage"`
-}
-
 // ScenarioSpec defines the desired state of Scenario.
 type ScenarioSpec struct {
-	// Options define some additional automations on the experiment
-	// +optional
-	Options *ScenarioOptions `json:"options,omitempty"`
+	// SharedStorage defines a volume that will be mounted across the Scenario's Services.
+	SharedStorage *v1.PersistentVolumeClaimVolumeSource `json:"sharedStorage,omitempty"`
 
 	// Actions are the tasks that will be taken.
 	Actions []Action `json:"actions"`
@@ -173,6 +168,9 @@ type ScenarioStatus struct {
 
 	// PrometheusEndpoint points to the local Prometheus instance
 	PrometheusEndpoint string `json:"prometheusEndpoint,omitempty"`
+
+	// Logviewer points to the local Logviewer instance
+	LogviewerEndpoint string `json:"logviewerEndpoint,omitempty"`
 }
 
 func (in ScenarioStatus) Table() (header []string, data [][]string) {

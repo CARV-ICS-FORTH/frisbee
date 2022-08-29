@@ -35,6 +35,24 @@ type Service struct {
 	Status ServiceStatus `json:"status,omitempty"`
 }
 
+func (s *Service) AttachVolumeSpec(source *corev1.PersistentVolumeClaimVolumeSource) {
+	s.Spec.Volumes = append(s.Spec.Volumes, corev1.Volume{
+		Name: source.ClaimName,
+		VolumeSource: corev1.VolumeSource{
+			PersistentVolumeClaim: source,
+		},
+	})
+
+	for i := 0; i < len(s.Spec.Containers); i++ {
+		s.Spec.Containers[i].VolumeMounts = append(s.Spec.Containers[i].VolumeMounts, corev1.VolumeMount{
+			Name:      source.ClaimName, // Name of a Volume.
+			ReadOnly:  source.ReadOnly,
+			MountPath: "/shared",   // Path within the container
+			SubPath:   s.GetName(), //  Path within the volume
+		})
+	}
+}
+
 // EphemeralVolumeSpec defines an ephemeral volume that has the  lifetime of a pod,
 // It's use for application that need additional storage but don't care whether
 // that data is stored persistently across restarts.

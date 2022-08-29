@@ -26,7 +26,7 @@ spec:
     - action: Service
       name: logviewer
       service:
-        templateRef: default.telemetry.logviewer
+        templateRef: system.telemetry.logviewer.template
         inputs:
           - { logClaimName: shared-dir }
 

@@ -175,7 +175,7 @@ func (c *Client) SetAnnotation(ga sdk.CreateAnnotationRequest) (reqID uint) {
 			return true, nil
 		}
 	}); err != nil {
-		c.logger.Error(err, "AnnotationError", "operation", "Set", "request", ga)
+		c.logger.Info("AnnotationError", "operation", "Set", "request", ga, "err", err)
 	}
 
 	return reqID
@@ -199,6 +199,6 @@ func (c *Client) PatchAnnotation(reqID uint, ga sdk.PatchAnnotationRequest) {
 			return true, nil
 		}
 	}); err != nil {
-		c.logger.Error(err, "AnnotationError", "operation", "Patch", "request", ga)
+		c.logger.Info("AnnotationError", "operation", "Patch", "request", ga, "err", err)
 	}
 }

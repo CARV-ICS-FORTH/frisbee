@@ -25,4 +25,6 @@ const (
 	PrometheusTemplate = "system.telemetry.prometheus.template"
 
 	GrafanaTemplate = "system.telemetry.grafana.template"
+
+	LogviewerTemplate = "system.telemetry.logviewer.template"
 )

@@ -239,7 +239,7 @@ func (r *Controller) PopulateView(ctx context.Context, req types.NamespacedName)
 		for i, job := range serviceJobs.Items {
 			// Do not account telemetry jobs, unless they have failed.
 			// FIXME: if v1alpha1.GetComponentLabel(&job) == v1alpha1.ComponentSys {
-			if job.GetName() == notRandomGrafanaName || job.GetName() == notRandomPrometheusName {
+			if job.GetName() == defaultGrafanaName || job.GetName() == defaultPrometheusName {
 				r.view.Exclude(job.GetName(), &serviceJobs.Items[i])
 			} else {
 				r.view.Classify(job.GetName(), &serviceJobs.Items[i])
@@ -377,7 +377,7 @@ func (r *Controller) HasFailed(ctx context.Context, cr *v1alpha1.Scenario) error
 }
 
 func (r *Controller) RunActions(ctx context.Context, t *v1alpha1.Scenario, actionList []v1alpha1.Action) error {
-	endpoints := r.supportedActions()
+	handlers := r.supportedActions()
 	for _, action := range actionList {
 
 		if action.Assert.HasMetricsExpr() {
@@ -387,22 +387,14 @@ func (r *Controller) RunActions(ctx context.Context, t *v1alpha1.Scenario, actio
 			}
 		}
 
-		e, ok := endpoints[action.ActionType]
-		if !ok {
-			return errors.Errorf("unknown type [%s] for action [%s]", action.ActionType, action.Name)
-		}
-
-		job, err := e(ctx, t, action)
+		job, err := handlers[action.ActionType](ctx, t, action)
 		if err != nil {
 			return errors.Wrapf(err, "action failed [%s]", action.Name)
 		}
 
 		// Some jobs are virtual and do not require something to be created.
 		// Yet, they must be tracked in order to respect the execution dependencies of the graph.
-		switch action.ActionType {
-		case v1alpha1.ActionDelete:
-			break
-		default:
+		if action.ActionType != v1alpha1.ActionDelete {
 			if err := common.Create(ctx, r, t, job); err != nil {
 				return errors.Wrapf(err, "cannot run action '%s'", action.Name)
 			}

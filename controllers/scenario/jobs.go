@@ -29,10 +29,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type endpoint func(context.Context, *v1alpha1.Scenario, v1alpha1.Action) (client.Object, error)
+type ActionHandler func(context.Context, *v1alpha1.Scenario, v1alpha1.Action) (client.Object, error)
 
-func (r *Controller) supportedActions() map[v1alpha1.ActionType]endpoint {
-	return map[v1alpha1.ActionType]endpoint{
+func (r *Controller) supportedActions() map[v1alpha1.ActionType]ActionHandler {
+	return map[v1alpha1.ActionType]ActionHandler{
 		v1alpha1.ActionService: r.service,
 		v1alpha1.ActionCluster: r.cluster,
 		v1alpha1.ActionChaos:   r.chaos,
@@ -65,38 +65,42 @@ func (r *Controller) service(ctx context.Context, t *v1alpha1.Scenario, action v
 
 	// set labels
 	v1alpha1.SetScenarioLabel(&job.ObjectMeta, t.GetName())
+	spec.DeepCopyInto(&job.Spec)
 
 	// The job belongs to a SUT, unless the template is explicitly declared as a System job (SYS)
-	if spec.Decorators.Labels != nil &&
-		spec.Decorators.Labels[v1alpha1.LabelComponent] == string(v1alpha1.ComponentSys) {
+	if job.Spec.Decorators.Labels != nil &&
+		job.Spec.Decorators.Labels[v1alpha1.LabelComponent] == string(v1alpha1.ComponentSys) {
 		v1alpha1.SetComponentLabel(&job.ObjectMeta, v1alpha1.ComponentSys)
 	} else {
 		v1alpha1.SetComponentLabel(&job.ObjectMeta, v1alpha1.ComponentSUT)
 	}
 
-	spec.DeepCopyInto(&job.Spec)
+	// Add shared storage
+	if t.Spec.SharedStorage != nil {
+		job.AttachVolumeSpec(t.Spec.SharedStorage)
+	}
 
 	return &job, nil
 }
 
 func (r *Controller) cluster(ctx context.Context, t *v1alpha1.Scenario, action v1alpha1.Action) (client.Object, error) {
-	{ // Validate job requirements
-		if action.Cluster.Placement != nil {
-			// ensure there are at least two physical nodes for placement to make sense
-			var nodes corev1.NodeList
+	// Validate job requirements
+	if action.Cluster.Placement != nil {
+		// ensure there are at least two physical nodes for placement to make sense
+		var nodes corev1.NodeList
 
-			if err := r.GetClient().List(ctx, &nodes); err != nil {
-				return nil, errors.Wrapf(err, "cannot list physical nodes")
-			}
-
-			if len(nodes.Items) < 2 {
-				return nil, errors.Errorf("placement policies require at least two physical nodes. '%d' nodes were found", len(nodes.Items))
-			}
-
-			// TODO: check compatibility with labels and taints
+		if err := r.GetClient().List(ctx, &nodes); err != nil {
+			return nil, errors.Wrapf(err, "cannot list physical nodes")
 		}
+
+		if len(nodes.Items) < 2 {
+			return nil, errors.Errorf("placement policies require at least two physical nodes. '%d' nodes were found", len(nodes.Items))
+		}
+
+		// TODO: check compatibility with labels and taints
 	}
 
+	// Evaluate macros into concrete statements
 	if err := expandMapInputs(ctx, r, t.GetNamespace(), &action.Cluster.Inputs); err != nil {
 		return nil, errors.Wrapf(err, "input error")
 	}
@@ -112,6 +116,9 @@ func (r *Controller) cluster(ctx context.Context, t *v1alpha1.Scenario, action v
 	v1alpha1.SetComponentLabel(&job.ObjectMeta, v1alpha1.ComponentSUT)
 
 	action.Cluster.DeepCopyInto(&job.Spec)
+
+	// Add shared storage
+	job.Spec.SharedStorage = t.Spec.SharedStorage
 
 	return &job, nil
 }
@@ -163,72 +170,6 @@ func (r *Controller) cascade(ctx context.Context, t *v1alpha1.Scenario, action v
 
 	return &job, nil
 }
-
-/*
-
-func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Call, i int) error {
-
-	// Call normally does not return anything. This however would break all the pipeline for
-	// managing dependencies between jobs. For that, we return a dummy virtual object without dedicated controller.
-	// FIXME: if the call fails, this object will be re-created, and the call will fail with an "existing object" error.
-	return lifecycle.VirtualExecution(ctx, r, cr, jobName, func(vjob *v1alpha1.VirtualObject) error {
-		res, err := r.executor.Exec(pod, callable.Container, callable.Command, true)
-
-		defer func() {
-			// Use the virtual object to store the remote execution logs.
-			vjob.Status.Data = map[string]string{
-				"info":   fmt.Sprintf("Callable '%s/%s'", serviceName, callable.Container),
-				"stdout": res.Stdout,
-				"stderr": res.Stderr,
-			}
-		}()
-
-		r.Logger.Info("CallOutput",
-			"job", client.ObjectKeyFromObject(cr),
-			"stdout", res.Stdout,
-			"stderr", res.Stderr,
-		)
-
-		if err != nil {
-			return errors.Wrapf(err, "call [%s/%s] has failed", serviceName, callable.Container)
-		}
-
-		if cr.Spec.Expect != nil {
-			r.Logger.Info("AssertCall",
-				"job", client.ObjectKeyFromObject(cr),
-				"expect", cr.Spec.Expect,
-			)
-
-			expect := cr.Spec.Expect[i]
-
-			if expect.Stdout != nil {
-				matchStdout, err := regexp.MatchString(*expect.Stdout, res.Stdout)
-				if err != nil {
-					return errors.Wrapf(err, "regex error")
-				}
-
-				if !matchStdout {
-					return errors.Errorf("Mismatched stdout. Expected: '%s' but got: '%s' --", *expect.Stdout, res.Stdout)
-				}
-			}
-
-			if expect.Stderr != nil {
-				matchStderr, err := regexp.MatchString(*expect.Stderr, res.Stderr)
-				if err != nil {
-					return errors.Wrapf(err, "regex error")
-				}
-
-				if !matchStderr {
-					return errors.Errorf("Mismatched stderr. Expected: '%s' but got '%s' --", *expect.Stderr, res.Stderr)
-				}
-			}
-		}
-
-		return nil
-	})
-}
-
-*/
 
 func (r *Controller) delete(ctx context.Context, t *v1alpha1.Scenario, action v1alpha1.Action) (client.Object, error) {
 	r.Info("-> Delete", "obj", action.Name, "targets", action.Delete.Jobs)
