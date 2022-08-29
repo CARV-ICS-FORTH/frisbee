@@ -24,15 +24,14 @@ import (
 
 type ExpandedSpecBody string
 
-func NewScheme(parent metav1.Object, inputs *v1alpha1.Inputs, body []byte) (*v1alpha1.Scheme, error) {
-	var scheme v1alpha1.Scheme
+func NewScheme(parent metav1.Object, inputs *v1alpha1.Inputs, body []byte) *v1alpha1.Scheme {
 
-	scheme.Scenario = v1alpha1.GetScenarioLabel(parent)
-	scheme.Namespace = parent.GetNamespace()
-	scheme.Inputs = inputs
-	scheme.Spec = body
-
-	return &scheme, nil
+	return &v1alpha1.Scheme{
+		Scenario:  v1alpha1.GetScenarioLabel(parent),
+		Namespace: parent.GetNamespace(),
+		Spec:      body,
+		Inputs:    inputs,
+	}
 }
 
 // Evaluate parses a given scheme and returns the respective ServiceSpec.

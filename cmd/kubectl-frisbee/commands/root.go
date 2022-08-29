@@ -18,9 +18,10 @@ package commands
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/carv-ics-forth/frisbee/pkg/ui"
 	"github.com/spf13/cobra"
-	"os"
 )
 
 var (
@@ -39,16 +40,12 @@ func init() {
 
 	// Test Runtime
 	RootCmd.AddCommand(NewInspectCmd())
+	RootCmd.AddCommand(NewSaveCmd())
 }
 
 var RootCmd = &cobra.Command{
 	Use:   "kubectl-frisbee",
 	Short: "Frisbee entrypoint for kubectl plugin",
-
-	PersistentPostRun: func(cmd *cobra.Command, args []string) {
-		ui.SetVerbose(verbose)
-	},
-
 	Run: func(cmd *cobra.Command, args []string) {
 		ui.Logo()
 		err := cmd.Usage()
@@ -58,34 +55,8 @@ var RootCmd = &cobra.Command{
 }
 
 func Execute() {
-	ui.SetVerbose(true)
-	/*
-		cfg, err := config.Load()
-		ui.WarnOnError("loading config", err)
-
-		defaultNamespace := "testkube"
-		if cfg.Namespace != "" {
-			defaultNamespace = cfg.Namespace
-		}
-
-		apiURI := "http://localhost:8088"
-		if cfg.APIURI != "" {
-			apiURI = cfg.APIURI
-		}
-
-		if os.Getenv("TESTKUBE_API_URI") != "" {
-			apiURI = os.Getenv("TESTKUBE_API_URI")
-		}
-
-		RootCmd.PersistentFlags().BoolVarP(&telemetryEnabled, "telemetry-enabled", "", cfg.TelemetryEnabled, "enable collection of anonumous telemetry data")
-		RootCmd.PersistentFlags().StringVarP(&client, "client", "c", "proxy", "client used for connecting to Testkube API one of proxy|direct")
-		RootCmd.PersistentFlags().StringVarP(&namespace, "namespace", "", defaultNamespace, "Kubernetes namespace, default value read from config if set")
-		RootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "", false, "show additional debug messages")
-		RootCmd.PersistentFlags().StringVarP(&apiURI, "api-uri", "a", apiURI, "api uri, default value read from config if set")
-		RootCmd.PersistentFlags().BoolVarP(&oauthEnabled, "oauth-enabled", "", cfg.OAuth2Data.Enabled, "enable oauth")
-	*/
-
-	RootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "", false, "show additional debug messages")
+	RootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", true, "show additional debug messages")
+	RootCmd.PersistentFlags().Bool("hints", true, "show hints related to the specific operations")
 
 	if err := RootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)

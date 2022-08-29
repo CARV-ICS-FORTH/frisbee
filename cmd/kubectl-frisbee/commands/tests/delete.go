@@ -17,16 +17,16 @@ limitations under the License.
 package tests
 
 import (
+	"strings"
+
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/common"
 	"github.com/carv-ics-forth/frisbee/pkg/ui"
 	"github.com/spf13/cobra"
-	"strings"
 )
 
 type TestDeleteOptions struct {
 	DeleteAll, Force bool
 	Selectors        []string
-	string
 }
 
 func PopulateTestDeleteFlags(cmd *cobra.Command, options *TestDeleteOptions) {

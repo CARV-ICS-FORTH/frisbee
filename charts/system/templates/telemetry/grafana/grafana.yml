@@ -46,6 +46,13 @@ spec:
             subPath: prometheus.yml
             readOnly: true
 
+        startupProbe:
+          httpGet:
+            path: /api/health
+            port: http
+          failureThreshold: 30
+          periodSeconds: 10
+
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -79,19 +86,41 @@ data:
         isDefault: true
         editable: true
 
+
   grafana.ini: |
+    # For more options see https://github.com/grafana/grafana/blob/main/conf/defaults.ini
+
+    #################################### Paths ###############################
+    #[paths]
+    # Path to where grafana can store temp files, sessions, and the sqlite3 db (if that is used)
+    #data = /testdata/data
+
+    # Temporary files in `data` directory older than given duration will be removed
+    #temp_data_lifetime = 24h
+
+    # Directory where grafana can store logs
+    #logs = /testdata/log
+
+    # Directory where grafana will automatically scan and look for plugins
+    #plugins = data/plugins
+
+    # folder that contains provisioning config files that grafana will apply on startup and while running.
+    #provisioning = conf/provisioning
+
     [auth]
     disable_login_form = true
 
+    #################################### Basic Auth ##########################
     [auth.basic]
     enabled = false
 
+    #################################### Anonymous Auth ######################
     [auth.anonymous]
     # enable anonymous access
     enabled = true
 
     # specify organization name that should be used for unauthenticated users
-    #org_name = frisbee-benchmark
+    #org_name = Frisbee Dev.
 
-    # specify role for unauthenticated users (other roles Viewer, Editor, Admin)
+    # specify role for unauthenticated users (Viewer, Editor, Admin)
     org_role = Admin

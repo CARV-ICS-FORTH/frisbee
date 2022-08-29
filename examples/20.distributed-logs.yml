@@ -35,7 +35,6 @@ spec:
   inputs:
     parameters:
       target: localhost
-      logClaimName: ""
   service:
     decorators:
       telemetry:
@@ -44,17 +43,9 @@ spec:
         cpu: "0.2"
         memory: "48Mi"
 
-    volumes: # Need to declare the volume here
-      - name: logvolume
-        persistentVolumeClaim:
-          claimName: "{{.Inputs.Parameters.logClaimName}}"
-
     containers:
       - name: app
         image: czero/iperf2
-        volumeMounts: # Need to mount the volume here
-          - name: logvolume
-            mountPath: /logs
         command:
           - /bin/sh
           - -c
@@ -62,7 +53,7 @@ spec:
               set -eum
               cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app
     
-              iperf -c {{.Inputs.Parameters.target}} -t 360 -i 5  >> /logs/${HOSTNAME}
+              iperf -c {{.Inputs.Parameters.target}} -t 120 -i 5  >> /testdata/my_logs
 
 ---
 # In order to have shared logs, we must first create a network volume.
@@ -87,7 +78,7 @@ kind: Scenario
 metadata:
   name: distributed-logs
 spec:
-  sharedStorage:
+  testData:
     claimName: logs
 
   actions:
@@ -103,7 +94,7 @@ spec:
         templateRef: iperf.client
         instances: 5
         inputs:
-          - { target: server, logClaimName: logs  }
+          - { target: server  }
         schedule:
           cron: "@every 1m"
 
@@ -111,6 +102,6 @@ spec:
     # When all actions are done, delete looping servers to gracefully exit the experiment
     - action: Delete
       name: teardown
-      depends: { running: [ server], success: [clients] } # Notice: We want the logviewer to remain running
+      depends: { running: [ server], success: [clients] }
       delete:
         jobs: [ server ]

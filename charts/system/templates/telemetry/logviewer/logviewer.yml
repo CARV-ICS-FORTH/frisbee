@@ -20,17 +20,13 @@ spec:
     initContainers:
       - name: wait-for-volume
         image: busybox
-        volumeMounts:
-          - name: logs
-            mountPath: /srv
-        command: [ "touch", "/srv/init" ]
+        command: [ "touch", "/testdata/init"]
 
     containers: # Expose collected logs
       - name: app
         image: filebrowser/filebrowser
+        command: ["/filebrowser"]
+        args: ["-r", "/testdata"]
         ports:
           - name: http
             containerPort: {{.Values.telemetry.logviewer.port}}
-        volumeMounts:
-          - name: logs
-            mountPath: /srv

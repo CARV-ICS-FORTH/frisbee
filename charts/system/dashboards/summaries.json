@@ -45,6 +45,31 @@
         "datasource": "-- Grafana --",
         "enable": true,
         "expr": "",
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "iconSize": 0,
+        "lineColor": "",
+        "name": "Annotations & Alerts",
+        "query": "",
+        "showLine": false,
+        "step": "",
+        "tagKeys": "",
+        "tags": null,
+        "tagsField": "",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
+        "textField": "",
+        "textFormat": "",
+        "titleFormat": "",
+        "type": "dashboard"
+      },
+      {
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "expr": "",
         "iconColor": "#5794F2",
         "iconSize": 0,
         "lineColor": "",
@@ -134,7 +159,7 @@
   "fiscalYearStartMonth": 0,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": 1,
+  "id": 2,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -673,12 +698,9 @@
       "sparkline": {},
       "targets": [
         {
-          "exemplar": true,
           "expr": "sum(process_resident_memory_bytes{})",
           "format": "time_series",
-          "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "",
           "refId": "allocations"
         }
       ],
@@ -1204,8 +1226,7 @@
                 "value": 80
               }
             ]
-          },
-          "unit": "none"
+          }
         },
         "overrides": []
       },
@@ -1226,34 +1247,15 @@
       "styles": null,
       "targets": [
         {
-          "exemplar": true,
           "expr": "max(up) by (node, instance)",
           "format": "table",
           "instant": true,
-          "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "",
           "refId": "Used"
         }
       ],
       "title": "Placement Table",
       "transform": "",
-      "transformations": [
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {
-              "Time": true,
-              "Value": true
-            },
-            "indexByName": {},
-            "renameByName": {
-              "instance": "Instance",
-              "node": "Node"
-            }
-          }
-        }
-      ],
       "type": "table"
     },
     {
@@ -2119,7 +2121,6 @@
         "x": 0,
         "y": 78
       },
-      "heatmap": {},
       "hideZeroBuckets": false,
       "highlightCards": true,
       "id": 106,
@@ -4032,6 +4033,42 @@
       "type": "row"
     },
     {
+      "alert": {
+        "alertRuleTags": {},
+        "conditions": [
+          {
+            "evaluator": {
+              "params": [
+                -3000000000
+              ],
+              "type": "lt"
+            },
+            "operator": {
+              "type": "and"
+            },
+            "query": {
+              "params": [
+                "rx-max",
+                "1m",
+                "now"
+              ]
+            },
+            "reducer": {
+              "params": [],
+              "type": "avg"
+            },
+            "type": "query"
+          }
+        ],
+        "executionErrorState": "keep_state",
+        "for": "0s",
+        "frequency": "1m",
+        "handler": 1,
+        "message": "Alert [skata-404/Scenario/sla-assertions] for object frisbee.dev/v1alpha1, Kind=Scenario sla-assertions has been fired",
+        "name": "skata-404/Scenario/sla-assertions",
+        "noDataState": "keep_state",
+        "notifications": []
+      },
       "datasource": "Prometheus",
       "editable": false,
       "error": false,
@@ -4166,7 +4203,14 @@
           "refId": "rx-min"
         }
       ],
-      "thresholds": [],
+      "thresholds": [
+        {
+          "colorMode": "critical",
+          "op": "lt",
+          "value": -3000000000,
+          "visible": true
+        }
+      ],
       "timeFrom": null,
       "timeShift": null,
       "title": "Network Throughput ",
@@ -4359,5 +4403,5 @@
   "timezone": "",
   "title": "Frisbee SUT Monitoring (Summary)",
   "uid": "summary",
-  "version": 1
+  "version": 2
 }

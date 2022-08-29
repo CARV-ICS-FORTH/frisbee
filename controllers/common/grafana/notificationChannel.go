@@ -17,12 +17,15 @@ limitations under the License.
 package grafana
 
 import (
+	"context"
+
+	"github.com/carv-ics-forth/frisbee/controllers/common"
 	"github.com/carv-ics-forth/frisbee/controllers/common/configuration"
 	"github.com/grafana-tools/sdk"
-	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
-func (c *Client) SetNotificationChannel(webhookURL string) error {
+func (c *Client) SetNotificationChannel(ctx context.Context, webhookURL string) error {
 
 	// use the webhook as notification channel for grafana
 	feedback := sdk.AlertNotification{
@@ -36,9 +39,15 @@ func (c *Client) SetNotificationChannel(webhookURL string) error {
 		},
 	}
 
-	if _, err := c.Conn.CreateAlertNotification(c.ctx, feedback); err != nil {
-		return errors.Wrapf(err, "cannot create alert notification channel '%s'", feedback.Name)
-	}
-
-	return nil
+	// Although the notification channel is backed by the Grafana Pod, the Grafana Service is different
+	// from the Alerting Service. For this reason, we must be sure that both Services are linked to the Grafana Pod.
+	return wait.ExponentialBackoffWithContext(ctx, common.BackoffForServiceEndpoint, func() (done bool, err error) {
+		_, errCh := c.Conn.CreateAlertNotification(c.ctx, feedback)
+		switch {
+		case errCh != nil: // API connection error. Just retry
+			return false, nil
+		default:
+			return true, nil
+		}
+	})
 }

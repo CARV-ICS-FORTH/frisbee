@@ -18,10 +18,12 @@ package v1alpha1
 
 import (
 	"fmt"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"strings"
 	"time"
+
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/json"
 )
 
 // +kubebuilder:object:root=true
@@ -143,8 +145,8 @@ type EmbedActions struct {
 
 // ScenarioSpec defines the desired state of Scenario.
 type ScenarioSpec struct {
-	// SharedStorage defines a volume that will be mounted across the Scenario's Services.
-	SharedStorage *v1.PersistentVolumeClaimVolumeSource `json:"sharedStorage,omitempty"`
+	// TestData defines a volume that will be mounted across the Scenario's Services.
+	TestData *v1.PersistentVolumeClaimVolumeSource `json:"testData,omitempty"`
 
 	// Actions are the tasks that will be taken.
 	Actions []Action `json:"actions"`
@@ -181,6 +183,10 @@ func (in ScenarioStatus) Table() (header []string, data [][]string) {
 		"Conditions",
 	}
 
+	// encode message to escape it
+	message, _ := json.Marshal(in.Message)
+
+	// encode conditions for better visualization
 	var conditions strings.Builder
 	{
 		if len(in.Conditions) > 0 {
@@ -197,7 +203,7 @@ func (in ScenarioStatus) Table() (header []string, data [][]string) {
 	data = append(data, []string{
 		in.Phase.String(),
 		in.Reason,
-		in.Message,
+		string(message),
 		conditions.String(),
 	})
 

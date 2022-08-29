@@ -18,10 +18,11 @@ package grafana
 
 import (
 	"context"
-	"github.com/carv-ics-forth/frisbee/controllers/common"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"strconv"
 	"strings"
+
+	"github.com/carv-ics-forth/frisbee/controllers/common"
+	"k8s.io/apimachinery/pkg/util/wait"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/grafana-tools/sdk"
@@ -212,6 +213,10 @@ const StatusSuccess = "success"
 
 // SetAlert adds a new alert to Grafana.
 func (c *Client) SetAlert(ctx context.Context, alert *Alert, name string, msg string) error {
+	if c == nil {
+		panic("empty client was given")
+	}
+
 	if alert == nil {
 		return errors.New("NIL alert was given")
 	}
@@ -272,16 +277,16 @@ func (c *Client) SetAlert(ctx context.Context, alert *Alert, name string, msg st
 		resp, errReq := c.Conn.SetDashboard(ctx, board, params)
 		switch {
 		case errReq != nil: // API connection error. Just retry
+			c.logger.Info("Failed to set alert. Retry", "alertName", name, "resp", resp)
 			return false, nil
-		case resp.Message == nil: // Server error. Abort
-			return false, errors.Errorf("empty response")
-		case *resp.Message != StatusSuccess: // Unexpected response
-			return false, errors.Errorf("expected message '%s', but got '%s'", StatusSuccess, *resp.Message)
+		case *resp.Status != StatusSuccess: // Unexpected response
+			return false, errors.Errorf("expected status '%s', but got '%s'", StatusSuccess, *resp.Status)
+
 		default: // Done
 			return true, nil
 		}
 	}); err != nil {
-		return errors.Errorf("cannot set alert '%s'", name)
+		return errors.Wrapf(err, "cannot set alert '%s'", name)
 	}
 
 	return nil

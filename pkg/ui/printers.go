@@ -51,7 +51,7 @@ func (ui *UI) Debug(message string, subMessages ...string) {
 }
 
 func (ui *UI) Info(message string, subMessages ...string) {
-	fmt.Fprintf(ui.Writer, "%s", DarkGray(message))
+	fmt.Fprintf(ui.Writer, "%s", White(message))
 	for _, sub := range subMessages {
 		fmt.Fprintf(ui.Writer, " %s", LightGray(sub))
 	}

@@ -27,15 +27,16 @@ func NewInspectCmd() *cobra.Command {
 		Use:     "inspect <resourceName>",
 		Aliases: []string{"show"},
 		Short:   "Inspect tests or test suites",
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			ui.SetVerbose(verbose)
+		},
 		Run: func(cmd *cobra.Command, args []string) {
 			ui.Logo()
 
 			err := cmd.Help()
 			ui.PrintOnError("Displaying help", err)
 		},
-		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			// validator.PersistentPreRunVersionCheck(cmd, common.Version)
-		}}
+	}
 
 	cmd.AddCommand(tests.NewInspectTestCmd())
 	// cmd.AddCommand(testsuites.NewWatchTestSuiteExecutionCmd())

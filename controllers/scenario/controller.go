@@ -93,6 +93,19 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot populate view for '%s'", req))
 	}
 
+	/* Check if all the SYS services are running. If they are terminated (Failed/Success), we have nothing else to do,
+	and we abort the experiment. If they are still being created (Uninitialized, Pending), we sleep and retry */
+	if abort, sysErr := r.view.SystemState(); sysErr != nil {
+		if abort {
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(sysErr, "errorneous system state"))
+		} else {
+			// Just stop, waiting for system services to come up.
+			return common.Stop()
+		}
+	} else {
+
+	}
+
 	/*
 		3: Use the view to update the CR's lifecycle.
 		------------------------------------------------------------------
@@ -153,7 +166,9 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "initialization error"))
 		}
 
-		return lifecycle.Pending(ctx, r, &cr, "Scenario is ready to start running actions.")
+		// We could use common.Stop() to simply wait, but we need update status because Initialize()
+		// sets the endpoints, and we want to maintain this information for connectToGrafana().
+		return lifecycle.Pending(ctx, r, &cr, "Initializing system (SYS) services.")
 
 	case v1alpha1.PhasePending:
 		actionList, nextRun, err := r.NextJobs(&cr)
@@ -210,7 +225,7 @@ func (r *Controller) Initialize(ctx context.Context, cr *v1alpha1.Scenario) erro
 
 	// Ensure that the scenario is OK
 	if errValidate := r.Validate(ctx, cr); errValidate != nil {
-		return errors.Wrapf(errValidate, "malformed description")
+		return errors.Wrapf(errValidate, "validation error")
 	}
 
 	// Start Prometheus + Grafana
@@ -237,13 +252,7 @@ func (r *Controller) PopulateView(ctx context.Context, req types.NamespacedName)
 		}
 
 		for i, job := range serviceJobs.Items {
-			// Do not account telemetry jobs, unless they have failed.
-			// FIXME: if v1alpha1.GetComponentLabel(&job) == v1alpha1.ComponentSys {
-			if job.GetName() == defaultGrafanaName || job.GetName() == defaultPrometheusName {
-				r.view.Exclude(job.GetName(), &serviceJobs.Items[i])
-			} else {
-				r.view.Classify(job.GetName(), &serviceJobs.Items[i])
-			}
+			r.view.Classify(job.GetName(), &serviceJobs.Items[i])
 		}
 	}
 
@@ -318,10 +327,8 @@ func (r *Controller) HasSucceed(ctx context.Context, cr *v1alpha1.Scenario) erro
 	// We maintain testbed components (e.g, prometheus and grafana) for getting back the test results.
 	// These components are removed by deleting the Scenario.
 	for _, job := range r.view.GetSuccessfulJobs() {
-		if v1alpha1.GetComponentLabel(job) == v1alpha1.ComponentSUT { // System services should not be removed
-			expressions.UnsetAlert(job)
-			common.Delete(ctx, r, job)
-		}
+		expressions.UnsetAlert(job)
+		common.Delete(ctx, r, job)
 	}
 
 	return nil
@@ -335,24 +342,18 @@ func (r *Controller) HasFailed(ctx context.Context, cr *v1alpha1.Scenario) error
 
 	// Remove the non-failed components. Leave the failed jobs and system jobs for postmortem analysis.
 	for _, job := range r.view.GetPendingJobs() {
-		if v1alpha1.GetComponentLabel(job) == v1alpha1.ComponentSUT { // System jobs should not be deleted
-			expressions.UnsetAlert(job)
-			common.Delete(ctx, r, job)
-		}
+		expressions.UnsetAlert(job)
+		common.Delete(ctx, r, job)
 	}
 
 	for _, job := range r.view.GetRunningJobs() {
-		if v1alpha1.GetComponentLabel(job) == v1alpha1.ComponentSUT { // System jobs should not be deleted
-			expressions.UnsetAlert(job)
-			common.Delete(ctx, r, job)
-		}
+		expressions.UnsetAlert(job)
+		common.Delete(ctx, r, job)
 	}
 
-	for _, job := range r.view.GetSuccessfulJobs() { // System jobs should not be deleted
-		if v1alpha1.GetComponentLabel(job) == v1alpha1.ComponentSUT {
-			expressions.UnsetAlert(job)
-			// common.Delete(ctx, r, job) Keep it commented for debugging
-		}
+	for _, job := range r.view.GetSuccessfulJobs() {
+		expressions.UnsetAlert(job)
+		// common.Delete(ctx, r, job) Keep it commented. It is useful to see which jobs are complete.
 	}
 
 	r.StopTelemetry(cr)
@@ -377,13 +378,17 @@ func (r *Controller) HasFailed(ctx context.Context, cr *v1alpha1.Scenario) error
 }
 
 func (r *Controller) RunActions(ctx context.Context, t *v1alpha1.Scenario, actionList []v1alpha1.Action) error {
+	if err := r.connectToGrafana(ctx, t); err != nil {
+		return errors.Wrapf(err, "connect to grafana")
+	}
+
 	handlers := r.supportedActions()
 	for _, action := range actionList {
 
 		if action.Assert.HasMetricsExpr() {
 			// Assert belong to the top-level workflow. Not to the job
-			if err := expressions.SetAlert(ctx, r.Logger, t, action.Assert.Metrics); err != nil {
-				return errors.Wrapf(err, "assertion error")
+			if err := expressions.SetAlert(ctx, t, action.Assert.Metrics); err != nil {
+				return errors.Wrapf(err, "cannot set assertions for action '%s'", action.Name)
 			}
 		}
 

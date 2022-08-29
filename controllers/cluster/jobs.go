@@ -18,6 +18,7 @@ package cluster
 
 import (
 	"context"
+
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
 	serviceutils "github.com/carv-ics-forth/frisbee/controllers/service/utils"
@@ -40,7 +41,7 @@ func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Cluster, i int) er
 
 	jobSpec.DeepCopyInto(&job.Spec)
 
-	job.AttachVolumeSpec(cr.Spec.SharedStorage)
+	job.AttachTestDataVolume(cr.Spec.TestData, true)
 
 	if err := common.Create(ctx, r, cr, &job); err != nil {
 		return err

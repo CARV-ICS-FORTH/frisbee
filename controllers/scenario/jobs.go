@@ -19,6 +19,7 @@ package scenario
 import (
 	"context"
 	"fmt"
+
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	chaosutils "github.com/carv-ics-forth/frisbee/controllers/chaos/utils"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
@@ -76,8 +77,8 @@ func (r *Controller) service(ctx context.Context, t *v1alpha1.Scenario, action v
 	}
 
 	// Add shared storage
-	if t.Spec.SharedStorage != nil {
-		job.AttachVolumeSpec(t.Spec.SharedStorage)
+	if t.Spec.TestData != nil {
+		job.AttachTestDataVolume(t.Spec.TestData, true)
 	}
 
 	return &job, nil
@@ -118,7 +119,7 @@ func (r *Controller) cluster(ctx context.Context, t *v1alpha1.Scenario, action v
 	action.Cluster.DeepCopyInto(&job.Spec)
 
 	// Add shared storage
-	job.Spec.SharedStorage = t.Spec.SharedStorage
+	job.Spec.TestData = t.Spec.TestData
 
 	return &job, nil
 }

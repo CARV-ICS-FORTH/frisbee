@@ -19,11 +19,12 @@ package scenario
 import (
 	"context"
 	"fmt"
-	"github.com/carv-ics-forth/frisbee/pkg/structure"
 	"net/http"
 	"path/filepath"
 	"sync"
 	"time"
+
+	"github.com/carv-ics-forth/frisbee/pkg/structure"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
@@ -81,10 +82,6 @@ func (r *Controller) StartTelemetry(ctx context.Context, t *v1alpha1.Scenario) e
 		return errors.Wrapf(err, "grafana error")
 	}
 
-	if err := r.connectToGrafana(ctx, t); err != nil {
-		return errors.Wrapf(err, "connect to grafana")
-	}
-
 	return nil
 }
 
@@ -98,6 +95,11 @@ func (r *Controller) StopTelemetry(t *v1alpha1.Scenario) {
 }
 
 func (r *Controller) installLogviewer(ctx context.Context, t *v1alpha1.Scenario) error {
+	// the filebrowser makes sense only if test data are enabled.
+	if t.Spec.TestData == nil {
+		return nil
+	}
+
 	var job v1alpha1.Service
 
 	job.SetName(defaultLogViewerName)
@@ -124,7 +126,8 @@ func (r *Controller) installLogviewer(ctx context.Context, t *v1alpha1.Scenario)
 
 		spec.DeepCopyInto(&job.Spec)
 
-		job.AttachVolumeSpec(t.Spec.SharedStorage)
+		// the logviewer is the only service that has complete access to the volume's content.
+		job.AttachTestDataVolume(t.Spec.TestData, false)
 	}
 
 	if err := common.Create(ctx, r, t, &job); err != nil {
@@ -163,7 +166,10 @@ func (r *Controller) installPrometheus(ctx context.Context, t *v1alpha1.Scenario
 
 		spec.DeepCopyInto(&job.Spec)
 
-		job.AttachVolumeSpec(t.Spec.SharedStorage)
+		// NOTICE: Prometheus does not support NFS or other distributed filesystems. It returns
+		// panic: Unable to create mmap-ed active query log
+		// We have this line here commented, just to make the point of **DO NOT UNCOMMENT IT**.
+		// job.AttachTestDataVolume(t.Spec.TestData, true)
 	}
 
 	if err := common.Create(ctx, r, t, &job); err != nil {
@@ -201,7 +207,7 @@ func (r *Controller) installGrafana(ctx context.Context, t *v1alpha1.Scenario, a
 
 		spec.DeepCopyInto(&job.Spec)
 
-		job.AttachVolumeSpec(t.Spec.SharedStorage)
+		job.AttachTestDataVolume(t.Spec.TestData, true)
 
 		if err := r.importDashboards(ctx, t, &job.Spec, agentRefs); err != nil {
 			return errors.Wrapf(err, "import dashboards")
@@ -318,9 +324,15 @@ func (r *Controller) connectToGrafana(ctx context.Context, t *v1alpha1.Scenario)
 		return nil
 	}
 
-	if grafana.ClientExistsFor(t) {
+	// if a client exists, return the client directly.
+	if c := grafana.GetClientFor(t); c != nil {
 		return nil
 	}
+
+	// otherwise, re-create a client.
+	// this condition captures both the cases:
+	// 1) this is the first time we create a client to the controller
+	// 2) the controller has been restarted and lost all of the create controllers.
 
 	var endpoint string
 

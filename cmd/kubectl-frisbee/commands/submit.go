@@ -27,14 +27,14 @@ func NewSubmitCmd() *cobra.Command {
 		Use:     "submit <resourceName>",
 		Aliases: []string{"r", "start"},
 		Short:   "Submit tests or test suites for execution",
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			ui.SetVerbose(verbose)
+		},
 		Run: func(cmd *cobra.Command, args []string) {
 			ui.Logo()
 
 			err := cmd.Help()
 			ui.PrintOnError("Displaying help", err)
-		},
-		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			// validator.PersistentPreRunVersionCheck(cmd, common.Version)
 		}}
 
 	cmd.AddCommand(tests.NewSubmitTestCmd())
