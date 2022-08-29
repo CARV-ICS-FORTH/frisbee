@@ -18,7 +18,8 @@ package service
 
 import (
 	"fmt"
-	"github.com/carv-ics-forth/frisbee/controllers/common/lifecycle"
+
+	"github.com/carv-ics-forth/frisbee/pkg/lifecycle"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"

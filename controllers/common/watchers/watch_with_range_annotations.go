@@ -18,12 +18,13 @@ package watchers
 
 import (
 	"fmt"
-	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"reflect"
+
+	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
+	"github.com/carv-ics-forth/frisbee/pkg/grafana"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/carv-ics-forth/frisbee/controllers/common"
-	"github.com/carv-ics-forth/frisbee/controllers/common/grafana"
 	cmap "github.com/orcaman/concurrent-map"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"

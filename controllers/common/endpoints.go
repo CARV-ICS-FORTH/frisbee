@@ -18,11 +18,11 @@ package common
 
 import (
 	"fmt"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"time"
 
-	"github.com/carv-ics-forth/frisbee/controllers/common/configuration"
+	"github.com/carv-ics-forth/frisbee/pkg/configuration"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 var BackoffForK8sEndpoint = wait.Backoff{

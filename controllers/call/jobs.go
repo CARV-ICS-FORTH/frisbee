@@ -22,7 +22,7 @@ import (
 	"regexp"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	"github.com/carv-ics-forth/frisbee/controllers/common/lifecycle"
+	"github.com/carv-ics-forth/frisbee/pkg/lifecycle"
 	"github.com/carv-ics-forth/frisbee/pkg/structure"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/types"

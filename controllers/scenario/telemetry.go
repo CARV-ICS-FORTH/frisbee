@@ -24,13 +24,13 @@ import (
 	"sync"
 	"time"
 
+	configuration2 "github.com/carv-ics-forth/frisbee/pkg/configuration"
+	"github.com/carv-ics-forth/frisbee/pkg/expressions"
+	"github.com/carv-ics-forth/frisbee/pkg/grafana"
 	"github.com/carv-ics-forth/frisbee/pkg/structure"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
-	"github.com/carv-ics-forth/frisbee/controllers/common/configuration"
-	"github.com/carv-ics-forth/frisbee/controllers/common/expressions"
-	"github.com/carv-ics-forth/frisbee/controllers/common/grafana"
 	serviceutils "github.com/carv-ics-forth/frisbee/controllers/service/utils"
 	notifier "github.com/golanghelper/grafana-webhook"
 	"github.com/pkg/errors"
@@ -110,7 +110,7 @@ func (r *Controller) installLogviewer(ctx context.Context, t *v1alpha1.Scenario)
 
 	{ // spec
 		fromtemplate := &v1alpha1.GenerateFromTemplate{
-			TemplateRef:  configuration.LogviewerTemplate,
+			TemplateRef:  configuration2.LogviewerTemplate,
 			MaxInstances: 1,
 			Inputs:       nil,
 		}
@@ -150,7 +150,7 @@ func (r *Controller) installPrometheus(ctx context.Context, t *v1alpha1.Scenario
 
 	{ // spec
 		fromtemplate := &v1alpha1.GenerateFromTemplate{
-			TemplateRef:  configuration.PrometheusTemplate,
+			TemplateRef:  configuration2.PrometheusTemplate,
 			MaxInstances: 1,
 			Inputs:       nil,
 		}
@@ -191,7 +191,7 @@ func (r *Controller) installGrafana(ctx context.Context, t *v1alpha1.Scenario, a
 
 	{ // spec
 		fromtemplate := &v1alpha1.GenerateFromTemplate{
-			TemplateRef:  configuration.GrafanaTemplate,
+			TemplateRef:  configuration2.GrafanaTemplate,
 			MaxInstances: 1,
 			Inputs:       nil,
 		}
@@ -336,7 +336,7 @@ func (r *Controller) connectToGrafana(ctx context.Context, t *v1alpha1.Scenario)
 
 	var endpoint string
 
-	if configuration.Global.DeveloperMode {
+	if configuration2.Global.DeveloperMode {
 		/* If in developer mode, the operator runs outside the cluster, and will reach Grafana via the ingress */
 		endpoint = common.ExternalEndpoint(defaultGrafanaName, t.GetNamespace())
 	} else {

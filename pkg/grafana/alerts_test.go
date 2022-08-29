@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	"github.com/carv-ics-forth/frisbee/controllers/common/grafana"
+	"github.com/carv-ics-forth/frisbee/pkg/grafana"
 	"github.com/grafana-tools/sdk"
 )
 

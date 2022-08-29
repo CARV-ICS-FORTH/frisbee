@@ -25,7 +25,7 @@ import (
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
-	"github.com/carv-ics-forth/frisbee/controllers/common/grafana"
+	grafana2 "github.com/carv-ics-forth/frisbee/pkg/grafana"
 	notifier "github.com/golanghelper/grafana-webhook"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -80,7 +80,7 @@ func (e *endpoint) Fields() int {
 }
 
 func SetAlert(ctx context.Context, job client.Object, expr v1alpha1.ExprMetrics) error {
-	alert, err := grafana.ParseAlertExpr(expr)
+	alert, err := grafana2.ParseAlertExpr(expr)
 	if err != nil {
 		return errors.Wrapf(err, "invalid alert expression")
 	}
@@ -97,7 +97,7 @@ func SetAlert(ctx context.Context, job client.Object, expr v1alpha1.ExprMetrics)
 
 	// push the alert to grafana. Due to the distributed nature, the requested dashboard may not be in Grafana yet.
 	// If the dashboard is not found, retry a few times before failing.
-	return grafana.GetClientFor(job).SetAlert(ctx, alert, name, msg)
+	return grafana2.GetClientFor(job).SetAlert(ctx, alert, name, msg)
 }
 
 // DispatchAlert informs an object about the fired alert by updating the metadata of that object.
@@ -127,7 +127,7 @@ func DispatchAlert(ctx context.Context, r common.Reconciler, b *notifier.Body) e
 	}{}
 
 	switch b.State {
-	case grafana.NoData:
+	case grafana2.NoData:
 		/*
 		  Spurious Alert may be risen if the expr evaluation frequency is less than the scheduled interval.
 		  In this case, Grafana faces an idle period, and raises a NoData Alert.
@@ -137,7 +137,7 @@ func DispatchAlert(ctx context.Context, r common.Reconciler, b *notifier.Body) e
 
 		return nil
 
-	case grafana.Alerting, grafana.OK:
+	case grafana2.Alerting, grafana2.OK:
 		patchStruct.Metadata.Annotations = map[string]string{
 			alertName:      b.RuleName,
 			alertState:     string(b.State),
@@ -195,7 +195,7 @@ func AlertIsFired(job metav1.Object) (*time.Time, string, bool) {
 	}
 
 	switch state {
-	case grafana.Alerting:
+	case grafana2.Alerting:
 		// Step 2. Parse the timestamp
 		tsS, ok := annotations[alertTimestamp]
 		if !ok {
@@ -215,7 +215,7 @@ func AlertIsFired(job metav1.Object) (*time.Time, string, bool) {
 
 		return &ts, info, true
 
-	case grafana.OK:
+	case grafana2.OK:
 		/*
 		 This is the equivalent of revoking an alert. It happens when, after sending an Alert, decides
 		 that the latest evaluation no longer matches the given rule.
@@ -230,6 +230,6 @@ func AlertIsFired(job metav1.Object) (*time.Time, string, bool) {
 func UnsetAlert(obj metav1.Object) {
 	alertID, exists := obj.GetAnnotations()[alertName]
 	if exists {
-		grafana.GetClientFor(obj).UnsetAlert(alertID)
+		grafana2.GetClientFor(obj).UnsetAlert(alertID)
 	}
 }
