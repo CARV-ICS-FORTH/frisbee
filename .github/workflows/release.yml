@@ -43,9 +43,9 @@ jobs:
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v2
         with:
-          distribution: goreleaser-pro
+          distribution: goreleaser
           version: latest
-          args: release -f ${{ matrix.path }} #--skip-publish
+          args: release -f ${{ matrix.path }} --rm-dist #--skip-publish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           
