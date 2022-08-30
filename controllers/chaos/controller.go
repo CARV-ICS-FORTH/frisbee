@@ -22,7 +22,7 @@ import (
 	"reflect"
 	"time"
 
-	lifecycle2 "github.com/carv-ics-forth/frisbee/pkg/lifecycle"
+	"github.com/carv-ics-forth/frisbee/pkg/lifecycle"
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
@@ -52,7 +52,7 @@ type Controller struct {
 
 	gvk schema.GroupVersionKind
 
-	view *lifecycle2.Classifier
+	view *lifecycle.Classifier
 
 	// because the range annotator has state (uid), we need to save in the controller's store.
 	regionAnnotations cmap.ConcurrentMap
@@ -93,7 +93,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		------------------------------------------------------------------
 	*/
 	if err := r.PopulateView(ctx, req.NamespacedName); err != nil {
-		return lifecycle2.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot populate view for '%s'", req))
+		return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot populate view for '%s'", req))
 	}
 
 	/*
@@ -146,13 +146,13 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		// Build the job in kubernetes
 		if err := r.runJob(ctx, &cr); err != nil {
-			return lifecycle2.Failed(ctx, r, &cr, errors.Wrapf(err, "injection failed"))
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "injection failed"))
 		}
 
 		// Update the scheduling information
 		cr.Status.LastScheduleTime = &metav1.Time{Time: time.Now()}
 
-		return lifecycle2.Pending(ctx, r, &cr, "injecting fault")
+		return lifecycle.Pending(ctx, r, &cr, "injecting fault")
 	}
 
 	panic(errors.New("This should never happen"))
@@ -292,7 +292,7 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 		Logger:            logger.WithName("chaos"),
 		gvk:               v1alpha1.GroupVersion.WithKind("Chaos"),
 		regionAnnotations: cmap.New(),
-		view:              &lifecycle2.Classifier{},
+		view:              &lifecycle.Classifier{},
 	}
 
 	var networkChaos GenericFault

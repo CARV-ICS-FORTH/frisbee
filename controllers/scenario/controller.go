@@ -27,7 +27,7 @@ import (
 	"github.com/carv-ics-forth/frisbee/controllers/common/watchers"
 	"github.com/carv-ics-forth/frisbee/pkg/configuration"
 	"github.com/carv-ics-forth/frisbee/pkg/expressions"
-	lifecycle2 "github.com/carv-ics-forth/frisbee/pkg/lifecycle"
+	"github.com/carv-ics-forth/frisbee/pkg/lifecycle"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -52,7 +52,7 @@ type Controller struct {
 	ctrl.Manager
 	logr.Logger
 
-	view *lifecycle2.Classifier
+	view *lifecycle.Classifier
 
 	alertingPort int
 }
@@ -90,14 +90,14 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		------------------------------------------------------------------
 	*/
 	if err := r.PopulateView(ctx, req.NamespacedName); err != nil {
-		return lifecycle2.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot populate view for '%s'", req))
+		return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot populate view for '%s'", req))
 	}
 
 	/* Check if all the SYS services are running. If they are terminated (Failed/Success), we have nothing else to do,
 	and we abort the experiment. If they are still being created (Uninitialized, Pending), we sleep and retry */
 	if abort, sysErr := r.view.SystemState(); sysErr != nil {
 		if abort {
-			return lifecycle2.Failed(ctx, r, &cr, errors.Wrapf(sysErr, "errorneous system state"))
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(sysErr, "errorneous system state"))
 		} else {
 			// Just stop, waiting for system services to come up.
 			return common.Stop()
@@ -163,17 +163,17 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	case v1alpha1.PhaseUninitialized:
 		if err := r.Initialize(ctx, &cr); err != nil {
-			return lifecycle2.Failed(ctx, r, &cr, errors.Wrapf(err, "initialization error"))
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "initialization error"))
 		}
 
 		// We could use common.Stop() to simply wait, but we need update status because Initialize()
 		// sets the endpoints, and we want to maintain this information for connectToGrafana().
-		return lifecycle2.Pending(ctx, r, &cr, "Initializing system (SYS) services.")
+		return lifecycle.Pending(ctx, r, &cr, "Initializing system (SYS) services.")
 
 	case v1alpha1.PhasePending:
 		actionList, nextRun, err := r.NextJobs(&cr)
 		if err != nil {
-			return lifecycle2.Failed(ctx, r, &cr, errors.Wrapf(err, "scheduling error"))
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "scheduling error"))
 		}
 
 		if len(actionList) == 0 {
@@ -190,10 +190,10 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		}
 
 		if err := r.RunActions(ctx, &cr, actionList); err != nil {
-			return lifecycle2.Failed(ctx, r, &cr, errors.Wrapf(err, "actions failed"))
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "actions failed"))
 		}
 
-		return lifecycle2.Pending(ctx, r, &cr, fmt.Sprintf("Scheduled jobs: '%d'", len(cr.Status.ScheduledJobs)))
+		return lifecycle.Pending(ctx, r, &cr, fmt.Sprintf("Scheduled jobs: '%d'", len(cr.Status.ScheduledJobs)))
 	}
 
 	panic(errors.New("This should never happen"))
@@ -457,7 +457,7 @@ func NewController(mgr ctrl.Manager, logger logr.Logger, alertingPort int) error
 		Manager:      mgr,
 		Logger:       logger.WithName("scenario"),
 		alertingPort: alertingPort,
-		view:         &lifecycle2.Classifier{},
+		view:         &lifecycle.Classifier{},
 	}
 
 	gvk := v1alpha1.GroupVersion.WithKind("Scenario")
