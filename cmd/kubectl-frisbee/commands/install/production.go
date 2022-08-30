@@ -32,7 +32,7 @@ func NewInstallProductionCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			ui.Logo()
 
-			command := []string{"upgrade", "--install",
+			command := []string{"upgrade", "--install", "--wait",
 				"--namespace", options.Namespace, "--create-namespace",
 				"--values", options.Values,
 				options.Name, options.Chart,

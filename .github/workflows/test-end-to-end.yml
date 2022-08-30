@@ -31,13 +31,24 @@ jobs:
           alias helm='microk8s helm3'
           
           # Install kubectl-frisbee
-          ./install.sh
-          
-          echo $PATH
-          ls /var/snap/microk8s/current/ 
+          ./install.sh 
           
           # Install Frisbee
           ./kubectl-frisbee install production -v=false  
+
+
+ #     - name: Cache Frisbee Installation
+ #       uses: actions/cache@v3
+ #       env:
+ #         cache-name: cache-installation
+ #       with:
+ #         # microk8s on snap is in '/var/snap/microk8s/current/' on Linux/macOS
+#          path: /var/snap/microk8s/current
+#          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+ #         restore-keys: |
+#            ${{ runner.os }}-build-${{ env.cache-name }}-
+#            ${{ runner.os }}-build-
+#            ${{ runner.os }}-
 
       - name: Run Frisbee Scenario
         run: |
