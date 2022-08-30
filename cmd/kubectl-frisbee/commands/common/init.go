@@ -48,3 +48,9 @@ func Hint(cmd *cobra.Command, msg string, sub ...string) {
 		ui.Success(msg, sub...)
 	}
 }
+
+func Verbose(cmd *cobra.Command) bool {
+	ok, _ := cmd.Flags().GetBool("verbose")
+
+	return ok
+}
