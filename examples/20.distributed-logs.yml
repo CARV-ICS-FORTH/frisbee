@@ -6,8 +6,7 @@ metadata:
 spec:
   service:
     decorators:
-      telemetry:
-        - system.telemetry.agent
+      telemetry: [system.telemetry.agent]
       resources:
         cpu: "1"
         memory: "48Mi"

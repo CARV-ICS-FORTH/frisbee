@@ -13,7 +13,6 @@ spec:
           - {cni0: "10.1.96.192", host: "192.168.178.3"}
           - {"neigh": node-0} # node-1 will ping node-0
 
-
     # Test Localhost Connectivity
     - action: Call
       name: localhost
