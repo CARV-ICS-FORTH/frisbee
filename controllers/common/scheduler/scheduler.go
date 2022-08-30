@@ -21,7 +21,7 @@ import (
 	"time"
 
 	"github.com/carv-ics-forth/frisbee/pkg/expressions"
-	lifecycle2 "github.com/carv-ics-forth/frisbee/pkg/lifecycle"
+	"github.com/carv-ics-forth/frisbee/pkg/lifecycle"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
@@ -36,7 +36,7 @@ import (
 // If we've missed a run, and we're still within the deadline to start it, we'll need to run a job.
 // time-based and event-driven scheduling can be used in conjunction.
 func Schedule(ctx context.Context, r common.Reconciler, cr client.Object, schedule *v1alpha1.SchedulerSpec,
-	lastSchedule *metav1.Time, state lifecycle2.ClassifierReader) (bool, ctrl.Result, error) {
+	lastSchedule *metav1.Time, state lifecycle.ClassifierReader) (bool, ctrl.Result, error) {
 	// no schedule.
 	if schedule == nil {
 		return true, ctrl.Result{}, nil
@@ -93,7 +93,7 @@ func timeBasedWithDeadline(ctx context.Context, r common.Reconciler, cr client.O
 	}
 
 	if tooLate {
-		ret, err := lifecycle2.Failed(ctx, r, cr, errors.New("scheduling violation"))
+		ret, err := lifecycle.Failed(ctx, r, cr, errors.New("scheduling violation"))
 
 		return false, ret, err
 	}

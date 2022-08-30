@@ -22,9 +22,9 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/carv-ics-forth/frisbee/controllers/common/scheduler"
 	"github.com/carv-ics-forth/frisbee/pkg/expressions"
-	lifecycle2 "github.com/carv-ics-forth/frisbee/pkg/lifecycle"
-	"github.com/carv-ics-forth/frisbee/pkg/scheduler"
+	"github.com/carv-ics-forth/frisbee/pkg/lifecycle"
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
@@ -47,7 +47,7 @@ type Controller struct {
 	ctrl.Manager
 	logr.Logger
 
-	view *lifecycle2.Classifier
+	view *lifecycle.Classifier
 }
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
@@ -85,7 +85,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		------------------------------------------------------------------
 	*/
 	if err := r.PopulateView(ctx, req.NamespacedName); err != nil {
-		return lifecycle2.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot populate view for '%s'", req))
+		return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot populate view for '%s'", req))
 	}
 
 	/*
@@ -140,10 +140,10 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	case v1alpha1.PhaseUninitialized:
 		if err := r.Initialize(ctx, &cr); err != nil {
-			return lifecycle2.Failed(ctx, r, &cr, errors.Wrapf(err, "initialization error"))
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "initialization error"))
 		}
 
-		return lifecycle2.Pending(ctx, r, &cr, "ready to start submitting jobs.")
+		return lifecycle.Pending(ctx, r, &cr, "ready to start submitting jobs.")
 
 	case v1alpha1.PhasePending:
 		nextJob := cr.Status.ScheduledJobs + 1
@@ -166,14 +166,14 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		// Build the job in kubernetes
 		if err := r.runJob(ctx, &cr, nextJob); err != nil {
-			return lifecycle2.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot create job"))
+			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot create job"))
 		}
 
 		// Update the scheduling information
 		cr.Status.ScheduledJobs = nextJob
 		cr.Status.LastScheduleTime = &metav1.Time{Time: time.Now()}
 
-		return lifecycle2.Pending(ctx, r, &cr, fmt.Sprintf("Scheduled jobs: '%d'", cr.Status.ScheduledJobs))
+		return lifecycle.Pending(ctx, r, &cr, fmt.Sprintf("Scheduled jobs: '%d'", cr.Status.ScheduledJobs))
 	}
 
 	panic(errors.New("This should never happen"))
@@ -206,7 +206,7 @@ func (r *Controller) Initialize(ctx context.Context, cr *v1alpha1.Cascade) error
 		}
 	}
 
-	if _, err := lifecycle2.Pending(ctx, r, cr, "submitting job requests"); err != nil {
+	if _, err := lifecycle.Pending(ctx, r, cr, "submitting job requests"); err != nil {
 		return errors.Wrapf(err, "status update")
 	}
 
@@ -314,7 +314,7 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 	r := &Controller{
 		Manager: mgr,
 		Logger:  logger.WithName("cascade"),
-		view:    &lifecycle2.Classifier{},
+		view:    &lifecycle.Classifier{},
 	}
 
 	gvk := v1alpha1.GroupVersion.WithKind("Cascade")
