@@ -30,12 +30,14 @@ jobs:
           alias kubectl='microk8s kubectl'
           alias helm='microk8s helm3'
           
+          # Microk8s info
+          microk8s status
+          
           # Install kubectl-frisbee
           ./install.sh 
           
           # Install Frisbee
           ./kubectl-frisbee install production -v=false  
-
 
  #     - name: Cache Frisbee Installation
  #       uses: actions/cache@v3

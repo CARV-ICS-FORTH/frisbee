@@ -103,7 +103,7 @@ func NewSubmitTestCmd() *cobra.Command {
 			// Ensure the namespace for hosting the scenario
 			{
 				err := common.CreateNamespace(testName, common.ManagedNamespace)
-				ui.ExitOnError("Create managed namespace:"+testName, err)
+				ui.ExitOnError("Creating managed namespace:"+testName, err)
 
 				if options.CPUQuota != "" || options.MemoryQuota != "" {
 					err := common.SetQuota(testName, options.CPUQuota, options.MemoryQuota)
