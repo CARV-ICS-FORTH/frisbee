@@ -19,42 +19,22 @@ jobs:
       - name: Check out Git repository
         uses: actions/checkout@v3
 
-      - name: Set up Go
-        uses: actions/setup-go@v3
-        with:
-          go-version: 1.18
-
-      - name: Go Cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/go/pkg/mod
-            ~/.cache/go-build
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-
       - name: Install MicroK8s
         uses: balchua/microk8s-actions@v0.2.2
         with:
           channel: 'latest/stable'
           addons: '["dns", "ingress", "helm3"]'
 
-
-      - name: skata
-        run: |
-          ls -lah
-
       - name: Install Frisbee
         run: |
           alias kubectl='microk8s kubectl'
           alias helm='microk8s helm3'
           
-          # Build the Frisbee cli
-          go build ./cmd/kubectl-frisbee/main.go
+          # Install kubectl-frisbee
+          ./install.sh
           
           # Install Frisbee
-          ./main install production -v=false  
+          kubectl-frisbee install production -v=false  
 
   run-tests:
     runs-on: ubuntu-latest
@@ -65,11 +45,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: skata
-        run: |
-          ls -lah
-
       - name: Run Frisbee Scenario
         run: |
           # Submit the job
-          ./main submit test demo- ${{ github.event.inputs.scenario }} ${{ github.event.inputs.charts}}
+          kubectl-frisbee submit test demo- ${{ github.event.inputs.scenario }} ${{ github.event.inputs.charts}}

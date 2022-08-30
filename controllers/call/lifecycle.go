@@ -38,8 +38,8 @@ func (r *Controller) calculateLifecycle(cr *v1alpha1.Call) bool {
 		if meta.IsStatusConditionTrue(cr.Status.Conditions, v1alpha1.ConditionAllJobsAreScheduled.String()) {
 			// The Until condition is already handled, and we are in the Running Phase.
 			// From now on, the lifecycle depends on the progress of the already scheduled jobs.
-			queuedJobs := cr.Status.ScheduledJobs
-			return lifecycle.GroupedJobs(queuedJobs, r.view, &cr.Status.Lifecycle, cr.Spec.Tolerate)
+			totalJobs := cr.Status.ScheduledJobs + 1
+			return lifecycle.GroupedJobs(totalJobs, r.view, &cr.Status.Lifecycle, cr.Spec.Tolerate)
 		}
 
 		eval := expressions.Condition{Expr: cr.Spec.Until}
@@ -97,7 +97,7 @@ func (r *Controller) calculateLifecycle(cr *v1alpha1.Call) bool {
 	}
 
 	// Step 4. Check if scheduling goes as expected.
-	queuedJobs := len(cr.Spec.Services)
+	totalJobs := len(cr.Spec.Services)
 
-	return lifecycle.GroupedJobs(queuedJobs, r.view, &cr.Status.Lifecycle, cr.Spec.Tolerate)
+	return lifecycle.GroupedJobs(totalJobs, r.view, &cr.Status.Lifecycle, cr.Spec.Tolerate)
 }

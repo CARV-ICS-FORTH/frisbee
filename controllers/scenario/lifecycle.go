@@ -69,7 +69,7 @@ func (r *Controller) updateLifecycle(cr *v1alpha1.Scenario) bool {
 	}
 
 	// Step 4. Check if scheduling goes as expected.
-	queuedJobs := len(cr.Spec.Actions)
+	totalJobs := len(cr.Spec.Actions)
 
-	return lifecycle.GroupedJobs(queuedJobs, r.view, &cr.Status.Lifecycle, nil)
+	return lifecycle.GroupedJobs(totalJobs, r.view, &cr.Status.Lifecycle, nil)
 }

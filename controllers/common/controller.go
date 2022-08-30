@@ -124,7 +124,7 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 
 			if err := wait.ExponentialBackoffWithContext(ctx, BackoffForK8sEndpoint, func() (done bool, err error) {
 				if errUpdate := Update(ctx, r, obj); errUpdate != nil {
-					return false, nil
+					return false, errUpdate
 				} else {
 					return true, nil
 				}
@@ -160,7 +160,7 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 
 				if err := wait.ExponentialBackoffWithContext(ctx, BackoffForK8sEndpoint, func() (done bool, err error) {
 					if errUpdate := Update(ctx, r, obj); errUpdate != nil {
-						return false, err
+						return false, errUpdate
 					} else {
 						return true, nil
 					}
