@@ -11,7 +11,7 @@ on:
       - 'pkg/**'
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
 
     steps:
@@ -33,17 +33,15 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
-      - name: Install Snapcraft
-        uses: samuelmeuli/action-snapcraft@v1
 
-      - name: Install Microk8s
-        run: |
-          sudo snap install microk8s --classic --channel=1.24/stable  # Install microk8s v.1.24
-          sudo microk8s config > ~/.kube/config                       # Setup kubeconfig
-          sudo microk8s start                                         # Start microk8s
-          sudo microk8s enable dns ingress helm3                      # Enable Dependencies
-          sudo snap alias microk8s.kubectl kubectl                    # Create aliases
-          sudo snap alias microk8s.helm3 helm
+      - name: Install MicroK8s
+        uses: balchua/microk8s-actions@v0.2.2
+        with:
+          channel: 'latest/stable'
+          addons: '["dns", "ingress", "helm3"]'
 
       - name: Unit test
-        run: make test
+        run: |
+          alias kubectl='microk8s kubectl'
+          alias helm='microk8s helm3'
+          make test
