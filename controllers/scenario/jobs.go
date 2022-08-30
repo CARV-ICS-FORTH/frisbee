@@ -95,19 +95,24 @@ func (r *Controller) cluster(ctx context.Context, t *v1alpha1.Scenario, action v
 		}
 
 		{ // Ensure that there are enough nodes for placement to make sense.
-			var totalReady int
-			var totalNotReady int
+			var ready []string
+			var notReady []string
 			for _, node := range nodes.Items {
-				if node.Status.Phase == corev1.NodeRunning {
-					totalReady++
-				} else {
-					totalNotReady++
+
+				// search at the node's condition for the "NodeReady".
+				for _, cond := range node.Status.Conditions {
+					if cond.Type == corev1.NodeReady && cond.Status == corev1.ConditionTrue {
+						ready = append(ready, node.GetName())
+						goto next
+					}
 				}
+				notReady = append(notReady, node.GetName())
+			next:
 			}
 
-			if totalReady < 2 {
-				return nil, errors.Errorf("placement policies require at least two running physical nodes."+
-					" found '%d' ready and '%d' not ready", totalReady, totalNotReady)
+			if len(ready) < 2 {
+				return nil, errors.Errorf("placement policies require at least two ready physical nodes."+
+					" Ready:'%v', NotReady:'%v'", ready, notReady)
 			}
 		}
 

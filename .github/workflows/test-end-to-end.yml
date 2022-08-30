@@ -1,4 +1,4 @@
-name: Run Frisbee Scenarios within GitHub Actions
+name: Run Frisbee Scenarios
 
 on:
   workflow_dispatch:
@@ -34,7 +34,7 @@ jobs:
           ./install.sh
           
           # Install Frisbee
-          kubectl-frisbee install production -v=false  
+          kubectl frisbee install production -v=false  
 
   run-tests:
     runs-on: ubuntu-latest
@@ -48,4 +48,4 @@ jobs:
       - name: Run Frisbee Scenario
         run: |
           # Submit the job
-          kubectl-frisbee submit test demo- ${{ github.event.inputs.scenario }} ${{ github.event.inputs.charts}}
+          kubectl frisbee submit test demo- ${{ github.event.inputs.scenario }} ${{ github.event.inputs.charts}}
