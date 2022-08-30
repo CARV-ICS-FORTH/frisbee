@@ -13,7 +13,7 @@ on:
         default: ./charts/system
 
 jobs:
-  test:
+  install-microk8s:
     runs-on: ubuntu-latest
 
     steps:
@@ -35,6 +35,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
+      - name: skata
+        run: |
+          ls -lah
 
       - name: Install MicroK8s
         uses: balchua/microk8s-actions@v0.2.2
@@ -42,6 +45,7 @@ jobs:
           channel: 'latest/stable'
           addons: '["dns", "ingress", "helm3"]'
 
+  run-tests:
       - name: Run Frisbee Scenario
         run: |
           alias kubectl='microk8s kubectl'
@@ -51,7 +55,6 @@ jobs:
           go build ./cmd/kubectl-frisbee/main.go
           
           # Install Frisbee
-          ./main install production
-          
+          ./main install production -v=false  
           # Submit the job
           ./main submit test demo- ${{ github.event.inputs.scenario }} ${{ github.event.inputs.charts}}
