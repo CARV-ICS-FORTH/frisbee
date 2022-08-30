@@ -15,7 +15,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - name: Check out Git repository
+        uses: actions/checkout@v2
 
       - name: Set up Go
         uses: actions/setup-go@v2
@@ -35,9 +36,8 @@ jobs:
       - name: Install Snapcraft
         uses: samuelmeuli/action-snapcraft@v1
 
-
       - name: Install Microk8s
-        run:
+        run: |
           snap install microk8s --classic --channel=1.24/stable  # Install microk8s v.1.24
           microk8s config > ~/.kube/config                       # Setup kubeconfig
           microk8s start                                         # Start microk8s
