@@ -2,8 +2,9 @@ name: Code build and checks
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
+  release:
+    branches:
+      - main
     tags:
       - "v[0-9]+.[0-9]+.[0-9]+"
       - "v[0-9]+.[0-9]+.[0-9]+-*"
