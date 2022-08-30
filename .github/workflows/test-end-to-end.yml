@@ -6,7 +6,7 @@ on:
       scenario:
         required: true
         description: The scenario to run.
-        default: ./examples/1.hello-world.yaml
+        default: ./examples/1.hello-world.yml
       charts:
         required: false
         description: Space separated list of dependent Helm Charts required for the Scenario.
@@ -34,6 +34,7 @@ jobs:
           ./install.sh
           
           echo $PATH
+          ls /var/snap/microk8s/current/ 
           
           # Install Frisbee
           ./kubectl-frisbee install production -v=false  
@@ -41,6 +42,9 @@ jobs:
       - name: Run Frisbee Scenario
         run: |
           echo $PATH
+          
+          ls -lah 
+          ls /var/snap/microk8s/current/
           
           # Submit the job
           ./kubectl-frisbee submit test demo- ${{ github.event.inputs.scenario }} ${{ github.event.inputs.charts}}
