@@ -65,6 +65,11 @@ jobs:
         run: |
           readme-generator-for-helm/bin/index.js --values $(cat prepared-inputs | grep values) --schema /tmp/chart-schema.json
 
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
       - name: Push changes
         run: |
           # Push all the changes
@@ -72,7 +77,5 @@ jobs:
           
           git status -s
           if git status -s | grep charts; then
-            git config user.name "Frisbee-Bot"
-            git config user.email "frisbee-bot@ics.forth.gr"
             git add . && git commit -am "Update README.md with readme-generator-for-helm" --signoff && git push
           fi
