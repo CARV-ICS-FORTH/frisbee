@@ -19,13 +19,14 @@ package chaos
 import (
 	"context"
 	"fmt"
-	"k8s.io/apimachinery/pkg/types"
 	"reflect"
 	"time"
 
+	lifecycle2 "github.com/carv-ics-forth/frisbee/pkg/lifecycle"
+	"k8s.io/apimachinery/pkg/types"
+
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
-	"github.com/carv-ics-forth/frisbee/controllers/common/lifecycle"
 	"github.com/go-logr/logr"
 	cmap "github.com/orcaman/concurrent-map"
 	"github.com/pkg/errors"
@@ -51,7 +52,7 @@ type Controller struct {
 
 	gvk schema.GroupVersionKind
 
-	view *lifecycle.Classifier
+	view *lifecycle2.Classifier
 
 	// because the range annotator has state (uid), we need to save in the controller's store.
 	regionAnnotations cmap.ConcurrentMap
@@ -92,7 +93,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		------------------------------------------------------------------
 	*/
 	if err := r.PopulateView(ctx, req.NamespacedName); err != nil {
-		return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot populate view for '%s'", req))
+		return lifecycle2.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot populate view for '%s'", req))
 	}
 
 	/*
@@ -145,13 +146,13 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		// Build the job in kubernetes
 		if err := r.runJob(ctx, &cr); err != nil {
-			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "injection failed"))
+			return lifecycle2.Failed(ctx, r, &cr, errors.Wrapf(err, "injection failed"))
 		}
 
 		// Update the scheduling information
 		cr.Status.LastScheduleTime = &metav1.Time{Time: time.Now()}
 
-		return lifecycle.Pending(ctx, r, &cr, "injecting fault")
+		return lifecycle2.Pending(ctx, r, &cr, "injecting fault")
 	}
 
 	panic(errors.New("This should never happen"))
@@ -291,7 +292,7 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 		Logger:            logger.WithName("chaos"),
 		gvk:               v1alpha1.GroupVersion.WithKind("Chaos"),
 		regionAnnotations: cmap.New(),
-		view:              &lifecycle.Classifier{},
+		view:              &lifecycle2.Classifier{},
 	}
 
 	var networkChaos GenericFault

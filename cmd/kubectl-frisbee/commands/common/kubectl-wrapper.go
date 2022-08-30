@@ -337,8 +337,13 @@ func CreateNamespace(name string, labels ...string) error {
 	}
 
 	// Label namespace
+	return LabelNamespace(name, labels...)
+}
+
+func LabelNamespace(name string, labels ...string) error {
+	// Label namespace
 	if labels != nil {
-		command = []string{"label", "namespaces", name, "--overwrite=true",
+		command := []string{"label", "namespaces", name, "--overwrite=true",
 			strings.Join(labels, ",")}
 
 		_, err := process.Execute(Kubectl, command...)

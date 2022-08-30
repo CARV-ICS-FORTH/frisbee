@@ -19,6 +19,7 @@ package lifecycle
 import (
 	"context"
 	"fmt"
+
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
 	"github.com/carv-ics-forth/frisbee/pkg/structure"

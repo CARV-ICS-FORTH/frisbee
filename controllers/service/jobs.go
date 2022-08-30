@@ -24,8 +24,8 @@ import (
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
-	"github.com/carv-ics-forth/frisbee/controllers/common/configuration"
 	serviceutils "github.com/carv-ics-forth/frisbee/controllers/service/utils"
+	"github.com/carv-ics-forth/frisbee/pkg/configuration"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"

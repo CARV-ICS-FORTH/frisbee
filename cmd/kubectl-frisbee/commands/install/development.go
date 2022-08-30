@@ -18,12 +18,13 @@ package install
 
 import (
 	"fmt"
+	"net"
+	"os"
+
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/common"
 	"github.com/carv-ics-forth/frisbee/pkg/ui"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"net"
-	"os"
 )
 
 const (
@@ -40,6 +41,8 @@ func NewInstallDevelopmentCmd() *cobra.Command {
 		Short: "Install Frisbee in development mode.",
 		Long:  "Install all Frisbee components, except for the controller which will run externally.",
 		Args: func(cmd *cobra.Command, args []string) error {
+			ui.Logo()
+
 			if len(args) < 2 {
 				return errors.New("please pass project path and public ip as argument")
 			}
@@ -55,22 +58,23 @@ func NewInstallDevelopmentCmd() *cobra.Command {
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			ui.Info("Helm installing frisbee framework")
+			command := []string{"upgrade", "--install", "--wait",
+				"--namespace", options.Namespace, "--create-namespace",
+				"--set", fmt.Sprintf("operator.enabled=%t", false),
+				"--set", fmt.Sprintf("operator.advertisedHost=%s", publicIP),
+				"--values", options.Values,
+				options.Name, chartPath,
+			}
 
-			common.UpdateHelmFrisbeeRepo()
-
-			command := []string{"upgrade", "--install", "--wait", "--create-namespace", "--namespace", options.Namespace}
-			command = append(command, "--set", fmt.Sprintf("operator.enabled=%t", false))
-			command = append(command, "--set", fmt.Sprintf("operator.advertisedHost=%s", publicIP))
-			command = append(command, options.Name, chartPath)
-
-			common.HelmInstallFrisbee(command, &options)
+			common.HelmInstallFrisbee(cmd, command, &options)
 		},
 		PersistentPostRun: func(cmd *cobra.Command, args []string) {
 			ui.NL()
 			ui.Info("Frisbee runs in development mode. You must use: ",
 				fmt.Sprintf("FRISBEE_NAMESPACE=%s make run", options.Namespace))
 			ui.NL()
+
+			ui.Success(" Happy Testing! 🚀")
 		},
 	}
 

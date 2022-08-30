@@ -18,6 +18,7 @@ package configuration
 
 import (
 	"context"
+
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/go-logr/logr"
 	"github.com/mitchellh/mapstructure"

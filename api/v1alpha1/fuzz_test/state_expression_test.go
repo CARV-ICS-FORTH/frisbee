@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	"github.com/carv-ics-forth/frisbee/controllers/common/lifecycle"
+	"github.com/carv-ics-forth/frisbee/pkg/lifecycle"
 )
 
 func setJobs(state *lifecycle.Classifier) {
@@ -12,6 +12,7 @@ func setJobs(state *lifecycle.Classifier) {
 		var job v1alpha1.Service
 
 		job.SetName("service0")
+		v1alpha1.SetComponentLabel(&job.ObjectMeta, v1alpha1.ComponentSUT)
 
 		job.Status.Lifecycle.Phase = v1alpha1.PhaseSuccess
 		job.Status.Lifecycle.Reason = "MockSuccess"
@@ -23,6 +24,7 @@ func setJobs(state *lifecycle.Classifier) {
 		var job v1alpha1.Service
 
 		job.SetName("service1")
+		v1alpha1.SetComponentLabel(&job.ObjectMeta, v1alpha1.ComponentSUT)
 
 		job.Status.Lifecycle.Phase = v1alpha1.PhaseFailed
 		job.Status.Lifecycle.Reason = "MockFailure"
@@ -34,6 +36,7 @@ func setJobs(state *lifecycle.Classifier) {
 		var job v1alpha1.Service
 
 		job.SetName("service2")
+		v1alpha1.SetComponentLabel(&job.ObjectMeta, v1alpha1.ComponentSUT)
 
 		job.Status.Lifecycle.Phase = v1alpha1.PhaseRunning
 		job.Status.Lifecycle.Reason = "MockRunning"
@@ -45,6 +48,7 @@ func setJobs(state *lifecycle.Classifier) {
 		var job v1alpha1.Service
 
 		job.SetName("service3")
+		v1alpha1.SetComponentLabel(&job.ObjectMeta, v1alpha1.ComponentSUT)
 
 		job.Status.Lifecycle.Phase = v1alpha1.PhaseRunning
 		job.Status.Lifecycle.Reason = "MockRunning"

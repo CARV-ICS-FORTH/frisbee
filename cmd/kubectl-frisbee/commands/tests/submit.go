@@ -18,6 +18,9 @@ package tests
 
 import (
 	"fmt"
+	"path/filepath"
+	"strings"
+
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/common"
 	"github.com/carv-ics-forth/frisbee/pkg/ui"
 	"github.com/kubeshop/testkube/pkg/process"
@@ -25,9 +28,6 @@ import (
 	"github.com/spf13/cobra"
 	k8errors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/rand"
-	"os"
-	"path/filepath"
-	"strings"
 )
 
 type TestSubmitOptions struct {
@@ -83,19 +83,12 @@ func NewSubmitTestCmd() *cobra.Command {
 			{
 				scenario, err := client.GetScenario(testName)
 				if err != nil && !k8errors.IsNotFound(errors.Cause(err)) {
-					ui.UseStderr()
-					ui.Errf("Can't query Kubernetes API for test with name '%s'", testName)
-					ui.Debug(err.Error())
-					os.Exit(1)
+					ui.Failf("Can't query Kubernetes API for test with name '%s'", testName)
 				}
 
 				// Check for conflicting tests
 				if scenario != nil {
-					ui.UseStderr()
-					ui.Errf("test with name '%s' already exists", testName)
-					ui.Debug("Created", scenario.GetCreationTimestamp().String())
-					ui.Debug("Status", scenario.GetReconcileStatus().Phase.String())
-					os.Exit(1)
+					ui.Failf("test with name '%s' already exists", testName)
 				}
 
 				ui.ExitOnError("Check for conflicting tests", err)
@@ -110,7 +103,7 @@ func NewSubmitTestCmd() *cobra.Command {
 			// Ensure the namespace for hosting the scenario
 			{
 				err := common.CreateNamespace(testName, common.ManagedNamespace)
-				ui.ExitOnError("Creating managed namespace", err)
+				ui.ExitOnError("Create managed namespace:"+testName, err)
 
 				if options.CPUQuota != "" || options.MemoryQuota != "" {
 					err := common.SetQuota(testName, options.CPUQuota, options.MemoryQuota)

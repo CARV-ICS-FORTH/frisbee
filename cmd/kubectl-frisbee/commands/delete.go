@@ -37,8 +37,6 @@ func NewDeleteCmd() *cobra.Command {
 			ui.PrintOnError("Displaying help", err)
 		}}
 
-	cmd.PersistentFlags().BoolVarP(&verbose, "verbose", "", false, "should I show additional debug messages")
-
 	cmd.AddCommand(tests.NewDeleteTestsCmd())
 
 	return cmd

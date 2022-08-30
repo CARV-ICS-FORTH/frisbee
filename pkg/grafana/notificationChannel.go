@@ -20,7 +20,7 @@ import (
 	"context"
 
 	"github.com/carv-ics-forth/frisbee/controllers/common"
-	"github.com/carv-ics-forth/frisbee/controllers/common/configuration"
+	"github.com/carv-ics-forth/frisbee/pkg/configuration"
 	"github.com/grafana-tools/sdk"
 	"k8s.io/apimachinery/pkg/util/wait"
 )

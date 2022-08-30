@@ -36,11 +36,6 @@ func NewInstallCmd() *cobra.Command {
 			err := cmd.Help()
 			ui.PrintOnError("Displaying help", err)
 		},
-		PostRun: func(cmd *cobra.Command, args []string) {
-			ui.NL()
-			ui.Info(" Happy Testing! 🚀")
-			ui.NL()
-		},
 	}
 
 	cmd.AddCommand(install.NewInstallDevelopmentCmd())

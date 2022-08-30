@@ -40,32 +40,48 @@ func NewUninstallCmd() *cobra.Command {
 	var options PlatformUninstallOptions
 
 	cmd := &cobra.Command{
-		Use:   "uninstall",
-		Short: "Uninstall Frisbee from current kubectl context",
+		Use:     "uninstall",
+		Short:   "Uninstall Frisbee from current kubectl context",
+		Aliases: []string{"del", "delete", "un"},
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			ui.SetVerbose(verbose)
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			ui.Logo()
 
-			ui.Verbose = true
-
+			// Delete test-cases (aka namespaces managed by  frisbee)
 			err := common.DeleteNamespaces(common.ManagedNamespace)
 			ui.ExitOnError("Deleting test-cases", err)
 
-			_, err = process.Execute("helm", "uninstall", "--wait",
-				"--namespace", options.Namespace, options.Name)
+			// Uninstall Helm Release
+			command := []string{
+				"uninstall", "--wait",
+				"--namespace", options.Namespace,
+				options.Name,
+			}
+
+			if common.Verbose(cmd) {
+				command = append(command, "--debug")
+			}
+
+			_, err = process.Execute(common.Helm, command...)
 			ui.ExitOnError("Uninstalling  platform", err)
 
+			// Optionally, remove installed CRDS
 			if options.CRDS {
-				_, err = process.Execute("kubectl", "delete", "crds", "--wait",
+				_, err := process.Execute("kubectl", "delete", "crds", "--wait",
 					common.Scenarios, common.Clusters, common.Services, common.Cascades, common.Chaos,
 					common.Calls, common.VirtualObjects, common.Templates)
-				ui.ExitOnError("Uninstalling crds", err)
+
+				ui.ExitOnError("Delete crds", err)
 			}
 		},
+		PersistentPostRun: func(cmd *cobra.Command, args []string) {
+			ui.NL()
+			ui.Success("Frisbee has been uninstalled")
+			ui.NL()
+		},
 	}
-
 	PopulatePlatformUninstallFlags(cmd, &options)
 
 	return cmd
