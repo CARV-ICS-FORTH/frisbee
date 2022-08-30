@@ -42,7 +42,7 @@ func NewUninstallCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "uninstall",
 		Short:   "Uninstall Frisbee from current kubectl context",
-		Aliases: []string{"del", "delete", "un"},
+		Aliases: []string{"un"},
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			ui.SetVerbose(verbose)
 		},
