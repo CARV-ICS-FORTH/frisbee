@@ -4,6 +4,11 @@ on:
   workflow_dispatch:
   pull_request:
     branches: [main]
+    paths:
+      - 'api/**'
+      - 'cmd/**'
+      - 'controllers/**'
+      - 'pkg/**'
 
 jobs:
   build:
@@ -30,22 +35,14 @@ jobs:
       - name: Install Snapcraft
         uses: samuelmeuli/action-snapcraft@v1
 
-      # Install microk8s via Snapcraft
+
       - name: Install Microk8s
         run:
-          # Install microk8s v.1.24
-          snap install microk8s --classic --channel=1.24/stable
-          # Use microk8s config as the default kubernetes config
-          microk8s config > ~/.kube/config
-          
-          # Start microk8s
-          microk8s start
-          
-          # Enable Dependencies
-          microk8s enable dns ingress helm3
-          
-          # Create aliases
-          snap alias microk8s.kubectl kubectl
+          snap install microk8s --classic --channel=1.24/stable  # Install microk8s v.1.24
+          microk8s config > ~/.kube/config                       # Setup kubeconfig
+          microk8s start                                         # Start microk8s
+          microk8s enable dns ingress helm3                      # Enable Dependencies
+          snap alias microk8s.kubectl kubectl                    # Create aliases
           snap alias microk8s.helm3 helm
 
       - name: Unit test
