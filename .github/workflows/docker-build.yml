@@ -44,6 +44,6 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
 
-      - name: Build image for Frisbee Controller
+      - name: Build and push image for Frisbee Controller
         run: |
-          make docker-build
+          make docker-push
