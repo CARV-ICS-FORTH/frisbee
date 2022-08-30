@@ -27,5 +27,23 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
+      - name: Install Microk8s
+        uses: samuelmeuli/action-snapcraft@v1
+        run:
+          # Install microk8s v.1.24
+          snap install microk8s --classic --channel=1.24/stable
+          # Use microk8s config as the default kubernetes config
+          microk8s config > ~/.kube/config
+          
+          # Start microk8s
+          microk8s start
+          
+          # Enable Dependencies
+          microk8s enable dns ingress helm3
+          
+          # Create aliases
+          snap alias microk8s.kubectl kubectl
+          snap alias microk8s.helm3 helm
+
       - name: Unit test
         run: make test
