@@ -75,4 +75,4 @@ spec:
       name: teardown
       depends: { running: [server], success: [clients]}
       delete:
-        jobs: [ server ]
+        jobs: [ clients, server ]

@@ -94,8 +94,21 @@ func (r *Controller) cluster(ctx context.Context, t *v1alpha1.Scenario, action v
 			return nil, errors.Wrapf(err, "cannot list physical nodes")
 		}
 
-		if len(nodes.Items) < 2 {
-			return nil, errors.Errorf("placement policies require at least two physical nodes. '%d' nodes were found", len(nodes.Items))
+		{ // Ensure that there are enough nodes for placement to make sense.
+			var totalReady int
+			var totalNotReady int
+			for _, node := range nodes.Items {
+				if node.Status.Phase == corev1.NodeRunning {
+					totalReady++
+				} else {
+					totalNotReady++
+				}
+			}
+
+			if totalReady < 2 {
+				return nil, errors.Errorf("placement policies require at least two running physical nodes."+
+					" found '%d' ready and '%d' not ready", totalReady, totalNotReady)
+			}
 		}
 
 		// TODO: check compatibility with labels and taints

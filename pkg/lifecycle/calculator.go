@@ -183,13 +183,13 @@ func GroupedJobs(totalJobs int, state ClassifierReader, lf *v1alpha1.Lifecycle, 
 			lifecycle: v1alpha1.Lifecycle{
 				Phase:   v1alpha1.PhaseFailed,
 				Reason:  v1alpha1.ConditionInvalidStateTransition.String(),
-				Message: fmt.Sprintf("prev: '%v', current: '%s'", lf, state.ListAll()),
+				Message: fmt.Sprintf("totalJobs: %d, prev: '%v', current: '%s'", totalJobs, lf, state.ListAll()),
 			},
 			condition: metav1.Condition{
 				Type:    v1alpha1.ConditionInvalidStateTransition.String(),
 				Status:  metav1.ConditionTrue,
 				Reason:  AtLeastOneJobHasFailed,
-				Message: fmt.Sprintf("prev: '%v', current: '%s'", lf, state.ListAll()),
+				Message: fmt.Sprintf("totalJobs: %d, prev: '%v', current: '%s'", totalJobs, lf, state.ListAll()),
 			},
 		},
 	}...)
@@ -213,7 +213,7 @@ func GroupedJobs(totalJobs int, state ClassifierReader, lf *v1alpha1.Lifecycle, 
 
 	panic(errors.Errorf(`unhandled lifecycle conditions.
 		current: '%v',
-		queued: '%d',
+		totalJobs: '%d',
 		jobs: '%s',
 	`, lf, totalJobs, state.ListAll()))
 }
