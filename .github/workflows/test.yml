@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   pull_request:
     branches: [main]
-    paths:
+    paths: # List all paths with *.go files.
       - 'api/**'
       - 'cmd/**'
       - 'controllers/**'
@@ -38,12 +38,12 @@ jobs:
 
       - name: Install Microk8s
         run: |
-          snap install microk8s --classic --channel=1.24/stable  # Install microk8s v.1.24
-          microk8s config > ~/.kube/config                       # Setup kubeconfig
-          microk8s start                                         # Start microk8s
-          microk8s enable dns ingress helm3                      # Enable Dependencies
-          snap alias microk8s.kubectl kubectl                    # Create aliases
-          snap alias microk8s.helm3 helm
+          sudo snap install microk8s --classic --channel=1.24/stable  # Install microk8s v.1.24
+          sudo microk8s config > ~/.kube/config                       # Setup kubeconfig
+          sudo microk8s start                                         # Start microk8s
+          sudo microk8s enable dns ingress helm3                      # Enable Dependencies
+          sudo snap alias microk8s.kubectl kubectl                    # Create aliases
+          sudo snap alias microk8s.helm3 helm
 
       - name: Unit test
         run: make test
