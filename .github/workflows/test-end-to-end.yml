@@ -25,10 +25,29 @@ jobs:
           channel: 'latest/stable'
           addons: '["dns", "ingress", "helm3"]'
 
+      - name: Cache Frisbee Installation
+        uses: actions/cache@v3
+        env:
+           cache-name: cache-installation
+        with:
+           # microk8s on snap is in '/var/snap/microk8s/current/' on Linux/macOS
+            path: /var/snap/microk8s/
+            key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/lite.lock') }}
+            restore-keys: |
+              ${{ runner.os }}-build-${{ env.cache-name }}-
+              ${{ runner.os }}-build-
+              ${{ runner.os }}-
+
+
       - name: Install Frisbee
         run: |
           alias kubectl='microk8s kubectl'
           alias helm='microk8s helm3'
+          
+          # Fix Microk8s permissions
+          usermod -a -G microk8s runner
+          chown -f -R runner ~/.kube
+          newgrp microk8s
           
           # Microk8s info
           microk8s status
@@ -39,18 +58,6 @@ jobs:
           # Install Frisbee
           ./kubectl-frisbee install production -v=false  
 
- #     - name: Cache Frisbee Installation
- #       uses: actions/cache@v3
- #       env:
- #         cache-name: cache-installation
- #       with:
- #         # microk8s on snap is in '/var/snap/microk8s/current/' on Linux/macOS
-#          path: /var/snap/microk8s/current
-#          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
- #         restore-keys: |
-#            ${{ runner.os }}-build-${{ env.cache-name }}-
-#            ${{ runner.os }}-build-
-#            ${{ runner.os }}-
 
       - name: Run Frisbee Scenario
         run: |
