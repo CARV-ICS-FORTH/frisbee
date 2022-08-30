@@ -83,7 +83,7 @@ func NewSubmitTestCmd() *cobra.Command {
 			{
 				scenario, err := client.GetScenario(testName)
 				if err != nil && !k8errors.IsNotFound(errors.Cause(err)) {
-					ui.Failf("Can't query Kubernetes API for test with name '%s'", testName)
+					ui.Failf("Can't query Kubernetes API for test with name '%s'. Err:%s", testName, err)
 				}
 
 				// Check for conflicting tests
