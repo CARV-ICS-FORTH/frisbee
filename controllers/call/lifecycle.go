@@ -34,10 +34,15 @@ func (r *Controller) calculateLifecycle(cr *v1alpha1.Call) bool {
 	}
 
 	// Step 3. Check if "Until" conditions are met.
-
 	if !cr.Spec.Until.IsZero() {
-		eval := expressions.Condition{Expr: cr.Spec.Until}
+		if meta.IsStatusConditionTrue(cr.Status.Conditions, v1alpha1.ConditionAllJobsAreScheduled.String()) {
+			// The Until condition is already handled, and we are in the Running Phase.
+			// From now on, the lifecycle depends on the progress of the already scheduled jobs.
+			queuedJobs := cr.Status.ScheduledJobs
+			return lifecycle.GroupedJobs(queuedJobs, r.view, &cr.Status.Lifecycle, cr.Spec.Tolerate)
+		}
 
+		eval := expressions.Condition{Expr: cr.Spec.Until}
 		if eval.IsTrue(r.view, cr) {
 			cr.Status.Lifecycle.Phase = v1alpha1.PhaseRunning
 			cr.Status.Lifecycle.Reason = "UntilCondition"
@@ -53,9 +58,6 @@ func (r *Controller) calculateLifecycle(cr *v1alpha1.Call) bool {
 			// prevent the parent from spawning new jobs.
 			suspend := true
 			cr.Spec.Suspend = &suspend
-
-			// use the jobs created so far as reference for establishing the "successful" condition.
-			cr.Status.QueuedJobs = cr.Status.QueuedJobs[:r.view.Count()]
 
 			return true
 		}
