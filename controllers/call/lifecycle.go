@@ -50,8 +50,12 @@ func (r *Controller) calculateLifecycle(cr *v1alpha1.Call) bool {
 				Message: eval.Info,
 			})
 
+			// prevent the parent from spawning new jobs.
 			suspend := true
 			cr.Spec.Suspend = &suspend
+
+			// use the jobs created so far as reference for establishing the "successful" condition.
+			cr.Status.QueuedJobs = cr.Status.QueuedJobs[:r.view.Count()]
 
 			return true
 		}

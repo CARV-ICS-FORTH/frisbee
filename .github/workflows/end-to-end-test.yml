@@ -1,0 +1,57 @@
+name: Run Frisbee Scenarios within GitHub Actions
+
+on:
+  workflow_dispatch:
+    inputs:
+      scenario:
+        required: true
+        description: The scenario to run.
+        default: ./examples/1.hello-world.yaml
+      charts:
+        required: false
+        description: Space separated list of dependent Helm Charts required for the Scenario.
+        default: ./charts/system
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.18
+
+      - name: Go Cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+
+      - name: Install MicroK8s
+        uses: balchua/microk8s-actions@v0.2.2
+        with:
+          channel: 'latest/stable'
+          addons: '["dns", "ingress", "helm3"]'
+
+      - name: Run Frisbee Scenario
+        run: |
+          alias kubectl='microk8s kubectl'
+          alias helm='microk8s helm3'
+          
+          # Build the Frisbee cli
+          go build ./cmd/kubectl-frisbee/main.go
+          
+          # Install Frisbee
+          ./main install production
+          
+          # Submit the job
+          ./main submit test demo- ${{ github.event.inputs.scenario }} ${{ github.event.inputs.charts}}
