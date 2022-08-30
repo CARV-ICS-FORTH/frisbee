@@ -27,8 +27,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
-      - name: Install Microk8s
+      - name: Install Snapcraft
         uses: samuelmeuli/action-snapcraft@v1
+
+      # Install microk8s via Snapcraft
+      - name: Install Microk8s
         run:
           # Install microk8s v.1.24
           snap install microk8s --classic --channel=1.24/stable
