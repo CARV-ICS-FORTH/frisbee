@@ -2,7 +2,7 @@ name: Code build and checks
 
 on:
   workflow_dispatch:
-  release:
+  pull_request_target:
     branches:
       - main
     tags:
