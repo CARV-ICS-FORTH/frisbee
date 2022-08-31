@@ -2,7 +2,7 @@ name: Release kubectl-frisbee
 
 on:
   workflow_dispatch:
-  release:
+  push:
     branches:
       - main
     tags:
