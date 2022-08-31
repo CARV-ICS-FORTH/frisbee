@@ -41,7 +41,7 @@ jobs:
         run: |
           alias kubectl='microk8s kubectl'
           alias helm='microk8s helm3'
-                    
+          
           # Install kubectl-frisbee
           ./install.sh 
           
@@ -56,8 +56,6 @@ jobs:
           kubectl get pods -A
           
           # Submit the job
-          ./kubectl-frisbee submit test demo- ${{ github.event.inputs.scenario }} ${{ github.event.inputs.charts}} \
-          --expect-success --timeout=1m
+          ./kubectl-frisbee submit test demo- ${{ github.event.inputs.scenario }} ${{ github.event.inputs.charts}} --expect-success
           
           ./kubectl-frisbee get tests
-
