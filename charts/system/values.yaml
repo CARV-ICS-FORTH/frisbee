@@ -6,7 +6,7 @@
 ## @param telemetry.prometheus.port Listening port for Prometheus
 ## @param telemetry.prometheus.honorTimestamp Use the timestamps of the metrics exposed by the agent (time-drifts)
 ## @param telemetry.prometheus.queryLookbackDelta The maximum duration for retrieving metrics for considering the source as stale.
-## @param telemetry.logviewer.port Listening port for Logviewer
+## @param telemetry.dataviewer.port Listening port for Dataviewer
 telemetry:
 
   grafana:
@@ -20,7 +20,7 @@ telemetry:
 
     queryLookbackDelta: 1m
 
-  logviewer:
+  dataviewer:
     port: 80
 
 

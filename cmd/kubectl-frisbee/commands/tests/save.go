@@ -17,28 +17,27 @@ limitations under the License.
 package tests
 
 import (
-	"fmt"
-
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/common"
 	"github.com/carv-ics-forth/frisbee/pkg/ui"
 	"github.com/spf13/cobra"
 )
 
+const (
+	TestdataSource   = "dataviewer:/testdata"
+	PrometheusSource = "prometheus:/prometheus/data"
+)
+
 type TestSaveOptions struct {
-	Force bool
+	Force      bool
+	Datasource string
 }
 
 func PopulateSaveTestFlags(cmd *cobra.Command, options *TestSaveOptions) {
 	cmd.Flags().BoolVar(&options.Force, "force", false, "Force save test data despite test phase.")
-}
 
-const (
-	Prometheus     = "prometheus"
-	PrometheusData = "/prometheus/data"
-	Logviewer      = "logviewer"
-	TestDataPath   = "/testdata"
-)
+	cmd.Flags().StringVar(&options.Datasource, "datasource", TestdataSource, "The location to copy data from.")
+}
 
 func NewSaveTestsCmd() *cobra.Command {
 	var options TestSaveOptions
@@ -55,33 +54,34 @@ func NewSaveTestsCmd() *cobra.Command {
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			client := common.GetClient(cmd)
+			ui.Logo()
 
 			testName := args[0]
 			destination := args[1]
 
-			scenario, err := client.GetScenario(testName)
+			scenario, err := common.GetClient(cmd).GetScenario(testName)
 			ui.ExitOnError("Getting test information", err)
 
-			if scenario.Spec.TestData == nil {
-				ui.Failf("TestData is not enabled. Enable the TestData parameter on the scenario definition")
-			}
-
-			// Abort getting data from a non-completed test, unless --force is used
-			if !scenario.Status.Phase.Is(v1alpha1.PhaseSuccess, v1alpha1.PhaseFailed) {
+			switch {
+			case scenario == nil:
+				ui.Failf("test '%s' was not found", testName)
+			case scenario.Spec.TestData == nil && options.Datasource == TestdataSource:
+				ui.Failf("TestData is not enabled. Either enable the TestData parameter on the scenario definition or use --datasource.")
+			case !scenario.Status.Phase.Is(v1alpha1.PhaseSuccess, v1alpha1.PhaseFailed):
+				// Abort getting data from a non-completed test, unless --force is used
 				if !options.Force {
 					ui.Failf("Unsafe operation. The test is not completed yet. Use --force")
 				}
 			}
 
-			err = common.KubectlPrint(testName, "cp", fmt.Sprintf("%s:/%s", Logviewer, TestDataPath), destination)
+			err = common.KubectlPrint(testName, "cp", options.Datasource, destination)
 			ui.ExitOnError("Save test data to "+destination, err)
 
-			promDestination := destination + "/" + Prometheus
-			err = common.KubectlPrint(testName, "cp", fmt.Sprintf("%s:/%s", Prometheus, PrometheusData), promDestination)
-			ui.ExitOnError("Save Prometheus data to "+promDestination, err)
+			promDestination := destination + "/" + "prometheus"
+			err = common.KubectlPrint(testName, "cp", PrometheusSource, promDestination)
 
 			common.Hint(cmd, "To store data from a specific location use 'kubectl cp pod:path destination -n", testName)
+			ui.ExitOnError("Save Prometheus data to "+promDestination, err)
 		},
 	}
 

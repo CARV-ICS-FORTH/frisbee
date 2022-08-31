@@ -649,11 +649,11 @@ spec:
                   - type
                   type: object
                 type: array
+              dataviewerEndpoint:
+                description: Dataviewer points to the local Dataviewer instance
+                type: string
               grafanaEndpoint:
                 description: GrafanaEndpoint points to the local Grafana instance
-                type: string
-              logviewerEndpoint:
-                description: Logviewer points to the local Logviewer instance
                 type: string
               message:
                 description: Message provides more details for understanding the Reason.

@@ -68,13 +68,14 @@ jobs:
 
       - name: Configure Git
         run: |
+          cd charts
+          
           git config user.name "$GITHUB_ACTOR"
           git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
 
       - name: Push changes
         run: |
           # Push all the changes
-          cd charts
           
           git status -s
           if git status -s | grep charts; then

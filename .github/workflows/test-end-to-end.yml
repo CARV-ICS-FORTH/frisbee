@@ -19,52 +19,45 @@ jobs:
       - name: Check out Git repository
         uses: actions/checkout@v3
 
+      - name: Cache Frisbee Installation
+        id:  cache-microk8s
+        uses: actions/cache@v3
+        with:
+          path: /var/snap/microk8s/
+          key: ${{ runner.os }}-microk8s-
+          #restore-keys: |
+          #  ${{ runner.os }}-microk8s-
+
+
       - name: Install MicroK8s
+        if: steps.cache-microk8s.outputs.cache-hit != 'true'
         uses: balchua/microk8s-actions@v0.2.2
         with:
           channel: 'latest/stable'
-          addons: '["dns", "ingress", "helm3"]'
-
-      - name: Cache Frisbee Installation
-        uses: actions/cache@v3
-        env:
-           cache-name: cache-installation
-        with:
-           # microk8s on snap is in '/var/snap/microk8s/current/' on Linux/macOS
-            path: /var/snap/microk8s/
-            key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/lite.lock') }}
-            restore-keys: |
-              ${{ runner.os }}-build-${{ env.cache-name }}-
-              ${{ runner.os }}-build-
-              ${{ runner.os }}-
+          addons: '["dns", "ingress", "helm3", "rbac"]'
 
 
       - name: Install Frisbee
         run: |
           alias kubectl='microk8s kubectl'
           alias helm='microk8s helm3'
-          
-          # Fix Microk8s permissions
-          usermod -a -G microk8s runner
-          chown -f -R runner ~/.kube
-          newgrp microk8s
-          
-          # Microk8s info
-          microk8s status
-          
+                    
           # Install kubectl-frisbee
           ./install.sh 
           
           # Install Frisbee
           ./kubectl-frisbee install production -v=false  
-
+          
+          # Wait for the frisbee operator to come-up
+          kubectl wait pods -n frisbee -l control-plane=frisbee-operator --for condition=Ready --timeout=90s
 
       - name: Run Frisbee Scenario
         run: |
-          echo $PATH
-          
-          ls -lah 
-          ls /var/snap/microk8s/current/
+          kubectl get pods -A
           
           # Submit the job
-          ./kubectl-frisbee submit test demo- ${{ github.event.inputs.scenario }} ${{ github.event.inputs.charts}}
+          ./kubectl-frisbee submit test demo- ${{ github.event.inputs.scenario }} ${{ github.event.inputs.charts}} \
+          --expect-success --timeout=1m
+          
+          ./kubectl-frisbee get tests
+
