@@ -1,8 +1,9 @@
 name: Generate API Docs
+
 on:
   workflow_dispatch:
-    release:
-    pull_request_target:
+  pull_request_target:
+    branches:
       - main
     paths:
       - 'api/**/*.go'
