@@ -31,15 +31,19 @@ import (
 )
 
 type TestSubmitOptions struct {
-	CPUQuota, MemoryQuota string
-	Wait, Log             bool
+	CPUQuota, MemoryQuota          string
+	ExpectSuccess, ExpectFail, Log bool
+	Timeout                        string
 }
 
 func PopulateTestSubmitFlags(cmd *cobra.Command, options *TestSubmitOptions) {
-	cmd.Flags().StringVar(&options.CPUQuota, "cpu", "", "set quotas for the total CPUs (e.g, 0.5) that can be used by all Pods running in the test.")
-	cmd.Flags().StringVar(&options.MemoryQuota, "memory", "", "set quotas for the total Memory (e.g, 100Mi) that can be used by all Pods running in the test.")
-	cmd.Flags().BoolVarP(&options.Wait, "wait", "w", false, "wait for the scenario to complete")
+	// cmd.Flags().StringVar(&options.CPUQuota, "cpu", "", "set quotas for the total CPUs (e.g, 0.5) that can be used by all Pods running in the test.")
+	// cmd.Flags().StringVar(&options.MemoryQuota, "memory", "", "set quotas for the total Memory (e.g, 100Mi) that can be used by all Pods running in the test.")
 	cmd.Flags().BoolVarP(&options.Log, "log", "l", false, "tail logs until completion")
+
+	cmd.Flags().BoolVar(&options.ExpectSuccess, "expect-success", false, "wait for the scenario to complete successfully.")
+	cmd.Flags().BoolVar(&options.ExpectFail, "expect-fail", false, "wait for the scenario to fail.")
+	cmd.Flags().StringVarP(&options.Timeout, "timeout", "t", "1m", "wait for the scenario to complete or to fail.")
 }
 
 func NewSubmitTestCmd() *cobra.Command {
@@ -61,13 +65,19 @@ func NewSubmitTestCmd() *cobra.Command {
 `,
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) < 2 {
-				return errors.Errorf("Pass Test Name and Test File Path")
+				ui.Failf("Pass Test Name and Test File Path")
+			}
+
+			if options.ExpectSuccess && options.ExpectFail {
+				ui.Failf("Use one of --expect-success or --expect-fail.")
 			}
 
 			return nil
 		},
 
 		Run: func(cmd *cobra.Command, args []string) {
+			ui.Logo()
+
 			client := common.GetClient(cmd)
 
 			testName := args[0]
@@ -134,7 +144,7 @@ func NewSubmitTestCmd() *cobra.Command {
 			}
 
 			// Control test output
-			ControlOutput(testName, &options)
+			ControlOutput(cmd, testName, &options)
 		},
 	}
 
@@ -143,12 +153,26 @@ func NewSubmitTestCmd() *cobra.Command {
 	return cmd
 }
 
-func ControlOutput(testName string, options *TestSubmitOptions) {
-	if options.Wait {
-		err := common.WaitTestSuccess(testName)
-		ui.ExitOnError("waiting test completion "+testName, err)
+func ControlOutput(cmd *cobra.Command, testName string, options *TestSubmitOptions) {
+	if options.ExpectSuccess {
+		ui.Info("Expecting the test to complete successfully within ", options.Timeout, " ...")
 
-	} else if options.Log {
+		err := common.WaitForPhase(testName, "Success", options.Timeout)
+
+		common.Hint(cmd, "To inspect the execution:", "kubectl frisbee inspect test ku", testName)
+		ui.ExitOnError("waiting for test to complete successfully", err)
+	} else if options.ExpectFail {
+		ui.Info("Expecting the test to fail within ", options.Timeout, " ...")
+
+		err := common.WaitForPhase(testName, "Failed", options.Timeout)
+
+		common.Hint(cmd, "To inspect the execution:", "kubectl frisbee inspect test ", testName)
+		ui.ExitOnError("waiting for test to fail", err)
+	}
+
+	if options.Log {
+		ui.Info("Fetching test logs ...")
+
 		err := common.GetPodLogs(testName, true, "all")
 		ui.ExitOnError("getting logs", err)
 	}

@@ -1,6 +1,6 @@
 ---
 apiVersion: v2
-name: defaults
+name: system
 description: Default templates for Frisbee
 
 # A chart can be either an 'application' or a 'library' chart.

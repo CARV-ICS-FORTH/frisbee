@@ -9,7 +9,7 @@
 | `telemetry.prometheus.port`               | Listening port for Prometheus                                                    | `9090`       |
 | `telemetry.prometheus.honorTimestamp`     | Use the timestamps of the metrics exposed by the agent (time-drifts)             | `true`       |
 | `telemetry.prometheus.queryLookbackDelta` | The maximum duration for retrieving metrics for considering the source as stale. | `1m`         |
-| `telemetry.logviewer.port`                | Listening port for Logviewer                                                     | `80`         |
+| `telemetry.dataviewer.port`                | Listening port for Dataviewer                                                     | `80`         |
 
 
 ### Chaos

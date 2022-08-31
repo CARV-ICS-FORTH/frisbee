@@ -53,7 +53,7 @@ const (
 
 	defaultGrafanaName = "grafana"
 
-	defaultLogViewerName = "logviewer"
+	defaultDataviewerName = "dataviewer"
 )
 
 var (
@@ -70,7 +70,7 @@ func (r *Controller) StartTelemetry(ctx context.Context, t *v1alpha1.Scenario) e
 		return nil
 	}
 
-	if err := r.installLogviewer(ctx, t); err != nil {
+	if err := r.installDataviewer(ctx, t); err != nil {
 		return errors.Wrapf(err, "storage preparation")
 	}
 
@@ -94,7 +94,7 @@ func (r *Controller) StopTelemetry(t *v1alpha1.Scenario) {
 	}
 }
 
-func (r *Controller) installLogviewer(ctx context.Context, t *v1alpha1.Scenario) error {
+func (r *Controller) installDataviewer(ctx context.Context, t *v1alpha1.Scenario) error {
 	// the filebrowser makes sense only if test data are enabled.
 	if t.Spec.TestData == nil {
 		return nil
@@ -102,7 +102,7 @@ func (r *Controller) installLogviewer(ctx context.Context, t *v1alpha1.Scenario)
 
 	var job v1alpha1.Service
 
-	job.SetName(defaultLogViewerName)
+	job.SetName(defaultDataviewerName)
 
 	// set labels
 	v1alpha1.SetScenarioLabel(&job.ObjectMeta, t.GetName())
@@ -110,7 +110,7 @@ func (r *Controller) installLogviewer(ctx context.Context, t *v1alpha1.Scenario)
 
 	{ // spec
 		fromtemplate := &v1alpha1.GenerateFromTemplate{
-			TemplateRef:  configuration2.LogviewerTemplate,
+			TemplateRef:  configuration2.DataviewerTemplate,
 			MaxInstances: 1,
 			Inputs:       nil,
 		}
@@ -126,7 +126,7 @@ func (r *Controller) installLogviewer(ctx context.Context, t *v1alpha1.Scenario)
 
 		spec.DeepCopyInto(&job.Spec)
 
-		// the logviewer is the only service that has complete access to the volume's content.
+		// the dataviewer is the only service that has complete access to the volume's content.
 		job.AttachTestDataVolume(t.Spec.TestData, false)
 	}
 
@@ -134,7 +134,7 @@ func (r *Controller) installLogviewer(ctx context.Context, t *v1alpha1.Scenario)
 		return errors.Wrapf(err, "cannot create %s", job.GetName())
 	}
 
-	t.Status.LogviewerEndpoint = common.ExternalEndpoint(defaultLogViewerName, t.GetNamespace())
+	t.Status.DataviewerEndpoint = common.ExternalEndpoint(defaultDataviewerName, t.GetNamespace())
 
 	return nil
 }

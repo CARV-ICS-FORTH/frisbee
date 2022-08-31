@@ -183,7 +183,7 @@ scenario.frisbee.dev/cockroach-bitrot created
 
 * **Log-based:** Consumes information from distributed logs.
 
-* [Logviewer](http://logviewer-mytest.localhost) (admin/admin)
+* [Dataviewer](http://dataviewer-mytest.localhost) (admin/admin)
 
 >
 > You may notice that it takes **long time for the experiment to start**. This is due to preparing the NFS volume for

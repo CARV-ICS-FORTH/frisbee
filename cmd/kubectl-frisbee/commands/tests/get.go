@@ -17,11 +17,12 @@ limitations under the License.
 package tests
 
 import (
+	"os"
+	"strings"
+
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/common"
 	"github.com/carv-ics-forth/frisbee/pkg/ui"
 	"github.com/spf13/cobra"
-	"os"
-	"strings"
 )
 
 func NewGetTestsCmd() *cobra.Command {
@@ -40,6 +41,8 @@ func NewGetTestsCmd() *cobra.Command {
 		},
 
 		Run: func(cmd *cobra.Command, args []string) {
+			ui.Logo()
+
 			client := common.GetClient(cmd)
 
 			selectors = append(selectors, common.ManagedNamespace)

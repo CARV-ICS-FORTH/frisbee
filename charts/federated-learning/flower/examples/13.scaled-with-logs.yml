@@ -37,9 +37,9 @@ spec:
   actions:
     # Step 0. Enable the log viewer
     - action: Service
-      name: logviewer
+      name: dataviewer
       service:
-        templateRef: system.telemetry.logviewer.template
+        templateRef: system.telemetry.dataviewer.template
         inputs:
           - { logClaimName: logs }
 
@@ -54,7 +54,7 @@ spec:
     # Create a Flower server
     - action: Service
       name: server
-      depends: { running: [ logviewer ] }
+      depends: { running: [ dataviewer ] }
       service:
         templateRef: fl.quickstart.server
         inputs:

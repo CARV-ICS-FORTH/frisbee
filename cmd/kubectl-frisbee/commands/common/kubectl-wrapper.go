@@ -35,11 +35,16 @@ import (
 const (
 	ManagedNamespace = "app.kubernetes.io/managed-by=Frisbee"
 	pollTimeout      = 24 * time.Hour
-	pollInterval     = 1 * time.Second
+	pollInterval     = 5 * time.Second
 )
 
-func NotFound(testName, out string) bool {
+func ErrNotFound(testName, out string) bool {
 	return out == fmt.Sprintf("No resources found in %s namespace.\n", testName)
+}
+
+func ErrContainerNotReady(testName, container string, out string) bool {
+	return out == fmt.Sprintf("Error from server (BadRequest): container \"%s\" in pod \"%s\" is waiting to start: ContainerCreating\n",
+		container, testName)
 }
 
 func KubectlPrint(testName string, arguments ...string) error {
@@ -47,7 +52,7 @@ func KubectlPrint(testName string, arguments ...string) error {
 
 	out, err := process.Execute(Kubectl, arguments...)
 	switch {
-	case NotFound(testName, string(out)): // resource not found
+	case ErrNotFound(testName, string(out)): // resource not found
 		return nil
 	case err != nil: // execution error
 		return err
@@ -130,13 +135,12 @@ func GetTemplateResources(cmd *cobra.Command, testName string) error {
 	return KubectlPrint(testName, command...)
 }
 
-func WaitTestSuccess(testName string) error {
-	command := []string{"wait",
-		"scenario", "--all=true",
-		"--for=jsonpath=.status.phase=Success",
+func WaitForPhase(testName string, phase string, timeout string) error {
+	command := []string{"wait", "scenario", "--all=true",
+		"--for=jsonpath=.status.phase=" + phase,
+		"--timeout=" + timeout,
 	}
 
-	ui.Info("Waiting for test completion...")
 	return KubectlPrint(testName, command...)
 }
 
@@ -230,13 +234,7 @@ func GetPodLogs(testName string, tail bool, pods ...string) error {
 		"--prefix=true",
 	}
 
-	if tail {
-		// If tail, print everything
-		command = append(command, fmt.Sprintf("--follow=true"))
-	} else {
-		command = append(command, fmt.Sprintf("--tail=5"))
-	}
-
+	// set query
 	switch {
 	// Run with --all
 	case len(pods) == 0:
@@ -254,31 +252,39 @@ func GetPodLogs(testName string, tail bool, pods ...string) error {
 		panic(errors.Errorf("invalid GetPodLogs arguments: '%v'", pods))
 	}
 
+	// callback function
 	getLogs := func() (done bool, err error) {
-		out, err := process.LoggedExecuteInDir("", os.Stdout, Kubectl, command...)
+		out, err := process.Execute(Kubectl, command...)
 		switch {
-		case NotFound(testName, string(out)): // resource not found
+		// resource initialization
+		case ErrNotFound(testName, string(out)), ErrContainerNotReady(testName, v1alpha1.MainContainerName, string(out)):
 			return false, nil
-		case err != nil: // execution error
+			// execution error
+		case err != nil:
 			if tail { // on tail, we want to ignore errors and continue
 				return false, nil
 			}
+
 			return false, err // without tail, we want to return the error immediately
 		default: // completed
 			return true, nil
 		}
 	}
 
+	// set output and retry policy
 	if tail {
+		command = append(command, fmt.Sprintf("--follow=true")) // print all
 		return wait.PollImmediate(pollInterval, pollTimeout, getLogs)
 	} else {
+		command = append(command, fmt.Sprintf("--tail=5")) // print last 5 lines
 		_, err := getLogs()
 		return err
 	}
 }
 
 func Events(testName string) error {
-	return KubectlPrint(testName, "get", "events")
+	return KubectlPrint(testName, "get", "events",
+		"--sort-by='.metadata.creationTimestamp'")
 }
 
 func OpenShell(testName string, podName string, shellArgs ...string) error {
