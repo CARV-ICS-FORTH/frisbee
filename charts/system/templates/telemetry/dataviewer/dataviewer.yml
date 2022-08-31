@@ -2,7 +2,7 @@
 apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
-  name: system.telemetry.logviewer.template
+  name: system.telemetry.dataviewer.template
 spec:
   service:
     requirements:
@@ -10,7 +10,7 @@ spec:
         service:
           name: self
           port:
-            number: {{.Values.telemetry.logviewer.port}}
+            number: {{.Values.telemetry.dataviewer.port}}
 
     decorators:
       labels:
@@ -29,4 +29,4 @@ spec:
         args: ["-r", "/testdata"]
         ports:
           - name: http
-            containerPort: {{.Values.telemetry.logviewer.port}}
+            containerPort: {{.Values.telemetry.dataviewer.port}}

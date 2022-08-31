@@ -63,6 +63,49 @@ spec:
     
               iperf -c {{.Inputs.Parameters.target}} -t 360 -i 5  >> /logs/${HOSTNAME}
 
+
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Template
+metadata:
+  name: logviewer.template
+spec:
+  inputs:
+    parameters:
+      logClaimName: ""
+
+  service:
+    requirements:
+      ingressBackend:
+        service:
+          name: self
+          port:
+            number: 80
+
+    volumes: # Match the pod to the log volume
+      - name: logs
+        persistentVolumeClaim:
+          claimName: "{{.Inputs.Parameters.logClaimName}}"
+
+    # Do a nasty touch to sync/populate the volume.
+    initContainers:
+      - name: wait-for-volume
+        image: busybox
+        volumeMounts:
+          - name: logs
+            mountPath: /srv
+        command: [ "touch", "/srv/init"]
+
+    containers: # Expose collected logs
+      - name: app
+        image: filebrowser/filebrowser
+        ports:
+          - name: http
+            containerPort: 80
+        volumeMounts:
+          - name: logs
+            mountPath: /srv
+
 ---
 # In order to have shared logs, we must first create a network volume.
 # This volume will then be mounted across the various containers.
@@ -91,7 +134,7 @@ spec:
     - action: Service
       name: logviewer
       service:
-        templateRef: system.telemetry.logviewer.template
+        templateRef: logviewer.template
         inputs:
           - { logClaimName: logs }
 

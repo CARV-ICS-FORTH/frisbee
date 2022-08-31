@@ -26,5 +26,5 @@ const (
 
 	GrafanaTemplate = "system.telemetry.grafana.template"
 
-	LogviewerTemplate = "system.telemetry.logviewer.template"
+	DataviewerTemplate = "system.telemetry.dataviewer.template"
 )

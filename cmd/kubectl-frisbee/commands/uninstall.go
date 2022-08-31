@@ -50,22 +50,34 @@ func NewUninstallCmd() *cobra.Command {
 			ui.Logo()
 
 			// Delete test-cases (aka namespaces managed by  frisbee)
-			err := common.DeleteNamespaces(common.ManagedNamespace)
-			ui.ExitOnError("Deleting test-cases", err)
+			{
+				err := common.DeleteNamespaces(common.ManagedNamespace)
+				if err != nil {
+					ui.WarnOnError("Deleting test-cases", err)
+				} else {
+					ui.Success("Deleting test-cases")
+				}
+			}
 
 			// Uninstall Helm Release
-			command := []string{
-				"uninstall", "--wait",
-				"--namespace", options.Namespace,
-				options.Name,
-			}
+			{
+				command := []string{
+					"uninstall", "--wait",
+					"--namespace", options.Namespace,
+					options.Name,
+				}
 
-			if common.Verbose(cmd) {
-				command = append(command, "--debug")
-			}
+				if common.Verbose(cmd) {
+					command = append(command, "--debug")
+				}
 
-			_, err = process.Execute(common.Helm, command...)
-			ui.ExitOnError("Uninstalling  platform", err)
+				_, err := process.Execute(common.Helm, command...)
+				if err != nil {
+					ui.WarnOnError("Uninstalling  platform", err)
+				} else {
+					ui.Success("Uninstalling  platform")
+				}
+			}
 
 			// Optionally, remove installed CRDS
 			if options.CRDS {

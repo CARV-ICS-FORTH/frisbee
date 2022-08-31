@@ -171,8 +171,8 @@ type ScenarioStatus struct {
 	// PrometheusEndpoint points to the local Prometheus instance
 	PrometheusEndpoint string `json:"prometheusEndpoint,omitempty"`
 
-	// Logviewer points to the local Logviewer instance
-	LogviewerEndpoint string `json:"logviewerEndpoint,omitempty"`
+	// Dataviewer points to the local Dataviewer instance
+	DataviewerEndpoint string `json:"dataviewerEndpoint,omitempty"`
 }
 
 func (in ScenarioStatus) Table() (header []string, data [][]string) {

@@ -58,6 +58,8 @@ func NewInspectTestCmd() *cobra.Command {
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
+			ui.Logo()
+
 			client := common.GetClient(cmd)
 
 			testName := args[0]
@@ -94,35 +96,35 @@ func NewInspectTestCmd() *cobra.Command {
 
 				ui.NL()
 				err = common.Dashboards(cmd, testName)
-				ui.ExitOnError("== Visualization Dashboards ==", err)
 
 				common.Hint(cmd, "For more Frisbee Resource information use:",
 					"kubectl describe <Kind>.frisbee.dev [Names...] -n", testName)
+				ui.ExitOnError("== Visualization Dashboards ==", err)
 			}
 
 			if options.ExternalResources || options.All {
 				ui.NL()
 				err := common.GetChaosResources(cmd, testName)
-				ui.ExitOnError("== Active Chaos Resources ==", err)
 
 				common.Hint(cmd, "For more Chaos Resource information use:",
 					"kubectl describe <Kind>.chaos-mesh.org [Names...] -n", testName)
+				ui.ExitOnError("== Active Chaos Resources ==", err)
 
 				ui.NL()
 				err = common.GetK8sResources(cmd, testName)
-				ui.ExitOnError("== Active K8s Resources ==", err)
 
 				common.Hint(cmd, "For more K8s Resource information use:",
 					"kubectl describe <Kind> [Names...] -n", testName)
+				ui.ExitOnError("== Active K8s Resources ==", err)
 			}
 
 			if options.Charts || options.All {
 				ui.NL()
 				err := common.GetTemplateResources(cmd, testName)
-				ui.ExitOnError("== Frisbee Templates ==", err)
 
 				common.Hint(cmd, "For more Template info use:",
 					"kubectl describe templates -n", testName, "[template...]")
+				ui.ExitOnError("== Frisbee Templates ==", err)
 
 				/*
 					ui.NL()
@@ -135,9 +137,9 @@ func NewInspectTestCmd() *cobra.Command {
 			if options.Events || options.All {
 				ui.NL()
 				err := common.Events(testName)
-				ui.ExitOnError("== Events ==", err)
 
 				common.Hint(cmd, "For more events use:", "kubectl get events -n", testName)
+				ui.ExitOnError("== Events ==", err)
 			}
 
 			if options.Logs != nil || options.All {
@@ -154,9 +156,9 @@ func NewInspectTestCmd() *cobra.Command {
 
 				ui.NL()
 				err = common.GetPodLogs(testName, false, options.Logs...)
-				ui.ExitOnError("== Logs From Pods ==", err)
 
 				common.Hint(cmd, "For more logs use:", "kubectl logs -n", testName, "<podNames>")
+				ui.ExitOnError("== Logs From Pods ==", err)
 			}
 		},
 	}
