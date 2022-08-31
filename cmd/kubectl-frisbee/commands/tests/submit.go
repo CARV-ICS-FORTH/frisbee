@@ -21,6 +21,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/common"
 	"github.com/carv-ics-forth/frisbee/pkg/ui"
 	"github.com/kubeshop/testkube/pkg/process"
@@ -31,9 +32,9 @@ import (
 )
 
 type TestSubmitOptions struct {
-	CPUQuota, MemoryQuota          string
-	ExpectSuccess, ExpectFail, Log bool
-	Timeout                        string
+	CPUQuota, MemoryQuota                          string
+	ExpectSuccess, ExpectFailure, ExpectError, Log bool
+	Timeout                                        string
 }
 
 func PopulateTestSubmitFlags(cmd *cobra.Command, options *TestSubmitOptions) {
@@ -42,7 +43,8 @@ func PopulateTestSubmitFlags(cmd *cobra.Command, options *TestSubmitOptions) {
 	cmd.Flags().BoolVarP(&options.Log, "log", "l", false, "tail logs until completion")
 
 	cmd.Flags().BoolVar(&options.ExpectSuccess, "expect-success", false, "wait for the scenario to complete successfully.")
-	cmd.Flags().BoolVar(&options.ExpectFail, "expect-fail", false, "wait for the scenario to fail.")
+	cmd.Flags().BoolVar(&options.ExpectFailure, "expect-failure", false, "wait for the scenario to fail ungracefully.")
+	cmd.Flags().BoolVar(&options.ExpectError, "expect-error", false, "wait for the scenario to abort due to an assertion error.")
 	cmd.Flags().StringVarP(&options.Timeout, "timeout", "t", "1m", "wait for the scenario to complete or to fail.")
 }
 
@@ -68,8 +70,8 @@ func NewSubmitTestCmd() *cobra.Command {
 				ui.Failf("Pass Test Name and Test File Path")
 			}
 
-			if options.ExpectSuccess && options.ExpectFail {
-				ui.Failf("Use one of --expect-success or --expect-fail.")
+			if options.ExpectSuccess && options.ExpectFailure && options.ExpectError {
+				ui.Failf("Use one of --expect-success or --expect-failure or --expect-error.")
 			}
 
 			return nil
@@ -154,20 +156,31 @@ func NewSubmitTestCmd() *cobra.Command {
 }
 
 func ControlOutput(cmd *cobra.Command, testName string, options *TestSubmitOptions) {
-	if options.ExpectSuccess {
-		ui.Info("Expecting the test to complete successfully within ", options.Timeout, " ...")
 
-		err := common.WaitForPhase(testName, "Success", options.Timeout)
+	switch {
+	case options.ExpectSuccess:
+		ui.Info("Expecting the test to complete successfully within ", options.Timeout)
 
-		common.Hint(cmd, "To inspect the execution:", "kubectl frisbee inspect test ku", testName)
+		err := common.WaitForCondition(testName, v1alpha1.ConditionAllJobsAreCompleted, options.Timeout)
+
+		common.Hint(cmd, "To inspect the execution:", "kubectl frisbee inspect test ", testName)
 		ui.ExitOnError("waiting for test to complete successfully", err)
-	} else if options.ExpectFail {
-		ui.Info("Expecting the test to fail within ", options.Timeout, " ...")
 
-		err := common.WaitForPhase(testName, "Failed", options.Timeout)
+	case options.ExpectFailure:
+		ui.Info("Expecting the test to fail within ", options.Timeout)
+
+		err := common.WaitForCondition(testName, v1alpha1.ConditionJobUnexpectedTermination, options.Timeout)
 
 		common.Hint(cmd, "To inspect the execution:", "kubectl frisbee inspect test ", testName)
 		ui.ExitOnError("waiting for test to fail", err)
+
+	case options.ExpectError:
+		ui.Info("Expecting the test to raise an assertion error within ", options.Timeout)
+
+		err := common.WaitForCondition(testName, v1alpha1.ConditionAssertionError, options.Timeout)
+
+		common.Hint(cmd, "To inspect the execution:", "kubectl frisbee inspect test ", testName)
+		ui.ExitOnError("waiting for test to raise an assertion error", err)
 	}
 
 	if options.Log {

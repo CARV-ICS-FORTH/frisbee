@@ -135,9 +135,9 @@ func GetTemplateResources(cmd *cobra.Command, testName string) error {
 	return KubectlPrint(testName, command...)
 }
 
-func WaitForPhase(testName string, phase string, timeout string) error {
+func WaitForCondition(testName string, condition v1alpha1.ConditionType, timeout string) error {
 	command := []string{"wait", "scenario", "--all=true",
-		"--for=jsonpath=.status.phase=" + phase,
+		"--for=condition=" + condition.String(),
 		"--timeout=" + timeout,
 	}
 
