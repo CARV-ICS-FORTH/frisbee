@@ -1,4 +1,4 @@
-# Frisbee - A Friendly Kubernetes-Native Testing Platform
+# Frisbee - A Test Automation Framework For Kubernetes
 
 <p align="center">
     <a href="https://www.vectorstock.com/royalty-free-vector/disc-golf-frisbee-eps-vector-25179185">
@@ -32,19 +32,21 @@
 The effort being put in automating tests should not take over delivering value to users.
 Frisbee lowers the threshold of testing distributed systems by making it possible to:
 
-🎁 Setup initial dependency stack – easily!
+* Setup initial dependency stack – easily!
 
-🏭 Test against actual, close to production software - no mocks!
+* Test against actual, close to production software - no mocks!
 
-⏳ Replay complex workloads written in an intuitive language!
+* Replay complex workloads written in an intuitive language!
 
-🏗️ Combine Chaos Engineering with large-scale performance testing!
+* Combine Chaos Engineering with large-scale performance testing!
 
-🕹️ Assert actual program behavior and side effects
+* Assert actual program behavior and side effects
 
 
 
-## Testing Patterns
+To begin with Frisbee, check the **[QuickStart](https://frisbee.dev/docs/quick-start/)** and the **[Walkthrough](https://frisbee.dev/docs/walkthrough).**
+
+## Testing Patterns For Multiple Domains
 
 👉 [Databases](charts/databases)
 
@@ -61,9 +63,6 @@ Frisbee lowers the threshold of testing distributed systems by making it possibl
 
 # Usage
 
-👉 To begin with Frisbee, check the **[QuickStart](https://frisbee.dev/docs/quick-start/).**
-
-👉 To understand the basic features, check the **[Walkthrough](https://frisbee.dev/docs/walkthrough).**
 
 
 1. Make sure that [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/)
