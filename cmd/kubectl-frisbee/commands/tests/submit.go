@@ -32,15 +32,22 @@ import (
 )
 
 type TestSubmitOptions struct {
-	CPUQuota, MemoryQuota                          string
-	ExpectSuccess, ExpectFailure, ExpectError, Log bool
-	Timeout                                        string
+	CPUQuota, MemoryQuota                     string
+	Watch                                     bool
+	ExpectSuccess, ExpectFailure, ExpectError bool
+	Timeout                                   string
+
+	Logs     []string
+	Loglines int
 }
 
 func PopulateTestSubmitFlags(cmd *cobra.Command, options *TestSubmitOptions) {
 	// cmd.Flags().StringVar(&options.CPUQuota, "cpu", "", "set quotas for the total CPUs (e.g, 0.5) that can be used by all Pods running in the test.")
 	// cmd.Flags().StringVar(&options.MemoryQuota, "memory", "", "set quotas for the total Memory (e.g, 100Mi) that can be used by all Pods running in the test.")
-	cmd.Flags().BoolVarP(&options.Log, "log", "l", false, "tail logs until completion")
+	cmd.Flags().StringSliceVarP(&options.Logs, "logs", "l", nil, "show logs output from executor pod (if unsure, use 'all')")
+	cmd.Flags().IntVar(&options.Loglines, "log-lines", 5, "Lines of recent log file to display.")
+
+	cmd.Flags().BoolVarP(&options.Watch, "watch", "w", false, "watch status")
 
 	cmd.Flags().BoolVar(&options.ExpectSuccess, "expect-success", false, "wait for the scenario to complete successfully.")
 	cmd.Flags().BoolVar(&options.ExpectFailure, "expect-failure", false, "wait for the scenario to fail ungracefully.")
@@ -88,7 +95,7 @@ func NewSubmitTestCmd() *cobra.Command {
 			// Generate test name, if needed
 			if strings.HasSuffix(testName, "-") {
 				testName = fmt.Sprintf("%s%d", testName, rand.Intn(1000))
-				ui.Info("Generate test name: ", testName)
+				ui.Info(fmt.Sprintf("Create new test: %s", testName))
 			}
 
 			// Query Kubernetes API for conflicting tests
@@ -109,13 +116,13 @@ func NewSubmitTestCmd() *cobra.Command {
 			// Validate the scenario
 			{
 				err := common.RunTest(testName, testFile, true)
-				ui.ExitOnError("Validating testfile"+testFile, err)
+				ui.ExitOnError("Validating testfile: "+testFile, err)
 			}
 
 			// Ensure the namespace for hosting the scenario
 			{
 				err := common.CreateNamespace(testName, common.ManagedNamespace)
-				ui.ExitOnError("Creating managed namespace:"+testName, err)
+				ui.ExitOnError("Creating managed namespace: "+testName, err)
 
 				if options.CPUQuota != "" || options.MemoryQuota != "" {
 					err := common.SetQuota(testName, options.CPUQuota, options.MemoryQuota)
@@ -181,12 +188,19 @@ func ControlOutput(cmd *cobra.Command, testName string, options *TestSubmitOptio
 
 		common.Hint(cmd, "To inspect the execution:", "kubectl frisbee inspect test ", testName)
 		ui.ExitOnError("waiting for test to raise an assertion error", err)
-	}
 
-	if options.Log {
-		ui.Info("Fetching test logs ...")
+	case options.Watch:
+		ui.Info("Watching for changes in the test status.")
 
-		err := common.GetPodLogs(testName, true, "all")
-		ui.ExitOnError("getting logs", err)
+		err := common.GetFrisbeeResources(cmd, testName, true)
+		ui.ExitOnError("Watching for changes in the test status error", err)
+
+	case options.Logs != nil:
+		ui.Info("Getting test logs ...")
+
+		err := common.GetPodLogs(testName, true, options.Loglines, options.Logs...)
+		common.Hint(cmd, "To inspect the execution logs use:",
+			"kubectl frisbee inspect test ", testName, " --logs all")
+		ui.ExitOnError("Getting logs", err)
 	}
 }

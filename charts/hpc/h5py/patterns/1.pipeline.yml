@@ -1,0 +1,37 @@
+---
+# In order to have shared logs, we must first create a network volume.
+# This volume will then be mounted across the various containers.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: shared-storage
+spec:
+  storageClassName: network-volume
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 500Mi
+
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Scenario
+metadata:
+  name: pipeline
+spec:
+  testData:
+    volume: { claimName: shared-storage}
+    globalNamespace: true
+
+  actions:
+    - action: Service
+      name: generator
+      service:
+        templateRef: h5py.pipeline.image-generator
+
+    - action: Service
+      name: visualizer
+#      depends: { success: [generator]}
+      service:
+        templateRef: h5py.pipeline.image-visualizer

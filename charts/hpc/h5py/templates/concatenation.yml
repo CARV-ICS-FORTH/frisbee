@@ -1,0 +1,59 @@
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Template
+metadata:
+  name: h5py.concatenation.create
+spec:
+  service:
+    decorators:
+      telemetry:
+        - system.telemetry.agent
+    containers:
+      - name: app
+        image: hdfgroup/hdf5lib:1.13.1
+        command:
+          - /bin/sh # Run shell
+          - -c # Read from string
+          - |  # Multi-line str
+
+            cat <<EOF > create.py
+            {{ range .Files.Lines "scripts/concatenation/create.py" }}
+            {{ . }}
+            {{ end }}
+            EOF
+
+            # Create 4 files to the shared dir, and one directory for the logs.
+            mkdir /testdata/${HOSTNAME}
+            python create.py /testdata 4 &> /testdata/${HOSTNAME}/logs
+
+            sleep 10
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Template
+metadata:
+  name: h5py.concatenation.concatenate
+spec:
+  service:
+    containers:
+      - name: app
+        image: hdfgroup/hdf5lib:1.13.1
+        command:
+          - /bin/sh # Run shell
+          - -c # Read from string
+          - |  # Multi-line str
+
+            cat <<EOF > concatenate.py
+            {{ range .Files.Lines "scripts/concatenation/concatenate.py" }}
+            {{ . }}
+            {{ end }}
+            EOF
+
+            ls /testdata/
+            h5debug /testdata/myfile_0_creators
+
+            # Concatenate all files from the shared dir, and create one directory for the logs.
+            mkdir /testdata/${HOSTNAME}
+            python concatenate.py /testdata &> /testdata/${HOSTNAME}/logs
+
+
+            sleep 10

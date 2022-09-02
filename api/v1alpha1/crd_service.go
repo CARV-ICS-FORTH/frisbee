@@ -35,29 +35,29 @@ type Service struct {
 	Status ServiceStatus `json:"status,omitempty"`
 }
 
-func (s *Service) AttachTestDataVolume(source *corev1.PersistentVolumeClaimVolumeSource, useSubPath bool) {
+func (s *Service) AttachTestDataVolume(source *TestdataVolume, useSubPath bool) {
 	if source == nil {
 		return
 	}
 
 	// add volume to the pod
 	s.Spec.Volumes = append(s.Spec.Volumes, corev1.Volume{
-		Name: source.ClaimName,
+		Name: source.Claim.ClaimName,
 		VolumeSource: corev1.VolumeSource{
-			PersistentVolumeClaim: source,
+			PersistentVolumeClaim: &source.Claim,
 		},
 	})
 
 	subpath := ""
-	if useSubPath {
+	if useSubPath && !source.GlobalNamespace {
 		subpath = s.GetName()
 	}
 
 	// mount volume to initContainers
 	for i := 0; i < len(s.Spec.InitContainers); i++ {
 		s.Spec.InitContainers[i].VolumeMounts = append(s.Spec.InitContainers[i].VolumeMounts, corev1.VolumeMount{
-			Name:      source.ClaimName, // Name of a Volume.
-			ReadOnly:  source.ReadOnly,
+			Name:      source.Claim.ClaimName, // Name of a Volume.
+			ReadOnly:  source.Claim.ReadOnly,
 			MountPath: "/testdata", // Path within the container
 			SubPath:   subpath,     //  Path within the volume
 		})
@@ -66,8 +66,8 @@ func (s *Service) AttachTestDataVolume(source *corev1.PersistentVolumeClaimVolum
 	// mount volume to application containers
 	for i := 0; i < len(s.Spec.Containers); i++ {
 		s.Spec.Containers[i].VolumeMounts = append(s.Spec.Containers[i].VolumeMounts, corev1.VolumeMount{
-			Name:      source.ClaimName, // Name of a Volume.
-			ReadOnly:  source.ReadOnly,
+			Name:      source.Claim.ClaimName, // Name of a Volume.
+			ReadOnly:  source.Claim.ReadOnly,
 			MountPath: "/testdata", // Path within the container
 			SubPath:   subpath,     //  Path within the volume
 		})

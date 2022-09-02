@@ -78,7 +78,7 @@ metadata:
   name: distributed-logs
 spec:
   testData:
-    claimName: logs
+    volume: { claimName: logs}
 
   actions:
     - action: Service

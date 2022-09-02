@@ -1,0 +1,62 @@
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Template
+metadata:
+  name: h5py.pipeline.image-generator
+spec:
+  service:
+    containers:
+      - name: app
+        image: hdfgroup/hdf5lib:1.13.1
+        command:
+          - /bin/sh # Run shell
+          - -c # Read from string
+          - |  # Multi-line str
+
+            python3 - <<EOF
+            {{ range .Files.Lines "scripts/multiprocessing/image-generator.py" }}
+            {{ . }}
+            {{ end }}
+            EOF
+
+
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Template
+metadata:
+  name: h5py.pipeline.image-visualizer
+spec:
+  service:
+    requirements:
+      ingressBackend:
+        service:
+          name: self
+          port:
+            number: 80
+
+    containers:
+      - name: app
+        ports:
+          - name: http
+            containerPort: 80
+        image: dorowu/ubuntu-desktop-lxde-vnc
+        command:
+          - /bin/sh # Run shell
+          - -c # Read from string
+          - |  # Multi-line str
+
+            # Install h5py
+            apt-get update -y
+            apt-get install -y python3-pip  python3-tk
+            pip install h5py  matplotlib
+
+            # Run the plotter
+            # For direct use: python3 - <<EOF
+            cat <<EOF > plotter.py
+            {{ range .Files.Lines "scripts/multiprocessing/image-visualizer.py" }}
+            {{ . }}
+            {{ end }}
+            EOF
+
+            # Start Xserver
+            /startup.sh

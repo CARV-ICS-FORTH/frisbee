@@ -1,0 +1,27 @@
+---
+# Create an HDF5 file in memory and retrieve the raw bytes
+# This could be used, for instance, in a server producing small HDF5
+# files on demand.
+apiVersion: frisbee.dev/v1alpha1
+kind: Scenario
+metadata:
+  name: sources
+spec:
+  actions:
+    - action: Service
+      name: bytesio-embedded
+      service:
+        templateRef: h5py.bytesio.embedded
+
+    - action: Service
+      name: bytesio-from-script
+      service:
+        templateRef: h5py.bytesio.from-script
+
+
+    - action: Service
+      name: bytesio-from-web
+      service:
+        templateRef: h5py.bytesio.from-web
+        inputs:
+          - {source: "https://raw.githubusercontent.com/h5py/h5py/master/examples/bytesio.py"}

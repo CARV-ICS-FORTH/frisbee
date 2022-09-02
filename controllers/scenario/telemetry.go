@@ -61,25 +61,27 @@ var (
 )
 
 func (r *Controller) StartTelemetry(ctx context.Context, t *v1alpha1.Scenario) error {
+	// the filebrowser makes sense only if test data are enabled.
+	if t.Spec.TestData != nil {
+		if err := r.installDataviewer(ctx, t); err != nil {
+			return errors.Wrapf(err, "cannot provision testdata")
+		}
+	}
+
+	// there is no need to import the stack of the is no dashboard.
 	telemetryAgents, err := r.ListTelemetryAgents(ctx, t)
 	if err != nil {
 		return errors.Wrapf(err, "importing dashboards")
 	}
 
-	if len(telemetryAgents) == 0 { // there is no need to import the stack of the is no dashboard.
-		return nil
-	}
+	if len(telemetryAgents) > 0 {
+		if err := r.installPrometheus(ctx, t); err != nil {
+			return errors.Wrapf(err, "prometheus error")
+		}
 
-	if err := r.installDataviewer(ctx, t); err != nil {
-		return errors.Wrapf(err, "storage preparation")
-	}
-
-	if err := r.installPrometheus(ctx, t); err != nil {
-		return errors.Wrapf(err, "prometheus error")
-	}
-
-	if err := r.installGrafana(ctx, t, telemetryAgents); err != nil {
-		return errors.Wrapf(err, "grafana error")
+		if err := r.installGrafana(ctx, t, telemetryAgents); err != nil {
+			return errors.Wrapf(err, "grafana error")
+		}
 	}
 
 	return nil
@@ -95,11 +97,19 @@ func (r *Controller) StopTelemetry(t *v1alpha1.Scenario) {
 }
 
 func (r *Controller) installDataviewer(ctx context.Context, t *v1alpha1.Scenario) error {
-	// the filebrowser makes sense only if test data are enabled.
-	if t.Spec.TestData == nil {
-		return nil
+	// Ensure the the claim exists and we do not wait indefinitely.
+	if t.Spec.TestData != nil {
+		claimName := t.Spec.TestData.Claim.ClaimName
+		var claim corev1.PersistentVolumeClaim
+
+		key := client.ObjectKey{Namespace: t.GetNamespace(), Name: claimName}
+
+		if err := r.GetClient().Get(ctx, key, &claim); err != nil {
+			return errors.Wrapf(err, "cannot verify existence of testdata claim '%s'", claimName)
+		}
 	}
 
+	// Now we can use it to create the data viewer
 	var job v1alpha1.Service
 
 	job.SetName(defaultDataviewerName)

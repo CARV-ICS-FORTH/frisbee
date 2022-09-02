@@ -1,0 +1,77 @@
+---
+# Create a template from embedded code
+apiVersion: frisbee.dev/v1alpha1
+kind: Template
+metadata:
+  name: h5py.bytesio.embedded
+spec:
+  service:
+    containers:
+      - name: app
+        image: hdfgroup/hdf5lib:1.13.1
+        command:
+          - /bin/sh # Run shell
+          - -c # Read from string
+          - |  # Multi-line str
+
+            python - <<EOF
+            """Create an HDF5 file in memory and retrieve the raw bytes
+            This could be used, for instance, in a server producing small HDF5
+            files on demand.
+            """
+            import io
+            import h5py
+
+            bio = io.BytesIO()
+
+            with h5py.File(bio, 'w') as f:
+              f['dataset'] = range(10)
+
+              data = bio.getvalue() # data is a regular Python bytes object.
+              print("Total size:", len(data))
+              print("First bytes:", data[:10])
+            EOF
+
+
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Template
+metadata:
+  name: h5py.bytesio.from-web
+spec:
+  inputs:
+    parameters: { source: "" }
+  service:
+    containers:
+      - name: app
+        image: hdfgroup/hdf5lib:1.13.1
+        command:
+          - /bin/sh # Run shell
+          - -c # Read from string
+          - |  # Multi-line str
+
+            source={{"{{.Inputs.Parameters.source}}"}}
+            wget $source -O script.py
+            python script.py
+
+---
+# Create a template from external scripts
+apiVersion: frisbee.dev/v1alpha1
+kind: Template
+metadata:
+  name: h5py.bytesio.from-script
+spec:
+  service:
+    containers:
+      - name: app
+        image: hdfgroup/hdf5lib:1.13.1
+        command:
+          - /bin/sh # Run shell
+          - -c # Read from string
+          - |  # Multi-line str
+
+            python3 - <<EOF
+            {{ range .Files.Lines "scripts/bytesio/bytesio.py" }}
+            {{ . }}
+            {{ end }}
+            EOF
