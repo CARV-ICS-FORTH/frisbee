@@ -44,7 +44,7 @@ Frisbee is implemented as a set of Kubernetes CRD (Custom Resource Definition) t
 * Assert actual program behavior and side effects.
 
   
-
+To learn more about Frisbee, check the **[QuickStart](https://frisbee.dev/docs/quick-start/)** tutorial or visit our **[Website](https://frisbee.dev)**.
 
 ## Use-Cases and Testing Patterns 
 
@@ -60,9 +60,7 @@ Frisbee is implemented as a set of Kubernetes CRD (Custom Resource Definition) t
 
 
 
-
 ## Getting Started
-
 
 
 #### Step 1. Fix Dependencies
@@ -257,9 +255,6 @@ Visualization like that helpful in `root-cause analysis`, as it makes it easy to
 
 
 
-
-To learn more about Frisbee, check the [QuickStart](https://frisbee.dev/docs/quick-start/) tutorial.
-
 ## Features
 
 👉 Workflow templating to store commonly used workflows in the cluster.
@@ -289,9 +284,7 @@ To learn more about Frisbee, check the [QuickStart](https://frisbee.dev/docs/qui
 👉 CLI applications to test management and test inspection. 
 
 
-
-Try the **[Walkthrough](https://frisbee.dev/docs/walkthrough)** to learn how to use these features.
-
+To learn how to use these features, check the **[Walkthrough](https://frisbee.dev/docs/walkthrough)** 
 
 
 
