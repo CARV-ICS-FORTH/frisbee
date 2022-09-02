@@ -1,4 +1,4 @@
-name: Run Frisbee Scenarios
+name: Live Testbed
 
 on:
   workflow_dispatch:
@@ -56,6 +56,9 @@ jobs:
           kubectl get pods -A
           
           # Submit the job
-          ./kubectl-frisbee submit test demo- ${{ github.event.inputs.scenario }} ${{ github.event.inputs.charts}} --expect-success
+          testID =$(./kubectl-frisbee submit test demo- ${{ github.event.inputs.scenario }} ${{ github.event.inputs.charts}} --expect-success | awk /test:/'{print $4}')
           
           ./kubectl-frisbee get tests
+          
+          ./kubectl-frisbee inspect tests ${testID}
+          
