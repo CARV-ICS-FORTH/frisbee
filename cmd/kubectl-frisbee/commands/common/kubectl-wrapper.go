@@ -19,6 +19,7 @@ package common
 import (
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -38,26 +39,66 @@ const (
 	pollInterval     = 5 * time.Second
 )
 
-func ErrNotFound(testName, out string) bool {
-	return out == fmt.Sprintf("No resources found in %s namespace.\n", testName)
+const (
+	// Validated over https://regex101.com/r/eXgekO/1
+	NotReadyRegex        = `.* container "(\w+)" in pod "(.*)" is waiting to start: (\w+)`
+	NoPodsFoundReg       = `.* pods "\w+" not found`
+	NotResourcesFoundReg = `No resources found in (.+) namespace..*`
+)
+
+func ErrNotFound(out []byte) bool {
+	{ // First form
+		match, err := regexp.Match(NotResourcesFoundReg, out)
+		if err != nil {
+			panic("unhandled output")
+		}
+
+		if match {
+			return true
+		}
+	}
+
+	{ // SEcond form
+		match, err := regexp.Match(NoPodsFoundReg, out)
+		if err != nil {
+			panic("unhandled output")
+		}
+
+		if match {
+			return true
+		}
+	}
+
+	return false
 }
 
-func ErrContainerNotReady(testName, container string, out string) bool {
-	return out == fmt.Sprintf("Error from server (BadRequest): container \"%s\" in pod \"%s\" is waiting to start: ContainerCreating\n",
-		container, testName)
+func ErrContainerNotReady(out []byte) bool {
+	match, err := regexp.Match(NotReadyRegex, out)
+	if err != nil {
+		panic("unhandled output")
+	}
+
+	return match
 }
 
-func KubectlPrint(testName string, arguments ...string) error {
+func KubectlPrint(testName string, wantOutput bool, arguments ...string) error {
 	arguments = append(arguments, "-n", testName)
 
-	out, err := process.Execute(Kubectl, arguments...)
+	var out []byte
+	var err error
+
+	if wantOutput {
+		out, err = process.LoggedExecuteInDir("", os.Stdout, Kubectl, arguments...)
+	} else {
+		out, err = process.Execute(Kubectl, arguments...)
+	}
+
 	switch {
-	case ErrNotFound(testName, string(out)): // resource not found
+	case ErrNotFound(out): // resource not found
 		return nil
 	case err != nil: // execution error
 		return err
 	default: // completed
-		ui.Info(string(out))
 		return nil
 	}
 }
@@ -78,7 +119,8 @@ const (
 )
 
 var FrisbeeResourceInspectionFields = strings.Join([]string{
-	"custom-columns=Kind:.kind",
+	"custom-columns=Name:.metadata.namespace",
+	"Kind:.kind",
 	"Job:.metadata.name",
 	"Component:.metadata.labels.scenario\\.frisbee\\.dev\\/component",
 	"Phase:.status.phase",
@@ -87,27 +129,35 @@ var FrisbeeResourceInspectionFields = strings.Join([]string{
 	// "Conditions:.status.conditions[*].type",
 }, ",")
 
-func GetFrisbeeResources(cmd *cobra.Command, testName string) error {
+func GetFrisbeeResources(cmd *cobra.Command, testName string, watch bool) error {
 	command := []string{"get",
 		"--show-kind=true",
-		"--sort-by=.metadata.creationTimestamp",
-		"-l", fmt.Sprintf("%s", v1alpha1.LabelScenario)}
-
-	command = append(command, strings.Join([]string{
-		Clusters, Services, Chaos, Cascades, Calls, VirtualObjects,
-	}, ","))
-
-	// restricted format supported by Kubectl
-	outputType := OutputType(cmd.Flag("output").Value.String())
-	if outputType == "table" ||
-		outputType == "json" ||
-		outputType == "yaml" {
-		command = append(command, "-o", string(outputType))
+		"-l", fmt.Sprintf("%s", v1alpha1.LabelScenario),
+		"-o", FrisbeeResourceInspectionFields,
 	}
 
-	command = append(command, "-o", FrisbeeResourceInspectionFields)
+	// restricted format supported by Kubectl
+	if cmd.Flag("output") != nil {
+		outputType := OutputType(cmd.Flag("output").Value.String())
+		if outputType == "table" ||
+			outputType == "json" ||
+			outputType == "yaml" {
+			command = append(command, "-o", string(outputType))
+		}
+	}
 
-	return KubectlPrint(testName, command...)
+	// decide the presentation method
+	if watch {
+		// monitor the top-level scenario overview
+		command = append(command, "--watch=true", Scenarios)
+	} else {
+		// monitor all sub-resources, sorted by creation Timestamp
+		command = append(command, "--sort-by=.metadata.creationTimestamp", strings.Join([]string{
+			Clusters, Services, Chaos, Cascades, Calls, VirtualObjects,
+		}, ","))
+	}
+
+	return KubectlPrint(testName, true, command...)
 }
 
 var TemplateInspectionFields = strings.Join([]string{
@@ -132,7 +182,7 @@ func GetTemplateResources(cmd *cobra.Command, testName string) error {
 
 	command = append(command, "-o", TemplateInspectionFields)
 
-	return KubectlPrint(testName, command...)
+	return KubectlPrint(testName, true, command...)
 }
 
 func WaitForCondition(testName string, condition v1alpha1.ConditionType, timeout string) error {
@@ -141,7 +191,7 @@ func WaitForCondition(testName string, condition v1alpha1.ConditionType, timeout
 		"--timeout=" + timeout,
 	}
 
-	return KubectlPrint(testName, command...)
+	return KubectlPrint(testName, true, command...)
 }
 
 // ////////////////////////////////////
@@ -182,7 +232,7 @@ func GetChaosResources(cmd *cobra.Command, testName string) error {
 
 	command = append(command, "-o", ChaosResourceInspectionFields)
 
-	return KubectlPrint(testName, command...)
+	return KubectlPrint(testName, true, command...)
 }
 
 // ////////////////////////////////////
@@ -225,65 +275,96 @@ func GetK8sResources(cmd *cobra.Command, testName string) error {
 
 	command = append(command, "-o", K8SResourceInspectionFields)
 
-	return KubectlPrint(testName, command...)
+	return KubectlPrint(testName, true, command...)
 }
 
-func GetPodLogs(testName string, tail bool, pods ...string) error {
+const (
+	FilterSYS = string(v1alpha1.LabelComponent + "=" + v1alpha1.ComponentSys)
+	FilterSUT = string(v1alpha1.LabelComponent + "=" + v1alpha1.ComponentSUT)
+)
+
+/*
+GetPodLogs provides convenience on printing the logs from prods.
+// Filter query:
+// - Run with '--all'
+// - Run with '--logs all pod1 ...'
+// - Run with '--logs all'
+// - Run with '--logs SYS'
+// - Run with '--logs SUT'
+// - Run with '--logs pod1 pod2 ...'
+*/
+func GetPodLogs(testName string, tail bool, lines int, pods ...string) error {
 	command := []string{"logs", "-n", testName,
 		"-c", v1alpha1.MainContainerName,
 		"--prefix=true",
+		fmt.Sprintf("--tail=%d", lines),
 	}
 
-	// set query
 	switch {
-	// Run with --all
 	case len(pods) == 0:
-		command = append(command, "-l", fmt.Sprintf("%s", v1alpha1.LabelScenario))
-	// Run with --logs all pod1 ...
+		command = append(command, "-l", v1alpha1.LabelScenario)
 	case len(pods) > 1 && structure.ContainsStrings(pods, "all"):
 		return errors.Errorf("expects either 'all' or pod names")
-	// Run with --logs all
 	case len(pods) == 1 && pods[0] == "all":
-		command = append(command, "-l", fmt.Sprintf("%s", v1alpha1.LabelScenario))
-		// Run with --logs pod1 pod2 ...
+		command = append(command, "-l", v1alpha1.LabelScenario)
+	case len(pods) == 1 && pods[0] == string(v1alpha1.ComponentSys):
+		command = append(command, "-l", strings.Join([]string{v1alpha1.LabelScenario, FilterSYS}, ","))
+	case len(pods) == 1 && pods[0] == string(v1alpha1.ComponentSUT):
+		command = append(command, "-l", strings.Join([]string{v1alpha1.LabelScenario, FilterSUT}, ","))
 	case pods != nil:
 		command = append(command, pods...)
 	default:
 		panic(errors.Errorf("invalid GetPodLogs arguments: '%v'", pods))
 	}
 
-	// callback function
-	getLogs := func() (done bool, err error) {
-		out, err := process.Execute(Kubectl, command...)
-		switch {
-		// resource initialization
-		case ErrNotFound(testName, string(out)), ErrContainerNotReady(testName, v1alpha1.MainContainerName, string(out)):
-			return false, nil
-			// execution error
-		case err != nil:
-			if tail { // on tail, we want to ignore errors and continue
-				return false, nil
-			}
-
-			return false, err // without tail, we want to return the error immediately
-		default: // completed
-			return true, nil
-		}
-	}
-
 	// set output and retry policy
 	if tail {
-		command = append(command, fmt.Sprintf("--follow=true")) // print all
+		command = append(command, "--ignore-errors=false", "--follow=true")
+
+		getLogs := func() (done bool, err error) {
+			out, err := process.LoggedExecuteInDir("", os.Stdout, Kubectl, command...)
+			switch {
+			case len(out) == 0, ErrNotFound(out), ErrContainerNotReady(out): // resource initialization
+				// ui.Info("Waiting for pods to become ready ...", string(out))
+				return false, nil
+			case err != nil: // abort
+				return false, err
+			default: // ok
+				// Output printing is not required as it is printed by the os.Stdout
+				return true, nil
+			}
+		}
+
+		ui.Debug(Kubectl, command...)
 		return wait.PollImmediate(pollInterval, pollTimeout, getLogs)
+
 	} else {
-		command = append(command, fmt.Sprintf("--tail=5")) // print last 5 lines
+		command = append(command, "--ignore-errors=true")
+
+		getLogs := func() (done bool, err error) {
+			out, err := process.Execute(Kubectl, command...)
+			switch {
+			// resource initialization
+			case len(out) == 0, ErrNotFound(out), ErrContainerNotReady(out):
+				ui.Info("Waiting for pods to become ready ...", string(out))
+				return false, nil
+			case err != nil: // abort
+				// return the error immediately
+				return false, err
+			default: // ok
+				ui.Info(string(out))
+				return true, nil
+			}
+		}
+
+		ui.Debug(Kubectl, command...)
 		_, err := getLogs()
 		return err
 	}
 }
 
 func Events(testName string) error {
-	return KubectlPrint(testName, "get", "events",
+	return KubectlPrint(testName, true, "get", "events",
 		"--sort-by='.metadata.creationTimestamp'")
 }
 
@@ -314,7 +395,7 @@ func RunTest(testName string, testFile string, dryrun bool) error {
 		command = append(command, "--dry-run=client")
 	}
 
-	return KubectlPrint(testName, command...)
+	return KubectlPrint(testName, false, command...)
 }
 
 func Dashboards(cmd *cobra.Command, testName string) error {
@@ -330,7 +411,7 @@ func Dashboards(cmd *cobra.Command, testName string) error {
 		command = append(command, "-o", string(outputType))
 	}
 
-	return KubectlPrint(testName, command...)
+	return KubectlPrint(testName, true, command...)
 }
 
 func CreateNamespace(name string, labels ...string) error {
@@ -461,7 +542,7 @@ spec:
 
 	command := []string{"apply", "--wait", "-f", f.Name()}
 
-	return KubectlPrint(testName, command...)
+	return KubectlPrint(testName, false, command...)
 }
 
 // ////////////////////////////////////

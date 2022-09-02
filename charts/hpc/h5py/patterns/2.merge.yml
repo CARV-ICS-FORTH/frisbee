@@ -1,0 +1,51 @@
+---
+# In order to have shared logs, we must first create a network volume.
+# This volume will then be mounted across the various containers.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: shared-storage
+spec:
+  storageClassName: network-volume
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 500Mi
+
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Scenario
+metadata:
+  name: merge
+spec:
+  testData:
+    volume: { claimName: shared-storage}
+    globalNamespace: true
+
+  actions:
+    # Spawn multiple creators that each generates multiple files.
+    - action: Cluster
+      name: creators
+      cluster:
+        instances: 1
+        templateRef:  h5py.concatenation.create
+
+    # Concatenate creates files into a single HDF5
+    - action: Service
+      name: concatenate
+      depends: { success: [creators]}
+      service:
+        templateRef:  h5py.concatenation.concatenate
+
+
+    # Fancy method to ensure validity after each step.
+#    - action: Call
+#      name: validate
+#      depends: { success: [creators]}
+#      call:
+#        callable: num-of-files
+#        services: [ dataviewer ]
+#        expect:
+#          - { stdout: "if we now the number of files, we can use it directly" }

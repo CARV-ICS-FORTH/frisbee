@@ -65,20 +65,27 @@ func NewDeleteTestsCmd() *cobra.Command {
 			case options.Force:
 				testName := args[0]
 
+				ui.Info("Deleting test: ", testName)
 				err := common.ForceDelete(testName)
 				ui.ExitOnError("Force Delete "+testName, err)
 
 			case options.DeleteAll:
+				ui.Info("Deleting all tests with label: ", common.ManagedNamespace)
+
 				err := common.DeleteNamespaces(common.ManagedNamespace)
 				ui.ExitOnError("Delete all tests", err)
 
 			case len(args) > 0:
+				ui.Info("Deleting tests: ", args...)
+
 				err := common.DeleteNamespaces("", args...)
 				ui.ExitOnError("Delete tests", err)
 
 			case len(options.Selectors) != 0:
 				options.Selectors = append(options.Selectors, common.ManagedNamespace)
 				selector := strings.Join(options.Selectors, ",")
+
+				ui.Info("Deleting all tests with labels: ", common.ManagedNamespace)
 
 				err := common.DeleteNamespaces(selector)
 				ui.ExitOnError("Deleting tests by labels: "+selector, err)

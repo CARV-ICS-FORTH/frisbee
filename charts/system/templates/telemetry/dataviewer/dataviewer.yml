@@ -30,3 +30,20 @@ spec:
         ports:
           - name: http
             containerPort: {{.Values.telemetry.dataviewer.port}}
+
+    callables:
+      num-of-files:
+        container: app
+        command:
+          - /bin/sh
+          - -c
+          - |
+            ls /testdata | wc -l
+
+      list-files:
+        container: app
+        command:
+          - /bin/sh
+          - -c
+          - |
+            ls -l /testdata

@@ -32,8 +32,8 @@ import (
 // 4. Ensure that macros point to a valid action.
 func (r *Controller) Validate(ctx context.Context, t *v1alpha1.Scenario) error {
 
+	// Validate Reference Graph
 	for _, action := range t.Spec.Actions {
-
 		switch action.ActionType {
 		case v1alpha1.ActionService:
 			if _, err := serviceutils.GetServiceSpec(ctx, r.GetClient(), t, *action.Service); err != nil {
@@ -55,5 +55,6 @@ func (r *Controller) Validate(ctx context.Context, t *v1alpha1.Scenario) error {
 			}
 		}
 	}
+
 	return nil
 }

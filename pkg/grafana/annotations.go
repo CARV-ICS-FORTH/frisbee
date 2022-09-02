@@ -163,7 +163,7 @@ func (c *Client) SetAnnotation(ga sdk.CreateAnnotationRequest) (reqID uint) {
 		gaResp, err := c.Conn.CreateAnnotation(ctx, ga)
 		switch {
 		case err != nil: // API connection error. Just retry
-			return false, nil
+			return false, err
 		case gaResp.Message == nil: // Server error. Abort
 			return false, errors.Errorf("empty annotation response")
 		case *gaResp.Message != statusAnnotationAdded: // Unexpected response
@@ -173,7 +173,7 @@ func (c *Client) SetAnnotation(ga sdk.CreateAnnotationRequest) (reqID uint) {
 			return true, nil
 		}
 	}); err != nil {
-		c.logger.Info("AnnotationError", "operation", "Set", "request", ga, "err", err)
+		c.logger.Info("AnnotationError", "operation", "Set", "request", ga, "err", err.Error())
 	}
 
 	return reqID
@@ -202,6 +202,6 @@ func (c *Client) PatchAnnotation(reqID uint, ga sdk.PatchAnnotationRequest) {
 			return true, nil
 		}
 	}); err != nil {
-		c.logger.Info("AnnotationError", "operation", "Patch", "request", ga, "err", err)
+		c.logger.Info("AnnotationError", "operation", "Patch", "request", ga, "err", err.Error())
 	}
 }

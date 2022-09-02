@@ -143,10 +143,19 @@ type EmbedActions struct {
 	Call *CallSpec `json:"call,omitempty"`
 }
 
+type TestdataVolume struct {
+	Claim v1.PersistentVolumeClaimVolumeSource `json:"volume,omitempty"`
+
+	// GlobalNamespace if disabled, all containers see the name root directory. If enabled, each container
+	// sees its own namespace.
+	// +optional
+	GlobalNamespace bool `json:"globalNamespace,omitempty"`
+}
+
 // ScenarioSpec defines the desired state of Scenario.
 type ScenarioSpec struct {
 	// TestData defines a volume that will be mounted across the Scenario's Services.
-	TestData *v1.PersistentVolumeClaimVolumeSource `json:"testData,omitempty"`
+	TestData *TestdataVolume `json:"testData,omitempty"`
 
 	// Actions are the tasks that will be taken.
 	Actions []Action `json:"actions"`

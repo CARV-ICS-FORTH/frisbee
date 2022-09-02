@@ -74,14 +74,14 @@ func NewSaveTestsCmd() *cobra.Command {
 				}
 			}
 
-			err = common.KubectlPrint(testName, "cp", options.Datasource, destination)
-			ui.ExitOnError("Save test data to "+destination, err)
+			err = common.KubectlPrint(testName, false, "cp", options.Datasource, destination)
+			ui.ExitOnError("Saving test data to: "+destination, err)
 
 			promDestination := destination + "/" + "prometheus"
-			err = common.KubectlPrint(testName, "cp", PrometheusSource, promDestination)
+			err = common.KubectlPrint(testName, ui.Verbose, "cp", PrometheusSource, promDestination)
 
-			common.Hint(cmd, "To store data from a specific location use 'kubectl cp pod:path destination -n", testName)
-			ui.ExitOnError("Save Prometheus data to "+promDestination, err)
+			common.Hint(cmd, "To store data from a specific location use", "kubectl cp pod:path destination -n", testName)
+			ui.ExitOnError("Saving Prometheus data to: "+promDestination, err)
 		},
 	}
 

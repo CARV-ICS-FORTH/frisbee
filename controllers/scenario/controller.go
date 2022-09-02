@@ -328,7 +328,7 @@ func (r *Controller) HasSucceed(ctx context.Context, cr *v1alpha1.Scenario) erro
 	// These components are removed by deleting the Scenario.
 	for _, job := range r.view.GetSuccessfulJobs() {
 		expressions.UnsetAlert(job)
-		common.Delete(ctx, r, job)
+		// common.Delete(ctx, r, job)
 	}
 
 	return nil
