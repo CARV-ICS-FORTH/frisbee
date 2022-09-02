@@ -45,7 +45,7 @@ _download_url() {
 echo "Downloading frisbee from URL: $(_download_url)"
 curl -sSLf $(_download_url) > kubectl-frisbee
 chmod +x kubectl-frisbee
-ln -s kubectl-frisbee /usr/local/bin/kubectl-frisbee
+cp kubectl-frisbee /usr/local/bin/kubectl-frisbee
 
 
 echo "kubectl-frisbee installed in:"
