@@ -4033,42 +4033,6 @@
       "type": "row"
     },
     {
-      "alert": {
-        "alertRuleTags": {},
-        "conditions": [
-          {
-            "evaluator": {
-              "params": [
-                -3000000000
-              ],
-              "type": "lt"
-            },
-            "operator": {
-              "type": "and"
-            },
-            "query": {
-              "params": [
-                "rx-max",
-                "1m",
-                "now"
-              ]
-            },
-            "reducer": {
-              "params": [],
-              "type": "avg"
-            },
-            "type": "query"
-          }
-        ],
-        "executionErrorState": "keep_state",
-        "for": "0s",
-        "frequency": "1m",
-        "handler": 1,
-        "message": "Alert [skata-404/Scenario/sla-assertions] for object frisbee.dev/v1alpha1, Kind=Scenario sla-assertions has been fired",
-        "name": "skata-404/Scenario/sla-assertions",
-        "noDataState": "keep_state",
-        "notifications": []
-      },
       "datasource": "Prometheus",
       "editable": false,
       "error": false,

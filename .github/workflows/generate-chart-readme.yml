@@ -1,7 +1,6 @@
 name: Generate Chart Parameters
 
 on:
-  workflow_dispatch:
   pull_request_target:
     paths:
       - 'charts/**/values.yaml'

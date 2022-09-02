@@ -88,7 +88,7 @@ spec:
     # Delete the second cluster.
     - action: Delete
       name: delete-group-b
-      depends: { running: [ group-b ],  after: "30s" }
+      depends: { running: [ group-b ],  after: "120s" }
       delete: # referenced jobs should be actions.
         jobs: [ group-b ]
 
