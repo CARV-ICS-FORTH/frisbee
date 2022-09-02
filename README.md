@@ -15,9 +15,17 @@
     <br /><br />
 </p>
 
-[![GitHub license](https://img.shields.io/github/license/carv-ics-forth/frisbee)](https://github.com/carv-ics-forth/frisbee/blob/main/LICENSE)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/carv-ics-forth/frisbee/blob/main/CONTRIBUTING.md)
-![Code build and checks](https://github.com/CARV-ICS-FORTH/frisbee/actions/workflows/test-unit.yml/badge.svg)
+<p align="center">
+    <a href="https://github.com/carv-ics-forth/frisbee/blob/main/LICENSE">
+        <img src="https://img.shields.io/github/license/carv-ics-forth/frisbee">
+    </a>    
+    <a href="https://github.com/carv-ics-forth/frisbee/blob/main/CONTRIBUTING.md">
+        <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg">
+    </a>    
+    <a Code build and checks>
+        <img src="https://github.com/CARV-ICS-FORTH/frisbee/actions/workflows/test-unit.yml/badge.svg">
+    </a>        
+</p>    
 
 # Why Frisbee ?
 
