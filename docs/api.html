@@ -951,8 +951,8 @@ GenerateFromTemplate
 <td>
 <code>testData</code><br/>
 <em>
-<a href="https://v1-20.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#persistentvolumeclaimvolumesource-v1-core">
-Kubernetes core/v1.PersistentVolumeClaimVolumeSource
+<a href="#frisbee.dev/v1alpha1.TestdataVolume">
+TestdataVolume
 </a>
 </em>
 </td>
@@ -1068,8 +1068,8 @@ GenerateFromTemplate
 <td>
 <code>testData</code><br/>
 <em>
-<a href="https://v1-20.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#persistentvolumeclaimvolumesource-v1-core">
-Kubernetes core/v1.PersistentVolumeClaimVolumeSource
+<a href="#frisbee.dev/v1alpha1.TestdataVolume">
+TestdataVolume
 </a>
 </em>
 </td>
@@ -2405,8 +2405,8 @@ ScenarioSpec
 <td>
 <code>testData</code><br/>
 <em>
-<a href="https://v1-20.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#persistentvolumeclaimvolumesource-v1-core">
-Kubernetes core/v1.PersistentVolumeClaimVolumeSource
+<a href="#frisbee.dev/v1alpha1.TestdataVolume">
+TestdataVolume
 </a>
 </em>
 </td>
@@ -2477,8 +2477,8 @@ ScenarioStatus
 <td>
 <code>testData</code><br/>
 <em>
-<a href="https://v1-20.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#persistentvolumeclaimvolumesource-v1-core">
-Kubernetes core/v1.PersistentVolumeClaimVolumeSource
+<a href="#frisbee.dev/v1alpha1.TestdataVolume">
+TestdataVolume
 </a>
 </em>
 </td>
@@ -3236,6 +3236,48 @@ Lifecycle
 </tr>
 </tbody>
 </table>
+<h3 id="frisbee.dev/v1alpha1.TestdataVolume">TestdataVolume
+</h3>
+<p>
+(<em>Appears on:</em><a href="#frisbee.dev/v1alpha1.ClusterSpec">ClusterSpec</a>, <a href="#frisbee.dev/v1alpha1.ScenarioSpec">ScenarioSpec</a>)
+</p>
+<div>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>volume</code><br/>
+<em>
+<a href="https://v1-20.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#persistentvolumeclaimvolumesource-v1-core">
+Kubernetes core/v1.PersistentVolumeClaimVolumeSource
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>globalNamespace</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>GlobalNamespace if disabled, all containers see the name root directory. If enabled, each container
+sees its own namespace.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="frisbee.dev/v1alpha1.TolerateSpec">TolerateSpec
 </h3>
 <p>
@@ -3439,5 +3481,5 @@ Kubernetes meta/v1.Duration
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>12f4183</code>.
+on git commit <code>f273dcd</code>.
 </em></p>
