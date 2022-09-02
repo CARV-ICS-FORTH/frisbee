@@ -208,33 +208,6 @@ For example, in the next figure, it fairly easy to understand that `INSERT_ERROR
 
 To learn how to use these features, check the **[Walkthrough](https://frisbee.dev/docs/walkthrough)** and the **[Examples](examples)**.
 
-```shell
->> tree -v  examples/
-examples/
-├── 1.hello-world.yml
-├── 2.parameters.yml
-├── 3.execution-order.yml
-├── 4.dependency-order.yml
-├── 5.clustering.yml
-├── 6.time-driven-scheduling.yml
-├── 7.event-driven-scheduling.yml
-├── 8.conditional-scheduling.yml
-├── 9.tolerate-failures.yml
-├── 10.resource-throttling.yml
-├── 11.advanced-placement.yml
-├── 12.callables.yml
-├── 13.assertions.yml
-├── 14.delete-job.yml
-├── 15.performance-monitoring.yml
-├── 16.simulate-failure.yml
-├── 17.simulate-cascading-failures.yml
-├── 18.revoke-failures.yml
-├── 19.sla-assertions.yml
-├── 20.distributed-logs.yml
-├── 21.custom-storage.yml
-└── 22.diagnostics.yml
-```
-
 
 ## Citation
 
