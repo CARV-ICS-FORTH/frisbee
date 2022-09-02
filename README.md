@@ -81,7 +81,7 @@ curl -sSLf https://raw.githubusercontent.com/CARV-ICS-FORTH/frisbee/main/install
 
 From now on, all Frisbee operations will be available via `kubectl frisbee`.
 
-![image-20220902175233546](docs/readme.assets/kubect-frisbee.png)
+<img src="docs/readme.assets/kubect-frisbee.png" alt="image-20220902175233546" style="zoom:80%;" />
 
 
 
@@ -147,7 +147,7 @@ kubectl frisbee submit test demo- ./examles/1.hello-world.yml
 
 Note that if a testname has `-` as a postfix (e.g, `demo-`), Frisbee will autogenerate the test name.
 
-![image-20220902182750771](docs/readme.assets/submit.png)
+<img src="docs/readme.assets/submit.png" alt="image-20220902182750771" style="zoom:80%;" />
 
 
 
@@ -161,7 +161,7 @@ kubectl frisbee get tests
 
 
 
-![image-20220902183147118](docs/readme.assets/list.png)
+<img src="docs/readme.assets/list.png" alt="image-20220902183147118" style="zoom:80%;" />
 
 
 
@@ -173,7 +173,7 @@ kubectl frisbee inspect tests demo-482
 
 
 
-![image-20220902183520716](docs/readme.assets/inspect.png)
+<img src="docs/readme.assets/inspect.png" alt="image-20220902183520716" style="zoom:80%;" />
 
 
 
@@ -193,13 +193,13 @@ kubectl frisbee submit test demo- examples/15.performance-monitoring.yml
 
 
 
-![image-20220902184603844](docs/readme.assets/submit-visual.png)
+<img src="docs/readme.assets/submit-visual.png" alt="image-20220902184603844" style="zoom:80%;" />
 
 
 
 Oops .... the job has failed. Let's inspect what happened ....
 
-![image-20220902184746969](docs/readme.assets/inspect-failed.png)
+<img src="docs/readme.assets/inspect-failed.png" alt="image-20220902184746969" style="zoom: 80%;" />
 
 
 
