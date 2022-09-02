@@ -18,16 +18,13 @@ jobs:
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v3
-
-      - name: Cache Frisbee Installation
-        id:  cache-microk8s
+        
+      - name: Cache Microk8s Installation
+        id: cache-microk8s
         uses: actions/cache@v3
         with:
           path: /var/snap/microk8s/
-          key: ${{ runner.os }}-microk8s-
-          #restore-keys: |
-          #  ${{ runner.os }}-microk8s-
-
+          key: microk8s
 
       - name: Install MicroK8s
         if: steps.cache-microk8s.outputs.cache-hit != 'true'
@@ -35,7 +32,6 @@ jobs:
         with:
           channel: 'latest/stable'
           addons: '["dns", "ingress", "helm3", "rbac"]'
-
 
       - name: Install Frisbee
         run: |
@@ -56,7 +52,7 @@ jobs:
           kubectl get pods -A
           
           # Submit the job
-          testID =$(./kubectl-frisbee submit test demo- ${{ github.event.inputs.scenario }} ${{ github.event.inputs.charts}} --expect-success | awk /test:/'{print $4}')
+          testID=$(./kubectl-frisbee submit test demo- ${{ github.event.inputs.scenario }} ${{ github.event.inputs.charts}} --expect-success | awk /test:/'{print $4}')
           
           ./kubectl-frisbee get tests
           
