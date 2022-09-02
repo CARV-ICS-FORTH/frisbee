@@ -81,8 +81,9 @@ curl -sSLf https://raw.githubusercontent.com/CARV-ICS-FORTH/frisbee/main/install
 
 From now on, all Frisbee operations will be available via `kubectl frisbee`.
 
-<img src="docs/readme.assets/kubect-frisbee.png" alt="image-20220902175233546" style="zoom:80%;" />
-
+<p align="center">
+    <img src="docs/readme.assets/kubect-frisbee.png" width="500">
+</p>
 
 
 After the Frisbee Terminal is install, you can install the Frisbee Platform using
@@ -147,7 +148,9 @@ kubectl frisbee submit test demo- ./examles/1.hello-world.yml
 
 Note that if a testname has `-` as a postfix (e.g, `demo-`), Frisbee will autogenerate the test name.
 
-<img src="docs/readme.assets/submit.png" alt="image-20220902182750771" style="zoom:80%;" />
+<p align="center">
+    <img src="docs/readme.assets/submit.png" width="500">
+</p>
 
 
 
@@ -159,9 +162,9 @@ To get a list of available tests, use.
 kubectl frisbee get tests
 ```
 
-
-
-<img src="docs/readme.assets/list.png" alt="image-20220902183147118" style="zoom:80%;" />
+<p align="center">
+    <img src="docs/readme.assets/list.png" width="500">
+</p>
 
 
 
@@ -172,9 +175,9 @@ kubectl frisbee inspect tests demo-482
 ```
 
 
-
-<img src="docs/readme.assets/inspect.png" alt="image-20220902183520716" style="zoom:80%;" />
-
+<p align="center">
+    <img src="docs/readme.assets/inspect.png" width="500">
+</p>
 
 
 Notice that the `hello-world` example ended almost immediately.
@@ -191,15 +194,16 @@ Let's try the `performance-monitoring` example to understand how to use it.
 kubectl frisbee submit test demo- examples/15.performance-monitoring.yml
 ```
 
-
-
-<img src="docs/readme.assets/submit-visual.png" alt="image-20220902184603844" style="zoom:80%;" />
-
+<p align="center">
+    <img src="docs/readme.assets/submit-visual.png" width="500">
+</p>
 
 
 Oops .... the job has failed. Let's inspect what happened ....
 
-<img src="docs/readme.assets/inspect-failed.png" alt="image-20220902184746969" style="zoom: 80%;" />
+<p align="center">
+    <img src="docs/readme.assets/inspect-failed.png" width="500">
+</p>
 
 
 
@@ -214,16 +218,17 @@ kubectl frisbee submit test demo- examples/15.performance-monitoring.yml charts/
 
 Notice that besides the `telemetry templates` (which are part of the `charts/system`), the exact has also dependencies to `iperf` for generating the traffic.
 
+<p align="center">
+    <img src="docs/readme.assets/submit-dependencies.png" width="500">
+</p>
 
-
-![image-20220902185553533](docs/readme.assets/submit-dependencies.png)
 
 
 Instead of using `get` to list the tests and get the `test id`, another way is to take it directly from the `submit` output and use it in `inspect`.
 
-
-
-![image-20220902185821186](docs/readme.assets/inspect-dashboards.png)
+<p align="center">
+    <img src="docs/readme.assets/inspect-dashboards.png" width="800">
+</p>
 
 
 
@@ -235,9 +240,10 @@ firefox $(kubectl frisbee inspect tests demo-710 | grep grafana- | awk '{print $
 
 Hint: we can create pipelines that open new brower tabs every time you start a new experiment. 
 
+<p align="center">
+    <img src="docs/readme.assets/grafana.png" width="1000">
+</p>
 
-
-![image-20220902191141426](docs/readme.assets/grafana.png)
 
 
 
@@ -245,9 +251,10 @@ Notice that in contrast to the vanilla Grafana that plots just the performance m
 
 Visualization like that helpful in `root-cause analysis`, as it makes it easy to correlate an `observed behavior back to a testing event`. For example, in the next figure, it fairly easy to understand that `INSERT_ERROR` messages (`yellow line`) are triggered by a `fault-injection event`.
 
+<p align="center">
+    <img src="docs/readme.assets/contextualized-visualization.png" width="1000">
+</p>
 
-
-![image-20211008230432961](docs/readme.assets/contextualized-visualization.png)
 
 
 
