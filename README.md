@@ -27,12 +27,13 @@
     </a>        
 </p>    
 
-# Why Frisbee ?
+## What is Frisbee ?
 
-The effort being put in automating tests should not take over delivering value to users.
-Frisbee lowers the threshold of testing distributed systems by making it possible to:
+Frisbee is a workflow-based engine that lowers the threshold of testing containerized applications on Kubernetes. 
 
-* Setup initial dependency stack – easily!
+Frisbee is implemented as a set of Kubernetes CRD (Custom Resource Definition) that:
+
+* Setup initial application stack – easily!
 
 * Test against actual, close to production software - no mocks!
 
@@ -40,13 +41,10 @@ Frisbee lowers the threshold of testing distributed systems by making it possibl
 
 * Combine Chaos Engineering with large-scale performance testing!
 
-* Assert actual program behavior and side effects
+* Assert actual program behavior and side effects.
 
 
-
-To begin with Frisbee, check the **[QuickStart](https://frisbee.dev/docs/quick-start/)** and the **[Walkthrough](https://frisbee.dev/docs/walkthrough).**
-
-## Testing Patterns For Multiple Domains
+## Use-Cases and Testing Patterns 
 
 👉 [Databases](charts/databases)
 
@@ -59,14 +57,16 @@ To begin with Frisbee, check the **[QuickStart](https://frisbee.dev/docs/quick-s
 👉 [Networking](charts/networking)
 
 
-
-
-# Usage
-
+## Try Frisbee Testing
 
 
 1. Make sure that [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/)
    and  [Helm](https://helm.sh/docs/intro/install/) are installed on your system.
+
+
+2. Check the **[QuickStart](https://frisbee.dev/docs/quick-start/)** and the **[Walkthrough](https://frisbee.dev/docs/walkthrough).**
+
+
 
 2. Update Helm repo.
 
@@ -111,7 +111,33 @@ Through these dashboards humans and controllers can examine to check things like
 
 
 
+## Features
 
+👉 Workflow templating to store commonly used workflows in the cluster.
+
+👉 DAG based declaration of testing workflows.
+
+👉 Step level input & outputs (template parameterization).
+
+👉 Conditional Execution (Time-Driven, Status-Driven, Performance-Driven).
+
+👉 Live Progress monitoring via Prometheus/Grafana.
+
+👉 Assertions and alerting of SLA violations.
+
+👉 Placement Policies (affinity/tolerations/node selectors).
+
+👉 Archiving Test results after executing for later access.
+
+👉 On-Demand reliable container attached storage.
+
+👉 Garbage collection of completed resources.
+
+👉 Chaos-Engineering and Fault-Injection via Chaos-Mesh.
+
+👉 On-Demand reliable container attached storage.
+
+👉 CLI applications to test management and test inspection. 
 
 
 ## Citation
