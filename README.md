@@ -1,16 +1,10 @@
-# Frisbee - The Kubernetes Native Testbed
+# Frisbee - A Friendly Kubernetes-Native Testing Platform
 
-
-
-
-
-
-<div align="center">
+<p align="center">
     <a href="https://www.vectorstock.com/royalty-free-vector/disc-golf-frisbee-eps-vector-25179185">
         <img src="docs/images/logo.jpg" width="400">
     </a>
-</div>
-
+</p>
 
 
 <p align="center">
@@ -20,7 +14,10 @@
     <a href="mailto: fnikol@ics.forth.gr">Contact</a>
     <br /><br />
 </p>
-​											[![GitHub license](https://img.shields.io/github/license/carv-ics-forth/frisbee)](https://github.com/adap/flower/blob/main/LICENSE) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/carv-ics-forth/frisbee/blob/main/CONTRIBUTING.md) ![Code build and checks](https://github.com/CARV-ICS-FORTH/frisbee/actions/workflows/test-unit.yml/badge.svg)
+
+[![GitHub license](https://img.shields.io/github/license/carv-ics-forth/frisbee)](https://github.com/carv-ics-forth/frisbee/blob/main/LICENSE)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/carv-ics-forth/frisbee/blob/main/CONTRIBUTING.md)
+![Code build and checks](https://github.com/CARV-ICS-FORTH/frisbee/actions/workflows/test-unit.yml/badge.svg)
 
 # Why Frisbee ?
 
@@ -39,18 +36,7 @@ Frisbee lowers the threshold of testing distributed systems by making it possibl
 
 
 
-# Usage
-
-👉 To begin with Frisbee, check the **[QuickStart](https://frisbee.dev/docs/quick-start/).**
-
-👉 To understand the basic features, check the **[Walkthrough](https://frisbee.dev/docs/walkthrough).**
-
-
-
-#### Testing Patterns
-
-
-Among others, you will find scenarios and testing patterns for:
+## Testing Patterns
 
 👉 [Databases](charts/databases)
 
@@ -64,7 +50,13 @@ Among others, you will find scenarios and testing patterns for:
 
 
 
-# TL;DR
+
+# Usage
+
+👉 To begin with Frisbee, check the **[QuickStart](https://frisbee.dev/docs/quick-start/).**
+
+👉 To understand the basic features, check the **[Walkthrough](https://frisbee.dev/docs/walkthrough).**
+
 
 1. Make sure that [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/)
    and  [Helm](https://helm.sh/docs/intro/install/) are installed on your system.
