@@ -72,7 +72,7 @@ Before starting, Make sure that [kubectl](https://kubernetes.io/docs/tasks/tools
 Then, run the `install.sh`, that will deploy the **Frisbee Terminal**  as an extension to  `kubectl`.
 
 ```shell
-curl -sSLf https://raw.githubusercontent.com/CARV-ICS-FORTH/frisbee/main/install.sh | bash
+curl -sSLf https://frisbee.dev/install.sh | bash
 ```
 
 Through **Frisbee Terminal** we can easily install the **Frisbee Platform**.
@@ -99,7 +99,7 @@ We use it to get local access in `examples` and `charts` directories.
 Let's start by running the  hello-world.
 
 ```shell
-kubectl frisbee submit test demo- ./examles/1.hello-world.yml
+kubectl frisbee submit test demo- ./examples/1.hello-world.yml
 ```
 
 
