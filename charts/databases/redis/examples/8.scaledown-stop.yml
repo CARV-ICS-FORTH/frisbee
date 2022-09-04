@@ -44,14 +44,15 @@ spec:
 
 
     # When all servers are up and running, stop some of them
-    - action: Stop
-      name: stop-servers
+    - action: Cascade
+      name:  stop-servers
       depends: { running: [ more-servers ] }
-      stop:
-        services:
-          - more-servers-2
-          - more-servers-5
-          - more-servers-8
-          - masters-2
+      cascade:
+        templateRef: system.chaos.pod.kill
+        inputs:
+          - { target: more-servers-2 }
+          - { target: more-servers-5 }
+          - { target: more-servers-8 }
+          - { target: masters-2 }
         schedule:
           cron: "@every 1m"

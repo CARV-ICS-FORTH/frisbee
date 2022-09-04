@@ -57,38 +57,38 @@ spec:
       name: killer1
       depends: { running: [ workers, moreWorkers ] }
       chaos:
-        type: kill
-        kill:
-          selector: { macro: .cluster.moreWorkers.one }
+        templateRef: system.chaos.pod.kill
+        inputs:
+          - { target: .cluster.moreWorkers.one }
 
     - action: Chaos
       name: killer2
       depends: { running: [ workers, moreWorkers, killer1 ] }
       chaos:
-        type: kill
-        kill:
-          selector: { macro: .cluster.moreWorkers.one }
+        templateRef: system.chaos.pod.kill
+        inputs:
+          - { target: .cluster.moreWorkers.one }
 
     - action: Chaos
       name: killer3
       depends: { running: [ workers, moreWorkers, killer2 ] }
       chaos:
-        type: kill
-        kill:
-          selector: { macro: .cluster.moreWorkers.one }
+        templateRef: system.chaos.pod.kill
+        inputs:
+          - { target: .cluster.moreWorkers.one }
 
     - action: Chaos
       name: killer4
       depends: { running: [ workers, moreWorkers, killer3 ] }
       chaos:
-        type: kill
-        kill:
-          selector: { macro: .cluster.moreWorkers.one }
+        templateRef: system.chaos.pod.kill
+        inputs:
+          - { target: .cluster.moreWorkers.one }
 
     - action: Chaos
       name: killer5
       depends: { running: [ workers, moreWorkers, killer4 ] }
       chaos:
-        type: kill
-        kill:
-          selector: { macro: .cluster.moreWorkers.one }
+        templateRef: system.chaos.pod.kill
+        inputs:
+          - { target: .cluster.moreWorkers.one }
