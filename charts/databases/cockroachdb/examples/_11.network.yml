@@ -59,3 +59,11 @@ spec:
         templateRef: system.chaos.network.partition.partial
         inputs:
           - { source: masters-0, duration: 10m , direction: "to", dst: "masters-1, masters-2, masters-3" }
+
+
+    # When all actions are done, delete looping servers to gracefully exit the experiment
+    - action: Delete
+      name: teardown
+      depends: { running: [masters]}
+      delete:
+        jobs: [ masters ]

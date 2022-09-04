@@ -56,7 +56,7 @@ spec:
           - -c        # Read from string
           - |         # Multi-line str
             set -eum
-            exec cockroach init --insecure
+            cockroach init --insecure
 
       import-tpcc:
         container: app

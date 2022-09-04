@@ -4,12 +4,6 @@ kind: Scenario
 metadata:
   name: redis-baseline-cluster-deterministic-outoforder
 spec:
-  withTelemetry:
-    importDashboards:
-      - system.telemetry.agent
-      - ycsb.telemetry.client
-      - redis.telemetry.server
-
   actions:
     # Step 0. Create individual Redis servers
     - action: Cluster
