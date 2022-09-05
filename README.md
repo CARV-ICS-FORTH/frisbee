@@ -68,8 +68,8 @@ Before starting, Make sure that [kubectl](https://kubernetes.io/docs/tasks/tools
 If you use `microk8s`, make sure you have created aliases to the commands.
 
 ```shell
-alias kubectl='microk8s kubectl'
-alias helm='microk8s helm3'
+sudo snap alias microk8s.kubectl kubectl
+sudo snap alias microk8s.helm3 helm
 ```
 
 

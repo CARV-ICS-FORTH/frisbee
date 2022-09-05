@@ -17,11 +17,12 @@ limitations under the License.
 package common
 
 import (
+	"os"
+
 	"github.com/carv-ics-forth/frisbee/pkg/ui"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"k8s.io/utils/exec"
-	"os"
 )
 
 var (
@@ -34,15 +35,11 @@ var (
 
 func init() {
 	kubectlPath, err := exec.New().LookPath("kubectl")
-	if err != nil {
-		panic(err)
-	}
+	ui.ExitOnError("Frisbee requires 'kubectl' to be installed in your system.", err)
 	Kubectl = kubectlPath
 
 	helmPath, err := exec.New().LookPath("helm")
-	if err != nil {
-		panic(err)
-	}
+	ui.ExitOnError("Frisbee requires 'helm' to be installed in your system.", err)
 	Helm = helmPath
 
 	nodejsPath, err := exec.New().LookPath("node")

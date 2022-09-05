@@ -1252,14 +1252,12 @@ Jobs may refer to actions of a scenario, services of a cluster, chaos events of 
 <td><p>ConditionCRInitialized indicates whether the workflow has been initialized</p>
 </td>
 </tr><tr><td><p>&#34;InvalidStateTransition&#34;</p></td>
-<td><p>ConditionInvalidStateTransition indicates the transition of a resource into another state.</p>
+<td><p>ConditionInvalidStateTransition indicates the transition of a resource into another state.
+This is used for debugging.</p>
 </td>
 </tr><tr><td><p>&#34;UnexpectedTermination&#34;</p></td>
 <td><p>ConditionJobUnexpectedTermination is used for a job that has been unexpectedly terminated.
 The termination refers to both Success and Fail.</p>
-</td>
-</tr><tr><td><p>&#34;PerformanceAlert&#34;</p></td>
-<td><p>ConditionPerformanceAlert indicates an alert received by Grafana concerning the real-time performance of the system.</p>
 </td>
 </tr></tbody>
 </table>
@@ -3481,5 +3479,5 @@ Kubernetes meta/v1.Duration
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>f273dcd</code>.
+on git commit <code>3e6ca05</code>.
 </em></p>
