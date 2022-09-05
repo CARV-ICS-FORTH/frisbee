@@ -106,7 +106,7 @@ func NewReportTestsCmd() *cobra.Command {
 				Filter time to the beginning/ending of the scenario.
 			*/
 			from, to := scenario.FindTimeline()
-			uri := GenerateQuotedURL(scenario.Status.GrafanaEndpoint, SummaryDashboardUID, from, to)
+			uri := GenerateQuotedURL(scenario.Status.GrafanaEndpoint, options.DashboardUID, from, to)
 
 			/*
 				Generate PDFs for each panel, in parallel.
@@ -115,7 +115,7 @@ func NewReportTestsCmd() *cobra.Command {
 				err = SavePDF(&options, uri, destination)
 				ui.ExitOnError("Saving aggregated report to: "+destination, err)
 			} else {
-				err = SavePDFs(&options, uri, destination, scenario.Status.GrafanaEndpoint, SummaryDashboardUID)
+				err = SavePDFs(&options, uri, destination, scenario.Status.GrafanaEndpoint, options.DashboardUID)
 				ui.ExitOnError("Saving reports to: "+destination, err)
 			}
 		},
