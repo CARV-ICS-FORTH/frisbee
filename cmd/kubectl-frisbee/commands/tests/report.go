@@ -112,10 +112,10 @@ func NewReportTestsCmd() *cobra.Command {
 				Generate PDFs for each panel, in parallel.
 			*/
 			if options.Aggregate {
-				err = SavePDF(uri, destination)
+				err = SavePDF(&options, uri, destination)
 				ui.ExitOnError("Saving aggregated report to: "+destination, err)
 			} else {
-				err = SavePDFs(uri, destination, scenario.Status.GrafanaEndpoint, SummaryDashboardUID)
+				err = SavePDFs(&options, uri, destination, scenario.Status.GrafanaEndpoint, SummaryDashboardUID)
 				ui.ExitOnError("Saving reports to: "+destination, err)
 			}
 		},
@@ -127,7 +127,7 @@ func NewReportTestsCmd() *cobra.Command {
 }
 
 // SavePDF extracts the pdf from Grafana and stores it to the destinatio.
-func SavePDF(dashboardURI string, destination string) error {
+func SavePDF(options *TestReportOptions, dashboardURI string, destination string) error {
 	/*
 		Validate the URI. This is because if the URI is wrong, the
 		nodejs will block forever.
@@ -137,8 +137,13 @@ func SavePDF(dashboardURI string, destination string) error {
 		return err
 	}
 
+	exporter := common.FastPDFExporter
+	if options.Aggregate {
+		exporter = common.LongPDFExporter
+	}
+
 	command := []string{
-		common.PDFExporter,
+		exporter,
 		dashboardURI,
 		User,
 		destination,
@@ -155,7 +160,7 @@ var (
 	removeDuplicatesRegex = regexp.MustCompile(`/_{2,}/g`)
 )
 
-func SavePDFs(dashboardURI, destDir string, grafanaEndpoint string, dashboardUID string) error {
+func SavePDFs(options *TestReportOptions, dashboardURI, destDir string, grafanaEndpoint string, dashboardUID string) error {
 	/*
 		Open Connection to Grafana.
 	*/
@@ -192,7 +197,7 @@ func SavePDFs(dashboardURI, destDir string, grafanaEndpoint string, dashboardUID
 
 		ui.Debug(fmt.Sprintf("Processing %d/%d", i, len(panels)))
 
-		if err := SavePDF(panelURI, filepath.Join(destDir, title)+".pdf"); err != nil {
+		if err := SavePDF(options, panelURI, filepath.Join(destDir, title)+".pdf"); err != nil {
 			return errors.Wrapf(err, "cannot save panel '%d (%s)'", panel.ID, panel.Title)
 		}
 	}

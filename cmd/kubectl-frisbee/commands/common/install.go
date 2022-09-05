@@ -147,11 +147,16 @@ func installCertManager(cmd *cobra.Command) error {
 ******************************************************************
 */
 const (
-	puppeteer   = "puppeteer"
-	pdfExporter = "hack/pdf-exporter/long-dashboards.js"
+	puppeteer = "puppeteer"
 )
 
-var PDFExporter = filepath.Join(InstallationDir, pdfExporter)
+var (
+	// FastPDFExporter is fast on individual panels, but does not render dashboard with many panels.
+	FastPDFExporter = filepath.Join(InstallationDir, "hack/pdf-exporter/fast-generator.js")
+
+	// LongPDFExporter can render dashboards with many panels, but it's a bit slow.
+	LongPDFExporter = filepath.Join(InstallationDir, "hack/pdf-exporter/long-dashboards.js")
+)
 
 func InstallPDFExporter(options *FrisbeeInstallOptions) {
 	if options.NoPDFExporter {
@@ -164,7 +169,7 @@ func InstallPDFExporter(options *FrisbeeInstallOptions) {
 	if err := os.Chdir(InstallationDir); err != nil {
 		ui.Fail(errors.Wrap(err, "Cannot chdir to Frisbee cache"))
 	}
-	ui.Info("Installing PDFExporter at", InstallationDir)
+	ui.Info("Installing PDFExporters at", InstallationDir)
 
 	command := []string{
 		NPM, "list", InstallationDir,
