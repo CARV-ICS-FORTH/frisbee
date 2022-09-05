@@ -18,6 +18,7 @@ package v1alpha1
 
 import (
 	"fmt"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"strings"
 	"time"
 
@@ -64,6 +65,49 @@ func (in *Scenario) Table() (header []string, data [][]string) {
 	})
 
 	return header, data
+}
+
+/*
+FindTimeline parses the scenario to find timeline that make sense (formatted into time.UnixMilli).
+For the starting time we adhere to these rules:
+ 1. If possible, we use the time that the first job was scheduled.
+ 2. Otherwise, we use the Creation time.
+
+For the ending time we adhere to these rules:
+ 1. If the scenario is successful, we return the ConditionAllJobsAreCompleted time.
+ 2. If the scenario has failed, we return the Failure time.
+ 3. Otherwise, we report time.Now().
+*/
+func (in *Scenario) FindTimeline() (from int64, to int64) {
+	initialized := meta.FindStatusCondition(in.Status.Conditions, ConditionCRInitialized.String())
+	if initialized != nil {
+		from = initialized.LastTransitionTime.Time.UnixMilli()
+	} else {
+		from = in.GetCreationTimestamp().Time.UnixMilli()
+	}
+
+	to = time.Now().UnixMilli()
+	switch in.Status.Phase {
+	case PhaseSuccess:
+		success := meta.FindStatusCondition(in.Status.Conditions, ConditionAllJobsAreCompleted.String())
+		to = success.LastTransitionTime.Time.UnixMilli()
+
+	case PhaseFailed:
+		// Failure may come from various reasons. Unfortunately we have to go through all of them.
+		unexpected := meta.FindStatusCondition(in.Status.Conditions, ConditionJobUnexpectedTermination.String())
+		if unexpected != nil {
+			to = unexpected.LastTransitionTime.Time.UnixMilli()
+			break
+		}
+
+		assert := meta.FindStatusCondition(in.Status.Conditions, ConditionAssertionError.String())
+		if assert != nil {
+			to = assert.LastTransitionTime.Time.UnixMilli()
+			break
+		}
+	}
+
+	return from, to
 }
 
 type ActionType string

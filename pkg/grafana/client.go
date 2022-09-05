@@ -85,7 +85,7 @@ func WithHTTP(endpoint string) Option {
 	}
 }
 
-func New(ctx context.Context, setters ...Option) error {
+func New(ctx context.Context, setters ...Option) (*Client, error) {
 	var args Options
 
 	for _, setter := range setters {
@@ -102,11 +102,11 @@ func New(ctx context.Context, setters ...Option) error {
 
 	// connect the controller to Grafana for pushing annotations.
 	if args.HTTPEndpoint != nil {
-		args.Logger.Info("Connecting to Grafana ...", "endpoint", *args.HTTPEndpoint)
+		client.logger.Info("Connecting to Grafana ...", "endpoint", *args.HTTPEndpoint)
 
 		conn, err := sdk.NewClient(*args.HTTPEndpoint, "", sdk.DefaultHTTPClient)
 		if err != nil {
-			return errors.Wrapf(err, "conn error")
+			return nil, errors.Wrapf(err, "client error")
 		}
 
 		if err := wait.ExponentialBackoffWithContext(ctx, common.BackoffForServiceEndpoint, func() (done bool, err error) {
@@ -115,11 +115,11 @@ func New(ctx context.Context, setters ...Option) error {
 			case errHealth != nil: // API connection error. Just retry
 				return false, nil
 			default:
-				args.Logger.Info("Connected to Grafana", "healthStatus", resp)
+				client.logger.Info("Connected to Grafana", "healthStatus", resp)
 				return true, nil
 			}
 		}); err != nil {
-			return errors.Errorf("endpoint '%s' is unreachable", *args.HTTPEndpoint)
+			return nil, errors.Errorf("endpoint '%s' is unreachable", *args.HTTPEndpoint)
 		}
 
 		client.Conn = conn
@@ -127,12 +127,12 @@ func New(ctx context.Context, setters ...Option) error {
 
 	// connect Grafana to controller for receiving alerts.
 	if args.WebhookURL != nil {
-		args.Logger.Info("Setting Notification Channel ...", "endpoint", args.WebhookURL)
+		client.logger.Info("Setting Notification Channel ...", "endpoint", args.WebhookURL)
 
 		// Although the notification channel is backed by the Grafana Pod, the Grafana Service is different
 		// from the Alerting Service. For this reason, we must be sure that both Services are linked to the Grafana Pod.
 		if err := client.SetNotificationChannel(ctx, *args.WebhookURL); err != nil {
-			return errors.Wrapf(err, "notification channel error")
+			return nil, errors.Wrapf(err, "notification channel error")
 		}
 	}
 
@@ -141,7 +141,7 @@ func New(ctx context.Context, setters ...Option) error {
 		SetClientFor(args.RegisterFor, client)
 	}
 
-	return nil
+	return client, nil
 }
 
 var clientsLocker sync.RWMutex

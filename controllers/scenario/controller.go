@@ -19,6 +19,8 @@ package scenario
 import (
 	"context"
 	"fmt"
+	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"reflect"
 	"time"
 
@@ -234,6 +236,13 @@ func (r *Controller) Initialize(ctx context.Context, cr *v1alpha1.Scenario) erro
 	}
 
 	r.GetEventRecorderFor(cr.GetName()).Event(cr, corev1.EventTypeNormal, "Initialized", "Start scheduling jobs")
+
+	meta.SetStatusCondition(&cr.Status.Conditions, metav1.Condition{
+		Type:    v1alpha1.ConditionCRInitialized.String(),
+		Status:  metav1.ConditionTrue,
+		Reason:  "Initialized2",
+		Message: "Start Scheduling Jobs",
+	})
 
 	return nil
 }

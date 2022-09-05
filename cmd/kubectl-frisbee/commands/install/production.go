@@ -23,7 +23,7 @@ import (
 )
 
 func NewInstallProductionCmd() *cobra.Command {
-	var options common.HelmInstallFrisbeeOptions
+	var options common.FrisbeeInstallOptions
 
 	cmd := &cobra.Command{
 		Use:   "production",
@@ -38,7 +38,9 @@ func NewInstallProductionCmd() *cobra.Command {
 				options.Name, options.Chart,
 			}
 
-			common.HelmInstallFrisbee(cmd, command, &options)
+			common.InstallFrisbeeOnK8s(cmd, command, &options)
+
+			common.InstallPDFExporter(&options)
 		},
 		PersistentPostRun: func(cmd *cobra.Command, args []string) {
 			ui.NL()
@@ -47,7 +49,7 @@ func NewInstallProductionCmd() *cobra.Command {
 		},
 	}
 
-	common.PopulateUpgradeInstallFlags(cmd, &options)
+	common.PopulateInstallFlags(cmd, &options)
 
 	return cmd
 }

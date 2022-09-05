@@ -23,3 +23,9 @@ testbin/*
 *.swp
 *.swo
 *~
+
+
+# Ignore NPM stuff required for the reported
+./package.json
+./package-lock.json
+./node_modules

@@ -24,7 +24,7 @@ import (
 	"sync"
 	"time"
 
-	configuration2 "github.com/carv-ics-forth/frisbee/pkg/configuration"
+	"github.com/carv-ics-forth/frisbee/pkg/configuration"
 	"github.com/carv-ics-forth/frisbee/pkg/expressions"
 	"github.com/carv-ics-forth/frisbee/pkg/grafana"
 	"github.com/carv-ics-forth/frisbee/pkg/structure"
@@ -97,7 +97,7 @@ func (r *Controller) StopTelemetry(t *v1alpha1.Scenario) {
 }
 
 func (r *Controller) installDataviewer(ctx context.Context, t *v1alpha1.Scenario) error {
-	// Ensure the the claim exists and we do not wait indefinitely.
+	// Ensure the claim exists, and we do not wait indefinitely.
 	if t.Spec.TestData != nil {
 		claimName := t.Spec.TestData.Claim.ClaimName
 		var claim corev1.PersistentVolumeClaim
@@ -120,7 +120,7 @@ func (r *Controller) installDataviewer(ctx context.Context, t *v1alpha1.Scenario
 
 	{ // spec
 		fromtemplate := &v1alpha1.GenerateFromTemplate{
-			TemplateRef:  configuration2.DataviewerTemplate,
+			TemplateRef:  configuration.DataviewerTemplate,
 			MaxInstances: 1,
 			Inputs:       nil,
 		}
@@ -160,7 +160,7 @@ func (r *Controller) installPrometheus(ctx context.Context, t *v1alpha1.Scenario
 
 	{ // spec
 		fromtemplate := &v1alpha1.GenerateFromTemplate{
-			TemplateRef:  configuration2.PrometheusTemplate,
+			TemplateRef:  configuration.PrometheusTemplate,
 			MaxInstances: 1,
 			Inputs:       nil,
 		}
@@ -201,7 +201,7 @@ func (r *Controller) installGrafana(ctx context.Context, t *v1alpha1.Scenario, a
 
 	{ // spec
 		fromtemplate := &v1alpha1.GenerateFromTemplate{
-			TemplateRef:  configuration2.GrafanaTemplate,
+			TemplateRef:  configuration.GrafanaTemplate,
 			MaxInstances: 1,
 			Inputs:       nil,
 		}
@@ -346,7 +346,7 @@ func (r *Controller) connectToGrafana(ctx context.Context, t *v1alpha1.Scenario)
 
 	var endpoint string
 
-	if configuration2.Global.DeveloperMode {
+	if configuration.Global.DeveloperMode {
 		/* If in developer mode, the operator runs outside the cluster, and will reach Grafana via the ingress */
 		endpoint = common.ExternalEndpoint(defaultGrafanaName, t.GetNamespace())
 	} else {
@@ -354,12 +354,14 @@ func (r *Controller) connectToGrafana(ctx context.Context, t *v1alpha1.Scenario)
 		endpoint = common.InternalEndpoint(defaultGrafanaName, t.GetNamespace(), GrafanaPort)
 	}
 
-	return grafana.New(ctx,
+	_, err := grafana.New(ctx,
 		grafana.WithHTTP(endpoint),   // Connect to ...
 		grafana.WithRegisterFor(t),   // Used by grafana.GetClient(), grafana.ClientExistsFor(), ...
 		grafana.WithLogger(r.Logger), // Log info
 		grafana.WithNotifications(WebhookURL),
 	)
+
+	return err
 }
 
 var gracefulShutDown = 30 * time.Second

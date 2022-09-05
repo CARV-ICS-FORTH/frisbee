@@ -23,7 +23,7 @@ import (
 )
 
 // GetClient returns api client
-func GetClient(cmd *cobra.Command) client.Client {
+func GetClient(_ *cobra.Command) client.Client {
 	options := client.Options{
 		// Namespace: namespace,
 	}

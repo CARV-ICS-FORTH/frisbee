@@ -44,17 +44,12 @@ const (
 	// The termination refers to both Success and Fail.
 	ConditionJobUnexpectedTermination = ConditionType("UnexpectedTermination")
 
-	// ConditionTerminated indicates the user-defined conditions are met.
-	// ConditionTerminated = ConditionType("Terminated")
-
-	// ConditionInvalidStateTransition indicates the transition of a resource into another state.
-	ConditionInvalidStateTransition = ConditionType("InvalidStateTransition")
-
-	// ConditionPerformanceAlert indicates an alert received by Grafana concerning the real-time performance of the system.
-	ConditionPerformanceAlert = ConditionType("PerformanceAlert")
-
 	// ConditionAssertionError indicate that an assertion condition is false.
 	ConditionAssertionError = ConditionType("AssertError")
+
+	// ConditionInvalidStateTransition indicates the transition of a resource into another state.
+	// This is used for debugging.
+	ConditionInvalidStateTransition = ConditionType("InvalidStateTransition")
 )
 
 // Phase is a simple, high-level summary of where the Object is in its lifecycle.
@@ -125,21 +120,6 @@ type Lifecycle struct {
 	// +optional
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
-
-/*
-func (in Lifecycle) String() string {
-	if in.Phase == PhaseFailed {
-		if in.Reason == "" {
-			in.Reason = "check the logs"
-		}
-
-		return fmt.Sprintf("phase:%s reason:%s", in.Phase, in.Reason)
-	}
-
-	return fmt.Sprintf("phase:%s ", in.Phase)
-}
-
-*/
 
 // +kubebuilder:object:generate=false
 
