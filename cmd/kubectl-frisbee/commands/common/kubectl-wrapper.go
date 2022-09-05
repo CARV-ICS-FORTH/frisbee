@@ -103,9 +103,13 @@ func KubectlPrint(testName string, wantOutput bool, arguments ...string) error {
 	}
 }
 
-// ////////////////////////////////////
-// 			Frisbee Resources
-// ////////////////////////////////////
+/*
+******************************************************************
+
+					Frisbee Resources
+
+******************************************************************
+*/
 
 const (
 	Scenarios      = "scenarios.frisbee.dev"
@@ -194,9 +198,13 @@ func WaitForCondition(testName string, condition v1alpha1.ConditionType, timeout
 	return KubectlPrint(testName, true, command...)
 }
 
-// ////////////////////////////////////
-// 			CHAOS Resources
-// ////////////////////////////////////
+/*
+******************************************************************
+
+					CHAOS Resources
+
+******************************************************************
+*/
 
 const (
 	NetworkChaos = "networkchaos.chaos-mesh.org"
@@ -235,9 +243,13 @@ func GetChaosResources(cmd *cobra.Command, testName string) error {
 	return KubectlPrint(testName, true, command...)
 }
 
-// ////////////////////////////////////
-// 			K8s Resources
-// ////////////////////////////////////
+/*
+******************************************************************
+
+					K8s Resources
+
+******************************************************************
+*/
 
 const (
 	K8PODs            = "pods"
@@ -545,9 +557,13 @@ spec:
 	return KubectlPrint(testName, false, command...)
 }
 
-// ////////////////////////////////////
-// 			Helm Resources
-// ////////////////////////////////////
+/*
+******************************************************************
+
+					Helm Resources
+
+******************************************************************
+*/
 
 func ListHelm(cmd *cobra.Command, testName string) error {
 	command := []string{"list", "-n", testName}

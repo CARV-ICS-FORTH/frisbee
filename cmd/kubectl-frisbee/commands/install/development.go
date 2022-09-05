@@ -27,12 +27,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const (
-	PathToLocalFrisbeeChart = "charts/platform"
-)
-
 func NewInstallDevelopmentCmd() *cobra.Command {
-	var options common.HelmInstallFrisbeeOptions
+	var options common.FrisbeeInstallOptions
 	var chartPath string
 	var publicIP net.IP
 
@@ -48,7 +44,7 @@ func NewInstallDevelopmentCmd() *cobra.Command {
 			}
 
 			// Check Project Path
-			chartPath = fmt.Sprintf("%s/%s", args[0], PathToLocalFrisbeeChart)
+			chartPath = fmt.Sprintf("%s/%s", args[0], common.FrisbeeChartLocalPath)
 			_, err := os.Stat(chartPath + "/Chart.yaml")
 			ui.ExitOnError("Check Helm Chart", err)
 
@@ -66,7 +62,9 @@ func NewInstallDevelopmentCmd() *cobra.Command {
 				options.Name, chartPath,
 			}
 
-			common.HelmInstallFrisbee(cmd, command, &options)
+			common.InstallFrisbeeOnK8s(cmd, command, &options)
+
+			common.InstallPDFExporter(&options)
 		},
 		PersistentPostRun: func(cmd *cobra.Command, args []string) {
 			ui.NL()
@@ -78,7 +76,7 @@ func NewInstallDevelopmentCmd() *cobra.Command {
 		},
 	}
 
-	common.PopulateUpgradeInstallFlags(cmd, &options)
+	common.PopulateInstallFlags(cmd, &options)
 
 	return cmd
 }

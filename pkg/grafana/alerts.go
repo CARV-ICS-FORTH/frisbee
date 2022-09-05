@@ -190,9 +190,13 @@ func ParseAlertExpr(query v1alpha1.ExprMetrics) (*Alert, error) {
 	return &alert, nil
 }
 
-// ///////////////////////////////////////////
-//		Grafana Alerting Client
-// ///////////////////////////////////////////
+/*
+******************************************************************
+
+					Grafana Alerting Client
+
+******************************************************************
+*/
 
 const (
 	DefaultEvaluationFrequency = "1m"

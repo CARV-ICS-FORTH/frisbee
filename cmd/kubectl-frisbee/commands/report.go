@@ -22,11 +22,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewSubmitCmd() *cobra.Command {
+func NewReportCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "submit <resourceName>",
-		Aliases: []string{"start"},
-		Short:   "Submit tests or test suites for execution",
+		Use:     "report <resourceName>",
+		Aliases: []string{"r"},
+		Short:   "Generate PDFs for every dashboard in Grafana.",
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			ui.SetVerbose(verbose)
 		},
@@ -35,9 +35,10 @@ func NewSubmitCmd() *cobra.Command {
 
 			err := cmd.Help()
 			ui.PrintOnError("Displaying help", err)
-		}}
+		},
+	}
 
-	cmd.AddCommand(tests.NewSubmitTestCmd())
+	cmd.AddCommand(tests.NewReportTestsCmd())
 	// cmd.AddCommand(testsuites.NewRunTestSuiteCmd())
 
 	return cmd

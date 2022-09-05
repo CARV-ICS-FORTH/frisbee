@@ -17,7 +17,10 @@ limitations under the License.
 package common
 
 import (
+	embed "github.com/carv-ics-forth/frisbee"
+	"github.com/pkg/errors"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/carv-ics-forth/frisbee/pkg/ui"
@@ -26,28 +29,38 @@ import (
 )
 
 const (
-	FrisbeeRepo  = "https://carv-ics-forth.github.io/frisbee/charts"
-	JetstackRepo = "https://charts.jetstack.io"
+	FrisbeeRepo           = "https://carv-ics-forth.github.io/frisbee/charts"
+	FrisbeeChartInRepo    = "frisbee/platform"
+	FrisbeeChartLocalPath = "charts/platform" // relative to Frisbee root.
+
+	InstallationDir = "/home/fnikol/.frisbee"
 )
 
 const (
-	LocalInstallation = "./charts/platform/values.yaml"
+	JetstackRepo = "https://charts.jetstack.io"
 )
 
-type HelmInstallFrisbeeOptions struct {
+/*******************************************************************
+
+			Install The Frisbee Platform
+
+*******************************************************************/
+
+type FrisbeeInstallOptions struct {
 	Name, Namespace, Chart, Values string
-	NoCertManager                  bool
+	NoCertManager, NoPDFExporter   bool
 }
 
-func PopulateUpgradeInstallFlags(cmd *cobra.Command, options *HelmInstallFrisbeeOptions) {
-	cmd.Flags().StringVar(&options.Chart, "chart", "frisbee/platform", "chart name")
+func PopulateInstallFlags(cmd *cobra.Command, options *FrisbeeInstallOptions) {
+	cmd.Flags().StringVar(&options.Chart, "chart", FrisbeeChartInRepo, "chart name")
 	cmd.Flags().StringVar(&options.Name, "name", "frisbee", "installation name")
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "frisbee", "installation namespace")
 	cmd.Flags().StringVarP(&options.Values, "values", "f", "", "path to Helm values file")
 	cmd.Flags().BoolVar(&options.NoCertManager, "no-cert-manager", false, "don't install cert-manager")
+	cmd.Flags().BoolVar(&options.NoPDFExporter, "no-pdf-exporter", false, "don't install pdf exporter")
 }
 
-func HelmInstallFrisbee(cmd *cobra.Command, command []string, options *HelmInstallFrisbeeOptions) {
+func InstallFrisbeeOnK8s(cmd *cobra.Command, command []string, options *FrisbeeInstallOptions) {
 	ui.Info("Helm installing frisbee framework...")
 
 	// Install dependencies
@@ -123,4 +136,48 @@ func installCertManager(cmd *cobra.Command) error {
 	ui.Info("Helm install jetstack output", string(out))
 
 	return nil
+}
+
+/*
+******************************************************************
+
+	Install PDF-Exporter
+	This is required for generating pdfs from Grafana.
+
+******************************************************************
+*/
+const (
+	puppeteer   = "puppeteer"
+	pdfExporter = "hack/pdf-exporter/long-dashboards.js"
+)
+
+var PDFExporter = filepath.Join(InstallationDir, pdfExporter)
+
+func InstallPDFExporter(options *FrisbeeInstallOptions) {
+	if options.NoPDFExporter {
+		return
+	}
+
+	/*
+		Install NodeJS dependencies
+	*/
+	if err := os.Chdir(InstallationDir); err != nil {
+		ui.Fail(errors.Wrap(err, "Cannot chdir to Frisbee cache"))
+	}
+	ui.Info("Installing PDFExporter at", InstallationDir)
+
+	command := []string{
+		NPM, "list", InstallationDir,
+		"|", "grep", puppeteer, "||",
+		NPM, "install", puppeteer, "--package-lock", "--prefix", InstallationDir,
+	}
+
+	_, err := process.Execute("sh", "-c", strings.Join(command, " "))
+	ui.ExitOnError("Install Puppeteer", err)
+
+	/*
+		Copy the embedded pdf exporter in the underlying filesystem.
+	*/
+	err = embed.CopyLocallyIfNotExists(embed.Hack, InstallationDir)
+	ui.ExitOnError("Install PDF Renderer", err)
 }

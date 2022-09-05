@@ -37,10 +37,11 @@ func init() {
 	RootCmd.AddCommand(NewSubmitCmd())
 	RootCmd.AddCommand(NewGetCmd())
 	RootCmd.AddCommand(NewDeleteCmd())
-
-	// Test Runtime
 	RootCmd.AddCommand(NewInspectCmd())
+
+	// Analysis Tools
 	RootCmd.AddCommand(NewSaveCmd())
+	RootCmd.AddCommand(NewReportCmd())
 }
 
 var RootCmd = &cobra.Command{
