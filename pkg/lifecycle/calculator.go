@@ -47,7 +47,7 @@ const (
 	ExactlyOneJobIsSuccessful = "ExactlyOneJobIsSuccessful"
 
 	// ToleratedJobsAreSuccessful indicate that despite (tolerated) failures, a required number of jobs are successful.
-	ToleratedJobsAreSuccessful = "ToleratedJobsAreSuccessful"
+	ToleratedJobsAreSuccessful = "JobSuccessfulDespiteErrors"
 )
 
 // Reasons for Running

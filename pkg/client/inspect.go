@@ -17,9 +17,10 @@ limitations under the License.
 package client
 
 import (
+	"time"
+
 	"github.com/carv-ics-forth/frisbee/pkg/executor"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"time"
 )
 
 var (
@@ -28,18 +29,16 @@ var (
 )
 
 // NewTestInspectionClient creates new Test client
-func NewTestInspectionClient(client client.Client, exec executor.Executor, options Options) TestInspectionClient {
+func NewTestInspectionClient(client client.Client, exec executor.Executor) TestInspectionClient {
 	return TestInspectionClient{
 		client:   client,
 		executor: exec,
-		options:  options,
 	}
 }
 
 type TestInspectionClient struct {
 	client   client.Client
 	executor executor.Executor
-	options  Options
 }
 
 /*

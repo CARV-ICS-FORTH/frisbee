@@ -19,6 +19,7 @@ package tests
 import (
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/common"
+	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/env"
 	"github.com/carv-ics-forth/frisbee/pkg/ui"
 	"github.com/spf13/cobra"
 )
@@ -59,7 +60,7 @@ func NewSaveTestsCmd() *cobra.Command {
 			testName := args[0]
 			destination := args[1]
 
-			scenario, err := common.GetClient(cmd).GetScenario(testName)
+			scenario, err := env.Settings.GetFrisbeeClient().GetScenario(cmd.Context(), testName)
 			ui.ExitOnError("Getting test information", err)
 
 			switch {
@@ -74,13 +75,13 @@ func NewSaveTestsCmd() *cobra.Command {
 				}
 			}
 
-			err = common.KubectlPrint(testName, false, "cp", options.Datasource, destination)
+			_, err = common.Kubectl(testName, "cp", options.Datasource, destination)
 			ui.ExitOnError("Saving test data to: "+destination, err)
 
 			promDestination := destination + "/" + "prometheus"
-			err = common.KubectlPrint(testName, ui.Verbose, "cp", PrometheusSource, promDestination)
+			_, err = common.Kubectl(testName, "cp", PrometheusSource, promDestination)
 
-			common.Hint(cmd, "To store data from a specific location use", "kubectl cp pod:path destination -n", testName)
+			env.Settings.Hint("To store data from a specific location use", "kubectl cp pod:path destination -n", testName)
 			ui.ExitOnError("Saving Prometheus data to: "+promDestination, err)
 		},
 	}

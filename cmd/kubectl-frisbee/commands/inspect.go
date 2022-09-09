@@ -17,6 +17,7 @@ limitations under the License.
 package commands
 
 import (
+	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/common"
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/tests"
 	"github.com/carv-ics-forth/frisbee/pkg/ui"
 	"github.com/spf13/cobra"
@@ -28,23 +29,18 @@ func NewInspectCmd() *cobra.Command {
 		Aliases: []string{"show"},
 		Short:   "Inspect tests or test suites",
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			ui.SetVerbose(verbose)
-		},
-		Run: func(cmd *cobra.Command, args []string) {
 			ui.Logo()
 
-			err := cmd.Help()
-			ui.PrintOnError("Displaying help", err)
+			if !common.CRDsExist(common.Scenarios) {
+				ui.Failf("Frisbee is not installed on the kubernetes cluster.")
+			}
+		},
+		Run: func(cmd *cobra.Command, args []string) {
+			ui.PrintOnError("Displaying help", cmd.Help())
 		},
 	}
 
 	cmd.AddCommand(tests.NewInspectTestCmd())
-	// cmd.AddCommand(testsuites.NewWatchTestSuiteExecutionCmd())
-
-	cmd.PersistentFlags().StringP("output", "o", "pretty", "output type can be one of json|yaml|pretty|go-template")
 
 	return cmd
 }
-
-// kubectl frisbee inspect test skata --events
-// kubectl frisbee inspect test skata --logs

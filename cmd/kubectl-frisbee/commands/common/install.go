@@ -17,14 +17,10 @@ limitations under the License.
 package common
 
 import (
-	embed "github.com/carv-ics-forth/frisbee"
-	"github.com/pkg/errors"
-	"os"
-	"path/filepath"
 	"strings"
 
+	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/env"
 	"github.com/carv-ics-forth/frisbee/pkg/ui"
-	"github.com/kubeshop/testkube/pkg/process"
 	"github.com/spf13/cobra"
 )
 
@@ -32,8 +28,6 @@ const (
 	FrisbeeRepo           = "https://carv-ics-forth.github.io/frisbee/charts"
 	FrisbeeChartInRepo    = "frisbee/platform"
 	FrisbeeChartLocalPath = "charts/platform" // relative to Frisbee root.
-
-	InstallationDir = "/home/fnikol/.frisbee"
 )
 
 const (
@@ -48,7 +42,7 @@ const (
 
 type FrisbeeInstallOptions struct {
 	Name, Namespace, Chart, Values string
-	NoCertManager, NoPDFExporter   bool
+	NoCertManager                  bool
 }
 
 func PopulateInstallFlags(cmd *cobra.Command, options *FrisbeeInstallOptions) {
@@ -57,51 +51,58 @@ func PopulateInstallFlags(cmd *cobra.Command, options *FrisbeeInstallOptions) {
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "frisbee", "installation namespace")
 	cmd.Flags().StringVarP(&options.Values, "values", "f", "", "path to Helm values file")
 	cmd.Flags().BoolVar(&options.NoCertManager, "no-cert-manager", false, "don't install cert-manager")
-	cmd.Flags().BoolVar(&options.NoPDFExporter, "no-pdf-exporter", false, "don't install pdf exporter")
 }
 
-func InstallFrisbeeOnK8s(cmd *cobra.Command, command []string, options *FrisbeeInstallOptions) {
-	ui.Info("Helm installing frisbee framework...")
-
+func InstallFrisbeeOnK8s(command []string, options *FrisbeeInstallOptions) {
 	// Install dependencies
 	if !options.NoCertManager {
-		err := installCertManager(cmd)
+		err := installCertManager()
 		ui.ExitOnError("Helm install cert-manager", err)
 	}
 
 	// Update Frisbee repo
 	updateHelmFrisbeeRepo()
 
-	if Verbose(cmd) {
+	ui.Info("Installing Frisbee platform...")
+
+	if env.Settings.Debug {
 		command = append(command, "--debug")
 
-		_, err := process.LoggedExecuteInDir("", os.Stdout, Helm, command...)
+		_, err := LoggedKubectl("", command...)
 		ui.ExitOnError("Helm install frisbee", err)
 	} else {
-		_, err := process.Execute(Helm, command...)
+		_, err := Helm("", command...)
 		ui.ExitOnError("Helm install frisbee", err)
 	}
 }
 
 func updateHelmFrisbeeRepo() {
-	_, err := process.Execute(Helm, "repo", "add", "frisbee", FrisbeeRepo)
+	_, err := Helm("", "repo", "add", "frisbee", FrisbeeRepo)
 	if err != nil && !strings.Contains(err.Error(), "Error: repository name (frisbee) already exists, please specify a different name") {
 		ui.WarnOnError("adding frisbee repo", err)
 	}
 
-	_, err = process.Execute(Helm, "repo", "update")
+	_, err = Helm("", "repo", "update")
 	ui.ExitOnError("Updating helm repositories", err)
 }
 
-func installCertManager(cmd *cobra.Command) error {
-	_, err := process.Execute(Kubectl, "get", "crds", "certificates.cert-manager.io")
-	if err != nil && !strings.Contains(err.Error(), "Error from server (NotFound)") {
-		return err
+func CRDsExist(apiresource string) bool {
+	out, err := Kubectl("", "get", "crds", apiresource)
+	if ErrNotFound(out) {
+		return false
 	}
 
-	if err == nil {
-		ui.Info("Found existing crd certificates.cert-manager.io. " +
-			"Assume that jetstack cert manager is already installed. Skip its installation.")
+	ui.ExitOnError("cannot query kubernetes api for crds", err)
+
+	return true
+}
+
+func installCertManager() error {
+	ui.Info("Installing cert manager...")
+
+	if CRDsExist("certificates.cert-manager.io") {
+		ui.Success("Found existing crds for jetstack cert-manager. Skip installation",
+			"certificates.cert-manager.io")
 
 		return nil
 	}
@@ -109,26 +110,25 @@ func installCertManager(cmd *cobra.Command) error {
 	ui.Info("Helm installing jetstack cert manager.")
 
 	// Update Helm Repo
-	_, err = process.Execute(Helm, "repo", "add", "jetstack", JetstackRepo)
+	_, err := Helm("", "repo", "add", "jetstack", JetstackRepo)
 	if err != nil && !strings.Contains(err.Error(), "Error: repository name (jetstack) already exists") {
 		return err
 	}
 
-	_, err = process.Execute(Helm, "repo", "update")
+	_, err = Helm("", "repo", "update")
 	ui.ExitOnError("Update repo", err)
 
 	// Prepare installation command app
 	command := []string{"upgrade", "--install", "--create-namespace",
 		"cert-manager", "jetstack/cert-manager",
-		"--namespace", "cert-manager",
 		"--set", "installCRDs=true",
 	}
 
-	if Verbose(cmd) {
+	if env.Settings.Debug {
 		command = append(command, "--debug")
 	}
 
-	out, err := process.Execute(Helm, command...)
+	out, err := Helm("cert-manager", command...)
 	if err != nil {
 		return err
 	}
@@ -136,53 +136,4 @@ func installCertManager(cmd *cobra.Command) error {
 	ui.Info("Helm install jetstack output", string(out))
 
 	return nil
-}
-
-/*
-******************************************************************
-
-	Install PDF-Exporter
-	This is required for generating pdfs from Grafana.
-
-******************************************************************
-*/
-const (
-	puppeteer = "puppeteer"
-)
-
-var (
-	// FastPDFExporter is fast on individual panels, but does not render dashboard with many panels.
-	FastPDFExporter = filepath.Join(InstallationDir, "hack/pdf-exporter/fast-generator.js")
-
-	// LongPDFExporter can render dashboards with many panels, but it's a bit slow.
-	LongPDFExporter = filepath.Join(InstallationDir, "hack/pdf-exporter/long-dashboards.js")
-)
-
-func InstallPDFExporter(options *FrisbeeInstallOptions) {
-	if options.NoPDFExporter {
-		return
-	}
-
-	/*
-		Install NodeJS dependencies
-	*/
-	if err := os.Chdir(InstallationDir); err != nil {
-		ui.Fail(errors.Wrap(err, "Cannot chdir to Frisbee cache"))
-	}
-	ui.Info("Installing PDFExporters at", InstallationDir)
-
-	command := []string{
-		NPM, "list", InstallationDir,
-		"|", "grep", puppeteer, "||",
-		NPM, "install", puppeteer, "--package-lock", "--prefix", InstallationDir,
-	}
-
-	_, err := process.Execute("sh", "-c", strings.Join(command, " "))
-	ui.ExitOnError("Install Puppeteer", err)
-
-	/*
-		Copy the embedded pdf exporter in the underlying filesystem.
-	*/
-	err = embed.CopyLocallyIfNotExists(embed.Hack, InstallationDir)
-	ui.ExitOnError("Install PDF Renderer", err)
 }

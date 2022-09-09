@@ -58,7 +58,7 @@ func WithNotifications(webhookURL string) Option {
 	}
 }
 
-// WithRegisterFor will register the client with the given name. Registered clients are retrievable by GetClient().
+// WithRegisterFor will register the client with the given name. Registered clients are retrievable by GetFrisbeeClient().
 func WithRegisterFor(obj metav1.Object) Option {
 	return func(args *Options) {
 		args.RegisterFor = obj
@@ -136,7 +136,7 @@ func New(ctx context.Context, setters ...Option) (*Client, error) {
 		}
 	}
 
-	// Register the client. It will be used by GetClient(), ClientExistsFor()...
+	// Register the client. It will be used by GetFrisbeeClient(), ClientExistsFor()...
 	if args.RegisterFor != nil {
 		SetClientFor(args.RegisterFor, client)
 	}

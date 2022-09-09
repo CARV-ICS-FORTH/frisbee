@@ -65,9 +65,10 @@ To learn more about Frisbee, check the **[QuickStart](https://frisbee.dev/docs/q
 
 Before starting, Make sure that [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/) and  [Helm](https://helm.sh/docs/intro/install/) are installed on your system.
 
-If you use `microk8s`, make sure you have created aliases to the commands.
+For quick testing, you can use [microk8s](https://microk8s.io/docs/getting-started). In that case, make sure you have added the addons and created aliases to the commands.
 
 ```shell
+sudo microk8s enable dns ingress helm3
 sudo snap alias microk8s.kubectl kubectl
 sudo snap alias microk8s.helm3 helm
 ```

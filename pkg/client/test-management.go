@@ -18,6 +18,10 @@ package client
 
 import (
 	"context"
+	"regexp"
+	"strings"
+	"time"
+
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/pkg/manifest"
 	"github.com/pkg/errors"
@@ -26,11 +30,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/yaml"
-	"regexp"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sort"
-	"strings"
-	"time"
 )
 
 var (
@@ -38,23 +38,18 @@ var (
 )
 
 // NewTestManagementClient creates new Test client
-func NewTestManagementClient(client client.Client, options Options) TestManagementClient {
+func NewTestManagementClient(client client.Client) TestManagementClient {
 	return TestManagementClient{
-		client:  client,
-		options: options,
+		client: client,
 	}
 }
 
 type TestManagementClient struct {
-	client  client.Client
-	options Options
+	client client.Client
 }
 
 // GetScenario returns single scenario by id
-func (c TestManagementClient) GetScenario(id string) (scenario *v1alpha1.Scenario, err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
+func (c TestManagementClient) GetScenario(ctx context.Context, id string) (scenario *v1alpha1.Scenario, err error) {
 	filters := &client.ListOptions{Namespace: id}
 
 	var scenarios v1alpha1.ScenarioList
@@ -74,9 +69,7 @@ func (c TestManagementClient) GetScenario(id string) (scenario *v1alpha1.Scenari
 }
 
 // ListScenarios list all scenarios
-func (c TestManagementClient) ListScenarios(selector string) (scenarios v1alpha1.ScenarioList, err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+func (c TestManagementClient) ListScenarios(ctx context.Context, selector string) (scenarios v1alpha1.ScenarioList, err error) {
 
 	set, err := labels.ConvertSelectorToLabelsMap(selector)
 	if err != nil {
@@ -138,21 +131,11 @@ func (c TestManagementClient) ListScenarios(selector string) (scenarios v1alpha1
 		}
 	}
 
-	// arrange in descending order (latest created goes first)
-	sort.SliceStable(scenarios.Items, func(i, j int) bool {
-		tsI := scenarios.Items[i].GetCreationTimestamp()
-		tsJ := scenarios.Items[j].GetCreationTimestamp()
-
-		return tsI.After(tsJ.Time)
-	})
-
 	return scenarios, nil
 }
 
 // ListVirtualObjects list all virtual objects
-func (c TestManagementClient) ListVirtualObjects(namespace string, selectors ...string) (list v1alpha1.VirtualObjectList, err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+func (c TestManagementClient) ListVirtualObjects(ctx context.Context, namespace string, selectors ...string) (list v1alpha1.VirtualObjectList, err error) {
 
 	var filter client.ListOptions
 	filter.Namespace = namespace

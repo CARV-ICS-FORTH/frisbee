@@ -16,10 +16,7 @@ limitations under the License.
 
 package client
 
-import (
-	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-)
-
+/*
 // Client is the Frisbee API client abstraction
 type Client interface {
 	TestManagementAPI
@@ -48,3 +45,6 @@ type TestInspectionAPI interface {
 	// Logs returns logs stream from job pods, based on job pods logs
 	// Logs(testName string) (logs chan output.Output, err error)
 }
+
+
+*/

@@ -17,15 +17,18 @@ limitations under the License.
 package commands
 
 import (
+	"os"
+
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/common"
+	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/env"
+	"github.com/carv-ics-forth/frisbee/pkg/home"
 	"github.com/carv-ics-forth/frisbee/pkg/ui"
-	"github.com/kubeshop/testkube/pkg/process"
 	"github.com/spf13/cobra"
 )
 
 type PlatformUninstallOptions struct {
-	Namespace, Name string
-	CRDS            bool
+	Namespace, Name, RepositoryCache string
+	CRDS, Cache                      bool
 }
 
 func PopulatePlatformUninstallFlags(cmd *cobra.Command, options *PlatformUninstallOptions) {
@@ -33,7 +36,10 @@ func PopulatePlatformUninstallFlags(cmd *cobra.Command, options *PlatformUninsta
 
 	cmd.Flags().StringVar(&options.Name, "name", "frisbee", "installation name")
 
+	cmd.Flags().BoolVar(&options.Cache, "cache", false, "delete frisbee cache")
 	cmd.Flags().BoolVar(&options.CRDS, "crds", false, "delete frisbee crds")
+
+	cmd.Flags().StringVar(&options.RepositoryCache, "repository-cache", home.CachePath("repository"), "path to the file containing cached repository indexes")
 }
 
 func NewUninstallCmd() *cobra.Command {
@@ -44,48 +50,58 @@ func NewUninstallCmd() *cobra.Command {
 		Short:   "Uninstall Frisbee from current kubectl context",
 		Aliases: []string{"un", "purge"},
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			ui.SetVerbose(verbose)
-		},
-		Run: func(cmd *cobra.Command, args []string) {
 			ui.Logo()
 
-			// Delete test-cases (aka namespaces managed by  frisbee)
-			{
+		},
+		Run: func(cmd *cobra.Command, args []string) {
+
+			// Delete Tests
+			if common.CRDsExist(common.Scenarios) {
+				ui.Info("Deleting Tests. If it takes long time, make sure that Frisbee controller is still running.")
+
 				err := common.DeleteNamespaces(common.ManagedNamespace)
-				if err != nil {
-					ui.WarnOnError("Deleting test-cases", err)
-				} else {
-					ui.Success("Deleting test-cases")
-				}
+				ui.ExitOnError("Deleting Tests....", err)
+
+				ui.Success("Tests deleted")
 			}
 
-			// Uninstall Helm Release
+			// Delete Helm Charts
 			{
 				command := []string{
 					"uninstall", "--wait",
-					"--namespace", options.Namespace,
 					options.Name,
 				}
 
-				if common.Verbose(cmd) {
+				if env.Settings.Debug {
 					command = append(command, "--debug")
 				}
 
-				_, err := process.Execute(common.Helm, command...)
-				if err != nil {
-					ui.WarnOnError("Uninstalling  platform", err)
-				} else {
-					ui.Success("Uninstalling  platform")
-				}
+				_, err := common.Helm(options.Namespace, command...)
+				ui.ExitOnError("Deleting Helm charts ....", common.HelmIgnoreNotFound(err))
+
+				ui.Success("Helm Charts deleted")
 			}
 
-			// Optionally, remove installed CRDS
+			// Delete crds
 			if options.CRDS {
-				_, err := process.Execute("kubectl", "delete", "crds", "--wait",
+				_, err := common.Kubectl("", "delete", "crds", "--wait",
 					common.Scenarios, common.Clusters, common.Services, common.Cascades, common.Chaos,
 					common.Calls, common.VirtualObjects, common.Templates)
 
-				ui.ExitOnError("Delete crds", err)
+				ui.ExitOnError("Deleting CRDs ....", err)
+
+				ui.Success("CRDS  deleted")
+
+			}
+
+			// Delete cache
+			if options.Cache {
+				err := os.RemoveAll(options.RepositoryCache)
+				if err != nil && !os.IsNotExist(err) {
+					ui.ExitOnError("Deleting Cache ....", err)
+				}
+
+				ui.Success("Cache  deleted")
 			}
 		},
 		PersistentPostRun: func(cmd *cobra.Command, args []string) {

@@ -28,13 +28,10 @@ func NewInstallCmd() *cobra.Command {
 		Short:   "Install Frisbee to current kubectl context",
 		Aliases: []string{"i", "deploy"},
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			ui.SetVerbose(verbose)
+			ui.Logo()
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			ui.Logo()
-
-			err := cmd.Help()
-			ui.PrintOnError("Displaying help", err)
+			ui.PrintOnError("Displaying help", cmd.Help())
 		},
 	}
 

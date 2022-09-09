@@ -19,10 +19,11 @@ package scenario
 import (
 	"context"
 	"fmt"
-	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"reflect"
 	"time"
+
+	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
@@ -336,8 +337,12 @@ func (r *Controller) HasSucceed(ctx context.Context, cr *v1alpha1.Scenario) erro
 	// We maintain testbed components (e.g, prometheus and grafana) for getting back the test results.
 	// These components are removed by deleting the Scenario.
 	for _, job := range r.view.GetSuccessfulJobs() {
-		expressions.UnsetAlert(job)
+		expressions.UnsetAlert(ctx, job)
 		// common.Delete(ctx, r, job)
+	}
+
+	if cr.GetDeletionTimestamp().IsZero() {
+		r.GetEventRecorderFor(cr.GetName()).Event(cr, corev1.EventTypeNormal, "Completed", cr.Status.Lifecycle.Message)
 	}
 
 	return nil
@@ -351,17 +356,17 @@ func (r *Controller) HasFailed(ctx context.Context, cr *v1alpha1.Scenario) error
 
 	// Remove the non-failed components. Leave the failed jobs and system jobs for postmortem analysis.
 	for _, job := range r.view.GetPendingJobs() {
-		expressions.UnsetAlert(job)
+		expressions.UnsetAlert(ctx, job)
 		common.Delete(ctx, r, job)
 	}
 
 	for _, job := range r.view.GetRunningJobs() {
-		expressions.UnsetAlert(job)
+		expressions.UnsetAlert(ctx, job)
 		common.Delete(ctx, r, job)
 	}
 
 	for _, job := range r.view.GetSuccessfulJobs() {
-		expressions.UnsetAlert(job)
+		expressions.UnsetAlert(ctx, job)
 		// common.Delete(ctx, r, job) Keep it commented. It is useful to see which jobs are complete.
 	}
 
@@ -378,7 +383,7 @@ func (r *Controller) HasFailed(ctx context.Context, cr *v1alpha1.Scenario) error
 	)
 
 	if cr.GetDeletionTimestamp().IsZero() {
-		r.GetEventRecorderFor(cr.GetName()).Event(cr, corev1.EventTypeNormal,
+		r.GetEventRecorderFor(cr.GetName()).Event(cr, corev1.EventTypeWarning,
 			"Suspended", cr.Status.Lifecycle.Message)
 	}
 

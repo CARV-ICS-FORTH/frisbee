@@ -30,17 +30,13 @@ func NewInstallProductionCmd() *cobra.Command {
 		Short: "Install Frisbee in production mode.",
 		Long:  "Install all Frisbee components, including the controller.",
 		Run: func(cmd *cobra.Command, args []string) {
-			ui.Logo()
-
 			command := []string{"upgrade", "--install", "--wait",
 				"--namespace", options.Namespace, "--create-namespace",
 				"--values", options.Values,
 				options.Name, options.Chart,
 			}
 
-			common.InstallFrisbeeOnK8s(cmd, command, &options)
-
-			common.InstallPDFExporter(&options)
+			common.InstallFrisbeeOnK8s(command, &options)
 		},
 		PersistentPostRun: func(cmd *cobra.Command, args []string) {
 			ui.NL()

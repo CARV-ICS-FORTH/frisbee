@@ -17,19 +17,30 @@ limitations under the License.
 package client
 
 import (
+	frisbeev1alpha1 "github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/pkg/executor"
+	"k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // check in compile time if interface is implemented
-var _ Client = (*APIClient)(nil)
+// var _ Client = (*APIClient)(nil)
+
+var scheme = runtime.NewScheme()
+
+func init() {
+	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+	utilruntime.Must(frisbeev1alpha1.AddToScheme(scheme))
+}
 
 // NewDirectAPIClient returns proxy api client
-func NewDirectAPIClient(client client.Client, options Options) APIClient {
+func NewDirectAPIClient(client client.Client) APIClient {
 	return APIClient{
-		TestManagementClient: NewTestManagementClient(client, options),
-		TestInspectionClient: NewTestInspectionClient(client, executor.NewExecutor(controllerruntime.GetConfigOrDie()), options),
+		TestManagementClient: NewTestManagementClient(client),
+		TestInspectionClient: NewTestInspectionClient(client, executor.NewExecutor(controllerruntime.GetConfigOrDie())),
 	}
 }
 

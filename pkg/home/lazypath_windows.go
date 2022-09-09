@@ -1,3 +1,5 @@
+//go:build windows
+
 /*
 Copyright 2022 ICS-FORTH.
 
@@ -14,18 +16,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package home
 
-import (
-	"fmt"
-	"os"
+import "os"
 
-	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands"
-)
+func dataHome() string { return configHome() }
 
-func main() {
-	if err := commands.NewRootCmd().Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-}
+func configHome() string { return os.Getenv("APPDATA") }
+
+func cacheHome() string { return os.Getenv("TEMP") }

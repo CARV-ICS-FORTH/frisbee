@@ -37,8 +37,6 @@ func NewInstallDevelopmentCmd() *cobra.Command {
 		Short: "Install Frisbee in development mode.",
 		Long:  "Install all Frisbee components, except for the controller which will run externally.",
 		Args: func(cmd *cobra.Command, args []string) error {
-			ui.Logo()
-
 			if len(args) < 2 {
 				return errors.New("please pass project path and public ip as argument")
 			}
@@ -54,6 +52,7 @@ func NewInstallDevelopmentCmd() *cobra.Command {
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
+
 			command := []string{"upgrade", "--install", "--wait",
 				"--namespace", options.Namespace, "--create-namespace",
 				"--set", fmt.Sprintf("operator.enabled=%t", false),
@@ -62,14 +61,11 @@ func NewInstallDevelopmentCmd() *cobra.Command {
 				options.Name, chartPath,
 			}
 
-			common.InstallFrisbeeOnK8s(cmd, command, &options)
-
-			common.InstallPDFExporter(&options)
+			common.InstallFrisbeeOnK8s(command, &options)
 		},
 		PersistentPostRun: func(cmd *cobra.Command, args []string) {
 			ui.NL()
-			ui.Info("Frisbee runs in development mode. You must use: ",
-				fmt.Sprintf("FRISBEE_NAMESPACE=%s make run", options.Namespace))
+			ui.Success("Frisbee installed in development mode. Run it with: ", fmt.Sprintf("FRISBEE_NAMESPACE=%s make run", options.Namespace))
 			ui.NL()
 
 			ui.Success(" Happy Testing! 🚀")
