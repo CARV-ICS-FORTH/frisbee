@@ -18,9 +18,11 @@ package v1alpha1
 
 import (
 	"fmt"
-	"k8s.io/apimachinery/pkg/api/meta"
+	"sort"
 	"strings"
 	"time"
+
+	"k8s.io/apimachinery/pkg/api/meta"
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -228,7 +230,7 @@ type ScenarioStatus struct {
 	DataviewerEndpoint string `json:"dataviewerEndpoint,omitempty"`
 }
 
-func (in ScenarioStatus) Table() (header []string, data [][]string) {
+func (in *ScenarioStatus) Table() (header []string, data [][]string) {
 	header = []string{
 		"Phase",
 		"Reason",
@@ -281,7 +283,7 @@ type ScenarioList struct {
 }
 
 // Table returns a tabular form of the structure for pretty printing.
-func (in ScenarioList) Table() (header []string, data [][]string) {
+func (in *ScenarioList) Table() (header []string, data [][]string) {
 	header = []string{
 		"Test",
 		"Scenario",
@@ -289,6 +291,14 @@ func (in ScenarioList) Table() (header []string, data [][]string) {
 		"Actions",
 		"Phase",
 	}
+
+	// arrange in descending order (latest created goes first)
+	sort.SliceStable(in.Items, func(i, j int) bool {
+		tsI := in.Items[i].GetCreationTimestamp()
+		tsJ := in.Items[j].GetCreationTimestamp()
+
+		return tsI.After(tsJ.Time)
+	})
 
 	for _, scenario := range in.Items {
 		_, scenarioData := scenario.Table()

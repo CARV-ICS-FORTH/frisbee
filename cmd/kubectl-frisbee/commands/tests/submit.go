@@ -23,12 +23,11 @@ import (
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/common"
+	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/env"
 	"github.com/carv-ics-forth/frisbee/pkg/ui"
-	"github.com/kubeshop/testkube/pkg/process"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	k8errors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/rand"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type TestSubmitOptions struct {
@@ -85,38 +84,29 @@ func NewSubmitTestCmd() *cobra.Command {
 		},
 
 		Run: func(cmd *cobra.Command, args []string) {
-			ui.Logo()
-
-			client := common.GetClient(cmd)
-
-			testName := args[0]
-			testFile := args[1]
+			testName, testFile := args[0], args[1]
 
 			// Generate test name, if needed
 			if strings.HasSuffix(testName, "-") {
 				testName = fmt.Sprintf("%s%d", testName, rand.Intn(1000))
-				ui.Info(fmt.Sprintf("Create new test: %s", testName))
 			}
-
-			// Query Kubernetes API for conflicting tests
-			{
-				scenario, err := client.GetScenario(testName)
-				if err != nil && !k8errors.IsNotFound(errors.Cause(err)) {
-					ui.Failf("Can't query Kubernetes API for test with name '%s'. Err:%s", testName, err)
-				}
-
-				// Check for conflicting tests
-				if scenario != nil {
-					ui.Failf("test with name '%s' already exists", testName)
-				}
-
-				ui.ExitOnError("Check for conflicting tests", err)
-			}
+			ui.Success("Submitting test ...", testName)
 
 			// Validate the scenario
 			{
 				err := common.RunTest(testName, testFile, true)
 				ui.ExitOnError("Validating testfile: "+testFile, err)
+			}
+
+			// Query Kubernetes API for conflicting tests
+			{
+				scenario, err := env.Settings.GetFrisbeeClient().GetScenario(cmd.Context(), testName)
+
+				if scenario != nil {
+					ui.Failf("test '%s' already exists", testName)
+				}
+
+				ui.ExitOnError("Looking for conflicts", client.IgnoreNotFound(err))
 			}
 
 			// Ensure the namespace for hosting the scenario
@@ -128,7 +118,6 @@ func NewSubmitTestCmd() *cobra.Command {
 					err := common.SetQuota(testName, options.CPUQuota, options.MemoryQuota)
 					ui.ExitOnError("Setting namespace quotas", err)
 				}
-
 			}
 
 			// Install Helm Dependencies, if any
@@ -137,11 +126,10 @@ func NewSubmitTestCmd() *cobra.Command {
 				for _, chart := range helmCharts {
 					command := []string{"upgrade", "--install",
 						filepath.Base(chart), chart,
-						"--namespace", testName,
 						"--create-namespace",
 					}
 
-					_, err := process.Execute(common.Helm, command...)
+					_, err := common.Helm(testName, command...)
 					ui.ExitOnError("Installing Dependency: "+chart, err)
 				}
 			}
@@ -152,8 +140,10 @@ func NewSubmitTestCmd() *cobra.Command {
 				ui.ExitOnError("Starting test-case execution ", err)
 			}
 
+			ui.Success("Test has been successfully submitted.")
+
 			// Control test output
-			ControlOutput(cmd, testName, &options)
+			ControlOutput(testName, &options)
 		},
 	}
 
@@ -162,7 +152,7 @@ func NewSubmitTestCmd() *cobra.Command {
 	return cmd
 }
 
-func ControlOutput(cmd *cobra.Command, testName string, options *TestSubmitOptions) {
+func ControlOutput(testName string, options *TestSubmitOptions) {
 
 	switch {
 	case options.ExpectSuccess:
@@ -170,7 +160,7 @@ func ControlOutput(cmd *cobra.Command, testName string, options *TestSubmitOptio
 
 		err := common.WaitForCondition(testName, v1alpha1.ConditionAllJobsAreCompleted, options.Timeout)
 
-		common.Hint(cmd, "To inspect the execution:", "kubectl frisbee inspect test ", testName)
+		env.Settings.Hint("To inspect the execution:", "kubectl frisbee inspect test ", testName)
 		ui.ExitOnError("waiting for test to complete successfully", err)
 
 	case options.ExpectFailure:
@@ -178,7 +168,7 @@ func ControlOutput(cmd *cobra.Command, testName string, options *TestSubmitOptio
 
 		err := common.WaitForCondition(testName, v1alpha1.ConditionJobUnexpectedTermination, options.Timeout)
 
-		common.Hint(cmd, "To inspect the execution:", "kubectl frisbee inspect test ", testName)
+		env.Settings.Hint("To inspect the execution:", "kubectl frisbee inspect test ", testName)
 		ui.ExitOnError("waiting for test to fail", err)
 
 	case options.ExpectError:
@@ -186,20 +176,20 @@ func ControlOutput(cmd *cobra.Command, testName string, options *TestSubmitOptio
 
 		err := common.WaitForCondition(testName, v1alpha1.ConditionAssertionError, options.Timeout)
 
-		common.Hint(cmd, "To inspect the execution:", "kubectl frisbee inspect test ", testName)
+		env.Settings.Hint("To inspect the execution:", "kubectl frisbee inspect test ", testName)
 		ui.ExitOnError("waiting for test to raise an assertion error", err)
 
 	case options.Watch:
 		ui.Info("Watching for changes in the test status.")
 
-		err := common.GetFrisbeeResources(cmd, testName, true)
+		err := common.GetFrisbeeResources(testName, true)
 		ui.ExitOnError("Watching for changes in the test status error", err)
 
 	case options.Logs != nil:
-		ui.Info("Getting test logs ...")
+		ui.Info("Tailing test logs ...", "log-lines", fmt.Sprint(options.Loglines))
 
 		err := common.GetPodLogs(testName, true, options.Loglines, options.Logs...)
-		common.Hint(cmd, "To inspect the execution logs use:",
+		env.Settings.Hint("To inspect the execution logs use:",
 			"kubectl frisbee inspect test ", testName, " --logs all")
 		ui.ExitOnError("Getting logs", err)
 	}

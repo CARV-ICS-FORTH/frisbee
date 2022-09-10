@@ -5,7 +5,7 @@
 ## @param global.domainName DNS name for making Telemetry stack accessible outside the cluster.
 ## @param global.ingressClass Type of ingres for making Telemetry stack accessible outside the cluster.
 global:
-  domainName: platform.science-hangar.eu
+  domainName: knot-platform.eu
 
   ingressClass: nginx
 

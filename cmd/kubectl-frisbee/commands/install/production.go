@@ -22,25 +22,24 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const FrisbeeChartInRepo = "frisbee/platform"
+
 func NewInstallProductionCmd() *cobra.Command {
 	var options common.FrisbeeInstallOptions
+	var values string
 
 	cmd := &cobra.Command{
 		Use:   "production",
 		Short: "Install Frisbee in production mode.",
 		Long:  "Install all Frisbee components, including the controller.",
 		Run: func(cmd *cobra.Command, args []string) {
-			ui.Logo()
-
 			command := []string{"upgrade", "--install", "--wait",
 				"--namespace", options.Namespace, "--create-namespace",
-				"--values", options.Values,
-				options.Name, options.Chart,
+				"--values", values,
+				options.Name, FrisbeeChartInRepo,
 			}
 
-			common.InstallFrisbeeOnK8s(cmd, command, &options)
-
-			common.InstallPDFExporter(&options)
+			common.InstallFrisbeeOnK8s(command, &options)
 		},
 		PersistentPostRun: func(cmd *cobra.Command, args []string) {
 			ui.NL()
@@ -49,6 +48,7 @@ func NewInstallProductionCmd() *cobra.Command {
 		},
 	}
 
+	cmd.Flags().StringVarP(&values, "values", "f", FrisbeeChartInRepo+"/values.yaml", "helm values file")
 	common.PopulateInstallFlags(cmd, &options)
 
 	return cmd

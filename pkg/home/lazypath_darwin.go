@@ -1,3 +1,5 @@
+//go:build darwin
+
 /*
 Copyright 2022 ICS-FORTH.
 
@@ -14,22 +16,22 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package common
+package home
 
 import (
-	"github.com/carv-ics-forth/frisbee/pkg/client"
-	"github.com/carv-ics-forth/frisbee/pkg/ui"
-	"github.com/spf13/cobra"
+	"path/filepath"
+
+	"k8s.io/client-go/util/homedir"
 )
 
-// GetClient returns api client
-func GetClient(_ *cobra.Command) client.Client {
-	options := client.Options{
-		// Namespace: namespace,
-	}
+func dataHome() string {
+	return filepath.Join(homedir.HomeDir(), "Library")
+}
 
-	client, err := client.GetClient(client.ClientDirect, options)
-	ui.ExitOnError("Setting up client type", err)
+func configHome() string {
+	return filepath.Join(homedir.HomeDir(), "Library", "Preferences")
+}
 
-	return client
+func cacheHome() string {
+	return filepath.Join(homedir.HomeDir(), "Library", "Caches")
 }

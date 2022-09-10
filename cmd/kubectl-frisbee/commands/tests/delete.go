@@ -59,7 +59,6 @@ func NewDeleteTestsCmd() *cobra.Command {
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			ui.Logo()
 
 			switch {
 			case options.Force:

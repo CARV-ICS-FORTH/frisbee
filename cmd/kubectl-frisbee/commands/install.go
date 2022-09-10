@@ -18,6 +18,7 @@ package commands
 
 import (
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/install"
+	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/env"
 	"github.com/carv-ics-forth/frisbee/pkg/ui"
 	"github.com/spf13/cobra"
 )
@@ -28,13 +29,15 @@ func NewInstallCmd() *cobra.Command {
 		Short:   "Install Frisbee to current kubectl context",
 		Aliases: []string{"i", "deploy"},
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			ui.SetVerbose(verbose)
-		},
-		Run: func(cmd *cobra.Command, args []string) {
 			ui.Logo()
 
-			err := cmd.Help()
-			ui.PrintOnError("Displaying help", err)
+			env.Settings.CheckKubePerms()
+
+			ui.Info("Using config:", env.Settings.KubeConfig)
+			ui.Warn("If it takes long time, make sure you have used the proper values file.")
+		},
+		Run: func(cmd *cobra.Command, args []string) {
+			ui.PrintOnError("Displaying help", cmd.Help())
 		},
 	}
 

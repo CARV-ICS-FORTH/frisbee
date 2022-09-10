@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/common"
+	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/env"
 	"github.com/carv-ics-forth/frisbee/pkg/ui"
 	"github.com/spf13/cobra"
 )
@@ -41,16 +42,12 @@ func NewGetTestsCmd() *cobra.Command {
 		},
 
 		Run: func(cmd *cobra.Command, args []string) {
-			ui.Logo()
-
-			client := common.GetClient(cmd)
-
 			selectors = append(selectors, common.ManagedNamespace)
 
-			tests, err := client.ListScenarios(strings.Join(selectors, ","))
+			tests, err := env.Settings.GetFrisbeeClient().ListScenarios(cmd.Context(), strings.Join(selectors, ","))
 			ui.ExitOnError("Getting all tests ", err)
 
-			err = common.RenderList(cmd, tests, os.Stdout)
+			err = common.RenderList(&tests, os.Stdout)
 			ui.PrintOnError("Rendering list", err)
 		},
 	}

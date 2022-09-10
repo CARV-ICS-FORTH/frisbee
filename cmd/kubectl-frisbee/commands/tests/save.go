@@ -19,6 +19,7 @@ package tests
 import (
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/common"
+	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/env"
 	"github.com/carv-ics-forth/frisbee/pkg/ui"
 	"github.com/spf13/cobra"
 )
@@ -54,19 +55,16 @@ func NewSaveTestsCmd() *cobra.Command {
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			ui.Logo()
+			testName, destination := args[0], args[1]
 
-			testName := args[0]
-			destination := args[1]
-
-			scenario, err := common.GetClient(cmd).GetScenario(testName)
+			scenario, err := env.Settings.GetFrisbeeClient().GetScenario(cmd.Context(), testName)
 			ui.ExitOnError("Getting test information", err)
 
 			switch {
 			case scenario == nil:
 				ui.Failf("test '%s' was not found", testName)
 			case scenario.Spec.TestData == nil && options.Datasource == TestdataSource:
-				ui.Failf("TestData is not enabled. Either enable the TestData parameter on the scenario definition or use --datasource.")
+				ui.Failf("TestData is not enabled for this test. Either enable Scenario.Spec.TestData or use --datasource.")
 			case !scenario.Status.Phase.Is(v1alpha1.PhaseSuccess, v1alpha1.PhaseFailed):
 				// Abort getting data from a non-completed test, unless --force is used
 				if !options.Force {
@@ -74,13 +72,13 @@ func NewSaveTestsCmd() *cobra.Command {
 				}
 			}
 
-			err = common.KubectlPrint(testName, false, "cp", options.Datasource, destination)
+			_, err = common.Kubectl(testName, "cp", options.Datasource, destination)
 			ui.ExitOnError("Saving test data to: "+destination, err)
 
 			promDestination := destination + "/" + "prometheus"
-			err = common.KubectlPrint(testName, ui.Verbose, "cp", PrometheusSource, promDestination)
+			_, err = common.Kubectl(testName, "cp", PrometheusSource, promDestination)
 
-			common.Hint(cmd, "To store data from a specific location use", "kubectl cp pod:path destination -n", testName)
+			env.Settings.Hint("To store data from a specific location use", "kubectl cp pod:path destination -n", testName)
 			ui.ExitOnError("Saving Prometheus data to: "+promDestination, err)
 		},
 	}

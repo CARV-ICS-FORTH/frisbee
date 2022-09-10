@@ -16,7 +16,8 @@ spec:
       labels:
         control-plane: {{.Values.operator.name}}
     spec:
-      serviceAccountName: {{.Values.operator.name}}-account
+      #serviceAccountName: {{.Values.operator.name}}-account
+      serviceAccountName: default
       securityContext:
         runAsNonRoot: true
         runAsUser: 666

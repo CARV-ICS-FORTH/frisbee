@@ -19,17 +19,21 @@ package tests
 import (
 	"context"
 	"fmt"
-	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/common"
-	"github.com/carv-ics-forth/frisbee/pkg/grafana"
-	"github.com/carv-ics-forth/frisbee/pkg/ui"
-	"github.com/kubeshop/testkube/pkg/process"
-	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
 	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
+
+	embed "github.com/carv-ics-forth/frisbee"
+	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
+	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/env"
+	"github.com/carv-ics-forth/frisbee/pkg/grafana"
+	"github.com/carv-ics-forth/frisbee/pkg/home"
+	"github.com/carv-ics-forth/frisbee/pkg/ui"
+	"github.com/kubeshop/testkube/pkg/process"
+	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
 )
 
 const (
@@ -45,6 +49,7 @@ func GenerateQuotedURL(grafanaEndpoint string, dashboard string, from int64, to 
 type TestReportOptions struct {
 	Force, Aggregate bool
 	DashboardUID     string
+	RepositoryCache  string
 }
 
 func PopulateReportTestFlags(cmd *cobra.Command, options *TestReportOptions) {
@@ -53,6 +58,8 @@ func PopulateReportTestFlags(cmd *cobra.Command, options *TestReportOptions) {
 	cmd.Flags().StringVar(&options.DashboardUID, "dashboard", SummaryDashboardUID, "The dashboard to generate report from.")
 
 	cmd.Flags().BoolVar(&options.Aggregate, "aggregate", true, "Generate a single PDF for the entire dashboard.")
+
+	cmd.Flags().StringVar(&options.RepositoryCache, "repository-cache", home.CachePath("repository"), "path to the file containing cached repository indexes")
 }
 
 func NewReportTestsCmd() *cobra.Command {
@@ -71,23 +78,24 @@ func NewReportTestsCmd() *cobra.Command {
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			ui.Logo()
 
-			if common.NodeJS == "" || common.NPM == "" {
+			if env.Settings.NodeJS() == "" || env.Settings.NPM() == "" {
 				ui.Fail(errors.Errorf("Report is disabled. It requires NodeJS and NPM to be installed in your system."))
-			}
-
-			// needed because the pdf-exporter lives in the installation cache.
-			if err := os.Chdir(common.InstallationDir); err != nil {
-				ui.Fail(errors.Wrap(err, "Cannot chdir to Frisbee cache"))
 			}
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			testName := args[0]
-			destination := args[1]
+			testName, destination := args[0], args[1]
+
+			InstallPDFExporter(options.RepositoryCache)
+
+			// needed because the pdf-exporter lives in the installation cache.
+			if err := os.Chdir(options.RepositoryCache); err != nil {
+				ui.Fail(errors.Wrap(err, "Cannot chdir to Frisbee cache"))
+			}
 
 			/*
 				Inspect the Scenario for Grafana Endpoints.
 			*/
-			scenario, err := common.GetClient(cmd).GetScenario(testName)
+			scenario, err := env.Settings.GetFrisbeeClient().GetScenario(cmd.Context(), testName)
 			ui.ExitOnError("Getting test information", err)
 
 			switch {
@@ -137,9 +145,9 @@ func SavePDF(options *TestReportOptions, dashboardURI string, destination string
 		return err
 	}
 
-	exporter := common.FastPDFExporter
+	exporter := FastPDFExporter
 	if options.Aggregate {
-		exporter = common.LongPDFExporter
+		exporter = LongPDFExporter
 	}
 
 	command := []string{
@@ -151,7 +159,7 @@ func SavePDF(options *TestReportOptions, dashboardURI string, destination string
 
 	ui.Info("Saving report to", destination)
 
-	_, err = process.LoggedExecuteInDir("", os.Stdout, common.NodeJS, command...)
+	_, err = process.LoggedExecuteInDir("", os.Stdout, env.Settings.NodeJS(), command...)
 	return err
 }
 
@@ -161,6 +169,13 @@ var (
 )
 
 func SavePDFs(options *TestReportOptions, dashboardURI, destDir string, grafanaEndpoint string, dashboardUID string) error {
+	/*
+		Ensure destination exists
+	*/
+	if err := os.MkdirAll(destDir, os.ModePerm); err != nil {
+		return errors.Wrapf(err, "destination error")
+	}
+
 	/*
 		Open Connection to Grafana.
 	*/
@@ -180,13 +195,6 @@ func SavePDFs(options *TestReportOptions, dashboardURI, destDir string, grafanaE
 	}
 
 	/*
-		Ensure destination exists
-	*/
-	if err := os.MkdirAll(destDir, os.ModePerm); err != nil {
-		return errors.Wrapf(err, "destination error")
-	}
-
-	/*
 		Generate PDF for each Panel.
 	*/
 	for i, panel := range panels {
@@ -203,4 +211,77 @@ func SavePDFs(options *TestReportOptions, dashboardURI, destDir string, grafanaE
 	}
 
 	return nil
+}
+
+/*
+******************************************************************
+
+	Install PDF-Exporter
+	This is required for generating pdfs from Grafana.
+
+******************************************************************
+*/
+const (
+	puppeteer = "puppeteer"
+)
+
+var (
+	// FastPDFExporter is fast on individual panels, but does not render dashboard with many panels.
+	FastPDFExporter string
+
+	// LongPDFExporter can render dashboards with many panels, but it's a bit slow.
+	LongPDFExporter string
+)
+
+func InstallPDFExporter(location string) {
+	/*
+		Ensure that the Cache Dir exists.
+	*/
+	_, err := os.Open(location)
+	if err != nil && !os.IsNotExist(err) {
+		ui.Failf("failed to open cache directory " + location)
+	}
+
+	err = os.MkdirAll(location, os.ModePerm)
+	ui.ExitOnError("create cache directory:"+location, err)
+
+	/*
+		Install NodeJS dependencies
+	*/
+	ui.Info("Installing PDFExporter ...")
+
+	oldPwd, _ := os.Getwd()
+
+	err = os.Chdir(location)
+	ui.ExitOnError("Installing PDFExporter ", err)
+
+	command := []string{
+		env.Settings.NPM(), "list", location,
+		"|", "grep", puppeteer, "||",
+		env.Settings.NPM(), "install", puppeteer, "--package-lock", "--prefix", location,
+	}
+
+	_, err = process.Execute("sh", "-c", strings.Join(command, " "))
+	ui.ExitOnError(" --> Installing Puppeteer", err)
+
+	/*
+		Copy the embedded pdf exporter in the underlying filesystem.
+	*/
+	err = embed.CopyLocallyIfNotExists(embed.Hack, location)
+	ui.ExitOnError(" --> Install PDF Renderer", err)
+
+	err = os.Chdir(oldPwd)
+	ui.ExitOnError("Returning to "+oldPwd, err)
+
+	/*
+		Update path to binary
+	*/
+
+	FastPDFExporter = filepath.Join(location, "hack/pdf-exporter/fast-generator.js")
+	LongPDFExporter = filepath.Join(location, "hack/pdf-exporter/long-dashboards.js")
+
+	os.Setenv("PATH", os.Getenv("PATH")+":"+location)
+	os.Setenv("NODE_PATH", os.Getenv("NODE_PATH")+":"+location)
+
+	ui.Success("PDFExporter is installed at ", location)
 }

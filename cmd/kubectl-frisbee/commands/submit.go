@@ -17,7 +17,9 @@ limitations under the License.
 package commands
 
 import (
+	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/common"
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/tests"
+	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/env"
 	"github.com/carv-ics-forth/frisbee/pkg/ui"
 	"github.com/spf13/cobra"
 )
@@ -28,17 +30,21 @@ func NewSubmitCmd() *cobra.Command {
 		Aliases: []string{"start"},
 		Short:   "Submit tests or test suites for execution",
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			ui.SetVerbose(verbose)
-		},
-		Run: func(cmd *cobra.Command, args []string) {
 			ui.Logo()
 
-			err := cmd.Help()
-			ui.PrintOnError("Displaying help", err)
+			env.Settings.CheckKubePerms()
+
+			ui.Info("Using config:", env.Settings.KubeConfig)
+
+			if !common.CRDsExist(common.Scenarios) {
+				ui.Failf("Frisbee is not installed on the kubernetes cluster.")
+			}
+		},
+		Run: func(cmd *cobra.Command, args []string) {
+			ui.PrintOnError("Displaying help", cmd.Help())
 		}}
 
 	cmd.AddCommand(tests.NewSubmitTestCmd())
-	// cmd.AddCommand(testsuites.NewRunTestSuiteCmd())
 
 	return cmd
 }

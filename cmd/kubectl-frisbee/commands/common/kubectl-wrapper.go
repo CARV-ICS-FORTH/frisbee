@@ -24,11 +24,12 @@ import (
 	"time"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
+	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/env"
 	"github.com/carv-ics-forth/frisbee/pkg/structure"
 	"github.com/carv-ics-forth/frisbee/pkg/ui"
 	"github.com/kubeshop/testkube/pkg/process"
 	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
+	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/utils/exec"
 )
@@ -43,11 +44,18 @@ const (
 	// Validated over https://regex101.com/r/eXgekO/1
 	NotReadyRegex        = `.* container "(\w+)" in pod "(.*)" is waiting to start: (\w+)`
 	NoPodsFoundReg       = `.* pods "\w+" not found`
-	NotResourcesFoundReg = `No resources found in (.+) namespace..*`
+	NotResourcesFoundReg = `No resources found*`
+	NotFound             = `Error from server (NotFound)`
 )
 
 func ErrNotFound(out []byte) bool {
 	{ // First form
+		if strings.Contains(string(out), NotFound) {
+			return true
+		}
+	}
+
+	{ // Second form
 		match, err := regexp.Match(NotResourcesFoundReg, out)
 		if err != nil {
 			panic("unhandled output")
@@ -58,7 +66,7 @@ func ErrNotFound(out []byte) bool {
 		}
 	}
 
-	{ // SEcond form
+	{ // Third form
 		match, err := regexp.Match(NoPodsFoundReg, out)
 		if err != nil {
 			panic("unhandled output")
@@ -81,26 +89,68 @@ func ErrContainerNotReady(out []byte) bool {
 	return match
 }
 
-func KubectlPrint(testName string, wantOutput bool, arguments ...string) error {
-	arguments = append(arguments, "-n", testName)
+/*
+func KubectlIgnoreNotFound(err error) error {
+	if err != nil &&
+		(strings.Contains(err.Error(), "Error from server (NotFound)") ||
+			strings.Contains(err.Error(), "No resources found in")) {
 
-	var out []byte
-	var err error
-
-	if wantOutput {
-		out, err = process.LoggedExecuteInDir("", os.Stdout, Kubectl, arguments...)
-	} else {
-		out, err = process.Execute(Kubectl, arguments...)
-	}
-
-	switch {
-	case ErrNotFound(out): // resource not found
-		return nil
-	case err != nil: // execution error
-		return err
-	default: // completed
 		return nil
 	}
+
+	return err
+}
+
+*/
+
+func Kubectl(testName string, arguments ...string) ([]byte, error) {
+	arguments = append(arguments, "--kubeconfig", env.Settings.KubeConfig)
+
+	if testName != "" {
+		arguments = append(arguments, "-n", testName)
+	}
+
+	return process.Execute(env.Settings.Kubectl(), arguments...)
+}
+
+func LoggedKubectl(testName string, arguments ...string) ([]byte, error) {
+	arguments = append(arguments, "--kubeconfig", env.Settings.KubeConfig)
+
+	if testName != "" {
+		arguments = append(arguments, "-n", testName)
+	}
+
+	return process.LoggedExecuteInDir("", os.Stdout, env.Settings.Kubectl(), arguments...)
+}
+
+func HelmIgnoreNotFound(err error) error {
+	if err != nil && strings.Contains(err.Error(), "release: not found") {
+		return nil
+	}
+
+	return err
+}
+
+func Helm(testName string, arguments ...string) ([]byte, error) {
+	arguments = append(arguments, "--kubeconfig", env.Settings.KubeConfig)
+
+	if testName != "" {
+		arguments = append(arguments, "-n", testName)
+	}
+
+	logrus.Warn("Helm cmd ", arguments)
+
+	return process.Execute(env.Settings.Helm(), arguments...)
+}
+
+func LoggedHelm(testName string, arguments ...string) ([]byte, error) {
+	arguments = append(arguments, "--kubeconfig", env.Settings.KubeConfig)
+
+	if testName != "" {
+		arguments = append(arguments, "-n", testName)
+	}
+
+	return process.LoggedExecuteInDir("", os.Stdout, env.Settings.Helm(), arguments...)
 }
 
 /*
@@ -133,35 +183,43 @@ var FrisbeeResourceInspectionFields = strings.Join([]string{
 	// "Conditions:.status.conditions[*].type",
 }, ",")
 
-func GetFrisbeeResources(cmd *cobra.Command, testName string, watch bool) error {
+const EmptyResourceInspectionFields = "Name   Kind   Job   Component   Phase   Reason   Message"
+
+func GetFrisbeeResources(testName string, watch bool) error {
 	command := []string{"get",
 		"--show-kind=true",
 		"-l", fmt.Sprintf("%s", v1alpha1.LabelScenario),
 		"-o", FrisbeeResourceInspectionFields,
 	}
 
-	// restricted format supported by Kubectl
-	if cmd.Flag("output") != nil {
-		outputType := OutputType(cmd.Flag("output").Value.String())
-		if outputType == "table" ||
-			outputType == "json" ||
-			outputType == "yaml" {
-			command = append(command, "-o", string(outputType))
-		}
+	outputType := OutputType(env.Settings.OutputType)
+	if outputType == "table" ||
+		outputType == "json" ||
+		outputType == "yaml" {
+		command = append(command, "-o", string(outputType))
 	}
 
 	// decide the presentation method
 	if watch {
 		// monitor the top-level scenario overview
 		command = append(command, "--watch=true", Scenarios)
+
+		_, err := LoggedKubectl(testName, command...)
+		return err
 	} else {
 		// monitor all sub-resources, sorted by creation Timestamp
 		command = append(command, "--sort-by=.metadata.creationTimestamp", strings.Join([]string{
 			Clusters, Services, Chaos, Cascades, Calls, VirtualObjects,
 		}, ","))
-	}
 
-	return KubectlPrint(testName, true, command...)
+		out, err := Kubectl(testName, command...)
+		if strings.Contains(string(out), EmptyResourceInspectionFields) {
+			return nil
+		}
+
+		ui.Info(string(out))
+		return err
+	}
 }
 
 var TemplateInspectionFields = strings.Join([]string{
@@ -171,13 +229,16 @@ var TemplateInspectionFields = strings.Join([]string{
 	"HelmRelease:.metadata.annotations.meta\\.helm\\.sh\\/release-name",
 }, ",")
 
-func GetTemplateResources(cmd *cobra.Command, testName string) error {
+
+const EmptyTemplateResources = "API   Kind   Name   HelmRelease"
+
+func GetTemplateResources(testName string) error {
 	command := []string{"get"}
 
 	command = append(command, Templates)
 
 	// restricted format supported by Kubectl
-	outputType := OutputType(cmd.Flag("output").Value.String())
+	outputType := OutputType(env.Settings.OutputType)
 	if outputType == "table" ||
 		outputType == "json" ||
 		outputType == "yaml" {
@@ -186,7 +247,14 @@ func GetTemplateResources(cmd *cobra.Command, testName string) error {
 
 	command = append(command, "-o", TemplateInspectionFields)
 
-	return KubectlPrint(testName, true, command...)
+	out, err := Kubectl(testName, command...)
+	if ErrNotFound(out) || strings.Contains(string(out), EmptyTemplateResources) {
+		return nil
+	}
+
+	ui.Info(string(out))
+
+	return err
 }
 
 func WaitForCondition(testName string, condition v1alpha1.ConditionType, timeout string) error {
@@ -195,7 +263,8 @@ func WaitForCondition(testName string, condition v1alpha1.ConditionType, timeout
 		"--timeout=" + timeout,
 	}
 
-	return KubectlPrint(testName, true, command...)
+	_, err := LoggedKubectl(testName, command...)
+	return err
 }
 
 /*
@@ -222,7 +291,9 @@ var ChaosResourceInspectionFields = strings.Join([]string{
 	"Target:.status.experiment.containerRecords[*].id",
 }, ",")
 
-func GetChaosResources(cmd *cobra.Command, testName string) error {
+const EmptyChaosResourceInspectionFields = "Kind   Job   InjectionTime   Phase   Target"
+
+func GetChaosResources(testName string) error {
 	command := []string{"get",
 		"--show-kind=true",
 		"--sort-by=.metadata.creationTimestamp",
@@ -231,7 +302,7 @@ func GetChaosResources(cmd *cobra.Command, testName string) error {
 	command = append(command, strings.Join([]string{NetworkChaos, PodChaos, IOChaos, KernelChaos, TimeChaos}, ","))
 
 	// restricted format supported by Kubectl
-	outputType := OutputType(cmd.Flag("output").Value.String())
+	outputType := OutputType(env.Settings.OutputType)
 	if outputType == "table" ||
 		outputType == "json" ||
 		outputType == "yaml" {
@@ -240,7 +311,14 @@ func GetChaosResources(cmd *cobra.Command, testName string) error {
 
 	command = append(command, "-o", ChaosResourceInspectionFields)
 
-	return KubectlPrint(testName, true, command...)
+	out, err := Kubectl(testName, command...)
+	if ErrNotFound(out) || strings.Contains(string(out), EmptyChaosResourceInspectionFields) {
+		return nil
+	}
+
+	ui.Info(string(out))
+
+	return err
 }
 
 /*
@@ -250,6 +328,17 @@ func GetChaosResources(cmd *cobra.Command, testName string) error {
 
 ******************************************************************
 */
+
+func GetK8sEvents(testName string) error {
+	out, err := Kubectl(testName, "get", "events", "--sort-by='.metadata.creationTimestamp'")
+	if ErrNotFound(out) {
+		return nil
+	}
+
+	ui.Info(string(out))
+
+	return err
+}
 
 const (
 	K8PODs            = "pods"
@@ -271,14 +360,18 @@ var K8SResourceInspectionFields = strings.Join([]string{
 	"Message*:.status.message",
 }, ",")
 
-func GetK8sResources(cmd *cobra.Command, testName string) error {
+
+
+const EmptyK8SResourceInspectionFields = "API   Kind   Name   Action   Component   Phase*   Reason*   Message*"
+
+func GetK8sResources(testName string) error {
 	// Filter out pods that belong to a scenario
-	command := []string{"get", "--show-kind=true"}
+	command := []string{"get", "--show-kind=true",	"-l", v1alpha1.LabelScenario}
 
 	command = append(command, strings.Join([]string{K8PODs, K8PVCs, K8PVs, K8SStorageClasses}, ","))
 
 	// restricted format supported by Kubectl
-	outputType := OutputType(cmd.Flag("output").Value.String())
+	outputType := OutputType(env.Settings.OutputType)
 	if outputType == "table" ||
 		outputType == "json" ||
 		outputType == "yaml" {
@@ -287,7 +380,15 @@ func GetK8sResources(cmd *cobra.Command, testName string) error {
 
 	command = append(command, "-o", K8SResourceInspectionFields)
 
-	return KubectlPrint(testName, true, command...)
+	out, err := Kubectl(testName, command...)
+	if ErrNotFound(out) || strings.Contains(string(out), EmptyK8SResourceInspectionFields ) {
+		return nil
+	}
+
+
+	ui.Info(string(out))
+
+	return err
 }
 
 const (
@@ -306,7 +407,7 @@ GetPodLogs provides convenience on printing the logs from prods.
 // - Run with '--logs pod1 pod2 ...'
 */
 func GetPodLogs(testName string, tail bool, lines int, pods ...string) error {
-	command := []string{"logs", "-n", testName,
+	command := []string{"logs",
 		"-c", v1alpha1.MainContainerName,
 		"--prefix=true",
 		fmt.Sprintf("--tail=%d", lines),
@@ -333,8 +434,9 @@ func GetPodLogs(testName string, tail bool, lines int, pods ...string) error {
 	if tail {
 		command = append(command, "--ignore-errors=false", "--follow=true")
 
-		getLogs := func() (done bool, err error) {
-			out, err := process.LoggedExecuteInDir("", os.Stdout, Kubectl, command...)
+		return wait.PollImmediate(pollInterval, pollTimeout, func() (done bool, err error) {
+			out, err := LoggedKubectl(testName, command...)
+
 			switch {
 			case len(out) == 0, ErrNotFound(out), ErrContainerNotReady(out): // resource initialization
 				// ui.Info("Waiting for pods to become ready ...", string(out))
@@ -345,43 +447,31 @@ func GetPodLogs(testName string, tail bool, lines int, pods ...string) error {
 				// Output printing is not required as it is printed by the os.Stdout
 				return true, nil
 			}
-		}
-
-		ui.Debug(Kubectl, command...)
-		return wait.PollImmediate(pollInterval, pollTimeout, getLogs)
+		})
 
 	} else {
 		command = append(command, "--ignore-errors=true")
 
-		getLogs := func() (done bool, err error) {
-			out, err := process.Execute(Kubectl, command...)
-			switch {
-			// resource initialization
-			case len(out) == 0, ErrNotFound(out), ErrContainerNotReady(out):
-				ui.Info("Waiting for pods to become ready ...", string(out))
-				return false, nil
-			case err != nil: // abort
-				// return the error immediately
-				return false, err
-			default: // ok
-				ui.Info(string(out))
-				return true, nil
-			}
-		}
+		out, err := Kubectl(testName, command...)
 
-		ui.Debug(Kubectl, command...)
-		_, err := getLogs()
-		return err
+		switch {
+		case len(out) == 0, ErrNotFound(out), ErrContainerNotReady(out): // resource initialization
+			// ui.Info("Waiting for pods to become ready ...", string(out))
+			return nil
+		case err != nil: // abort
+			return err
+		default: // ok
+			ui.Info(string(out))
+
+			return nil
+		}
 	}
 }
 
-func Events(testName string) error {
-	return KubectlPrint(testName, true, "get", "events",
-		"--sort-by='.metadata.creationTimestamp'")
-}
-
 func OpenShell(testName string, podName string, shellArgs ...string) error {
-	command := []string{"exec", "--stdin", "--tty", "-n", testName, podName}
+	command := []string{"exec",
+	"--kubeconfig", env.Settings.KubeConfig,
+	"--stdin", "--tty", "-n", testName, podName}
 
 	if len(shellArgs) == 0 {
 		ui.Info("Interactive Shell:")
@@ -392,7 +482,7 @@ func OpenShell(testName string, podName string, shellArgs ...string) error {
 		command = append(command, shellArgs...)
 	}
 
-	shell := exec.New().Command(Kubectl, command...)
+	shell := exec.New().Command(env.Settings.Kubectl(), command...)
 	shell.SetStdin(os.Stdin)
 	shell.SetStdout(os.Stdout)
 	shell.SetStderr(os.Stderr)
@@ -407,30 +497,38 @@ func RunTest(testName string, testFile string, dryrun bool) error {
 		command = append(command, "--dry-run=client")
 	}
 
-	return KubectlPrint(testName, false, command...)
+	_, err := Kubectl(testName, command...)
+	return err
 }
 
-func Dashboards(cmd *cobra.Command, testName string) error {
+func Dashboards(testName string) error {
 	command := []string{"get", "ingress",
 		"-l", fmt.Sprintf("%s", v1alpha1.LabelScenario),
 	}
 
 	// restricted format supported by Kubectl
-	outputType := OutputType(cmd.Flag("output").Value.String())
+	outputType := OutputType(env.Settings.OutputType)
 	if outputType == "table" ||
 		outputType == "json" ||
 		outputType == "yaml" {
 		command = append(command, "-o", string(outputType))
 	}
 
-	return KubectlPrint(testName, true, command...)
+	out, err := Kubectl(testName, command...)
+	if ErrNotFound(out) {
+		return nil
+	}
+
+	ui.Info(string(out))
+
+	return err
 }
 
 func CreateNamespace(name string, labels ...string) error {
 	// Create namespace
 	command := []string{"create", "namespace", name}
 
-	_, err := process.Execute(Kubectl, command...)
+	_, err := Kubectl("", command...)
 	if err != nil {
 		return errors.Wrapf(err, "cannot create namespace")
 	}
@@ -445,7 +543,7 @@ func LabelNamespace(name string, labels ...string) error {
 		command := []string{"label", "namespaces", name, "--overwrite=true",
 			strings.Join(labels, ",")}
 
-		_, err := process.Execute(Kubectl, command...)
+		_, err := Kubectl("", command...)
 		if err != nil {
 			return errors.Wrapf(err, "cannot label namespace")
 		}
@@ -466,7 +564,11 @@ func DeleteNamespaces(selector string, testNames ...string) error {
 		command = append(command, testNames...)
 	}
 
-	_, err := process.Execute(Kubectl, command...)
+	out, err := Kubectl("", command...)
+	if ErrNotFound(out) {
+		return nil
+	}
+
 	return errors.Wrapf(err, "cannot delete namespace")
 }
 
@@ -482,9 +584,9 @@ func ForceDelete(testName string) error {
 	crds := []string{Scenarios, Clusters, Services, Chaos, Cascades, Calls, VirtualObjects, Templates}
 
 	for _, crd := range crds {
-		resourceQuery := []string{"get", crd, "-n", testName, "-o", "jsonpath='{.items[*].metadata.name}'"}
+		resourceQuery := []string{"get", crd, "-o", "jsonpath='{.items[*].metadata.name}'"}
 
-		resources, err := process.Execute(Kubectl, resourceQuery...)
+		resources, err := Kubectl(testName, resourceQuery...)
 
 		switch {
 		case err != nil:
@@ -492,13 +594,13 @@ func ForceDelete(testName string) error {
 		case string(resources) == "''":
 			ui.Debug(crd, " resources are deleted.")
 		default:
-			patch := []string{"patch", crd, "-n", testName, "--type", "json"}
+			patch := []string{"patch", crd, "--type", "json"}
 			patch = append(patch, K8SRemoveFinalizer...)
 			patch = append(patch, string(resources))
 
-			ui.Debug("Use patch", Kubectl, strings.Join(patch, " "))
+			ui.Debug("Use patch", env.Settings.Kubectl(), strings.Join(patch, " "))
 
-			if _, err := process.Execute(Kubectl, patch...); err != nil {
+			if _, err := Kubectl(testName, patch...); err != nil {
 				return errors.Wrapf(err, "cannot patch '%s' finalizers", crd)
 			}
 		}
@@ -554,7 +656,8 @@ spec:
 
 	command := []string{"apply", "--wait", "-f", f.Name()}
 
-	return KubectlPrint(testName, false, command...)
+	_, err = Kubectl(testName, command...)
+	return err
 }
 
 /*
@@ -565,18 +668,18 @@ spec:
 ******************************************************************
 */
 
-func ListHelm(cmd *cobra.Command, testName string) error {
-	command := []string{"list", "-n", testName}
+func ListHelm(testName string) error {
+	command := []string{"list"}
 
 	// output format supported by Helm
-	outputType := OutputType(cmd.Flag("output").Value.String())
+	outputType := OutputType(env.Settings.OutputType)
 	if outputType == "table" ||
 		outputType == "json" ||
 		outputType == "yaml" {
 		command = append(command, "-o", string(outputType))
 	}
 
-	out, err := process.Execute(Helm, command...)
+	out, err := Helm(testName, command...)
 
 	ui.Info(string(out))
 	return err

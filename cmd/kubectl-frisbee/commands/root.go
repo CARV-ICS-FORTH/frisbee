@@ -17,50 +17,43 @@ limitations under the License.
 package commands
 
 import (
-	"fmt"
-	"os"
-
+	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/env"
 	"github.com/carv-ics-forth/frisbee/pkg/ui"
 	"github.com/spf13/cobra"
 )
 
-var (
-	verbose bool
-)
+func NewRootCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "kubectl-frisbee",
+		Short: "Frisbee entrypoint for kubectl plugin",
+		Run: func(cmd *cobra.Command, args []string) {
+			ui.Logo()
 
-func init() {
-	// Platform Installation
-	RootCmd.AddCommand(NewInstallCmd())
-	RootCmd.AddCommand(NewUninstallCmd())
-
-	// Test Management
-	RootCmd.AddCommand(NewSubmitCmd())
-	RootCmd.AddCommand(NewGetCmd())
-	RootCmd.AddCommand(NewDeleteCmd())
-	RootCmd.AddCommand(NewInspectCmd())
-
-	// Analysis Tools
-	RootCmd.AddCommand(NewSaveCmd())
-	RootCmd.AddCommand(NewReportCmd())
-}
-
-var RootCmd = &cobra.Command{
-	Use:   "kubectl-frisbee",
-	Short: "Frisbee entrypoint for kubectl plugin",
-	Run: func(cmd *cobra.Command, args []string) {
-		ui.Logo()
-		err := cmd.Usage()
-		ui.PrintOnError("Displaying usage", err)
-		cmd.DisableAutoGenTag = true
-	},
-}
-
-func Execute() {
-	RootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", true, "show additional debug messages")
-	RootCmd.PersistentFlags().Bool("hints", true, "show hints related to the specific operations")
-
-	if err := RootCmd.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+			ui.PrintOnError("Displaying help", cmd.Help())
+		},
 	}
+
+	// Add global flags
+	env.Settings.AddFlags(cmd)
+
+	ui.SetVerbose(env.Settings.Debug)
+
+	// Add subcommands
+	cmd.AddCommand(
+		// Platform Installation
+		NewInstallCmd(),
+		NewUninstallCmd(),
+
+		// Test Management
+		NewSubmitCmd(),
+		NewGetCmd(),
+		NewDeleteCmd(),
+		NewInspectCmd(),
+
+		// Analysis Tools
+		NewSaveCmd(),
+		NewReportCmd(),
+	)
+
+	return cmd
 }

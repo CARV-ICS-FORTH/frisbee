@@ -18,12 +18,13 @@ package common
 
 import (
 	"fmt"
-	"github.com/carv-ics-forth/frisbee/pkg/ui"
-	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v3"
 	"io"
-	"k8s.io/apimachinery/pkg/util/json"
 	"text/template"
+
+	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/env"
+	"github.com/carv-ics-forth/frisbee/pkg/ui"
+	"gopkg.in/yaml.v3"
+	"k8s.io/apimachinery/pkg/util/json"
 )
 
 type OutputType string
@@ -77,10 +78,9 @@ func RenderPrettyList(obj ui.TableData, w io.Writer) error {
 	return nil
 }
 
-func RenderList(cmd *cobra.Command, obj interface{}, w io.Writer) error {
-	outputType := OutputType(cmd.Flag("output").Value.String())
+func RenderList(obj interface{}, w io.Writer) error {
 
-	switch outputType {
+	switch OutputType(env.Settings.OutputType) {
 	case OutputPretty:
 		list, ok := obj.(ui.TableData)
 		if !ok {
@@ -92,7 +92,8 @@ func RenderList(cmd *cobra.Command, obj interface{}, w io.Writer) error {
 	case OutputJSON:
 		return RenderJSON(obj, w)
 	case OutputGoTemplate:
-		tpl := cmd.Flag("go-template").Value.String()
+		tpl := env.Settings.GoTemplate
+
 		list, ok := obj.([]interface{})
 		if !ok {
 			return fmt.Errorf("can't render, need list type but got: %+v", obj)

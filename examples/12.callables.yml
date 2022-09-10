@@ -39,7 +39,7 @@ spec:
 
     # Invoke callables into the idle pods
     - action: Call
-      name: group-a
+      name: callers
       depends: { running: [ idle ] }
       call:
         callable: launch                              # Function to call
@@ -56,6 +56,6 @@ spec:
     # When all actions are done, delete looping servers to gracefully exit the experiment
     - action: Delete
       name: teardown
-      depends: { running: [idle], success: [group-a]}
+      depends: { running: [idle], success: [callers]}
       delete:
         jobs: [ idle ]

@@ -17,6 +17,8 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"sort"
+
 	"github.com/carv-ics-forth/frisbee/pkg/structure"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/json"
@@ -35,7 +37,7 @@ type VirtualObject struct {
 	Status VirtualObjectStatus `json:"status,omitempty"`
 }
 
-func (in VirtualObject) Table() (header []string, data [][]string) {
+func (in *VirtualObject) Table() (header []string, data [][]string) {
 	statusHeader, statusData := in.Status.Table()
 
 	header = []string{"Name", "Phase"}
@@ -61,7 +63,7 @@ type VirtualObjectStatus struct {
 	Data map[string]string `json:"data,omitempty"`
 }
 
-func (in VirtualObjectStatus) Table() (header []string, data [][]string) {
+func (in *VirtualObjectStatus) Table() (header []string, data [][]string) {
 	var values []string
 
 	for _, key := range structure.SortedMapKeys(in.Data) {
@@ -93,6 +95,32 @@ type VirtualObjectList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []VirtualObject `json:"items"`
+}
+
+func (in *VirtualObjectList) Table() (header []string, data [][]string) {
+	// arrange in descending order (latest created goes first)
+	sort.SliceStable(in.Items, func(i, j int) bool {
+		tsI := in.Items[i].GetCreationTimestamp()
+		tsJ := in.Items[j].GetCreationTimestamp()
+
+		return tsI.After(tsJ.Time)
+	})
+
+	for _, vObject := range in.Items {
+		vHeaders, vData := vObject.Table()
+
+		// ignore duplicate headers
+		for _, vHeader := range vHeaders {
+			if !structure.ContainsStrings(header, vHeader) {
+				header = append(header, vHeader)
+			}
+		}
+
+		// but always add data to an existing header
+		data = append(data, vData...)
+	}
+
+	return header, data
 }
 
 func init() {

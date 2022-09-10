@@ -20,6 +20,7 @@ import (
 	"os"
 
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/common"
+	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/env"
 	"github.com/carv-ics-forth/frisbee/pkg/ui"
 	"github.com/spf13/cobra"
 )
@@ -66,9 +67,7 @@ func NewInspectTestCmd() *cobra.Command {
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			ui.Logo()
-
-			client := common.GetClient(cmd)
+			client := env.Settings.GetFrisbeeClient()
 
 			testName := args[0]
 
@@ -85,53 +84,79 @@ func NewInspectTestCmd() *cobra.Command {
 			// Always-on functions
 
 			if options.Overview || options.All {
-				test, err := client.GetScenario(testName)
+				test, err := client.GetScenario(cmd.Context(), testName)
 				ui.ExitOnError("Getting Test Information", err)
 
 				if test != nil {
 					ui.NL()
-					err = common.RenderList(cmd, test, os.Stdout)
+					err = common.RenderList(test, os.Stdout)
 					ui.ExitOnError("== Scenario Overview ==", err)
 
 					ui.NL()
-					err = common.RenderList(cmd, test.Status, os.Stdout)
+					err = common.RenderList(&test.Status, os.Stdout)
 					ui.ExitOnError("== Scenario Status ==", err)
 				}
 
-				ui.NL()
-				err = common.GetFrisbeeResources(cmd, testName, false)
-				common.Hint(cmd, "For more Frisbee Resource information use:",
-					"kubectl describe <kind>.frisbee.dev [names...] -n", testName)
-				ui.ExitOnError("== Active Frisbee Resources ==", err)
+				ui.Success("== Scenario Information ==")
 
-				ui.NL()
-				err = common.Dashboards(cmd, testName)
-				ui.ExitOnError("== Visualization Dashboards ==", err)
+				{ // Action Information
+					ui.NL()
+					err = common.GetFrisbeeResources(testName, false)
+					env.Settings.Hint("For more Frisbee Resource information use:",
+						"kubectl describe <kind>.frisbee.dev [names...] -n", testName)
+
+					ui.ExitOnError("== Scenario Actions ==", err)
+				}
+
+				{ // Virtual Objects
+					ui.NL()
+					vObjList, err := client.ListVirtualObjects(cmd.Context(), testName)
+					ui.ExitOnError("Getting list of virtual objects", err)
+
+					err = common.RenderList(&vObjList, os.Stdout)
+					ui.ExitOnError("Rendering virtual object list", err)
+				}
+
+				ui.Success("== Action Information ==")
+
+				{ // Visualization Tools
+					ui.NL()
+					err = common.Dashboards(testName)
+					ui.ExitOnError("== Visualization Tools ==", err)
+
+					ui.Success("== Visualization Tools ==")
+				}
 			}
 
 			if options.ExternalResources || options.All {
 				ui.NL()
-				err := common.GetChaosResources(cmd, testName)
+				err := common.GetChaosResources(testName)
 
-				common.Hint(cmd, "For more Chaos Resource information use:",
+				env.Settings.Hint("For more Chaos Resource information use:",
 					"kubectl describe <kind>.chaos-mesh.org [names...] -n", testName)
 				ui.ExitOnError("== Active Chaos Resources ==", err)
 
-				ui.NL()
-				err = common.GetK8sResources(cmd, testName)
+				ui.Success("== Chaos Resources ==")
 
-				common.Hint(cmd, "For more K8s Resource information use:",
+				ui.NL()
+				err = common.GetK8sResources(testName)
+
+				env.Settings.Hint("For more K8s Resource information use:",
 					"kubectl describe <kind> [names...] -n", testName)
 				ui.ExitOnError("== Active K8s Resources ==", err)
+
+				ui.Success("== Kubernetes Resources ==")
 			}
 
 			if options.Charts || options.All {
 				ui.NL()
-				err := common.GetTemplateResources(cmd, testName)
+				err := common.GetTemplateResources(testName)
 
-				common.Hint(cmd, "For more Template info use:",
+				env.Settings.Hint("For more Template info use:",
 					"kubectl describe templates -n", testName, "[template...]")
 				ui.ExitOnError("== Frisbee Templates ==", err)
+
+				ui.Success("== Scenario Templates ==")
 
 				/*
 					ui.NL()
@@ -143,29 +168,24 @@ func NewInspectTestCmd() *cobra.Command {
 
 			if options.Events || options.All {
 				ui.NL()
-				err := common.Events(testName)
+				err := common.GetK8sEvents(testName)
 
-				common.Hint(cmd, "For more events use:", "kubectl get events -n", testName)
+				env.Settings.Hint("For more events use:", "kubectl get events -n", testName)
 				ui.ExitOnError("== Events ==", err)
+
+				ui.Success("== Scenario Events ==")
+
 			}
 
 			if options.Logs != nil || options.All {
-				ui.NL()
-				vobjects, err := client.ListVirtualObjects(testName)
-
-				for _, vobject := range vobjects.Items {
-					if err := common.RenderList(cmd, vobject, os.Stdout); err != nil {
-						ui.ExitOnError(vobject.GetName(), err)
-					}
-				}
-
-				ui.ExitOnError("== Logs From Virtual Objects ==", err)
 
 				ui.NL()
-				err = common.GetPodLogs(testName, false, options.Loglines, options.Logs...)
+				err := common.GetPodLogs(testName, false, options.Loglines, options.Logs...)
 
-				common.Hint(cmd, "For more logs use:", "kubectl logs -n", testName, "<podnames>")
+				env.Settings.Hint("For more logs use:", "kubectl logs -n", testName, "<podnames>")
 				ui.ExitOnError("== Logs From Pods ==", err)
+
+				ui.Success("== Scenario Logs ==")
 			}
 		},
 	}
