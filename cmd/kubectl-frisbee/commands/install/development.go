@@ -22,15 +22,18 @@ import (
 	"os"
 
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/common"
+	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/env"
 	"github.com/carv-ics-forth/frisbee/pkg/ui"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
+
+const FrisbeeChartLocalPath = "charts/platform" // relative to Frisbee root.
 
 func NewInstallDevelopmentCmd() *cobra.Command {
 	var options common.FrisbeeInstallOptions
 	var chartPath string
 	var publicIP net.IP
+	var values string
 
 	cmd := &cobra.Command{
 		Use:   "development <FrisbeePath> <PublicIP>",
@@ -38,11 +41,11 @@ func NewInstallDevelopmentCmd() *cobra.Command {
 		Long:  "Install all Frisbee components, except for the controller which will run externally.",
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) < 2 {
-				return errors.New("please pass project path and public ip as argument")
+				ui.Failf("please pass project path and public ip as argument")
 			}
 
 			// Check Project Path
-			chartPath = fmt.Sprintf("%s/%s", args[0], common.FrisbeeChartLocalPath)
+			chartPath = fmt.Sprintf("%s/charts/platform", args[0])
 			_, err := os.Stat(chartPath + "/Chart.yaml")
 			ui.ExitOnError("Check Helm Chart", err)
 
@@ -57,7 +60,7 @@ func NewInstallDevelopmentCmd() *cobra.Command {
 				"--namespace", options.Namespace, "--create-namespace",
 				"--set", fmt.Sprintf("operator.enabled=%t", false),
 				"--set", fmt.Sprintf("operator.advertisedHost=%s", publicIP),
-				"--values", options.Values,
+				"--values", values,
 				options.Name, chartPath,
 			}
 
@@ -65,14 +68,21 @@ func NewInstallDevelopmentCmd() *cobra.Command {
 		},
 		PersistentPostRun: func(cmd *cobra.Command, args []string) {
 			ui.NL()
-			ui.Success("Frisbee installed in development mode. Run it with: ", fmt.Sprintf("FRISBEE_NAMESPACE=%s make run", options.Namespace))
+			ui.Success("Frisbee installed in development mode. Run it with: ",
+				fmt.Sprintf("KUBECONFIG=%s FRISBEE_NAMESPACE=%s make run",
+					env.Settings.KubeConfig,
+					options.Namespace))
 			ui.NL()
 
 			ui.Success(" Happy Testing! 🚀")
 		},
 	}
 
+	cmd.Flags().StringVarP(&values, "values", "f", FrisbeeChartLocalPath+"/values.yaml", "helm values file")
+
 	common.PopulateInstallFlags(cmd, &options)
+
+	// 	cmd.Flags().StringVarP(&options.Values, "values", "f", filepath.Join(options.Chart, "values.yaml"), "path to Helm values file")
 
 	return cmd
 }

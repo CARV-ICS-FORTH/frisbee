@@ -25,9 +25,7 @@ import (
 )
 
 const (
-	FrisbeeRepo           = "https://carv-ics-forth.github.io/frisbee/charts"
-	FrisbeeChartInRepo    = "frisbee/platform"
-	FrisbeeChartLocalPath = "charts/platform" // relative to Frisbee root.
+	FrisbeeRepo = "https://carv-ics-forth.github.io/frisbee/charts"
 )
 
 const (
@@ -41,15 +39,14 @@ const (
 *******************************************************************/
 
 type FrisbeeInstallOptions struct {
-	Name, Namespace, Chart, Values string
-	NoCertManager                  bool
+	Name, Namespace string
+	NoCertManager   bool
 }
 
 func PopulateInstallFlags(cmd *cobra.Command, options *FrisbeeInstallOptions) {
-	cmd.Flags().StringVar(&options.Chart, "chart", FrisbeeChartInRepo, "chart name")
 	cmd.Flags().StringVar(&options.Name, "name", "frisbee", "installation name")
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "frisbee", "installation namespace")
-	cmd.Flags().StringVarP(&options.Values, "values", "f", "", "path to Helm values file")
+
 	cmd.Flags().BoolVar(&options.NoCertManager, "no-cert-manager", false, "don't install cert-manager")
 }
 
@@ -68,11 +65,11 @@ func InstallFrisbeeOnK8s(command []string, options *FrisbeeInstallOptions) {
 	if env.Settings.Debug {
 		command = append(command, "--debug")
 
-		_, err := LoggedKubectl("", command...)
-		ui.ExitOnError("Helm install frisbee", err)
+		_, err := LoggedHelm("", command...)
+		ui.ExitOnError("Installing Helm Charts", err)
 	} else {
 		_, err := Helm("", command...)
-		ui.ExitOnError("Helm install frisbee", err)
+		ui.ExitOnError("Installing Helm Charts", err)
 	}
 }
 

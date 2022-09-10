@@ -29,6 +29,7 @@ import (
 	"github.com/carv-ics-forth/frisbee/pkg/ui"
 	"github.com/kubeshop/testkube/pkg/process"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/utils/exec"
 )
@@ -43,11 +44,18 @@ const (
 	// Validated over https://regex101.com/r/eXgekO/1
 	NotReadyRegex        = `.* container "(\w+)" in pod "(.*)" is waiting to start: (\w+)`
 	NoPodsFoundReg       = `.* pods "\w+" not found`
-	NotResourcesFoundReg = `No resources found in (.+) namespace..*`
+	NotResourcesFoundReg = `No resources found*`
+	NotFound             = `Error from server (NotFound)`
 )
 
 func ErrNotFound(out []byte) bool {
 	{ // First form
+		if strings.Contains(string(out), NotFound) {
+			return true
+		}
+	}
+
+	{ // Second form
 		match, err := regexp.Match(NotResourcesFoundReg, out)
 		if err != nil {
 			panic("unhandled output")
@@ -58,7 +66,7 @@ func ErrNotFound(out []byte) bool {
 		}
 	}
 
-	{ // SEcond form
+	{ // Third form
 		match, err := regexp.Match(NoPodsFoundReg, out)
 		if err != nil {
 			panic("unhandled output")
@@ -129,6 +137,8 @@ func Helm(testName string, arguments ...string) ([]byte, error) {
 	if testName != "" {
 		arguments = append(arguments, "-n", testName)
 	}
+
+	logrus.Warn("Helm cmd ", arguments)
 
 	return process.Execute(env.Settings.Helm(), arguments...)
 }
@@ -219,6 +229,9 @@ var TemplateInspectionFields = strings.Join([]string{
 	"HelmRelease:.metadata.annotations.meta\\.helm\\.sh\\/release-name",
 }, ",")
 
+
+const EmptyTemplateResources = "API   Kind   Name   HelmRelease"
+
 func GetTemplateResources(testName string) error {
 	command := []string{"get"}
 
@@ -235,7 +248,7 @@ func GetTemplateResources(testName string) error {
 	command = append(command, "-o", TemplateInspectionFields)
 
 	out, err := Kubectl(testName, command...)
-	if ErrNotFound(out) {
+	if ErrNotFound(out) || strings.Contains(string(out), EmptyTemplateResources) {
 		return nil
 	}
 
@@ -347,9 +360,13 @@ var K8SResourceInspectionFields = strings.Join([]string{
 	"Message*:.status.message",
 }, ",")
 
+
+
+const EmptyK8SResourceInspectionFields = "API   Kind   Name   Action   Component   Phase*   Reason*   Message*"
+
 func GetK8sResources(testName string) error {
 	// Filter out pods that belong to a scenario
-	command := []string{"get", "--show-kind=true"}
+	command := []string{"get", "--show-kind=true",	"-l", v1alpha1.LabelScenario}
 
 	command = append(command, strings.Join([]string{K8PODs, K8PVCs, K8PVs, K8SStorageClasses}, ","))
 
@@ -364,9 +381,10 @@ func GetK8sResources(testName string) error {
 	command = append(command, "-o", K8SResourceInspectionFields)
 
 	out, err := Kubectl(testName, command...)
-	if ErrNotFound(out) {
+	if ErrNotFound(out) || strings.Contains(string(out), EmptyK8SResourceInspectionFields ) {
 		return nil
 	}
+
 
 	ui.Info(string(out))
 
@@ -451,7 +469,9 @@ func GetPodLogs(testName string, tail bool, lines int, pods ...string) error {
 }
 
 func OpenShell(testName string, podName string, shellArgs ...string) error {
-	command := []string{"exec", "--stdin", "--tty", "-n", testName, podName}
+	command := []string{"exec",
+	"--kubeconfig", env.Settings.KubeConfig,
+	"--stdin", "--tty", "-n", testName, podName}
 
 	if len(shellArgs) == 0 {
 		ui.Info("Interactive Shell:")
@@ -548,8 +568,6 @@ func DeleteNamespaces(selector string, testNames ...string) error {
 	if ErrNotFound(out) {
 		return nil
 	}
-
-	ui.Info(string(out))
 
 	return errors.Wrapf(err, "cannot delete namespace")
 }

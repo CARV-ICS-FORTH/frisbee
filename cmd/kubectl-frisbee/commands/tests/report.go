@@ -170,6 +170,13 @@ var (
 
 func SavePDFs(options *TestReportOptions, dashboardURI, destDir string, grafanaEndpoint string, dashboardUID string) error {
 	/*
+		Ensure destination exists
+	*/
+	if err := os.MkdirAll(destDir, os.ModePerm); err != nil {
+		return errors.Wrapf(err, "destination error")
+	}
+
+	/*
 		Open Connection to Grafana.
 	*/
 	ctx := context.Background()
@@ -185,13 +192,6 @@ func SavePDFs(options *TestReportOptions, dashboardURI, destDir string, grafanaE
 	panels, err := c.ListPanelsWithData(ctx, dashboardUID)
 	if err != nil {
 		return err
-	}
-
-	/*
-		Ensure destination exists
-	*/
-	if err := os.MkdirAll(destDir, os.ModePerm); err != nil {
-		return errors.Wrapf(err, "destination error")
 	}
 
 	/*

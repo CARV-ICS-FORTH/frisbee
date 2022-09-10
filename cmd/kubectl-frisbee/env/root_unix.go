@@ -17,12 +17,11 @@ limitations under the License.
 package env
 
 import (
+	"github.com/carv-ics-forth/frisbee/pkg/ui"
+	"k8s.io/utils/exec"
 	"os"
 	"os/user"
 	"path/filepath"
-
-	"github.com/carv-ics-forth/frisbee/pkg/ui"
-	"k8s.io/utils/exec"
 )
 
 func (env *EnvSettings) CheckKubePerms() {
@@ -59,6 +58,7 @@ func (env *EnvSettings) CheckKubePerms() {
 
 	env.KubeConfig = kc
 }
+
 
 func (env *EnvSettings) LookupBinaries() {
 	kubectlPath, err := exec.New().LookPath("kubectl")

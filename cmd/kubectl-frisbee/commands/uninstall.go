@@ -28,7 +28,7 @@ import (
 
 type PlatformUninstallOptions struct {
 	Namespace, Name, RepositoryCache string
-	CRDS, Cache                      bool
+	All, CRDS, Cache                 bool
 }
 
 func PopulatePlatformUninstallFlags(cmd *cobra.Command, options *PlatformUninstallOptions) {
@@ -38,8 +38,10 @@ func PopulatePlatformUninstallFlags(cmd *cobra.Command, options *PlatformUninsta
 
 	cmd.Flags().BoolVar(&options.Cache, "cache", false, "delete frisbee cache")
 	cmd.Flags().BoolVar(&options.CRDS, "crds", false, "delete frisbee crds")
+	cmd.Flags().BoolVar(&options.All, "all", false, "delete everything")
 
 	cmd.Flags().StringVar(&options.RepositoryCache, "repository-cache", home.CachePath("repository"), "path to the file containing cached repository indexes")
+
 }
 
 func NewUninstallCmd() *cobra.Command {
@@ -52,6 +54,9 @@ func NewUninstallCmd() *cobra.Command {
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			ui.Logo()
 
+			env.Settings.CheckKubePerms()
+
+			ui.Info("Using config:", env.Settings.KubeConfig)
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 
@@ -79,23 +84,25 @@ func NewUninstallCmd() *cobra.Command {
 				_, err := common.Helm(options.Namespace, command...)
 				ui.ExitOnError("Deleting Helm charts ....", common.HelmIgnoreNotFound(err))
 
-				ui.Success("Helm Charts deleted")
+				ui.Success("Charts deleted")
 			}
 
 			// Delete crds
-			if options.CRDS {
-				_, err := common.Kubectl("", "delete", "crds", "--wait",
+			if options.CRDS || options.All {
+				out, err := common.Kubectl("", "delete", "crds", "--wait",
 					common.Scenarios, common.Clusters, common.Services, common.Cascades, common.Chaos,
 					common.Calls, common.VirtualObjects, common.Templates)
 
-				ui.ExitOnError("Deleting CRDs ....", err)
+				if err != nil && !common.ErrNotFound(out) {
+					ui.ExitOnError("Deleting CRDs ....", err)
+				}
 
 				ui.Success("CRDS  deleted")
 
 			}
 
 			// Delete cache
-			if options.Cache {
+			if options.Cache || options.All {
 				err := os.RemoveAll(options.RepositoryCache)
 				if err != nil && !os.IsNotExist(err) {
 					ui.ExitOnError("Deleting Cache ....", err)

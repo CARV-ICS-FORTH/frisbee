@@ -19,6 +19,7 @@ package commands
 import (
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/common"
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/tests"
+	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/env"
 	"github.com/carv-ics-forth/frisbee/pkg/ui"
 	"github.com/spf13/cobra"
 )
@@ -30,6 +31,10 @@ func NewReportCmd() *cobra.Command {
 		Short:   "Generate PDFs for every dashboard in Grafana.",
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			ui.Logo()
+
+			env.Settings.CheckKubePerms()
+
+			ui.Info("Using config:", env.Settings.KubeConfig)
 
 			if !common.CRDsExist(common.Scenarios) {
 				ui.Failf("Frisbee is not installed on the kubernetes cluster.")

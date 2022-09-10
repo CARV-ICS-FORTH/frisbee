@@ -19,6 +19,7 @@ package commands
 import (
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/common"
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/tests"
+	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/env"
 	"github.com/carv-ics-forth/frisbee/pkg/ui"
 	"github.com/spf13/cobra"
 )
@@ -31,6 +32,10 @@ func NewInspectCmd() *cobra.Command {
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			ui.Logo()
 
+			env.Settings.CheckKubePerms()
+
+			ui.Info("Using config:", env.Settings.KubeConfig)
+
 			if !common.CRDsExist(common.Scenarios) {
 				ui.Failf("Frisbee is not installed on the kubernetes cluster.")
 			}
@@ -39,6 +44,9 @@ func NewInspectCmd() *cobra.Command {
 			ui.PrintOnError("Displaying help", cmd.Help())
 		},
 	}
+
+	cmd.Flags().StringVarP(&env.Settings.OutputType, "output", "o", env.Settings.OutputType, "can be one of json|yaml|pretty|go-template")
+	cmd.Flags().StringVar(&env.Settings.GoTemplate, "go-template", "{{.}}", "go template to render")
 
 	cmd.AddCommand(tests.NewInspectTestCmd())
 

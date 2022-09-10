@@ -29,8 +29,7 @@ func NewRootCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			ui.Logo()
 
-			err := cmd.Help()
-			ui.PrintOnError("Displaying help", err)
+			ui.PrintOnError("Displaying help", cmd.Help())
 		},
 	}
 
@@ -55,9 +54,6 @@ func NewRootCmd() *cobra.Command {
 		NewSaveCmd(),
 		NewReportCmd(),
 	)
-
-	// Check permissions on critical files
-	env.Settings.CheckKubePerms()
 
 	return cmd
 }

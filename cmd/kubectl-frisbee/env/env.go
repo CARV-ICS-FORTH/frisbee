@@ -65,18 +65,18 @@ type EnvSettings struct {
 	// Paths to external commands
 	Path
 
-	namespace string
-	config    *genericclioptions.ConfigFlags
+	// namespace string
+	config *genericclioptions.ConfigFlags
 
 	// KubeConfig is the path to the kubeconfig file
 	KubeConfig string
 
 	// KubeContext is the name of the kubeconfig context.
-	KubeContext string
+	//	KubeContext string
 	// Bearer KubeToken used for authentication
-	KubeToken string
+	//	KubeToken string
 	// Username to impersonate for the operation
-	KubeAsUser string
+	// KubeAsUser string
 
 	// MaxHistory is the max tests history maintained.
 	MaxHistory int
@@ -100,10 +100,11 @@ type EnvSettings struct {
 func New() *EnvSettings {
 	env := &EnvSettings{
 		// interaction with Kubernetes
-		namespace:   os.Getenv("FRISBEE_NAMESPACE"),
-		KubeContext: os.Getenv("FRISBEE_KUBECONTEXT"),
-		KubeToken:   os.Getenv("FRISBEE_KUBETOKEN"),
-		KubeAsUser:  os.Getenv("FRISBEE_KUBEASUSER"),
+		// namespace: os.Getenv("FRISBEE_NAMESPACE"),
+		//		KubeContext: os.Getenv("FRISBEE_KUBECONTEXT"),
+		//		KubeToken:   os.Getenv("FRISBEE_KUBETOKEN"),
+		// KubeAsUser: os.Getenv("FRISBEE_KUBEASUSER"),
+		KubeConfig: os.Getenv("KUBECONFIG"),
 
 		// Operation
 		MaxHistory: envIntOr("FRISBEE_MAX_HISTORY", defaultMaxHistory),
@@ -116,11 +117,11 @@ func New() *EnvSettings {
 		bind to kubernetes config flags
 	*/
 	env.config = &genericclioptions.ConfigFlags{
-		Namespace:   &env.namespace,
-		Context:     &env.KubeContext,
-		BearerToken: &env.KubeToken,
-		KubeConfig:  &env.KubeConfig,
-		Impersonate: &env.KubeAsUser,
+		//		Namespace:  &env.namespace,
+		KubeConfig: &env.KubeConfig,
+		//		Context:     &env.KubeContext,
+		//		BearerToken: &env.KubeToken,
+		// Impersonate: &env.KubeAsUser,
 		WrapConfigFn: func(config *rest.Config) *rest.Config {
 			// config.Burst = env.BurstLimit
 			return config
@@ -137,28 +138,28 @@ func New() *EnvSettings {
 
 // AddFlags binds flags to the given flagset.
 func (env *EnvSettings) AddFlags(cmd *cobra.Command) {
-	fs := cmd.Flags()
+	// fs := cmd.Flags()
 
 	/*
 		Top-Level Flags
 	*/
 
-	fs.StringVarP(&env.namespace, "namespace", "n", env.namespace, "namespace scope for this request")
-	fs.StringVar(&env.KubeConfig, "kubeconfig", "", "path to the kubeconfig file")
-	fs.StringVar(&env.KubeContext, "kube-context", env.KubeContext, "name of the kubeconfig context to use")
-	fs.StringVar(&env.KubeToken, "kube-token", env.KubeToken, "bearer token used for authentication")
-	fs.StringVar(&env.KubeAsUser, "kube-as-user", env.KubeAsUser, "username to impersonate for the operation")
+	// fs.StringVarP(&env.namespace, "namespace", "n", env.namespace, "namespace scope for this request")
+
+	// fs.StringVar(&env.KubeContext, "kube-context", env.KubeContext, "name of the kubeconfig context to use")
+	// fs.StringVar(&env.KubeToken, "kube-token", env.KubeToken, "bearer token used for authentication")
+	// fs.StringVar(&env.KubeAsUser, "kube-as-user", env.KubeAsUser, "username to impersonate for the operation")
 
 	/*
 		Persistent Flags
 	*/
 
 	pfs := cmd.PersistentFlags()
+
+	pfs.StringVar(&env.KubeConfig, "kubeconfig", env.KubeConfig, "path to the kubeconfig file")
+
 	pfs.BoolVarP(&env.Debug, "debug", "d", env.Debug, "enable verbose output")
 	pfs.BoolVar(&env.Hints, "hints", env.Hints, "enable hints in the output")
-
-	pfs.StringVarP(&env.OutputType, "output", "o", env.OutputType, "can be one of json|yaml|pretty|go-template")
-	pfs.StringVar(&env.GoTemplate, "go-template", "{{.}}", "go template to render")
 }
 
 func envOr(name, def string) string {
@@ -200,10 +201,13 @@ func envCSV(name string) (ls []string) {
 	return
 }
 
+/*
 // SetNamespace sets the namespace in the configuration
 func (env *EnvSettings) SetNamespace(namespace string) {
 	env.namespace = namespace
 }
+
+*/
 
 // RESTClientGetter gets the kubeconfig from EnvSettings
 func (env *EnvSettings) RESTClientGetter() genericclioptions.RESTClientGetter {
@@ -224,7 +228,7 @@ func (env *EnvSettings) GetFrisbeeClient() *frisbeeclient.APIClient {
 	genericClient, err := client.New(restConfig, client.Options{Scheme: scheme})
 	ui.ExitOnError("Setting up generic client", err)
 
-	ui.Info("Kubernetes connection at: ", restConfig.Host)
+	ui.Info("Connecting to Kubernetes API Server at: ", restConfig.Host)
 
 	c := frisbeeclient.NewDirectAPIClient(genericClient)
 	env.client = &c
