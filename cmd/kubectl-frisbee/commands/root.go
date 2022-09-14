@@ -28,6 +28,7 @@ func NewRootCmd() *cobra.Command {
 		Short: "Frisbee entrypoint for kubectl plugin",
 		Run: func(cmd *cobra.Command, args []string) {
 			ui.Logo()
+			ui.SetVerbose(env.Settings.Debug)
 
 			ui.PrintOnError("Displaying help", cmd.Help())
 		},
@@ -35,8 +36,6 @@ func NewRootCmd() *cobra.Command {
 
 	// Add global flags
 	env.Settings.AddFlags(cmd)
-
-	ui.SetVerbose(env.Settings.Debug)
 
 	// Add subcommands
 	cmd.AddCommand(

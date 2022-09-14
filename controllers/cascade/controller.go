@@ -114,6 +114,8 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return common.Stop()
 	}
 
+	log := r.Logger.WithValues("object", client.ObjectKeyFromObject(&cr))
+
 	switch cr.Status.Phase {
 	case v1alpha1.PhaseSuccess:
 		if err := r.HasSucceed(ctx, &cr); err != nil {
@@ -131,10 +133,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	case v1alpha1.PhaseRunning:
 		// Nothing to do. Just wait for something to happen.
-		r.Logger.Info(".. Awaiting",
-			"obj", client.ObjectKeyFromObject(&cr),
-			cr.Status.Reason, cr.Status.Message,
-		)
+		log.Info(".. Awaiting", cr.Status.Reason, cr.Status.Message)
 
 		return common.Stop()
 
@@ -143,7 +142,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "initialization error"))
 		}
 
-		return lifecycle.Pending(ctx, r, &cr, "ready to start submitting jobs.")
+		return lifecycle.Pending(ctx, r, &cr, "ready to start creating jobs.")
 
 	case v1alpha1.PhasePending:
 		nextJob := cr.Status.ScheduledJobs + 1
@@ -151,17 +150,25 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		//	If all jobs are scheduled but are not in the Running phase, they may be in the Pending phase.
 		//	In both cases, we have nothing else to do but waiting for the next reconciliation cycle.
 		if cr.Spec.Until == nil && (nextJob >= len(cr.Status.QueuedJobs)) {
-			r.Logger.Info(".. Awaiting",
-				"obj", client.ObjectKeyFromObject(&cr),
-				cr.Status.Reason, cr.Status.Message,
-			)
+			log.Info(".. Awaiting", cr.Status.Reason, cr.Status.Message)
 
 			return common.Stop()
 		}
 
 		// Get the next scheduled job
-		if hasJob, requeue, err := scheduler.Schedule(ctx, r, &cr, cr.Spec.Schedule, cr.Status.LastScheduleTime, r.view); !hasJob {
-			return requeue, err
+		{
+			hasJob, nextTick, err := scheduler.Schedule(log, &cr, scheduler.Parameters{
+				ScheduleSpec:     cr.Spec.Schedule,
+				LastScheduled:    cr.Status.LastScheduleTime,
+				ExpectedTimeline: cr.Status.Timeline,
+				State:            r.view,
+			})
+			if err != nil {
+				return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "scheduling error"))
+			}
+			if !hasJob {
+				return common.RequeueAfter(time.Until(nextTick))
+			}
 		}
 
 		// Build the job in kubernetes
@@ -173,7 +180,8 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		cr.Status.ScheduledJobs = nextJob
 		cr.Status.LastScheduleTime = &metav1.Time{Time: time.Now()}
 
-		return lifecycle.Pending(ctx, r, &cr, fmt.Sprintf("Scheduled jobs: '%d'", cr.Status.ScheduledJobs))
+		return lifecycle.Pending(ctx, r, &cr, fmt.Sprintf("Scheduled jobs: '%d/%d'",
+			cr.Status.ScheduledJobs+1, cr.Spec.MaxInstances))
 	}
 
 	panic(errors.New("This should never happen"))

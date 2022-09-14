@@ -45,13 +45,20 @@ func ValidateExpr(expr *ConditionalExpr) error {
 	return nil
 }
 
-func ValidateScheduler(sch *SchedulerSpec) error {
+func ValidateScheduler(instances int, sch *SchedulerSpec) error {
+	if instances < 2 {
+		return errors.Errorf("scheduling requires at least two instances.")
+	}
+
+	var activeConditions int
 
 	// cron
 	if cronspec := sch.Cron; cronspec != nil {
 		if _, err := cron.ParseStandard(*cronspec); err != nil {
 			return errors.Wrapf(err, "invalid schedule %q", *cronspec)
 		}
+
+		activeConditions++
 	}
 
 	// event
@@ -59,7 +66,41 @@ func ValidateScheduler(sch *SchedulerSpec) error {
 		if err := ValidateExpr(conditions); err != nil {
 			return errors.Wrapf(err, "conditions error")
 		}
+
+		activeConditions++
 	}
+
+	// timeline
+	if timeline := sch.Timeline; timeline != nil {
+		if err := ValidateDistribution(timeline.DistributionSpec); err != nil {
+			return errors.Wrapf(err, "conditions error")
+		}
+
+		activeConditions++
+	}
+
+	if activeConditions != 1 {
+		return errors.Errorf("The scheduler must have exactly one condition activated.")
+	}
+
+	return nil
+}
+
+func ValidateDistribution(dist *DistributionSpec) error {
+	switch dist.Distribution {
+	case "constant":
+		return nil
+
+	case "uniform":
+		return nil
+
+	case "zipfian":
+		return nil
+
+	case "histogram":
+		return nil
+	}
+	/* TODO: continue with the other distributions */
 
 	return nil
 }
@@ -92,3 +133,11 @@ func ValidatePlacement(policy *PlacementSpec, callIndex map[string]*Action) erro
 
 	return nil
 }
+
+/*
+	####################################
+
+			Mutation Functions
+
+  	#####################################
+*/

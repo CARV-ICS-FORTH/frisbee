@@ -32,7 +32,7 @@ import (
 
 var _ webhook.Defaulter = &Service{}
 
-// +kubebuilder:webhook:path=/validate-frisbee-dev-v1alpha1-service,mutating=false,failurePolicy=fail,sideEffects=None,groups=frisbee.dev,resources=services,verbs=create;update,versions=v1alpha1,name=vservice.kb.io,admissionReviewVersions={v1,v1alpha1}
+// +kubebuilder:webhook:path=/validate-frisbee-dev-v1alpha1-service,mutating=true,failurePolicy=fail,sideEffects=None,groups=frisbee.dev,resources=services,verbs=create;update,versions=v1alpha1,name=vservice.kb.io,admissionReviewVersions={v1,v1alpha1}
 
 var _ webhook.Validator = &Service{}
 
@@ -65,7 +65,7 @@ func (in *Service) ValidateCreate() error {
 			}
 		} else { // Validate Sidecar container(s)
 			if err := in.validateSidecarContainer(&container); err != nil {
-				return errors.Wrapf(err, "error in service template '%s'", in.GetName())
+				return errors.Wrapf(err, "service '%s' definition error", in.GetName())
 			}
 		}
 	}
@@ -76,12 +76,16 @@ func (in *Service) ValidateCreate() error {
 func (in *Service) validateMainContainer(c *corev1.Container) error {
 	// Ensure that are no other main containers
 	if len(in.Spec.Containers) > 1 {
-		return errors.Errorf("Only one container can defined in the template of a Main container")
+		return errors.Errorf("Only one container can defined in the template of a Main container.")
 	}
 
 	// Ensure that there are no sidecar decorations
 	if _, exists := in.Spec.Decorators.Annotations[SidecarTelemetry]; exists {
-		return errors.Errorf("Unclear if it's a main container or a telemetry sidecar")
+		return errors.Errorf("Unclear if it's a main container or a telemetry sidecar.")
+	}
+
+	if in.Spec.Decorators.Resources != nil && (c.Resources.Limits != nil || c.Resources.Requests != nil) {
+		return errors.Errorf("pod-level decorators.resources are in conflict with container[%s].resources.", c.Name)
 	}
 
 	return nil
@@ -95,7 +99,7 @@ func (in *Service) validateSidecarContainer(c *corev1.Container) error {
 	// Ensure that there are no sidecar decorations
 	if value, exists := in.Spec.Decorators.Annotations[SidecarTelemetry]; exists {
 		if value == MainContainerName {
-			return errors.Errorf("Follow either the Main container or the Sidecar container rules. Not both")
+			return errors.Errorf("Conflict. Main Container has been marked as sidecar in the decorators.annotation.")
 		}
 
 		if value != c.Name {

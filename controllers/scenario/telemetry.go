@@ -119,17 +119,12 @@ func (r *Controller) installDataviewer(ctx context.Context, t *v1alpha1.Scenario
 	v1alpha1.SetComponentLabel(&job.ObjectMeta, v1alpha1.ComponentSys)
 
 	{ // spec
-		fromtemplate := &v1alpha1.GenerateFromTemplate{
+		spec, err := serviceutils.GetServiceSpec(ctx, r.GetClient(), t, v1alpha1.GenerateFromTemplate{
 			TemplateRef:  configuration.DataviewerTemplate,
 			MaxInstances: 1,
 			Inputs:       nil,
-		}
+		})
 
-		if err := fromtemplate.Prepare(false); err != nil {
-			return errors.Wrapf(err, "template validation")
-		}
-
-		spec, err := serviceutils.GetServiceSpec(ctx, r.GetClient(), t, *fromtemplate)
 		if err != nil {
 			return errors.Wrapf(err, "cannot get spec")
 		}
@@ -159,17 +154,12 @@ func (r *Controller) installPrometheus(ctx context.Context, t *v1alpha1.Scenario
 	v1alpha1.SetComponentLabel(&job.ObjectMeta, v1alpha1.ComponentSys)
 
 	{ // spec
-		fromtemplate := &v1alpha1.GenerateFromTemplate{
+		spec, err := serviceutils.GetServiceSpec(ctx, r.GetClient(), t, v1alpha1.GenerateFromTemplate{
 			TemplateRef:  configuration.PrometheusTemplate,
 			MaxInstances: 1,
 			Inputs:       nil,
-		}
+		})
 
-		if err := fromtemplate.Prepare(false); err != nil {
-			return errors.Wrapf(err, "template validation")
-		}
-
-		spec, err := serviceutils.GetServiceSpec(ctx, r.GetClient(), t, *fromtemplate)
 		if err != nil {
 			return errors.Wrapf(err, "cannot get spec")
 		}
@@ -200,17 +190,12 @@ func (r *Controller) installGrafana(ctx context.Context, t *v1alpha1.Scenario, a
 	v1alpha1.SetComponentLabel(&job.ObjectMeta, v1alpha1.ComponentSys)
 
 	{ // spec
-		fromtemplate := &v1alpha1.GenerateFromTemplate{
+		spec, err := serviceutils.GetServiceSpec(ctx, r.GetClient(), t, v1alpha1.GenerateFromTemplate{
 			TemplateRef:  configuration.GrafanaTemplate,
 			MaxInstances: 1,
 			Inputs:       nil,
-		}
+		})
 
-		if err := fromtemplate.Prepare(false); err != nil {
-			return errors.Wrapf(err, "template validation")
-		}
-
-		spec, err := serviceutils.GetServiceSpec(ctx, r.GetClient(), t, *fromtemplate)
 		if err != nil {
 			return errors.Wrapf(err, "cannot get spec")
 		}

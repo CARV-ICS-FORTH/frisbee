@@ -59,7 +59,6 @@ func (env *EnvSettings) CheckKubePerms() {
 	env.KubeConfig = kc
 }
 
-
 func (env *EnvSettings) LookupBinaries() {
 	kubectlPath, err := exec.New().LookPath("kubectl")
 	ui.ExitOnError("Frisbee requires 'kubectl' to be installed in your system.", err)

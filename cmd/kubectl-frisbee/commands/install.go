@@ -30,6 +30,7 @@ func NewInstallCmd() *cobra.Command {
 		Aliases: []string{"i", "deploy"},
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			ui.Logo()
+			ui.SetVerbose(env.Settings.Debug)
 
 			env.Settings.CheckKubePerms()
 

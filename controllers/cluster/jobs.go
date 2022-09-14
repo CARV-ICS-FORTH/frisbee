@@ -18,10 +18,10 @@ package cluster
 
 import (
 	"context"
-
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
 	serviceutils "github.com/carv-ics-forth/frisbee/controllers/service/utils"
+	"github.com/carv-ics-forth/frisbee/pkg/distributions"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -52,17 +52,17 @@ func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Cluster, i int) er
 	return nil
 }
 
-func (r *Controller) constructJobSpecList(ctx context.Context, cluster *v1alpha1.Cluster) ([]v1alpha1.ServiceSpec, error) {
-	if err := cluster.Spec.GenerateFromTemplate.Prepare(true); err != nil {
-		return nil, errors.Wrapf(err, "template validation")
-	}
-
-	serviceSpecs, err := serviceutils.GetServiceSpecList(ctx, r.GetClient(), cluster, cluster.Spec.GenerateFromTemplate)
+func (r *Controller) constructJobSpecList(ctx context.Context, cr *v1alpha1.Cluster) ([]v1alpha1.ServiceSpec, error) {
+	serviceSpecs, err := serviceutils.GetServiceSpecList(ctx, r.GetClient(), cr, cr.Spec.GenerateFromTemplate)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot get serviceSpecs")
 	}
 
-	SetPlacement(cluster, serviceSpecs)
+	SetPlacement(cr, serviceSpecs)
+
+	SetResources(cr, serviceSpecs)
+
+	SetTimeline(cr)
 
 	return serviceSpecs, nil
 }
@@ -151,4 +151,36 @@ func SetPlacement(cluster *v1alpha1.Cluster, services []v1alpha1.ServiceSpec) {
 		// Apply the current rules.
 		services[i].Affinity = &affinity
 	}
+}
+
+func SetResources(cluster *v1alpha1.Cluster, services []v1alpha1.ServiceSpec) {
+	if cluster.Spec.Resources == nil {
+		return
+	}
+
+	generator := distributions.GetPointDistribution(int64(cluster.Spec.MaxInstances), cluster.Spec.Resources.DistributionSpec)
+	resources := generator.ApplyToResources(cluster.Spec.Resources.TotalResources)
+
+	// apply the resource distribution to the Main container of each pod.
+	for i := range services {
+		for ci, c := range services[i].Containers {
+			if c.Name == v1alpha1.MainContainerName {
+				services[i].Containers[ci].Resources.Requests = resources[i]
+				services[i].Containers[ci].Resources.Limits = resources[i]
+			}
+		}
+	}
+
+}
+
+func SetTimeline(cr *v1alpha1.Cluster) {
+	if cr.Spec.Schedule == nil || cr.Spec.Schedule.Timeline == nil {
+		return
+	}
+
+	generator := distributions.GetPointDistribution(int64(cr.Spec.MaxInstances),
+		cr.Spec.Schedule.Timeline.DistributionSpec)
+
+	cr.Status.Timeline = generator.ApplyToTimeline(cr.GetCreationTimestamp(),
+		*cr.Spec.Schedule.Timeline.TotalDuration)
 }

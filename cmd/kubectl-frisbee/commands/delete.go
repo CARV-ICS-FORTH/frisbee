@@ -31,6 +31,7 @@ func NewDeleteCmd() *cobra.Command {
 		Short:   "Delete resources",
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			ui.Logo()
+			ui.SetVerbose(env.Settings.Debug)
 
 			env.Settings.CheckKubePerms()
 

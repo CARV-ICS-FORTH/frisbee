@@ -92,6 +92,71 @@ spec:
                       next scheduled time
                     format: int64
                     type: integer
+                  timeline:
+                    description: Timeline creates a timeline that honors the underlying
+                      distribution.
+                    properties:
+                      constant:
+                        description: DistParamsConstant are parameters for the constant
+                          distribution.
+                        properties:
+                          value:
+                            format: int64
+                            type: integer
+                        required:
+                        - value
+                        type: object
+                      distribution:
+                        enum:
+                        - constant
+                        - uniform
+                        - zipfian
+                        - histogram
+                        type: string
+                      histogram:
+                        description: DistParamsHistogram are parameters for the constant
+                          distribution.
+                        properties:
+                          blockSize:
+                            format: int64
+                            type: integer
+                          buckets:
+                            items:
+                              format: int64
+                              type: integer
+                            type: array
+                        required:
+                        - blockSize
+                        - buckets
+                        type: object
+                      total:
+                        description: TotalDuration defines the total duration within
+                          which events will happen.
+                        type: string
+                      uniform:
+                        description: DistParamsUniform are parameters for the constant
+                          distribution.
+                        properties:
+                          max:
+                            format: int64
+                            type: integer
+                        required:
+                        - max
+                        type: object
+                      zipfian:
+                        description: DistParamsZipfian are parameters for the constant
+                          distribution.
+                        properties:
+                          max:
+                            format: int64
+                            type: integer
+                        required:
+                        - max
+                        type: object
+                    required:
+                    - distribution
+                    - total
+                    type: object
                 type: object
               services:
                 description: Services is a list of services that will be stopped.
@@ -252,6 +317,12 @@ spec:
               scheduledJobs:
                 description: ScheduledJobs points to the next QueuedJobs.
                 type: integer
+              timeline:
+                description: Timeline is the result of evaluating a timeline distribution.
+                items:
+                  format: date-time
+                  type: string
+                type: array
             type: object
         type: object
     served: true

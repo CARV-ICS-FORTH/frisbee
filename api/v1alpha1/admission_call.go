@@ -30,7 +30,7 @@ import (
 
 var _ webhook.Defaulter = &Call{}
 
-// +kubebuilder:webhook:path=/validate-frisbee-dev-v1alpha1-call,mutating=false,failurePolicy=fail,sideEffects=None,groups=frisbee.dev,resources=calls,verbs=create;update,versions=v1alpha1,name=vcall.kb.io,admissionReviewVersions={v1,v1alpha1}
+// +kubebuilder:webhook:path=/validate-frisbee-dev-v1alpha1-call,mutating=true,failurePolicy=fail,sideEffects=None,groups=frisbee.dev,resources=calls,verbs=create;update,versions=v1alpha1,name=vcall.kb.io,admissionReviewVersions={v1,v1alpha1}
 
 var _ webhook.Validator = &Call{}
 
@@ -49,6 +49,13 @@ func (in *Call) SetupWebhookWithManager(mgr ctrl.Manager) error {
 func (in *Call) Default() {
 	calllog.V(5).Info("default", "name", in.Name)
 
+	// Schedule field
+	if schedule := in.Spec.Schedule; schedule != nil {
+		if schedule.StartingDeadlineSeconds == nil {
+			schedule.StartingDeadlineSeconds = &DefaultStartingDeadlineSeconds
+		}
+	}
+
 	// TODO(user): fill in your defaulting logic.
 }
 
@@ -56,38 +63,36 @@ func (in *Call) Default() {
 func (in *Call) ValidateCreate() error {
 	calllog.V(5).Info("validate create", "name", in.Name)
 
-	spec := in.Spec
-
 	// Expect field
-	if expect := spec.Expect; expect != nil {
-		if len(expect) != len(spec.Services) {
-			return errors.Errorf("Expect '%d' outputs for '%d' services", len(expect), len(spec.Services))
+	if expect := in.Spec.Expect; expect != nil {
+		if len(expect) != len(in.Spec.Services) {
+			return errors.Errorf("Expect '%d' outputs for '%d' services", len(expect), len(in.Spec.Services))
 		}
 	}
 
 	// Tolerate field
-	if tolerate := spec.Tolerate; tolerate != nil {
+	if tolerate := in.Spec.Tolerate; tolerate != nil {
 		if err := ValidateTolerate(tolerate); err != nil {
 			return errors.Wrapf(err, "tolerate error")
 		}
 	}
 
 	// Until field
-	if until := spec.Until; until != nil {
+	if until := in.Spec.Until; until != nil {
 		if err := ValidateExpr(until); err != nil {
 			return errors.Wrapf(err, "until error")
 		}
 	}
 
 	// Schedule field
-	if schedule := spec.Schedule; schedule != nil {
-		if err := ValidateScheduler(schedule); err != nil {
+	if schedule := in.Spec.Schedule; schedule != nil {
+		if err := ValidateScheduler(len(in.Spec.Services), schedule); err != nil {
 			return errors.Wrapf(err, "schedule error")
 		}
 	}
 
 	// Suspend Field
-	if suspend := spec.Suspend; suspend != nil {
+	if suspend := in.Spec.Suspend; suspend != nil {
 		if *suspend {
 			return errors.Errorf("Cannot create a call that is already suspended")
 		}
