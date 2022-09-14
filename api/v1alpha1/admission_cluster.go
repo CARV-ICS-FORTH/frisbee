@@ -28,7 +28,7 @@ import (
 
 var _ webhook.Defaulter = &Cluster{}
 
-// +kubebuilder:webhook:path=/validate-frisbee-dev-v1alpha1-cluster,mutating=false,failurePolicy=fail,sideEffects=None,groups=frisbee.dev,resources=clusters,verbs=create;update,versions=v1alpha1,name=vcluster.kb.io,admissionReviewVersions={v1,v1alpha1}
+// +kubebuilder:webhook:path=/validate-frisbee-dev-v1alpha1-cluster,mutating=true,failurePolicy=fail,sideEffects=None,groups=frisbee.dev,resources=clusters,verbs=create;update,versions=v1alpha1,name=vcluster.kb.io,admissionReviewVersions={v1,v1alpha1}
 
 var _ webhook.Validator = &Cluster{}
 
@@ -45,6 +45,17 @@ func (in *Cluster) SetupWebhookWithManager(mgr ctrl.Manager) error {
 func (in *Cluster) Default() {
 	clusterlog.V(5).Info("default", "name", in.Name)
 
+	if err := in.Spec.GenerateFromTemplate.Prepare(true); err != nil {
+		clusterlog.Error(err, "template error")
+	}
+
+	// Schedule field
+	if schedule := in.Spec.Schedule; schedule != nil {
+		if schedule.StartingDeadlineSeconds == nil {
+			schedule.StartingDeadlineSeconds = &DefaultStartingDeadlineSeconds
+		}
+	}
+
 	// TODO(user): fill in your defaulting logic.
 }
 
@@ -52,31 +63,58 @@ func (in *Cluster) Default() {
 func (in *Cluster) ValidateCreate() error {
 	clusterlog.V(5).Info("validate create", "name", in.Name)
 
-	spec := in.Spec
+	// Set missing values for the template
+	if err := in.Spec.GenerateFromTemplate.Prepare(true); err != nil {
+		clusterlog.Error(err, "template error")
+	}
+
+	// Resources field
+	if resources := in.Spec.Resources; resources != nil {
+		if in.Spec.Until != nil {
+			return errors.Errorf("ResourceDistribution conflicts with Until conditions.")
+		}
+
+		if in.Spec.MaxInstances < 2 {
+			return errors.Errorf("ResourceDistribution requires at least two services.")
+		}
+
+		if resources.TotalResources == nil {
+			return errors.Errorf("You must specify the field 'TotalResources'")
+		}
+
+		if err := ValidateDistribution(resources.DistributionSpec); err != nil {
+			return errors.Wrapf(err, "distribution error")
+		}
+	}
+
+	// TestData field
+	if testdata := in.Spec.TestData; testdata != nil {
+		// todo: add conditions
+	}
 
 	// Tolerate field
-	if tolerate := spec.Tolerate; tolerate != nil {
+	if tolerate := in.Spec.Tolerate; tolerate != nil {
 		if err := ValidateTolerate(tolerate); err != nil {
 			return errors.Wrapf(err, "tolerate error")
 		}
 	}
 
 	// Until field
-	if until := spec.Until; until != nil {
+	if until := in.Spec.Until; until != nil {
 		if err := ValidateExpr(until); err != nil {
 			return errors.Wrapf(err, "until error")
 		}
 	}
 
 	// Schedule field
-	if schedule := spec.Schedule; schedule != nil {
-		if err := ValidateScheduler(schedule); err != nil {
+	if schedule := in.Spec.Schedule; schedule != nil {
+		if err := ValidateScheduler(in.Spec.MaxInstances, schedule); err != nil {
 			return errors.Wrapf(err, "schedule error")
 		}
 	}
 
 	// Suspend Field
-	if suspend := spec.Suspend; suspend != nil {
+	if suspend := in.Spec.Suspend; suspend != nil {
 		if *suspend {
 			return errors.Errorf("Cannot create a cluster that is already suspended")
 		}

@@ -115,17 +115,15 @@ func (in *GenerateFromTemplate) Prepare(allowMultipleInputs bool) error {
 	case in.TemplateRef == "":
 		return errors.New("empty templateRef")
 
-	case len(in.Inputs) == 0: // use default parameters for all instances
-		if in.MaxInstances == 0 {
-			in.MaxInstances = 1
-		}
+	case len(in.Inputs) > 1 && !allowMultipleInputs: // object violation
+		return errors.Errorf("Allowed inputs '%t' but got '%d'", allowMultipleInputs, len(in.Inputs))
+
+	case len(in.Inputs) == 0 && in.MaxInstances == 0: // use default parameters for all instances
+		in.MaxInstances = 1
 
 		return nil
 
-	case !allowMultipleInputs && len(in.Inputs) > 1: // object violation
-		return errors.Errorf("Allowed inputs '%t' but got '%d'", allowMultipleInputs, len(in.Inputs))
-
-	case len(in.Inputs) >= in.MaxInstances: // every instance has its own parameters.
+	case len(in.Inputs) > in.MaxInstances: // every instance has its own parameters.
 		in.MaxInstances = len(in.Inputs)
 
 		return nil

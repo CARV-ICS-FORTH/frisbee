@@ -19,44 +19,15 @@ package call
 import (
 	"context"
 	"fmt"
-	"regexp"
-
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
+	"github.com/carv-ics-forth/frisbee/pkg/distributions"
 	"github.com/carv-ics-forth/frisbee/pkg/lifecycle"
 	"github.com/carv-ics-forth/frisbee/pkg/structure"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"regexp"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-func (r *Controller) constructJobSpecList(ctx context.Context, cr *v1alpha1.Call) ([]v1alpha1.Callable, error) {
-	specs := make([]v1alpha1.Callable, 0, len(cr.Spec.Services))
-
-	for _, serviceName := range cr.Spec.Services {
-		// get service spec
-		var service v1alpha1.Service
-
-		key := client.ObjectKey{
-			Namespace: cr.GetNamespace(),
-			Name:      serviceName,
-		}
-
-		if err := r.GetClient().Get(ctx, key, &service); err != nil {
-			return nil, errors.Wrapf(err, "cannot get info for service %s", serviceName)
-		}
-
-		// find callable
-		callable, ok := service.Spec.Callables[cr.Spec.Callable]
-		if !ok {
-			return nil, errors.Errorf("callable '%s/%s' not found. Available: %s",
-				cr.Spec.Callable, serviceName, structure.SortedMapKeys(service.Spec.Callables))
-		}
-
-		specs = append(specs, callable)
-	}
-
-	return specs, nil
-}
 
 func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Call, i int) error {
 	jobName := fmt.Sprintf("%s-%d", cr.GetName(), i)
@@ -129,4 +100,47 @@ func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Call, i int) error
 
 		return nil
 	})
+}
+
+func (r *Controller) constructJobSpecList(ctx context.Context, cr *v1alpha1.Call) ([]v1alpha1.Callable, error) {
+	specs := make([]v1alpha1.Callable, 0, len(cr.Spec.Services))
+
+	for _, serviceName := range cr.Spec.Services {
+		// get service spec
+		var service v1alpha1.Service
+
+		key := client.ObjectKey{
+			Namespace: cr.GetNamespace(),
+			Name:      serviceName,
+		}
+
+		if err := r.GetClient().Get(ctx, key, &service); err != nil {
+			return nil, errors.Wrapf(err, "cannot get info for service %s", serviceName)
+		}
+
+		// find callable
+		callable, ok := service.Spec.Callables[cr.Spec.Callable]
+		if !ok {
+			return nil, errors.Errorf("callable '%s/%s' not found. Available: %s",
+				cr.Spec.Callable, serviceName, structure.SortedMapKeys(service.Spec.Callables))
+		}
+
+		specs = append(specs, callable)
+	}
+
+	SetTimeline(cr)
+
+	return specs, nil
+}
+
+func SetTimeline(cr *v1alpha1.Call) {
+	if cr.Spec.Schedule == nil || cr.Spec.Schedule.Timeline == nil {
+		return
+	}
+
+	generator := distributions.GetPointDistribution(int64(len(cr.Spec.Services)),
+		cr.Spec.Schedule.Timeline.DistributionSpec)
+
+	cr.Status.Timeline = generator.ApplyToTimeline(cr.GetCreationTimestamp(),
+		*cr.Spec.Schedule.Timeline.TotalDuration)
 }

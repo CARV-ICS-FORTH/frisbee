@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -29,47 +30,77 @@ import (
 
 var _ webhook.Defaulter = &Cascade{}
 
-// +kubebuilder:webhook:path=/validate-frisbee-dev-v1alpha1-cascade,mutating=false,failurePolicy=fail,sideEffects=None,groups=frisbee.dev,resources=cascades,verbs=create;update,versions=v1alpha1,name=vcascade.kb.io,admissionReviewVersions={v1,v1alpha1}
+// +kubebuilder:webhook:path=/validate-frisbee-dev-v1alpha1-cascade,mutating=true,failurePolicy=fail,sideEffects=None,groups=frisbee.dev,resources=cascades,verbs=create;update,versions=v1alpha1,name=vcascade.kb.io,admissionReviewVersions={v1,v1alpha1}
 
 var _ webhook.Validator = &Cascade{}
 
 // log is for logging in this package.
 var cascadelog = logf.Log.WithName("cascade-hook")
 
-func (r *Cascade) SetupWebhookWithManager(mgr ctrl.Manager) error {
+func (in *Cascade) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
+		For(in).
 		Complete()
 }
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *Cascade) Default() {
-	cascadelog.V(5).Info("default", "name", r.Name)
+func (in *Cascade) Default() {
+	cascadelog.V(5).Info("default", "name", in.Name)
+
+	if err := in.Spec.GenerateFromTemplate.Prepare(true); err != nil {
+		clusterlog.Error(err, "template error")
+	}
+
+	// Schedule field
+	if schedule := in.Spec.Schedule; schedule != nil {
+		if schedule.StartingDeadlineSeconds == nil {
+			schedule.StartingDeadlineSeconds = &DefaultStartingDeadlineSeconds
+		}
+	}
 
 	// TODO(user): fill in your defaulting logic.
 }
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *Cascade) ValidateCreate() error {
-	cascadelog.V(5).Info("validate create", "name", r.Name)
+func (in *Cascade) ValidateCreate() error {
+	// Set missing values for the template
+	if err := in.Spec.GenerateFromTemplate.Prepare(true); err != nil {
+		clusterlog.Error(err, "template error")
+	}
+
+	// Until field
+	if until := in.Spec.Until; until != nil {
+		if err := ValidateExpr(until); err != nil {
+			return errors.Wrapf(err, "until error")
+		}
+	}
+
+	// Schedule field
+	if schedule := in.Spec.Schedule; schedule != nil {
+		if err := ValidateScheduler(in.Spec.MaxInstances, schedule); err != nil {
+			return errors.Wrapf(err, "schedule error")
+		}
+	}
+
+	cascadelog.V(5).Info("validate create", "name", in.Name)
 
 	// TODO(user): fill in your validation logic upon object creation.
 	return nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *Cascade) ValidateUpdate(old runtime.Object) error {
-	cascadelog.V(5).Info("validate update", "name", r.Name)
+func (in *Cascade) ValidateUpdate(old runtime.Object) error {
+	cascadelog.V(5).Info("validate update", "name", in.Name)
 
 	// TODO(user): fill in your validation logic upon object update.
 	return nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *Cascade) ValidateDelete() error {
-	cascadelog.V(5).Info("validate delete", "name", r.Name)
+func (in *Cascade) ValidateDelete() error {
+	cascadelog.V(5).Info("validate delete", "name", in.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.
 	return nil

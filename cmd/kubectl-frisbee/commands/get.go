@@ -32,6 +32,7 @@ func NewGetCmd() *cobra.Command {
 		Long:    `Get available resources, get single item or list`,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			ui.Logo()
+			ui.SetVerbose(env.Settings.Debug)
 
 			env.Settings.CheckKubePerms()
 
