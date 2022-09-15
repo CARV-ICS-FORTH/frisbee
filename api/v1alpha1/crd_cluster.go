@@ -50,7 +50,7 @@ type PlacementSpec struct {
 
 // ClusterSpec defines the desired state of Cluster.
 type ClusterSpec struct {
-	GenerateFromTemplate `json:",inline"`
+	GenerateObjectFromTemplate `json:",inline"`
 
 	// Resources defines how a set of resources will be distributed among the cluster's services.
 	// +optional

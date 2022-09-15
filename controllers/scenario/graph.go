@@ -40,7 +40,7 @@ func (r *Controller) Validate(ctx context.Context, t *v1alpha1.Scenario) error {
 				return errors.Wrapf(err, "service '%s' error", action.Name)
 			}
 		case v1alpha1.ActionCluster:
-			if _, err := serviceutils.GetServiceSpec(ctx, r.GetClient(), t, action.Cluster.GenerateFromTemplate); err != nil {
+			if _, err := serviceutils.GetServiceSpec(ctx, r.GetClient(), t, action.Cluster.GenerateObjectFromTemplate); err != nil {
 				return errors.Wrapf(err, "cluster '%s' error", action.Name)
 			}
 
@@ -50,7 +50,7 @@ func (r *Controller) Validate(ctx context.Context, t *v1alpha1.Scenario) error {
 			}
 
 		case v1alpha1.ActionCascade:
-			if _, err := chaosutils.GetChaosSpec(ctx, r.GetClient(), t, action.Cascade.GenerateFromTemplate); err != nil {
+			if _, err := chaosutils.GetChaosSpec(ctx, r.GetClient(), t, action.Cascade.GenerateObjectFromTemplate); err != nil {
 				return errors.Wrapf(err, "cascade '%s' error", action.Name)
 			}
 		}

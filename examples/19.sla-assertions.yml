@@ -6,7 +6,7 @@ metadata:
 spec:
   service:
     decorators:
-      telemetry: [system.telemetry.agent]
+      telemetry: [ system.telemetry.agent ]
       resources:
         cpu: "1"
         memory: "48Mi"
@@ -19,11 +19,11 @@ spec:
         command:
           - /bin/sh
           - -c
-          - |         
-              set -eum
-              cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
-              
-              iperf -s -f m -i 5
+          - |
+            set -eum
+            cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
+            
+            iperf -s -f m -i 5
 
 ---
 apiVersion: frisbee.dev/v1alpha1
@@ -48,10 +48,10 @@ spec:
           - /bin/sh   # Run shell
           - -c        # Read from string
           - |         # Multi-line str
-              set -eum
-              cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app
-    
-              iperf -c {{.Inputs.Parameters.target}} -t 360
+            set -eum
+            cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app
+            
+            iperf -c {{.Inputs.Parameters.target}} -t 360
 
 ---
 apiVersion: frisbee.dev/v1alpha1
@@ -91,6 +91,6 @@ spec:
     # When all actions are done, delete looping servers to gracefully exit the experiment
     - action: Delete
       name: teardown
-      depends: { running: [ server], success: [client, noisy-neighbors] } # Notice: Killing is regarded as a 'looping' action.
+      depends: { running: [ server ], success: [ client, noisy-neighbors ] } # Notice: Killing is regarded as a 'looping' action.
       delete:
         jobs: [ server ]

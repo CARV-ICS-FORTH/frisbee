@@ -17,7 +17,7 @@ spec:
     callables:
       launch:
         container: app                                          # Target container
-        command:  [ "echo", "{{.Inputs.Parameters.message}}" ]  # Function to call
+        command: [ "echo", "{{.Inputs.Parameters.message}}" ]  # Function to call
 
 ---
 apiVersion: frisbee.dev/v1alpha1
@@ -43,19 +43,19 @@ spec:
       depends: { running: [ idle ] }
       call:
         callable: launch                              # Function to call
-        services: [idle-1, idle-2, idle-0, idle-3]    # List of target services
+        services: [ idle-1, idle-2, idle-0, idle-3 ]    # List of target services
         expect:
           - stdout: "I am B"
           - stdout: "I am C"
           - stdout: "oops .."
           - stdout: "I am D"
-        tolerate:                                     # Continue despite an error
+        tolerate: # Continue despite an error
           failedJobs: 1
 
 
     # When all actions are done, delete looping servers to gracefully exit the experiment
     - action: Delete
       name: teardown
-      depends: { running: [idle], success: [callers]}
+      depends: { running: [ idle ], success: [ callers ] }
       delete:
         jobs: [ idle ]

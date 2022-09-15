@@ -29,9 +29,6 @@ import (
 type ClassifierReader interface {
 	v1alpha1.StateAggregationFunctions
 
-	// IsDeletable returns true if a job is deletable: it is pending or running
-	IsDeletable(job string) (client.Object, bool)
-
 	// ListAll returns a printable form of the names of classified objects
 	ListAll() string
 
@@ -44,10 +41,10 @@ type ClassifierReader interface {
 	// SystemState returns the state of the SYS services. If all services are running, it should return (false, nil).
 	SystemState() (abort bool, err error)
 
-	GetPendingJobs() []client.Object
-	GetRunningJobs() []client.Object
-	GetSuccessfulJobs() []client.Object
-	GetFailedJobs() []client.Object
+	GetPendingJobs(jobName ...string) []client.Object
+	GetRunningJobs(jobName ...string) []client.Object
+	GetSuccessfulJobs(jobName ...string) []client.Object
+	GetFailedJobs(jobName ...string) []client.Object
 }
 
 var _ ClassifierReader = (*Classifier)(nil)
@@ -337,67 +334,107 @@ func (in *Classifier) ListAll() string {
 	)
 }
 
-func (in *Classifier) GetPendingJobs() []client.Object {
+func (in *Classifier) GetPendingJobs(jobNames ...string) []client.Object {
 	list := make([]client.Object, 0, len(in.pendingJobs))
 
-	for _, job := range in.pendingJobs {
-		list = append(list, job)
+	if len(jobNames) == 0 {
+		// if no job names are defined, return everything
+		for _, job := range in.pendingJobs {
+			list = append(list, job)
+		}
+	} else {
+		// otherwise, iterate the list
+		for _, job := range jobNames {
+			j, exists := in.pendingJobs[job]
+			if exists {
+				list = append(list, j)
+			}
+		}
 	}
 
 	return list
 }
 
-func (in *Classifier) GetRunningJobs() []client.Object {
+func (in *Classifier) GetRunningJobs(jobNames ...string) []client.Object {
 	list := make([]client.Object, 0, len(in.runningJobs))
 
-	for _, job := range in.runningJobs {
-		list = append(list, job)
+	if len(jobNames) == 0 {
+		// if no job names are defined, return everything
+		for _, job := range in.runningJobs {
+			list = append(list, job)
+		}
+	} else {
+		// otherwise, iterate the list
+		for _, job := range jobNames {
+			j, exists := in.runningJobs[job]
+			if exists {
+				list = append(list, j)
+			}
+		}
 	}
 
 	return list
 }
 
-func (in *Classifier) GetSuccessfulJobs() []client.Object {
+func (in *Classifier) GetSuccessfulJobs(jobNames ...string) []client.Object {
 	list := make([]client.Object, 0, len(in.successfulJobs))
 
-	for _, job := range in.successfulJobs {
-		list = append(list, job)
+	if len(jobNames) == 0 {
+		// if no job names are defined, return everything
+		for _, job := range in.successfulJobs {
+			list = append(list, job)
+		}
+	} else {
+		// otherwise, iterate the list
+		for _, job := range jobNames {
+			j, exists := in.successfulJobs[job]
+			if exists {
+				list = append(list, j)
+			}
+		}
 	}
 
 	return list
 }
 
-func (in *Classifier) GetFailedJobs() []client.Object {
+func (in *Classifier) GetFailedJobs(jobNames ...string) []client.Object {
 	list := make([]client.Object, 0, len(in.failedJobs))
 
-	for _, job := range in.failedJobs {
-		list = append(list, job)
+	if len(jobNames) == 0 {
+		// if no job names are defined, return everything
+		for _, job := range in.failedJobs {
+			list = append(list, job)
+		}
+	} else {
+		// otherwise, iterate the list
+		for _, job := range jobNames {
+			j, exists := in.failedJobs[job]
+			if exists {
+				list = append(list, j)
+			}
+		}
 	}
 
 	return list
 }
 
-func (in *Classifier) GetTerminatingJobs() []client.Object {
+func (in *Classifier) GetTerminatingJobs(jobNames ...string) []client.Object {
 	list := make([]client.Object, 0, len(in.failedJobs))
 
-	for _, job := range in.terminatingJobs {
-		list = append(list, job)
+	if len(jobNames) == 0 {
+		// if no job names are defined, return everything
+		for _, job := range in.terminatingJobs {
+			list = append(list, job)
+		}
+	} else {
+		// otherwise, iterate the list
+		for _, job := range jobNames {
+			j, exists := in.terminatingJobs[job]
+			if exists {
+				list = append(list, j)
+			}
+		}
 	}
 
 	return list
-}
-
-// IsDeletable returns if a service can be deleted or not.
-// Deletable are only pending or running services, which belong to the SUT (not on the system(
-func (in *Classifier) IsDeletable(jobName string) (client.Object, bool) {
-	if job, exists := in.pendingJobs[jobName]; exists {
-		return job, v1alpha1.GetComponentLabel(job) == v1alpha1.ComponentSUT
-	}
-
-	if job, exists := in.runningJobs[jobName]; exists {
-		// A system service is not deletabled
-		return job, v1alpha1.GetComponentLabel(job) == v1alpha1.ComponentSUT
-	}
-
-	return nil, false
 }

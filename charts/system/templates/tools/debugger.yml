@@ -37,24 +37,24 @@ spec:
     callables:
       localhost:
         container: app
-        command: ["ping", "-c1", "127.0.0.1"]
+        command: [ "ping", "-c1", "127.0.0.1" ]
 
       cni:
         container: app
-        command: ["ping", "-c1", {{"{{.Inputs.Parameters.cni0}}" | quote }}]
+        command: [ "ping", "-c1", {{"{{.Inputs.Parameters.cni0}}" | quote }}]
 
       host:
         container: app
-        command: ["ping", "-c1", {{"{{.Inputs.Parameters.host}}" | quote }}]
+        command: [ "ping", "-c1", {{"{{.Inputs.Parameters.host}}" | quote }}]
 
       neigh:
         container: app
-        command: ["ping", "-c1", {{"{{.Inputs.Parameters.neigh}}" | quote }}]
+        command: [ "ping", "-c1", {{"{{.Inputs.Parameters.neigh}}" | quote }}]
 
       public:
         container: app
-        command: ["ping", "-c1", {{"{{.Inputs.Parameters.public}}" | quote }}]
+        command: [ "ping", "-c1", {{"{{.Inputs.Parameters.public}}" | quote }}]
 
       dns:
         container: app
-        command: ["ping", "-c1", {{"{{.Inputs.Parameters.web}}" | quote }}]
+        command: [ "ping", "-c1", {{"{{.Inputs.Parameters.web}}" | quote }}]

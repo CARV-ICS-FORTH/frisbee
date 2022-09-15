@@ -11,7 +11,6 @@
 | `telemetry.prometheus.queryLookbackDelta` | The maximum duration for retrieving metrics for considering the source as stale. | `1m`         |
 | `telemetry.dataviewer.port`                | Listening port for Dataviewer                                                     | `80`         |
 
-
 ### Chaos
 
 | Name                                        | Description                                                                          | Value       |

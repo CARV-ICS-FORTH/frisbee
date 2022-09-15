@@ -18,12 +18,10 @@ package utils
 
 import (
 	"context"
-
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/pkg/errors"
 	k8errors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/yaml"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -46,32 +44,4 @@ func GetTemplate(ctx context.Context, c client.Client, who metav1.Object, ref st
 	default:
 		return &template, nil
 	}
-}
-
-func GenerateFromScheme(spec interface{}, scheme *v1alpha1.Scheme, userInputs map[string]string) error {
-	if userInputs != nil {
-		if scheme.Inputs == nil || scheme.Inputs.Parameters == nil {
-			return errors.New("template is not parameterizable")
-		}
-
-		for key, value := range userInputs {
-			_, exists := scheme.Inputs.Parameters[key]
-			if !exists {
-				return errors.Errorf("parameter '%s' does not exist", key)
-			}
-
-			scheme.Inputs.Parameters[key] = value
-		}
-	}
-
-	expandedSpecBody, err := Evaluate(scheme)
-	if err != nil {
-		return errors.Wrapf(err, "cannot convert scheme to spec")
-	}
-
-	if err := yaml.Unmarshal([]byte(expandedSpecBody), spec); err != nil {
-		return errors.Wrapf(err, "decoding error")
-	}
-
-	return nil
 }

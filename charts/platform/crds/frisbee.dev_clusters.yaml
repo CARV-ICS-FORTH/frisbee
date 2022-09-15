@@ -36,12 +36,13 @@ spec:
             description: ClusterSpec defines the desired state of Cluster.
             properties:
               inputs:
-                description: Inputs are list of inputs passed to the objects. Event
-                  used in conjunction with instances, if the number of instances is
-                  larger that the number of inputs, then inputs are recursively iteration.
+                description: UserParameters is a map of parameters passed to the objects.
+                  Event used in conjunction with instances, if the number of instances
+                  is larger that the number of inputs, then inputs are recursively
+                  iteration.
                 items:
                   additionalProperties:
-                    type: string
+                    x-kubernetes-preserve-unknown-fields: true
                   type: object
                 type: array
               instances:

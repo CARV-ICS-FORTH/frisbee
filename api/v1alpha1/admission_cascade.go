@@ -49,7 +49,7 @@ func (in *Cascade) SetupWebhookWithManager(mgr ctrl.Manager) error {
 func (in *Cascade) Default() {
 	cascadelog.V(5).Info("default", "name", in.Name)
 
-	if err := in.Spec.GenerateFromTemplate.Prepare(true); err != nil {
+	if err := in.Spec.GenerateObjectFromTemplate.Prepare(true); err != nil {
 		clusterlog.Error(err, "template error")
 	}
 
@@ -66,7 +66,7 @@ func (in *Cascade) Default() {
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (in *Cascade) ValidateCreate() error {
 	// Set missing values for the template
-	if err := in.Spec.GenerateFromTemplate.Prepare(true); err != nil {
+	if err := in.Spec.GenerateObjectFromTemplate.Prepare(true); err != nil {
 		clusterlog.Error(err, "template error")
 	}
 

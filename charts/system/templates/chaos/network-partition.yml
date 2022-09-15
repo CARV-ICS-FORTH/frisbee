@@ -62,7 +62,7 @@ spec:
         mode: all
         selector:
           expressionSelectors:
-            - { key: 'scenario.frisbee.dev/name', operator: In, values: [ {{"{{.Scenario}}"}}] }
+            - { key: 'scenario.frisbee.dev/name', operator: In, values: [ {{"{{.Inputs.Scenario}}"}}] }
             - { key: 'scenario.frisbee.dev/component', operator: In, values: [ "SUT" ] }
         target:
           mode: all

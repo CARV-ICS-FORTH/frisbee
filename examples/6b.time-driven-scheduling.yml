@@ -32,12 +32,11 @@ spec:
         command: [ iperf ]
         args: [ "-c", "{{.Inputs.Parameters.target}}", "-t", "{{.Inputs.Parameters.duration}}" ]
 
-
 ---
 apiVersion: frisbee.dev/v1alpha1
 kind: Scenario
 metadata:
-  name: time-driven-scheduling
+  name: timeline-distribution
 spec:
   actions:
     - action: Service
@@ -63,6 +62,6 @@ spec:
     # When all actions are done, delete looping servers to gracefully exit the experiment
     - action: Delete
       name: teardown
-      depends: { running: [server], success: [clients]}
+      depends: { running: [ server ], success: [ clients ] }
       delete:
         jobs: [ server ]

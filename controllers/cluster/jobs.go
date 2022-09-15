@@ -53,7 +53,7 @@ func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Cluster, i int) er
 }
 
 func (r *Controller) constructJobSpecList(ctx context.Context, cr *v1alpha1.Cluster) ([]v1alpha1.ServiceSpec, error) {
-	serviceSpecs, err := serviceutils.GetServiceSpecList(ctx, r.GetClient(), cr, cr.Spec.GenerateFromTemplate)
+	serviceSpecs, err := serviceutils.GetServiceSpecList(ctx, r.GetClient(), cr, cr.Spec.GenerateObjectFromTemplate)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot get serviceSpecs")
 	}

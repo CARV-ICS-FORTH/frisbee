@@ -17,7 +17,7 @@ limitations under the License.
 package v1alpha1
 
 // SchedulerSpec defines information about schedule of the chaos experiment.
-// The scheduler will schedule up to spec.GenerateFromTemplate.Instances or spec.GenerateFromTemplate.Until.
+// The scheduler will schedule up to spec.GenerateObjectFromTemplate.Instances or spec.GenerateObjectFromTemplate.Until.
 type SchedulerSpec struct {
 	// Cron defines a cron job rule.
 	//

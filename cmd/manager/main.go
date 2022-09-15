@@ -107,7 +107,7 @@ func main() {
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme: scheme,
-		// Namespace:              namespace,
+		// DeleteNamespace:              namespace,
 		//	MetricsBindAddress: metricsAddr,
 		Host:                   "0.0.0.0",
 		Port:                   webhookPort,

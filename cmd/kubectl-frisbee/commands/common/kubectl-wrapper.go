@@ -605,6 +605,7 @@ func ForceDelete(testName string) error {
 	return DeleteNamespaces("", testName)
 }
 
+/*
 func SetQuota(testName string, cpu, memory string) error {
 	if cpu == "" && memory == "" {
 		return nil
@@ -615,7 +616,7 @@ func SetQuota(testName string, cpu, memory string) error {
 		Inputs: &v1alpha1.Inputs{Parameters: map[string]string{"CPU": cpu, "Memory": memory}},
 		Spec: []byte(`
 ---
-apiVersion: v1			
+apiVersion: v1
 kind: ResourceQuota
 metadata:
  name: mem-cpu-quota
@@ -655,6 +656,8 @@ spec:
 	_, err = Kubectl(testName, command...)
 	return err
 }
+
+*/
 
 /*
 ******************************************************************

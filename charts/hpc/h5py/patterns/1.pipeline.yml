@@ -21,7 +21,7 @@ metadata:
   name: pipeline
 spec:
   testData:
-    volume: { claimName: shared-storage}
+    volume: { claimName: shared-storage }
     globalNamespace: true
 
   actions:
@@ -32,6 +32,6 @@ spec:
 
     - action: Service
       name: visualizer
-#      depends: { success: [generator]}
+      #      depends: { success: [generator]}
       service:
         templateRef: h5py.pipeline.image-visualizer

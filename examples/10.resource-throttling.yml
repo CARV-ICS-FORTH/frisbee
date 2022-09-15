@@ -64,14 +64,14 @@ spec:
         instances: 10
         # Create a variety of clients with different resources
         inputs:
-          - { target: server, duration: "120", cpu: "0.4", memory: "48Mi"  }
-          - { target: server, duration: "120", cpu: "1", memory: "49Mi"  }
-          - { target: server, duration: "120", cpu: "1.2", memory: "50Mi"  }
+          - { target: server, duration: "120", cpu: "0.4", memory: "48Mi" }
+          - { target: server, duration: "120", cpu: "1", memory: "49Mi" }
+          - { target: server, duration: "120", cpu: "1.2", memory: "50Mi" }
 
 
     # When all actions are done, delete looping servers to gracefully exit the experiment
     - action: Delete
       name: teardown
-      depends: { running: [server], success: [clients]}
+      depends: { running: [ server ], success: [ clients ] }
       delete:
         jobs: [ server ]

@@ -45,7 +45,7 @@ spec:
 
     # When all servers are up and running, stop some of them
     - action: Cascade
-      name:  stop-servers
+      name: stop-servers
       depends: { running: [ more-servers ] }
       cascade:
         templateRef: system.chaos.pod.kill

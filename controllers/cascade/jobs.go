@@ -51,7 +51,7 @@ func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Cascade, i int) er
 }
 
 func (r *Controller) constructJobSpecList(ctx context.Context, cr *v1alpha1.Cascade) ([]v1alpha1.ChaosSpec, error) {
-	specs, err := chaosutils.GetChaosSpecList(ctx, r.GetClient(), cr, cr.Spec.GenerateFromTemplate)
+	specs, err := chaosutils.GetChaosSpecList(ctx, r.GetClient(), cr, cr.Spec.GenerateObjectFromTemplate)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot get specs")
 	}

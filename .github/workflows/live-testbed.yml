@@ -18,7 +18,7 @@ jobs:
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v3
-        
+
       - name: Cache Microk8s Installation
         id: cache-microk8s
         uses: actions/cache@v3
