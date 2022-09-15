@@ -171,13 +171,13 @@ type DeleteSpec struct {
 
 type EmbedActions struct {
 	// +optional
-	Service *GenerateFromTemplate `json:"service,omitempty"`
+	Service *GenerateObjectFromTemplate `json:"service,omitempty"`
 
 	// +optional
 	Cluster *ClusterSpec `json:"cluster,omitempty"`
 
 	// +optional
-	Chaos *GenerateFromTemplate `json:"chaos,omitempty"`
+	Chaos *GenerateObjectFromTemplate `json:"chaos,omitempty"`
 
 	// +optional
 	Cascade *CascadeSpec `json:"cascade,omitempty"`

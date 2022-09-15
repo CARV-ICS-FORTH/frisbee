@@ -6,7 +6,7 @@ metadata:
 spec:
   service:
     decorators:
-      telemetry: [system.telemetry.agent]
+      telemetry: [ system.telemetry.agent ]
       resources:
         cpu: "1"
         memory: "48Mi"
@@ -19,11 +19,11 @@ spec:
         command:
           - /bin/sh
           - -c
-          - |         
-              set -eum
-              cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
-              
-              iperf -s -f m -i 5
+          - |
+            set -eum
+            cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
+            
+            iperf -s -f m -i 5
 
 ---
 apiVersion: frisbee.dev/v1alpha1
@@ -57,11 +57,11 @@ spec:
         command:
           - /bin/sh
           - -c
-          - |         
-              set -eum
-              cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app
-    
-              iperf -c {{.Inputs.Parameters.target}} -t 360 -i 5  >> /logs/${HOSTNAME}
+          - |
+            set -eum
+            cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app
+            
+            iperf -c {{.Inputs.Parameters.target}} -t 360 -i 5  >> /logs/${HOSTNAME}
 
 
 ---
@@ -94,7 +94,7 @@ spec:
         volumeMounts:
           - name: logs
             mountPath: /srv
-        command: [ "touch", "/srv/init"]
+        command: [ "touch", "/srv/init" ]
 
     containers: # Expose collected logs
       - name: app
@@ -127,7 +127,7 @@ spec:
 apiVersion: frisbee.dev/v1alpha1
 kind: Scenario
 metadata:
-  name: distributed-logs
+  name: custom-storage
 spec:
   actions:
     # Step 0. Enable the log viewer
@@ -151,7 +151,7 @@ spec:
         templateRef: iperf.client
         instances: 5
         inputs:
-          - { target: server, logClaimName: logs  }
+          - { target: server, logClaimName: logs }
         schedule:
           cron: "@every 1m"
 
@@ -159,6 +159,6 @@ spec:
     # When all actions are done, delete looping servers to gracefully exit the experiment
     - action: Delete
       name: teardown
-      depends: { running: [ server, logviewer], success: [clients] } # Notice: We want the logviewer to remain running
+      depends: { running: [ server, logviewer ], success: [ clients ] } # Notice: We want the logviewer to remain running
       delete:
         jobs: [ server ]

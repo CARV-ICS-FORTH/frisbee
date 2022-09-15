@@ -44,12 +44,22 @@ spec:
               inputs:
                 description: Inputs are dynamic fields that populate the spec.
                 properties:
+                  namespace:
+                    description: Namespace returns the namespace from which the template
+                      is called from.
+                    type: string
                   parameters:
                     additionalProperties:
-                      type: string
+                      x-kubernetes-preserve-unknown-fields: true
                     description: Parameters are user-set values that are dynamically
                       evaluated
                     type: object
+                  scenario:
+                    description: Scenario returns the scenario from which the template
+                      is called from.
+                    type: string
+                required:
+                - parameters
                 type: object
               service:
                 description: ServiceSpec defines the desired state of Service.

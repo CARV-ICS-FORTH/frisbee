@@ -50,15 +50,17 @@ func ValidateScheduler(instances int, sch *SchedulerSpec) error {
 		return errors.Errorf("scheduling requires at least two instances.")
 	}
 
-	var activeConditions int
+	// Cron and Timeline can be active at the same time.
+	// However, both Cron and Timeline can be used in conjuction with Events.
+	if sch.Cron != nil && sch.Timeline != nil {
+		return errors.Errorf("cron and timeline distribution cannot be activated in paralle.")
+	}
 
 	// cron
 	if cronspec := sch.Cron; cronspec != nil {
 		if _, err := cron.ParseStandard(*cronspec); err != nil {
 			return errors.Wrapf(err, "invalid schedule %q", *cronspec)
 		}
-
-		activeConditions++
 	}
 
 	// event
@@ -66,8 +68,6 @@ func ValidateScheduler(instances int, sch *SchedulerSpec) error {
 		if err := ValidateExpr(conditions); err != nil {
 			return errors.Wrapf(err, "conditions error")
 		}
-
-		activeConditions++
 	}
 
 	// timeline
@@ -75,12 +75,6 @@ func ValidateScheduler(instances int, sch *SchedulerSpec) error {
 		if err := ValidateDistribution(timeline.DistributionSpec); err != nil {
 			return errors.Wrapf(err, "conditions error")
 		}
-
-		activeConditions++
-	}
-
-	if activeConditions != 1 {
-		return errors.Errorf("The scheduler must have exactly one condition activated.")
 	}
 
 	return nil

@@ -292,7 +292,7 @@ func decoratePod(ctx context.Context, r *Controller, cr *v1alpha1.Service) error
 	if req := cr.Spec.Decorators.Telemetry; req != nil {
 		// import dashboards for monitoring agents to the service
 		for _, monRef := range req {
-			monSpec, err := serviceutils.GetServiceSpec(ctx, r.GetClient(), cr, v1alpha1.GenerateFromTemplate{TemplateRef: monRef})
+			monSpec, err := serviceutils.GetServiceSpec(ctx, r.GetClient(), cr, v1alpha1.GenerateObjectFromTemplate{TemplateRef: monRef})
 			if err != nil {
 				return errors.Wrapf(err, "cannot get monitor")
 			}

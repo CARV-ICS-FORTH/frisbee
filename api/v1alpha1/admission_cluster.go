@@ -45,7 +45,7 @@ func (in *Cluster) SetupWebhookWithManager(mgr ctrl.Manager) error {
 func (in *Cluster) Default() {
 	clusterlog.V(5).Info("default", "name", in.Name)
 
-	if err := in.Spec.GenerateFromTemplate.Prepare(true); err != nil {
+	if err := in.Spec.GenerateObjectFromTemplate.Prepare(true); err != nil {
 		clusterlog.Error(err, "template error")
 	}
 
@@ -64,7 +64,7 @@ func (in *Cluster) ValidateCreate() error {
 	clusterlog.V(5).Info("validate create", "name", in.Name)
 
 	// Set missing values for the template
-	if err := in.Spec.GenerateFromTemplate.Prepare(true); err != nil {
+	if err := in.Spec.GenerateObjectFromTemplate.Prepare(true); err != nil {
 		clusterlog.Error(err, "template error")
 	}
 
@@ -76,10 +76,6 @@ func (in *Cluster) ValidateCreate() error {
 
 		if in.Spec.MaxInstances < 2 {
 			return errors.Errorf("ResourceDistribution requires at least two services.")
-		}
-
-		if resources.TotalResources == nil {
-			return errors.Errorf("You must specify the field 'TotalResources'")
 		}
 
 		if err := ValidateDistribution(resources.DistributionSpec); err != nil {

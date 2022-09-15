@@ -27,49 +27,59 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func GetChaosSpec(ctx context.Context, c client.Client, caller metav1.Object, fromTemplate v1alpha1.GenerateFromTemplate) (v1alpha1.ChaosSpec, error) {
-	template, err := templateutils.GetTemplate(ctx, c, caller, fromTemplate.TemplateRef)
+func GetChaosSpec(ctx context.Context, c client.Client, parent metav1.Object, fromTemplate v1alpha1.GenerateObjectFromTemplate) (v1alpha1.ChaosSpec, error) {
+	t, err := templateutils.GetTemplate(ctx, c, parent, fromTemplate.TemplateRef)
 	if err != nil {
 		return v1alpha1.ChaosSpec{}, errors.Wrapf(err, "getTemplate error")
 	}
 
 	// convert the chaos to a json and then expand templated values.
-	specBody, err := json.Marshal(template.Spec.Chaos)
+	body, err := json.Marshal(t.Spec.Chaos)
 	if err != nil {
 		return v1alpha1.ChaosSpec{}, errors.Errorf("cannot marshal chaos of %s", fromTemplate.TemplateRef)
 	}
 
 	spec := v1alpha1.ChaosSpec{}
-	scheme := templateutils.NewScheme(caller, template.Spec.Inputs, specBody)
 
-	if err := templateutils.GenerateFromScheme(&spec, scheme, fromTemplate.GetInput(0)); err != nil {
+	// set extra runtime fields.
+	if t.Spec.Inputs == nil {
+		t.Spec.Inputs = &v1alpha1.TemplateInputs{}
+	}
+
+	// add extra fields in the template
+	t.Spec.Inputs.Scenario = v1alpha1.GetScenarioLabel(parent)
+	t.Spec.Inputs.Namespace = parent.GetNamespace()
+
+	if err := fromTemplate.Generate(&spec, 0, t.Spec, body); err != nil {
 		return v1alpha1.ChaosSpec{}, errors.Wrapf(err, "evaluation of template '%s' has failed", fromTemplate.TemplateRef)
 	}
 
 	return spec, nil
 }
 
-func GetChaosSpecList(ctx context.Context, c client.Client, caller metav1.Object, fromTemplate v1alpha1.GenerateFromTemplate) ([]v1alpha1.ChaosSpec, error) {
-	template, err := templateutils.GetTemplate(ctx, c, caller, fromTemplate.TemplateRef)
+func GetChaosSpecList(ctx context.Context, c client.Client, parent metav1.Object, fromTemplate v1alpha1.GenerateObjectFromTemplate) ([]v1alpha1.ChaosSpec, error) {
+	t, err := templateutils.GetTemplate(ctx, c, parent, fromTemplate.TemplateRef)
 	if err != nil {
 		return nil, errors.Wrapf(err, "template %s error", fromTemplate.TemplateRef)
 	}
 
 	// convert the chaos to a json and then expand templated values.
-	specBody, err := json.Marshal(template.Spec.Chaos)
+	body, err := json.Marshal(t.Spec.Chaos)
 	if err != nil {
 		return nil, errors.Errorf("cannot marshal chaos of %s", fromTemplate.TemplateRef)
 	}
 
 	specs := make([]v1alpha1.ChaosSpec, 0, fromTemplate.MaxInstances)
 
-	if err := fromTemplate.IterateInputs(func(userInputs map[string]string) error {
+	// add extra fields in the template
+	t.Spec.Inputs.Scenario = v1alpha1.GetScenarioLabel(parent)
+	t.Spec.Inputs.Namespace = parent.GetNamespace()
 
+	if err := fromTemplate.IterateInputs(func(nextInputSet uint) error {
 		spec := v1alpha1.ChaosSpec{}
-		scheme := templateutils.NewScheme(caller, template.Spec.Inputs, specBody)
 
-		if err := templateutils.GenerateFromScheme(&spec, scheme, userInputs); err != nil {
-			return errors.Wrapf(err, "macro expansion failed")
+		if err := fromTemplate.Generate(&spec, nextInputSet, t.Spec, body); err != nil {
+			return errors.Wrapf(err, "evaluation of template '%s' has failed", fromTemplate.TemplateRef)
 		}
 
 		specs = append(specs, spec)

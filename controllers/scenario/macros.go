@@ -142,7 +142,7 @@ func expandSliceInputs(ctx context.Context, s *Controller, nm string, inputs *[]
 	return nil
 }
 
-func expandMapInputs(ctx context.Context, s *Controller, nm string, inputs *[]map[string]string) error {
+func expandMacros(ctx context.Context, s *Controller, nm string, inputs *[]v1alpha1.UserInputs) error {
 	if inputs == nil || *inputs == nil {
 		return nil
 	}
@@ -154,7 +154,9 @@ func expandMapInputs(ctx context.Context, s *Controller, nm string, inputs *[]ma
 
 	// extend macros
 	for i, input := range *inputs {
-		for key, value := range input {
+		for key, rawValue := range input {
+			value := rawValue.String()
+
 			if isMacro(value) {
 
 				val := value
@@ -187,7 +189,7 @@ func expandMapInputs(ctx context.Context, s *Controller, nm string, inputs *[]ma
 					return errors.Wrapf(err, "filter by mode")
 				}
 
-				(*inputs)[i][key] = filteredServices.ToString()
+				(*inputs)[i][key] = v1alpha1.ParameterValue(filteredServices.ToString())
 			}
 		}
 	}

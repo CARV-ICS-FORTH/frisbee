@@ -35,7 +35,7 @@ type Cascade struct {
 
 // CascadeSpec defines the desired state of Cascade.
 type CascadeSpec struct {
-	GenerateFromTemplate `json:",inline"`
+	GenerateObjectFromTemplate `json:",inline"`
 
 	// Schedule defines the interval between the creation of services within the group.
 	// +optional

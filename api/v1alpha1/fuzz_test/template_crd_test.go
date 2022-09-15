@@ -10,7 +10,7 @@ func TestFromTemplate_Validate(t1 *testing.T) {
 	type fields struct {
 		TemplateRef string
 		Instances   int
-		Inputs      []map[string]string
+		Inputs      []v1alpha1.UserInputs
 	}
 
 	type args struct {
@@ -38,7 +38,9 @@ func TestFromTemplate_Validate(t1 *testing.T) {
 			fields: fields{
 				TemplateRef: "validName",
 				Instances:   0,
-				Inputs:      []map[string]string{{"keyA": "valA", "keyB": "valB"}},
+				Inputs: []v1alpha1.UserInputs{
+					{"keyA": v1alpha1.ParameterValue("valA"), "keyB": v1alpha1.ParameterValue("valB")},
+				},
 			},
 			args:    args{false},
 			wantErr: false,
@@ -48,7 +50,10 @@ func TestFromTemplate_Validate(t1 *testing.T) {
 			fields: fields{
 				TemplateRef: "validName",
 				Instances:   0,
-				Inputs:      []map[string]string{{"keyA": "valA"}, {"keyB": "valB"}},
+				Inputs: []v1alpha1.UserInputs{
+					{"keyA": v1alpha1.ParameterValue("valA")},
+					{"keyB": v1alpha1.ParameterValue("valB")},
+				},
 			},
 			args:    args{true},
 			wantErr: false,
@@ -58,7 +63,10 @@ func TestFromTemplate_Validate(t1 *testing.T) {
 			fields: fields{
 				TemplateRef: "validName",
 				Instances:   0,
-				Inputs:      []map[string]string{{"keyA": "valA", "keyB": "valB"}, {"keyB": "valB", "valB": "valC"}},
+				Inputs: []v1alpha1.UserInputs{
+					{"keyA": v1alpha1.ParameterValue("valA"), "keyB": v1alpha1.ParameterValue("valB")},
+					{"keyB": v1alpha1.ParameterValue("valB"), "valB": v1alpha1.ParameterValue("valC")},
+				},
 			},
 			args:    args{true},
 			wantErr: false,
@@ -68,7 +76,10 @@ func TestFromTemplate_Validate(t1 *testing.T) {
 			fields: fields{
 				TemplateRef: "validName",
 				Instances:   0,
-				Inputs:      []map[string]string{{"keyA": "valA"}, {"keyB": "valB"}},
+				Inputs: []v1alpha1.UserInputs{
+					{"keyA": v1alpha1.ParameterValue("valA")},
+					{"keyB": v1alpha1.ParameterValue("valB")},
+				},
 			},
 			args:    args{false},
 			wantErr: true,
@@ -78,7 +89,9 @@ func TestFromTemplate_Validate(t1 *testing.T) {
 			fields: fields{
 				TemplateRef: "validName",
 				Instances:   3,
-				Inputs:      []map[string]string{{"keyA": "valA", "keyB": "valB"}},
+				Inputs: []v1alpha1.UserInputs{
+					{"keyA": v1alpha1.ParameterValue("valA"), "keyB": v1alpha1.ParameterValue("valB")},
+				},
 			},
 			args:    args{true},
 			wantErr: false,
@@ -88,7 +101,10 @@ func TestFromTemplate_Validate(t1 *testing.T) {
 			fields: fields{
 				TemplateRef: "validName",
 				Instances:   3,
-				Inputs:      []map[string]string{{"keyA": "valA"}, {"keyB": "valB"}},
+				Inputs: []v1alpha1.UserInputs{
+					{"keyA": v1alpha1.ParameterValue("valA")},
+					{"keyB": v1alpha1.ParameterValue("valB")},
+				},
 			},
 			args:    args{true},
 			wantErr: false,
@@ -97,7 +113,7 @@ func TestFromTemplate_Validate(t1 *testing.T) {
 
 	for _, tt := range tests {
 		t1.Run(tt.name, func(t1 *testing.T) {
-			t := &v1alpha1.GenerateFromTemplate{
+			t := &v1alpha1.GenerateObjectFromTemplate{
 				TemplateRef:  tt.fields.TemplateRef,
 				MaxInstances: tt.fields.Instances,
 				Inputs:       tt.fields.Inputs,

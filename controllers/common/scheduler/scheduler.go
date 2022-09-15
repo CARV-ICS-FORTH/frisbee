@@ -18,7 +18,6 @@ package scheduler
 
 import (
 	"github.com/go-logr/logr"
-	"github.com/sirupsen/logrus"
 	"time"
 
 	"github.com/carv-ics-forth/frisbee/pkg/expressions"
@@ -62,7 +61,7 @@ func Schedule(log logr.Logger, obj client.Object, s Parameters) (goToNextJob boo
 
 	// Timeline-based scheduling
 	if s.ScheduleSpec.Timeline != nil {
-		missed, next, err := timelineWithDeadline(obj, s)
+		missed, next, err := timelineWithDeadline(log, obj, s)
 		return !missed.IsZero(), next, err
 	}
 
@@ -93,13 +92,12 @@ func cronWithDeadline(log logr.Logger, obj client.Object, s Parameters) (lastMis
 		if !lastMissed.IsZero() && !honorDeadline(log, lastMissed, deadline) {
 			return lastMissed, next, errors.Errorf("scheduling violation. deadline of '%d' seconds is too strict.", *deadline)
 		}
-
 	*/
 
 	return lastMissed, next, nil
 }
 
-func timelineWithDeadline(obj client.Object, s Parameters) (lastMissed time.Time, next time.Time, err error) {
+func timelineWithDeadline(log logr.Logger, obj client.Object, s Parameters) (lastMissed time.Time, next time.Time, err error) {
 	timeline := s.ExpectedTimeline
 
 	lastMissed, next, err = getNextScheduleTime(obj.GetCreationTimestamp().Time, timeline, s)
@@ -112,7 +110,6 @@ func timelineWithDeadline(obj client.Object, s Parameters) (lastMissed time.Time
 		if !lastMissed.IsZero() && !honorDeadline(log, lastMissed, deadline) {
 			return lastMissed, next, errors.Errorf("scheduling violation. deadline of '%d' seconds is too strict.", *deadline)
 		}
-
 	*/
 
 	return lastMissed, next, nil
@@ -174,8 +171,6 @@ func getNextScheduleTime(earliest time.Time, timeline Timeline, param Parameters
 
 	for t := timeline.Next(earliestTime); !t.After(now); t = timeline.Next(t) {
 		lastMissed = t
-
-		logrus.Warn("Missed ", lastMissed, " now ", now, " earliest ", earliestTime)
 
 		// An object might miss several starts. For example, if
 		// controller gets wedged on Friday at 5:01pm when everyone has

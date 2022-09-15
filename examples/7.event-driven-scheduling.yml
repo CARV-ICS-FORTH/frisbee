@@ -61,13 +61,13 @@ spec:
           - { target: server, duration: "30" }
         schedule:
           cron: "@every 1m"   # Schedule one client every minute
-          event:              # When 3 clients are created, give it a boost
+          event: # When 3 clients are created, give it a boost
             state: '{{.NumSuccessfulJobs}} >= 3'
 
 
     # When all actions are done, delete looping servers to gracefully exit the experiment
     - action: Delete
       name: teardown
-      depends: { running: [server], success: [clients]}
+      depends: { running: [ server ], success: [ clients ] }
       delete:
         jobs: [ server ]

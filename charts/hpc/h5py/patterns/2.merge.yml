@@ -21,7 +21,7 @@ metadata:
   name: merge
 spec:
   testData:
-    volume: { claimName: shared-storage}
+    volume: { claimName: shared-storage }
     globalNamespace: true
 
   actions:
@@ -30,14 +30,14 @@ spec:
       name: creators
       cluster:
         instances: 1
-        templateRef:  h5py.concatenation.create
+        templateRef: h5py.concatenation.create
 
     # Concatenate creates files into a single HDF5
     - action: Service
       name: concatenate
-      depends: { success: [creators]}
+      depends: { success: [ creators ] }
       service:
-        templateRef:  h5py.concatenation.concatenate
+        templateRef: h5py.concatenation.concatenate
 
 
     # Fancy method to ensure validity after each step.

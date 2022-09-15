@@ -6,7 +6,7 @@ metadata:
 spec:
   service:
     decorators:
-      telemetry: [system.telemetry.agent]
+      telemetry: [ system.telemetry.agent ]
       resources:
         cpu: "1"
         memory: "48Mi"
@@ -19,11 +19,11 @@ spec:
         command:
           - /bin/sh
           - -c
-          - |         
-              set -eum
-              cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
-              
-              iperf -s -f m -i 5
+          - |
+            set -eum
+            cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
+            
+            iperf -s -f m -i 5
 
 ---
 apiVersion: frisbee.dev/v1alpha1
@@ -48,11 +48,11 @@ spec:
         command:
           - /bin/sh
           - -c
-          - |         
-              set -eum
-              cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app
-    
-              iperf -c {{.Inputs.Parameters.target}} -t 120 -i 5  >> /testdata/my_logs
+          - |
+            set -eum
+            cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app
+            
+            iperf -c {{.Inputs.Parameters.target}} -t 120 -i 5  >> /testdata/my_logs
 
 ---
 # In order to have shared logs, we must first create a network volume.
@@ -75,10 +75,10 @@ spec:
 apiVersion: frisbee.dev/v1alpha1
 kind: Scenario
 metadata:
-  name: distributed-logs
+  name: testdata
 spec:
   testData:
-    volume: { claimName: logs}
+    volume: { claimName: logs }
 
   actions:
     - action: Service
@@ -93,7 +93,7 @@ spec:
         templateRef: iperf.client
         instances: 5
         inputs:
-          - { target: server  }
+          - { target: server }
         schedule:
           cron: "@every 1m"
 
@@ -101,6 +101,6 @@ spec:
     # When all actions are done, delete looping servers to gracefully exit the experiment
     - action: Delete
       name: teardown
-      depends: { running: [ server], success: [clients] }
+      depends: { running: [ server ], success: [ clients ] }
       delete:
         jobs: [ server ]

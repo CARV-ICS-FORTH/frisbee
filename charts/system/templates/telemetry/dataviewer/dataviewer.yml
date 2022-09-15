@@ -20,13 +20,13 @@ spec:
     initContainers:
       - name: wait-for-volume
         image: busybox
-        command: [ "touch", "/testdata/init"]
+        command: [ "touch", "/testdata/init" ]
 
     containers: # Expose collected logs
       - name: app
         image: filebrowser/filebrowser
-        command: ["/filebrowser"]
-        args: ["-r", "/testdata"]
+        command: [ "/filebrowser" ]
+        args: [ "-r", "/testdata" ]
         ports:
           - name: http
             containerPort: {{.Values.telemetry.dataviewer.port}}

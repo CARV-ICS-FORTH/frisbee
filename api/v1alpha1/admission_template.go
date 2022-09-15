@@ -67,11 +67,15 @@ func (in *Template) validateTemplateLanguage() error {
 			return errors.Wrapf(err, "marshal error")
 		}
 
-		if _, err := ExprState(specBody).Evaluate(Scheme{
-			Scenario:  "",
-			Namespace: "",
-			Inputs:    in.Spec.Inputs,
-		}); err != nil {
+		// these fields are expected to be set at runtime. use dummy just for the validation.
+		if in.Spec.Inputs == nil {
+			in.Spec.Inputs = &TemplateInputs{}
+		}
+
+		in.Spec.Inputs.Scenario = "dummy"
+		in.Spec.Inputs.Namespace = "dummy"
+
+		if _, err := ExprState(specBody).Evaluate(in.Spec); err != nil {
 			return errors.Wrapf(err, "template language error")
 		}
 	}

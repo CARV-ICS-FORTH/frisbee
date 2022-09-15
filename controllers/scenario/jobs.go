@@ -44,7 +44,7 @@ func (r *Controller) supportedActions() map[v1alpha1.ActionType]ActionHandler {
 }
 
 func (r *Controller) service(ctx context.Context, t *v1alpha1.Scenario, action v1alpha1.Action) (client.Object, error) {
-	if err := expandMapInputs(ctx, r, t.GetNamespace(), &action.Service.Inputs); err != nil {
+	if err := expandMacros(ctx, r, t.GetNamespace(), &action.Service.Inputs); err != nil {
 		return nil, errors.Wrapf(err, "input error")
 	}
 
@@ -120,7 +120,7 @@ func (r *Controller) cluster(ctx context.Context, t *v1alpha1.Scenario, action v
 	}
 
 	// Evaluate macros into concrete statements
-	if err := expandMapInputs(ctx, r, t.GetNamespace(), &action.Cluster.Inputs); err != nil {
+	if err := expandMacros(ctx, r, t.GetNamespace(), &action.Cluster.Inputs); err != nil {
 		return nil, errors.Wrapf(err, "input error")
 	}
 
@@ -143,7 +143,7 @@ func (r *Controller) cluster(ctx context.Context, t *v1alpha1.Scenario, action v
 }
 
 func (r *Controller) chaos(ctx context.Context, t *v1alpha1.Scenario, action v1alpha1.Action) (client.Object, error) {
-	if err := expandMapInputs(ctx, r, t.GetNamespace(), &action.Chaos.Inputs); err != nil {
+	if err := expandMacros(ctx, r, t.GetNamespace(), &action.Chaos.Inputs); err != nil {
 		return nil, errors.Wrapf(err, "input error")
 	}
 
@@ -172,7 +172,7 @@ func (r *Controller) chaos(ctx context.Context, t *v1alpha1.Scenario, action v1a
 }
 
 func (r *Controller) cascade(ctx context.Context, t *v1alpha1.Scenario, action v1alpha1.Action) (client.Object, error) {
-	if err := expandMapInputs(ctx, r, t.GetNamespace(), &action.Cascade.Inputs); err != nil {
+	if err := expandMacros(ctx, r, t.GetNamespace(), &action.Cascade.Inputs); err != nil {
 		return nil, errors.Wrapf(err, "input error")
 	}
 
@@ -197,12 +197,31 @@ func (r *Controller) delete(ctx context.Context, t *v1alpha1.Scenario, action v1
 	// ensure that all references jobs are deletable
 	deletableJobs := make([]client.Object, 0, len(action.Delete.Jobs))
 	for _, refJob := range action.Delete.Jobs {
-		job, deletable := r.view.IsDeletable(refJob)
-		if !deletable {
-			return nil, errors.Errorf("job '%s' is not currently deletable. Inspect Job: '%v'", refJob, job)
-		}
 
-		deletableJobs = append(deletableJobs, job)
+		switch {
+		case r.view.IsSuccessful(refJob), r.view.IsFailed(refJob), r.view.IsTerminating(refJob):
+			r.Logger.Info("job '%s' is already completed.")
+			continue
+		case r.view.IsPending(refJob):
+			job := r.view.GetPendingJobs(refJob)[0]
+
+			if v1alpha1.GetComponentLabel(job) == v1alpha1.ComponentSys {
+				return nil, errors.Errorf("service '%s' belongs to the system and is not deletable", refJob)
+			}
+
+			deletableJobs = append(deletableJobs, job)
+
+		case r.view.IsRunning(refJob):
+			job := r.view.GetRunningJobs(refJob)[0]
+
+			if v1alpha1.GetComponentLabel(job) == v1alpha1.ComponentSys {
+				return nil, errors.Errorf("service '%s' belongs to the system and is not deletable", refJob)
+			}
+
+			deletableJobs = append(deletableJobs, job)
+		default:
+			return nil, errors.Errorf("service '%s' is not yet scheduled. Check your conditions", refJob)
+		}
 	}
 
 	// Delete normally does not return anything. This however would break all the pipeline for
