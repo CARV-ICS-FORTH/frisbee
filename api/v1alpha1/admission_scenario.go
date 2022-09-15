@@ -55,7 +55,6 @@ func (in *Scenario) Default() {
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (in *Scenario) ValidateCreate() error {
-
 	legitReferences, err := BuildDependencyGraph(in)
 	if err != nil {
 		return errors.Wrapf(err, "invalid scenario [%s]", in.GetName())

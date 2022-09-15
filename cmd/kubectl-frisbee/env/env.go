@@ -46,10 +46,10 @@ func init() {
 }
 
 const (
-	// defaultMaxHistory sets the maximum number of tests to 0: unlimited
+	// defaultMaxHistory sets the maximum number of tests to 0: unlimited.
 	defaultMaxHistory = 50
 
-	// defaultOutputType sets the output format
+	// defaultOutputType sets the output format.
 	defaultOutputType = "pretty"
 )
 
@@ -138,6 +138,13 @@ func New() *EnvSettings {
 
 // AddFlags binds flags to the given flagset.
 func (env *EnvSettings) AddFlags(cmd *cobra.Command) {
+	pfs := cmd.PersistentFlags()
+
+	pfs.StringVar(&env.KubeConfig, "kubeconfig", env.KubeConfig, "path to the kubeconfig file")
+
+	pfs.BoolVarP(&env.Debug, "debug", "d", env.Debug, "enable verbose output")
+	pfs.BoolVar(&env.Hints, "hints", env.Hints, "enable hints in the output")
+
 	// fs := cmd.Flags()
 
 	/*
@@ -149,23 +156,13 @@ func (env *EnvSettings) AddFlags(cmd *cobra.Command) {
 	// fs.StringVar(&env.KubeContext, "kube-context", env.KubeContext, "name of the kubeconfig context to use")
 	// fs.StringVar(&env.KubeToken, "kube-token", env.KubeToken, "bearer token used for authentication")
 	// fs.StringVar(&env.KubeAsUser, "kube-as-user", env.KubeAsUser, "username to impersonate for the operation")
-
-	/*
-		Persistent Flags
-	*/
-
-	pfs := cmd.PersistentFlags()
-
-	pfs.StringVar(&env.KubeConfig, "kubeconfig", env.KubeConfig, "path to the kubeconfig file")
-
-	pfs.BoolVarP(&env.Debug, "debug", "d", env.Debug, "enable verbose output")
-	pfs.BoolVar(&env.Hints, "hints", env.Hints, "enable hints in the output")
 }
 
 func envOr(name, def string) string {
 	if v, ok := os.LookupEnv(name); ok {
 		return v
 	}
+
 	return def
 }
 
@@ -173,11 +170,14 @@ func envBoolOr(name string, def bool) bool {
 	if name == "" {
 		return def
 	}
+
 	envVal := envOr(name, strconv.FormatBool(def))
+
 	ret, err := strconv.ParseBool(envVal)
 	if err != nil {
 		return def
 	}
+
 	return ret
 }
 
@@ -185,11 +185,14 @@ func envIntOr(name string, def int) int {
 	if name == "" {
 		return def
 	}
+
 	envVal := envOr(name, strconv.Itoa(def))
+
 	ret, err := strconv.Atoi(envVal)
 	if err != nil {
 		return def
 	}
+
 	return ret
 }
 
@@ -198,6 +201,7 @@ func envCSV(name string) (ls []string) {
 	if trimmed != "" {
 		ls = strings.Split(trimmed, ",")
 	}
+
 	return
 }
 
@@ -209,7 +213,7 @@ func (env *EnvSettings) SetNamespace(namespace string) {
 
 */
 
-// RESTClientGetter gets the kubeconfig from EnvSettings
+// RESTClientGetter gets the kubeconfig from EnvSettings.
 func (env *EnvSettings) RESTClientGetter() genericclioptions.RESTClientGetter {
 	return env.config
 }
@@ -241,7 +245,7 @@ func (env *EnvSettings) Hint(msg string, sub ...string) {
 	}
 }
 
-// Kubectl returns path to the kubectl binary
+// Kubectl returns path to the kubectl binary.
 func (p *Path) Kubectl() string {
 	if p.kubectlPath == "" {
 		ui.Fail(errors.Errorf("command requires 'kubectl' to be installed in your system"))
@@ -250,7 +254,7 @@ func (p *Path) Kubectl() string {
 	return p.kubectlPath
 }
 
-// Helm returns path to the helm binary
+// Helm returns path to the helm binary.
 func (p *Path) Helm() string {
 	if p.helmPath == "" {
 		ui.Fail(errors.Errorf("command requires 'helm' to be installed in your system"))
@@ -259,7 +263,7 @@ func (p *Path) Helm() string {
 	return p.helmPath
 }
 
-// NodeJS returns path to the node binary
+// NodeJS returns path to the node binary.
 func (p *Path) NodeJS() string {
 	if p.nodejsPath == "" {
 		ui.Fail(errors.Errorf("command requires 'node' to be installed in your system"))
@@ -268,7 +272,7 @@ func (p *Path) NodeJS() string {
 	return p.nodejsPath
 }
 
-// NPM returns path to the node binary
+// NPM returns path to the node binary.
 func (p *Path) NPM() string {
 	if p.npmPath == "" {
 		ui.Fail(errors.Errorf("command requires 'npm' to be installed in your system"))

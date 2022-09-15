@@ -25,7 +25,6 @@ import (
 )
 
 func Test_setField(t *testing.T) {
-
 	cr := v1alpha1.Service{
 		Spec: v1alpha1.ServiceSpec{
 			Requirements: &v1alpha1.Requirements{

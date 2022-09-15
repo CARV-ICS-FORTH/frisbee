@@ -18,8 +18,10 @@ package watchers
 
 import (
 	"fmt"
-	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"reflect"
+
+	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/carv-ics-forth/frisbee/controllers/common"
@@ -35,7 +37,6 @@ func Watch(r common.Reconciler, gvk schema.GroupVersionKind) builder.Predicates 
 	w := simpleWatch{}
 
 	return w.Watch(r, gvk)
-
 }
 
 type simpleWatch struct{}

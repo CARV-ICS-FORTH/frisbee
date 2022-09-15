@@ -230,7 +230,6 @@ func setField(cr *v1alpha1.Service, val v1alpha1.SetField) (err error) {
 }
 
 func decoratePod(ctx context.Context, r *Controller, cr *v1alpha1.Service) error {
-
 	// set labels
 	if req := cr.Spec.Decorators.Labels; req != nil {
 		cr.SetLabels(labels.Merge(cr.GetLabels(), req))

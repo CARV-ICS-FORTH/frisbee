@@ -270,7 +270,6 @@ func (r *Controller) HasSucceed(ctx context.Context, cr *v1alpha1.Call) error {
 }
 
 func (r *Controller) HasFailed(ctx context.Context, cr *v1alpha1.Call) error {
-
 	r.Logger.Error(fmt.Errorf(cr.Status.Message), "!! "+cr.Status.Reason,
 		"obj", client.ObjectKeyFromObject(cr).String())
 

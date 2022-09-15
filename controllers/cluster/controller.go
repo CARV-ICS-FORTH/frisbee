@@ -232,7 +232,6 @@ func (r *Controller) PopulateView(ctx context.Context, req types.NamespacedName)
 }
 
 func (r *Controller) HasSucceed(ctx context.Context, cr *v1alpha1.Cluster) error {
-
 	r.Logger.Info("CleanOnSuccess",
 		"obj", client.ObjectKeyFromObject(cr).String(),
 		"successfulJobs", r.view.ListSuccessfulJobs(),
@@ -251,7 +250,6 @@ func (r *Controller) HasSucceed(ctx context.Context, cr *v1alpha1.Cluster) error
 }
 
 func (r *Controller) HasFailed(ctx context.Context, cr *v1alpha1.Cluster) error {
-
 	r.Logger.Error(fmt.Errorf(cr.Status.Message), "!! "+cr.Status.Reason,
 		"obj", client.ObjectKeyFromObject(cr).String())
 

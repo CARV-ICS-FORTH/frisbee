@@ -44,8 +44,10 @@ const (
 
 */
 
-type GenericFault = unstructured.Unstructured
-type GenericFaultList = unstructured.UnstructuredList
+type (
+	GenericFault     = unstructured.Unstructured
+	GenericFaultList = unstructured.UnstructuredList
+)
 
 var (
 	NetworkChaosGVK = schema.GroupVersionKind{

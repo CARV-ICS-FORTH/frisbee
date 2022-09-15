@@ -60,13 +60,11 @@ func GetServiceSpecList(ctx context.Context, c client.Client, parent metav1.Obje
 	specBody, err := json.Marshal(template.Spec.Service)
 	if err != nil {
 		return nil, errors.Errorf("cannot marshal service of '%s'", fromTemplate.TemplateRef)
-
 	}
 
 	specs := make([]v1alpha1.ServiceSpec, 0, fromTemplate.MaxInstances)
 
 	if err := fromTemplate.IterateInputs(func(userInputs map[string]string) error {
-
 		spec := v1alpha1.ServiceSpec{}
 		scheme := templateutils.NewScheme(parent, template.Spec.Inputs, specBody)
 

@@ -41,7 +41,6 @@ const (
 type lazypath string
 
 func (l lazypath) path(frisbeeEnvVar, xdgEnvVar string, defaultFn func() string, elem ...string) string {
-
 	// There is an order to check for a path.
 	// 1. See if a Frisbee specific environment variable has been set.
 	// 2. Check if an XDG environment variable is set

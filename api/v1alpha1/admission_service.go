@@ -17,13 +17,14 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"strings"
+
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
-	"strings"
 )
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.

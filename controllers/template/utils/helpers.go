@@ -25,7 +25,6 @@ import (
 type ExpandedSpecBody string
 
 func NewScheme(parent metav1.Object, inputs *v1alpha1.Inputs, body []byte) *v1alpha1.Scheme {
-
 	return &v1alpha1.Scheme{
 		Scenario:  v1alpha1.GetScenarioLabel(parent),
 		Namespace: parent.GetNamespace(),

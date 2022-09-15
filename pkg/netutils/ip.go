@@ -32,7 +32,6 @@ func GetPublicIP() (net.IP, error) {
 	// http://api.ident.me
 	// http://whatismyipaddress.com/api
 	resp, err := http.Get(url)
-
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot contact public IP address API")
 	}

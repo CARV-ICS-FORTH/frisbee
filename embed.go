@@ -22,10 +22,11 @@ package embed
 
 import (
 	"embed"
-	"github.com/pkg/errors"
 	"io/fs"
 	"os"
 	"path/filepath"
+
+	"github.com/pkg/errors"
 )
 
 //go:embed hack

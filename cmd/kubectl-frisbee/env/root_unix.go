@@ -17,11 +17,12 @@ limitations under the License.
 package env
 
 import (
-	"github.com/carv-ics-forth/frisbee/pkg/ui"
-	"k8s.io/utils/exec"
 	"os"
 	"os/user"
 	"path/filepath"
+
+	"github.com/carv-ics-forth/frisbee/pkg/ui"
+	"k8s.io/utils/exec"
 )
 
 func (env *EnvSettings) CheckKubePerms() {
@@ -49,16 +50,15 @@ func (env *EnvSettings) CheckKubePerms() {
 	}
 
 	perm := fi.Mode().Perm()
-	if perm&0040 > 0 {
+	if perm&0o040 > 0 {
 		ui.Warn("Kubernetes configuration file is group-readable. This is insecure. Location: ", kc)
 	}
-	if perm&0004 > 0 {
+	if perm&0o004 > 0 {
 		ui.Warn("Kubernetes configuration file is world-readable. This is insecure. Location: ", kc)
 	}
 
 	env.KubeConfig = kc
 }
-
 
 func (env *EnvSettings) LookupBinaries() {
 	kubectlPath, err := exec.New().LookPath("kubectl")

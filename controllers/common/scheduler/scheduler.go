@@ -36,7 +36,8 @@ import (
 // If we've missed a run, and we're still within the deadline to start it, we'll need to run a job.
 // time-based and event-driven scheduling can be used in conjunction.
 func Schedule(ctx context.Context, r common.Reconciler, cr client.Object, schedule *v1alpha1.SchedulerSpec,
-	lastSchedule *metav1.Time, state lifecycle.ClassifierReader) (bool, ctrl.Result, error) {
+	lastSchedule *metav1.Time, state lifecycle.ClassifierReader,
+) (bool, ctrl.Result, error) {
 	// no schedule.
 	if schedule == nil {
 		return true, ctrl.Result{}, nil

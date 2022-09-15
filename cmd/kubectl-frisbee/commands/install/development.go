@@ -55,8 +55,8 @@ func NewInstallDevelopmentCmd() *cobra.Command {
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-
-			command := []string{"upgrade", "--install", "--wait",
+			command := []string{
+				"upgrade", "--install", "--wait",
 				"--namespace", options.Namespace, "--create-namespace",
 				"--set", fmt.Sprintf("operator.enabled=%t", false),
 				"--set", fmt.Sprintf("operator.advertisedHost=%s", publicIP),

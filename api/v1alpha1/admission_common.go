@@ -46,7 +46,6 @@ func ValidateExpr(expr *ConditionalExpr) error {
 }
 
 func ValidateScheduler(sch *SchedulerSpec) error {
-
 	// cron
 	if cronspec := sch.Cron; cronspec != nil {
 		if _, err := cron.ParseStandard(*cronspec); err != nil {
@@ -67,7 +66,6 @@ func ValidateScheduler(sch *SchedulerSpec) error {
 // ValidatePlacement validates the placement policy. However, because it may involve references to other
 // services, the validation requires a list of the defined actions.
 func ValidatePlacement(policy *PlacementSpec, callIndex map[string]*Action) error {
-
 	// Validate the name of the references nodes.
 	if policy.Nodes != nil {
 		// TODO: add logic

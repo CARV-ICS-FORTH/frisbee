@@ -64,7 +64,6 @@ func GetChaosSpecList(ctx context.Context, c client.Client, caller metav1.Object
 	specs := make([]v1alpha1.ChaosSpec, 0, fromTemplate.MaxInstances)
 
 	if err := fromTemplate.IterateInputs(func(userInputs map[string]string) error {
-
 		spec := v1alpha1.ChaosSpec{}
 		scheme := templateutils.NewScheme(caller, template.Spec.Inputs, specBody)
 

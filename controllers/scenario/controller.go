@@ -106,7 +106,6 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			return common.Stop()
 		}
 	} else {
-
 	}
 
 	/*
@@ -444,7 +443,6 @@ func (r *Controller) Finalizer() string {
 }
 
 func (r *Controller) Finalize(obj client.Object) error {
-
 	r.Logger.Info("XX Finalize",
 		"kind", reflect.TypeOf(obj),
 		"name", obj.GetName(),

@@ -87,7 +87,6 @@ type Reconciler interface {
 // Bool indicate whether the caller should return immediately (true) or continue (false).
 // The reconciliation cycle is where the framework gives us back control after a watch has passed up an event.
 func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.Object, requeue *bool) (ctrl.Result, error) {
-
 	// make the calling controller to return
 	*requeue = true
 
@@ -134,7 +133,6 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 
 			return Stop()
 		}
-
 	} else {
 		// The object is being deleted
 		if controllerutil.ContainsFinalizer(obj, r.Finalizer()) {

@@ -17,9 +17,10 @@ limitations under the License.
 package scenario
 
 import (
+	"time"
+
 	"github.com/carv-ics-forth/frisbee/pkg/structure"
 	"github.com/pkg/errors"
-	"time"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -34,7 +35,6 @@ import (
 // next timeout. To handle this scenario, we have to requeue the request with the given duration.
 // In this case, the given duration is the nearest expected timeout.
 func (r *Controller) NextJobs(cr *v1alpha1.Scenario) (runNext []v1alpha1.Action, nextCycle time.Time, err error) {
-
 	timeOK := func(deps *v1alpha1.WaitSpec) bool {
 		if dur := deps.After; dur != nil {
 			cur := metav1.Now()

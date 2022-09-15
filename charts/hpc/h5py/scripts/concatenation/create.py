@@ -4,10 +4,10 @@ import h5py
 import numpy as np
 import socket
 
-def create_random_file(folder, index):
+def create_random_file(dir, index):
     """create one random file"""
     filename = 'myfile_' + str(index) + "_"+  socket.gethostname() + ".h5"
-    name = os.path.join(folder, filename )
+    name = os.path.join(dir, filename)
 
     f = h5py.File(name=name, mode='w')
 
@@ -37,7 +37,7 @@ def main(argv):
     print("ShareDir:", shared_dir, " num_of_files:", num_of_files)
 
     for i_file in range(num_of_files):
-            name = create_random_file(folder=shared_dir, index=i_file)
+            name = create_random_file(dir=shared_dir, index=i_file)
             print("Creating ", name)
 
 

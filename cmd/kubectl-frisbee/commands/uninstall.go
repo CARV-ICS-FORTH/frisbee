@@ -41,7 +41,6 @@ func PopulatePlatformUninstallFlags(cmd *cobra.Command, options *PlatformUninsta
 	cmd.Flags().BoolVar(&options.All, "all", false, "delete everything")
 
 	cmd.Flags().StringVar(&options.RepositoryCache, "repository-cache", home.CachePath("repository"), "path to the file containing cached repository indexes")
-
 }
 
 func NewUninstallCmd() *cobra.Command {
@@ -59,7 +58,6 @@ func NewUninstallCmd() *cobra.Command {
 			ui.Info("Using config:", env.Settings.KubeConfig)
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-
 			// Delete Tests
 			if common.CRDsExist(common.Scenarios) {
 				ui.Info("Deleting Tests. If it takes long time, make sure that Frisbee controller is still running.")

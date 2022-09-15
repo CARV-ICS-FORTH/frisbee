@@ -20,7 +20,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 )
 
-type CreateFunc func(e event.CreateEvent) bool
-type UpdateFunc func(e event.UpdateEvent) bool
-type DeleteFunc func(e event.DeleteEvent) bool
-type GenericFunc func(e event.GenericEvent) bool
+type (
+	CreateFunc  func(e event.CreateEvent) bool
+	UpdateFunc  func(e event.UpdateEvent) bool
+	DeleteFunc  func(e event.DeleteEvent) bool
+	GenericFunc func(e event.GenericEvent) bool
+)

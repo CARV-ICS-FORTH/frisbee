@@ -26,7 +26,6 @@ import (
 )
 
 func (c *Client) SetNotificationChannel(ctx context.Context, webhookURL string) error {
-
 	// use the webhook as notification channel for grafana
 	feedback := sdk.AlertNotification{
 		Name:                  configuration.Global.ControllerName,

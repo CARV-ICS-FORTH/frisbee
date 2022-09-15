@@ -31,7 +31,6 @@ import (
 // 3. Ensure that dependencies point to a valid action.
 // 4. Ensure that macros point to a valid action.
 func (r *Controller) Validate(ctx context.Context, t *v1alpha1.Scenario) error {
-
 	// Validate Reference Graph
 	for _, action := range t.Spec.Actions {
 		switch action.ActionType {

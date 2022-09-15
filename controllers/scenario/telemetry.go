@@ -56,9 +56,7 @@ const (
 	defaultDataviewerName = "dataviewer"
 )
 
-var (
-	GrafanaPort = int64(3000)
-)
+var GrafanaPort = int64(3000)
 
 func (r *Controller) StartTelemetry(ctx context.Context, t *v1alpha1.Scenario) error {
 	// the filebrowser makes sense only if test data are enabled.

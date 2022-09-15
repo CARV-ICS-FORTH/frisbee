@@ -116,7 +116,8 @@ func installCertManager() error {
 	ui.ExitOnError("Update repo", err)
 
 	// Prepare installation command app
-	command := []string{"upgrade", "--install", "--create-namespace",
+	command := []string{
+		"upgrade", "--install", "--create-namespace",
 		"cert-manager", "jetstack/cert-manager",
 		"--set", "installCRDs=true",
 	}

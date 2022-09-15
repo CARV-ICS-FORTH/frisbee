@@ -32,7 +32,6 @@ func NewSaveCmd() *cobra.Command {
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			ui.Logo()
 
-
 			env.Settings.CheckKubePerms()
 			ui.Info("Using config:", env.Settings.KubeConfig)
 

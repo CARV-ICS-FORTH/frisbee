@@ -52,7 +52,8 @@ func buildVirtualObject(parent metav1.Object, name string) *v1alpha1.VirtualObje
 // by the parent's lifecycle. The VirtualExecution will return nil.
 // If the VirtualExecution fails (e.g, cannot create a virtual object), it will return an error.
 func VirtualExecution(ctx context.Context, r common.Reconciler, parent client.Object, jobName string,
-	cb func(vobj *v1alpha1.VirtualObject) error) error {
+	cb func(vobj *v1alpha1.VirtualObject) error,
+) error {
 	// Step 1. Create the object in the Kubernetes API
 	vJob := buildVirtualObject(parent, jobName)
 

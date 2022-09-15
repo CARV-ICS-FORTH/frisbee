@@ -144,8 +144,10 @@ func New(ctx context.Context, setters ...Option) (*Client, error) {
 	return client, nil
 }
 
-var clientsLocker sync.RWMutex
-var clients = map[types.NamespacedName]*Client{}
+var (
+	clientsLocker sync.RWMutex
+	clients       = map[types.NamespacedName]*Client{}
+)
 
 type Client struct {
 	ctx    context.Context
@@ -171,7 +173,6 @@ func getKey(obj metav1.Object) types.NamespacedName {
 // SetClientFor creates a new client for the given object.  It panics if it cannot parse the object's metadata,
 // or if another client is already registers.
 func SetClientFor(obj metav1.Object, c *Client) {
-
 	key := getKey(obj)
 
 	clientsLocker.RLock()

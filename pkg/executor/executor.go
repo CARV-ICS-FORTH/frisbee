@@ -20,10 +20,11 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"github.com/sirupsen/logrus"
 	"io"
 	"net/http"
 	"strings"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/armon/circbuf"
 	"github.com/pkg/errors"
