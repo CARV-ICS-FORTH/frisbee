@@ -1,4 +1,4 @@
-package common
+package common_test
 
 /*
 func TestSetQuota(t *testing.T) {
