@@ -27,8 +27,8 @@ import (
 )
 
 type PlatformUninstallOptions struct {
-	Namespace, Name, RepositoryCache string
-	All, CRDS, Cache                 bool
+	Namespace, Name, RepositoryCache              string
+	All, DeleteCRDS, DeleteCache, DeleteNamespace bool
 }
 
 func PopulatePlatformUninstallFlags(cmd *cobra.Command, options *PlatformUninstallOptions) {
@@ -36,8 +36,9 @@ func PopulatePlatformUninstallFlags(cmd *cobra.Command, options *PlatformUninsta
 
 	cmd.Flags().StringVar(&options.Name, "name", "frisbee", "installation name")
 
-	cmd.Flags().BoolVar(&options.Cache, "cache", false, "delete frisbee cache")
-	cmd.Flags().BoolVar(&options.CRDS, "crds", false, "delete frisbee crds")
+	cmd.Flags().BoolVar(&options.DeleteCache, "delete-cache", false, "delete frisbee cache")
+	cmd.Flags().BoolVar(&options.DeleteCRDS, "delete-crds", false, "delete frisbee crds")
+	cmd.Flags().BoolVar(&options.DeleteNamespace, "delete-namespace", false, "delete the installation namespace")
 	cmd.Flags().BoolVar(&options.All, "all", false, "delete everything")
 
 	cmd.Flags().StringVar(&options.RepositoryCache, "repository-cache", home.CachePath("repository"), "path to the file containing cached repository indexes")
@@ -52,6 +53,7 @@ func NewUninstallCmd() *cobra.Command {
 		Aliases: []string{"un", "purge"},
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			ui.Logo()
+			ui.SetVerbose(env.Settings.Debug)
 
 			env.Settings.CheckKubePerms()
 
@@ -86,7 +88,7 @@ func NewUninstallCmd() *cobra.Command {
 			}
 
 			// Delete crds
-			if options.CRDS || options.All {
+			if options.DeleteCRDS || options.All {
 				out, err := common.Kubectl("", "delete", "crds", "--wait",
 					common.Scenarios, common.Clusters, common.Services, common.Cascades, common.Chaos,
 					common.Calls, common.VirtualObjects, common.Templates)
@@ -95,18 +97,26 @@ func NewUninstallCmd() *cobra.Command {
 					ui.ExitOnError("Deleting CRDs ....", err)
 				}
 
-				ui.Success("CRDS  deleted")
+				ui.Success("CRDs  deleted")
 
 			}
 
 			// Delete cache
-			if options.Cache || options.All {
+			if options.DeleteCache || options.All {
 				err := os.RemoveAll(options.RepositoryCache)
 				if err != nil && !os.IsNotExist(err) {
 					ui.ExitOnError("Deleting Cache ....", err)
 				}
 
 				ui.Success("Cache  deleted")
+			}
+
+			// Delete namespace
+			if options.DeleteNamespace || options.All {
+				_, err := common.Kubectl("", "delete", "namespace", options.Namespace)
+				ui.ExitOnError("Deleting namespace ....", err)
+
+				ui.Success("Namespace  deleted")
 			}
 		},
 		PersistentPostRun: func(cmd *cobra.Command, args []string) {

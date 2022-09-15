@@ -90,6 +90,10 @@ type CallStatus struct {
 	// +optional
 	QueuedJobs []Callable `json:"queuedJobs,omitempty"`
 
+	// Timeline is the result of evaluating a timeline distribution.
+	// +optional
+	Timeline []metav1.Time `json:"timeline,omitempty"`
+
 	// ScheduledJobs points to the next QueuedJobs.
 	ScheduledJobs int `json:"scheduledJobs,omitempty"`
 

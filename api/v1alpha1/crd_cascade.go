@@ -35,7 +35,7 @@ type Cascade struct {
 
 // CascadeSpec defines the desired state of Cascade.
 type CascadeSpec struct {
-	GenerateFromTemplate `json:",inline"`
+	GenerateObjectFromTemplate `json:",inline"`
 
 	// Schedule defines the interval between the creation of services within the group.
 	// +optional
@@ -54,6 +54,10 @@ type CascadeStatus struct {
 	// QueuedJobs is a list of Chaos jobs scheduled for creation by the cascade.
 	// +optional
 	QueuedJobs []ChaosSpec `json:"queuedJobs,omitempty"`
+
+	// Timeline is the result of evaluating a timeline distribution.
+	// +optional
+	Timeline []metav1.Time `json:"timeline,omitempty"`
 
 	// ScheduledJobs points to the next QueuedJobs.
 	ScheduledJobs int `json:"scheduledJobs,omitempty"`

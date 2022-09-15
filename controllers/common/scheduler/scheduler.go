@@ -17,89 +17,109 @@ limitations under the License.
 package scheduler
 
 import (
-	"context"
+	"github.com/go-logr/logr"
 	"time"
 
 	"github.com/carv-ics-forth/frisbee/pkg/expressions"
 	"github.com/carv-ics-forth/frisbee/pkg/lifecycle"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	"github.com/carv-ics-forth/frisbee/controllers/common"
 	"github.com/pkg/errors"
 	"github.com/robfig/cron/v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+type Parameters struct {
+	// ScheduleSpec is the scheduling options
+	ScheduleSpec *v1alpha1.SchedulerSpec
+
+	// LastScheduled is the time the controller last scheduled an object.
+	LastScheduled *metav1.Time
+
+	// ExpectedTime is the evaluation of a timeline distribution defined in the ScheduleSpec.
+	ExpectedTimeline v1alpha1.Timeline
+
+	// State is the real state of the system.
+	State *lifecycle.Classifier
+}
 
 // Schedule calculate the next scheduled run, and whether we've got a run that we haven't processed yet  (or anything we missed).
 // If we've missed a run, and we're still within the deadline to start it, we'll need to run a job.
 // time-based and event-driven scheduling can be used in conjunction.
-func Schedule(ctx context.Context, r common.Reconciler, cr client.Object, schedule *v1alpha1.SchedulerSpec,
-	lastSchedule *metav1.Time, state lifecycle.ClassifierReader,
-) (bool, ctrl.Result, error) {
-	// no schedule.
-	if schedule == nil {
-		return true, ctrl.Result{}, nil
+func Schedule(log logr.Logger, obj client.Object, s Parameters) (goToNextJob bool, next time.Time, err error) {
+	// no scheduling constraint.
+	if s.ScheduleSpec == nil {
+		return true, time.Time{}, nil
+	}
+
+	// Cron-based scheduling
+	if s.ScheduleSpec.Cron != nil {
+		missed, next, err := cronWithDeadline(log, obj, s)
+		return !missed.IsZero(), next, err
+	}
+
+	// Timeline-based scheduling
+	if s.ScheduleSpec.Timeline != nil {
+		missed, next, err := timelineWithDeadline(log, obj, s)
+		return !missed.IsZero(), next, err
 	}
 
 	// Event-based scheduling
-	if !schedule.Event.IsZero() {
-		eval := expressions.Condition{Expr: schedule.Event}
-		if eval.IsTrue(state, cr) {
-			return true, ctrl.Result{}, nil
+	if !s.ScheduleSpec.Event.IsZero() {
+		eval := expressions.Condition{Expr: s.ScheduleSpec.Event}
+		if eval.IsTrue(s.State, obj) {
+			return true, time.Time{}, nil
 		}
 	}
 
-	// Time-based scheduling
-	if schedule.Cron != nil {
-		return timeBasedWithDeadline(ctx, r, cr, schedule, lastSchedule)
-	}
-
-	return false, ctrl.Result{}, nil
+	return false, time.Time{}, nil
 }
 
-func timeBasedWithDeadline(ctx context.Context, r common.Reconciler, cr client.Object, schedule *v1alpha1.SchedulerSpec, lastSchedule *metav1.Time) (bool, ctrl.Result, error) {
-	missedRun, nextRun, err := getNextScheduleTime(cr, schedule, lastSchedule)
+func cronWithDeadline(log logr.Logger, obj client.Object, s Parameters) (lastMissed time.Time, next time.Time, err error) {
+	timeline, err := cron.ParseStandard(*s.ScheduleSpec.Cron)
 	if err != nil {
-		/*
-			we don't really care about re-queuing until we get an update that
-			fixes the schedule, so don't return an error.
-		*/
-		return false, ctrl.Result{}, nil
+		return time.Time{}, time.Time{}, errors.Wrapf(err, "unparseable timeline %q", *s.ScheduleSpec.Cron)
 	}
 
-	if missedRun.IsZero() {
-		if nextRun.IsZero() {
-			r.Info("scheduling is complete.", "object", cr.GetName())
+	lastMissed, next, err = getNextScheduleTime(obj.GetCreationTimestamp().Time, timeline, s)
+	if err != nil {
+		return lastMissed, next, errors.Wrapf(err, "scheduling error")
+	}
 
-			return false, ctrl.Result{}, nil
+	/*
+		deadline := s.ScheduleSpec.StartingDeadlineSeconds
+		if !lastMissed.IsZero() && !honorDeadline(log, lastMissed, deadline) {
+			return lastMissed, next, errors.Errorf("scheduling violation. deadline of '%d' seconds is too strict.", *deadline)
 		}
+	*/
 
-		r.Info("Requeue. ",
-			"object", cr.GetName(),
-			"too early in the schedule. sleep for:", time.Until(nextRun).String(),
-		)
+	return lastMissed, next, nil
+}
 
-		return false, ctrl.Result{
-			Requeue:      true,
-			RequeueAfter: time.Until(nextRun),
-		}, nil
+func timelineWithDeadline(log logr.Logger, obj client.Object, s Parameters) (lastMissed time.Time, next time.Time, err error) {
+	timeline := s.ExpectedTimeline
+
+	lastMissed, next, err = getNextScheduleTime(obj.GetCreationTimestamp().Time, timeline, s)
+	if err != nil {
+		return lastMissed, next, errors.Wrapf(err, "timeline error")
 	}
 
-	// if there is a missed run, make sure we're not too late to start the run
-	tooLate := false
-	if deadline := schedule.StartingDeadlineSeconds; deadline != nil {
-		tooLate = missedRun.Add(time.Duration(*deadline) * time.Second).Before(time.Now())
-	}
+	/*
+		deadline := s.ScheduleSpec.StartingDeadlineSeconds
+		if !lastMissed.IsZero() && !honorDeadline(log, lastMissed, deadline) {
+			return lastMissed, next, errors.Errorf("scheduling violation. deadline of '%d' seconds is too strict.", *deadline)
+		}
+	*/
 
-	if tooLate {
-		ret, err := lifecycle.Failed(ctx, r, cr, errors.New("scheduling violation"))
+	return lastMissed, next, nil
+}
 
-		return false, ret, err
-	}
-
-	return true, ctrl.Result{}, nil
+// Timeline describes a job's duty cycle.
+type Timeline interface {
+	// Next returns the next activation time, later than the given time.
+	// Next is invoked initially, and then each time the job is run.
+	Next(time.Time) time.Time
 }
 
 // getNextScheduleTime figure out the next times that we need to create jobs at (or anything we missed).
@@ -112,58 +132,46 @@ func timeBasedWithDeadline(ctx context.Context, r common.Reconciler, cr client.O
 // bail so that we don't cause issues on controller restarts or wedges.
 // Otherwise, we'll just return the missed runs (of which we'll just use the latest),
 // and the next run, so that we can know when it's time to reconcile again.
-func getNextScheduleTime(
-	obj metav1.Object,
-	scheduler *v1alpha1.SchedulerSpec,
-	lastScheduleTime *metav1.Time,
-) (lastMissed time.Time, next time.Time, err error) {
-	cur := time.Now()
-	// start the job immediately if there is no defined scheduler.
-	if scheduler == nil || scheduler.Cron == nil {
-		return time.Now(), time.Time{}, nil
-	}
-
-	sched, err := cron.ParseStandard(*scheduler.Cron)
-	if err != nil {
-		return time.Time{}, time.Time{}, errors.Wrapf(err, "unparseable schedule %q", *scheduler.Cron)
-	}
+func getNextScheduleTime(earliest time.Time, timeline Timeline, param Parameters) (lastMissed time.Time, next time.Time, err error) {
+	now := time.Now()
 
 	var earliestTime time.Time
 
-	if lastScheduleTime.IsZero() {
+	if param.LastScheduled.IsZero() {
 		// If none found, then this is either a recently created cronJob,
 		// or the active/completed info was somehow lost (contract for status
 		// in kubernetes says it may need to be recreated), or that we have
 		// started a job, but have not noticed it yet (distributed systems can
 		// have arbitrary delays).  In any case, use the creation time of the
 		// object as last known start time.
-		earliestTime = obj.GetCreationTimestamp().Time
+		earliestTime = earliest
 	} else {
 		// for optimization purposes, cheat a bit and start from our last observed run time
 		// we could reconstitute this here, but there's not much point, since we've
 		// just updated it.
-		earliestTime = lastScheduleTime.Time
+		earliestTime = param.LastScheduled.Time
 	}
 
-	if scheduler.StartingDeadlineSeconds != nil {
+	if param.ScheduleSpec.StartingDeadlineSeconds != nil {
 		// controller is not going to schedule anything below this point
-		schedulingDeadline := cur.Add(-time.Second * time.Duration(*scheduler.StartingDeadlineSeconds))
+		schedulingDeadline := now.Add(-time.Second * time.Duration(*param.ScheduleSpec.StartingDeadlineSeconds))
 
 		if schedulingDeadline.After(earliestTime) {
 			earliestTime = schedulingDeadline
 		}
 	}
 
-	if earliestTime.After(cur) {
+	if earliestTime.After(now) {
 		// the earliest time is later than now.
 		// return the next activation time (used for re-queuing the request)
-		return time.Time{}, sched.Next(cur), nil
+		return time.Time{}, timeline.Next(now), nil
 	}
 
 	starts := 0
 
-	for t := sched.Next(earliestTime); !t.After(cur); t = sched.Next(t) {
+	for t := timeline.Next(earliestTime); !t.After(now); t = timeline.Next(t) {
 		lastMissed = t
+
 		// An object might miss several starts. For example, if
 		// controller gets wedged on Friday at 5:01pm when everyone has
 		// gone home, and someone comes in on Tuesday AM and discovers
@@ -186,5 +194,19 @@ func getNextScheduleTime(
 		}
 	}
 
-	return lastMissed, sched.Next(cur), nil
+	return lastMissed, timeline.Next(now), nil
+}
+
+func honorDeadline(log logr.Logger, lastMissed time.Time, deadline *int64) bool {
+	// if there is a missed run, make sure we're not too late to start the run
+	tooLate := false
+	if deadline != nil {
+		skew := lastMissed.Add(time.Duration(*deadline) * time.Second)
+
+		log.Info("MissedSchedule", "skew", skew)
+
+		tooLate = skew.Before(time.Now())
+	}
+
+	return tooLate
 }

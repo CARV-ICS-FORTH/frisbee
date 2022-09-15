@@ -68,6 +68,6 @@ spec:
     # When all actions are done, delete looping servers to gracefully exit the experiment
     - action: Delete
       name: teardown
-      depends: { running: [server], success: [delete-client]} # # Notice: dependency to a Delete action.
+      depends: { running: [ server ], success: [ delete-client ] } # # Notice: dependency to a Delete action.
       delete:
         jobs: [ server ]

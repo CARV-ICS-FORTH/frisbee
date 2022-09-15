@@ -20,10 +20,10 @@ jobs:
         include:
           - name: "linux"
             path: .builds-linux.goreleaser.yml
-#          - name: "windows"
-#            path: .builds-windows.goreleaser.yml
-#          - name: "darwin"
-#            path: .builds-darwin.goreleaser.yml
+    #          - name: "windows"
+    #            path: .builds-windows.goreleaser.yml
+    #          - name: "darwin"
+    #            path: .builds-darwin.goreleaser.yml
 
     steps:
       - name: Checkout

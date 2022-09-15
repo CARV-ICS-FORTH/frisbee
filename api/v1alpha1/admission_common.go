@@ -45,7 +45,17 @@ func ValidateExpr(expr *ConditionalExpr) error {
 	return nil
 }
 
-func ValidateScheduler(sch *SchedulerSpec) error {
+func ValidateScheduler(instances int, sch *SchedulerSpec) error {
+	if instances < 2 {
+		return errors.Errorf("scheduling requires at least two instances.")
+	}
+
+	// Cron and Timeline can be active at the same time.
+	// However, both Cron and Timeline can be used in conjuction with Events.
+	if sch.Cron != nil && sch.Timeline != nil {
+		return errors.Errorf("cron and timeline distribution cannot be activated in paralle.")
+	}
+
 	// cron
 	if cronspec := sch.Cron; cronspec != nil {
 		if _, err := cron.ParseStandard(*cronspec); err != nil {
@@ -60,12 +70,39 @@ func ValidateScheduler(sch *SchedulerSpec) error {
 		}
 	}
 
+	// timeline
+	if timeline := sch.Timeline; timeline != nil {
+		if err := ValidateDistribution(timeline.DistributionSpec); err != nil {
+			return errors.Wrapf(err, "conditions error")
+		}
+	}
+
+	return nil
+}
+
+func ValidateDistribution(dist *DistributionSpec) error {
+	switch dist.Distribution {
+	case "constant":
+		return nil
+
+	case "uniform":
+		return nil
+
+	case "zipfian":
+		return nil
+
+	case "histogram":
+		return nil
+	}
+	/* TODO: continue with the other distributions */
+
 	return nil
 }
 
 // ValidatePlacement validates the placement policy. However, because it may involve references to other
 // services, the validation requires a list of the defined actions.
 func ValidatePlacement(policy *PlacementSpec, callIndex map[string]*Action) error {
+
 	// Validate the name of the references nodes.
 	if policy.Nodes != nil {
 		// TODO: add logic

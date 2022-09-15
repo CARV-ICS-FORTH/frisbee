@@ -20,6 +20,7 @@ import (
 	"context"
 
 	"github.com/carv-ics-forth/frisbee/controllers/common"
+	"github.com/carv-ics-forth/frisbee/pkg/distributions"
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
@@ -50,15 +51,26 @@ func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Cascade, i int) er
 	return nil
 }
 
-func (r *Controller) constructJobSpecList(ctx context.Context, group *v1alpha1.Cascade) ([]v1alpha1.ChaosSpec, error) {
-	if err := group.Spec.GenerateFromTemplate.Prepare(true); err != nil {
-		return nil, errors.Wrapf(err, "template validation")
-	}
-
-	specs, err := chaosutils.GetChaosSpecList(ctx, r.GetClient(), group, group.Spec.GenerateFromTemplate)
+func (r *Controller) constructJobSpecList(ctx context.Context, cr *v1alpha1.Cascade) ([]v1alpha1.ChaosSpec, error) {
+	specs, err := chaosutils.GetChaosSpecList(ctx, r.GetClient(), cr, cr.Spec.GenerateObjectFromTemplate)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot get specs")
 	}
 
+	SetTimeline(cr)
+
 	return specs, nil
+}
+
+func SetTimeline(cr *v1alpha1.Cascade) {
+	if cr.Spec.Schedule == nil || cr.Spec.Schedule.Timeline == nil {
+		return
+	}
+
+	generator := distributions.GetPointDistribution(int64(cr.Spec.MaxInstances),
+		cr.Spec.Schedule.Timeline.DistributionSpec)
+
+	cr.Status.Timeline = generator.ApplyToTimeline(cr.GetCreationTimestamp(),
+		*cr.Spec.Schedule.Timeline.TotalDuration)
+
 }

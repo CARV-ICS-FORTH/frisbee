@@ -4,21 +4,21 @@ metadata:
   name: {{.Release.Namespace}}-prometheus
   namespace: {{.Release.Namespace}}
 rules:
-  - apiGroups: [""]
+  - apiGroups: [ "" ]
     resources:
       - nodes
       - nodes/proxy
       - services
       - endpoints
       - pods
-    verbs: ["get", "list", "watch"]
+    verbs: [ "get", "list", "watch" ]
   - apiGroups:
       - extensions
     resources:
       - ingresses
-    verbs: ["get", "list", "watch"]
-  - nonResourceURLs: ["/metrics"]
-    verbs: ["get"]
+    verbs: [ "get", "list", "watch" ]
+  - nonResourceURLs: [ "/metrics" ]
+    verbs: [ "get" ]
 ---
 
 apiVersion: rbac.authorization.k8s.io/v1
@@ -73,9 +73,9 @@ spec:
           - -c        # Read from string
           - |         # Multi-line str
             # Create local envs that will be used to substitute the configuration placeholders
-            export NAMESPACE={{"{{.Namespace}}"}}
-            export SCENARIO={{"{{.Scenario}}"}}
-            
+            export NAMESPACE={{"{{.Inputs.Namespace}}"}}
+            export SCENARIO={{"{{.Inputs.Scenario}}"}}
+
             # Use envsubst to replace ${var} or $var according to the values of the current environment variables.
             wget https://github.com/a8m/envsubst/releases/download/v1.2.0/envsubst-Linux-x86_64
             chmod +x envsubst-Linux-x86_64

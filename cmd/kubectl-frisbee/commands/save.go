@@ -31,6 +31,7 @@ func NewSaveCmd() *cobra.Command {
 		Short:   "Save locally the data generated throughout the test execution",
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			ui.Logo()
+			ui.SetVerbose(env.Settings.Debug)
 
 			env.Settings.CheckKubePerms()
 			ui.Info("Using config:", env.Settings.KubeConfig)

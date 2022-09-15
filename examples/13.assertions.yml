@@ -24,7 +24,7 @@ spec:
             
             # Gracefully terminate after the given period
             sleep 60 && exit 0
-            
+
 
 
 ---
@@ -60,7 +60,7 @@ spec:
     - action: Cluster
       name: clients
       depends: { running: [ server ] }  # Depends are pre-execution conditions
-      assert:                           # Assert are post-execution conditions
+      assert: # Assert are post-execution conditions
         state: '{{.IsRunning "server"}} || {{.IsTerminating "server"}}'
       cluster:
         templateRef: iperf.client
@@ -73,6 +73,6 @@ spec:
     # When all actions are done, delete looping servers to gracefully exit the experiment
     - action: Delete
       name: teardown
-      depends: { running: [server], success: [clients]}
+      depends: { running: [ server ], success: [ clients ] }
       delete:
         jobs: [ clients, server ]

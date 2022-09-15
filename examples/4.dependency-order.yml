@@ -37,7 +37,7 @@ spec:
 apiVersion: frisbee.dev/v1alpha1
 kind: Scenario
 metadata:
-  name: clustering
+  name: dependency-order
 spec:
   actions:
     # Create an iperf server
@@ -59,6 +59,6 @@ spec:
     # When all actions are done, delete looping servers to gracefully exit the experiment
     - action: Delete
       name: teardown
-      depends: { running: [server], success: [client]}
+      depends: { running: [ server ], success: [ client ] }
       delete:
         jobs: [ server ]

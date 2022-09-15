@@ -31,6 +31,7 @@ func NewInspectCmd() *cobra.Command {
 		Short:   "Inspect tests or test suites",
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			ui.Logo()
+			ui.SetVerbose(env.Settings.Debug)
 
 			env.Settings.CheckKubePerms()
 

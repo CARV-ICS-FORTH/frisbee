@@ -29,7 +29,7 @@ import (
 
 var _ webhook.Defaulter = &Template{}
 
-// +kubebuilder:webhook:path=/validate-frisbee-dev-v1alpha1-template,mutating=false,failurePolicy=fail,sideEffects=None,groups=frisbee.dev,resources=templates,verbs=create;update,versions=v1alpha1,name=vtemplate.kb.io,admissionReviewVersions={v1,v1alpha1}
+// +kubebuilder:webhook:path=/validate-frisbee-dev-v1alpha1-template,mutating=true,failurePolicy=fail,sideEffects=None,groups=frisbee.dev,resources=templates,verbs=create;update,versions=v1alpha1,name=vtemplate.kb.io,admissionReviewVersions={v1,v1alpha1}
 
 var _ webhook.Validator = &Template{}
 
@@ -67,11 +67,15 @@ func (in *Template) validateTemplateLanguage() error {
 			return errors.Wrapf(err, "marshal error")
 		}
 
-		if _, err := ExprState(specBody).Evaluate(Scheme{
-			Scenario:  "",
-			Namespace: "",
-			Inputs:    in.Spec.Inputs,
-		}); err != nil {
+		// these fields are expected to be set at runtime. use dummy just for the validation.
+		if in.Spec.Inputs == nil {
+			in.Spec.Inputs = &TemplateInputs{}
+		}
+
+		in.Spec.Inputs.Scenario = "dummy"
+		in.Spec.Inputs.Namespace = "dummy"
+
+		if _, err := ExprState(specBody).Evaluate(in.Spec); err != nil {
 			return errors.Wrapf(err, "template language error")
 		}
 	}

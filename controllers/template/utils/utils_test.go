@@ -16,13 +16,7 @@ limitations under the License.
 
 package utils_test
 
-import (
-	"testing"
-
-	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	templateutils "github.com/carv-ics-forth/frisbee/controllers/template/utils"
-)
-
+/*
 func TestGenerateSpecFromScheme(t *testing.T) {
 	type args struct {
 		tspec *v1alpha1.Scheme
@@ -32,22 +26,22 @@ func TestGenerateSpecFromScheme(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    templateutils.ExpandedSpecBody
+		want    string
 		wantErr bool
 	}{
 		{
 			name: "single",
 			args: args{tspec: &v1alpha1.Scheme{
-				Inputs: &v1alpha1.Inputs{Parameters: map[string]string{"slaves": "slave0"}},
+				Inputs: &v1alpha1.Inputs{Parameters: v1alpha1.UserInputs{"slaves": v1alpha1.ParameterValue("slave0")}},
 				Spec:   []byte(`{{.Inputs.Parameters.slaves}}`),
 			}},
-			want:    templateutils.ExpandedSpecBody("slave0"),
+			want:    "slave0",
 			wantErr: false,
 		},
 		{
 			name: "space-newlines",
 			args: args{tspec: &v1alpha1.Scheme{
-				Inputs: &v1alpha1.Inputs{Parameters: map[string]string{"slaves": "slave0 slave1 slave2"}},
+				Inputs: &v1alpha1.Inputs{Parameters: v1alpha1.UserInputs{"slaves": v1alpha1.ParameterValue("slave0 slave1 slave2")}},
 				Spec: []byte(`
 cat > test.yml <<EOF
 	{{- range splitList " " .Inputs.Parameters.slaves}}
@@ -56,30 +50,29 @@ cat > test.yml <<EOF
 EOF
 `),
 			}},
-			want: templateutils.ExpandedSpecBody(
-				`
+			want: `
 cat > test.yml <<EOF
 	rs.Add( slave0 )
 	rs.Add( slave1 )
 	rs.Add( slave2 )
 EOF
-`),
+`,
 			wantErr: false,
 		},
 		{
 			name: "comma-nonewlines",
 			args: args{tspec: &v1alpha1.Scheme{
-				Inputs: &v1alpha1.Inputs{Parameters: map[string]string{"slaves": "slave0,slave1,slave2"}},
+				Inputs: &v1alpha1.Inputs{Parameters: v1alpha1.UserInputs{"slaves": v1alpha1.ParameterValue("slave0,slave1,slave2")}},
 				Spec:   []byte(`{{range splitList "," .Inputs.Parameters.slaves -}}{{.}}{{- end -}}`),
 			}},
-			want:    templateutils.ExpandedSpecBody("slave0slave1slave2"),
+			want:    "slave0slave1slave2",
 			wantErr: false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := templateutils.Evaluate(tt.args.tspec)
+			got, err := tt.args.tspec.Evaluate()
 
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Evaluate() error = %v, wantErr %v", err, tt.wantErr)
@@ -92,3 +85,6 @@ EOF
 		})
 	}
 }
+
+
+*/

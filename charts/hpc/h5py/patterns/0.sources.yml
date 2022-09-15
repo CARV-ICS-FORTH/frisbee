@@ -24,4 +24,4 @@ spec:
       service:
         templateRef: h5py.bytesio.from-web
         inputs:
-          - {source: "https://raw.githubusercontent.com/h5py/h5py/master/examples/bytesio.py"}
+          - { source: "https://raw.githubusercontent.com/h5py/h5py/master/examples/bytesio.py" }

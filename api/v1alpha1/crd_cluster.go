@@ -50,9 +50,14 @@ type PlacementSpec struct {
 
 // ClusterSpec defines the desired state of Cluster.
 type ClusterSpec struct {
-	GenerateFromTemplate `json:",inline"`
+	GenerateObjectFromTemplate `json:",inline"`
+
+	// Resources defines how a set of resources will be distributed among the cluster's services.
+	// +optional
+	Resources *ResourceDistributionSpec `json:"resources,omitempty"`
 
 	// TestData defines a volume that will be mounted across the Scenario's Services.
+	// +optional
 	TestData *TestdataVolume `json:"testData,omitempty"`
 
 	// Tolerate specifies the conditions under which the cluster will fail. If undefined, the cluster fails
@@ -81,6 +86,10 @@ type ClusterStatus struct {
 	// QueuedJobs is a list of services scheduled for creation by the cluster.
 	// +optional
 	QueuedJobs []ServiceSpec `json:"queuedJobs,omitempty"`
+
+	// Timeline is the result of evaluating a timeline distribution.
+	// +optional
+	Timeline []metav1.Time `json:"timeline,omitempty"`
 
 	// ScheduledJobs points to the next QueuedJobs.
 	ScheduledJobs int `json:"scheduledJobs,omitempty"`

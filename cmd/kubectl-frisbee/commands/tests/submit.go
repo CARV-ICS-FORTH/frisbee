@@ -113,11 +113,12 @@ func NewSubmitTestCmd() *cobra.Command {
 			{
 				err := common.CreateNamespace(testName, common.ManagedNamespace)
 				ui.ExitOnError("Creating managed namespace: "+testName, err)
-
-				if options.CPUQuota != "" || options.MemoryQuota != "" {
-					err := common.SetQuota(testName, options.CPUQuota, options.MemoryQuota)
-					ui.ExitOnError("Setting namespace quotas", err)
-				}
+				/*
+					if options.CPUQuota != "" || options.MemoryQuota != "" {
+						err := common.SetQuota(testName, options.CPUQuota, options.MemoryQuota)
+						ui.ExitOnError("Setting namespace quotas", err)
+					}
+				*/
 			}
 
 			// Install Helm Dependencies, if any

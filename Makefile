@@ -16,7 +16,7 @@ FrisbeeVersion=$(shell cat VERSION)
 FRISBEE_NAMESPACE := frisbee
 
 CRD_DIR ?=	charts/platform/crds
-WEBHOOK_DIR ?= charts/platform/templates/webhook
+WEBHOOK_DIR ?= charts/platform/templates/webhook/admission
 RBAC_DIR ?= charts/platform/templates/rbac
 CERTS_DIR ?= /tmp/k8s-webhook-server/serving-certs
 
@@ -99,7 +99,7 @@ CRD_OPTIONS ?= crd
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) paths="./..."  output:crd:artifacts:config=${CRD_DIR}
-	#$(CONTROLLER_GEN) webhook paths="./..."  output:webhook:artifacts:config=${WEBHOOK_DIR}
+	# $(CONTROLLER_GEN) webhook paths="./..."  output:webhook:artifacts:config=${WEBHOOK_DIR}
 	$(CONTROLLER_GEN) rbac:roleName=frisbee paths="./..."  output:rbac:artifacts:config=${RBAC_DIR}
 
 fmt: ## Run go fmt against code.

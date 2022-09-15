@@ -195,7 +195,8 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "actions failed"))
 		}
 
-		return lifecycle.Pending(ctx, r, &cr, fmt.Sprintf("Scheduled jobs: '%d'", len(cr.Status.ScheduledJobs)))
+		return lifecycle.Pending(ctx, r, &cr, fmt.Sprintf("Scheduled jobs: '%d/%d'",
+			len(cr.Status.ScheduledJobs), len(cr.Spec.Actions)))
 	}
 
 	panic(errors.New("This should never happen"))

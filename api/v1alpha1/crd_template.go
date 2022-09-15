@@ -19,7 +19,10 @@ package v1alpha1
 import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/json"
+	"reflect"
 )
 
 // +kubebuilder:object:root=true
@@ -35,16 +38,47 @@ type Template struct {
 	Status TemplateStatus `json:"status,omitempty"`
 }
 
-type Inputs struct {
+func ParameterValue(v interface{}) *apiextensionsv1.JSON {
+	raw, _ := json.Marshal(v)
+	return &apiextensionsv1.JSON{Raw: raw}
+}
+
+type Parameters map[string]*apiextensionsv1.JSON
+
+func (p Parameters) Unmarshal() (map[string]interface{}, error) {
+	v := map[string]interface{}{}
+
+	for key, value := range p {
+		var eValue interface{}
+
+		if err := json.Unmarshal(value.Raw, &eValue); err != nil {
+			return nil, errors.Wrapf(err, "cannot unmarshal parameters")
+		}
+
+		v[key] = eValue
+	}
+
+	return v, nil
+}
+
+type TemplateInputs struct {
 	// Parameters are user-set values that are dynamically evaluated
-	Parameters map[string]string `json:"parameters,omitempty"`
+	Parameters Parameters `json:"parameters"`
+
+	// Namespace returns the namespace from which the template is called from.
+	// +optional
+	Namespace string `json:"namespace,omitempty"`
+
+	// Scenario returns the scenario from which the template is called from.
+	// +optional
+	Scenario string `json:"scenario,omitempty"`
 }
 
 // TemplateSpec defines the desired state of Template
 type TemplateSpec struct {
 	// Inputs are dynamic fields that populate the spec.
 	// +optional
-	Inputs *Inputs `json:"inputs,omitempty"`
+	Inputs *TemplateInputs `json:"inputs,omitempty"`
 
 	// EmbedSpecs point to the Frisbee specs that can be templated.
 	*EmbedSpecs `json:",inline"`
@@ -84,8 +118,34 @@ func init() {
 	SchemeBuilder.Register(&Template{}, &TemplateList{})
 }
 
-// GenerateFromTemplate generates a spec by parameterizing the templateRef with the given inputs.
-type GenerateFromTemplate struct {
+/*
+
+	Smart Guy for building objects from a template.
+
+*/
+
+// +kubebuilder:object:generate=false
+
+type UserInputs map[string]*apiextensionsv1.JSON
+
+func (u UserInputs) Unmarshal() (map[string]interface{}, error) {
+	v := map[string]interface{}{}
+
+	for key, value := range u {
+		var eValue interface{}
+
+		if err := json.Unmarshal(value.Raw, &eValue); err != nil {
+			return nil, errors.Wrapf(err, "cannot unmarshal parameters")
+		}
+
+		v[key] = eValue
+	}
+
+	return v, nil
+}
+
+// GenerateObjectFromTemplate generates a spec by parameterizing the templateRef with the given inputs.
+type GenerateObjectFromTemplate struct {
 	// TemplateRef refers to a  template (e.g, iperf-server).
 	TemplateRef string `json:"templateRef"`
 
@@ -100,32 +160,30 @@ type GenerateFromTemplate struct {
 	// +optional
 	MaxInstances int `json:"instances"`
 
-	// Inputs are list of inputs passed to the objects.
+	// UserParameters is a map of parameters passed to the objects.
 	// Event used in conjunction with instances, if the number of instances is larger that the number of inputs,
 	// then inputs are recursively iteration.
 	// +optional
-	Inputs []map[string]string `json:"inputs,omitempty"`
+	Inputs []UserInputs `json:"inputs,omitempty"`
 }
 
 // Prepare automatically fills missing values from the template, according to the following rules:
 // * Without inputs and without instances, there is 1 instance with default values.
 // * Without instances, the number of instances is inferred by the number of inputs.
-func (in *GenerateFromTemplate) Prepare(allowMultipleInputs bool) error {
+func (in *GenerateObjectFromTemplate) Prepare(allowMultipleInputs bool) error {
 	switch {
 	case in.TemplateRef == "":
 		return errors.New("empty templateRef")
 
-	case len(in.Inputs) == 0: // use default parameters for all instances
-		if in.MaxInstances == 0 {
-			in.MaxInstances = 1
-		}
+	case len(in.Inputs) > 1 && !allowMultipleInputs: // object violation
+		return errors.Errorf("Allowed inputs '%t' but got '%d'", allowMultipleInputs, len(in.Inputs))
+
+	case len(in.Inputs) == 0 && in.MaxInstances == 0: // use default parameters for all instances
+		in.MaxInstances = 1
 
 		return nil
 
-	case !allowMultipleInputs && len(in.Inputs) > 1: // object violation
-		return errors.Errorf("Allowed inputs '%t' but got '%d'", allowMultipleInputs, len(in.Inputs))
-
-	case len(in.Inputs) >= in.MaxInstances: // every instance has its own parameters.
+	case len(in.Inputs) > in.MaxInstances: // every instance has its own parameters.
 		in.MaxInstances = len(in.Inputs)
 
 		return nil
@@ -145,16 +203,16 @@ func (in *GenerateFromTemplate) Prepare(allowMultipleInputs bool) error {
 	}
 }
 
-func (in *GenerateFromTemplate) GetInput(i int) map[string]string {
+func (in *GenerateObjectFromTemplate) GetInputs(i uint) UserInputs {
 	switch len(in.Inputs) {
 	case 0:
 		// no inputs
 		return nil
 	case 1:
-		copied := make(map[string]string)
+		copied := UserInputs{}
 
-		for key, elem := range in.Inputs[0] {
-			copied[key] = elem
+		for key, value := range in.Inputs[0] {
+			copied[key] = value
 		}
 
 		return copied
@@ -165,17 +223,17 @@ func (in *GenerateFromTemplate) GetInput(i int) map[string]string {
 	}
 }
 
-func (in *GenerateFromTemplate) IterateInputs(cb func(in map[string]string) error) error {
+func (in *GenerateObjectFromTemplate) IterateInputs(cb func(nextInputSet uint) error) error {
 	if len(in.Inputs) == 0 {
 		for i := 0; i < in.MaxInstances; i++ {
-			if err := cb(nil); err != nil {
+			if err := cb(0); err != nil {
 				return err
 			}
 		}
 	} else {
 		for i := 0; i < in.MaxInstances; i++ {
 			// recursively iterate the input.
-			if err := cb(in.GetInput(i % len(in.Inputs))); err != nil {
+			if err := cb(uint(i % len(in.Inputs))); err != nil {
 				return err
 			}
 		}
@@ -184,19 +242,54 @@ func (in *GenerateFromTemplate) IterateInputs(cb func(in map[string]string) erro
 	return nil
 }
 
-// +kubebuilder:object:generate=false
+func (in *GenerateObjectFromTemplate) Generate(spec interface{}, userInputsSet uint, t TemplateSpec, templateBody []byte) error {
 
-type Scheme struct {
-	// Scenario returns the name of the scenario that invokes the template.
-	Scenario string `json:"scenario,omitempty"`
+	evaluationParams := struct {
+		Inputs struct {
+			Parameters map[string]interface{} `json:"parameters"`
+			Namespace  string                 `json:"namespace"`
+			Scenario   string                 `json:"scenario"`
+		} `json:"inputs"`
+	}{}
 
-	// Returns the namespace where the scenario is running
-	Namespace string `json:"namespace,omitempty"`
+	templateParams, err := t.Inputs.Parameters.Unmarshal()
+	if err != nil {
+		return errors.Wrapf(err, "cannot unmarshal template parameters")
+	}
 
-	// Spec is the body whose Inputs.Parameters will be expanded.
-	Spec []byte `json:"spec"`
+	// init using the default template parameters
+	evaluationParams.Inputs.Parameters = templateParams
 
-	// Inputs are dynamic fields that populate the spec.
-	// +optional
-	Inputs *Inputs `json:"inputs,omitempty"`
+	// if exists, user parameters overwrite the default template parameters
+	if in.Inputs != nil {
+		if t.Inputs == nil || t.Inputs.Parameters == nil {
+			return errors.New("template is not parameterizable")
+		}
+
+		userParams, err := in.Inputs[userInputsSet].Unmarshal()
+		if err != nil {
+			return errors.Wrapf(err, "cannot unmarshal user parameters")
+		}
+
+		for key, value := range userParams {
+			expected, exists := templateParams[key]
+			if !exists {
+				return errors.Errorf("parameter '%s' does not exist", key)
+			}
+
+			if reflect.TypeOf(expected) != reflect.TypeOf(value) {
+				return errors.Errorf("mismatched types. expected '%s' but got '%s'",
+					reflect.TypeOf(expected), reflect.TypeOf(value))
+			}
+
+			evaluationParams.Inputs.Parameters[key] = value
+		}
+	}
+
+	expandedTemplateBody, err := ExprState(templateBody).Evaluate(evaluationParams)
+	if err != nil {
+		return errors.Wrapf(err, "template execution error")
+	}
+
+	return json.Unmarshal([]byte(expandedTemplateBody), spec)
 }

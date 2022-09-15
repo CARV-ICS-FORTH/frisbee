@@ -77,7 +77,7 @@
 3) Run workload A sending traffic to a random node
 4) Scale-up the topology by adding new nodes
 5) Scale-down the topology by periodically **stopping** some nodes (run command within target container to drain the
-node)
+   node)
 
 #### **Observations**
 

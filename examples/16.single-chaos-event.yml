@@ -5,8 +5,8 @@ metadata:
   name: iperf.server
 spec:
   service:
-    decorators:   # Add support for Telemetry
-      telemetry: [system.telemetry.agent]
+    decorators: # Add support for Telemetry
+      telemetry: [ system.telemetry.agent ]
       resources:
         cpu: "1"
         memory: "48Mi"
@@ -20,10 +20,10 @@ spec:
           - /bin/sh   # Run shell
           - -c        # Read from string
           - |         # Multi-line str
-              set -eum
-              cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
-              
-              iperf -s -f m -i 5
+            set -eum
+            cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
+            
+            iperf -s -f m -i 5
 
 ---
 apiVersion: frisbee.dev/v1alpha1
@@ -36,7 +36,7 @@ spec:
       target: localhost
   service:
     decorators:
-      telemetry:                  # Register Telemetry Agents
+      telemetry: # Register Telemetry Agents
         - system.telemetry.agent  # Collect Generic System's Metrics
         - iperf2.telemetry.client # Collect App Specific Metrics
     containers:
@@ -46,10 +46,10 @@ spec:
           - /bin/sh   # Run shell
           - -c        # Read from string
           - |         # Multi-line str
-              set -eum
-              cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
-  
-              iperf -c {{.Inputs.Parameters.target}} -t 500 > /dev/shm/pipe
+            set -eum
+            cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
+            
+            iperf -c {{.Inputs.Parameters.target}} -t 500 > /dev/shm/pipe
 
 
 ---
@@ -87,6 +87,6 @@ spec:
     # When all actions are done, delete looping servers to gracefully exit the experiment
     - action: Delete
       name: teardown
-      depends: { running: [ server, clients ], success: [partition]} # Notice: dependency to a Chaos action.
+      depends: { running: [ server, clients ], success: [ partition ] } # Notice: dependency to a Chaos action.
       delete:
         jobs: [ server, clients ]

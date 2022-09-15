@@ -29,7 +29,6 @@ import (
 	"github.com/carv-ics-forth/frisbee/pkg/ui"
 	"github.com/kubeshop/testkube/pkg/process"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/utils/exec"
 )
@@ -123,8 +122,6 @@ func Helm(testName string, arguments ...string) ([]byte, error) {
 	if testName != "" {
 		arguments = append(arguments, "-n", testName)
 	}
-
-	logrus.Warn("Helm cmd ", arguments)
 
 	return process.Execute(env.Settings.Helm(), arguments...)
 }
@@ -486,7 +483,10 @@ func RunTest(testName string, testFile string, dryrun bool) error {
 		command = append(command, "--dry-run=client")
 	}
 
-	_, err := Kubectl(testName, command...)
+	out, err := Kubectl(testName, command...)
+
+	ui.Debug(string(out))
+
 	return err
 }
 
@@ -602,6 +602,7 @@ func ForceDelete(testName string) error {
 	return DeleteNamespaces("", testName)
 }
 
+/*
 func SetQuota(testName string, cpu, memory string) error {
 	if cpu == "" && memory == "" {
 		return nil
@@ -612,7 +613,7 @@ func SetQuota(testName string, cpu, memory string) error {
 		Inputs: &v1alpha1.Inputs{Parameters: map[string]string{"CPU": cpu, "Memory": memory}},
 		Spec: []byte(`
 ---
-apiVersion: v1			
+apiVersion: v1
 kind: ResourceQuota
 metadata:
  name: mem-cpu-quota
@@ -653,6 +654,8 @@ spec:
 	_, err = Kubectl(testName, command...)
 	return err
 }
+
+ */
 
 /*
 ******************************************************************

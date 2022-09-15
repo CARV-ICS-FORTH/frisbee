@@ -17,7 +17,7 @@ limitations under the License.
 package v1alpha1
 
 // SchedulerSpec defines information about schedule of the chaos experiment.
-// The scheduler will schedule up to spec.GenerateFromTemplate.Instances or spec.GenerateFromTemplate.Until.
+// The scheduler will schedule up to spec.GenerateObjectFromTemplate.Instances or spec.GenerateObjectFromTemplate.Until.
 type SchedulerSpec struct {
 	// Cron defines a cron job rule.
 	//
@@ -31,13 +31,20 @@ type SchedulerSpec struct {
 	// +optional
 	Cron *string `json:"cron,omitempty"`
 
+	// Timeline creates a timeline that honors the underlying distribution.
+	// +optional
+	Timeline *TimelineDistributionSpec `json:"timeline,omitempty"`
+
+	// Event schedules a new every when an event has happened.
+	// +optional
+	Event *ConditionalExpr `json:"event,omitempty"`
+
 	// StartingDeadlineSeconds is an optional deadline in seconds for starting the job if it misses scheduled
 	// time for any reason. if we miss this deadline, we'll just wait till the next scheduled time
 	//
 	// +optional
 	StartingDeadlineSeconds *int64 `json:"startingDeadlineSeconds,omitempty"`
-
-	// Event schedules a new every when an event has happened.
-	// +optional
-	Event *ConditionalExpr `json:"event,omitempty"`
 }
+
+// DefaultStartingDeadlineSeconds hints to abort the experiment if the schedule is skewed more than 1 minuted.
+var DefaultStartingDeadlineSeconds = int64(60)

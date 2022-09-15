@@ -5,10 +5,6 @@ metadata:
   name: iperf.server
 spec:
   service:
-    decorators:
-      resources:
-        cpu: "1"
-        memory: "48Mi"
     containers:
       - name: app
         image: czero/iperf2
@@ -29,26 +25,18 @@ spec:
     parameters:
       target: localhost
       duration: "60"
-      memory: ""
-      cpu: ""
-
   service:
-    decorators: # Decorators wrap Pod definitions with some nice features
-      resources:
-        cpu: "{{.Inputs.Parameters.cpu}}"
-        memory: "{{.Inputs.Parameters.memory}}"
     containers:
       - name: app
         image: czero/iperf2
         command: [ iperf ]
         args: [ "-c", "{{.Inputs.Parameters.target}}", "-t", "{{.Inputs.Parameters.duration}}" ]
 
-
 ---
 apiVersion: frisbee.dev/v1alpha1
 kind: Scenario
 metadata:
-  name: resource-throttling
+  name: timeline-distribution
 spec:
   actions:
     - action: Service
@@ -61,13 +49,15 @@ spec:
       depends: { running: [ server ] }
       cluster:
         templateRef: iperf.client
-        instances: 10
-        # Create a variety of clients with different resources
         inputs:
-          - { target: server, duration: "120", cpu: "0.4", memory: "48Mi" }
-          - { target: server, duration: "120", cpu: "1", memory: "49Mi" }
-          - { target: server, duration: "120", cpu: "1.2", memory: "50Mi" }
-
+          - { target: server, duration: "10" }
+          - { target: server, duration: "20" }
+          - { target: server, duration: "30" }
+        # Schedule the creation of new clients
+        schedule:
+          timeline:
+            total: 3m
+            distribution: zipfian
 
     # When all actions are done, delete looping servers to gracefully exit the experiment
     - action: Delete

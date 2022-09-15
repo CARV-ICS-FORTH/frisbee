@@ -31,6 +31,7 @@ func NewReportCmd() *cobra.Command {
 		Short:   "Generate PDFs for every dashboard in Grafana.",
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			ui.Logo()
+			ui.SetVerbose(env.Settings.Debug)
 
 			env.Settings.CheckKubePerms()
 

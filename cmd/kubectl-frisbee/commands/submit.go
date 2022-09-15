@@ -31,6 +31,7 @@ func NewSubmitCmd() *cobra.Command {
 		Short:   "Submit tests or test suites for execution",
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			ui.Logo()
+			ui.SetVerbose(env.Settings.Debug)
 
 			env.Settings.CheckKubePerms()
 

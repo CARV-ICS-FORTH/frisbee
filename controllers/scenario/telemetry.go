@@ -117,17 +117,12 @@ func (r *Controller) installDataviewer(ctx context.Context, t *v1alpha1.Scenario
 	v1alpha1.SetComponentLabel(&job.ObjectMeta, v1alpha1.ComponentSys)
 
 	{ // spec
-		fromtemplate := &v1alpha1.GenerateFromTemplate{
+		spec, err := serviceutils.GetServiceSpec(ctx, r.GetClient(), t, v1alpha1.GenerateObjectFromTemplate{
 			TemplateRef:  configuration.DataviewerTemplate,
 			MaxInstances: 1,
 			Inputs:       nil,
-		}
+		})
 
-		if err := fromtemplate.Prepare(false); err != nil {
-			return errors.Wrapf(err, "template validation")
-		}
-
-		spec, err := serviceutils.GetServiceSpec(ctx, r.GetClient(), t, *fromtemplate)
 		if err != nil {
 			return errors.Wrapf(err, "cannot get spec")
 		}
@@ -157,17 +152,12 @@ func (r *Controller) installPrometheus(ctx context.Context, t *v1alpha1.Scenario
 	v1alpha1.SetComponentLabel(&job.ObjectMeta, v1alpha1.ComponentSys)
 
 	{ // spec
-		fromtemplate := &v1alpha1.GenerateFromTemplate{
+		spec, err := serviceutils.GetServiceSpec(ctx, r.GetClient(), t, v1alpha1.GenerateObjectFromTemplate{
 			TemplateRef:  configuration.PrometheusTemplate,
 			MaxInstances: 1,
 			Inputs:       nil,
-		}
+		})
 
-		if err := fromtemplate.Prepare(false); err != nil {
-			return errors.Wrapf(err, "template validation")
-		}
-
-		spec, err := serviceutils.GetServiceSpec(ctx, r.GetClient(), t, *fromtemplate)
 		if err != nil {
 			return errors.Wrapf(err, "cannot get spec")
 		}
@@ -198,17 +188,12 @@ func (r *Controller) installGrafana(ctx context.Context, t *v1alpha1.Scenario, a
 	v1alpha1.SetComponentLabel(&job.ObjectMeta, v1alpha1.ComponentSys)
 
 	{ // spec
-		fromtemplate := &v1alpha1.GenerateFromTemplate{
+		spec, err := serviceutils.GetServiceSpec(ctx, r.GetClient(), t, v1alpha1.GenerateObjectFromTemplate{
 			TemplateRef:  configuration.GrafanaTemplate,
 			MaxInstances: 1,
 			Inputs:       nil,
-		}
+		})
 
-		if err := fromtemplate.Prepare(false); err != nil {
-			return errors.Wrapf(err, "template validation")
-		}
-
-		spec, err := serviceutils.GetServiceSpec(ctx, r.GetClient(), t, *fromtemplate)
 		if err != nil {
 			return errors.Wrapf(err, "cannot get spec")
 		}
@@ -298,14 +283,14 @@ func (r *Controller) ListTelemetryAgents(ctx context.Context, scenario *v1alpha1
 	dedup := make(map[string]struct{})
 
 	for _, action := range scenario.Spec.Actions {
-		var fromTemplate *v1alpha1.GenerateFromTemplate
+		var fromTemplate *v1alpha1.GenerateObjectFromTemplate
 
 		// only Services and Clusters may container Telemetry Agents.
 		switch action.ActionType {
 		case v1alpha1.ActionService:
 			fromTemplate = action.Service
 		case v1alpha1.ActionCluster:
-			fromTemplate = &action.Cluster.GenerateFromTemplate
+			fromTemplate = &action.Cluster.GenerateObjectFromTemplate
 		default:
 			continue
 		}
