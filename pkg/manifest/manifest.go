@@ -18,7 +18,7 @@ package manifest
 
 import (
 	"bufio"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -47,10 +47,11 @@ func ReadManifest(manifestPaths ...string) ([][]byte, error) {
 // ReadFromStdin reads the manifest from standard input.
 func ReadFromStdin() ([]byte, error) {
 	reader := bufio.NewReader(os.Stdin)
-	body, err := ioutil.ReadAll(reader)
+	body, err := io.ReadAll(reader)
 	if err != nil {
 		return []byte{}, err
 	}
+
 	return body, err
 }
 
@@ -66,13 +67,15 @@ func ReadFromFilePathsOrUrls(filePathsOrUrls ...string) ([][]byte, error) {
 				return [][]byte{}, err
 			}
 		} else {
-			body, err = ioutil.ReadFile(filepath.Clean(filePathOrUrl))
+			body, err = os.ReadFile(filepath.Clean(filePathOrUrl))
 			if err != nil {
 				return [][]byte{}, err
 			}
 		}
+
 		fileContents = append(fileContents, body)
 	}
+
 	return fileContents, err
 }
 
@@ -82,11 +85,13 @@ func ReadFromUrl(url string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	body, err := ioutil.ReadAll(response.Body)
+
+	body, err := io.ReadAll(response.Body)
 	_ = response.Body.Close()
 	if err != nil {
 		return nil, err
 	}
+
 	return body, err
 }
 

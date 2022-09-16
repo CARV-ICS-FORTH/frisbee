@@ -26,6 +26,7 @@ import (
 	"github.com/carv-ics-forth/frisbee/controllers/common"
 	serviceutils "github.com/carv-ics-forth/frisbee/controllers/service/utils"
 	"github.com/carv-ics-forth/frisbee/pkg/configuration"
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
@@ -34,38 +35,38 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 )
 
-func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Service) error {
-	setDefaultValues(cr)
+func (r *Controller) runJob(ctx context.Context, service *v1alpha1.Service) error {
+	setDefaultValues(service)
 
-	if err := handleRequirements(ctx, r, cr); err != nil {
+	if err := handleRequirements(ctx, r, service); err != nil {
 		return errors.Wrapf(err, "cannot satisfy requirements")
 	}
 
-	if err := decoratePod(ctx, r, cr); err != nil {
+	if err := decoratePod(ctx, r, service); err != nil {
 		return errors.Wrapf(err, "cannot set pod decorators")
 	}
 
-	discovery, err := constructDiscoveryService(cr)
+	discovery, err := constructDiscoveryService(service)
 	if err != nil {
 		return errors.Wrapf(err, "cannot build DNS service")
 	}
 
-	if err := common.Create(ctx, r, cr, discovery); err != nil {
+	if err := common.Create(ctx, r, service, discovery); err != nil {
 		return errors.Wrapf(err, "cannot create DNS service")
 	}
 
 	// finally, create the pod
 	var pod corev1.Pod
 
-	pod.SetName(cr.GetName())
+	pod.SetName(service.GetName())
 
 	// make labels visible to the pod
-	v1alpha1.PropagateLabels(&pod, cr)
-	pod.SetAnnotations(cr.GetAnnotations())
+	v1alpha1.PropagateLabels(&pod, service)
+	pod.SetAnnotations(service.GetAnnotations())
 
-	cr.Spec.PodSpec.DeepCopyInto(&pod.Spec)
+	service.Spec.PodSpec.DeepCopyInto(&pod.Spec)
 
-	if err := common.Create(ctx, r, cr, &pod); err != nil {
+	if err := common.Create(ctx, r, service, &pod); err != nil {
 		return errors.Wrapf(err, "cannot create pod")
 	}
 
@@ -103,29 +104,31 @@ func handleRequirements(ctx context.Context, r *Controller, cr *v1alpha1.Service
 	}
 
 	// Volume
-	if req := cr.Spec.Requirements.EphemeralVolume; req != nil {
-		var pvc corev1.PersistentVolumeClaim
+	/*
+		if req := cr.Spec.Requirements.EphemeralVolume; req != nil {
+			var pvc corev1.PersistentVolumeClaim
 
-		pvc.SetName(cr.GetName())
-		req.Spec.DeepCopyInto(&pvc.Spec)
+			pvc.SetName(cr.GetName())
+			req.Spec.DeepCopyInto(&pvc.Spec)
 
-		if err := common.Create(ctx, r, cr, &pvc); err != nil {
-			return errors.Wrapf(err, "cannot create pvc")
-		}
+			if err := common.Create(ctx, r, cr, &pvc); err != nil {
+				return errors.Wrapf(err, "cannot create pvc")
+			}
 
-		// auto-mount the created pvc.
-		volume := corev1.Volume{
-			Name: req.Name,
-			VolumeSource: corev1.VolumeSource{
-				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-					ClaimName: pvc.GetName(),
-					ReadOnly:  false,
+			// auto-mount the created pvc.
+			volume := corev1.Volume{
+				Name: req.Name,
+				VolumeSource: corev1.VolumeSource{
+					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+						ClaimName: pvc.GetName(),
+						ReadOnly:  false,
+					},
 				},
-			},
-		}
+			}
 
-		cr.Spec.Volumes = append(cr.Spec.Volumes, volume)
-	}
+			cr.Spec.Volumes = append(cr.Spec.Volumes, volume)
+		}
+	*/
 
 	// Ingress
 	if req := cr.Spec.Requirements.Ingress; req != nil {
@@ -169,33 +172,33 @@ func handleRequirements(ctx context.Context, r *Controller, cr *v1alpha1.Service
 	return nil
 }
 
-func setField(cr *v1alpha1.Service, val v1alpha1.SetField) (err error) {
+func SetField(service *v1alpha1.Service, val v1alpha1.SetField) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = errors.Errorf("cannot set field [%s]. err: %s", val.Field, r)
 		}
 	}()
 
-	fieldRef := reflect.ValueOf(&cr.Spec).Elem()
+	fieldRef := reflect.ValueOf(&service.Spec).Elem()
 
-	index := func(v reflect.Value, idx string) reflect.Value {
+	index := func(path reflect.Value, idx string) reflect.Value {
 		if i, err := strconv.Atoi(idx); err == nil {
-			return v.Index(i)
+			return path.Index(i)
 		}
 
 		// reflect.Value.FieldByName cannot be used on map Value
-		if v.Kind() == reflect.Map {
-			return reflect.Indirect(v)
+		if path.Kind() == reflect.Map {
+			return reflect.Indirect(path)
 		}
 
-		return reflect.Indirect(v).FieldByName(idx)
+		return reflect.Indirect(path).FieldByName(idx)
 	}
 
 	for _, s := range strings.Split(val.Field, ".") {
 		fieldRef = index(fieldRef, s)
 	}
 
-	var conv interface{} = val.Value
+	var conv interface{}
 
 	// Convert src value to something that may fit to the dst.
 	switch fieldRef.Kind() {
@@ -218,6 +221,7 @@ func setField(cr *v1alpha1.Service, val v1alpha1.SetField) (err error) {
 	case reflect.Map:
 		// TODO: Needs to be improved because the map can be of various types
 		logrus.Warn("THIS FUNCTION IS NOT WORKING, BUT WE DO NOT WANT TO FAIL EITHER")
+
 		return nil
 
 	default:
@@ -230,7 +234,6 @@ func setField(cr *v1alpha1.Service, val v1alpha1.SetField) (err error) {
 }
 
 func decoratePod(ctx context.Context, r *Controller, cr *v1alpha1.Service) error {
-
 	// set labels
 	if req := cr.Spec.Decorators.Labels; req != nil {
 		cr.SetLabels(labels.Merge(cr.GetLabels(), req))
@@ -244,7 +247,7 @@ func decoratePod(ctx context.Context, r *Controller, cr *v1alpha1.Service) error
 	// set dynamically evaluated fields
 	if req := cr.Spec.Decorators.SetFields; req != nil {
 		for _, val := range req {
-			if err := setField(cr, val); err != nil {
+			if err := SetField(cr, val); err != nil {
 				return errors.Wrapf(err, "cannot set field [%v]", val)
 			}
 		}
@@ -258,10 +261,12 @@ func decoratePod(ctx context.Context, r *Controller, cr *v1alpha1.Service) error
 
 		resources := make(map[corev1.ResourceName]resource.Quantity)
 
+		var resourceError *multierror.Error
+
 		if len(req.CPU) > 0 {
 			q, err := resource.ParseQuantity(req.CPU)
 			if err != nil {
-				return errors.Wrapf(err, "CPU resource error")
+				resourceError = multierror.Append(resourceError, errors.Wrapf(err, "CPU resource error"))
 			}
 
 			resources[corev1.ResourceCPU] = q
@@ -270,10 +275,14 @@ func decoratePod(ctx context.Context, r *Controller, cr *v1alpha1.Service) error
 		if len(req.Memory) > 0 {
 			q, err := resource.ParseQuantity(req.Memory)
 			if err != nil {
-				return errors.Wrapf(err, "Memory resource error")
+				resourceError = multierror.Append(resourceError, errors.Wrapf(err, "Memory resource error"))
 			}
 
 			resources[corev1.ResourceMemory] = q
+		}
+
+		if resourceError != nil {
+			return errors.Wrapf(resourceError, "Resource error")
 		}
 
 		cr.Spec.Containers[0].Resources = corev1.ResourceRequirements{
@@ -311,11 +320,11 @@ func decoratePod(ctx context.Context, r *Controller, cr *v1alpha1.Service) error
 	return nil
 }
 
-func constructDiscoveryService(cr *v1alpha1.Service) (*corev1.Service, error) {
+func constructDiscoveryService(service *v1alpha1.Service) (*corev1.Service, error) {
 	// register ports from containers and sidecars
 	var allPorts []corev1.ServicePort
 
-	for ci, container := range cr.Spec.Containers {
+	for ci, container := range service.Spec.Containers {
 		for pi, port := range container.Ports {
 			if port.ContainerPort == 0 {
 				return nil, errors.Errorf("port is 0 for container[%d].port[%d]", ci, pi)
@@ -337,17 +346,17 @@ func constructDiscoveryService(cr *v1alpha1.Service) (*corev1.Service, error) {
 
 	var kubeService corev1.Service
 
-	kubeService.SetName(cr.GetName())
+	kubeService.SetName(service.GetName())
 
 	// make labels visible to the dns service
-	v1alpha1.PropagateLabels(&kubeService, cr)
+	v1alpha1.PropagateLabels(&kubeService, service)
 
 	kubeService.Spec.Ports = allPorts
 	kubeService.Spec.ClusterIP = clusterIP
 
 	// select pods that are created by the same v1alpha1.Service as this corev1.Service
 	kubeService.Spec.Selector = map[string]string{
-		v1alpha1.LabelCreatedBy: cr.GetName(),
+		v1alpha1.LabelCreatedBy: service.GetName(),
 	}
 
 	return &kubeService, nil

@@ -18,6 +18,7 @@ package grafana
 
 import (
 	"context"
+
 	"github.com/pkg/errors"
 )
 

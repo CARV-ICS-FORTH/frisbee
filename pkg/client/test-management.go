@@ -33,9 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var (
-	yamlSeparator = regexp.MustCompile(`\n---`)
-)
+var yamlSeparator = regexp.MustCompile(`\n---`)
 
 // NewTestManagementClient creates new Test client
 func NewTestManagementClient(client client.Client) TestManagementClient {
@@ -70,7 +68,6 @@ func (c TestManagementClient) GetScenario(ctx context.Context, id string) (scena
 
 // ListScenarios list all scenarios
 func (c TestManagementClient) ListScenarios(ctx context.Context, selector string) (scenarios v1alpha1.ScenarioList, err error) {
-
 	set, err := labels.ConvertSelectorToLabelsMap(selector)
 	if err != nil {
 		return scenarios, errors.Wrapf(err, "invalid selector")
@@ -136,7 +133,6 @@ func (c TestManagementClient) ListScenarios(ctx context.Context, selector string
 
 // ListVirtualObjects list all virtual objects
 func (c TestManagementClient) ListVirtualObjects(ctx context.Context, namespace string, selectors ...string) (list v1alpha1.VirtualObjectList, err error) {
-
 	var filter client.ListOptions
 	filter.Namespace = namespace
 

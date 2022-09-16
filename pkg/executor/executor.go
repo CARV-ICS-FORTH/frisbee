@@ -18,12 +18,10 @@ package executor
 
 import (
 	"bufio"
-	"bytes"
 	"context"
-	"github.com/sirupsen/logrus"
-	"io"
 	"net/http"
-	"strings"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/armon/circbuf"
 	"github.com/pkg/errors"
@@ -116,6 +114,7 @@ func (e *Executor) Exec(pod types.NamespacedName, containerID string, command []
 }
 
 // GetPodLogs returns pod logs bytes
+/*
 func (e *Executor) GetPodLogs(ctx context.Context, pod corev1.Pod, logLinesCount ...int64) (logs []byte, err error) {
 	count := int64(100)
 	if len(logLinesCount) > 0 {
@@ -168,6 +167,7 @@ func (e *Executor) GetPodLogs(ctx context.Context, pod corev1.Pod, logLinesCount
 
 	return logs, nil
 }
+*/
 
 func (e *Executor) TailPodLogs(ctx context.Context, pod corev1.Pod, logs chan []byte) (err error) {
 	count := int64(1)

@@ -45,7 +45,7 @@ func (in *Cascade) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
-// Default implements webhook.Defaulter so a webhook will be registered for the type
+// Default implements webhook.Defaulter so a webhook will be registered for the type.
 func (in *Cascade) Default() {
 	cascadelog.V(5).Info("default", "name", in.Name)
 
@@ -59,11 +59,10 @@ func (in *Cascade) Default() {
 			schedule.StartingDeadlineSeconds = &DefaultStartingDeadlineSeconds
 		}
 	}
-
 	// TODO(user): fill in your defaulting logic.
 }
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
+// ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
 func (in *Cascade) ValidateCreate() error {
 	// Set missing values for the template
 	if err := in.Spec.GenerateObjectFromTemplate.Prepare(true); err != nil {
@@ -90,17 +89,17 @@ func (in *Cascade) ValidateCreate() error {
 	return nil
 }
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (in *Cascade) ValidateUpdate(old runtime.Object) error {
-	cascadelog.V(5).Info("validate update", "name", in.Name)
+// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
+func (in *Cascade) ValidateUpdate(runtime.Object) error {
+	cascadelog.Info("validate update", "name", in.Name)
 
 	// TODO(user): fill in your validation logic upon object update.
 	return nil
 }
 
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
+// ValidateDelete implements webhook.Validator so a webhook will be registered for the type.
 func (in *Cascade) ValidateDelete() error {
-	cascadelog.V(5).Info("validate delete", "name", in.Name)
+	cascadelog.Info("validate delete", "name", in.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.
 	return nil

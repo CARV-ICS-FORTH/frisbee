@@ -127,7 +127,7 @@ spec:
 apiVersion: frisbee.dev/v1alpha1
 kind: Scenario
 metadata:
-  name: custom-storage
+  name: shared-storage
 spec:
   actions:
     # Step 0. Enable the log viewer

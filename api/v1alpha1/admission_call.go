@@ -45,7 +45,7 @@ func (in *Call) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
-// Default implements webhook.Defaulter so a webhook will be registered for the type
+// Default implements webhook.Defaulter so a webhook will be registered for the type.
 func (in *Call) Default() {
 	calllog.V(5).Info("default", "name", in.Name)
 
@@ -59,7 +59,7 @@ func (in *Call) Default() {
 	// TODO(user): fill in your defaulting logic.
 }
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
+// ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
 func (in *Call) ValidateCreate() error {
 	calllog.V(5).Info("validate create", "name", in.Name)
 
@@ -101,17 +101,17 @@ func (in *Call) ValidateCreate() error {
 	return nil
 }
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (in *Call) ValidateUpdate(old runtime.Object) error {
-	calllog.V(5).Info("validate update", "name", in.Name)
+// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
+func (in *Call) ValidateUpdate(runtime.Object) error {
+	calllog.Info("validate update", "name", in.Name)
 
 	// TODO(user): fill in your validation logic upon object update.
 	return nil
 }
 
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
+// ValidateDelete implements webhook.Validator so a webhook will be registered for the type.
 func (in *Call) ValidateDelete() error {
-	calllog.V(5).Info("validate delete", "name", in.Name)
+	calllog.Info("validate delete", "name", in.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.
 	return nil

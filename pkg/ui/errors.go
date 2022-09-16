@@ -23,6 +23,7 @@ func (ui *UI) printAndExit(item string, exitOnError bool, errors ...error) {
 				}
 
 				fmt.Fprintf(writer, "%s %s (error: %s)\n\n", LightRed("⨯"), Red(item), err)
+
 				if exitOnError {
 					os.Exit(1)
 				}
@@ -40,6 +41,7 @@ func (ui *UI) WarnOnError(item string, errors ...error) {
 		for _, err := range errors {
 			if err != nil {
 				fmt.Fprintf(Writer, "%s %s (error: %s)\n\n", LightYellow("⨯"), Yellow(item), err)
+
 				return
 			}
 		}

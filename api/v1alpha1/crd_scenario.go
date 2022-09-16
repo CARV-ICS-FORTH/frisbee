@@ -61,7 +61,7 @@ func (in *Scenario) Table() (header []string, data [][]string) {
 	data = append(data, []string{
 		in.GetNamespace(),
 		in.GetName(),
-		time.Now().Sub(in.GetCreationTimestamp().Time).Round(time.Second).String(),
+		time.Since(in.GetCreationTimestamp().Time).Round(time.Second).String(),
 		scheduled,
 		in.Status.Phase.String(),
 	})
@@ -89,6 +89,7 @@ func (in *Scenario) FindTimeline() (from int64, to int64) {
 	}
 
 	to = time.Now().UnixMilli()
+
 	switch in.Status.Phase {
 	case PhaseSuccess:
 		success := meta.FindStatusCondition(in.Status.Conditions, ConditionAllJobsAreCompleted.String())
@@ -99,12 +100,14 @@ func (in *Scenario) FindTimeline() (from int64, to int64) {
 		unexpected := meta.FindStatusCondition(in.Status.Conditions, ConditionJobUnexpectedTermination.String())
 		if unexpected != nil {
 			to = unexpected.LastTransitionTime.Time.UnixMilli()
+
 			break
 		}
 
 		assert := meta.FindStatusCondition(in.Status.Conditions, ConditionAssertionError.String())
 		if assert != nil {
 			to = assert.LastTransitionTime.Time.UnixMilli()
+
 			break
 		}
 	}

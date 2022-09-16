@@ -59,7 +59,6 @@ func NewDeleteTestsCmd() *cobra.Command {
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-
 			switch {
 			case options.Force:
 				testName := args[0]

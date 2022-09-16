@@ -17,15 +17,12 @@ limitations under the License.
 package main
 
 import (
-	"fmt"
-	"os"
-
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands"
+	"github.com/carv-ics-forth/frisbee/pkg/ui"
 )
 
 func main() {
 	if err := commands.NewRootCmd().Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		ui.Fail(err)
 	}
 }

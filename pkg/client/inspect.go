@@ -17,15 +17,8 @@ limitations under the License.
 package client
 
 import (
-	"time"
-
 	"github.com/carv-ics-forth/frisbee/pkg/executor"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-)
-
-var (
-	pollTimeout  = 24 * time.Hour
-	pollInterval = 200 * time.Millisecond
 )
 
 // NewTestInspectionClient creates new Test client

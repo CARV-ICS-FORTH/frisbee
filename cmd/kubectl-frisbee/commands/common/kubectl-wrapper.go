@@ -40,7 +40,8 @@ const (
 )
 
 const (
-	// Validated over https://regex101.com/r/eXgekO/1
+	// Regex Validated over https://regex101.com/r/eXgekO/1
+
 	NotReadyRegex        = `.* container "(\w+)" in pod "(.*)" is waiting to start: (\w+)`
 	NoPodsFoundReg       = `.* pods "\w+" not found`
 	NotResourcesFoundReg = `No resources found*`
@@ -87,20 +88,6 @@ func ErrContainerNotReady(out []byte) bool {
 
 	return match
 }
-
-/*
-func KubectlIgnoreNotFound(err error) error {
-	if err != nil &&
-		(strings.Contains(err.Error(), "Error from server (NotFound)") ||
-			strings.Contains(err.Error(), "No resources found in")) {
-
-		return nil
-	}
-
-	return err
-}
-
-*/
 
 func Kubectl(testName string, arguments ...string) ([]byte, error) {
 	arguments = append(arguments, "--kubeconfig", env.Settings.KubeConfig)
@@ -183,7 +170,8 @@ var FrisbeeResourceInspectionFields = strings.Join([]string{
 const EmptyResourceInspectionFields = "Name   Kind   Job   Component   Phase   Reason   Message"
 
 func GetFrisbeeResources(testName string, watch bool) error {
-	command := []string{"get",
+	command := []string{
+		"get",
 		"--show-kind=true",
 		"-l", fmt.Sprintf("%s", v1alpha1.LabelScenario),
 		"-o", FrisbeeResourceInspectionFields,
@@ -254,7 +242,8 @@ func GetTemplateResources(testName string) error {
 }
 
 func WaitForCondition(testName string, condition v1alpha1.ConditionType, timeout string) error {
-	command := []string{"wait", "scenario", "--all=true",
+	command := []string{
+		"wait", "scenario", "--all=true",
 		"--for=condition=" + condition.String(),
 		"--timeout=" + timeout,
 	}
@@ -290,10 +279,12 @@ var ChaosResourceInspectionFields = strings.Join([]string{
 const EmptyChaosResourceInspectionFields = "Kind   Job   InjectionTime   Phase   Target"
 
 func GetChaosResources(testName string) error {
-	command := []string{"get",
+	command := []string{
+		"get",
 		"--show-kind=true",
 		"--sort-by=.metadata.creationTimestamp",
-		"-l", fmt.Sprintf("%s", v1alpha1.LabelScenario)}
+		"-l", fmt.Sprintf("%s", v1alpha1.LabelScenario),
+	}
 
 	command = append(command, strings.Join([]string{NetworkChaos, PodChaos, IOChaos, KernelChaos, TimeChaos}, ","))
 
@@ -400,7 +391,8 @@ GetPodLogs provides convenience on printing the logs from prods.
 // - Run with '--logs pod1 pod2 ...'
 */
 func GetPodLogs(testName string, tail bool, lines int, pods ...string) error {
-	command := []string{"logs",
+	command := []string{
+		"logs",
 		"-c", v1alpha1.MainContainerName,
 		"--prefix=true",
 		fmt.Sprintf("--tail=%d", lines),
@@ -462,9 +454,11 @@ func GetPodLogs(testName string, tail bool, lines int, pods ...string) error {
 }
 
 func OpenShell(testName string, podName string, shellArgs ...string) error {
-	command := []string{"exec",
+	command := []string{
+		"exec",
 		"--kubeconfig", env.Settings.KubeConfig,
-		"--stdin", "--tty", "-n", testName, podName}
+		"--stdin", "--tty", "-n", testName, podName,
+	}
 
 	if len(shellArgs) == 0 {
 		ui.Info("Interactive Shell:")
@@ -498,7 +492,8 @@ func RunTest(testName string, testFile string, dryrun bool) error {
 }
 
 func Dashboards(testName string) error {
-	command := []string{"get", "ingress",
+	command := []string{
+		"get", "ingress",
 		"-l", fmt.Sprintf("%s", v1alpha1.LabelScenario),
 	}
 
@@ -536,8 +531,10 @@ func CreateNamespace(name string, labels ...string) error {
 func LabelNamespace(name string, labels ...string) error {
 	// Label namespace
 	if labels != nil {
-		command := []string{"label", "namespaces", name, "--overwrite=true",
-			strings.Join(labels, ",")}
+		command := []string{
+			"label", "namespaces", name, "--overwrite=true",
+			strings.Join(labels, ","),
+		}
 
 		_, err := Kubectl("", command...)
 		if err != nil {
@@ -549,7 +546,8 @@ func LabelNamespace(name string, labels ...string) error {
 }
 
 func DeleteNamespaces(selector string, testNames ...string) error {
-	command := []string{"delete", "namespace",
+	command := []string{
+		"delete", "namespace",
 		// "--dry-run=client",
 		"--cascade=foreground",
 	}
@@ -630,7 +628,8 @@ spec:
     requests.memory: {{.Inputs.Parameters.Memory}}
     limits.memory: {{.Inputs.Parameters.Memory}}
    {{- end}}
-`)}
+`),
+	}
 
 	quota, err := v1alpha1.ExprState(scheme.Spec).Evaluate(scheme)
 	if err != nil {

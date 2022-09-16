@@ -39,24 +39,24 @@ func getActionOrDie(t *v1alpha1.Scenario, actionName string) *v1alpha1.Action {
 	panic(errors.Errorf("cannot find action '%s'", actionName))
 }
 
-func (r *Controller) updateLifecycle(cr *v1alpha1.Scenario) bool {
+func (r *Controller) updateLifecycle(scenario *v1alpha1.Scenario) bool {
 	// Step 1. Skip any scenario which are already completed, or uninitialized.
-	if cr.Status.Lifecycle.Phase.Is(v1alpha1.PhaseUninitialized, v1alpha1.PhaseSuccess, v1alpha1.PhaseFailed) {
+	if scenario.Status.Lifecycle.Phase.Is(v1alpha1.PhaseUninitialized, v1alpha1.PhaseSuccess, v1alpha1.PhaseFailed) {
 		return false
 	}
 
-	for _, actionName := range cr.Status.ScheduledJobs {
-		action := getActionOrDie(cr, actionName)
+	for _, actionName := range scenario.Status.ScheduledJobs {
+		action := getActionOrDie(scenario, actionName)
 
 		if !action.Assert.IsZero() {
 			eval := expressions.Condition{Expr: action.Assert}
 
-			if !eval.IsTrue(r.view, cr) {
-				cr.Status.Lifecycle.Phase = v1alpha1.PhaseFailed
-				cr.Status.Lifecycle.Reason = "AssertError"
-				cr.Status.Lifecycle.Message = fmt.Sprintf("action '%s' failed due to:'%s'", action.Name, eval.Info)
+			if !eval.IsTrue(r.view, scenario) {
+				scenario.Status.Lifecycle.Phase = v1alpha1.PhaseFailed
+				scenario.Status.Lifecycle.Reason = "AssertError"
+				scenario.Status.Lifecycle.Message = fmt.Sprintf("action '%s' failed due to:'%s'", action.Name, eval.Info)
 
-				meta.SetStatusCondition(&cr.Status.Lifecycle.Conditions, metav1.Condition{
+				meta.SetStatusCondition(&scenario.Status.Lifecycle.Conditions, metav1.Condition{
 					Type:    v1alpha1.ConditionAssertionError.String(),
 					Status:  metav1.ConditionTrue,
 					Reason:  "AssertError",
@@ -69,7 +69,7 @@ func (r *Controller) updateLifecycle(cr *v1alpha1.Scenario) bool {
 	}
 
 	// Step 4. Check if scheduling goes as expected.
-	totalJobs := len(cr.Spec.Actions)
+	totalJobs := len(scenario.Spec.Actions)
 
-	return lifecycle.GroupedJobs(totalJobs, r.view, &cr.Status.Lifecycle, nil)
+	return lifecycle.GroupedJobs(totalJobs, r.view, &scenario.Status.Lifecycle, nil)
 }

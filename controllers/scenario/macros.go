@@ -35,7 +35,7 @@ const (
 	idListSeparator = " "
 )
 
-// SList is a service list
+// SList is a service list.
 type SList []*v1alpha1.Service
 
 func (in SList) ToString() string {
@@ -64,11 +64,11 @@ func isMacro(macro string) bool {
 	return strings.HasPrefix(macro, ".")
 }
 
-func parseMacro(namespace string, ss *v1alpha1.ServiceSelector) error {
-	fields := strings.Split(*ss.Macro, ".")
+func parseMacro(namespace string, selector *v1alpha1.ServiceSelector) error {
+	fields := strings.Split(*selector.Macro, ".")
 
 	if len(fields) != 4 {
-		panic(errors.Errorf("%s is not a valid macro", *ss.Macro))
+		panic(errors.Errorf("%s is not a valid macro", *selector.Macro))
 	}
 
 	kind := fields[1]
@@ -77,21 +77,21 @@ func parseMacro(namespace string, ss *v1alpha1.ServiceSelector) error {
 
 	switch kind {
 	case "cluster":
-		ss.Match.ByCluster = map[string]string{namespace: object}
-		ss.Mode = v1alpha1.Convert(filter)
+		selector.Match.ByCluster = map[string]string{namespace: object}
+		selector.Mode = v1alpha1.Convert(filter)
 
 	case "service":
-		ss.Match.ByName = map[string][]string{namespace: {object}}
-		ss.Mode = v1alpha1.Convert(filter)
+		selector.Match.ByName = map[string][]string{namespace: {object}}
+		selector.Mode = v1alpha1.Convert(filter)
 
 	default:
-		return errors.Errorf("%v is not a valid macro", *ss.Macro)
+		return errors.Errorf("%v is not a valid macro", *selector.Macro)
 	}
 
 	return nil
 }
 
-func expandSliceInputs(ctx context.Context, s *Controller, nm string, inputs *[]string) error {
+func expandSliceInputs(ctx context.Context, controller *Controller, namespace string, inputs *[]string) error {
 	if inputs == nil || *inputs == nil {
 		return nil
 	}
@@ -108,13 +108,13 @@ func expandSliceInputs(ctx context.Context, s *Controller, nm string, inputs *[]
 			val := value
 			ss := &v1alpha1.ServiceSelector{Macro: &val}
 
-			if err := parseMacro(nm, ss); err != nil {
+			if err := parseMacro(namespace, ss); err != nil {
 				return errors.Wrapf(err, "input [%d]", i)
 			}
 
 			services, exists := cache[value]
 			if !exists {
-				runningServices, err := selectServices(ctx, s, &ss.Match)
+				runningServices, err := selectServices(ctx, controller, &ss.Match)
 				if err != nil {
 					return errors.Wrapf(err, "service selection error")
 				}
@@ -142,7 +142,7 @@ func expandSliceInputs(ctx context.Context, s *Controller, nm string, inputs *[]
 	return nil
 }
 
-func expandMacros(ctx context.Context, s *Controller, nm string, inputs *[]v1alpha1.UserInputs) error {
+func expandMacros(ctx context.Context, controller *Controller, nm string, inputs *[]v1alpha1.UserInputs) error {
 	if inputs == nil || *inputs == nil {
 		return nil
 	}
@@ -168,7 +168,7 @@ func expandMacros(ctx context.Context, s *Controller, nm string, inputs *[]v1alp
 
 				services, exists := cache[value]
 				if !exists {
-					runningServices, err := selectServices(ctx, s, &ss.Match)
+					runningServices, err := selectServices(ctx, controller, &ss.Match)
 					if err != nil {
 						return errors.Wrapf(err, "service selection error")
 					}
@@ -379,7 +379,7 @@ func getRandomNumber(max int) uint64 {
 func getFixedSubListFromServiceList(services SList, num int) SList {
 	indexes := RandomFixedIndexes(0, uint(len(services)), uint(num))
 
-	var filteredServices SList
+	filteredServices := make(SList, len(indexes))
 
 	for _, index := range indexes {
 		filteredServices = append(filteredServices, services[index])

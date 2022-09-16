@@ -7,12 +7,14 @@ metadata:
 spec:
   inputs:
     parameters:
-      claimName: ""
       size: "10M"
       direct: "0"
+      ioengine: libaio
+      claimName: ""
+
   service:
     volumes:
-      - name: shared-fs
+      - name: scratch-volume
         persistentVolumeClaim:
           claimName: {{"{{.Inputs.Parameters.claimName}}" | quote}}
 
@@ -25,8 +27,8 @@ spec:
       - name: app
         image: xridge/fio
         volumeMounts:
-          - name: shared-fs
-            mountPath: /testdata
+          - name: scratch-volume
+            mountPath: /scratch
         command:
           - /bin/sh # Run shell
           - -c      # Read from string
@@ -34,49 +36,13 @@ spec:
             set -eum
             cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
 
-            DEVICE=/testdata
+            DEVICE=/scratch
             SIZE={{"{{.Inputs.Parameters.size}}"}}
             DIRECT={{"{{.Inputs.Parameters.direct}}"}}
+            IOENGINE={{"{{.Inputs.Parameters.ioengine}}"}}
 
             echo "USING DEVICE: $DEVICE"
 
-            cat > fio.conf <<EOF
-            [global]
-            directory=$DEVICE
-            size=$SIZE
-            direct=$DIRECT
-            gtod_reduce=1
-            time_based=1
-            runtime=1m
-            group_reporting=1
-
-            [file1]
-            ioengine=libaio
-            EOF
-
-            for rw in randread randwrite; do
-                for numjobs in 1 4 8 16; do
-                    for iodepth in 1 4 32 128; do
-                        cmd="fio --rw=$$rw --bs=4K --numjobs=$$numjobs --iodepth=$$iodepth fio.conf"
-                        echo $$cmd
-                        $$cmd >> /dev/shm/pipe
-
-                        echo
-                        echo
-                        echo
-                    done
-                done
-            done
-            for rw in read write; do
-                for numjobs in 1; do
-                    for iodepth in 1 4 32 128 256; do
-                        cmd="fio --rw=$$rw --bs=1M --numjobs=$$numjobs --iodepth=$$iodepth fio.conf"
-                        echo $$cmd
-                        $$cmd >> /dev/shm/pipe
-
-                        echo
-                        echo
-                        echo
-                    done
-                done
-            done
+            {{ range .Files.Lines "scripts/fio.sh" }}
+            {{ . }}
+            {{ end }}

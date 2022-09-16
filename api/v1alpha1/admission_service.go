@@ -17,13 +17,14 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"strings"
+
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
-	"strings"
 )
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
@@ -47,18 +48,18 @@ func (in *Service) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
-// Default implements webhook.Defaulter so a webhook will be registered for the type
+// Default implements webhook.Defaulter so a webhook will be registered for the type.
 func (in *Service) Default() {
-	servicelog.V(5).Info("default", "name", in.Name)
-
-	// TODO(user): fill in your defaulting logic.
+	servicelog.Info("default", "name", in.Name)
 }
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
+// ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
 func (in *Service) ValidateCreate() error {
-	servicelog.V(5).Info("validate create", "name", in.GetName())
+	servicelog.Info("validate create", "name", in.GetName())
 
-	for _, container := range in.Spec.Containers {
+	for i := range in.Spec.Containers {
+		container := in.Spec.Containers[i]
+
 		if container.Name == MainContainerName { // Validate Main container(s)
 			if err := in.validateMainContainer(&container); err != nil {
 				return errors.Wrapf(err, "error in service template '%s'", in.GetName())
@@ -73,46 +74,46 @@ func (in *Service) ValidateCreate() error {
 	return nil
 }
 
-func (in *Service) validateMainContainer(c *corev1.Container) error {
+func (in *Service) validateMainContainer(container *corev1.Container) error {
 	// Ensure that are no other main containers
 	if len(in.Spec.Containers) > 1 {
-		return errors.Errorf("Only one container can defined in the template of a Main container.")
+		return errors.Errorf("only one container can defined in the template of a Main container")
 	}
 
 	// Ensure that there are no sidecar decorations
 	if _, exists := in.Spec.Decorators.Annotations[SidecarTelemetry]; exists {
-		return errors.Errorf("Unclear if it's a main container or a telemetry sidecar.")
+		return errors.Errorf("unclear if it's a main container or a telemetry sidecar")
 	}
 
-	if in.Spec.Decorators.Resources != nil && (c.Resources.Limits != nil || c.Resources.Requests != nil) {
-		return errors.Errorf("pod-level decorators.resources are in conflict with container[%s].resources.", c.Name)
+	if in.Spec.Decorators.Resources != nil && (container.Resources.Limits != nil || container.Resources.Requests != nil) {
+		return errors.Errorf("pod-level decorators.resources are in conflict with container[%s].resources", container.Name)
 	}
 
 	return nil
 }
 
-func (in *Service) validateSidecarContainer(c *corev1.Container) error {
+func (in *Service) validateSidecarContainer(container *corev1.Container) error {
 	if in.Spec.Decorators.Annotations == nil {
-		return errors.Errorf("Follow either the Main container or the Sidecar container rules.")
+		return errors.Errorf("follow either the Main container or the Sidecar container rules")
 	}
 
 	// Ensure that there are no sidecar decorations
 	if value, exists := in.Spec.Decorators.Annotations[SidecarTelemetry]; exists {
 		if value == MainContainerName {
-			return errors.Errorf("Conflict. Main Container has been marked as sidecar in the decorators.annotation.")
+			return errors.Errorf("conflict. Main Container has been marked as sidecar in the decorators.annotation")
 		}
 
-		if value != c.Name {
+		if value != container.Name {
 			return errors.Errorf("Invalid annotation. Expected: '%s:%s' but got '%s:%s'",
-				SidecarTelemetry, c.Name,
+				SidecarTelemetry, container.Name,
 				SidecarTelemetry, value)
 		}
 
 		// Ensure that container is discoverable by Prometheus
-		for _, port := range c.Ports {
+		for _, port := range container.Ports {
 			if !strings.HasPrefix(port.Name, PrometheusDiscoverablePort) {
 				return errors.Errorf(`Because container '%s' is defined as a Telemetry Agent,
-									Port '%s' should be prefixed by '%s'`, c.Name, port.Name, PrometheusDiscoverablePort)
+									Port '%s' should be prefixed by '%s'`, container.Name, port.Name, PrometheusDiscoverablePort)
 			}
 		}
 
@@ -122,17 +123,17 @@ func (in *Service) validateSidecarContainer(c *corev1.Container) error {
 	return errors.Errorf("no sidecar annotations where found")
 }
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (in *Service) ValidateUpdate(old runtime.Object) error {
-	servicelog.V(5).Info("validate update", "name", in.Name)
+// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
+func (in *Service) ValidateUpdate(_ runtime.Object) error {
+	servicelog.Info("validate update", "name", in.Name)
 
 	// TODO(user): fill in your validation logic upon object update.
 	return nil
 }
 
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
+// ValidateDelete implements webhook.Validator so a webhook will be registered for the type.
 func (in *Service) ValidateDelete() error {
-	servicelog.V(5).Info("validate delete", "name", in.Name)
+	servicelog.Info("validate delete", "name", in.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.
 	return nil

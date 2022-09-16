@@ -18,6 +18,7 @@ package chaos
 
 import (
 	"context"
+
 	"k8s.io/apimachinery/pkg/labels"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
@@ -25,18 +26,18 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Chaos) error {
-	var f GenericFault
+func (r *Controller) runJob(ctx context.Context, chaos *v1alpha1.Chaos) error {
+	var fault GenericFault
 
-	if err := getRawManifest(cr, &f); err != nil {
-		return errors.Wrapf(err, "cannot get manifest for chaos '%s'", cr.GetName())
+	if err := getRawManifest(chaos, &fault); err != nil {
+		return errors.Wrapf(err, "cannot get manifest for chaos '%s'", chaos.GetName())
 	}
 
-	f.SetLabels(labels.Merge(f.GetLabels(), cr.GetLabels()))
-	f.SetAnnotations(labels.Merge(f.GetAnnotations(), cr.GetAnnotations()))
+	fault.SetLabels(labels.Merge(fault.GetLabels(), chaos.GetLabels()))
+	fault.SetAnnotations(labels.Merge(fault.GetAnnotations(), chaos.GetAnnotations()))
 
-	if err := common.Create(ctx, r, cr, &f); err != nil {
-		return errors.Wrapf(err, "cannot inject fault for chaos '%s'", cr.GetName())
+	if err := common.Create(ctx, r, chaos, &fault); err != nil {
+		return errors.Wrapf(err, "cannot inject fault for chaos '%s'", chaos.GetName())
 	}
 
 	return nil

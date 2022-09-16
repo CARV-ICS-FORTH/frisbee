@@ -18,6 +18,7 @@ package cluster
 
 import (
 	"context"
+
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
 	serviceutils "github.com/carv-ics-forth/frisbee/controllers/service/utils"
@@ -52,17 +53,17 @@ func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Cluster, i int) er
 	return nil
 }
 
-func (r *Controller) constructJobSpecList(ctx context.Context, cr *v1alpha1.Cluster) ([]v1alpha1.ServiceSpec, error) {
-	serviceSpecs, err := serviceutils.GetServiceSpecList(ctx, r.GetClient(), cr, cr.Spec.GenerateObjectFromTemplate)
+func (r *Controller) constructJobSpecList(ctx context.Context, cluster *v1alpha1.Cluster) ([]v1alpha1.ServiceSpec, error) {
+	serviceSpecs, err := serviceutils.GetServiceSpecList(ctx, r.GetClient(), cluster, cluster.Spec.GenerateObjectFromTemplate)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot get serviceSpecs")
 	}
 
-	SetPlacement(cr, serviceSpecs)
+	SetPlacement(cluster, serviceSpecs)
 
-	SetResources(cr, serviceSpecs)
+	SetResources(cluster, serviceSpecs)
 
-	SetTimeline(cr)
+	SetTimeline(cluster)
 
 	return serviceSpecs, nil
 }
@@ -170,17 +171,16 @@ func SetResources(cluster *v1alpha1.Cluster, services []v1alpha1.ServiceSpec) {
 			}
 		}
 	}
-
 }
 
-func SetTimeline(cr *v1alpha1.Cluster) {
-	if cr.Spec.Schedule == nil || cr.Spec.Schedule.Timeline == nil {
+func SetTimeline(cluster *v1alpha1.Cluster) {
+	if cluster.Spec.Schedule == nil || cluster.Spec.Schedule.Timeline == nil {
 		return
 	}
 
-	generator := distributions.GetPointDistribution(int64(cr.Spec.MaxInstances),
-		cr.Spec.Schedule.Timeline.DistributionSpec)
+	generator := distributions.GetPointDistribution(int64(cluster.Spec.MaxInstances),
+		cluster.Spec.Schedule.Timeline.DistributionSpec)
 
-	cr.Status.Timeline = generator.ApplyToTimeline(cr.GetCreationTimestamp(),
-		*cr.Spec.Schedule.Timeline.TotalDuration)
+	cluster.Status.Timeline = generator.ApplyToTimeline(cluster.GetCreationTimestamp(),
+		*cluster.Spec.Schedule.Timeline.TotalDuration)
 }

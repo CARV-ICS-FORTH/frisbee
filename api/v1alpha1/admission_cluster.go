@@ -41,9 +41,9 @@ func (in *Cluster) SetupWebhookWithManager(mgr ctrl.Manager) error {
 		Complete()
 }
 
-// Default implements webhook.Defaulter so a webhook will be registered for the type
+// Default implements webhook.Defaulter so a webhook will be registered for the type.
 func (in *Cluster) Default() {
-	clusterlog.V(5).Info("default", "name", in.Name)
+	clusterlog.Info("default", "name", in.Name)
 
 	if err := in.Spec.GenerateObjectFromTemplate.Prepare(true); err != nil {
 		clusterlog.Error(err, "template error")
@@ -55,13 +55,12 @@ func (in *Cluster) Default() {
 			schedule.StartingDeadlineSeconds = &DefaultStartingDeadlineSeconds
 		}
 	}
-
 	// TODO(user): fill in your defaulting logic.
 }
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
+// ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
 func (in *Cluster) ValidateCreate() error {
-	clusterlog.V(5).Info("validate create", "name", in.Name)
+	clusterlog.Info("validate create", "name", in.Name)
 
 	// Set missing values for the template
 	if err := in.Spec.GenerateObjectFromTemplate.Prepare(true); err != nil {
@@ -71,11 +70,11 @@ func (in *Cluster) ValidateCreate() error {
 	// Resources field
 	if resources := in.Spec.Resources; resources != nil {
 		if in.Spec.Until != nil {
-			return errors.Errorf("ResourceDistribution conflicts with Until conditions.")
+			return errors.Errorf("resource distribution conflicts with Until conditions")
 		}
 
 		if in.Spec.MaxInstances < 2 {
-			return errors.Errorf("ResourceDistribution requires at least two services.")
+			return errors.Errorf("resource distribution requires at least two services")
 		}
 
 		if err := ValidateDistribution(resources.DistributionSpec); err != nil {
@@ -85,6 +84,7 @@ func (in *Cluster) ValidateCreate() error {
 
 	// TestData field
 	if testdata := in.Spec.TestData; testdata != nil {
+		clusterlog.Info("TestData validation is missing.")
 		// todo: add conditions
 	}
 
@@ -122,17 +122,17 @@ func (in *Cluster) ValidateCreate() error {
 	return nil
 }
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (in *Cluster) ValidateUpdate(old runtime.Object) error {
-	clusterlog.V(5).Info("validate update", "name", in.Name)
+// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
+func (in *Cluster) ValidateUpdate(runtime.Object) error {
+	clusterlog.Info("validate update", "name", in.Name)
 
 	// TODO(user): fill in your validation logic upon object update.
 	return nil
 }
 
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
+// ValidateDelete implements webhook.Validator so a webhook will be registered for the type.
 func (in *Cluster) ValidateDelete() error {
-	clusterlog.V(5).Info("validate delete", "name", in.Name)
+	clusterlog.Info("validate delete", "name", in.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.
 	return nil

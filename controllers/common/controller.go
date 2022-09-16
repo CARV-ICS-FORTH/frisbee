@@ -57,7 +57,7 @@ func RequeueWithError(err error) (ctrl.Result, error) {
 	return ctrl.Result{}, err
 }
 
-// Reconciler implements basic functionality that is common to every solid reconciler (e.g, finalizers)
+// Reconciler implements basic functionality that is common to every solid reconciler (e.g, finalizers).
 type Reconciler interface {
 	GetClient() client.Client
 	GetCache() cache.Cache
@@ -65,6 +65,7 @@ type Reconciler interface {
 	GetEventRecorderFor(name string) record.EventRecorder
 
 	// Logging
+
 	Error(err error, msg string, keysAndValues ...interface{})
 	Info(msg string, keysAndValues ...interface{})
 	V(level int) logr.Logger
@@ -87,7 +88,6 @@ type Reconciler interface {
 // Bool indicate whether the caller should return immediately (true) or continue (false).
 // The reconciliation cycle is where the framework gives us back control after a watch has passed up an event.
 func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.Object, requeue *bool) (ctrl.Result, error) {
-
 	// make the calling controller to return
 	*requeue = true
 
@@ -122,19 +122,20 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 				"finalizer", r.Finalizer(),
 				"current", obj.GetFinalizers())
 
-			if err := wait.ExponentialBackoffWithContext(ctx, BackoffForK8sEndpoint, func() (done bool, err error) {
-				if errUpdate := Update(ctx, r, obj); errUpdate != nil {
-					return false, errUpdate
-				} else {
+			if err := wait.ExponentialBackoffWithContext(ctx, BackoffForK8sEndpoint,
+				func() (done bool, err error) {
+					if errUpdate := Update(ctx, r, obj); errUpdate != nil {
+						return false, errUpdate
+					}
+
 					return true, nil
-				}
-			}); err != nil {
+				},
+			); err != nil {
 				r.Error(err, "Abort retrying to add finalizer", "obj", client.ObjectKeyFromObject(obj))
 			}
 
 			return Stop()
 		}
-
 	} else {
 		// The object is being deleted
 		if controllerutil.ContainsFinalizer(obj, r.Finalizer()) {
@@ -158,13 +159,15 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 					"current", obj.GetFinalizers(),
 				)
 
-				if err := wait.ExponentialBackoffWithContext(ctx, BackoffForK8sEndpoint, func() (done bool, err error) {
-					if errUpdate := Update(ctx, r, obj); errUpdate != nil {
-						return false, errUpdate
-					} else {
+				if err := wait.ExponentialBackoffWithContext(ctx, BackoffForK8sEndpoint,
+					func() (done bool, err error) {
+						if errUpdate := Update(ctx, r, obj); errUpdate != nil {
+							return false, errUpdate
+						}
+
 						return true, nil
-					}
-				}); err != nil {
+					},
+				); err != nil {
 					r.Error(err, "Abort retrying to remove finalizer", "obj", client.ObjectKeyFromObject(obj))
 				}
 
@@ -179,30 +182,41 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 }
 
 // Update will update the metadata and the spec of the Object. If there is a conflict, it will retry again.
-func Update(ctx context.Context, r Reconciler, obj client.Object) error {
-	r.Info("OO UpdtMeta",
+func Update(ctx context.Context, reconciler Reconciler, obj client.Object) error {
+	reconciler.Info("OO UpdtMeta",
 		"obj", client.ObjectKeyFromObject(obj),
 		"version", obj.GetResourceVersion(),
 	)
 
-	return r.GetClient().Update(ctx, obj)
+	return reconciler.GetClient().Update(ctx, obj)
 }
 
 // UpdateStatus will update the status of the Object. If there is a conflict, it will retry again.
-func UpdateStatus(ctx context.Context, r Reconciler, obj client.Object) error {
-	r.Info("OO UpdtStatus",
-		"obj", client.ObjectKeyFromObject(obj),
-		"version", obj.GetResourceVersion(),
-		"become", obj.(v1alpha1.ReconcileStatusAware).GetReconcileStatus().Phase,
-	)
+func UpdateStatus(ctx context.Context, reconciler Reconciler, obj client.Object) error {
+	statusAwre, ok := obj.(v1alpha1.ReconcileStatusAware)
+	if ok {
+		reconciler.Info("OO UpdtStatus",
+			"obj", client.ObjectKeyFromObject(obj),
+			"version", obj.GetResourceVersion(),
+			"become", statusAwre.GetReconcileStatus().Phase,
+		)
 
-	return r.GetClient().Status().Update(ctx, obj)
+		return reconciler.GetClient().Status().Update(ctx, obj)
+	}
+
+	return errors.Errorf("object '%s' of GKV '%s' is not status aware",
+		client.ObjectKeyFromObject(obj), obj.GetObjectKind().GroupVersionKind())
 }
 
 // Create ignores existing objects.
 // if the next reconciliation cycle happens faster than the API update, it is possible to
 // reschedule the creation of a Job. To avoid that, get if the Job is already submitted.
-func Create(ctx context.Context, r Reconciler, parent, child client.Object) error {
+func Create(ctx context.Context, reconciler Reconciler, parent, child client.Object) error {
+	if reconciler == nil || parent == nil || child == nil {
+		panic(errors.Errorf("empty parameters.  Reconciler:%t Parent:%t Child:%t",
+			reconciler == nil, parent == nil, child == nil))
+	}
+
 	// Create a searchable link between the parent and the children.
 	v1alpha1.SetCreatedByLabel(child, parent)
 
@@ -213,16 +227,17 @@ func Create(ctx context.Context, r Reconciler, parent, child client.Object) erro
 	// reconciling the owner object on changes to controlled (with a Logs + EnqueueRequestForOwner).
 	// Since only one OwnerReference can be a controller, it returns an error if
 	// there is another OwnerReference with Controller flag set.
-	if err := controllerutil.SetControllerReference(parent, child, r.GetClient().Scheme()); err != nil {
+	if err := controllerutil.SetControllerReference(parent, child, reconciler.GetClient().Scheme()); err != nil {
 		return errors.Wrapf(err, "set controller reference")
 	}
 
-	r.Info("++ Create",
+	reconciler.Info("++ Create",
 		"kind", reflect.TypeOf(child),
 		"obj", client.ObjectKeyFromObject(child),
 	)
 
-	err := r.GetClient().Create(ctx, child)
+	err := reconciler.GetClient().Create(ctx, child)
+
 	switch {
 	case k8errors.IsAlreadyExists(err):
 		panic(err) // This should never happen under normal conditions
@@ -233,13 +248,13 @@ func Create(ctx context.Context, r Reconciler, parent, child client.Object) erro
 	}
 }
 
-func ListChildren(ctx context.Context, r Reconciler, childJobs client.ObjectList, req types.NamespacedName) error {
+func ListChildren(ctx context.Context, reconciler Reconciler, childJobs client.ObjectList, req types.NamespacedName) error {
 	filters := []client.ListOption{
 		client.InNamespace(req.Namespace),
 		client.MatchingLabels{v1alpha1.LabelCreatedBy: req.Name},
 	}
 
-	if err := r.GetClient().List(ctx, childJobs, filters...); err != nil {
+	if err := reconciler.GetClient().List(ctx, childJobs, filters...); err != nil {
 		return errors.Wrapf(err, "cannot list children")
 	}
 
@@ -248,8 +263,8 @@ func ListChildren(ctx context.Context, r Reconciler, childJobs client.ObjectList
 
 // Delete removes a Kubernetes object, ignoring the NotFound error. If any error exists,
 // it is recorded in the reconciler's logger.
-func Delete(ctx context.Context, r Reconciler, obj client.Object) {
-	r.Info("-- Delete",
+func Delete(ctx context.Context, reconciler Reconciler, obj client.Object) {
+	reconciler.Info("-- Delete",
 		"kind", reflect.TypeOf(obj),
 		"obj", client.ObjectKeyFromObject(obj),
 		"version", obj.GetResourceVersion(),
@@ -257,16 +272,15 @@ func Delete(ctx context.Context, r Reconciler, obj client.Object) {
 
 	// propagation := metav1.DeletePropagationForeground
 	propagation := metav1.DeletePropagationBackground
-	options := client.DeleteOptions{
-		PropagationPolicy: &propagation,
-	}
+	options := client.DeleteOptions{PropagationPolicy: &propagation}
 
-	err := r.GetClient().Delete(ctx, obj, &options)
+	err := reconciler.GetClient().Delete(ctx, obj, &options)
+
 	switch {
 	case k8errors.IsNotFound(err):
 	// Ignore
 	case err != nil:
-		r.Error(err, "deletion error", "obj", client.ObjectKeyFromObject(obj))
+		reconciler.Error(err, "deletion error", "obj", client.ObjectKeyFromObject(obj))
 	default:
 		return
 	}

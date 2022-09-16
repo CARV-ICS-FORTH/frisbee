@@ -54,7 +54,7 @@ spec:
 apiVersion: frisbee.dev/v1alpha1
 kind: Scenario
 metadata:
-  name: chaos-cascading-failures
+  name: multi-chaos
 spec:
   actions:
     - action: Service

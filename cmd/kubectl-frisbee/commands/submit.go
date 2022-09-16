@@ -43,7 +43,8 @@ func NewSubmitCmd() *cobra.Command {
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			ui.PrintOnError("Displaying help", cmd.Help())
-		}}
+		},
+	}
 
 	cmd.AddCommand(tests.NewSubmitTestCmd())
 

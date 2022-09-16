@@ -29,7 +29,7 @@ import (
 // ///////////////////////////////////////////
 
 const (
-	// ResourceDiscoveryLabel is used to discover Frisbee resources across different namespaces
+	// ResourceDiscoveryLabel is used to discover Frisbee resources across different namespaces.
 	ResourceDiscoveryLabel = "discover.frisbee.dev/name"
 )
 
@@ -49,7 +49,7 @@ const (
 
 // https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/
 const (
-	// LabelScenario points to the scenario
+	// LabelScenario points to the scenario.
 	LabelScenario = "scenario.frisbee.dev/name"
 
 	// LabelAction points to the action this resource is part of.
@@ -67,13 +67,14 @@ func SetScenarioLabel(obj *metav1.ObjectMeta, scenario string) {
 	oldScenario, exists := obj.GetLabels()[scenario]
 	if !exists {
 		metav1.SetMetaDataLabel(obj, LabelScenario, scenario)
+
 		return
 	}
 
 	if oldScenario == scenario {
 		logrus.Warnf("Overwriting scenario '%s' on object '%s'", scenario, obj.GetName())
 	} else {
-		panic(errors.Errorf("setting scenario '%s' failed. obj: '%s' already has scenario '%s'.",
+		panic(errors.Errorf("setting scenario '%s' failed. obj: '%s' already has scenario '%s'",
 			scenario, obj.GetName(), oldScenario,
 		))
 	}
@@ -83,13 +84,14 @@ func SetComponentLabel(obj *metav1.ObjectMeta, componentType Component) {
 	oldType, exists := obj.GetLabels()[string(componentType)]
 	if !exists {
 		metav1.SetMetaDataLabel(obj, LabelComponent, string(componentType))
+
 		return
 	}
 
 	if oldType == string(componentType) {
 		logrus.Warnf("Overwriting component type '%s' on object '%s'", componentType, obj.GetName())
 	} else {
-		panic(errors.Errorf("setting component type '%s' failed. obj: '%s' already has type '%s'.",
+		panic(errors.Errorf("setting component type '%s' failed. obj: '%s' already has type '%s'",
 			componentType, obj.GetName(), oldType,
 		))
 	}
@@ -99,13 +101,14 @@ func SetCreatedByLabel(child client.Object, parent client.Object) {
 	oldParent, exists := child.GetLabels()[parent.GetName()]
 	if !exists {
 		child.SetLabels(labels.Merge(child.GetLabels(), map[string]string{LabelCreatedBy: parent.GetName()}))
+
 		return
 	}
 
 	if oldParent == parent.GetName() {
 		logrus.Warnf("Overwriting parent '%s' on object '%s'", parent.GetName(), child.GetName())
 	} else {
-		panic(errors.Errorf("setting parent '%s' failed. obj: '%s' already has type '%s'.",
+		panic(errors.Errorf("setting parent '%s' failed. obj: '%s' already has type '%s'",
 			parent.GetName(), child.GetName(), oldParent,
 		))
 	}
@@ -117,6 +120,7 @@ func PropagateLabels(child metav1.Object, parent metav1.Object) {
 
 func HasScenarioLabel(obj metav1.Object) bool {
 	_, ok := obj.GetLabels()[LabelScenario]
+
 	return ok
 }
 
@@ -148,13 +152,13 @@ func GetComponentLabel(obj metav1.Object) Component {
 			LabelComponent, obj.GetName(), obj.GetLabels()))
 	}
 
-	v := Component(component)
+	componentType := Component(component)
 
-	if v != ComponentSys && v != ComponentSUT {
+	if componentType != ComponentSys && componentType != ComponentSUT {
 		panic(errors.Errorf("unknown component type '%s'", component))
 	}
 
-	return v
+	return componentType
 }
 
 // ///////////////////////////////////////////

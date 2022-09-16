@@ -13,6 +13,7 @@ func TestParseAlert(t *testing.T) {
 	type args struct {
 		query v1alpha1.ExprMetrics
 	}
+
 	tests := []struct {
 		name    string
 		args    args
@@ -123,6 +124,7 @@ func TestParseAlert(t *testing.T) {
 			got, err := grafana.ParseAlertExpr(tt.args.query)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ParseAlertExpr() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {

@@ -3,6 +3,7 @@ package ui
 import (
 	"bytes"
 	"fmt"
+
 	"github.com/dimiro1/banner"
 )
 

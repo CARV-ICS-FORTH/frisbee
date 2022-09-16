@@ -125,7 +125,8 @@ func NewSubmitTestCmd() *cobra.Command {
 			{
 				helmCharts := args[2:]
 				for _, chart := range helmCharts {
-					command := []string{"upgrade", "--install",
+					command := []string{
+						"upgrade", "--install",
 						filepath.Base(chart), chart,
 						"--create-namespace",
 					}
@@ -154,7 +155,6 @@ func NewSubmitTestCmd() *cobra.Command {
 }
 
 func ControlOutput(testName string, options *TestSubmitOptions) {
-
 	switch {
 	case options.ExpectSuccess:
 		ui.Info("Expecting the test to complete successfully within ", options.Timeout)

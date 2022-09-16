@@ -56,7 +56,7 @@ spec:
 apiVersion: frisbee.dev/v1alpha1
 kind: Scenario
 metadata:
-  name: simulate-failure
+  name: single-chaos
 spec:
   actions:
     - action: Service

@@ -35,40 +35,39 @@ var _ webhook.Validator = &Chaos{}
 // log is for logging in this package.
 var chaoslog = logf.Log.WithName("chaos-hook")
 
-func (r *Chaos) SetupWebhookWithManager(mgr ctrl.Manager) error {
+func (in *Chaos) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
+		For(in).
 		Complete()
 }
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
-// Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *Chaos) Default() {
-	chaoslog.V(5).Info("default", "name", r.Name)
-
+// Default implements webhook.Defaulter so a webhook will be registered for the type.
+func (in *Chaos) Default() {
+	chaoslog.Info("default", "name", in.Name)
 	// TODO(user): fill in your defaulting logic.
 }
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *Chaos) ValidateCreate() error {
-	chaoslog.V(5).Info("validate create", "name", r.Name)
+// ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
+func (in *Chaos) ValidateCreate() error {
+	chaoslog.Info("validate create", "name", in.Name)
 
 	// TODO(user): fill in your validation logic upon object creation.
 	return nil
 }
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *Chaos) ValidateUpdate(old runtime.Object) error {
-	chaoslog.V(5).Info("validate update", "name", r.Name)
+// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
+func (in *Chaos) ValidateUpdate(runtime.Object) error {
+	chaoslog.Info("validate update", "name", in.Name)
 
 	// TODO(user): fill in your validation logic upon object update.
 	return nil
 }
 
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *Chaos) ValidateDelete() error {
-	chaoslog.V(5).Info("validate delete", "name", r.Name)
+// ValidateDelete implements webhook.Validator so a webhook will be registered for the type.
+func (in *Chaos) ValidateDelete() error {
+	chaoslog.Info("validate delete", "name", in.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.
 	return nil

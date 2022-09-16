@@ -18,7 +18,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 	"time"
 
@@ -80,26 +79,26 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		1: Load CR by name and extract the Desired State
 		------------------------------------------------------------------
 	*/
-	var cr v1alpha1.Service
+	var service v1alpha1.Service
 
 	var requeue bool
-	result, err := common.Reconcile(ctx, r, req, &cr, &requeue)
+	result, err := common.Reconcile(ctx, r, req, &service, &requeue)
 
 	if requeue {
 		return result, err
 	}
 
 	r.Logger.Info("-> Reconcile",
-		"obj", client.ObjectKeyFromObject(&cr),
-		"phase", cr.Status.Phase,
-		"version", cr.GetResourceVersion(),
+		"obj", client.ObjectKeyFromObject(&service),
+		"phase", service.Status.Phase,
+		"version", service.GetResourceVersion(),
 	)
 
 	defer func() {
 		r.Logger.Info("<- Reconcile",
-			"obj", client.ObjectKeyFromObject(&cr),
-			"phase", cr.Status.Phase,
-			"version", cr.GetResourceVersion(),
+			"obj", client.ObjectKeyFromObject(&service),
+			"phase", service.Status.Phase,
+			"version", service.GetResourceVersion(),
 		)
 	}()
 
@@ -108,7 +107,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		------------------------------------------------------------------
 	*/
 	if err := r.PopulateView(ctx, req.NamespacedName); err != nil {
-		return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot populate view for '%s'", req))
+		return lifecycle.Failed(ctx, r, &service, errors.Wrapf(err, "cannot populate view for '%s'", req))
 	}
 
 	/*
@@ -117,8 +116,9 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		The Update serves as "journaling" for the upcoming operations,
 		and as a roadblock for stall (queued) requests.
 	*/
-	r.updateLifecycle(&cr)
-	if err := common.UpdateStatus(ctx, r, &cr); err != nil {
+	r.updateLifecycle(&service)
+
+	if err := common.UpdateStatus(ctx, r, &service); err != nil {
 		// due to the multiple updates, it is possible for this function to
 		// be in conflict. We fix this issue by re-queueing the request.
 		return common.RequeueAfter(time.Second)
@@ -129,16 +129,16 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		------------------------------------------------------------------
 	*/
 
-	switch cr.Status.Phase {
+	switch service.Status.Phase {
 	case v1alpha1.PhaseSuccess:
-		if err := r.HasSucceed(ctx, &cr); err != nil {
+		if err := r.HasSucceed(ctx, &service); err != nil {
 			return common.RequeueAfter(time.Second)
 		}
 
 		return common.Stop()
 
 	case v1alpha1.PhaseFailed:
-		if err := r.HasFailed(ctx, &cr); err != nil {
+		if err := r.HasFailed(ctx, &service); err != nil {
 			return common.RequeueAfter(time.Second)
 		}
 
@@ -147,28 +147,28 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	case v1alpha1.PhaseRunning:
 		// Nothing to do. Just wait for something to happen.
 		r.Logger.Info(".. Awaiting",
-			"obj", client.ObjectKeyFromObject(&cr),
-			cr.Status.Reason, cr.Status.Message,
+			"obj", client.ObjectKeyFromObject(&service),
+			service.Status.Reason, service.Status.Message,
 		)
 
 		return common.Stop()
 
 	case v1alpha1.PhaseUninitialized:
 		// Avoid re-scheduling a scheduled job
-		if cr.Status.LastScheduleTime != nil {
+		if service.Status.LastScheduleTime != nil {
 			// next reconciliation cycle will be trigger by the watchers
 			return common.Stop()
 		}
 
 		// Build the job in kubernetes
-		if err := r.runJob(ctx, &cr); err != nil {
-			return lifecycle.Failed(ctx, r, &cr, err)
+		if err := r.runJob(ctx, &service); err != nil {
+			return lifecycle.Failed(ctx, r, &service, err)
 		}
 
 		// Update the scheduling information
-		cr.Status.LastScheduleTime = &metav1.Time{Time: time.Now()}
+		service.Status.LastScheduleTime = &metav1.Time{Time: time.Now()}
 
-		return lifecycle.Pending(ctx, r, &cr, "Submit pod create request")
+		return lifecycle.Pending(ctx, r, &service, "Submit pod create request")
 
 	case v1alpha1.PhasePending:
 		// Nothing to do
@@ -196,7 +196,6 @@ func (r *Controller) PopulateView(ctx context.Context, req types.NamespacedName)
 }
 
 func (r *Controller) HasSucceed(ctx context.Context, cr *v1alpha1.Service) error {
-
 	r.Logger.Info("CleanOnSuccess",
 		"obj", client.ObjectKeyFromObject(cr).String(),
 		"successfulJobs", r.view.ListSuccessfulJobs(),
@@ -212,8 +211,7 @@ func (r *Controller) HasSucceed(ctx context.Context, cr *v1alpha1.Service) error
 }
 
 func (r *Controller) HasFailed(ctx context.Context, cr *v1alpha1.Service) error {
-
-	r.Logger.Error(fmt.Errorf(cr.Status.Message), "!! "+cr.Status.Reason,
+	r.Logger.Error(errors.Errorf(cr.Status.Message), "!! "+cr.Status.Reason,
 		"obj", client.ObjectKeyFromObject(cr).String())
 
 	// Remove the non-failed components. Leave the failed jobs and system jobs for postmortem analysis.
@@ -256,7 +254,7 @@ func (r *Controller) Finalize(obj client.Object) error {
 */
 
 func NewController(mgr ctrl.Manager, logger logr.Logger) error {
-	r := &Controller{
+	controller := &Controller{
 		Manager:           mgr,
 		Logger:            logger.WithName("service"),
 		gvk:               v1alpha1.GroupVersion.WithKind("Service"),
@@ -267,6 +265,6 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		Named("service").
 		For(&v1alpha1.Service{}).
-		Owns(&corev1.Pod{}, builder.WithPredicates(r.Watchers())).
-		Complete(r)
+		Owns(&corev1.Pod{}, builder.WithPredicates(controller.Watchers())).
+		Complete(controller)
 }

@@ -18,9 +18,10 @@ package install
 
 import (
 	"fmt"
-	"github.com/kubeshop/testkube/pkg/process"
 	"net"
 	"os"
+
+	"github.com/kubeshop/testkube/pkg/process"
 
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/common"
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/env"
@@ -56,7 +57,6 @@ func NewInstallDevelopmentCmd() *cobra.Command {
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-
 			// use make generate to update the manifest of the project.
 			err := os.Chdir(args[0])
 			ui.ExitOnError("chdir to "+args[0], err)
@@ -64,7 +64,8 @@ func NewInstallDevelopmentCmd() *cobra.Command {
 			_, err = process.Execute("make", "generate")
 			ui.ExitOnError("Update Manifest", err)
 
-			command := []string{"upgrade", "--install", "--wait",
+			command := []string{
+				"upgrade", "--install", "--wait",
 				"--namespace", options.Namespace, "--create-namespace",
 				"--set", fmt.Sprintf("operator.enabled=%t", false),
 				"--set", fmt.Sprintf("operator.advertisedHost=%s", publicIP),

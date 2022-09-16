@@ -41,13 +41,13 @@ type Configuration struct {
 }
 
 // Discover discovers a resource across different namespaces
-func Discover(ctx context.Context, c client.Client, crList client.ObjectList, id string) error {
+func Discover(ctx context.Context, cli client.Client, crList client.ObjectList, id string) error {
 	// find the platform configuration (which may reside on a different namespace)
 	filters := []client.ListOption{
 		client.MatchingLabels{v1alpha1.ResourceDiscoveryLabel: id},
 	}
 
-	if err := c.List(ctx, crList, filters...); err != nil {
+	if err := cli.List(ctx, crList, filters...); err != nil {
 		return errors.Wrapf(err, "cannot list resources")
 	}
 

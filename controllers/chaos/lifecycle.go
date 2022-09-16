@@ -28,13 +28,13 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func (r *Controller) updateLifecycle(cr *v1alpha1.Chaos) bool {
+func (r *Controller) updateLifecycle(chaos *v1alpha1.Chaos) bool {
 	// Skip any CR which are already completed, or uninitialized.
-	if cr.Status.Phase.Is(v1alpha1.PhaseUninitialized, v1alpha1.PhaseSuccess, v1alpha1.PhaseFailed) {
+	if chaos.Status.Phase.Is(v1alpha1.PhaseUninitialized, v1alpha1.PhaseSuccess, v1alpha1.PhaseFailed) {
 		return false
 	}
 
-	return lifecycle.SingleJob(r.view, &cr.Status.Lifecycle)
+	return lifecycle.SingleJob(r.view, &chaos.Status.Lifecycle)
 }
 
 // ConditionType ...

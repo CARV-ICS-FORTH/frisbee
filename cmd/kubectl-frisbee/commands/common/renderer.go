@@ -79,7 +79,6 @@ func RenderPrettyList(obj ui.TableData, w io.Writer) error {
 }
 
 func RenderList(obj interface{}, w io.Writer) error {
-
 	switch OutputType(env.Settings.OutputType) {
 	case OutputPretty:
 		list, ok := obj.(ui.TableData)

@@ -41,12 +41,12 @@ func (r *Controller) Watchers() predicate.Funcs {
 	}
 }
 
-func (r *Controller) create(e event.CreateEvent) bool {
-	if !common.IsManagedByThisController(e.Object, r.gvk) {
+func (r *Controller) create(event event.CreateEvent) bool {
+	if !common.IsManagedByThisController(event.Object, r.gvk) {
 		return false
 	}
 
-	if !e.Object.GetDeletionTimestamp().IsZero() {
+	if !event.Object.GetDeletionTimestamp().IsZero() {
 		// on a restart of the controller manager, it's possible a new pod shows up in a state that
 		// is already pending deletion. Prevent the pod from being a creation observation.
 		return false
@@ -54,36 +54,36 @@ func (r *Controller) create(e event.CreateEvent) bool {
 
 	r.Logger.Info("** Detected",
 		"Request", "Create",
-		"kind", reflect.TypeOf(e.Object),
-		"obj", client.ObjectKeyFromObject(e.Object),
-		"version", e.Object.GetResourceVersion(),
+		"kind", reflect.TypeOf(event.Object),
+		"obj", client.ObjectKeyFromObject(event.Object),
+		"version", event.Object.GetResourceVersion(),
 	)
 
-	if v1alpha1.DrawRegion(e.Object) {
+	if v1alpha1.DrawRegion(event.Object) {
 		annotation := &grafana.RangeAnnotation{}
-		annotation.Add(e.Object)
+		annotation.Add(event.Object)
 
-		r.regionAnnotations.Set(e.Object.GetName(), annotation)
+		r.regionAnnotations.Set(event.Object.GetName(), annotation)
 	} else {
 		annotation := &grafana.PointAnnotation{}
-		annotation.Add(e.Object)
+		annotation.Add(event.Object)
 	}
 
 	return false
 }
 
-func (r *Controller) update(e event.UpdateEvent) bool {
-	if !common.IsManagedByThisController(e.ObjectNew, r.gvk) {
+func (r *Controller) update(event event.UpdateEvent) bool {
+	if !common.IsManagedByThisController(event.ObjectNew, r.gvk) {
 		return false
 	}
 
-	if e.ObjectOld.GetResourceVersion() == e.ObjectNew.GetResourceVersion() {
+	if event.ObjectOld.GetResourceVersion() == event.ObjectNew.GetResourceVersion() {
 		// Periodic resync will send update events for all known pods.
 		// Two different versions of the same pod will always have different RVs.
 		return false
 	}
 
-	if !e.ObjectNew.GetDeletionTimestamp().IsZero() {
+	if !event.ObjectNew.GetDeletionTimestamp().IsZero() {
 		// when an object is deleted gracefully it's deletion timestamp is first modified to reflect a grace period,
 		// and after such time has passed, the kubelet actually deletes it from the store. We receive an update
 		// for modification of the deletion timestamp and expect the reconciler to act asap, not to wait until the
@@ -92,8 +92,8 @@ func (r *Controller) update(e event.UpdateEvent) bool {
 	}
 
 	// if the status is the same, there is no need to inform the service
-	prev := e.ObjectOld.(*corev1.Pod)
-	latest := e.ObjectNew.(*corev1.Pod)
+	prev := event.ObjectOld.(*corev1.Pod)
+	latest := event.ObjectNew.(*corev1.Pod)
 
 	/*
 		if prev.Status.Phase == latest.Status.Phase {
@@ -105,8 +105,8 @@ func (r *Controller) update(e event.UpdateEvent) bool {
 
 	r.Logger.Info("** Detected",
 		"Request", "Update",
-		"kind", reflect.TypeOf(e.ObjectNew),
-		"obj", client.ObjectKeyFromObject(e.ObjectNew),
+		"kind", reflect.TypeOf(event.ObjectNew),
+		"obj", client.ObjectKeyFromObject(event.ObjectNew),
 		"from", prev.Status.Phase,
 		"to", latest.Status.Phase,
 		"version", fmt.Sprintf("%s -> %s", prev.GetResourceVersion(), latest.GetResourceVersion()),
@@ -115,40 +115,40 @@ func (r *Controller) update(e event.UpdateEvent) bool {
 	return true
 }
 
-func (r *Controller) delete(e event.DeleteEvent) bool {
-	if !common.IsManagedByThisController(e.Object, r.gvk) {
+func (r *Controller) delete(event event.DeleteEvent) bool {
+	if !common.IsManagedByThisController(event.Object, r.gvk) {
 		return false
 	}
 
 	// An object was deleted but the watch deletion event was missed while disconnected from apiserver.
 	// In this case we don't know the final "resting" state of the object,
 	// so there's a chance the included `Obj` is stale.
-	if e.DeleteStateUnknown {
-		runtimeutil.HandleError(errors.Errorf("couldn't get object from tombstone %+v", e.Object))
+	if event.DeleteStateUnknown {
+		runtimeutil.HandleError(errors.Errorf("couldn't get object from tombstone %+v", event.Object))
 
 		return false
 	}
 
 	r.Logger.Info("** Detected",
 		"Request", "Delete",
-		"kind", reflect.TypeOf(e.Object),
-		"obj", client.ObjectKeyFromObject(e.Object),
-		"version", e.Object.GetResourceVersion(),
+		"kind", reflect.TypeOf(event.Object),
+		"obj", client.ObjectKeyFromObject(event.Object),
+		"version", event.Object.GetResourceVersion(),
 	)
 
-	if v1alpha1.DrawRegion(e.Object) {
-		annotation, ok := r.regionAnnotations.Get(e.Object.GetName())
+	if v1alpha1.DrawRegion(event.Object) {
+		annotation, ok := r.regionAnnotations.Get(event.Object.GetName())
 		if !ok {
 			// this is a stall condition that happens when the controller is restarted. just ignore it
 			return false
 		}
 
-		annotation.(*grafana.RangeAnnotation).Delete(e.Object)
+		annotation.(*grafana.RangeAnnotation).Delete(event.Object)
 
-		r.regionAnnotations.Remove(e.Object.GetName())
+		r.regionAnnotations.Remove(event.Object.GetName())
 	} else {
 		annotation := &grafana.PointAnnotation{}
-		annotation.Delete(e.Object)
+		annotation.Delete(event.Object)
 	}
 
 	return true

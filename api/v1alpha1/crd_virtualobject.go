@@ -64,7 +64,7 @@ type VirtualObjectStatus struct {
 }
 
 func (in *VirtualObjectStatus) Table() (header []string, data [][]string) {
-	var values []string
+	values := make([]string, len(in.Data))
 
 	for _, key := range structure.SortedMapKeys(in.Data) {
 		header = append(header, key)
