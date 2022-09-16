@@ -17,12 +17,13 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"reflect"
+
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/json"
-	"reflect"
 )
 
 // +kubebuilder:object:root=true
@@ -40,25 +41,26 @@ type Template struct {
 
 func ParameterValue(v interface{}) *apiextensionsv1.JSON {
 	raw, _ := json.Marshal(v)
+
 	return &apiextensionsv1.JSON{Raw: raw}
 }
 
 type Parameters map[string]*apiextensionsv1.JSON
 
-func (p Parameters) Unmarshal() (map[string]interface{}, error) {
-	v := map[string]interface{}{}
+func (in Parameters) Unmarshal() (map[string]interface{}, error) {
+	decoded := map[string]interface{}{}
 
-	for key, value := range p {
+	for key, value := range in {
 		var eValue interface{}
 
 		if err := json.Unmarshal(value.Raw, &eValue); err != nil {
 			return nil, errors.Wrapf(err, "cannot unmarshal parameters")
 		}
 
-		v[key] = eValue
+		decoded[key] = eValue
 	}
 
-	return v, nil
+	return decoded, nil
 }
 
 type TemplateInputs struct {
@@ -74,7 +76,7 @@ type TemplateInputs struct {
 	Scenario string `json:"scenario,omitempty"`
 }
 
-// TemplateSpec defines the desired state of Template
+// TemplateSpec defines the desired state of Template.
 type TemplateSpec struct {
 	// Inputs are dynamic fields that populate the spec.
 	// +optional
@@ -92,7 +94,7 @@ type EmbedSpecs struct {
 	Chaos *ChaosSpec `json:"chaos,omitempty"`
 }
 
-// TemplateStatus defines the observed state of Template
+// TemplateStatus defines the observed state of Template.
 type TemplateStatus struct {
 	Lifecycle `json:",inline"`
 }
@@ -107,7 +109,7 @@ func (in *Template) SetReconcileStatus(lifecycle Lifecycle) {
 
 // +kubebuilder:object:root=true
 
-// TemplateList contains a list of Template
+// TemplateList contains a list of Template.
 type TemplateList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
@@ -129,7 +131,7 @@ func init() {
 type UserInputs map[string]*apiextensionsv1.JSON
 
 func (u UserInputs) Unmarshal() (map[string]interface{}, error) {
-	v := map[string]interface{}{}
+	decoded := map[string]interface{}{}
 
 	for key, value := range u {
 		var eValue interface{}
@@ -138,10 +140,10 @@ func (u UserInputs) Unmarshal() (map[string]interface{}, error) {
 			return nil, errors.Wrapf(err, "cannot unmarshal parameters")
 		}
 
-		v[key] = eValue
+		decoded[key] = eValue
 	}
 
-	return v, nil
+	return decoded, nil
 }
 
 // GenerateObjectFromTemplate generates a spec by parameterizing the templateRef with the given inputs.
@@ -203,7 +205,7 @@ func (in *GenerateObjectFromTemplate) Prepare(allowMultipleInputs bool) error {
 	}
 }
 
-func (in *GenerateObjectFromTemplate) GetInputs(i uint) UserInputs {
+func (in *GenerateObjectFromTemplate) GetInputs(inputIndex uint) UserInputs {
 	switch len(in.Inputs) {
 	case 0:
 		// no inputs
@@ -219,21 +221,21 @@ func (in *GenerateObjectFromTemplate) GetInputs(i uint) UserInputs {
 
 	default:
 		// safety is assumed by IterateInputs
-		return in.Inputs[i]
+		return in.Inputs[inputIndex]
 	}
 }
 
-func (in *GenerateObjectFromTemplate) IterateInputs(cb func(nextInputSet uint) error) error {
+func (in *GenerateObjectFromTemplate) IterateInputs(callBack func(nextInputSet uint) error) error {
 	if len(in.Inputs) == 0 {
 		for i := 0; i < in.MaxInstances; i++ {
-			if err := cb(0); err != nil {
+			if err := callBack(0); err != nil {
 				return err
 			}
 		}
 	} else {
 		for i := 0; i < in.MaxInstances; i++ {
 			// recursively iterate the input.
-			if err := cb(uint(i % len(in.Inputs))); err != nil {
+			if err := callBack(uint(i % len(in.Inputs))); err != nil {
 				return err
 			}
 		}
@@ -242,8 +244,7 @@ func (in *GenerateObjectFromTemplate) IterateInputs(cb func(nextInputSet uint) e
 	return nil
 }
 
-func (in *GenerateObjectFromTemplate) Generate(spec interface{}, userInputsSet uint, t TemplateSpec, templateBody []byte) error {
-
+func (in *GenerateObjectFromTemplate) Generate(spec interface{}, userInputsSet uint, tSpec TemplateSpec, templateBody []byte) error {
 	evaluationParams := struct {
 		Inputs struct {
 			Parameters map[string]interface{} `json:"parameters"`
@@ -252,7 +253,7 @@ func (in *GenerateObjectFromTemplate) Generate(spec interface{}, userInputsSet u
 		} `json:"inputs"`
 	}{}
 
-	templateParams, err := t.Inputs.Parameters.Unmarshal()
+	templateParams, err := tSpec.Inputs.Parameters.Unmarshal()
 	if err != nil {
 		return errors.Wrapf(err, "cannot unmarshal template parameters")
 	}
@@ -262,7 +263,7 @@ func (in *GenerateObjectFromTemplate) Generate(spec interface{}, userInputsSet u
 
 	// if exists, user parameters overwrite the default template parameters
 	if in.Inputs != nil {
-		if t.Inputs == nil || t.Inputs.Parameters == nil {
+		if tSpec.Inputs == nil || tSpec.Inputs.Parameters == nil {
 			return errors.New("template is not parameterizable")
 		}
 

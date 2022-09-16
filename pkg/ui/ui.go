@@ -1,4 +1,4 @@
-// simple ui - TODO use something more sophisticated :)
+// Package ui provides a simple terminal ui
 package ui
 
 import (

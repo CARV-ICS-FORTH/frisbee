@@ -17,8 +17,9 @@ limitations under the License.
 package scheduler
 
 import (
-	"github.com/go-logr/logr"
 	"time"
+
+	"github.com/go-logr/logr"
 
 	"github.com/carv-ics-forth/frisbee/pkg/expressions"
 	"github.com/carv-ics-forth/frisbee/pkg/lifecycle"
@@ -56,12 +57,14 @@ func Schedule(log logr.Logger, obj client.Object, s Parameters) (goToNextJob boo
 	// Cron-based scheduling
 	if s.ScheduleSpec.Cron != nil {
 		missed, next, err := cronWithDeadline(log, obj, s)
+
 		return !missed.IsZero(), next, err
 	}
 
 	// Timeline-based scheduling
 	if s.ScheduleSpec.Timeline != nil {
 		missed, next, err := timelineWithDeadline(log, obj, s)
+
 		return !missed.IsZero(), next, err
 	}
 
@@ -76,7 +79,7 @@ func Schedule(log logr.Logger, obj client.Object, s Parameters) (goToNextJob boo
 	return false, time.Time{}, nil
 }
 
-func cronWithDeadline(log logr.Logger, obj client.Object, s Parameters) (lastMissed time.Time, next time.Time, err error) {
+func cronWithDeadline(_ logr.Logger, obj client.Object, s Parameters) (lastMissed time.Time, next time.Time, err error) {
 	timeline, err := cron.ParseStandard(*s.ScheduleSpec.Cron)
 	if err != nil {
 		return time.Time{}, time.Time{}, errors.Wrapf(err, "unparseable timeline %q", *s.ScheduleSpec.Cron)
@@ -97,7 +100,7 @@ func cronWithDeadline(log logr.Logger, obj client.Object, s Parameters) (lastMis
 	return lastMissed, next, nil
 }
 
-func timelineWithDeadline(log logr.Logger, obj client.Object, s Parameters) (lastMissed time.Time, next time.Time, err error) {
+func timelineWithDeadline(_ logr.Logger, obj client.Object, s Parameters) (lastMissed time.Time, next time.Time, err error) {
 	timeline := s.ExpectedTimeline
 
 	lastMissed, next, err = getNextScheduleTime(obj.GetCreationTimestamp().Time, timeline, s)
@@ -197,9 +200,11 @@ func getNextScheduleTime(earliest time.Time, timeline Timeline, param Parameters
 	return lastMissed, timeline.Next(now), nil
 }
 
+/*
 func honorDeadline(log logr.Logger, lastMissed time.Time, deadline *int64) bool {
 	// if there is a missed run, make sure we're not too late to start the run
 	tooLate := false
+
 	if deadline != nil {
 		skew := lastMissed.Add(time.Duration(*deadline) * time.Second)
 
@@ -210,3 +215,4 @@ func honorDeadline(log logr.Logger, lastMissed time.Time, deadline *int64) bool 
 
 	return tooLate
 }
+*/

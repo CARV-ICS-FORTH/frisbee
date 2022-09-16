@@ -312,10 +312,10 @@ func SingleJob(state ClassifierReader, lf *v1alpha1.Lifecycle) bool {
 				}
 
 				return true
-			} else {
-				// do nothing
-				return false
 			}
+
+			// do nothing
+			return false
 		}
 	}
 

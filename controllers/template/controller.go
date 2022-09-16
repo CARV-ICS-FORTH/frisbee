@@ -46,10 +46,10 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		1: Load CR by name.
 		------------------------------------------------------------------
 	*/
-	var cr v1alpha1.Template
+	var template v1alpha1.Template
 
 	// Use a slightly different approach than other controllers, since we do not need finalizers.
-	if err := r.GetClient().Get(ctx, req.NamespacedName, &cr); err != nil {
+	if err := r.GetClient().Get(ctx, req.NamespacedName, &template); err != nil {
 		// Request object not found, could have been deleted after reconcile request.
 		// We'll ignore not-found errors, since they can't be fixed by an immediate
 		// requeue (we'll need to wait for a new notification), and we can get them
@@ -103,13 +103,13 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		4: Make the world matching what we want in our spec
 		------------------------------------------------------------------
 	*/
-	switch cr.Status.Lifecycle.Phase {
+	switch template.Status.Lifecycle.Phase {
 	case v1alpha1.PhaseUninitialized:
 		r.Logger.Info("Import", "obj", req.NamespacedName)
 
 		return common.Stop()
 	default:
-		panic("Should never happen: " + cr.Status.Lifecycle.Phase)
+		panic("Should never happen: " + template.Status.Lifecycle.Phase)
 	}
 }
 
@@ -141,8 +141,10 @@ func (r *Controller) Finalize(obj client.Object) error {
 */
 
 func NewController(mgr ctrl.Manager, logger logr.Logger) error {
+	var template v1alpha1.Template
+
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1alpha1.Template{}).
+		For(&template).
 		Named("template").
 		Complete(&Controller{
 			Manager: mgr,

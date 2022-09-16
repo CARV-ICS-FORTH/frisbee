@@ -21,7 +21,7 @@ import (
 	"github.com/robfig/cron/v3"
 )
 
-func ValidateTolerate(tol *TolerateSpec) error {
+func ValidateTolerate(_ *TolerateSpec) error {
 	return nil
 }
 
@@ -47,13 +47,13 @@ func ValidateExpr(expr *ConditionalExpr) error {
 
 func ValidateScheduler(instances int, sch *SchedulerSpec) error {
 	if instances < 2 {
-		return errors.Errorf("scheduling requires at least two instances.")
+		return errors.Errorf("scheduling requires at least two instances")
 	}
 
 	// Cron and Timeline can be active at the same time.
 	// However, both Cron and Timeline can be used in conjuction with Events.
 	if sch.Cron != nil && sch.Timeline != nil {
-		return errors.Errorf("cron and timeline distribution cannot be activated in paralle.")
+		return errors.Errorf("cron and timeline distribution cannot be activated in paralle")
 	}
 
 	// cron
@@ -102,7 +102,6 @@ func ValidateDistribution(dist *DistributionSpec) error {
 // ValidatePlacement validates the placement policy. However, because it may involve references to other
 // services, the validation requires a list of the defined actions.
 func ValidatePlacement(policy *PlacementSpec, callIndex map[string]*Action) error {
-
 	// Validate the name of the references nodes.
 	if policy.Nodes != nil {
 		// TODO: add logic
@@ -111,7 +110,6 @@ func ValidatePlacement(policy *PlacementSpec, callIndex map[string]*Action) erro
 	// Validate the presence of the references actions.
 	if policy.ConflictsWith != nil {
 		for _, ref := range policy.ConflictsWith {
-
 			action, exists := callIndex[ref]
 			if !exists {
 				return errors.Errorf("referenced action '%s' does not exist. ", ref)
@@ -121,7 +119,6 @@ func ValidatePlacement(policy *PlacementSpec, callIndex map[string]*Action) erro
 				return errors.Errorf("referenced action '%s' is type '%s'. Expected: '%s|%s'",
 					ref, action.ActionType, ActionCluster, ActionService)
 			}
-
 		}
 	}
 

@@ -27,13 +27,13 @@ import (
 )
 
 // updateLifecycle returns the update lifecycle of the cluster.
-func (r *Controller) updateLifecycle(cr *v1alpha1.Service) bool {
+func (r *Controller) updateLifecycle(service *v1alpha1.Service) bool {
 	// Skip any CR which are already completed, or uninitialized.
-	if cr.Status.Phase.Is(v1alpha1.PhaseUninitialized, v1alpha1.PhaseSuccess, v1alpha1.PhaseFailed) {
+	if service.Status.Phase.Is(v1alpha1.PhaseUninitialized, v1alpha1.PhaseSuccess, v1alpha1.PhaseFailed) {
 		return false
 	}
 
-	return lifecycle.SingleJob(r.view, &cr.Status.Lifecycle)
+	return lifecycle.SingleJob(r.view, &service.Status.Lifecycle)
 }
 
 // convertPodLifecycle translates the Pod's Lifecycle to Frisbee Lifecycle.
@@ -69,15 +69,14 @@ func convertPodLifecycle(obj client.Object) v1alpha1.Lifecycle {
 						Reason:  container.State.Terminated.Reason,
 						Message: container.State.Terminated.Message,
 					}
-				} else {
-					return v1alpha1.Lifecycle{
-						Phase:   v1alpha1.PhaseFailed,
-						Reason:  container.State.Terminated.Reason,
-						Message: container.State.Terminated.Message,
-					}
+				}
+
+				return v1alpha1.Lifecycle{
+					Phase:   v1alpha1.PhaseFailed,
+					Reason:  container.State.Terminated.Reason,
+					Message: container.State.Terminated.Message,
 				}
 			}
-
 			// TODO: Should we add the case where a side-car fails before the main container?
 		}
 

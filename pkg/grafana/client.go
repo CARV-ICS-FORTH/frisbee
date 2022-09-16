@@ -51,7 +51,7 @@ type Options struct {
 
 type Option func(*Options)
 
-// WithNotifications will update the object's annotations if a Grafana alert is triggered
+// WithNotifications will update the object's annotations if a Grafana alert is triggered.
 func WithNotifications(webhookURL string) Option {
 	return func(args *Options) {
 		args.WebhookURL = &webhookURL
@@ -66,13 +66,13 @@ func WithRegisterFor(obj metav1.Object) Option {
 }
 
 // WithLogger will use the given logger for printing info.
-func WithLogger(r logr.Logger) Option {
+func WithLogger(logger logr.Logger) Option {
 	return func(args *Options) {
-		if r == (logr.Logger{}) {
+		if logger == (logr.Logger{}) {
 			panic("trying to pass empty logger")
 		}
 
-		args.Logger = r
+		args.Logger = logger
 	}
 }
 
@@ -113,9 +113,11 @@ func New(ctx context.Context, setters ...Option) (*Client, error) {
 			resp, errHealth := conn.GetHealth(ctx)
 			switch {
 			case errHealth != nil: // API connection error. Just retry
+
 				return false, nil
 			default:
 				client.logger.Info("Connected to Grafana", "healthStatus", resp)
+
 				return true, nil
 			}
 		}); err != nil {
@@ -172,7 +174,7 @@ func getKey(obj metav1.Object) types.NamespacedName {
 
 // SetClientFor creates a new client for the given object.  It panics if it cannot parse the object's metadata,
 // or if another client is already registers.
-func SetClientFor(obj metav1.Object, c *Client) {
+func SetClientFor(obj metav1.Object, client *Client) {
 	key := getKey(obj)
 
 	clientsLocker.RLock()
@@ -184,10 +186,10 @@ func SetClientFor(obj metav1.Object, c *Client) {
 	}
 
 	clientsLocker.Lock()
-	clients[key] = c
+	clients[key] = client
 	clientsLocker.Unlock()
 
-	c.logger.Info("Set Grafana client for", "obj", key)
+	client.logger.Info("Set Grafana client for", "obj", key)
 }
 
 // GetClientFor returns the client with the given name. It panics if it cannot parse the object's metadata,
@@ -195,6 +197,7 @@ func SetClientFor(obj metav1.Object, c *Client) {
 func GetClientFor(obj metav1.Object) *Client {
 	if !v1alpha1.HasScenarioLabel(obj) {
 		logrus.Warn("No Scenario FOR ", obj.GetName(), " type ", reflect.TypeOf(obj))
+
 		return nil
 	}
 

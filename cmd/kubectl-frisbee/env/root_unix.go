@@ -25,7 +25,7 @@ import (
 	"k8s.io/utils/exec"
 )
 
-func (env *EnvSettings) CheckKubePerms() {
+func (env *EnvironmentSettings) CheckKubePerms() {
 	// This function MUST NOT FAIL, as it is just a check for a common permissions problem.
 	// If for some reason the function hits a stopping condition, it may panic. But only if
 	// we can be sure that it is panicking because Helm cannot proceed.
@@ -60,7 +60,7 @@ func (env *EnvSettings) CheckKubePerms() {
 	env.KubeConfig = kc
 }
 
-func (env *EnvSettings) LookupBinaries() {
+func (env *EnvironmentSettings) LookupBinaries() {
 	kubectlPath, err := exec.New().LookPath("kubectl")
 	ui.ExitOnError("Frisbee requires 'kubectl' to be installed in your system.", err)
 	env.kubectlPath = kubectlPath

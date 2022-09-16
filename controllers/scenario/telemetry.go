@@ -94,13 +94,13 @@ func (r *Controller) StopTelemetry(t *v1alpha1.Scenario) {
 	}
 }
 
-func (r *Controller) installDataviewer(ctx context.Context, t *v1alpha1.Scenario) error {
+func (r *Controller) installDataviewer(ctx context.Context, scenario *v1alpha1.Scenario) error {
 	// Ensure the claim exists, and we do not wait indefinitely.
-	if t.Spec.TestData != nil {
-		claimName := t.Spec.TestData.Claim.ClaimName
-		var claim corev1.PersistentVolumeClaim
+	if scenario.Spec.TestData != nil {
+		claimName := scenario.Spec.TestData.Claim.ClaimName
+		key := client.ObjectKey{Namespace: scenario.GetNamespace(), Name: claimName}
 
-		key := client.ObjectKey{Namespace: t.GetNamespace(), Name: claimName}
+		var claim corev1.PersistentVolumeClaim
 
 		if err := r.GetClient().Get(ctx, key, &claim); err != nil {
 			return errors.Wrapf(err, "cannot verify existence of testdata claim '%s'", claimName)
@@ -113,16 +113,15 @@ func (r *Controller) installDataviewer(ctx context.Context, t *v1alpha1.Scenario
 	job.SetName(defaultDataviewerName)
 
 	// set labels
-	v1alpha1.SetScenarioLabel(&job.ObjectMeta, t.GetName())
+	v1alpha1.SetScenarioLabel(&job.ObjectMeta, scenario.GetName())
 	v1alpha1.SetComponentLabel(&job.ObjectMeta, v1alpha1.ComponentSys)
 
 	{ // spec
-		spec, err := serviceutils.GetServiceSpec(ctx, r.GetClient(), t, v1alpha1.GenerateObjectFromTemplate{
+		spec, err := serviceutils.GetServiceSpec(ctx, r.GetClient(), scenario, v1alpha1.GenerateObjectFromTemplate{
 			TemplateRef:  configuration.DataviewerTemplate,
 			MaxInstances: 1,
 			Inputs:       nil,
 		})
-
 		if err != nil {
 			return errors.Wrapf(err, "cannot get spec")
 		}
@@ -130,14 +129,14 @@ func (r *Controller) installDataviewer(ctx context.Context, t *v1alpha1.Scenario
 		spec.DeepCopyInto(&job.Spec)
 
 		// the dataviewer is the only service that has complete access to the volume's content.
-		job.AttachTestDataVolume(t.Spec.TestData, false)
+		job.AttachTestDataVolume(scenario.Spec.TestData, false)
 	}
 
-	if err := common.Create(ctx, r, t, &job); err != nil {
+	if err := common.Create(ctx, r, scenario, &job); err != nil {
 		return errors.Wrapf(err, "cannot create %s", job.GetName())
 	}
 
-	t.Status.DataviewerEndpoint = common.ExternalEndpoint(defaultDataviewerName, t.GetNamespace())
+	scenario.Status.DataviewerEndpoint = common.ExternalEndpoint(defaultDataviewerName, scenario.GetNamespace())
 
 	return nil
 }
@@ -156,8 +155,8 @@ func (r *Controller) installPrometheus(ctx context.Context, t *v1alpha1.Scenario
 			TemplateRef:  configuration.PrometheusTemplate,
 			MaxInstances: 1,
 			Inputs:       nil,
+			Until:        nil,
 		})
-
 		if err != nil {
 			return errors.Wrapf(err, "cannot get spec")
 		}
@@ -179,44 +178,44 @@ func (r *Controller) installPrometheus(ctx context.Context, t *v1alpha1.Scenario
 	return nil
 }
 
-func (r *Controller) installGrafana(ctx context.Context, t *v1alpha1.Scenario, agentRefs []string) error {
+func (r *Controller) installGrafana(ctx context.Context, scenario *v1alpha1.Scenario, agentRefs []string) error {
 	var job v1alpha1.Service
 
 	job.SetName(defaultGrafanaName)
 
-	v1alpha1.SetScenarioLabel(&job.ObjectMeta, t.GetName())
+	v1alpha1.SetScenarioLabel(&job.ObjectMeta, scenario.GetName())
 	v1alpha1.SetComponentLabel(&job.ObjectMeta, v1alpha1.ComponentSys)
 
 	{ // spec
-		spec, err := serviceutils.GetServiceSpec(ctx, r.GetClient(), t, v1alpha1.GenerateObjectFromTemplate{
+		spec, err := serviceutils.GetServiceSpec(ctx, r.GetClient(), scenario, v1alpha1.GenerateObjectFromTemplate{
 			TemplateRef:  configuration.GrafanaTemplate,
 			MaxInstances: 1,
 			Inputs:       nil,
+			Until:        nil,
 		})
-
 		if err != nil {
 			return errors.Wrapf(err, "cannot get spec")
 		}
 
 		spec.DeepCopyInto(&job.Spec)
 
-		job.AttachTestDataVolume(t.Spec.TestData, true)
+		job.AttachTestDataVolume(scenario.Spec.TestData, true)
 
-		if err := r.importDashboards(ctx, t, &job.Spec, agentRefs); err != nil {
+		if err := r.importDashboards(ctx, scenario, &job.Spec, agentRefs); err != nil {
 			return errors.Wrapf(err, "import dashboards")
 		}
 	}
 
-	if err := common.Create(ctx, r, t, &job); err != nil {
+	if err := common.Create(ctx, r, scenario, &job); err != nil {
 		return errors.Wrapf(err, "cannot create %s", job.GetName())
 	}
 
-	t.Status.GrafanaEndpoint = common.ExternalEndpoint(defaultGrafanaName, t.GetNamespace())
+	scenario.Status.GrafanaEndpoint = common.ExternalEndpoint(defaultGrafanaName, scenario.GetNamespace())
 
 	return nil
 }
 
-func (r *Controller) importDashboards(ctx context.Context, t *v1alpha1.Scenario, spec *v1alpha1.ServiceSpec, telemetryAgents []string) error {
+func (r *Controller) importDashboards(ctx context.Context, scenario *v1alpha1.Scenario, spec *v1alpha1.ServiceSpec, telemetryAgents []string) error {
 	imported := make(map[string]struct{})
 
 	for _, agentRef := range telemetryAgents {
@@ -225,7 +224,7 @@ func (r *Controller) importDashboards(ctx context.Context, t *v1alpha1.Scenario,
 		var dashboards corev1.ConfigMap
 		{
 			key := client.ObjectKey{
-				Namespace: t.GetNamespace(),
+				Namespace: scenario.GetNamespace(),
 				Name:      agentRef + ".config",
 			}
 
@@ -263,10 +262,12 @@ func (r *Controller) importDashboards(ctx context.Context, t *v1alpha1.Scenario,
 
 			for file := range dashboards.Data {
 				mainContainer.VolumeMounts = append(mainContainer.VolumeMounts, corev1.VolumeMount{
-					Name:      volumeName, // Name of a Volume.
-					ReadOnly:  true,
-					MountPath: filepath.Join(defaultPathToGrafanaDashboards, file), // Path within the container
-					SubPath:   file,                                                //  Path within the volume
+					Name:             volumeName, // Name of a Volume.
+					ReadOnly:         true,
+					MountPath:        filepath.Join(defaultPathToGrafanaDashboards, file), // Path within the container
+					SubPath:          file,                                                //  Path within the volume
+					MountPropagation: nil,
+					SubPathExpr:      "",
 				})
 
 				r.Logger.Info("LoadDashboard", "obj", client.ObjectKeyFromObject(&dashboards), "file", file)
@@ -278,7 +279,7 @@ func (r *Controller) importDashboards(ctx context.Context, t *v1alpha1.Scenario,
 }
 
 // ListTelemetryAgents iterates the referenced services (directly via Service or indirectly via Cluster) and list
-// all telemetry dashboards that need to be imported
+// all telemetry dashboards that need to be imported.
 func (r *Controller) ListTelemetryAgents(ctx context.Context, scenario *v1alpha1.Scenario) ([]string, error) {
 	dedup := make(map[string]struct{})
 
@@ -311,14 +312,15 @@ func (r *Controller) ListTelemetryAgents(ctx context.Context, scenario *v1alpha1
 
 // connectToGrafana creates a dedicated link between the scenario controller and the Grafana service.
 // The link must be destroyed if the scenario is deleted, since any new instance will change the ip of Grafana.
-func (r *Controller) connectToGrafana(ctx context.Context, t *v1alpha1.Scenario) error {
-	if t.Status.GrafanaEndpoint == "" {
-		r.Logger.Info("The Grafana endpoint is empty. Skip telemetry.", "scenario", t.GetName())
+func (r *Controller) connectToGrafana(ctx context.Context, scenario *v1alpha1.Scenario) error {
+	if scenario.Status.GrafanaEndpoint == "" {
+		r.Logger.Info("The Grafana endpoint is empty. Skip telemetry.", "scenario", scenario.GetName())
+
 		return nil
 	}
 
 	// if a client exists, return the client directly.
-	if c := grafana.GetClientFor(t); c != nil {
+	if c := grafana.GetClientFor(scenario); c != nil {
 		return nil
 	}
 
@@ -331,23 +333,23 @@ func (r *Controller) connectToGrafana(ctx context.Context, t *v1alpha1.Scenario)
 
 	if configuration.Global.DeveloperMode {
 		/* If in developer mode, the operator runs outside the cluster, and will reach Grafana via the ingress */
-		endpoint = common.ExternalEndpoint(defaultGrafanaName, t.GetNamespace())
+		endpoint = common.ExternalEndpoint(defaultGrafanaName, scenario.GetNamespace())
 	} else {
 		/* If the operator runs within the cluster, it will reach Grafana via the service */
-		endpoint = common.InternalEndpoint(defaultGrafanaName, t.GetNamespace(), GrafanaPort)
+		endpoint = common.InternalEndpoint(defaultGrafanaName, scenario.GetNamespace(), GrafanaPort)
 	}
 
 	_, err := grafana.New(ctx,
-		grafana.WithHTTP(endpoint),   // Connect to ...
-		grafana.WithRegisterFor(t),   // Used by grafana.GetFrisbeeClient(), grafana.ClientExistsFor(), ...
-		grafana.WithLogger(r.Logger), // Log info
+		grafana.WithHTTP(endpoint),        // Connect to ...
+		grafana.WithRegisterFor(scenario), // Used by grafana.GetFrisbeeClient(), grafana.ClientExistsFor(), ...
+		grafana.WithLogger(r.Logger),      // Log info
 		grafana.WithNotifications(WebhookURL),
 	)
 
 	return err
 }
 
-var gracefulShutDown = 30 * time.Second
+var gracefulShutDownTimeout = 30 * time.Second
 
 var WebhookURL string
 
@@ -355,7 +357,7 @@ var startWebhookOnce sync.Once
 
 const alertingWebhook = "alerting-service"
 
-// CreateWebhookServer  creates a Webhook for listening for events from Grafana *
+// CreateWebhookServer  creates a Webhook for listening for events from Grafana.
 func (r *Controller) CreateWebhookServer(ctx context.Context, alertingPort int) error {
 	WebhookURL = fmt.Sprintf("http://%s:%d", alertingWebhook, alertingPort)
 
@@ -371,14 +373,15 @@ func (r *Controller) CreateWebhookServer(ctx context.Context, alertingPort int) 
 
 	// Start the server
 	srv := &http.Server{
-		Addr:    fmt.Sprintf(":%d", alertingPort),
-		Handler: webhook,
+		Addr:              fmt.Sprintf(":%d", alertingPort),
+		Handler:           webhook,
+		ReadHeaderTimeout: 1 * time.Minute, // To DDos that open multiple concurrent streams.
 	}
 
 	idleConnectionsClosed := make(chan error)
 
 	go func() {
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			idleConnectionsClosed <- err
 		}
 	}()
@@ -393,12 +396,13 @@ func (r *Controller) CreateWebhookServer(ctx context.Context, alertingPort int) 
 		}
 
 		// need a new background context for the graceful shutdown. the ctx is already cancelled.
-		gracefulTimeout, cancel := context.WithTimeout(context.Background(), gracefulShutDown)
+		gracefulShutDown, cancel := context.WithTimeout(ctx, gracefulShutDownTimeout)
 		defer cancel()
 
-		if err := srv.Shutdown(gracefulTimeout); err != nil {
+		if err := srv.Shutdown(gracefulShutDown); err != nil {
 			r.Logger.Error(err, "shutting down the webhook server")
 		}
+
 		close(idleConnectionsClosed)
 	}()
 

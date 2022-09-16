@@ -14,30 +14,32 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package service
+package service_test
 
 import (
 	"testing"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
+	"github.com/carv-ics-forth/frisbee/controllers/service"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 func Test_setField(t *testing.T) {
 	cr := v1alpha1.Service{
 		Spec: v1alpha1.ServiceSpec{
 			Requirements: &v1alpha1.Requirements{
-				EphemeralVolume: &v1alpha1.EphemeralVolumeSpec{
-					Name: "bind",
-					Spec: corev1.PersistentVolumeClaimSpec{
-						AccessModes: nil,
-						Selector:    nil,
-						Resources: corev1.ResourceRequirements{
-							Requests: map[corev1.ResourceName]resource.Quantity{"storage": resource.MustParse("1Gi")},
+				/*
+					EphemeralVolume: &v1alpha1.EphemeralVolumeSpec{
+						Name: "bind",
+						Spec: corev1.PersistentVolumeClaimSpec{
+							AccessModes: nil,
+							Selector:    nil,
+							Resources: corev1.ResourceRequirements{
+								Requests: map[corev1.ResourceName]resource.Quantity{"storage": resource.MustParse("1Gi")},
+							},
 						},
 					},
-				},
+				*/
 			},
 
 			PodSpec: corev1.PodSpec{
@@ -92,8 +94,8 @@ func Test_setField(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := setField(tt.args.cr, tt.args.val); (err != nil) != tt.wantErr {
-				t.Errorf("setField() error = %v, wantErr %v", err, tt.wantErr)
+			if err := service.SetField(tt.args.cr, tt.args.val); (err != nil) != tt.wantErr {
+				t.Errorf("SetField() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

@@ -17,16 +17,17 @@ limitations under the License.
 package distributions
 
 import (
+	"math"
+	"math/rand"
+	"strings"
+	"time"
+
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/pingcap/go-ycsb/pkg/generator"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"math"
-	"math/rand"
-	"strings"
-	"time"
 )
 
 type Generator interface {

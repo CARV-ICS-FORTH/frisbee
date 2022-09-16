@@ -40,7 +40,8 @@ const (
 )
 
 const (
-	// Validated over https://regex101.com/r/eXgekO/1
+	// Regex Validated over https://regex101.com/r/eXgekO/1
+
 	NotReadyRegex        = `.* container "(\w+)" in pod "(.*)" is waiting to start: (\w+)`
 	NoPodsFoundReg       = `.* pods "\w+" not found`
 	NotResourcesFoundReg = `No resources found*`
@@ -655,7 +656,7 @@ spec:
 	return err
 }
 
- */
+*/
 
 /*
 ******************************************************************

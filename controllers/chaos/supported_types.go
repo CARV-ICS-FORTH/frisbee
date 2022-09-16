@@ -90,17 +90,17 @@ var (
 	}
 )
 
-func getRawManifest(cr *v1alpha1.Chaos, f *GenericFault) error {
+func getRawManifest(chaos *v1alpha1.Chaos, f *GenericFault) error {
 	var body map[string]interface{}
 
-	if err := yaml.Unmarshal([]byte(cr.Spec.Raw), &body); err != nil {
+	if err := yaml.Unmarshal([]byte(chaos.Spec.Raw), &body); err != nil {
 		return errors.Wrapf(err, "cannot unmarshal manifest")
 	}
 
 	f.SetUnstructuredContent(body)
 
-	f.SetName(cr.GetName())
-	f.SetNamespace(cr.GetNamespace())
+	f.SetName(chaos.GetName())
+	f.SetNamespace(chaos.GetNamespace())
 
 	return nil
 }

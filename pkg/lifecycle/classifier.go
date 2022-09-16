@@ -77,6 +77,7 @@ func (in *Classifier) ClassifyExternal(name string, obj client.Object, conv Conv
 
 	if !obj.GetDeletionTimestamp().IsZero() {
 		in.terminatingJobs[name] = obj
+
 		return
 	}
 
@@ -105,6 +106,7 @@ func (in *Classifier) ClassifyExternal(name string, obj client.Object, conv Conv
 func (in *Classifier) Classify(name string, obj client.Object) {
 	if !obj.GetDeletionTimestamp().IsZero() {
 		in.terminatingJobs[name] = obj
+
 		return
 	}
 
@@ -122,6 +124,7 @@ func (in *Classifier) Classify(name string, obj client.Object) {
 			} else {
 				in.systemJobs[name] = obj
 			}
+
 			return
 		}
 
@@ -155,6 +158,8 @@ func (in *Classifier) SystemState() (abort bool, err error) {
 		phase := job.(v1alpha1.ReconcileStatusAware).GetReconcileStatus().Phase
 
 		switch phase {
+		case v1alpha1.PhaseRunning:
+			continue
 		case v1alpha1.PhaseFailed:
 			return true, errors.Errorf("System Job '%s' has failed", job.GetName())
 		case v1alpha1.PhaseSuccess:

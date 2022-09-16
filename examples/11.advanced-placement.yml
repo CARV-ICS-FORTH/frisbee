@@ -41,7 +41,7 @@ spec:
 apiVersion: frisbee.dev/v1alpha1
 kind: Scenario
 metadata:
-  name: placement
+  name: advanced-placement
 spec:
   actions:
     - action: Service

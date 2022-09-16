@@ -17,7 +17,7 @@ limitations under the License.
 package netutils
 
 import (
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 
@@ -36,7 +36,7 @@ func GetPublicIP() (net.IP, error) {
 		return nil, errors.Wrap(err, "cannot contact public IP address API")
 	}
 
-	ipStr, err := ioutil.ReadAll(resp.Body)
+	ipStr, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, "ip decoding error")
 	}

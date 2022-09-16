@@ -60,8 +60,8 @@ type Path struct {
 	npmPath     string
 }
 
-// EnvSettings describes all the environment settings.
-type EnvSettings struct {
+// EnvironmentSettings describes all the environment settings.
+type EnvironmentSettings struct {
 	// Paths to external commands
 	Path
 
@@ -97,8 +97,8 @@ type EnvSettings struct {
 	client *frisbeeclient.APIClient
 }
 
-func New() *EnvSettings {
-	env := &EnvSettings{
+func New() *EnvironmentSettings {
+	env := &EnvironmentSettings{
 		// interaction with Kubernetes
 		// namespace: os.Getenv("FRISBEE_NAMESPACE"),
 		//		KubeContext: os.Getenv("FRISBEE_KUBECONTEXT"),
@@ -137,7 +137,7 @@ func New() *EnvSettings {
 }
 
 // AddFlags binds flags to the given flagset.
-func (env *EnvSettings) AddFlags(cmd *cobra.Command) {
+func (env *EnvironmentSettings) AddFlags(cmd *cobra.Command) {
 	pfs := cmd.PersistentFlags()
 
 	pfs.StringVar(&env.KubeConfig, "kubeconfig", env.KubeConfig, "path to the kubeconfig file")
@@ -214,12 +214,12 @@ func (env *EnvSettings) SetNamespace(namespace string) {
 */
 
 // RESTClientGetter gets the kubeconfig from EnvSettings.
-func (env *EnvSettings) RESTClientGetter() genericclioptions.RESTClientGetter {
+func (env *EnvironmentSettings) RESTClientGetter() genericclioptions.RESTClientGetter {
 	return env.config
 }
 
 // GetFrisbeeClient returns api client
-func (env *EnvSettings) GetFrisbeeClient() *frisbeeclient.APIClient {
+func (env *EnvironmentSettings) GetFrisbeeClient() *frisbeeclient.APIClient {
 	if env.client != nil {
 		return env.client
 	}
@@ -236,10 +236,11 @@ func (env *EnvSettings) GetFrisbeeClient() *frisbeeclient.APIClient {
 
 	c := frisbeeclient.NewDirectAPIClient(genericClient)
 	env.client = &c
+
 	return env.client
 }
 
-func (env *EnvSettings) Hint(msg string, sub ...string) {
+func (env *EnvironmentSettings) Hint(msg string, sub ...string) {
 	if env.Hints {
 		ui.Success(msg, sub...)
 	}

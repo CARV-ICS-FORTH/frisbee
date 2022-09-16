@@ -174,11 +174,9 @@ func NewInspectTestCmd() *cobra.Command {
 				ui.ExitOnError("== Events ==", err)
 
 				ui.Success("== Scenario Events ==")
-
 			}
 
 			if options.Logs != nil || options.All {
-
 				ui.NL()
 				err := common.GetPodLogs(testName, false, options.Loglines, options.Logs...)
 

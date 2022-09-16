@@ -20,7 +20,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// ConditionType is a valid value for WorkflowCondition.Type
+// ConditionType is a valid value for WorkflowCondition.Type.
 type ConditionType string
 
 func (t ConditionType) String() string {
@@ -29,7 +29,7 @@ func (t ConditionType) String() string {
 
 // These are valid conditions of pod.
 const (
-	// ConditionCRInitialized indicates whether the workflow has been initialized
+	// ConditionCRInitialized indicates whether the workflow has been initialized.
 	ConditionCRInitialized = ConditionType("Initialized")
 
 	// ConditionAllJobsAreScheduled indicates that all jobs have been successfully scheduled.
@@ -132,8 +132,7 @@ type ReconcileStatusAware interface {
 
 // +kubebuilder:object:generate=false
 
-// StateAggregationFunctions is a set of aggregation functions for managing the lifecycle of different resources.
-type StateAggregationFunctions interface {
+type JobStatus interface {
 	// IsPending returns true if the given jobs are Pending phase.
 	IsPending(job ...string) bool
 	// IsRunning returns true if the given jobs are Running phase.
@@ -144,7 +143,11 @@ type StateAggregationFunctions interface {
 	IsFailed(job ...string) bool
 	// IsTerminating returns true if the given jobs are being deleted.
 	IsTerminating(job ...string) bool
+}
 
+// +kubebuilder:object:generate=false
+
+type NumberOfJobs interface {
 	// NumPendingJobs returns the number of jobs in Pending Phase.
 	NumPendingJobs() int
 	// NumRunningJobs returns the number of jobs in Running Phase.
@@ -155,7 +158,11 @@ type StateAggregationFunctions interface {
 	NumFailedJobs() int
 	// NumTerminatingJobs returns the number of jobs that are being deleted.
 	NumTerminatingJobs() int
+}
 
+// +kubebuilder:object:generate=false
+
+type ListJobs interface {
 	// ListPendingJobs returns the name of jobs in Pending Phase.
 	ListPendingJobs() []string
 	// ListRunningJobs returns the name of jobs in Running Phase.
@@ -166,6 +173,15 @@ type StateAggregationFunctions interface {
 	ListFailedJobs() []string
 	// ListTerminatingJobs returns the name of jobs that are being deleted.
 	ListTerminatingJobs() []string
+}
+
+// +kubebuilder:object:generate=false
+
+// StateAggregationFunctions is a set of aggregation functions for managing the lifecycle of different resources.
+type StateAggregationFunctions interface {
+	JobStatus
+	NumberOfJobs
+	ListJobs
 }
 
 var _ StateAggregationFunctions = (*DefaultClassifier)(nil)

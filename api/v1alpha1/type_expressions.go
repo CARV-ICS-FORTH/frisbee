@@ -45,16 +45,16 @@ type ConditionalExpr struct {
 	State ExprState `json:"state,omitempty"`
 }
 
-func (c *ConditionalExpr) IsZero() bool {
-	return c == nil || *c == (ConditionalExpr{})
+func (in *ConditionalExpr) IsZero() bool {
+	return in == nil || *in == (ConditionalExpr{})
 }
 
-func (c *ConditionalExpr) HasMetricsExpr() bool {
-	return c != nil && c.Metrics != ""
+func (in *ConditionalExpr) HasMetricsExpr() bool {
+	return in != nil && in.Metrics != ""
 }
 
-func (c *ConditionalExpr) HasStateExpr() bool {
-	return c != nil && c.State != ""
+func (in *ConditionalExpr) HasStateExpr() bool {
+	return in != nil && in.State != ""
 }
 
 /*
@@ -102,7 +102,7 @@ func (expr ExprState) GoValuate(state interface{}) (bool, error) {
 
 	expression, err := govaluate.NewEvaluableExpression(out)
 	if err != nil {
-		return false, errors.Wrapf(err, "Invalid  expression '%s'.", expr)
+		return false, errors.Wrapf(err, "invalid  expression '%s'", expr)
 	}
 
 	// The following loop converts govaluate variables (which we don't use), into strings. This

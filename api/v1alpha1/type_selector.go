@@ -28,9 +28,9 @@ const (
 	AllMode Mode = "all"
 	// FixedMode represents that the system will select a specific number of running objects.
 	FixedMode Mode = "fixed"
-	// FixedPercentMode to specify a fixed % of a cluster
+	// FixedPercentMode to specify a fixed % of a cluster.
 	FixedPercentMode Mode = "fixed-percent"
-	// RandomMaxPercentMode to specify a maximum % of a cluster
+	// RandomMaxPercentMode to specify a maximum % of a cluster.
 	RandomMaxPercentMode Mode = "random-max-percent"
 )
 

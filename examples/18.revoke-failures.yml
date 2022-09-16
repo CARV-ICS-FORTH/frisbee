@@ -41,7 +41,6 @@ spec:
     containers:
       - name: app
         image: czero/iperf2
-        ports:
         command:
           - /bin/sh   # Run shell
           - -c        # Read from string

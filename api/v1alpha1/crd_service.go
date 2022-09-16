@@ -35,13 +35,13 @@ type Service struct {
 	Status ServiceStatus `json:"status,omitempty"`
 }
 
-func (s *Service) AttachTestDataVolume(source *TestdataVolume, useSubPath bool) {
+func (in *Service) AttachTestDataVolume(source *TestdataVolume, useSubPath bool) {
 	if source == nil {
 		return
 	}
 
 	// add volume to the pod
-	s.Spec.Volumes = append(s.Spec.Volumes, corev1.Volume{
+	in.Spec.Volumes = append(in.Spec.Volumes, corev1.Volume{
 		Name: source.Claim.ClaimName,
 		VolumeSource: corev1.VolumeSource{
 			PersistentVolumeClaim: &source.Claim,
@@ -50,45 +50,37 @@ func (s *Service) AttachTestDataVolume(source *TestdataVolume, useSubPath bool) 
 
 	subpath := ""
 	if useSubPath && !source.GlobalNamespace {
-		subpath = s.GetName()
+		subpath = in.GetName()
 	}
 
 	// mount volume to initContainers
-	for i := 0; i < len(s.Spec.InitContainers); i++ {
-		s.Spec.InitContainers[i].VolumeMounts = append(s.Spec.InitContainers[i].VolumeMounts, corev1.VolumeMount{
-			Name:      source.Claim.ClaimName, // Name of a Volume.
-			ReadOnly:  source.Claim.ReadOnly,
-			MountPath: "/testdata", // Path within the container
-			SubPath:   subpath,     //  Path within the volume
+	for i := 0; i < len(in.Spec.InitContainers); i++ {
+		in.Spec.InitContainers[i].VolumeMounts = append(in.Spec.InitContainers[i].VolumeMounts, corev1.VolumeMount{
+			Name:             source.Claim.ClaimName, // Name of a Volume.
+			ReadOnly:         source.Claim.ReadOnly,
+			MountPath:        "/testdata", // Path within the container
+			SubPath:          subpath,     //  Path within the volume
+			MountPropagation: nil,
+			SubPathExpr:      "",
 		})
 	}
 
 	// mount volume to application containers
-	for i := 0; i < len(s.Spec.Containers); i++ {
-		s.Spec.Containers[i].VolumeMounts = append(s.Spec.Containers[i].VolumeMounts, corev1.VolumeMount{
-			Name:      source.Claim.ClaimName, // Name of a Volume.
-			ReadOnly:  source.Claim.ReadOnly,
-			MountPath: "/testdata", // Path within the container
-			SubPath:   subpath,     //  Path within the volume
+	for i := 0; i < len(in.Spec.Containers); i++ {
+		in.Spec.Containers[i].VolumeMounts = append(in.Spec.Containers[i].VolumeMounts, corev1.VolumeMount{
+			Name:             source.Claim.ClaimName, // Name of a Volume.
+			ReadOnly:         source.Claim.ReadOnly,
+			MountPath:        "/testdata", // Path within the container
+			SubPath:          subpath,     //  Path within the volume
+			MountPropagation: nil,
+			SubPathExpr:      "",
 		})
 	}
-}
-
-// EphemeralVolumeSpec defines an ephemeral volume that has the  lifetime of a pod,
-// It's use for application that need additional storage but don't care whether
-// that data is stored persistently across restarts.
-type EphemeralVolumeSpec struct {
-	Name string                           `json:"name"`
-	Spec corev1.PersistentVolumeClaimSpec `json:"spec,omitempty"`
 }
 
 // Requirements points to Kinds and their respective configurations required for the Service operation.
 // For example, this field can be used to create PVCs dedicated to this service.
 type Requirements struct {
-	// EphemeralVolume creates an ephemeral volume type.
-	// +optional
-	EphemeralVolume *EphemeralVolumeSpec `json:"persistentVolumeClaim,omitempty"`
-
 	// Ingress makes An API object that manages external access to the services in a cluster, typically HTTP.
 	// +optional
 	Ingress *netv1.IngressBackend `json:"ingressBackend,omitempty"`
@@ -149,6 +141,8 @@ type Decorators struct {
 
 	// Resources specifies limitations as to how the container will access host resources.
 	// +optional
+	//
+	// Deprecated: Use the Cluster.Resource.Distribution
 	Resources *Resources `json:"resources,omitempty"`
 
 	// Telemetry is a list of referenced agents responsible to monitor the Service.

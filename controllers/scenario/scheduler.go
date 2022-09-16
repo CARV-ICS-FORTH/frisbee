@@ -78,6 +78,7 @@ func (r *Controller) NextJobs(cr *v1alpha1.Scenario) (runNext []v1alpha1.Action,
 			for _, dep := range deps.Running {
 				if r.view.IsSuccessful(dep) || r.view.IsFailed(dep) {
 					err := errors.Errorf("action '%s' has a Running dependency on completed job '%s'", action.Name, dep)
+
 					return nil, time.Now(), err
 				}
 			}

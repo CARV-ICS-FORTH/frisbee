@@ -18,10 +18,11 @@ package v1alpha1
 
 import (
 	"fmt"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"strings"
 	"time"
+
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type ResourceDistributionSpec struct {
@@ -135,7 +136,8 @@ func (in ResourceDistribution) Table() (header []string, data [][]string) {
 func (in ResourceDistribution) String() string {
 	var out strings.Builder
 
-	out.WriteString(fmt.Sprintf("\n=== Resource Distribution ===\n"))
+	out.WriteString("\n=== Resource Distribution ===\n")
+
 	for i, node := range in {
 		out.WriteString(fmt.Sprintf("\n=== node_%d ===", i))
 		out.WriteString(fmt.Sprintf("\n* CPU: %.2f", node.Cpu().AsApproximateFloat64()))

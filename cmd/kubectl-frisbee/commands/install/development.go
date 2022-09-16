@@ -18,9 +18,10 @@ package install
 
 import (
 	"fmt"
-	"github.com/kubeshop/testkube/pkg/process"
 	"net"
 	"os"
+
+	"github.com/kubeshop/testkube/pkg/process"
 
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/common"
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/env"

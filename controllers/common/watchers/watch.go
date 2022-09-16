@@ -41,51 +41,51 @@ func Watch(r common.Reconciler, gvk schema.GroupVersionKind) builder.Predicates 
 
 type simpleWatch struct{}
 
-func (w *simpleWatch) Watch(r common.Reconciler, gvk schema.GroupVersionKind) builder.Predicates {
+func (w *simpleWatch) Watch(reconciler common.Reconciler, gvk schema.GroupVersionKind) builder.Predicates {
 	return builder.WithPredicates(predicate.Funcs{
-		CreateFunc:  w.watchCreate(r, gvk),
-		DeleteFunc:  w.watchDelete(r, gvk),
-		UpdateFunc:  w.watchUpdate(r, gvk),
-		GenericFunc: w.watchGeneric(r, gvk),
+		CreateFunc:  w.watchCreate(reconciler, gvk),
+		DeleteFunc:  w.watchDelete(reconciler, gvk),
+		UpdateFunc:  w.watchUpdate(reconciler, gvk),
+		GenericFunc: w.watchGeneric(),
 	})
 }
 
-func (w *simpleWatch) watchCreate(r common.Reconciler, gvk schema.GroupVersionKind) CreateFunc {
-	return func(e event.CreateEvent) bool {
-		if !common.IsManagedByThisController(e.Object, gvk) {
+func (w *simpleWatch) watchCreate(reconciler common.Reconciler, gvk schema.GroupVersionKind) CreateFunc {
+	return func(event event.CreateEvent) bool {
+		if !common.IsManagedByThisController(event.Object, gvk) {
 			return false
 		}
 
-		if !e.Object.GetDeletionTimestamp().IsZero() {
+		if !event.Object.GetDeletionTimestamp().IsZero() {
 			// on a restart of the controller manager, it's possible a new pod shows up in a state that
 			// is already pending deletion. Prevent the pod from being a creation observation.
 			return false
 		}
 
-		r.Info("** Detected",
+		reconciler.Info("** Detected",
 			"Request", "Create",
-			"kind", reflect.TypeOf(e.Object),
-			"obj", client.ObjectKeyFromObject(e.Object),
-			"version", e.Object.GetResourceVersion(),
+			"kind", reflect.TypeOf(event.Object),
+			"obj", client.ObjectKeyFromObject(event.Object),
+			"version", event.Object.GetResourceVersion(),
 		)
 
 		return true
 	}
 }
 
-func (w *simpleWatch) watchUpdate(r common.Reconciler, gvk schema.GroupVersionKind) UpdateFunc {
-	return func(e event.UpdateEvent) bool {
-		if !common.IsManagedByThisController(e.ObjectNew, gvk) {
+func (w *simpleWatch) watchUpdate(reconciler common.Reconciler, gvk schema.GroupVersionKind) UpdateFunc {
+	return func(event event.UpdateEvent) bool {
+		if !common.IsManagedByThisController(event.ObjectNew, gvk) {
 			return false
 		}
 
-		if e.ObjectOld.GetResourceVersion() >= e.ObjectNew.GetResourceVersion() {
+		if event.ObjectOld.GetResourceVersion() >= event.ObjectNew.GetResourceVersion() {
 			// Periodic resync will send update events for all known pods.
 			// Two different versions of the same pod will always have different RVs.
 			return false
 		}
 
-		if !e.ObjectNew.GetDeletionTimestamp().IsZero() {
+		if !event.ObjectNew.GetDeletionTimestamp().IsZero() {
 			// when an object is deleted gracefully it's deletion timestamp is first modified to reflect a grace period,
 			// and after such time has passed, the kubelet actually deletes it from the store. We receive an update
 			// for modification of the deletion timestamp and expect the reconciler to act asap, not to wait until the
@@ -94,20 +94,21 @@ func (w *simpleWatch) watchUpdate(r common.Reconciler, gvk schema.GroupVersionKi
 		}
 
 		// if the status is the same, there is no need to inform the service
-		prev := e.ObjectOld.(v1alpha1.ReconcileStatusAware)
-		latest := e.ObjectNew.(v1alpha1.ReconcileStatusAware)
+		prev := event.ObjectOld.(v1alpha1.ReconcileStatusAware)
+		latest := event.ObjectNew.(v1alpha1.ReconcileStatusAware)
 
-		r.Info("** Detected",
+		reconciler.Info("** Detected",
 			"Request", "Update",
-			"kind", reflect.TypeOf(e.ObjectNew),
-			"obj", client.ObjectKeyFromObject(e.ObjectNew),
+			"kind", reflect.TypeOf(event.ObjectNew),
+			"obj", client.ObjectKeyFromObject(event.ObjectNew),
 			"phase", fmt.Sprintf("%s -> %s", prev.GetReconcileStatus().Phase, latest.GetReconcileStatus().Phase),
 			"version", fmt.Sprintf("%s -> %s", prev.GetResourceVersion(), latest.GetResourceVersion()),
 		)
 
 		// a controller never initiates a phase change, and so is never asleep waiting for the same.
 		if prev.GetReconcileStatus().Phase == latest.GetReconcileStatus().Phase {
-			r.Info("Ignore Update", "obj", client.ObjectKeyFromObject(e.ObjectNew))
+			reconciler.Info("Ignore Update", "obj", client.ObjectKeyFromObject(event.ObjectNew))
+
 			return false
 		}
 
@@ -115,33 +116,33 @@ func (w *simpleWatch) watchUpdate(r common.Reconciler, gvk schema.GroupVersionKi
 	}
 }
 
-func (w *simpleWatch) watchDelete(r common.Reconciler, gvk schema.GroupVersionKind) DeleteFunc {
-	return func(e event.DeleteEvent) bool {
-		if !common.IsManagedByThisController(e.Object, gvk) {
+func (w *simpleWatch) watchDelete(reconciler common.Reconciler, gvk schema.GroupVersionKind) DeleteFunc {
+	return func(event event.DeleteEvent) bool {
+		if !common.IsManagedByThisController(event.Object, gvk) {
 			return false
 		}
 
 		// an object was deleted but the watch deletion event was missed while disconnected from apiserver.
 		// In this case we don't know the final "resting" state of the object,
 		// so there's a chance the included `Obj` is stale.
-		if e.DeleteStateUnknown {
-			runtimeutil.HandleError(errors.Errorf("couldn'w get object from tombstone %+v", e.Object))
+		if event.DeleteStateUnknown {
+			runtimeutil.HandleError(errors.Errorf("couldn'w get object from tombstone %+v", event.Object))
 
 			return false
 		}
 
-		r.Info("** Detected",
+		reconciler.Info("** Detected",
 			"Request", "Delete",
-			"kind", reflect.TypeOf(e.Object),
-			"obj", client.ObjectKeyFromObject(e.Object),
-			"version", e.Object.GetResourceVersion(),
+			"kind", reflect.TypeOf(event.Object),
+			"obj", client.ObjectKeyFromObject(event.Object),
+			"version", event.Object.GetResourceVersion(),
 		)
 
 		return true
 	}
 }
 
-func (w *simpleWatch) watchGeneric(r common.Reconciler, gvk schema.GroupVersionKind) GenericFunc {
+func (w *simpleWatch) watchGeneric() GenericFunc {
 	return func(e event.GenericEvent) bool {
 		return true
 	}

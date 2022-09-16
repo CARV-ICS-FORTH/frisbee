@@ -31,11 +31,12 @@ func (ui *UI) Table(tableData TableData, writer io.Writer) {
 
 func (ui *UI) JSONTable(tableData TableData, writer io.Writer) error {
 	_, data := tableData.Table()
+
 	return json.NewEncoder(writer).Encode(data)
 }
 
 func (ui *UI) NewArrayTable(a [][]string) ArrayTable {
-	return ArrayTable(a)
+	return a
 }
 
 type ArrayTable [][]string

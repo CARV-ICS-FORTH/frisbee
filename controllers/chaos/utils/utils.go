@@ -28,29 +28,30 @@ import (
 )
 
 func GetChaosSpec(ctx context.Context, c client.Client, parent metav1.Object, fromTemplate v1alpha1.GenerateObjectFromTemplate) (v1alpha1.ChaosSpec, error) {
-	t, err := templateutils.GetTemplate(ctx, c, parent, fromTemplate.TemplateRef)
+	template, err := templateutils.GetTemplate(ctx, c, parent, fromTemplate.TemplateRef)
 	if err != nil {
 		return v1alpha1.ChaosSpec{}, errors.Wrapf(err, "getTemplate error")
 	}
 
 	// convert the chaos to a json and then expand templated values.
-	body, err := json.Marshal(t.Spec.Chaos)
+	body, err := json.Marshal(template.Spec.Chaos)
 	if err != nil {
 		return v1alpha1.ChaosSpec{}, errors.Errorf("cannot marshal chaos of %s", fromTemplate.TemplateRef)
 	}
 
-	spec := v1alpha1.ChaosSpec{}
+	var spec v1alpha1.ChaosSpec
 
 	// set extra runtime fields.
-	if t.Spec.Inputs == nil {
-		t.Spec.Inputs = &v1alpha1.TemplateInputs{}
+	if template.Spec.Inputs == nil {
+		var inputs v1alpha1.TemplateInputs
+		template.Spec.Inputs = &inputs
 	}
 
 	// add extra fields in the template
-	t.Spec.Inputs.Scenario = v1alpha1.GetScenarioLabel(parent)
-	t.Spec.Inputs.Namespace = parent.GetNamespace()
+	template.Spec.Inputs.Scenario = v1alpha1.GetScenarioLabel(parent)
+	template.Spec.Inputs.Namespace = parent.GetNamespace()
 
-	if err := fromTemplate.Generate(&spec, 0, t.Spec, body); err != nil {
+	if err := fromTemplate.Generate(&spec, 0, template.Spec, body); err != nil {
 		return v1alpha1.ChaosSpec{}, errors.Wrapf(err, "evaluation of template '%s' has failed", fromTemplate.TemplateRef)
 	}
 
@@ -58,13 +59,13 @@ func GetChaosSpec(ctx context.Context, c client.Client, parent metav1.Object, fr
 }
 
 func GetChaosSpecList(ctx context.Context, c client.Client, parent metav1.Object, fromTemplate v1alpha1.GenerateObjectFromTemplate) ([]v1alpha1.ChaosSpec, error) {
-	t, err := templateutils.GetTemplate(ctx, c, parent, fromTemplate.TemplateRef)
+	template, err := templateutils.GetTemplate(ctx, c, parent, fromTemplate.TemplateRef)
 	if err != nil {
 		return nil, errors.Wrapf(err, "template %s error", fromTemplate.TemplateRef)
 	}
 
 	// convert the chaos to a json and then expand templated values.
-	body, err := json.Marshal(t.Spec.Chaos)
+	body, err := json.Marshal(template.Spec.Chaos)
 	if err != nil {
 		return nil, errors.Errorf("cannot marshal chaos of %s", fromTemplate.TemplateRef)
 	}
@@ -72,13 +73,13 @@ func GetChaosSpecList(ctx context.Context, c client.Client, parent metav1.Object
 	specs := make([]v1alpha1.ChaosSpec, 0, fromTemplate.MaxInstances)
 
 	// add extra fields in the template
-	t.Spec.Inputs.Scenario = v1alpha1.GetScenarioLabel(parent)
-	t.Spec.Inputs.Namespace = parent.GetNamespace()
+	template.Spec.Inputs.Scenario = v1alpha1.GetScenarioLabel(parent)
+	template.Spec.Inputs.Namespace = parent.GetNamespace()
 
 	if err := fromTemplate.IterateInputs(func(nextInputSet uint) error {
-		spec := v1alpha1.ChaosSpec{}
+		var spec v1alpha1.ChaosSpec
 
-		if err := fromTemplate.Generate(&spec, nextInputSet, t.Spec, body); err != nil {
+		if err := fromTemplate.Generate(&spec, nextInputSet, template.Spec, body); err != nil {
 			return errors.Wrapf(err, "evaluation of template '%s' has failed", fromTemplate.TemplateRef)
 		}
 

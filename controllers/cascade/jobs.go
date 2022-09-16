@@ -28,49 +28,48 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Cascade, i int) error {
+func (r *Controller) runJob(ctx context.Context, cascade *v1alpha1.Cascade, jobIndex int) error {
 	var job v1alpha1.Chaos
 
 	// Populate the job
-	job.SetName(common.GenerateName(cr, i, cr.Spec.MaxInstances))
+	job.SetName(common.GenerateName(cascade, jobIndex, cascade.Spec.MaxInstances))
 
-	v1alpha1.SetScenarioLabel(&job.ObjectMeta, v1alpha1.GetScenarioLabel(cr))
-	v1alpha1.SetComponentLabel(&job.ObjectMeta, v1alpha1.GetComponentLabel(cr))
+	v1alpha1.SetScenarioLabel(&job.ObjectMeta, v1alpha1.GetScenarioLabel(cascade))
+	v1alpha1.SetComponentLabel(&job.ObjectMeta, v1alpha1.GetComponentLabel(cascade))
 
 	// modulo is needed to re-iterate the job list, required for the implementation of "Until".
-	jobSpec := cr.Status.QueuedJobs[i%len(cr.Status.QueuedJobs)]
+	jobSpec := cascade.Status.QueuedJobs[jobIndex%len(cascade.Status.QueuedJobs)]
 
 	jobSpec.DeepCopyInto(&job.Spec)
 
-	if err := common.Create(ctx, r, cr, &job); err != nil {
+	if err := common.Create(ctx, r, cascade, &job); err != nil {
 		return err
 	}
 
-	r.GetEventRecorderFor(cr.GetName()).Event(cr, corev1.EventTypeNormal, "Scheduled", job.GetName())
+	r.GetEventRecorderFor(cascade.GetName()).Event(cascade, corev1.EventTypeNormal, "Scheduled", job.GetName())
 
 	return nil
 }
 
-func (r *Controller) constructJobSpecList(ctx context.Context, cr *v1alpha1.Cascade) ([]v1alpha1.ChaosSpec, error) {
-	specs, err := chaosutils.GetChaosSpecList(ctx, r.GetClient(), cr, cr.Spec.GenerateObjectFromTemplate)
+func (r *Controller) constructJobSpecList(ctx context.Context, cascade *v1alpha1.Cascade) ([]v1alpha1.ChaosSpec, error) {
+	specs, err := chaosutils.GetChaosSpecList(ctx, r.GetClient(), cascade, cascade.Spec.GenerateObjectFromTemplate)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot get specs")
 	}
 
-	SetTimeline(cr)
+	SetTimeline(cascade)
 
 	return specs, nil
 }
 
-func SetTimeline(cr *v1alpha1.Cascade) {
-	if cr.Spec.Schedule == nil || cr.Spec.Schedule.Timeline == nil {
+func SetTimeline(cascade *v1alpha1.Cascade) {
+	if cascade.Spec.Schedule == nil || cascade.Spec.Schedule.Timeline == nil {
 		return
 	}
 
-	generator := distributions.GetPointDistribution(int64(cr.Spec.MaxInstances),
-		cr.Spec.Schedule.Timeline.DistributionSpec)
+	generator := distributions.GetPointDistribution(int64(cascade.Spec.MaxInstances),
+		cascade.Spec.Schedule.Timeline.DistributionSpec)
 
-	cr.Status.Timeline = generator.ApplyToTimeline(cr.GetCreationTimestamp(),
-		*cr.Spec.Schedule.Timeline.TotalDuration)
-
+	cascade.Status.Timeline = generator.ApplyToTimeline(cascade.GetCreationTimestamp(),
+		*cascade.Spec.Schedule.Timeline.TotalDuration)
 }

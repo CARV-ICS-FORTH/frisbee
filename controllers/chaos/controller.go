@@ -18,7 +18,6 @@ package chaos
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 	"time"
 
@@ -65,26 +64,26 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		1: Load CR by name and extract the Desired State
 		------------------------------------------------------------------
 	*/
-	var cr v1alpha1.Chaos
+	var chaos v1alpha1.Chaos
 
 	var requeue bool
-	result, err := common.Reconcile(ctx, r, req, &cr, &requeue)
+	result, err := common.Reconcile(ctx, r, req, &chaos, &requeue)
 
 	if requeue {
 		return result, err
 	}
 
 	r.Logger.Info("-> Reconcile",
-		"obj", client.ObjectKeyFromObject(&cr),
-		"phase", cr.Status.Phase,
-		"version", cr.GetResourceVersion(),
+		"obj", client.ObjectKeyFromObject(&chaos),
+		"phase", chaos.Status.Phase,
+		"version", chaos.GetResourceVersion(),
 	)
 
 	defer func() {
 		r.Logger.Info("<- Reconcile",
-			"obj", client.ObjectKeyFromObject(&cr),
-			"phase", cr.Status.Phase,
-			"version", cr.GetResourceVersion(),
+			"obj", client.ObjectKeyFromObject(&chaos),
+			"phase", chaos.Status.Phase,
+			"version", chaos.GetResourceVersion(),
 		)
 	}()
 
@@ -93,7 +92,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		------------------------------------------------------------------
 	*/
 	if err := r.PopulateView(ctx, req.NamespacedName); err != nil {
-		return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "cannot populate view for '%s'", req))
+		return lifecycle.Failed(ctx, r, &chaos, errors.Wrapf(err, "cannot populate view for '%s'", req))
 	}
 
 	/*
@@ -102,8 +101,9 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		The Update serves as "journaling" for the upcoming operations,
 		and as a roadblock for stall (queued) requests.
 	*/
-	r.updateLifecycle(&cr)
-	if err := common.UpdateStatus(ctx, r, &cr); err != nil {
+	r.updateLifecycle(&chaos)
+
+	if err := common.UpdateStatus(ctx, r, &chaos); err != nil {
 		// due to the multiple updates, it is possible for this function to
 		// be in conflict. We fix this issue by re-queueing the request.
 		return common.RequeueAfter(time.Second)
@@ -113,16 +113,16 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		4: Make the world matching what we want in our spec.
 		------------------------------------------------------------------
 	*/
-	switch cr.Status.Phase {
+	switch chaos.Status.Phase {
 	case v1alpha1.PhaseSuccess:
-		if err := r.HasSucceed(ctx, &cr); err != nil {
+		if err := r.HasSucceed(ctx, &chaos); err != nil {
 			return common.RequeueAfter(time.Second)
 		}
 
 		return common.Stop()
 
 	case v1alpha1.PhaseFailed:
-		if err := r.HasFailed(ctx, &cr); err != nil {
+		if err := r.HasFailed(ctx, &chaos); err != nil {
 			return common.RequeueAfter(time.Second)
 		}
 
@@ -131,8 +131,8 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	case v1alpha1.PhaseRunning:
 		// Nothing to do. Just wait for something to happen.
 		r.Logger.Info(".. Awaiting",
-			"obj", client.ObjectKeyFromObject(&cr),
-			cr.Status.Reason, cr.Status.Message,
+			"obj", client.ObjectKeyFromObject(&chaos),
+			chaos.Status.Reason, chaos.Status.Message,
 		)
 
 		return common.Stop()
@@ -140,19 +140,19 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	case v1alpha1.PhaseUninitialized, v1alpha1.PhasePending:
 
 		// Avoid re-scheduling a scheduled job
-		if cr.Status.LastScheduleTime != nil {
+		if chaos.Status.LastScheduleTime != nil {
 			return common.Stop()
 		}
 
 		// Build the job in kubernetes
-		if err := r.runJob(ctx, &cr); err != nil {
-			return lifecycle.Failed(ctx, r, &cr, errors.Wrapf(err, "injection failed"))
+		if err := r.runJob(ctx, &chaos); err != nil {
+			return lifecycle.Failed(ctx, r, &chaos, errors.Wrapf(err, "injection failed"))
 		}
 
 		// Update the scheduling information
-		cr.Status.LastScheduleTime = &metav1.Time{Time: time.Now()}
+		chaos.Status.LastScheduleTime = &metav1.Time{Time: time.Now()}
 
-		return lifecycle.Pending(ctx, r, &cr, "injecting fault")
+		return lifecycle.Pending(ctx, r, &chaos, "injecting fault")
 	}
 
 	panic(errors.New("This should never happen"))
@@ -165,6 +165,7 @@ func (r *Controller) PopulateView(ctx context.Context, req types.NamespacedName)
 	// client's parses will return the following error: "Object 'Kind' is missing in 'unstructured object has no kind'"
 	// To avoid that, we ignore errors if the map is empty -- yielding the same behavior as empty, but valid objects.
 	var networkChaosList GenericFaultList
+
 	networkChaosList.SetGroupVersionKind(NetworkChaosGVK)
 	{
 		if err := common.ListChildren(ctx, r, &networkChaosList, req); err != nil {
@@ -177,6 +178,7 @@ func (r *Controller) PopulateView(ctx context.Context, req types.NamespacedName)
 	}
 
 	var podChaosList GenericFaultList
+
 	podChaosList.SetGroupVersionKind(PodChaosGVK)
 	{
 		if err := common.ListChildren(ctx, r, &podChaosList, req); err != nil {
@@ -189,6 +191,7 @@ func (r *Controller) PopulateView(ctx context.Context, req types.NamespacedName)
 	}
 
 	var ioChaosList GenericFaultList
+
 	ioChaosList.SetGroupVersionKind(IOChaosGVK)
 	{
 		if err := common.ListChildren(ctx, r, &ioChaosList, req); err != nil {
@@ -201,6 +204,7 @@ func (r *Controller) PopulateView(ctx context.Context, req types.NamespacedName)
 	}
 
 	var kernelChaosList GenericFaultList
+
 	kernelChaosList.SetGroupVersionKind(KernelChaosGVK)
 	{
 		if err := common.ListChildren(ctx, r, &kernelChaosList, req); err != nil {
@@ -213,6 +217,7 @@ func (r *Controller) PopulateView(ctx context.Context, req types.NamespacedName)
 	}
 
 	var timeChaosList GenericFaultList
+
 	timeChaosList.SetGroupVersionKind(TimeChaosGVK)
 	{
 		if err := common.ListChildren(ctx, r, &timeChaosList, req); err != nil {
@@ -227,9 +232,9 @@ func (r *Controller) PopulateView(ctx context.Context, req types.NamespacedName)
 	return nil
 }
 
-func (r *Controller) HasSucceed(ctx context.Context, cr *v1alpha1.Chaos) error {
+func (r *Controller) HasSucceed(ctx context.Context, chaos *v1alpha1.Chaos) error {
 	r.Logger.Info("CleanOnSuccess",
-		"obj", client.ObjectKeyFromObject(cr).String(),
+		"obj", client.ObjectKeyFromObject(chaos).String(),
 		"successfulJobs", r.view.ListSuccessfulJobs(),
 	)
 
@@ -240,9 +245,9 @@ func (r *Controller) HasSucceed(ctx context.Context, cr *v1alpha1.Chaos) error {
 	return nil
 }
 
-func (r *Controller) HasFailed(ctx context.Context, cr *v1alpha1.Chaos) error {
-	r.Logger.Error(fmt.Errorf(cr.Status.Message), "!! "+cr.Status.Reason,
-		"obj", client.ObjectKeyFromObject(cr).String())
+func (r *Controller) HasFailed(ctx context.Context, chaos *v1alpha1.Chaos) error {
+	r.Logger.Error(errors.Errorf(chaos.Status.Message), "!! "+chaos.Status.Reason,
+		"obj", client.ObjectKeyFromObject(chaos).String())
 
 	// Remove the non-failed components. Leave the failed jobs and system jobs for postmortem analysis.
 	for _, job := range r.view.GetPendingJobs() {
@@ -284,7 +289,7 @@ func (r *Controller) Finalize(obj client.Object) error {
 */
 
 func NewController(mgr ctrl.Manager, logger logr.Logger) error {
-	r := &Controller{
+	controller := &Controller{
 		Manager:           mgr,
 		Logger:            logger.WithName("chaos"),
 		gvk:               v1alpha1.GroupVersion.WithKind("Chaos"),
@@ -292,32 +297,31 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 		view:              &lifecycle.Classifier{},
 	}
 
-	var networkChaos GenericFault
+	var (
+		chaos        v1alpha1.Chaos
+		networkChaos GenericFault
+		podChaos     GenericFault
+		// blockChaos Fault
+		ioChaos     GenericFault
+		kernelChaos GenericFault
+		timeChaos   GenericFault
+	)
+
 	networkChaos.SetGroupVersionKind(NetworkChaosGVK)
-
-	var podChaos GenericFault
 	podChaos.SetGroupVersionKind(PodChaosGVK)
-
-	// var blockChaos Fault
 	// blockChaos.SetGroupVersionKind(BlockChaosGVK)
-
-	var ioChaos GenericFault
 	ioChaos.SetGroupVersionKind(IOChaosGVK)
-
-	var kernelChaos GenericFault
 	kernelChaos.SetGroupVersionKind(KernelChaosGVK)
-
-	var timeChaos GenericFault
 	timeChaos.SetGroupVersionKind(TimeChaosGVK)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named("chaos").
-		For(&v1alpha1.Chaos{}).
-		Owns(&networkChaos, builder.WithPredicates(r.Watchers())).
-		Owns(&podChaos, builder.WithPredicates(r.Watchers())).
-		// Owns(&blockChaos, builder.WithPredicates(r.Watchers())).
-		Owns(&ioChaos, builder.WithPredicates(r.Watchers())).
-		Owns(&kernelChaos, builder.WithPredicates(r.Watchers())).
-		Owns(&timeChaos, builder.WithPredicates(r.Watchers())).
-		Complete(r)
+		For(&chaos).
+		Owns(&networkChaos, builder.WithPredicates(controller.Watchers())).
+		Owns(&podChaos, builder.WithPredicates(controller.Watchers())).
+		// Owns(&blockChaos, builder.WithPredicates(controller.Watchers())).
+		Owns(&ioChaos, builder.WithPredicates(controller.Watchers())).
+		Owns(&kernelChaos, builder.WithPredicates(controller.Watchers())).
+		Owns(&timeChaos, builder.WithPredicates(controller.Watchers())).
+		Complete(controller)
 }

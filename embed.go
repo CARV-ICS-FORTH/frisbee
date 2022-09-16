@@ -36,7 +36,7 @@ var Hack embed.FS
 func CopyLocallyIfNotExists(static embed.FS, installationDir string) error {
 	root := "."
 
-	return fs.WalkDir(static, root, func(path string, d fs.DirEntry, err error) error {
+	return fs.WalkDir(static, root, func(path string, d fs.DirEntry, _ error) error {
 		if path == root {
 			// ignore the root
 			return nil
@@ -61,25 +61,21 @@ func CopyLocallyIfNotExists(static embed.FS, installationDir string) error {
 		switch {
 		case fInfo.Mode().IsRegular():
 			localInfo, err := os.Stat(path)
-			if os.IsNotExist(err) {
-				// copy file to the installation fs.
+			switch {
+			case os.IsNotExist(err):
 				data, err := fs.ReadFile(static, path)
 				if err != nil {
 					return errors.Wrapf(err, "cannot read embedded file '%s'", path)
 				}
-
 				if err := os.WriteFile(filepath.Join(installationDir, path), data, os.ModePerm); err != nil {
 					return errors.Wrapf(err, "cannot copy '%s' to installation dir", path)
 				}
-
 				return nil
-
-			} else if err != nil {
+			case err != nil:
 				return errors.Wrapf(err, "cannot stat installation path '%s'", path)
-			} else if !localInfo.Mode().IsRegular() {
+			case !localInfo.Mode().IsRegular():
 				return errors.Errorf("Expected '%s' to be a file, but it's '%s'.", path, localInfo.Mode().Type())
-			} else {
-				// the file is as expected. nothing to do.
+			default:
 				return nil
 			}
 
@@ -88,6 +84,7 @@ func CopyLocallyIfNotExists(static embed.FS, installationDir string) error {
 			if os.IsNotExist(err) {
 				// open or create dir in the installation fs
 				err := os.MkdirAll(filepath.Join(installationDir, path), os.ModePerm)
+
 				return errors.Wrapf(err, "cannot create dir '%s' in the installation fs", path)
 			} else if err != nil {
 				return errors.Wrapf(err, "cannot stat installation path '%s'", path)

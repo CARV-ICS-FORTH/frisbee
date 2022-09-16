@@ -8,6 +8,6 @@ spec:
     - action: Service
       name: fio
       service:
-        templateRef: fio.benchmark.bind-fs
+        templateRef: fio.benchmark.ephemeral
         inputs:
           - { direct: "1" }

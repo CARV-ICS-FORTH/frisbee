@@ -233,7 +233,7 @@ func (c *Client) SetAlert(ctx context.Context, alert *Alert, name string, msg st
 	for _, panel := range board.Panels {
 		if panel.ID == alert.PanelID {
 			if panel.Alert != nil {
-				return errors.Errorf("Alert [%s] has already been set for this panel.", panel.Alert.Name)
+				return errors.Errorf("alert [%s] has already been set for this panel", panel.Alert.Name)
 			}
 
 			panel.Alert = &sdk.Alert{
@@ -283,6 +283,7 @@ func (c *Client) SetAlert(ctx context.Context, alert *Alert, name string, msg st
 		case errReq != nil: // API connection error. Just retry
 			c.logger.Info("Failed to set alert. Retry", "alertName", name, "resp", resp)
 			return false, nil
+
 		case *resp.Status != StatusSuccess: // Unexpected response
 			return false, errors.Errorf("expected status '%s', but got '%s'", StatusSuccess, *resp.Status)
 

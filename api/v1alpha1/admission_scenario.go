@@ -46,9 +46,9 @@ func (in *Scenario) SetupWebhookWithManager(mgr ctrl.Manager) error {
 		Complete()
 }
 
-// Default implements webhook.Defaulter so a webhook will be registered for the type
+// Default implements webhook.Defaulter so a webhook will be registered for the type.
 func (in *Scenario) Default() {
-	scenariolog.V(5).Info("default", "name", in.Name)
+	scenariolog.Info("default", "name", in.Name)
 
 	// TODO(user): fill in your defaulting logic.
 }
@@ -254,17 +254,17 @@ func CheckAction(action *Action, references map[string]*Action) error {
 	}
 }
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (in *Scenario) ValidateUpdate(old runtime.Object) error {
-	scenariolog.V(5).Info("validate update", "name", in.Name)
+// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
+func (in *Scenario) ValidateUpdate(runtime.Object) error {
+	scenariolog.Info("validate update", "name", in.Name)
 
 	// TODO(user): fill in your validation logic upon object update.
 	return nil
 }
 
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
+// ValidateDelete implements webhook.Validator so a webhook will be registered for the type.
 func (in *Scenario) ValidateDelete() error {
-	scenariolog.V(5).Info("validate delete", "name", in.Name)
+	scenariolog.Info("validate delete", "name", in.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.
 	return nil

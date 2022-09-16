@@ -18,6 +18,7 @@ package utils
 
 import (
 	"context"
+
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/pkg/errors"
 	k8errors "k8s.io/apimachinery/pkg/api/errors"
@@ -36,6 +37,7 @@ func GetTemplate(ctx context.Context, c client.Client, who metav1.Object, ref st
 	}
 
 	err := c.Get(ctx, key, &template)
+
 	switch {
 	case k8errors.IsNotFound(err):
 		return nil, errors.Wrapf(err, "cannot find '%s at namespace '%s", ref, who.GetNamespace())

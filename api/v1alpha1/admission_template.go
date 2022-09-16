@@ -42,16 +42,14 @@ func (in *Template) SetupWebhookWithManager(mgr ctrl.Manager) error {
 		Complete()
 }
 
-// Default implements webhook.Defaulter so a webhook will be registered for the type
+// Default implements webhook.Defaulter so a webhook will be registered for the type.
 func (in *Template) Default() {
-	templatelog.V(5).Info("default", "name", in.Name)
-
-	// TODO(user): fill in your defaulting logic.
+	templatelog.Info("default", "name", in.Name)
 }
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
+// ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
 func (in *Template) ValidateCreate() error {
-	templatelog.V(5).Info("validate create", "name", in.Name)
+	templatelog.Info("validate create", "name", in.Name)
 
 	if err := in.validateTemplateLanguage(); err != nil {
 		return errors.Wrapf(err, "erroneous template '%s'", in.GetName())
@@ -69,7 +67,8 @@ func (in *Template) validateTemplateLanguage() error {
 
 		// these fields are expected to be set at runtime. use dummy just for the validation.
 		if in.Spec.Inputs == nil {
-			in.Spec.Inputs = &TemplateInputs{}
+			var inputs TemplateInputs
+			in.Spec.Inputs = &inputs
 		}
 
 		in.Spec.Inputs.Scenario = "dummy"
@@ -99,17 +98,17 @@ func (in *Template) validateTemplateLanguage() error {
 	return nil
 }
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (in *Template) ValidateUpdate(old runtime.Object) error {
-	templatelog.V(5).Info("validate update", "name", in.Name)
+// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
+func (in *Template) ValidateUpdate(runtime.Object) error {
+	templatelog.Info("validate update", "name", in.Name)
 
 	// TODO(user): fill in your validation logic upon object update.
 	return nil
 }
 
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
+// ValidateDelete implements webhook.Validator so a webhook will be registered for the type.
 func (in *Template) ValidateDelete() error {
-	templatelog.V(5).Info("validate delete", "name", in.Name)
+	templatelog.Info("validate delete", "name", in.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.
 	return nil

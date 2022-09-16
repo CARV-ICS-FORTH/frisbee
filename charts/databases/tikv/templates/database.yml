@@ -11,30 +11,30 @@ spec:
       cpu: ""
       memory: ""
   service:
-    requirements: # Requirements
-      ephemeralVolumeClaim:
-        name: datastore
-        spec:
-          storageClassName: local-volume
-          accessModes:
-            - ReadWriteOnce
-          resources:
-            requests:
-              storage: 15Gi
-
     decorators: # Decorators
-      telemetry:
-        - system.telemetry.agent
-        - tikv.telemetry.pd
+      telemetry: [system.telemetry.agent, tikv.telemetry.pd]
       resources: # Resources
         cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
         memory: {{"{{.Inputs.Parameters.memory}}" |quote}}
+
+    volumes:   # Create an ephemeral volume, backed by a file
+      - name: scratch-volume
+        ephemeral:
+          volumeClaimTemplate:
+            spec:
+              storageClassName: local-volume
+              accessModes:
+                - ReadWriteOnce
+              resources:
+                requests:
+                  storage: 15Gi
+
 
     containers: # Container
       - name: app
         image: pingcap/pd:v5.1.2
         volumeMounts:
-          - name: datastore
+          - name:  scratch-volume
             mountPath: /store
         ports:
           - name: to-clients
@@ -75,30 +75,29 @@ spec:
       cpu: ""
       memory: ""
   service:
-    requirements: # Requirements
-      ephemeralVolumeClaim:
-        name: datastore
-        spec:
-          storageClassName: local-volume
-          accessModes:
-            - ReadWriteOnce
-          resources:
-            requests:
-              storage: 15Gi
-
     decorators: # Decorators
-      telemetry:
-        - system.telemetry.agent
-        - tikv.telemetry.worker
+      telemetry: [ system.telemetry.agent, tikv.telemetry.worker ]
       resources: # Resources
         cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
-        memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
+        memory: {{"{{.Inputs.Parameters.memory}}" |quote}}
+
+    volumes: # Create an ephemeral volume, backed by a file
+      - name: scratch-volume
+        ephemeral:
+          volumeClaimTemplate:
+            spec:
+              storageClassName: local-volume
+              accessModes:
+                - ReadWriteOnce
+              resources:
+                requests:
+                  storage: 15Gi
 
     containers: # Container
       - name: app
         image: pingcap/tikv:v5.1.2
         volumeMounts:
-          - name: datastore
+          - name: scratch-volume
             mountPath: /store
         ports:
           - name: clusterbus

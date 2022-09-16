@@ -1,18 +1,19 @@
 package distributions
 
 import (
+	"reflect"
+	"testing"
+	"time"
+
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/pingcap/go-ycsb/pkg/generator"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"reflect"
-	"testing"
-	"time"
 )
 
 func TestPointDistribution_ApplyToResources(t *testing.T) {
-	var N = int64(10)
+	N := int64(10)
 
 	// the way to distribute resources
 	constant := NewPointDistribution(N, generator.NewConstant(N))
@@ -73,7 +74,7 @@ func TestPointDistribution_ApplyToResources(t *testing.T) {
 }
 
 func TestPointDistribution_ApplyToTimeline(t *testing.T) {
-	var N = int64(10)
+	N := int64(10)
 
 	// the way to distribute resources
 	constant := NewPointDistribution(N, generator.NewConstant(N))
