@@ -58,8 +58,6 @@ spec:
                     description: Scenario returns the scenario from which the template
                       is called from.
                     type: string
-                required:
-                - parameters
                 type: object
               service:
                 description: ServiceSpec defines the desired state of Service.

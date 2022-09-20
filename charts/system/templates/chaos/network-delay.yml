@@ -21,13 +21,13 @@ spec:
       spec:
         action: delay
         mode: all
-        duration: {{"{{.Inputs.Parameters.duration}}" | quote}}
+        duration: {{"{{.inputs.parameters.duration}}" | quote}}
         selector:
           pods:
               {{.Release.Namespace}}:
-                - {{"{{.Inputs.Parameters.source}}" | quote}}
+                - {{"{{.inputs.parameters.source}}" | quote}}
         delay:
-          latency: {{"{{.Inputs.Parameters.latency}}" | quote}}
-          correlation: {{"{{.Inputs.Parameters.correlation}}" | quote}}
-          jitter: {{"{{.Inputs.Parameters.jitter}}" | quote}}
+          latency: {{"{{.inputs.parameters.latency}}" | quote}}
+          correlation: {{"{{.inputs.parameters.correlation}}" | quote}}
+          jitter: {{"{{.inputs.parameters.jitter}}" | quote}}
 

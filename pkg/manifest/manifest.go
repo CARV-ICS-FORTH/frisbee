@@ -25,7 +25,7 @@ import (
 	"path/filepath"
 )
 
-// ReadManifest reads from stdin, a single file/url, or a list of files and/or urls
+// ReadManifest reads from stdin, a single file/url, or a list of files and/or urls.
 func ReadManifest(manifestPaths ...string) ([][]byte, error) {
 	var manifestContents [][]byte
 	var err error
@@ -55,7 +55,7 @@ func ReadFromStdin() ([]byte, error) {
 	return body, err
 }
 
-// ReadFromFilePathsOrUrls reads the content of a single or a list of file paths and/or urls
+// ReadFromFilePathsOrUrls reads the content of a single or a list of file paths and/or urls.
 func ReadFromFilePathsOrUrls(filePathsOrUrls ...string) ([][]byte, error) {
 	var fileContents [][]byte
 	var body []byte
@@ -79,7 +79,7 @@ func ReadFromFilePathsOrUrls(filePathsOrUrls ...string) ([][]byte, error) {
 	return fileContents, err
 }
 
-// ReadFromUrl reads the content of a URL
+// ReadFromUrl reads the content of a URL.
 func ReadFromUrl(url string) ([]byte, error) {
 	response, err := http.Get(url) //nolint:gosec
 	if err != nil {
@@ -95,7 +95,7 @@ func ReadFromUrl(url string) ([]byte, error) {
 	return body, err
 }
 
-// IsURL returns whether a string is a URL
+// IsURL returns whether a string is a URL.
 func IsURL(u string) bool {
 	var parsedURL *url.URL
 	var err error

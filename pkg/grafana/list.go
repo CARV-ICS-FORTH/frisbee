@@ -38,7 +38,7 @@ func (c *Client) ListPanelsWithData(ctx context.Context, dashboardUID string) ([
 		return nil, errors.Wrapf(err, "cannot retrieve dashboard %s", dashboardUID)
 	}
 
-	var panels []Panel
+	panels := make([]Panel, 0, len(board.Panels))
 
 	for _, panel := range board.Panels {
 		panels = append(panels, Panel{

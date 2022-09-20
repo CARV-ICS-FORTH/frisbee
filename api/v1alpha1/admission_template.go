@@ -60,39 +60,41 @@ func (in *Template) ValidateCreate() error {
 
 func (in *Template) validateTemplateLanguage() error {
 	{ // Ensure the template is ok and there are no brackets missing.
-		specBody, err := json.Marshal(in.Spec)
+		body, err := json.Marshal(in.Spec)
 		if err != nil {
 			return errors.Wrapf(err, "marshal error")
 		}
 
 		// these fields are expected to be set at runtime. use dummy just for the validation.
-		if in.Spec.Inputs == nil {
-			var inputs TemplateInputs
-			in.Spec.Inputs = &inputs
+		var inputs interface{}
+
+		if in.Spec.Inputs != nil {
+			inputs = struct {
+				Inputs *TemplateInputs `json:"inputs"`
+			}{
+				in.Spec.Inputs,
+			}
 		}
 
-		in.Spec.Inputs.Scenario = "dummy"
-		in.Spec.Inputs.Namespace = "dummy"
-
-		if _, err := ExprState(specBody).Evaluate(in.Spec); err != nil {
+		if _, err := ExprState(body).Evaluate(inputs); err != nil {
 			return errors.Wrapf(err, "template language error")
 		}
 	}
 
 	if in.Spec.Service != nil {
-		v := Service{
+		service := Service{
 			Spec: *in.Spec.Service,
 		}
 
-		return errors.Wrapf(v.ValidateCreate(), "service definition error")
+		return errors.Wrapf(service.ValidateCreate(), "service definition error")
 	}
 
 	if in.Spec.Chaos != nil {
-		v := Chaos{
+		chaos := Chaos{
 			Spec: *in.Spec.Chaos,
 		}
 
-		return errors.Wrapf(v.ValidateCreate(), "chaos definition error")
+		return errors.Wrapf(chaos.ValidateCreate(), "chaos definition error")
 	}
 
 	return nil

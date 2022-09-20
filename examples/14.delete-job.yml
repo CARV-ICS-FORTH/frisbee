@@ -33,7 +33,7 @@ spec:
       - name: app
         image: czero/iperf2
         command: [ iperf ]
-        args: [ "-c", "{{.Inputs.Parameters.target}}", "-t", "500" ]
+        args: [ "-c", "{{.inputs.parameters.target}}", "-t", "500" ]
 
 
 ---

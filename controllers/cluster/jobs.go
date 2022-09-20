@@ -28,27 +28,25 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Cluster, i int) error {
+func (r *Controller) runJob(ctx context.Context, cluster *v1alpha1.Cluster, i int) error {
 	var job v1alpha1.Service
 
 	// Populate the job
-	job.SetName(common.GenerateName(cr, i, cr.Spec.MaxInstances))
-
-	v1alpha1.SetScenarioLabel(&job.ObjectMeta, v1alpha1.GetScenarioLabel(cr))
-	v1alpha1.SetComponentLabel(&job.ObjectMeta, v1alpha1.GetComponentLabel(cr))
+	job.SetName(common.GenerateName(cluster, i, cluster.Spec.MaxInstances))
+	v1alpha1.PropagateLabels(&job, cluster)
 
 	// modulo is needed to re-iterate the job list, required for the implementation of "Until".
-	jobSpec := cr.Status.QueuedJobs[i%len(cr.Status.QueuedJobs)]
+	jobSpec := cluster.Status.QueuedJobs[i%len(cluster.Status.QueuedJobs)]
 
 	jobSpec.DeepCopyInto(&job.Spec)
 
-	job.AttachTestDataVolume(cr.Spec.TestData, true)
+	job.AttachTestDataVolume(cluster.Spec.TestData, true)
 
-	if err := common.Create(ctx, r, cr, &job); err != nil {
+	if err := common.Create(ctx, r, cluster, &job); err != nil {
 		return err
 	}
 
-	r.GetEventRecorderFor(cr.GetName()).Event(cr, corev1.EventTypeNormal, "Scheduled", job.GetName())
+	r.GetEventRecorderFor(cluster.GetName()).Event(cluster, corev1.EventTypeNormal, "Scheduled", job.GetName())
 
 	return nil
 }
@@ -69,8 +67,7 @@ func (r *Controller) constructJobSpecList(ctx context.Context, cluster *v1alpha1
 }
 
 func SetPlacement(cluster *v1alpha1.Cluster, services []v1alpha1.ServiceSpec) {
-	placement := cluster.Spec.Placement
-	if placement == nil {
+	if cluster.Spec.Placement == nil {
 		return
 	}
 
@@ -84,7 +81,7 @@ func SetPlacement(cluster *v1alpha1.Cluster, services []v1alpha1.ServiceSpec) {
 	*/
 	var affinity corev1.Affinity
 
-	if placement.Nodes != nil { // Match pods to a node
+	if cluster.Spec.Placement.Nodes != nil { // Match pods to a node
 		affinity.NodeAffinity = &corev1.NodeAffinity{
 			/*
 				If the affinity requirements specified by this field are not met at
@@ -100,7 +97,7 @@ func SetPlacement(cluster *v1alpha1.Cluster, services []v1alpha1.ServiceSpec) {
 							{
 								Key:      "kubernetes.io/hostname",
 								Operator: corev1.NodeSelectorOpIn,
-								Values:   placement.Nodes,
+								Values:   cluster.Spec.Placement.Nodes,
 							},
 						},
 					},
@@ -109,7 +106,7 @@ func SetPlacement(cluster *v1alpha1.Cluster, services []v1alpha1.ServiceSpec) {
 		}
 	}
 
-	if placement.Collocate { // Place together all the Pods that belong to this cluster
+	if cluster.Spec.Placement.Collocate { // Place together all the Pods that belong to this cluster
 		affinity.PodAffinity = &corev1.PodAffinity{
 			RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
 				{
@@ -117,7 +114,7 @@ func SetPlacement(cluster *v1alpha1.Cluster, services []v1alpha1.ServiceSpec) {
 						MatchExpressions: []metav1.LabelSelectorRequirement{
 							{
 								Key:      v1alpha1.LabelAction,
-								Operator: metav1.LabelSelectorOperator(corev1.NodeSelectorOpIn),
+								Operator: metav1.LabelSelectorOpIn,
 								Values:   []string{cluster.GetName()},
 							},
 						},
@@ -128,7 +125,7 @@ func SetPlacement(cluster *v1alpha1.Cluster, services []v1alpha1.ServiceSpec) {
 		}
 	}
 
-	if placement.ConflictsWith != nil { // Stay away from Pods that belong on  other clusters
+	if cluster.Spec.Placement.ConflictsWith != nil { // Stay away from Pods that belong to other Clusters
 		affinity.PodAntiAffinity = &corev1.PodAntiAffinity{
 			RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
 				{
@@ -136,8 +133,8 @@ func SetPlacement(cluster *v1alpha1.Cluster, services []v1alpha1.ServiceSpec) {
 						MatchExpressions: []metav1.LabelSelectorRequirement{
 							{
 								Key:      v1alpha1.LabelAction,
-								Operator: metav1.LabelSelectorOperator(corev1.NodeSelectorOpIn),
-								Values:   placement.ConflictsWith,
+								Operator: metav1.LabelSelectorOpIn,
+								Values:   cluster.Spec.Placement.ConflictsWith,
 							},
 						},
 					},

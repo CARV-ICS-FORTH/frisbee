@@ -19,10 +19,9 @@ package scenario
 import (
 	"time"
 
+	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/pkg/structure"
 	"github.com/pkg/errors"
-
-	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

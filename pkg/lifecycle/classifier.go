@@ -155,9 +155,12 @@ func (in *Classifier) Classify(name string, obj client.Object) {
 
 func (in *Classifier) SystemState() (abort bool, err error) {
 	for _, job := range in.systemJobs {
-		phase := job.(v1alpha1.ReconcileStatusAware).GetReconcileStatus().Phase
+		statusAware, ok := job.(v1alpha1.ReconcileStatusAware)
+		if !ok {
+			return true, errors.Errorf("job '%s' does not implement status interface", job.GetName())
+		}
 
-		switch phase {
+		switch statusAware.GetReconcileStatus().Phase {
 		case v1alpha1.PhaseRunning:
 			continue
 		case v1alpha1.PhaseFailed:

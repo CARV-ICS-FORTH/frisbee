@@ -19,12 +19,10 @@ package scheduler
 import (
 	"time"
 
-	"github.com/go-logr/logr"
-
+	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/pkg/expressions"
 	"github.com/carv-ics-forth/frisbee/pkg/lifecycle"
-
-	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
+	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"github.com/robfig/cron/v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

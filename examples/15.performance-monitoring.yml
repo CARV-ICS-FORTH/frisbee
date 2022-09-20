@@ -5,7 +5,7 @@ metadata:
   name: iperf.server
 spec:
   service:
-    decorators: # Add support for Telemetry
+    decorators: # Add support for Telemetry22
       telemetry: [ system.telemetry.agent ]
       resources:
         cpu: "1"
@@ -50,7 +50,7 @@ spec:
             set -eum
             cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
             
-            iperf -c {{.Inputs.Parameters.target}} -t 1000 > /dev/shm/pipe
+            iperf -c {{.inputs.parameters.target}} -t 1000 > /dev/shm/pipe
 
 
 ---

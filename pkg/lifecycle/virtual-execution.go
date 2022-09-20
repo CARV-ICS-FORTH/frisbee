@@ -39,6 +39,7 @@ func buildVirtualObject(parent metav1.Object, name string) *v1alpha1.VirtualObje
 
 	v1alpha1.PropagateLabels(&vobject, parent)
 
+	// FIXME: are these fields really needed ?
 	v1alpha1.SetScenarioLabel(&vobject.ObjectMeta, parent.GetName())
 	v1alpha1.SetComponentLabel(&vobject.ObjectMeta, v1alpha1.ComponentSUT)
 
@@ -51,22 +52,23 @@ func buildVirtualObject(parent metav1.Object, name string) *v1alpha1.VirtualObje
 // If the callback function fails, it will be reflected in the created virtual jobs and should be captured
 // by the parent's lifecycle. The VirtualExecution will return nil.
 // If the VirtualExecution fails (e.g, cannot create a virtual object), it will return an error.
-func VirtualExecution(ctx context.Context, r common.Reconciler, parent client.Object, jobName string,
-	cb func(vobj *v1alpha1.VirtualObject) error,
+func VirtualExecution(ctx context.Context, reconciler common.Reconciler, parent client.Object, jobName string,
+	callable func(vobj *v1alpha1.VirtualObject) error,
 ) error {
 	// Step 1. Create the object in the Kubernetes API
 	vJob := buildVirtualObject(parent, jobName)
 
-	if err := common.Create(ctx, r, parent, vJob); err != nil {
+	if err := common.Create(ctx, reconciler, parent, vJob); err != nil {
 		return errors.Wrapf(err, "cannot create virtual resource for vJob '%s'", jobName)
 	}
 
-	r.GetEventRecorderFor(parent.GetName()).Event(parent, corev1.EventTypeNormal, "VExecBegin", jobName)
+	reconciler.GetEventRecorderFor(parent.GetName()).Event(parent, corev1.EventTypeNormal, "VExecBegin", jobName)
 
 	// Step 2. Run the callback function with support for context cancelling
 	quit := make(chan error)
+
 	go func() {
-		quit <- cb(vJob)
+		quit <- callable(vJob)
 		close(quit)
 	}()
 
@@ -79,18 +81,17 @@ func VirtualExecution(ctx context.Context, r common.Reconciler, parent client.Ob
 
 	// Step 3. Update the status of the virtual job
 	if jobErr != nil {
-		r.GetEventRecorderFor(parent.GetName()).Event(parent, corev1.EventTypeWarning, "VExecFailed", jobName)
+		reconciler.GetEventRecorderFor(parent.GetName()).Event(parent, corev1.EventTypeWarning, "VExecFailed", jobName)
 
 		vJob.Status.Lifecycle.Phase = v1alpha1.PhaseFailed
 		vJob.Status.Lifecycle.Reason = "VExecFailed"
 		vJob.Status.Lifecycle.Message = errors.Wrapf(jobErr, "Job failed").Error()
 	} else {
-
-		r.GetEventRecorderFor(parent.GetName()).Event(parent, corev1.EventTypeNormal, "VExecSuccess", jobName)
+		reconciler.GetEventRecorderFor(parent.GetName()).Event(parent, corev1.EventTypeNormal, "VExecSuccess", jobName)
 
 		vJob.Status.Lifecycle.Phase = v1alpha1.PhaseSuccess
 		vJob.Status.Lifecycle.Reason = "VExecSuccess"
-		vJob.Status.Lifecycle.Message = fmt.Sprintf("Job completed")
+		vJob.Status.Lifecycle.Message = "Job completed"
 	}
 
 	// Step 4. Append information for stored data, if any
@@ -99,6 +100,7 @@ func VirtualExecution(ctx context.Context, r common.Reconciler, parent client.Ob
 	}
 
 	// Step 5. Update the status of the mockup. This will be captured by the lifecycle.
-	err := common.UpdateStatus(ctx, r, vJob)
+	err := common.UpdateStatus(ctx, reconciler, vJob)
+
 	return errors.Wrapf(err, "vexec status update error")
 }

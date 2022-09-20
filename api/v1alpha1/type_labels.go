@@ -64,52 +64,69 @@ const (
 )
 
 func SetScenarioLabel(obj *metav1.ObjectMeta, scenario string) {
-	oldScenario, exists := obj.GetLabels()[scenario]
+	oldValue, exists := obj.GetLabels()[scenario]
 	if !exists {
 		metav1.SetMetaDataLabel(obj, LabelScenario, scenario)
 
 		return
 	}
 
-	if oldScenario == scenario {
+	if oldValue == scenario {
 		logrus.Warnf("Overwriting scenario '%s' on object '%s'", scenario, obj.GetName())
 	} else {
 		panic(errors.Errorf("setting scenario '%s' failed. obj: '%s' already has scenario '%s'",
-			scenario, obj.GetName(), oldScenario,
+			scenario, obj.GetName(), oldValue,
+		))
+	}
+}
+
+func SetActionLabel(obj *metav1.ObjectMeta, actionName string) {
+	oldValue, exists := obj.GetLabels()[actionName]
+	if !exists {
+		metav1.SetMetaDataLabel(obj, LabelAction, actionName)
+
+		return
+	}
+
+	if oldValue == actionName {
+		logrus.Warnf("Overwriting action '%s' on object '%s'", oldValue, obj.GetName())
+	} else {
+		panic(errors.Errorf("setting action '%s' failed. obj: '%s' already has action '%s'",
+			actionName, obj.GetName(), oldValue,
 		))
 	}
 }
 
 func SetComponentLabel(obj *metav1.ObjectMeta, componentType Component) {
-	oldType, exists := obj.GetLabels()[string(componentType)]
+	oldValue, exists := obj.GetLabels()[string(componentType)]
 	if !exists {
 		metav1.SetMetaDataLabel(obj, LabelComponent, string(componentType))
 
 		return
 	}
 
-	if oldType == string(componentType) {
+	if oldValue == string(componentType) {
 		logrus.Warnf("Overwriting component type '%s' on object '%s'", componentType, obj.GetName())
 	} else {
 		panic(errors.Errorf("setting component type '%s' failed. obj: '%s' already has type '%s'",
-			componentType, obj.GetName(), oldType,
+			componentType, obj.GetName(), oldValue,
 		))
 	}
 }
 
 func SetCreatedByLabel(child client.Object, parent client.Object) {
-	oldParent, exists := child.GetLabels()[parent.GetName()]
+	oldValue, exists := child.GetLabels()[parent.GetName()]
 	if !exists {
 		child.SetLabels(labels.Merge(child.GetLabels(), map[string]string{LabelCreatedBy: parent.GetName()}))
 
 		return
 	}
 
-	if oldParent == parent.GetName() {
+	if oldValue == parent.GetName() {
 		logrus.Warnf("Overwriting parent '%s' on object '%s'", parent.GetName(), child.GetName())
 	} else {
 		panic(errors.Errorf("setting parent '%s' failed. obj: '%s' already has type '%s'",
-			parent.GetName(), child.GetName(), oldParent,
+			parent.GetName(), child.GetName(), oldValue,
 		))
 	}
 }

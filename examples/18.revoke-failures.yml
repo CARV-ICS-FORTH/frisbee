@@ -48,7 +48,7 @@ spec:
             set -eum
             cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app
             
-            iperf -c {{.Inputs.Parameters.target}} -t 500
+            iperf -c {{.inputs.parameters.target}} -t 500
 
 ---
 apiVersion: frisbee.dev/v1alpha1

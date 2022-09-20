@@ -28,9 +28,9 @@ spec:
             mkdir /scratch
 
             DEVICE=/scratch
-            SIZE={{"{{.Inputs.Parameters.size}}"}}
-            DIRECT={{"{{.Inputs.Parameters.direct}}"}}
-            IOENGINE={{"{{.Inputs.Parameters.ioengine}}"}}
+            SIZE={{"{{.inputs.parameters.size}}"}}
+            DIRECT={{"{{.inputs.parameters.direct}}"}}
+            IOENGINE={{"{{.inputs.parameters.ioengine}}"}}
 
             {{ range .Files.Lines "scripts/fio.sh" }}
             {{ . }}

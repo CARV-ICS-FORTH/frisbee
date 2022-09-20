@@ -21,8 +21,6 @@ import (
 	"reflect"
 	"time"
 
-	"k8s.io/apimachinery/pkg/util/wait"
-
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -30,6 +28,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"

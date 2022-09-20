@@ -52,7 +52,7 @@ spec:
             set -eum
             cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app
             
-            iperf -c {{.Inputs.Parameters.target}} -t 120 -i 5  >> /testdata/my_logs
+            iperf -c {{.inputs.parameters.target}} -t 120 -i 5  >> /testdata/my_logs
 
 ---
 # In order to have shared logs, we must first create a network volume.

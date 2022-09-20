@@ -21,7 +21,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// NewTestInspectionClient creates new Test client
+// NewTestInspectionClient creates new Test client.
 func NewTestInspectionClient(client client.Client, exec executor.Executor) TestInspectionClient {
 	return TestInspectionClient{
 		client:   client,

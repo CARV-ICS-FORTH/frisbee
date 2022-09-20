@@ -92,7 +92,7 @@ func New(ctx context.Context, setters ...Option) (*Client, error) {
 		setter(&args)
 	}
 
-	client := &Client{ctx: ctx}
+	client := &Client{}
 
 	if args.Logger == (logr.Logger{}) {
 		client.logger = defaultLogger
@@ -152,7 +152,6 @@ var (
 )
 
 type Client struct {
-	ctx    context.Context
 	logger logr.Logger
 
 	Conn *sdk.Client

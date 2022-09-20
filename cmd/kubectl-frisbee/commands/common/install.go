@@ -89,7 +89,7 @@ func CRDsExist(apiresource string) bool {
 		return false
 	}
 
-	ui.ExitOnError("cannot query kubernetes api for crds", err)
+	ui.ExitOnError("Query Kubernetes for CRDs", err)
 
 	return true
 }

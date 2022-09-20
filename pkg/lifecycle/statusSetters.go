@@ -20,10 +20,9 @@ import (
 	"context"
 	"time"
 
-	corev1 "k8s.io/api/core/v1"
-
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
+	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -57,73 +56,6 @@ func Pending(ctx context.Context, r common.Reconciler, obj client.Object, msg st
 	} else {
 		r.Info("Object does not support RecocileStatusAware interface. Not setting status",
 			"obj", obj.GetName(), "status", status,
-		)
-	}
-
-	r.GetEventRecorderFor(obj.GetName()).Event(obj, corev1.EventTypeNormal, status.Reason, status.Message)
-
-	return common.Stop()
-}
-
-// Running is a wrapper that sets Phase to Running and does not requeue the request.
-func Running(ctx context.Context, r common.Reconciler, obj client.Object, msg string) (reconcile.Result, error) {
-	if ctx == nil || obj == nil || msg == "" {
-		panic("invalid args")
-	}
-
-	status := v1alpha1.Lifecycle{
-		Phase:   v1alpha1.PhaseRunning,
-		Reason:  v1alpha1.PhaseRunning.String(),
-		Message: msg,
-	}
-
-	if statusAware, updateStatus := obj.(v1alpha1.ReconcileStatusAware); updateStatus {
-		statusAware.SetReconcileStatus(status)
-
-		if err := common.UpdateStatus(ctx, r, obj); err != nil {
-			r.Info("SetLifecycle",
-				"obj", client.ObjectKeyFromObject(obj),
-				"phase", status.Phase)
-
-			return common.RequeueAfter(time.Second)
-		}
-	} else {
-		r.Info("Object does not support RecocileStatusAware interface. Not setting status",
-			"obj", obj.GetName(), "status", status,
-		)
-	}
-
-	r.GetEventRecorderFor(obj.GetName()).Event(obj, corev1.EventTypeNormal, status.Reason, status.Message)
-
-	return common.Stop()
-}
-
-// Success is a wrapper that sets Phase to Success and does not requeue the request.
-func Success(ctx context.Context, r common.Reconciler, obj client.Object, msg string) (reconcile.Result, error) {
-	if ctx == nil || obj == nil || msg == "" {
-		panic("invalid args")
-	}
-
-	status := v1alpha1.Lifecycle{
-		Phase:   v1alpha1.PhaseSuccess,
-		Reason:  v1alpha1.PhaseSuccess.String(),
-		Message: msg,
-	}
-
-	if statusAware, updateStatus := obj.(v1alpha1.ReconcileStatusAware); updateStatus {
-		statusAware.SetReconcileStatus(status)
-
-		if err := common.UpdateStatus(ctx, r, obj); err != nil {
-			r.Info("SetLifecycle",
-				"obj", client.ObjectKeyFromObject(obj),
-				"phase", status.Phase)
-
-			return common.RequeueAfter(time.Second)
-		}
-	} else {
-		r.Info("Object does not support RecocileStatusAware interface. Not setting status",
-			"obj", obj.GetName(),
-			"status", status,
 		)
 	}
 

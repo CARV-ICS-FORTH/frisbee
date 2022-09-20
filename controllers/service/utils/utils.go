@@ -74,6 +74,11 @@ func GetServiceSpecList(ctx context.Context, c client.Client, parent metav1.Obje
 	specs := make([]v1alpha1.ServiceSpec, 0, fromTemplate.MaxInstances)
 
 	// add extra fields in the template
+	if template.Spec.Inputs == nil {
+		var inputs v1alpha1.TemplateInputs
+		template.Spec.Inputs = &inputs
+	}
+
 	template.Spec.Inputs.Scenario = v1alpha1.GetScenarioLabel(parent)
 	template.Spec.Inputs.Namespace = parent.GetNamespace()
 

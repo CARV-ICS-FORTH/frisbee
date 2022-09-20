@@ -49,11 +49,9 @@ func (in *Scenario) SetupWebhookWithManager(mgr ctrl.Manager) error {
 // Default implements webhook.Defaulter so a webhook will be registered for the type.
 func (in *Scenario) Default() {
 	scenariolog.Info("default", "name", in.Name)
-
-	// TODO(user): fill in your defaulting logic.
 }
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
+// ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
 func (in *Scenario) ValidateCreate() error {
 	legitReferences, err := BuildDependencyGraph(in)
 	if err != nil {
@@ -68,7 +66,7 @@ func (in *Scenario) ValidateCreate() error {
 
 	for _, action := range in.Spec.Actions {
 		// Check the referenced dependencies are ok
-		if err := CheckDependencyGraph(&action, legitReferences, txIndex); err != nil {
+		if err := CheckDependencyGraph(action, legitReferences, txIndex); err != nil {
 			return errors.Wrapf(err, "dependency error for action [%s]", action.Name)
 		}
 
@@ -127,7 +125,7 @@ func BuildDependencyGraph(scenario *Scenario) (map[string]*Action, error) {
 	return callIndex, nil
 }
 
-func CheckDependencyGraph(action *Action, callIndex map[string]*Action, txIndex map[string]bool) error {
+func CheckDependencyGraph(action Action, callIndex map[string]*Action, txIndex map[string]bool) error {
 	// find invalid dependency and update txIndex with completed actions.
 	if deps := action.DependsOn; deps != nil {
 		for _, dep := range deps.Running {

@@ -16,7 +16,7 @@ spec:
     volumes:
       - name: scratch-volume
         persistentVolumeClaim:
-          claimName: {{"{{.Inputs.Parameters.claimName}}" | quote}}
+          claimName: {{"{{.inputs.parameters.claimName}}" | quote}}
 
     decorators: # decorators
       telemetry:
@@ -37,9 +37,9 @@ spec:
             cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
 
             DEVICE=/scratch
-            SIZE={{"{{.Inputs.Parameters.size}}"}}
-            DIRECT={{"{{.Inputs.Parameters.direct}}"}}
-            IOENGINE={{"{{.Inputs.Parameters.ioengine}}"}}
+            SIZE={{"{{.inputs.parameters.size}}"}}
+            DIRECT={{"{{.inputs.parameters.direct}}"}}
+            IOENGINE={{"{{.inputs.parameters.ioengine}}"}}
 
             echo "USING DEVICE: $DEVICE"
 

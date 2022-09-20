@@ -59,8 +59,6 @@ func (r *Controller) runJob(ctx context.Context, service *v1alpha1.Service) erro
 	var pod corev1.Pod
 
 	pod.SetName(service.GetName())
-
-	// make labels visible to the pod
 	v1alpha1.PropagateLabels(&pod, service)
 	pod.SetAnnotations(service.GetAnnotations())
 
@@ -102,33 +100,6 @@ func handleRequirements(ctx context.Context, r *Controller, cr *v1alpha1.Service
 	if cr.Spec.Requirements == nil {
 		return nil
 	}
-
-	// Volume
-	/*
-		if req := cr.Spec.Requirements.EphemeralVolume; req != nil {
-			var pvc corev1.PersistentVolumeClaim
-
-			pvc.SetName(cr.GetName())
-			req.Spec.DeepCopyInto(&pvc.Spec)
-
-			if err := common.Create(ctx, r, cr, &pvc); err != nil {
-				return errors.Wrapf(err, "cannot create pvc")
-			}
-
-			// auto-mount the created pvc.
-			volume := corev1.Volume{
-				Name: req.Name,
-				VolumeSource: corev1.VolumeSource{
-					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-						ClaimName: pvc.GetName(),
-						ReadOnly:  false,
-					},
-				},
-			}
-
-			cr.Spec.Volumes = append(cr.Spec.Volumes, volume)
-		}
-	*/
 
 	// Ingress
 	if req := cr.Spec.Requirements.Ingress; req != nil {

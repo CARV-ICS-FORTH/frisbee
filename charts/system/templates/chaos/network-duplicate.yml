@@ -20,12 +20,12 @@ spec:
       spec:
         action: duplicate
         mode: all
-        duration: {{"{{.Inputs.Parameters.duration}}" | quote}}
+        duration: {{"{{.inputs.parameters.duration}}" | quote}}
         selector:
             pods:
               {{.Release.Namespace}}:
-                - {{"{{.Inputs.Parameters.source}}" | quote}}
+                - {{"{{.inputs.parameters.source}}" | quote}}
         duplicate:
-          duplicate: {{"{{.Inputs.Parameters.duplicate}}" | quote}}
-          correlation: {{"{{.Inputs.Parameters.correlation}}" |quote}}
+          duplicate: {{"{{.inputs.parameters.duplicate}}" | quote}}
+          correlation: {{"{{.inputs.parameters.correlation}}" |quote}}
 

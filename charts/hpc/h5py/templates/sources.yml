@@ -50,7 +50,7 @@ spec:
           - -c # Read from string
           - |  # Multi-line str
 
-            source={{"{{.Inputs.Parameters.source}}"}}
+            source={{"{{.inputs.parameters.source}}"}}
             wget $source -O script.py
             python script.py
 

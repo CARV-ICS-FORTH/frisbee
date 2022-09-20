@@ -14,7 +14,7 @@ spec:
     volumes:
       - name: dataset
         persistentVolumeClaim:
-          claimName: {{"{{.Inputs.Parameters.dataClaimName}}" | quote}}
+          claimName: {{"{{.inputs.parameters.dataClaimName}}" | quote}}
     containers: # Container(s)
       - name: app
         image: busybox

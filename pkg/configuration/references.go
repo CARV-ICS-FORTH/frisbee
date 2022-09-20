@@ -17,7 +17,7 @@ limitations under the License.
 package configuration
 
 // References are defined separately in order to facilitate the matching between Yaml configuration (of kubernetes)
-// and Go code of the controller
+// and Go code of the controller.
 const (
 	// PlatformConfigurationName points to a configmap that maintain information about the installation.
 	PlatformConfigurationName = "system.controller.configuration"

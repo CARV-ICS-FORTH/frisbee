@@ -19,7 +19,7 @@ spec:
     volumes: # Match the pod to the log volume
       - name: logs
         persistentVolumeClaim:
-          claimName: {{"{{.Inputs.Parameters.logClaimName}}" | quote}}
+          claimName: {{"{{.inputs.parameters.logClaimName}}" | quote}}
 
     initContainers:
       - name: wait-for-sync
@@ -51,8 +51,8 @@ spec:
             microdnf install findutils procps nc
 
             # Set local variables
-            storedir={{"{{.Inputs.Parameters.storedir}}"}}
-            nodeList={{"{{.Inputs.Parameters.join}}"}}
+            storedir={{"{{.inputs.parameters.storedir}}"}}
+            nodeList={{"{{.inputs.parameters.join}}"}}
 
             echo "Start Cockroachdb: ${nodeList}"
             # Because the log volume is shared with other services,
@@ -102,7 +102,7 @@ spec:
             set -euo pipefail
 
             # Set local variables
-            storedir={{"{{.Inputs.Parameters.storedir}}"}}
+            storedir={{"{{.inputs.parameters.storedir}}"}}
             nTables=6
 
             # find 6 random SST files on each node (abort if node has fewer)

@@ -20,11 +20,11 @@ spec:
       spec:
         action: loss
         mode: all
-        duration: {{"{{.Inputs.Parameters.duration}}" | quote}}
+        duration: {{"{{.inputs.parameters.duration}}" | quote}}
         selector:
             pods:
               {{.Release.Namespace}}:
-                - {{"{{.Inputs.Parameters.source}}" | quote}}
+                - {{"{{.inputs.parameters.source}}" | quote}}
         loss:
-          loss: {{"{{.Inputs.Parameters.loss}}" | quote}}
-          correlation: {{"{{.Inputs.Parameters.correlation}}" | quote}}
+          loss: {{"{{.inputs.parameters.loss}}" | quote}}
+          correlation: {{"{{.inputs.parameters.correlation}}" | quote}}

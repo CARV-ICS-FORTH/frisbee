@@ -41,10 +41,10 @@ func (c *Client) SetNotificationChannel(ctx context.Context, webhookURL string) 
 	// Although the notification channel is backed by the Grafana Pod, the Grafana Service is different
 	// from the Alerting Service. For this reason, we must be sure that both Services are linked to the Grafana Pod.
 	return wait.ExponentialBackoffWithContext(ctx, common.BackoffForServiceEndpoint, func() (done bool, err error) {
-		_, errCh := c.Conn.CreateAlertNotification(c.ctx, feedback)
+		_, errCh := c.Conn.CreateAlertNotification(ctx, feedback)
 		switch {
 		case errCh != nil: // API connection error. Just retry
-			return false, nil
+			return false, nil //nolint:nilerr
 		default:
 			return true, nil
 		}

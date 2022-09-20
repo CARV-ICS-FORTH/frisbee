@@ -21,17 +21,17 @@ spec:
           grafana.frisbee.dev/draw: range      
       spec:
         action: partition
-        direction: {{"{{.Inputs.Parameters.direction}}"}}
-        duration: {{"{{.Inputs.Parameters.duration}}"}}
+        direction: {{"{{.inputs.parameters.direction}}"}}
+        duration: {{"{{.inputs.parameters.duration}}"}}
         mode: all
         selector:
           pods:
-            {{.Release.Namespace}}:  [ {{"{{.Inputs.Parameters.dst}}"}} ]
+            {{.Release.Namespace}}:  [ {{"{{.inputs.parameters.dst}}"}} ]
         target:
           mode: all
           selector:
             pods:
-              {{.Release.Namespace}}: [ {{"{{.Inputs.Parameters.source}}"}} ]
+              {{.Release.Namespace}}: [ {{"{{.inputs.parameters.source}}"}} ]
 
 ---
 # system.chaos.network.partition will separate the target service from every other service that exists in the given scenario,
@@ -44,6 +44,7 @@ metadata:
   name: system.chaos.network.partition.scenario
 spec:
   inputs:
+    scenario: "default"
     parameters:
       source: "localhost"
       direction: both
@@ -57,18 +58,18 @@ spec:
           grafana.frisbee.dev/draw: range      
       spec:
         action: partition
-        direction: {{"{{.Inputs.Parameters.direction}}"}}
-        duration: {{"{{.Inputs.Parameters.duration}}"}}
+        direction: {{"{{.inputs.parameters.direction}}"}}
+        duration: {{"{{.inputs.parameters.duration}}"}}
         mode: all
         selector:
           expressionSelectors:
-            - { key: 'scenario.frisbee.dev/name', operator: In, values: [ {{"{{.Inputs.Scenario}}"}}] }
+            - { key: 'scenario.frisbee.dev/name', operator: In, values: [ {{"{{.inputs.scenario}}"}}] }
             - { key: 'scenario.frisbee.dev/component', operator: In, values: [ "SUT" ] }
         target:
           mode: all
           selector:
             pods:
-              {{.Release.Namespace}}: [{{"{{.Inputs.Parameters.source}}"}}]
+              {{.Release.Namespace}}: [{{"{{.inputs.parameters.source}}"}}]
 
 ---
 # system.chaos.network.partition.namespace will separate the target service from every other service in the namespace,
@@ -93,8 +94,8 @@ spec:
           grafana.frisbee.dev/draw: range
       spec:
         action: partition
-        direction: {{"{{.Inputs.Parameters.direction}}"}}
-        duration: {{"{{.Inputs.Parameters.duration}}"}}
+        direction: {{"{{.inputs.parameters.direction}}"}}
+        duration: {{"{{.inputs.parameters.duration}}"}}
         mode: all
         selector:
           namespaces: [{{.Release.Namespace}}]
@@ -102,4 +103,4 @@ spec:
           mode: all
           selector:
             pods:
-              {{.Release.Namespace}}: [ {{"{{.Inputs.Parameters.source}}"}} ]
+              {{.Release.Namespace}}: [ {{"{{.inputs.parameters.source}}"}} ]

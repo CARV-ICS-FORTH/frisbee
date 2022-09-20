@@ -17,7 +17,7 @@ spec:
     callables:
       launch:
         container: app                                          # Target container
-        command: [ "echo", "{{.Inputs.Parameters.message}}" ]  # Function to call
+        command: [ "echo", "{{.inputs.parameters.message}}" ]  # Function to call
 
 ---
 apiVersion: frisbee.dev/v1alpha1

@@ -98,7 +98,6 @@ func NewUninstallCmd() *cobra.Command {
 				}
 
 				ui.Success("CRDs  deleted")
-
 			}
 
 			// Delete cache

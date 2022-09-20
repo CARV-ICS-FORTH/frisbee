@@ -13,8 +13,8 @@ spec:
       telemetry:
         - system.telemetry.agent
       resources: # Resources
-        cpu: {{"{{.Inputs.Parameters.cpu}}" |quote}}
-        memory: {{"{{.Inputs.Parameters.memory}}" |quote}}
+        cpu: {{"{{.inputs.parameters.cpu}}" |quote}}
+        memory: {{"{{.inputs.parameters.memory}}" |quote}}
     containers: # Container
       - name: app
         image: "networkstatic/iperf3"
@@ -42,8 +42,8 @@ spec:
         - system.telemetry.agent
         - iperf3.telemetry.client
       resources:
-        memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
-        cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
+        memory: {{"{{.inputs.parameters.memory}}" | quote}}
+        cpu: {{"{{.inputs.parameters.cpu}}" | quote}}
     containers:
       - name: app
         image: "networkstatic/iperf3"
@@ -57,6 +57,6 @@ spec:
             set -eum
             cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
 
-            server={{"{{.Inputs.Parameters.server}}"}}
+            server={{"{{.inputs.parameters.server}}"}}
 
-            iperf3 -c ${server} -t {{"{{.Inputs.Parameters.seconds}}"}} -f m > /dev/shm/pipe
+            iperf3 -c ${server} -t {{"{{.inputs.parameters.seconds}}"}} -f m > /dev/shm/pipe

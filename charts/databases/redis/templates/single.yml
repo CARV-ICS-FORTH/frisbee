@@ -12,8 +12,8 @@ spec:
     decorators: # Decorators
       telemetry: [ system.telemetry.agent, redis.telemetry.server ]
       resources:
-        memory: {{"{{.Inputs.Parameters.memory}}" |quote}}
-        cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
+        memory: {{"{{.inputs.parameters.memory}}" |quote}}
+        cpu: {{"{{.inputs.parameters.cpu}}" | quote}}
     containers:
       - name: app
         image: redis
@@ -85,7 +85,7 @@ spec:
             cat > redis.conf <<EOF
               port 6379
               appendonly yes
-              slaveof {{"{{.Inputs.Parameters.master}}"}} 6379
+              slaveof {{"{{.inputs.parameters.master}}"}} 6379
             EOF
 
             redis-server redis.conf
@@ -129,11 +129,11 @@ spec:
             set -eum
             cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
 
-            echo "Watch {{"{{.Inputs.Parameters.master}}"}}:6379"
+            echo "Watch {{"{{.inputs.parameters.master}}"}}:6379"
 
             cat > sentinel.conf <<EOF
               sentinel resolve-hostnames yes
-              sentinel monitor mymaster {{"{{.Inputs.Parameters.master}}"}} 6379 1
+              sentinel monitor mymaster {{"{{.inputs.parameters.master}}"}} 6379 1
               sentinel down-after-milliseconds mymaster 5000
               sentinel failover-timeout mymaster 10000
               sentinel parallel-syncs mymaster 1

@@ -145,7 +145,7 @@ func DispatchAlert(ctx context.Context, r common.Reconciler, b *notifier.Body) e
 			alertTimestamp: time.Now().Format(time.RFC3339),
 		}
 	default:
-		return errors.Errorf("State '%s' is not handled. Only [OK, Alerting] are supported.", b.State)
+		return errors.Errorf("state '%s' is not handled. Only [OK, Alerting] are supported", b.State)
 	}
 
 	patchJSON, err := json.Marshal(patchStruct)
@@ -156,20 +156,20 @@ func DispatchAlert(ctx context.Context, r common.Reconciler, b *notifier.Body) e
 	patch := client.RawPatch(types.MergePatchType, patchJSON)
 
 	// Step 2. find objects interested in that alert.
-	var e endpoint
-	if err := e.Parse(b.RuleName); err != nil {
+	var targetEndpoint endpoint
+	if err := targetEndpoint.Parse(b.RuleName); err != nil {
 		r.Info("an alert is detected, but is not intended for Frisbee",
 			"name", b.RuleName)
 
-		return nil
+		return nil //nolint:nilerr
 	}
 
 	var obj unstructured.Unstructured
 
 	obj.SetAPIVersion(v1alpha1.GroupVersion.String())
-	obj.SetKind(e.Kind)
-	obj.SetNamespace(e.Namespace)
-	obj.SetName(e.Name)
+	obj.SetKind(targetEndpoint.Kind)
+	obj.SetNamespace(targetEndpoint.Namespace)
+	obj.SetName(targetEndpoint.Name)
 
 	return r.GetClient().Patch(ctx, &obj, patch)
 }
@@ -204,8 +204,8 @@ func AlertIsFired(job metav1.Object) (*time.Time, string, bool) {
 
 		ts, err := time.Parse(time.RFC3339, tsS)
 		if err != nil {
-			panic(errors.Wrapf(err, "cannot parse time"))
 			// return nil, notifyChannelError, false
+			panic(errors.Wrapf(err, "cannot parse time"))
 		}
 
 		info, ok := annotations[alertDetails]

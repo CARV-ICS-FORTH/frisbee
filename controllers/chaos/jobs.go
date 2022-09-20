@@ -19,11 +19,10 @@ package chaos
 import (
 	"context"
 
-	"k8s.io/apimachinery/pkg/labels"
-
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
 	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/labels"
 )
 
 func (r *Controller) runJob(ctx context.Context, chaos *v1alpha1.Chaos) error {

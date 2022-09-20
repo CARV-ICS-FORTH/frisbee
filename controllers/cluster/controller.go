@@ -22,16 +22,15 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/carv-ics-forth/frisbee/controllers/common/scheduler"
-	"github.com/carv-ics-forth/frisbee/pkg/expressions"
-	"github.com/carv-ics-forth/frisbee/pkg/lifecycle"
-	corev1 "k8s.io/api/core/v1"
-
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
+	"github.com/carv-ics-forth/frisbee/controllers/common/scheduler"
 	"github.com/carv-ics-forth/frisbee/controllers/common/watchers"
+	"github.com/carv-ics-forth/frisbee/pkg/expressions"
+	"github.com/carv-ics-forth/frisbee/pkg/lifecycle"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -188,6 +187,40 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 }
 
 func (r *Controller) Initialize(ctx context.Context, cluster *v1alpha1.Cluster) error {
+	// Validate job requirements
+	if cluster.Spec.Placement != nil {
+		// ensure there are at least two physical nodes for placement to make sense
+		var nodes corev1.NodeList
+
+		if err := r.GetClient().List(ctx, &nodes); err != nil {
+			return errors.Wrapf(err, "cannot list physical nodes")
+		}
+
+		{ // Ensure that there are enough nodes for placement to make sense.
+			var ready []string
+			var notReady []string
+
+			for _, node := range nodes.Items {
+				// search at the node's condition for the "NodeReady".
+				for _, cond := range node.Status.Conditions {
+					if cond.Type == corev1.NodeReady && cond.Status == corev1.ConditionTrue {
+						ready = append(ready, node.GetName())
+
+						goto next
+					}
+				}
+				notReady = append(notReady, node.GetName())
+			next:
+			}
+
+			if len(ready) < 2 {
+				return errors.Errorf("placement policies require at least two ready physical nodes."+
+					" Ready:'%v', NotReady:'%v'", ready, notReady)
+			}
+		}
+		// TODO: check compatibility with labels and taints
+	}
+
 	/*
 		We construct a list of job specifications based on the CR's template.
 		This list is used by the execution step to create the actual job.
@@ -238,9 +271,9 @@ func (r *Controller) PopulateView(ctx context.Context, req types.NamespacedName)
 	return nil
 }
 
-func (r *Controller) HasSucceed(ctx context.Context, cr *v1alpha1.Cluster) error {
+func (r *Controller) HasSucceed(ctx context.Context, cluster *v1alpha1.Cluster) error {
 	r.Logger.Info("CleanOnSuccess",
-		"obj", client.ObjectKeyFromObject(cr).String(),
+		"obj", client.ObjectKeyFromObject(cluster).String(),
 		"successfulJobs", r.view.ListSuccessfulJobs(),
 	)
 
@@ -257,7 +290,7 @@ func (r *Controller) HasSucceed(ctx context.Context, cr *v1alpha1.Cluster) error
 }
 
 func (r *Controller) HasFailed(ctx context.Context, cluster *v1alpha1.Cluster) error {
-	r.Logger.Error(fmt.Errorf(cluster.Status.Message), "!! "+cluster.Status.Reason,
+	r.Logger.Error(errors.Errorf(cluster.Status.Message), "!! "+cluster.Status.Reason,
 		"obj", client.ObjectKeyFromObject(cluster).String())
 
 	// Remove the non-failed components. Leave the failed jobs and system jobs for postmortem analysis.
@@ -321,7 +354,7 @@ func (r *Controller) Finalize(obj client.Object) error {
 */
 
 func NewController(mgr ctrl.Manager, logger logr.Logger) error {
-	r := &Controller{
+	controller := &Controller{
 		Manager: mgr,
 		Logger:  logger.WithName("cluster"),
 		view:    &lifecycle.Classifier{},
@@ -329,9 +362,14 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 
 	gvk := v1alpha1.GroupVersion.WithKind("Cluster")
 
+	var (
+		cluster v1alpha1.Cluster
+		service v1alpha1.Service
+	)
+
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1alpha1.Cluster{}).
+		For(&cluster).
 		Named("cluster").
-		Owns(&v1alpha1.Service{}, watchers.Watch(r, gvk)).
-		Complete(r)
+		Owns(&service, watchers.Watch(controller, gvk)).
+		Complete(controller)
 }

@@ -17,11 +17,7 @@ limitations under the License.
 package executor
 
 import (
-	"bufio"
-	"context"
 	"net/http"
-
-	"github.com/sirupsen/logrus"
 
 	"github.com/armon/circbuf"
 	"github.com/pkg/errors"
@@ -94,19 +90,21 @@ func (e *Executor) Exec(pod types.NamespacedName, containerID string, command []
 
 	var result Result
 
-	if stdOutBuffer.TotalWritten() > MaxStdoutLen {
+	switch {
+	case stdOutBuffer.TotalWritten() > MaxStdoutLen:
 		result.Stdout = "<... some data truncated by circular buffer; go to artifacts for details ...>\n" + stdOutBuffer.String()
-	} else if stdOutBuffer.TotalWritten() > 0 {
+	case stdOutBuffer.TotalWritten() > 0:
 		result.Stdout = stdOutBuffer.String()
-	} else {
+	default:
 		result.Stdout = ""
 	}
 
-	if stdErrBuffer.TotalWritten() > MaxStderrLen {
+	switch {
+	case stdErrBuffer.TotalWritten() > MaxStderrLen:
 		result.Stderr = "<... some data truncated by circular buffer; go to artifacts for details ...>\n" + stdErrBuffer.String()
-	} else if stdErrBuffer.TotalWritten() > 0 {
+	case stdErrBuffer.TotalWritten() > 0:
 		result.Stderr = stdErrBuffer.String()
-	} else {
+	default:
 		result.Stderr = ""
 	}
 
@@ -167,7 +165,7 @@ func (e *Executor) GetPodLogs(ctx context.Context, pod corev1.Pod, logLinesCount
 
 	return logs, nil
 }
-*/
+
 
 func (e *Executor) TailPodLogs(ctx context.Context, pod corev1.Pod, logs chan []byte) (err error) {
 	count := int64(1)
@@ -220,3 +218,4 @@ func (e *Executor) TailPodLogs(ctx context.Context, pod corev1.Pod, logs chan []
 
 	return
 }
+*/

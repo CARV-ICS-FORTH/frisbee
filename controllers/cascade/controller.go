@@ -22,18 +22,17 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/carv-ics-forth/frisbee/controllers/common/scheduler"
-	"github.com/carv-ics-forth/frisbee/pkg/expressions"
-	"github.com/carv-ics-forth/frisbee/pkg/lifecycle"
-	"k8s.io/apimachinery/pkg/types"
-
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
+	"github.com/carv-ics-forth/frisbee/controllers/common/scheduler"
 	"github.com/carv-ics-forth/frisbee/controllers/common/watchers"
+	"github.com/carv-ics-forth/frisbee/pkg/expressions"
+	"github.com/carv-ics-forth/frisbee/pkg/lifecycle"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )

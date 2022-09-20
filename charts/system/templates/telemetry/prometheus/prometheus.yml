@@ -41,6 +41,9 @@ kind: Template
 metadata:
   name: system.telemetry.prometheus.template
 spec:
+  inputs:
+    scenario: "default"
+
   service:
     requirements:
       ingressBackend:
@@ -72,9 +75,12 @@ spec:
           - /bin/sh   # Run shell
           - -c        # Read from string
           - |         # Multi-line str
+            set -eum
+
+            echo "AltName: {{.Release.Name}}"
+
             # Create local envs that will be used to substitute the configuration placeholders
-            export NAMESPACE={{"{{.Inputs.Namespace}}"}}
-            export SCENARIO={{"{{.Inputs.Scenario}}"}}
+            export SCENARIO={{"{{.inputs.scenario}}"}}
 
             # Use envsubst to replace ${var} or $var according to the values of the current environment variables.
             wget https://github.com/a8m/envsubst/releases/download/v1.2.0/envsubst-Linux-x86_64
@@ -82,8 +88,9 @@ spec:
 
             # Run Prometheus with the new modified configuration
             ./envsubst-Linux-x86_64 -i /etc/prometheus/prometheus.yml -o ./prometheus.yml
-            /bin/prometheus --config.file=./prometheus.yml    \
-            --query.lookback-delta={{.Values.telemetry.prometheus.queryLookbackDelta}}
+
+
+            /bin/prometheus --config.file=./prometheus.yml --query.lookback-delta={{.Values.telemetry.prometheus.queryLookbackDelta}}
 
         startupProbe:
           httpGet:
@@ -133,7 +140,7 @@ data:
           - role: pod
             namespaces:
               names:
-                - ${NAMESPACE}
+                - {{.Release.Namespace}}
 
         relabel_configs:
           # Condition 1. Filter services that belong to the same scenario as this Prometheus instance.

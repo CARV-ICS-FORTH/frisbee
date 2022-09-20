@@ -56,7 +56,7 @@ spec:
               2 AC +oo master2-6062
             EOF
 
-            zookeeper={{"{{.Inputs.Parameters.zookeeper}}:2181"}}
+            zookeeper={{"{{.inputs.parameters.zookeeper}}:2181"}}
 
             sleep 10
 
@@ -84,7 +84,7 @@ spec:
       telemetry: [ system.telemetry.agent ]
       setFields:
         - field: PodSpec.Containers.0.Ports.0.ContainerPort
-          value: {{"{{.Inputs.Parameters.port | int}}" | quote}}
+          value: {{"{{.inputs.parameters.port | int}}" | quote}}
     containers:
       - name: app
         image: icsforth/tebis-node:latest
@@ -100,9 +100,9 @@ spec:
             set -eum
             cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
 
-            device={{"{{.Inputs.Parameters.device}}"}}
-            zookeeper={{"{{.Inputs.Parameters.zookeeper}}:2181"}}
-            port={{"{{.Inputs.Parameters.port}}"}}
+            device={{"{{.inputs.parameters.device}}"}}
+            zookeeper={{"{{.inputs.parameters.zookeeper}}:2181"}}
+            port={{"{{.inputs.parameters.port}}"}}
             cores="0,1,2"
 
             rdma=$(hostname -I | awk '{print $2}')
@@ -147,12 +147,12 @@ spec:
             echo "Starting Tebis client"
 
              /ycsb-async-kreon                                \
-            -e {{"{{.Inputs.Parameters.scenario}}"}}              \
-            -threads {{"{{.Inputs.Parameters.threads}}"}}     \
+            -e {{"{{.inputs.parameters.scenario}}"}}              \
+            -threads {{"{{.inputs.parameters.threads}}"}}     \
             -dbnum 1                                          \
             -w sd                                             \
-            -r {{"{{.Inputs.Parameters.regions}}"}}           \
-            -zk_host  {{"{{.Inputs.Parameters.zookeeper}}"}}  \
+            -r {{"{{.inputs.parameters.regions}}"}}           \
+            -zk_host  {{"{{.inputs.parameters.zookeeper}}"}}  \
             -zk_port  2181
 
             echo "Exit code $?"

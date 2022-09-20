@@ -24,14 +24,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
+	"github.com/carv-ics-forth/frisbee/controllers/common"
+	serviceutils "github.com/carv-ics-forth/frisbee/controllers/service/utils"
 	"github.com/carv-ics-forth/frisbee/pkg/configuration"
 	"github.com/carv-ics-forth/frisbee/pkg/expressions"
 	"github.com/carv-ics-forth/frisbee/pkg/grafana"
 	"github.com/carv-ics-forth/frisbee/pkg/structure"
-
-	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	"github.com/carv-ics-forth/frisbee/controllers/common"
-	serviceutils "github.com/carv-ics-forth/frisbee/controllers/service/utils"
 	notifier "github.com/golanghelper/grafana-webhook"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
