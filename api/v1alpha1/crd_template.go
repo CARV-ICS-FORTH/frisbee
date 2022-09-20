@@ -65,7 +65,8 @@ func (in Parameters) Unmarshal() (map[string]interface{}, error) {
 
 type TemplateInputs struct {
 	// Parameters are user-set values that are dynamically evaluated
-	Parameters Parameters `json:"parameters"`
+	// +optional
+	Parameters Parameters `json:"parameters,omitempty"`
 
 	// Namespace returns the namespace from which the template is called from.
 	// +optional
@@ -253,15 +254,19 @@ func (in *GenerateObjectFromTemplate) Generate(spec interface{}, userInputsSet u
 		} `json:"inputs"`
 	}{}
 
+	// Step 1. Expose Scope Information
+	evaluationParams.Inputs.Namespace = tSpec.Inputs.Namespace
+	evaluationParams.Inputs.Scenario = tSpec.Inputs.Scenario
+
+	// Step 2: Initialize using the default templat evalues
 	templateParams, err := tSpec.Inputs.Parameters.Unmarshal()
 	if err != nil {
 		return errors.Wrapf(err, "cannot unmarshal template parameters")
 	}
 
-	// init using the default template parameters
 	evaluationParams.Inputs.Parameters = templateParams
 
-	// if exists, user parameters overwrite the default template parameters
+	// Step 3: Overwrite default parameters with user arguments
 	if in.Inputs != nil {
 		if tSpec.Inputs == nil || tSpec.Inputs.Parameters == nil {
 			return errors.New("template is not parameterizable")
@@ -287,6 +292,7 @@ func (in *GenerateObjectFromTemplate) Generate(spec interface{}, userInputsSet u
 		}
 	}
 
+	// Step 4: Evaluate the template and decode it to the caller's type.
 	expandedTemplateBody, err := ExprState(templateBody).Evaluate(evaluationParams)
 	if err != nil {
 		return errors.Wrapf(err, "template execution error")

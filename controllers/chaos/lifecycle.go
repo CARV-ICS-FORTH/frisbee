@@ -19,13 +19,12 @@ package chaos
 import (
 	"fmt"
 
-	"github.com/carv-ics-forth/frisbee/pkg/lifecycle"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
+	"github.com/carv-ics-forth/frisbee/pkg/lifecycle"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func (r *Controller) updateLifecycle(chaos *v1alpha1.Chaos) bool {

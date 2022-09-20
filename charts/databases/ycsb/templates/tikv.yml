@@ -22,8 +22,8 @@ spec:
         - system.telemetry.agent
         - ycsb.telemetry.client
       resources:
-        cpu: {{"{{.Inputs.Parameters.cpu}}" |quote}}
-        memory: {{"{{.Inputs.Parameters.memory}}" |quote}}
+        cpu: {{"{{.inputs.parameters.cpu}}" |quote}}
+        memory: {{"{{.inputs.parameters.memory}}" |quote}}
         #annotations:
         #"grafana.frisbee.dev/draw": "range"
 
@@ -37,18 +37,18 @@ spec:
             set -eum
             cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
 
-            addr={{"{{.Inputs.Parameters.server}}"}}:{{"{{.Inputs.Parameters.port}}"}}
+            addr={{"{{.inputs.parameters.server}}"}}:{{"{{.inputs.parameters.port}}"}}
 
-            echo "Loader: $addr <- {{"{{.Inputs.Parameters.recordcount}}"}}:{{"{{.Inputs.Parameters.offset}}"}}"
+            echo "Loader: $addr <- {{"{{.inputs.parameters.recordcount}}"}}:{{"{{.inputs.parameters.offset}}"}}"
 
-            sleep {{"{{.Inputs.Parameters.delay}}"}}
+            sleep {{"{{.inputs.parameters.delay}}"}}
 
             ./go-ycsb load tikv                                      \
-                -P workloads/{{"{{.Inputs.Parameters.workload}}"}}         \
-                -p dropdata={{"{{.Inputs.Parameters.dropdata}}"}}          \
-                -p recordcount={{"{{.Inputs.Parameters.recordcount}}"}}    \
-                -p insertstart={{"{{.Inputs.Parameters.offset}}"}}         \
-                -p threadcount={{"{{.Inputs.Parameters.threads}}"}}        \
+                -P workloads/{{"{{.inputs.parameters.workload}}"}}         \
+                -p dropdata={{"{{.inputs.parameters.dropdata}}"}}          \
+                -p recordcount={{"{{.inputs.parameters.recordcount}}"}}    \
+                -p insertstart={{"{{.inputs.parameters.offset}}"}}         \
+                -p threadcount={{"{{.inputs.parameters.threads}}"}}        \
                 -p tikv.pd=${addr}                                   \
                 -p tikv.type="raw"                                   \
             >> /dev/shm/pipe
@@ -75,8 +75,8 @@ spec:
         - system.telemetry.agent
         - ycsb.telemetry.client
       resources: # Resources
-        cpu: {{"{{.Inputs.Parameters.cpu}}" |quote}}
-        memory: {{"{{.Inputs.Parameters.memory}}" |quote}}
+        cpu: {{"{{.inputs.parameters.cpu}}" |quote}}
+        memory: {{"{{.inputs.parameters.memory}}" |quote}}
         #annotations:
         #"grafana.frisbee.dev/draw": "range"
 
@@ -90,14 +90,14 @@ spec:
             set -eum
             cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
 
-            addr={{"{{.Inputs.Parameters.server}}"}}:{{"{{.Inputs.Parameters.port}}"}}
+            addr={{"{{.inputs.parameters.server}}"}}:{{"{{.inputs.parameters.port}}"}}
 
-            echo "Runner: $addr <- {{"{{.Inputs.Parameters.workload}}"}}:{{"{{.Inputs.Parameters.operationcount}}"}}"
+            echo "Runner: $addr <- {{"{{.inputs.parameters.workload}}"}}:{{"{{.inputs.parameters.operationcount}}"}}"
 
             ./go-ycsb run tikv                                                                  \
-                  -P workloads/{{"{{.Inputs.Parameters.workload}}"}}                                  \
-                  -p operationcount={{"{{.Inputs.Parameters.operationcount}}"}}                       \
-                  -p threadcount={{"{{.Inputs.Parameters.threads}}"}}                                 \
+                  -P workloads/{{"{{.inputs.parameters.workload}}"}}                                  \
+                  -p operationcount={{"{{.inputs.parameters.operationcount}}"}}                       \
+                  -p threadcount={{"{{.inputs.parameters.threads}}"}}                                 \
                   -p tikv.pd=${addr}                                                            \
                   -p tikv.type="raw"                                                            \
             >> /dev/shm/pipe

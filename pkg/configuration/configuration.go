@@ -27,7 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// Configuration is the programmatic equivalent of charts/platform/configuration
+// Configuration is the programmatic equivalent of charts/platform/configuration.
 type Configuration struct {
 	DeveloperMode bool `json:"developerMode"`
 
@@ -40,7 +40,7 @@ type Configuration struct {
 	ControllerName string `json:"controllerName"`
 }
 
-// Discover discovers a resource across different namespaces
+// Discover discovers a resource across different namespaces.
 func Discover(ctx context.Context, cli client.Client, crList client.ObjectList, id string) error {
 	// find the platform configuration (which may reside on a different namespace)
 	filters := []client.ListOption{

@@ -47,9 +47,9 @@ spec:
             # https://docs.oracle.com/en-us/iaas/Content/Block/References/samplefiocommandslinux.htm
 
             DEVICE=/scratch
-            SIZE={{"{{.Inputs.Parameters.size}}"}}
-            DIRECT={{"{{.Inputs.Parameters.direct}}"}}
-            IOENGINE={{"{{.Inputs.Parameters.ioengine}}"}}
+            SIZE={{"{{.inputs.parameters.size}}"}}
+            DIRECT={{"{{.inputs.parameters.direct}}"}}
+            IOENGINE={{"{{.inputs.parameters.ioengine}}"}}
 
             echo "USING DEVICE: $DEVICE"
 

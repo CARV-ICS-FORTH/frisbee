@@ -24,13 +24,13 @@ import (
 )
 
 func GetCallerInfo(skip int) (fileName, funcName string, line int) {
-	pc, file, line, ok := runtime.Caller(skip)
+	programCounter, file, line, ok := runtime.Caller(skip)
 	if !ok {
 		return
 	}
 
 	fileName = path.Base(file)
-	funcName = runtime.FuncForPC(pc).Name()
+	funcName = runtime.FuncForPC(programCounter).Name()
 
 	return
 }

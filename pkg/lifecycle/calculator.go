@@ -26,7 +26,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// Reasons for Failure
+// Reasons for Failure.
 const (
 	// AtLeastOneJobHasFailed is used when at least one job has failed, and there is toleration defined.
 	AtLeastOneJobHasFailed = "AtLeastOneJobHasFailed"
@@ -34,37 +34,37 @@ const (
 	// TooManyJobsHaveFailed is used when the number of failures exceed the number of toleration.
 	TooManyJobsHaveFailed = "TooManyJobsHaveFailed"
 
-	// ExactlyOneJobIsFailed indicate that the only scheduled job is in the Failed Phase
+	// ExactlyOneJobIsFailed indicate that the only scheduled job is in the Failed Phase.
 	ExactlyOneJobIsFailed = "ExactlyOneJobIsFailed"
 )
 
-// Reasons for Success
+// Reasons for Success.
 const (
 	// AllJobsAreSuccessful is when all the scheduled jobs are successfully completed.
 	AllJobsAreSuccessful = "AllJobsAreSuccessful"
 
-	// ExactlyOneJobIsSuccessful indicate that the only scheduled job is in the Success Phase
+	// ExactlyOneJobIsSuccessful indicate that the only scheduled job is in the Success Phase.
 	ExactlyOneJobIsSuccessful = "ExactlyOneJobIsSuccessful"
 
 	// ToleratedJobsAreSuccessful indicate that despite (tolerated) failures, a required number of jobs are successful.
 	ToleratedJobsAreSuccessful = "JobSuccessfulDespiteErrors"
 )
 
-// Reasons for Running
+// Reasons for Running.
 const (
 	// AtLeastOneJobIsRunning indicate that  all jobs are created, and at least one is still running.
 	AtLeastOneJobIsRunning = "AtLeastOneJobIsRunning"
 
-	// ExactlyOneJobIsRunning indicate that the only scheduled job is in the Running phase
+	// ExactlyOneJobIsRunning indicate that the only scheduled job is in the Running phase.
 	ExactlyOneJobIsRunning = "ExactlyOneJobIsRunning"
 )
 
-// Reasons for Pending
+// Reasons for Pending.
 const (
 	// AtLeastOneJobIsNotScheduled indicate that there is at least one job that is not yet scheduled.
 	AtLeastOneJobIsNotScheduled = "AtLeastOneJobIsNotScheduled"
 
-	// ExactlyOneJobIsPending indicate that the only scheduled job is in the Pending phase
+	// ExactlyOneJobIsPending indicate that the only scheduled job is in the Pending phase.
 	ExactlyOneJobIsPending = "ExactlyOneJobIsPending"
 )
 
@@ -204,10 +204,10 @@ func GroupedJobs(totalJobs int, state ClassifierReader, lf *v1alpha1.Lifecycle, 
 				}
 
 				return true
-			} else {
-				// do nothing
-				return false
 			}
+
+			// do nothing
+			return false
 		}
 	}
 

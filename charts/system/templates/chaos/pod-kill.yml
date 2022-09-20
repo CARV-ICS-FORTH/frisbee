@@ -20,4 +20,4 @@ spec:
         selector:
             pods:
               {{.Release.Namespace}}:
-                - {{"{{.Inputs.Parameters.target}}"}}
+                - {{"{{.inputs.parameters.target}}"}}

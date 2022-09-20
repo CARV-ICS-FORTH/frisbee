@@ -19,11 +19,10 @@ package service
 import (
 	"fmt"
 
-	"github.com/carv-ics-forth/frisbee/pkg/lifecycle"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
+	"github.com/carv-ics-forth/frisbee/pkg/lifecycle"
 	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // updateLifecycle returns the update lifecycle of the cluster.

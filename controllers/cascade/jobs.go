@@ -19,13 +19,12 @@ package cascade
 import (
 	"context"
 
-	"github.com/carv-ics-forth/frisbee/controllers/common"
-	"github.com/carv-ics-forth/frisbee/pkg/distributions"
-	corev1 "k8s.io/api/core/v1"
-
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	chaosutils "github.com/carv-ics-forth/frisbee/controllers/chaos/utils"
+	"github.com/carv-ics-forth/frisbee/controllers/common"
+	"github.com/carv-ics-forth/frisbee/pkg/distributions"
 	"github.com/pkg/errors"
+	corev1 "k8s.io/api/core/v1"
 )
 
 func (r *Controller) runJob(ctx context.Context, cascade *v1alpha1.Cascade, jobIndex int) error {
@@ -33,9 +32,7 @@ func (r *Controller) runJob(ctx context.Context, cascade *v1alpha1.Cascade, jobI
 
 	// Populate the job
 	job.SetName(common.GenerateName(cascade, jobIndex, cascade.Spec.MaxInstances))
-
-	v1alpha1.SetScenarioLabel(&job.ObjectMeta, v1alpha1.GetScenarioLabel(cascade))
-	v1alpha1.SetComponentLabel(&job.ObjectMeta, v1alpha1.GetComponentLabel(cascade))
+	v1alpha1.PropagateLabels(&job, cascade)
 
 	// modulo is needed to re-iterate the job list, required for the implementation of "Until".
 	jobSpec := cascade.Status.QueuedJobs[jobIndex%len(cascade.Status.QueuedJobs)]

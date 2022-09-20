@@ -16,7 +16,7 @@ spec:
     volumes:
       - name: logs
         persistentVolumeClaim:
-          claimName: {{"{{.Inputs.Parameters.logClaimName}}" | quote}}
+          claimName: {{"{{.inputs.parameters.logClaimName}}" | quote}}
 
     containers: # Container
       - name: app

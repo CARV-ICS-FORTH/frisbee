@@ -25,8 +25,11 @@ import (
 const FrisbeeChartInRepo = "frisbee/platform"
 
 func NewInstallProductionCmd() *cobra.Command {
-	var options common.FrisbeeInstallOptions
-	var values string
+	var (
+		options   common.FrisbeeInstallOptions
+		chartPath string
+		values    string
+	)
 
 	cmd := &cobra.Command{
 		Use:   "production",
@@ -37,7 +40,7 @@ func NewInstallProductionCmd() *cobra.Command {
 				"upgrade", "--install", "--wait",
 				"--namespace", options.Namespace, "--create-namespace",
 				"--values", values,
-				options.Name, FrisbeeChartInRepo,
+				options.Name, chartPath,
 			}
 
 			common.InstallFrisbeeOnK8s(command, &options)
@@ -49,7 +52,8 @@ func NewInstallProductionCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&values, "values", "f", FrisbeeChartInRepo+"/values.yaml", "helm values file")
+	cmd.Flags().StringVar(&chartPath, "chart", FrisbeeChartInRepo, "chart file to install")
+	cmd.Flags().StringVarP(&values, "values", "f", "", "helm values file")
 	common.PopulateInstallFlags(cmd, &options)
 
 	return cmd

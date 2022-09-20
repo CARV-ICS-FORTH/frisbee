@@ -39,10 +39,10 @@ spec:
           - -c        # Read from string
           - |         # Multi-line str
             # Compare the input, and exit if needed
-            [[ {{.Inputs.Parameters.exit}} == "true" ]] && echo "Force exit" && exit -1
+            [[ {{.inputs.parameters.exit}} == "true" ]] && echo "Force exit" && exit -1
             
             # Otherwise, continue as normal
-            iperf -c {{.Inputs.Parameters.target}} -t {{.Inputs.Parameters.duration}} 
+            iperf -c {{.inputs.parameters.target}} -t {{.inputs.parameters.duration}} 
 
 
 ---

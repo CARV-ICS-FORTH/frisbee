@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"reflect"
 	"regexp"
 	"strings"
 	"text/template"
@@ -24,6 +25,7 @@ import (
 	"github.com/Knetic/govaluate"
 	"github.com/Masterminds/sprig/v3"
 	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/util/json"
 )
 
 // ConditionalExpr is a source of information about whether the state of the workflow after a given time is correct or not.
@@ -63,13 +65,49 @@ func (in *ConditionalExpr) HasStateExpr() bool {
 
 // +kubebuilder:object:generate=false
 
+func structToLowercase(in interface{}) map[string]interface{} {
+	v := reflect.ValueOf(in)
+	if v.Kind() != reflect.Struct {
+		return nil
+	}
+
+	vType := v.Type()
+
+	result := make(map[string]interface{}, v.NumField())
+
+	for i := 0; i < v.NumField(); i++ {
+		name := vType.Field(i).Name
+		result[strings.ToLower(name)] = v.Field(i).Interface()
+	}
+
+	return result
+}
+
+func lower(f interface{}) interface{} {
+	switch f := f.(type) {
+	case []interface{}:
+		for i := range f {
+			f[i] = lower(f[i])
+		}
+		return f
+	case map[string]interface{}:
+		lf := make(map[string]interface{}, len(f))
+		for k, v := range f {
+			lf[strings.ToLower(k)] = lower(v)
+		}
+		return lf
+	default:
+		return f
+	}
+}
+
 var sprigFuncMap = sprig.TxtFuncMap() // a singleton for better performance
 
 type ExprState string
 
 // Evaluate will evaluate the expression using the golang's templates enriched with the spring func map.
 func (expr ExprState) Evaluate(state interface{}) (string, error) {
-	if expr == "" {
+	if expr == "" || state == nil {
 		return "", nil
 	}
 
@@ -82,8 +120,25 @@ func (expr ExprState) Evaluate(state interface{}) (string, error) {
 	// Access the state fields and substitute the output.
 	var out strings.Builder
 
+	// pretty retarded way to support lower-case macros e.g, {{.inputs.parameters.}}
+	// The StateAggregationFunctions is an exception as need the param to be in the form {{.NumSuccessfulJobs}}.
+	if _, ok := state.(StateAggregationFunctions); !ok {
+		var lowercase map[string]interface{}
+
+		tmp, err := json.Marshal(state)
+		if err != nil {
+			return "", errors.Wrapf(err, "unable to create lowercase version (Marshal)")
+		}
+
+		if err := json.Unmarshal(tmp, &lowercase); err != nil {
+			return "", errors.Wrapf(err, "unable to create lowercase version (Unmarshal)")
+		}
+
+		state = lowercase
+	}
+
 	if err := t.Execute(&out, state); err != nil {
-		return "", errors.Wrapf(err, "malformed inputs")
+		return "", errors.Wrapf(err, "malformed inputs. Available: %v", state)
 	}
 
 	return out.String(), nil

@@ -34,7 +34,7 @@ spec:
   inputs:
     parameters:
       target: localhost
-      logClaimName: ""
+      claim_name: ""
   service:
     decorators:
       telemetry:
@@ -46,7 +46,7 @@ spec:
     volumes: # Need to declare the volume here
       - name: logvolume
         persistentVolumeClaim:
-          claimName: "{{.Inputs.Parameters.logClaimName}}"
+          claimName: "{{.inputs.parameters.claim_name}}"
 
     containers:
       - name: app
@@ -61,7 +61,7 @@ spec:
             set -eum
             cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app
             
-            iperf -c {{.Inputs.Parameters.target}} -t 360 -i 5  >> /logs/${HOSTNAME}
+            iperf -c {{.inputs.parameters.target}} -t 360 -i 5  >> /logs/${HOSTNAME}
 
 
 ---
@@ -72,7 +72,7 @@ metadata:
 spec:
   inputs:
     parameters:
-      logClaimName: ""
+      claim_name: ""
 
   service:
     requirements:
@@ -82,10 +82,14 @@ spec:
           port:
             number: 80
 
+    decorators:
+      labels:
+        scenario.frisbee.dev/component: SYS
+
     volumes: # Match the pod to the log volume
       - name: logs
         persistentVolumeClaim:
-          claimName: "{{.Inputs.Parameters.logClaimName}}"
+          claimName: "{{.inputs.parameters.claim_name}}"
 
     # Do a nasty touch to sync/populate the volume.
     initContainers:
@@ -136,7 +140,7 @@ spec:
       service:
         templateRef: logviewer.template
         inputs:
-          - { logClaimName: logs }
+          - { claim_name: logs }
 
     - action: Service
       depends: { running: [ logviewer ] }
@@ -151,7 +155,7 @@ spec:
         templateRef: iperf.client
         instances: 5
         inputs:
-          - { target: server, logClaimName: logs }
+          - { target: server, claim_name : logs }
         schedule:
           cron: "@every 1m"
 

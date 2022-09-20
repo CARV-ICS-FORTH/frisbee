@@ -21,13 +21,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/carv-ics-forth/frisbee/controllers/common"
-	"k8s.io/apimachinery/pkg/util/wait"
-
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
+	"github.com/carv-ics-forth/frisbee/controllers/common"
 	"github.com/grafana-tools/sdk"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 func ConvertEvaluatorAlias(alias string) string {
@@ -47,7 +46,7 @@ func ConvertEvaluatorAlias(alias string) string {
 // The location can be retrieved from the Grafana URL.
 // Example:
 // URL: http://grafana.platform.science-hangar.eu/d/wpFnYRwGk/iperf?orgId=1&viewPanel=2
-// Metric: wpFnYRwGk/2/bitrate
+// Metric: wpFnYRwGk/2/bitrate.
 type Metric struct {
 	DashboardUID string
 
@@ -282,7 +281,7 @@ func (c *Client) SetAlert(ctx context.Context, alert *Alert, name string, msg st
 		switch {
 		case errReq != nil: // API connection error. Just retry
 			c.logger.Info("Failed to set alert. Retry", "alertName", name, "resp", resp)
-			return false, nil
+			return false, nil //nolint:nilerr
 
 		case *resp.Status != StatusSuccess: // Unexpected response
 			return false, errors.Errorf("expected status '%s', but got '%s'", StatusSuccess, *resp.Status)

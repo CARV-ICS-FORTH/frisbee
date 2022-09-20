@@ -16,14 +16,14 @@ spec:
         - system.telemetry.agent
         - mongo.telemetry.server
       resources:
-        cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
-        memory: {{"{{.Inputs.Parameters.memory}}" |quote}}
+        cpu: {{"{{.inputs.parameters.cpu}}" | quote}}
+        memory: {{"{{.inputs.parameters.memory}}" |quote}}
     containers: # Container
       - name: app
         image: bitnami/mongodb
         ports:
           - name: to-clients
-            containerPort: {{"{{.Inputs.Parameters.port}}"  | int}}
+            containerPort: {{"{{.inputs.parameters.port}}"  | int}}
         command:
           - /bin/sh   # Run shell
           - -c        # Read from string
@@ -35,7 +35,7 @@ spec:
             cat > /tmp/mongod.conf <<EOF
               # network interfaces
               net:
-                port: {{"{{.Inputs.Parameters.port}}"}}
+                port: {{"{{.inputs.parameters.port}}"}}
                 bindIp: 0.0.0.0
 
               # Where and how to store data.
@@ -49,7 +49,7 @@ spec:
                 replSetName: app1r0
             EOF
 
-            echo "Create Replicaset with {{"{{.Inputs.Parameters.slaves}}"}}"
+            echo "Create Replicaset with {{"{{.inputs.parameters.slaves}}"}}"
             cat > /tmp/rs-init.js <<EOF
               rs.initiate()
             {{`{{- range splitList " " .Inputs.Parameters.slaves}}
@@ -71,7 +71,7 @@ spec:
               - |         # Multi-line str
                 set -eum
 
-                response=$(timeout -s QUIT 30 mongo --eval 'rs.status().ok' localhost:{{"{{.Inputs.Parameters.port}}"}} --quiet)
+                response=$(timeout -s QUIT 30 mongo --eval 'rs.status().ok' localhost:{{"{{.inputs.parameters.port}}"}} --quiet)
                 if ["$response" != "1"]; then
                     exit 1
                 fi
@@ -91,14 +91,14 @@ spec:
     decorators: # Decorators
       telemetry: [ system.telemetry.agent, mongo.telemetry.server/telegraf ]
       resources:
-        cpu: {{"{{.Inputs.Parameters.cpu}}" |quote}}
-        memory: {{"{{.Inputs.Parameters.memory}}" |quote}}
+        cpu: {{"{{.inputs.parameters.cpu}}" |quote}}
+        memory: {{"{{.inputs.parameters.memory}}" |quote}}
     containers: # Container
       - name: app
         image: bitnami/mongodb
         ports:
           - name: to-clients
-            containerPort: {{"{{.Inputs.Parameters.port}}" | int}}
+            containerPort: {{"{{.inputs.parameters.port}}" | int}}
         command:
           - /bin/sh   # Run shell
           - -c        # Read from string
@@ -110,7 +110,7 @@ spec:
             cat > /tmp/mongod.conf <<EOF
               # network interfaces
               net:
-                port: {{"{{.Inputs.Parameters.port}}"}}
+                port: {{"{{.inputs.parameters.port}}"}}
                 bindIp: 0.0.0.0
 
               # Where and how to store data.
@@ -134,7 +134,7 @@ spec:
               - |         # Multi-line str
                 set -eum
 
-                response=$(timeout -s QUIT 30 mongo --eval 'db.runCommand("ping").ok' localhost:{{"{{.Inputs.Parameters.port}}"}}/test --quiet)
+                response=$(timeout -s QUIT 30 mongo --eval 'db.runCommand("ping").ok' localhost:{{"{{.inputs.parameters.port}}"}}/test --quiet)
                 if ["$response" != "1"]; then
                     exit 1
                 fi

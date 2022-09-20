@@ -30,8 +30,8 @@ spec:
         - system.telemetry.agent
         - redis.telemetry.server
       resources:
-        memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
-        cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
+        memory: {{"{{.inputs.parameters.memory}}" | quote}}
+        cpu: {{"{{.inputs.parameters.cpu}}" | quote}}
     containers: # Container
       - name: app
         image: redis
@@ -68,7 +68,7 @@ spec:
             echo "Starting Redis node at ${podIP}:6379"
             redis-server redis.conf &
 
-            servers=( {{"{{.Inputs.Parameters.join}}"}} )
+            servers=( {{"{{.inputs.parameters.join}}"}} )
             if [ ${#servers[@]} -gt 0 ]; then
               echo "Join cluster by contacting ${servers[*]}"
 
@@ -124,7 +124,7 @@ spec:
           - |         # Multi-line str
             set -eum
 
-            servers=( {{"{{.Inputs.Parameters.servers}}"}} )
+            servers=( {{"{{.inputs.parameters.servers}}"}} )
 
             echo "Create cluster from ${servers[*]}"
 
@@ -138,6 +138,6 @@ spec:
             echo "Create cluster from ${all[*]}"
 
             # Sleep a bit to compensate for Kubernetes delays.
-            sleep {{"{{.Inputs.Parameters.delay}}"}}
+            sleep {{"{{.inputs.parameters.delay}}"}}
 
             redis-cli --cluster create --cluster-yes ${all[*]}

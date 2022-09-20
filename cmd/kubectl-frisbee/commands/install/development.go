@@ -32,10 +32,12 @@ import (
 const FrisbeeChartLocalPath = "charts/platform" // relative to Frisbee root.
 
 func NewInstallDevelopmentCmd() *cobra.Command {
-	var options common.FrisbeeInstallOptions
-	var chartPath string
-	var publicIP net.IP
-	var values string
+	var (
+		options   common.FrisbeeInstallOptions
+		chartPath string
+		publicIP  net.IP
+		values    string
+	)
 
 	cmd := &cobra.Command{
 		Use:   "development <FrisbeePath> <PublicIP>",

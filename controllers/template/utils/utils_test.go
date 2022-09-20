@@ -33,7 +33,7 @@ func TestGenerateSpecFromScheme(t *testing.T) {
 			name: "single",
 			args: args{tspec: &v1alpha1.Scheme{
 				Inputs: &v1alpha1.Inputs{Parameters: v1alpha1.UserInputs{"slaves": v1alpha1.ParameterValue("slave0")}},
-				Spec:   []byte(`{{.Inputs.Parameters.slaves}}`),
+				Spec:   []byte(`{{.inputs.parameters.slaves}}`),
 			}},
 			want:    "slave0",
 			wantErr: false,

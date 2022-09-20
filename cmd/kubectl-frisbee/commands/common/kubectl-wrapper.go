@@ -621,12 +621,12 @@ metadata:
 spec:
  hard:
   {{- if .Inputs.Parameters.CPU}}
-    requests.cpu: {{.Inputs.Parameters.CPU}}
-    limits.cpu: {{.Inputs.Parameters.CPU}}
+    requests.cpu: {{.inputs.parameters.CPU}}
+    limits.cpu: {{.inputs.parameters.CPU}}
   {{- end}}
   {{- if .Inputs.Parameters.Memory}}
-    requests.memory: {{.Inputs.Parameters.Memory}}
-    limits.memory: {{.Inputs.Parameters.Memory}}
+    requests.memory: {{.inputs.parameters.Memory}}
+    limits.memory: {{.inputs.parameters.Memory}}
    {{- end}}
 `),
 	}

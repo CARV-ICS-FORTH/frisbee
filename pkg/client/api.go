@@ -36,7 +36,7 @@ func init() {
 	utilruntime.Must(frisbeev1alpha1.AddToScheme(scheme))
 }
 
-// NewDirectAPIClient returns proxy api client
+// NewDirectAPIClient returns proxy api client.
 func NewDirectAPIClient(client client.Client) APIClient {
 	return APIClient{
 		TestManagementClient: NewTestManagementClient(client),
@@ -44,7 +44,7 @@ func NewDirectAPIClient(client client.Client) APIClient {
 	}
 }
 
-// APIClient struct managing proxy API Client dependencies
+// APIClient struct managing proxy API Client dependencies.
 type APIClient struct {
 	TestManagementClient
 	TestInspectionClient

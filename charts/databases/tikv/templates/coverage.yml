@@ -12,16 +12,6 @@ spec:
       memory: ""
   service:
     requirements: # Requirements
-      ephemeralVolumeClaim:
-        name: datastore
-        spec:
-          storageClassName: local-volume
-          accessModes:
-            - ReadWriteOnce
-          resources:
-            requests:
-              storage: 15Gi
-
       ingressBackend:
         service:
           name: self
@@ -34,14 +24,28 @@ spec:
         - tikv.telemetry.pd
 
       resources:
-        cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
-        memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
+        cpu: {{"{{.inputs.parameters.cpu}}" | quote}}
+        memory: {{"{{.inputs.parameters.memory}}" | quote}}
+
+    volumes:   # Create an ephemeral volume, backed by a file
+      - name: scratch-volume
+        ephemeral:
+          volumeClaimTemplate:
+            spec:
+              storageClassName: local-volume
+              volumeMode: Filesystem
+              accessModes:
+                - ReadWriteOnce
+              resources:
+                requests:
+                  storage: 15Gi
+
 
     containers: # Container(s)
       - name: app
         image: icsforth/tikv-pd-coverage
         volumeMounts:
-          - name: datastore
+          - name: scratch-volume
             mountPath: /store
         securityContext:
           privileged: true
@@ -105,16 +109,6 @@ spec:
 
   service:
     requirements: # Requirements
-      ephemeralVolumeClaim:
-        name: datastore
-        spec:
-          storageClassName: local-volume
-          accessModes:
-            - ReadWriteOnce
-          resources:
-            requests:
-              storage: 15Gi
-
       ingressBackend:
         service:
           name: self
@@ -127,8 +121,21 @@ spec:
         - tikv.telemetry.worker
 
       resources: # Resources
-        cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
-        memory: {{"{{.Inputs.Parameters.memory}}" |quote}}
+        cpu: {{"{{.inputs.parameters.cpu}}" | quote}}
+        memory: {{"{{.inputs.parameters.memory}}" |quote}}
+
+    volumes:   # Create an ephemeral volume, backed by a file
+      - name: scratch-volume
+        ephemeral:
+          volumeClaimTemplate:
+            spec:
+              storageClassName: local-volume
+              volumeMode: Filesystem
+              accessModes:
+                - ReadWriteOnce
+              resources:
+                requests:
+                  storage: 15Gi
 
     containers: # Container(s)
       - name: app
@@ -136,7 +143,7 @@ spec:
         securityContext:
           privileged: true
         volumeMounts:
-          - name: datastore
+          - name: scratch-volume
             mountPath: /store
         ports:
           - name: clusterbus
@@ -172,7 +179,7 @@ spec:
               status-addr = "127.0.0.1:20180"
 
             [pd]
-              endpoints = ["{{"{{.Inputs.Parameters.placementDriver}}"}}:2379"]
+              endpoints = ["{{"{{.inputs.parameters.placementDriver}}"}}:2379"]
 
             [storage]
               reserve-space = "0"

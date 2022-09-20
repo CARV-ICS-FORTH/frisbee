@@ -26,13 +26,13 @@ spec:
       #  - system.coverage.server
 
       resources:
-        memory: {{"{{.Inputs.Parameters.memory}}" | quote}}
-        cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
+        memory: {{"{{.inputs.parameters.memory}}" | quote}}
+        cpu: {{"{{.inputs.parameters.cpu}}" | quote}}
 
     volumes:
       - name: dataset
         persistentVolumeClaim:
-          claimName: {{"{{.Inputs.Parameters.dataClaimName}}" | quote}}
+          claimName: {{"{{.inputs.parameters.dataClaimName}}" | quote}}
 
     containers:
       - name: app
@@ -59,7 +59,7 @@ spec:
             # The clients are  supposed to be continuously running.
             # If the training is stopped, the clients will report “Disconnect and shut down” on the logs,
             # but they will keep running. To this end, we terminate the process upon the given message.
-            export FL_SERVER={{"{{.Inputs.Parameters.server}}"}}
+            export FL_SERVER={{"{{.inputs.parameters.server}}"}}
 
             # Install coverage tool
             pip install coverage

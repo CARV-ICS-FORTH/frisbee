@@ -21,13 +21,12 @@ import (
 	"reflect"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	"github.com/carv-ics-forth/frisbee/pkg/grafana"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	"github.com/carv-ics-forth/frisbee/controllers/common"
+	"github.com/carv-ics-forth/frisbee/pkg/grafana"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )

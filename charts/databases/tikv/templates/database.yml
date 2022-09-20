@@ -14,8 +14,8 @@ spec:
     decorators: # Decorators
       telemetry: [system.telemetry.agent, tikv.telemetry.pd]
       resources: # Resources
-        cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
-        memory: {{"{{.Inputs.Parameters.memory}}" |quote}}
+        cpu: {{"{{.inputs.parameters.cpu}}" | quote}}
+        memory: {{"{{.inputs.parameters.memory}}" |quote}}
 
     volumes:   # Create an ephemeral volume, backed by a file
       - name: scratch-volume
@@ -78,8 +78,8 @@ spec:
     decorators: # Decorators
       telemetry: [ system.telemetry.agent, tikv.telemetry.worker ]
       resources: # Resources
-        cpu: {{"{{.Inputs.Parameters.cpu}}" | quote}}
-        memory: {{"{{.Inputs.Parameters.memory}}" |quote}}
+        cpu: {{"{{.inputs.parameters.cpu}}" | quote}}
+        memory: {{"{{.inputs.parameters.memory}}" |quote}}
 
     volumes: # Create an ephemeral volume, backed by a file
       - name: scratch-volume
@@ -128,7 +128,7 @@ spec:
               status-addr = "127.0.0.1:20180"
 
             [pd]
-              endpoints = ["{{"{{.Inputs.Parameters.placementDriver}}"}}:2379"]
+              endpoints = ["{{"{{.inputs.parameters.placementDriver}}"}}:2379"]
 
             [storage]
               reserve-space = "0"

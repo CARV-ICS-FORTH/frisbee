@@ -41,20 +41,20 @@ spec:
 
       cni:
         container: app
-        command: [ "ping", "-c1", {{"{{.Inputs.Parameters.cni0}}" | quote }}]
+        command: [ "ping", "-c1", {{"{{.inputs.parameters.cni0}}" | quote }}]
 
       host:
         container: app
-        command: [ "ping", "-c1", {{"{{.Inputs.Parameters.host}}" | quote }}]
+        command: [ "ping", "-c1", {{"{{.inputs.parameters.host}}" | quote }}]
 
       neigh:
         container: app
-        command: [ "ping", "-c1", {{"{{.Inputs.Parameters.neigh}}" | quote }}]
+        command: [ "ping", "-c1", {{"{{.inputs.parameters.neigh}}" | quote }}]
 
       public:
         container: app
-        command: [ "ping", "-c1", {{"{{.Inputs.Parameters.public}}" | quote }}]
+        command: [ "ping", "-c1", {{"{{.inputs.parameters.public}}" | quote }}]
 
       dns:
         container: app
-        command: [ "ping", "-c1", {{"{{.Inputs.Parameters.web}}" | quote }}]
+        command: [ "ping", "-c1", {{"{{.inputs.parameters.web}}" | quote }}]

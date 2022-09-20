@@ -80,7 +80,7 @@ func Test_setField(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "test-requirement",
+			name: "no-such-field",
 			args: args{
 				cr: &cr,
 				val: v1alpha1.SetField{
@@ -88,7 +88,7 @@ func Test_setField(t *testing.T) {
 					Value: "3Gi",
 				},
 			},
-			wantErr: false,
+			wantErr: true,
 		},
 	}
 

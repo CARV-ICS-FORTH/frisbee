@@ -17,13 +17,13 @@ spec:
         - system.telemetry.agent
 
       resources:
-        memory: {{"{{.Inputs.Parameters.memory}}"}}
-        cpu: {{"{{.Inputs.Parameters.cpu}}"}}
+        memory: {{"{{.inputs.parameters.memory}}"}}
+        cpu: {{"{{.inputs.parameters.cpu}}"}}
 
     volumes:
       - name: dataset
         persistentVolumeClaim:
-          claimName: {{"{{.Inputs.Parameters.dataClaimName}}"}}
+          claimName: {{"{{.inputs.parameters.dataClaimName}}"}}
 
     containers:
       - name: app
@@ -46,7 +46,7 @@ spec:
             # The clients are  supposed to be continuously running.
             # If the training is stopped, the clients will report “Disconnect and shut down” on the logs,
             # but they will keep running. To this end, we terminate the process upon the given message.
-            export FL_SERVER={{"{{.Inputs.Parameters.server}}"}}
+            export FL_SERVER={{"{{.inputs.parameters.server}}"}}
 
             export logFile=/tmp/${HOSTNAME}
 
