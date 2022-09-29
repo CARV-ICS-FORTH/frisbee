@@ -54,3 +54,11 @@ spec:
         templateRef: system.chaos.network.delay
         inputs:
           - { source: server, duration: 5m, latency: "120ms",  jitter: "50ms" }
+
+
+    # Step: Teardown
+    - action: Delete
+      name: teardown
+      depends: { running: [ server ], success: [ clients, delay ] }
+      delete:
+        jobs: [ server ]

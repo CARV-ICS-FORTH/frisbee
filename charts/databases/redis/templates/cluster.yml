@@ -21,17 +21,13 @@ metadata:
 spec:
   inputs:
     parameters:
-      memory: ""
-      cpu: ""
       join: ""
   service:
     decorators: # Decorators
       telemetry:
         - system.telemetry.agent
         - redis.telemetry.server
-      resources:
-        memory: {{"{{.inputs.parameters.memory}}" | quote}}
-        cpu: {{"{{.inputs.parameters.cpu}}" | quote}}
+
     containers: # Container
       - name: app
         image: redis

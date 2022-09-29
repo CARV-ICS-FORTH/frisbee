@@ -16,8 +16,6 @@ spec:
       name: coordinator
       service:
         templateRef: tikv.cluster.placement-driver
-        inputs:
-          - { cpu: "4", memory: "8Gi" }
 
     - action: Cluster
       depends: { running: [ coordinator ] }
@@ -26,7 +24,7 @@ spec:
         templateRef: tikv.cluster.worker
         instances: 1
         inputs:
-          - { placementDriver: coordinator, cpu: "8", memory: "32Gi" }
+          - { placementDriver: coordinator }
 
     # Step 1: Load a new dataset, using the parameters of workload A.
     # We use no throttling to maximize this step and complete it soon.

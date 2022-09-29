@@ -54,3 +54,10 @@ spec:
         templateRef: system.chaos.network.partition.partial
         inputs:
           - { source: server, duration: 5m , direction: "both", dst: "clients-0,clients-1,clients-2" }
+
+    # Step: Teardown
+    - action: Delete
+      name: teardown
+      depends: { running: [ server ], success: [ clients, partition0 ] }
+      delete:
+        jobs: [ server ]

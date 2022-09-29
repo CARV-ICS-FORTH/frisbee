@@ -52,4 +52,11 @@ spec:
       service:
         templateRef: fl.quickstart.client
         inputs:
-          - { server: server, dataClaimName: dataset, cpu: "1.8" }
+          - { server: server, dataClaimName: dataset }
+
+    # Step: Teardown
+    - action: Delete
+      name: teardown
+      depends: { running: [ server ], success: [ clients, throttled-client ] }
+      delete:
+        jobs: [ server ]

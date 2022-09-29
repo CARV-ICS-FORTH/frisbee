@@ -6,10 +6,6 @@ kind: Template
 metadata:
   name: tikv.cluster.coverage.placement-driver
 spec:
-  inputs:
-    parameters:
-      cpu: ""
-      memory: ""
   service:
     requirements: # Requirements
       ingressBackend:
@@ -22,10 +18,6 @@ spec:
       telemetry:
         - system.telemetry.agent
         - tikv.telemetry.pd
-
-      resources:
-        cpu: {{"{{.inputs.parameters.cpu}}" | quote}}
-        memory: {{"{{.inputs.parameters.memory}}" | quote}}
 
     volumes:   # Create an ephemeral volume, backed by a file
       - name: scratch-volume
@@ -104,8 +96,6 @@ spec:
   inputs:
     parameters:
       placementDriver: "localhost"
-      cpu: ""
-      memory: ""
 
   service:
     requirements: # Requirements
@@ -119,10 +109,6 @@ spec:
       telemetry:
         - system.telemetry.agent
         - tikv.telemetry.worker
-
-      resources: # Resources
-        cpu: {{"{{.inputs.parameters.cpu}}" | quote}}
-        memory: {{"{{.inputs.parameters.memory}}" |quote}}
 
     volumes:   # Create an ephemeral volume, backed by a file
       - name: scratch-volume

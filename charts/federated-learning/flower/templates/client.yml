@@ -8,22 +8,15 @@ spec:
     parameters:
       server: "127.0.0.1"
       dataClaimName: ""
-
-      memory: ""
-      cpu: ""
   service:
     decorators:
       telemetry:
         - system.telemetry.agent
 
-      resources:
-        memory: {{"{{.inputs.parameters.memory}}"}}
-        cpu: {{"{{.inputs.parameters.cpu}}"}}
-
     volumes:
       - name: dataset
         persistentVolumeClaim:
-          claimName: {{"{{.inputs.parameters.dataClaimName}}"}}
+          claimName: {{"{{.inputs.parameters.dataClaimName}}" | quote}}
 
     containers:
       - name: app

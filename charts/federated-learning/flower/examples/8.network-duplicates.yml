@@ -53,3 +53,11 @@ spec:
         templateRef: system.chaos.network.duplicate
         inputs:
           - { source: server, duration: 5m }
+
+
+    # Step: Teardown
+    - action: Delete
+      name: teardown
+      depends: { running: [ server ], success: [ clients, duplicates ] }
+      delete:
+        jobs: [ server ]

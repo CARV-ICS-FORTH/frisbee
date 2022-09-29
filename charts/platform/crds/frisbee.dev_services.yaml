@@ -2132,41 +2132,6 @@ spec:
                     additionalProperties:
                       type: string
                     type: object
-                  resources:
-                    description: "Resources specifies limitations as to how the container
-                      will access host resources. \n Deprecated: Use the Cluster.Resource.Distribution"
-                    properties:
-                      cpu:
-                        type: string
-                      disk:
-                        description: Disk specifies the capabilities of the emulated
-                          storage device.
-                        properties:
-                          readbps:
-                            description: ReadBPS limits read rate (bytes per second)
-                            type: string
-                          readiops:
-                            description: ReadIOPS limits read rate (IO per second)
-                            type: string
-                          writebps:
-                            description: WriteBPS limits write rate (bytes per second)
-                            type: string
-                          writeiops:
-                            description: WriteIOPS limits write rate (IO per second)
-                            type: string
-                        type: object
-                      memory:
-                        type: string
-                      nic:
-                        description: NIC specifies the capabilities of the emulated
-                          network interface.
-                        properties:
-                          latency:
-                            type: string
-                          rate:
-                            type: string
-                        type: object
-                    type: object
                   setFields:
                     description: SetFields is used to populate fields. Used for dynamic
                       assignment based templated inputs.

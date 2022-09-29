@@ -46,3 +46,12 @@ spec:
           - { server: server, dataClaimName: dataset }
         schedule:
           cron: "@every 2m"
+
+
+
+    # Step: Teardown
+    - action: Delete
+      name: teardown
+      depends: { running: [ server ], success: [ clients ] }
+      delete:
+        jobs: [ server ]

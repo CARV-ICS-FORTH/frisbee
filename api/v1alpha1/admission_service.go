@@ -85,9 +85,11 @@ func (in *Service) validateMainContainer(container *corev1.Container) error {
 		return errors.Errorf("unclear if it's a main container or a telemetry sidecar")
 	}
 
-	if in.Spec.Decorators.Resources != nil && (container.Resources.Limits != nil || container.Resources.Requests != nil) {
-		return errors.Errorf("pod-level decorators.resources are in conflict with container[%s].resources", container.Name)
-	}
+	/*
+		if in.Spec.Decorators.Resources != nil && (container.Resources.Limits != nil || container.Resources.Requests != nil) {
+			return errors.Errorf("pod-level decorators.resources are in conflict with container[%s].resources", container.Name)
+		}
+	*/
 
 	return nil
 }

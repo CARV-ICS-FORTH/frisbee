@@ -4,17 +4,10 @@ kind: Template
 metadata:
   name: iperf2.server
 spec:
-  inputs:
-    parameters:
-      memory: ""
-      cpu: ""
   service:
     decorators:
       telemetry:
         - system.telemetry.agent
-      resources:
-        cpu: {{"{{.inputs.parameters.cpu}}" | quote}}
-        memory: {{"{{.inputs.parameters.memory}}" | quote}}
     containers:
       - name: app
         image: "czero/iperf2"
@@ -40,17 +33,13 @@ spec:
   inputs:
     parameters:
       server: localhost
-      memory: ""
-      cpu: ""
       seconds: "60"
   service:
     decorators:
       telemetry:
         - system.telemetry.agent
         - iperf2.telemetry.client
-      resources:
-        memory: {{"{{.inputs.parameters.memory}}" | quote}}
-        cpu: {{"{{.inputs.parameters.cpu}}" | quote}}
+
     containers:
       - name: app
         image: "czero/iperf2"

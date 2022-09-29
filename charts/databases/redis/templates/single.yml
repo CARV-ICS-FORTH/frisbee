@@ -4,16 +4,10 @@ kind: Template
 metadata:
   name: redis.single.master
 spec:
-  inputs:
-    parameters:
-      memory: ""
-      cpu: ""
   service:
     decorators: # Decorators
       telemetry: [ system.telemetry.agent, redis.telemetry.server ]
-      resources:
-        memory: {{"{{.inputs.parameters.memory}}" |quote}}
-        cpu: {{"{{.inputs.parameters.cpu}}" | quote}}
+
     containers:
       - name: app
         image: redis

@@ -26,12 +26,10 @@ import (
 	"github.com/carv-ics-forth/frisbee/controllers/common"
 	serviceutils "github.com/carv-ics-forth/frisbee/controllers/service/utils"
 	"github.com/carv-ics-forth/frisbee/pkg/configuration"
-	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 	netv1 "k8s.io/api/networking/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/labels"
 )
 
@@ -221,44 +219,6 @@ func decoratePod(ctx context.Context, r *Controller, cr *v1alpha1.Service) error
 			if err := SetField(cr, val); err != nil {
 				return errors.Wrapf(err, "cannot set field [%v]", val)
 			}
-		}
-	}
-
-	// set resources, to the first container only
-	if req := cr.Spec.Decorators.Resources; req != nil {
-		if len(cr.Spec.Containers) != 1 {
-			return errors.New("Decoration resources are not applicable for multiple containers")
-		}
-
-		resources := make(map[corev1.ResourceName]resource.Quantity)
-
-		var resourceError *multierror.Error
-
-		if len(req.CPU) > 0 {
-			q, err := resource.ParseQuantity(req.CPU)
-			if err != nil {
-				resourceError = multierror.Append(resourceError, errors.Wrapf(err, "CPU resource error"))
-			}
-
-			resources[corev1.ResourceCPU] = q
-		}
-
-		if len(req.Memory) > 0 {
-			q, err := resource.ParseQuantity(req.Memory)
-			if err != nil {
-				resourceError = multierror.Append(resourceError, errors.Wrapf(err, "Memory resource error"))
-			}
-
-			resources[corev1.ResourceMemory] = q
-		}
-
-		if resourceError != nil {
-			return errors.Wrapf(resourceError, "Resource error")
-		}
-
-		cr.Spec.Containers[0].Resources = corev1.ResourceRequirements{
-			Limits:   resources,
-			Requests: resources,
 		}
 	}
 

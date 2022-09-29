@@ -11,8 +11,6 @@ spec:
       name: coordinator
       service:
         templateRef: tikv.cluster.placement-driver
-        inputs:
-          - { cpu: "4", memory: "8Gi" }
 
     # add a cluster of 3 TiKV instances
     - action: Cluster

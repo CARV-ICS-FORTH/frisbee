@@ -10,8 +10,6 @@ spec:
       port: "2379"
       offset: "0"
       recordcount: "10000000"
-      cpu: ""     # Example: 8
-      memory: ""  # Example: 8Gi
       threads: ""
       workload: "workloada"
       dropdata: "false"
@@ -21,9 +19,7 @@ spec:
       telemetry:
         - system.telemetry.agent
         - ycsb.telemetry.client
-      resources:
-        cpu: {{"{{.inputs.parameters.cpu}}" |quote}}
-        memory: {{"{{.inputs.parameters.memory}}" |quote}}
+
         #annotations:
         #"grafana.frisbee.dev/draw": "range"
 
@@ -66,17 +62,13 @@ spec:
       port: "2379"
       workload: "workloada"
       operationcount: "30000000"
-      cpu: ""
-      memory: ""
       threads: ""
   service:
     decorators: # Decorators
       telemetry:
         - system.telemetry.agent
         - ycsb.telemetry.client
-      resources: # Resources
-        cpu: {{"{{.inputs.parameters.cpu}}" |quote}}
-        memory: {{"{{.inputs.parameters.memory}}" |quote}}
+
         #annotations:
         #"grafana.frisbee.dev/draw": "range"
 

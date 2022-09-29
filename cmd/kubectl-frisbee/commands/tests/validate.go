@@ -36,7 +36,7 @@ func NewValidateCmd() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:     "test <Scenario>",
-		Aliases: []string{"t"},
+		Aliases: []string{"tests", "t"},
 		Short:   "Validate a new test",
 		Long:    `Validate run the scenario in a dry-run mode`,
 		Args: func(cmd *cobra.Command, args []string) error {
@@ -125,7 +125,7 @@ func validateChart(chartDir string) error {
 	// Helm by default will validate only the chart/templates directory
 	ui.Info("Validating Templates ... ", chartDir)
 
-	if _, err := common.Helm("", "install", "dummy", "--dry-run", "--debug", chartDir); err != nil {
+	if _, err := common.Helm("", "install", "dummy", "--dry-run", chartDir); err != nil {
 		return err
 	}
 

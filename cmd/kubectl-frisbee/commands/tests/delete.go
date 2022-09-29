@@ -41,7 +41,7 @@ func NewDeleteTestsCmd() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:     "test <testName>",
-		Aliases: []string{"t", "tests"},
+		Aliases: []string{"tests", "t"},
 		Short:   "Delete Test",
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 && !options.DeleteAll {
