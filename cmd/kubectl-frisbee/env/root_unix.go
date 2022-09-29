@@ -17,11 +17,12 @@ limitations under the License.
 package env
 
 import (
-	"github.com/carv-ics-forth/frisbee/pkg/ui"
-	"k8s.io/utils/exec"
 	"os"
 	"os/user"
 	"path/filepath"
+
+	"github.com/carv-ics-forth/frisbee/pkg/ui"
+	"k8s.io/utils/exec"
 )
 
 func (env *EnvironmentSettings) CheckKubePerms() {
