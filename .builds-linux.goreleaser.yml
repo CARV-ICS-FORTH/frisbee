@@ -2,7 +2,6 @@ before:
   hooks:
     - go mod tidy
 
-
 dist: linux
 builds:
   - main: ./cmd/kubectl-frisbee

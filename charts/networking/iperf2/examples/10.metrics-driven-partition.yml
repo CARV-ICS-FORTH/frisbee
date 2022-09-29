@@ -20,7 +20,7 @@ spec:
       service:
         templateRef: iperf2.client
         inputs:
-          - { server: .service.server.one, seconds: "800" }
+          - { server: server, seconds: "800" }
 
     # Create a cluster of iperf clients
     - action: Cluster
@@ -30,7 +30,7 @@ spec:
         templateRef: iperf2.client
         instances: 20
         inputs:
-          - { server: .service.server.one, seconds: "300" }
+          - { server: server, seconds: "300" }
         schedule:
           cron: "@every 1m"
         placement:
@@ -44,7 +44,15 @@ spec:
       cascade:
         templateRef: system.chaos.network.partition
         inputs:
-          - { targets: .service.noise.one,  duration: "2m" }
+          - { targets: noise,  duration: "2m" }
         schedule:
           event:
             metrics: "avg() of query(wpFnYRwGk/2/bitrate, 5m, now) is below(500)"
+
+
+    # Step: Teardown
+    - action: Delete
+      name: teardown
+      depends: { running: [ server, noise ], success: [ partition0, clients ] }
+      delete:
+        jobs: [ server, noise ]

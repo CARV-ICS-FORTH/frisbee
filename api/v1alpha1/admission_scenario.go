@@ -58,18 +58,7 @@ func (in *Scenario) ValidateCreate() error {
 		return errors.Wrapf(err, "invalid scenario [%s]", in.GetName())
 	}
 
-	// Use transactions as a means to detect looping containers that never terminate within
-	// the lifespan of the scenario. If so, the experiment never ends and waste resources.
-	// The idea is find which Actions (Services, Clusters, ...) are not referenced by a
-	// terminal dependency condition (e.g, success), and mark as suspects for looping.
-	txIndex := make(map[string]bool, len(legitReferences))
-
-	for _, action := range in.Spec.Actions {
-		// Check the referenced dependencies are ok
-		if err := CheckDependencyGraph(action, legitReferences, txIndex); err != nil {
-			return errors.Wrapf(err, "dependency error for action [%s]", action.Name)
-		}
-
+	for i, action := range in.Spec.Actions {
 		// Check that expressions used in the assertions are ok
 		if !action.Assert.IsZero() {
 			if err := ValidateExpr(action.Assert); err != nil {
@@ -78,23 +67,13 @@ func (in *Scenario) ValidateCreate() error {
 		}
 
 		// Ensure that the type of action is supported and is correctly set
-		if err := CheckAction(&action, legitReferences); err != nil {
+		if err := CheckAction(&in.Spec.Actions[i], legitReferences); err != nil {
 			return errors.Wrapf(err, "incorrent spec for type [%s] of action [%s]", action.ActionType, action.Name)
 		}
-
-		/*
-			if err := r.CheckTemplateRef(ctx, scenario, action); err != nil {
-				return errors.Wrapf(err, "template reference error for action [%s]", actionName)
-			}
-
-		*/
 	}
 
-	// raise a warning if there are opened looping services that remain active after all actions are scheduled.
-	for actionName, completed := range txIndex {
-		if !completed {
-			return errors.Errorf("Action '%s' remains unbounded at the end of the scenario.", actionName)
-		}
+	if err := CheckForBoundedExecution(legitReferences); err != nil {
+		return errors.Wrapf(err, "infinity error")
 	}
 
 	return nil
@@ -114,6 +93,21 @@ func BuildDependencyGraph(scenario *Scenario) (map[string]*Action, error) {
 			return nil, errors.Wrapf(err, "invalid actioname %s", action.Name)
 		}
 
+		// validate references dependencies
+		if deps := action.DependsOn; deps != nil {
+			for _, dep := range deps.Running {
+				if _, exists := callIndex[dep]; !exists {
+					return nil, errors.Errorf("invalid running dependency: [%s]<-[%s]", action.Name, dep)
+				}
+			}
+
+			for _, dep := range deps.Success {
+				if _, exists := callIndex[dep]; !exists {
+					return nil, errors.Errorf("invalid success dependency: [%s]<-[%s]", action.Name, dep)
+				}
+			}
+		}
+
 		// update calling map
 		if _, exists := callIndex[action.Name]; !exists {
 			callIndex[action.Name] = &scenario.Spec.Actions[i]
@@ -125,33 +119,58 @@ func BuildDependencyGraph(scenario *Scenario) (map[string]*Action, error) {
 	return callIndex, nil
 }
 
-func CheckDependencyGraph(action Action, callIndex map[string]*Action, txIndex map[string]bool) error {
-	// find invalid dependency and update txIndex with completed actions.
-	if deps := action.DependsOn; deps != nil {
-		for _, dep := range deps.Running {
-			if _, exists := callIndex[dep]; !exists {
-				return errors.Errorf("invalid running dependency: [%s]<-[%s]", action.Name, dep)
-			}
+func CheckForBoundedExecution(callIndex map[string]*Action) error {
+	// Use transactions as a means to detect looping containers that never terminate within
+	// the lifespan of the scenario. If so, the experiment never ends and waste resources.
+	// The idea is find which Actions (Services, Clusters, ...) are not referenced by a
+	// terminal dependency condition (e.g, success), and mark as suspects for looping.
+	jobCompletionIndex := make(map[string]bool, len(callIndex))
 
-			// In general, we assume that an Action A with a "Running" dependency to Action B,
-			// will leave the Action B unchanged, after Action A is complete. Exception to this is "Delete" Action,
-			// which will delete (and therefore 'complete') the Action B.
-			if action.ActionType != ActionDelete {
-				// mark the action as opened
-				txIndex[dep] = false
-			} else {
-				// mark the action as completed
-				txIndex[dep] = true
+	// Mark every action as uncompleted.
+	for _, action := range callIndex {
+		jobCompletionIndex[action.Name] = false
+	}
+
+	// Do a mockup "run" and mark completed jobs
+	for _, action := range callIndex {
+		// Successful actions are regarded as completed.
+		if deps := action.DependsOn; deps != nil {
+			for _, dep := range deps.Success {
+				if _, exists := callIndex[dep]; !exists {
+					return errors.Errorf("invalid success dependency [%s]<-[%s]", action.Name, dep)
+				}
+
+				jobCompletionIndex[dep] = true
 			}
 		}
 
-		for _, dep := range deps.Success {
-			if _, exists := callIndex[dep]; !exists {
-				return errors.Errorf("invalid success dependency [%s]<-[%s]", action.Name, dep)
+		// Deleted actions are regarded as completed.
+		if action.ActionType == ActionDelete {
+			for _, job := range action.Delete.Jobs {
+				completed, exists := jobCompletionIndex[job]
+				if !exists {
+					return errors.Errorf("internal error. job '%s' does not exist. This should be captured by reference graph", job)
+				}
+
+				if completed {
+					return errors.Errorf("action.[%s].Delete[%s] deletes an already completed job", action.Name, job)
+				}
+
+				// mark the job as completed
+				jobCompletionIndex[job] = true
 			}
 
-			// mark the action as completed.
-			txIndex[dep] = true
+			// If it's a Teardown action, mark it as completed.
+			if action.ActionType == ActionDelete && action.Name == "teardown" {
+				jobCompletionIndex[action.Name] = true
+			}
+		}
+	}
+
+	// Find jobs are that not completed
+	for actionName, completed := range jobCompletionIndex {
+		if !completed {
+			return errors.Errorf("action '%s' is not completed at the end of the scenario", actionName)
 		}
 	}
 
@@ -176,15 +195,14 @@ func CheckAction(action *Action, references map[string]*Action) error {
 			return errors.Errorf("empty cluster definition")
 		}
 
-		v := &Cluster{
-			Spec: *action.EmbedActions.Cluster,
-		}
+		var cluster Cluster
+		cluster.Spec = *action.EmbedActions.Cluster
 
-		if err := v.ValidateCreate(); err != nil {
+		if err := cluster.ValidateCreate(); err != nil {
 			return errors.Wrapf(err, "cluster error")
 		}
 
-		if placement := v.Spec.Placement; placement != nil {
+		if placement := cluster.Spec.Placement; placement != nil {
 			if err := ValidatePlacement(placement, references); err != nil {
 				return errors.Wrapf(err, "placement error")
 			}
@@ -203,9 +221,7 @@ func CheckAction(action *Action, references map[string]*Action) error {
 					return nil, errors.Errorf("kill is a inject-only chaos. it does not have success. only running")
 				}
 			}
-
 		*/
-
 		return nil
 
 	case ActionCascade:
@@ -213,11 +229,11 @@ func CheckAction(action *Action, references map[string]*Action) error {
 			return errors.Errorf("empty cascade definition")
 		}
 
-		v := &Cascade{
-			Spec: *action.EmbedActions.Cascade,
-		}
+		var cascade Cascade
+		cascade.Spec = *action.EmbedActions.Cascade
 
-		return v.ValidateCreate()
+		return cascade.ValidateCreate()
+
 	case ActionDelete:
 		if action.EmbedActions.Delete == nil {
 			return errors.Errorf("empty delete definition")
@@ -236,16 +252,16 @@ func CheckAction(action *Action, references map[string]*Action) error {
 		}
 
 		return nil
+
 	case ActionCall:
 		if action.EmbedActions.Call == nil {
 			return errors.Errorf("empty call definition")
 		}
 
-		v := &Call{
-			Spec: *action.EmbedActions.Call,
-		}
+		var call Call
+		call.Spec = *action.EmbedActions.Call
 
-		return v.ValidateCreate()
+		return call.ValidateCreate()
 
 	default:
 		return errors.Errorf("Unknown action")

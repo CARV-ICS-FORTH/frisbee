@@ -18,7 +18,6 @@ spec:
       name: master
       depends: { running: [ slaves ] }
       service:
-        
         templateRef: mongo.cluster.master
         inputs:
           - { slaves: .cluster.slaves.all, cpu: "8", memory: "32Gi" }
@@ -32,7 +31,7 @@ spec:
         
         templateRef: ycsb.mongo.loader
         inputs:
-          - { server: .service.master.one, workload: workloada, recordcount: "1000000", threads: "400" }
+          - { server: master, workload: workloada, recordcount: "1000000", threads: "400" }
 
     # Step 2: Run workload A
     - action: Service
@@ -42,7 +41,7 @@ spec:
         
         templateRef: ycsb.mongo.runner
         inputs:
-          - { server: .service.master.one, workload: workloada, operationcount: "1000000",
+          - { server: master, workload: workloada, operationcount: "1000000",
               cpu: "8", memory: "8Gi", threads: "40" }
 
     # Step 3: Run workload B
@@ -53,7 +52,7 @@ spec:
         
         templateRef: ycsb.mongo.runner
         inputs:
-          - { server: .service.master.one, workload: workloadb, operationcount: "1000000",
+          - { server: master, workload: workloadb, operationcount: "1000000",
               cpu: "8", memory: "8Gi", threads: "40" }
 
     # Step 4: Run workload C
@@ -64,7 +63,7 @@ spec:
         
         templateRef: ycsb.mongo.runner
         inputs:
-          - { server: .service.master.one, workload: workloadc, operationcount: "1000000",
+          - { server: master, workload: workloadc, operationcount: "1000000",
               cpu: "8", memory: "8Gi", threads: "40" }
 
 
@@ -76,7 +75,7 @@ spec:
         
         templateRef: ycsb.mongo.runner
         inputs:
-          - { server: .service.master.one, workload: workloadf, operationcount: "1000000",
+          - { server: master, workload: workloadf, operationcount: "1000000",
               cpu: "8", memory: "8Gi", threads: "40" }
 
 
@@ -88,7 +87,7 @@ spec:
         
         templateRef: ycsb.mongo.runner
         inputs:
-          - { server: .service.master.one, workload: workloadd, operationcount: "1000000",
+          - { server: master, workload: workloadd, operationcount: "1000000",
               cpu: "8", memory: "8Gi", threads: "40" }
 
 
@@ -101,7 +100,7 @@ spec:
         
         templateRef: ycsb.mongo.loader
         inputs:
-          - { server: .service.master.one, workload: workloade, dropdata: "true", recordcount: "1000000",
+          - { server: master, workload: workloade, dropdata: "true", recordcount: "1000000",
               threads: "400" }
 
 
@@ -113,5 +112,13 @@ spec:
         
         templateRef: ycsb.mongo.runner
         inputs:
-          - { server: .service.master.one, workload: workloade, operationcount: "1000000",
+          - { server: master, workload: workloade, operationcount: "1000000",
               cpu: "8", memory: "8Gi", threads: "40" }
+
+
+    # Step 10: Teardown
+    - action: Delete
+      name: teardown
+      depends: { running: [ master, slaves], success: [ workload-e ] }
+      delete:
+        jobs: [ master, slaves ]

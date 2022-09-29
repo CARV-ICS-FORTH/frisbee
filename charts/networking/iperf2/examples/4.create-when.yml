@@ -20,7 +20,7 @@ spec:
       service:
         templateRef: iperf2.client
         inputs:
-          - { server: .service.server.one, seconds: "800" }
+          - { server: server, seconds: "800" }
 
     # Create a cluster of iperf clients
     - action: Cluster
@@ -30,8 +30,14 @@ spec:
         templateRef: iperf2.client
         instances: 100
         inputs:
-          - { server: .service.server.one, seconds: "160" }
-          - { server: .service.server.one, seconds: "60" }
+          - { server: server, seconds: "160" }
+          - { server: server, seconds: "60" }
         schedule:
           event:
             metrics: 'avg() of query(wpFnYRwGk/2/bitrate, 5m, now) is above(100)'
+
+    - action: Delete
+      name: teardown
+      depends: { running: [ server, noise ], success: [ clients] }
+      delete:
+        jobs: [ server, noise ]

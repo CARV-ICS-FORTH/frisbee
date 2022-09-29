@@ -43,3 +43,11 @@ spec:
           - { join: .cluster.masters.one }
         schedule:
           cron: "@every 2m"
+
+
+    # Step: Teardown
+    - action: Delete
+      name: teardown
+      depends: { running: [ masters, more-servers], success: [loader] }
+      delete:
+        jobs: [ masters, more-servers ]

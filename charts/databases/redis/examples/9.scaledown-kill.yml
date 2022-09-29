@@ -21,7 +21,6 @@ spec:
         inputs:
           - { servers: .cluster.masters.all }
 
-
     # Step 2. Hammer the server with requests
     - action: Service
       depends: { success: [ boot ] }
@@ -30,7 +29,6 @@ spec:
         templateRef: ycsb.redis.loader
         inputs:
           - { server: .cluster.masters.one , workload: workloada, recordcount: "100000000", threads: "40", mode: "cluster" }
-
 
     # Add new servers
     - action: Cluster
@@ -44,7 +42,6 @@ spec:
         tolerate: # Without this field, the cluster will fail immediately after the killing
           failedJobs: 3
 
-
     # When all servers are up and running, kill some of them periodically
     - action: Cascade
       name: killer
@@ -57,3 +54,10 @@ spec:
           - { target: more-servers-3 }
         schedule:
           cron: "@every 1m"
+
+    # Step: Teardown
+    - action: Delete
+      name: teardown
+      depends: { success: [loader, killer ], running: [more-servers] }
+      delete:
+        jobs: [ masters, more-servers ]

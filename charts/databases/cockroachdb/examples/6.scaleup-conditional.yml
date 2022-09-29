@@ -48,3 +48,11 @@ spec:
         schedule:
           event:
             metrics: 'max() of query(A2EjFbsMk/26/99Latency, 5m, now) is above(80000)'
+
+
+    # Step 9: Teardown
+    - action: Delete
+      name: teardown
+      depends: { success: [ loaders ] }
+      delete:
+        jobs: [ masters, more-servers ]

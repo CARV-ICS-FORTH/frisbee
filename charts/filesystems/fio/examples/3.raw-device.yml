@@ -11,3 +11,11 @@ spec:
         templateRef: fio.benchmark.raw-device
         inputs:
           - { direct: "0" }
+
+
+    # Step: Teardown
+    - action: Delete
+      name: teardown
+      depends: { success: [ fio] }
+      delete:
+        jobs: []

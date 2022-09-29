@@ -77,7 +77,6 @@ spec:
         inputs:
           - { server: master, workload: workloade, recordcount: "1000000", threads: "400", dropdata: "true" }
 
-
     # Step 9: Run workload E
     - action: Service
       depends: { success: [ reloader ] }
@@ -86,3 +85,11 @@ spec:
         templateRef: ycsb.cockroach.runner
         inputs:
           - { server: master, workload: workloade, operationcount: "1000000", threads: "40" }
+
+
+    # Step 10: Teardown
+    - action: Delete
+      name: teardown
+      depends: { running: [ master ], success: [ workload-e ] }
+      delete:
+        jobs: [ master ]

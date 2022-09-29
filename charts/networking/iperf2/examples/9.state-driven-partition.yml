@@ -20,7 +20,7 @@ spec:
       service:
         templateRef: iperf2.client
         inputs:
-          - { server: .service.server.one, seconds: "800" }
+          - { server: server, seconds: "800" }
 
 
     # Create another iperf client, a bit later
@@ -30,7 +30,7 @@ spec:
       service:
         templateRef: iperf2.client
         inputs:
-          - { server: .service.server.one, seconds: "120" }
+          - { server: server, seconds: "120" }
 
     # Inject a network failure when the client is created
     - action: Chaos
@@ -39,7 +39,7 @@ spec:
       chaos:
         templateRef: system.chaos.network.partition
         inputs:
-          - { targets: .service.server.one }
+          - { targets: server }
 
 
     # Revoke the failure when the client is deleted
@@ -48,3 +48,10 @@ spec:
       depends: { success: [ client ] }
       delete:
         jobs: [ partition0 ]
+
+
+    - action: Delete
+      name: teardown
+      depends: { running: [ server, noise ], success: [ delete-client ] }
+      delete:
+        jobs: [ server, noise ]

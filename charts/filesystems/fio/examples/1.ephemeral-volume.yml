@@ -11,3 +11,10 @@ spec:
         templateRef: fio.benchmark.ephemeral
         inputs:
           - { direct: "1" }
+
+    # Step: Teardown
+    - action: Delete
+      name: teardown
+      depends: { success: [ fio] }
+      delete:
+        jobs: []

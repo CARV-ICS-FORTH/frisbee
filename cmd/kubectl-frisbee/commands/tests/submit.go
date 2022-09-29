@@ -94,7 +94,7 @@ func NewSubmitTestCmd() *cobra.Command {
 
 			// Validate the scenario
 			{
-				err := common.RunTest(testName, testFile, true)
+				err := common.RunTest(testName, testFile, common.ValidationClient)
 				ui.ExitOnError("Validating testfile: "+testFile, err)
 			}
 
@@ -138,7 +138,7 @@ func NewSubmitTestCmd() *cobra.Command {
 
 			// Submit Scenario
 			{
-				err := common.RunTest(testName, testFile, false)
+				err := common.RunTest(testName, testFile, common.ValidationNone)
 				ui.ExitOnError("Starting test-case execution ", err)
 			}
 

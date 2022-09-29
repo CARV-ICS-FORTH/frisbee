@@ -68,25 +68,19 @@ func parseMacro(namespace string, selector *v1alpha1.ServiceSelector) error {
 	fields := strings.Split(*selector.Macro, ".")
 
 	if len(fields) != 4 {
-		panic(errors.Errorf("%s is not a valid macro", *selector.Macro))
+		return errors.Errorf("%s is not a valid macro", *selector.Macro)
 	}
 
 	kind := fields[1]
 	object := fields[2]
 	filter := fields[3]
 
-	switch kind {
-	case "cluster":
-		selector.Match.ByCluster = map[string]string{namespace: object}
-		selector.Mode = v1alpha1.Convert(filter)
-
-	case "service":
-		selector.Match.ByName = map[string][]string{namespace: {object}}
-		selector.Mode = v1alpha1.Convert(filter)
-
-	default:
+	if kind != "cluster" {
 		return errors.Errorf("%v is not a valid macro", *selector.Macro)
 	}
+
+	selector.Match.ByCluster = map[string]string{namespace: object}
+	selector.Mode = v1alpha1.Convert(filter)
 
 	return nil
 }
@@ -104,7 +98,6 @@ func expandSliceInputs(ctx context.Context, controller *Controller, namespace st
 	// extend macros
 	for i, value := range *inputs {
 		if isMacro(value) {
-
 			val := value
 			ss := &v1alpha1.ServiceSelector{Macro: &val}
 
@@ -381,8 +374,8 @@ func getFixedSubListFromServiceList(services SList, num int) SList {
 
 	filteredServices := make(SList, len(indexes))
 
-	for _, index := range indexes {
-		filteredServices = append(filteredServices, services[index])
+	for i, index := range indexes {
+		filteredServices[i] = services[index]
 	}
 
 	return filteredServices

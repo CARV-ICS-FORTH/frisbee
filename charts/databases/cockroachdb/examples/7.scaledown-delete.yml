@@ -54,7 +54,6 @@ spec:
         inputs:
           - { join: "masters-0:26257" }
 
-
     # When all servers are up and running, delete some of them.
     # Currently, deletion is supported only at the level of "Actions" -- you cannot delete services within a cluster.
     - action: Delete
@@ -62,3 +61,12 @@ spec:
       depends: { after: "4m" }
       delete:
         jobs: [ groupa ]
+
+    # Step: Teardown
+    - action: Delete
+      name: teardown
+      depends: { success: [ delete-client, loader ] }
+      delete:
+        jobs: [ masters, groupb ]
+
+

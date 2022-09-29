@@ -23,4 +23,10 @@ spec:
       service:
         templateRef: iperf3.client
         inputs:
-          - { server: .service.server.one, seconds: "600" }
+          - { server: server, seconds: "600" }
+
+    - action: Delete
+      name: teardown
+      depends: { running: [ server ], success: [ client ] }
+      delete:
+        jobs: [ server ]

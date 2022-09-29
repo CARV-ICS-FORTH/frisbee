@@ -172,9 +172,7 @@ type ServiceSpec struct {
 	// +optional
 	Callables map[string]Callable `json:"callables,omitempty"`
 
-	// +kubebuilder:validation:Optional
-	// +optional
-	corev1.PodSpec `json:",inline,omitempty"`
+	corev1.PodSpec `json:",inline"`
 }
 
 // ServiceStatus defines the observed state of Service.

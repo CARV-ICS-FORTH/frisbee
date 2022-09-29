@@ -71,3 +71,11 @@ spec:
       call:
         callable: run-workload
         services: [ masters-0 ]
+
+
+    # Step 5: Almost Teardown -- The logs will remain running
+    - action: Delete
+      name: teardown
+      depends: { running: [ masters, dataviewer ], success: [ run-workload], after: 10m }
+      delete:
+        jobs: [ masters, dataviewer ]

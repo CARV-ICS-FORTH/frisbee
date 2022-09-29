@@ -18,7 +18,7 @@ spec:
       service:
         templateRef: redis.single.slave
         inputs:
-          - { master: .service.master.one }
+          - { master: master }
 
     # Step 3. Create a failover manager
     - action: Service
@@ -27,7 +27,7 @@ spec:
       service:
         templateRef: redis.single.sentinel
         inputs:
-          - { master: .service.master.one }
+          - { master: master }
 
 
     # Step 4. Hammer the server with requests
@@ -47,7 +47,7 @@ spec:
       chaos:
         templateRef: system.chaos.network.partition
         inputs:
-          - { targets: .service.master.one, duration: "2m" }
+          - { targets: master, duration: "2m" }
 
 
     # Step 5. Cause partition B on the 6th minute, lasting 1 minute
@@ -57,4 +57,11 @@ spec:
       chaos:
         templateRef: system.chaos.network.partition
         inputs:
-          - { targets: .service.master.one, duration: "1m" }
+          - { targets: master, duration: "1m" }
+
+    # Step: Teardown
+    - action: Delete
+      name: teardown
+      depends: { running: [master, slave, sentinel], success: [loaders, partition-b] }
+      delete:
+        jobs: [ master, slave, sentinel]

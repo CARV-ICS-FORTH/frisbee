@@ -46,8 +46,8 @@ func ValidateExpr(expr *ConditionalExpr) error {
 }
 
 func ValidateScheduler(instances int, sch *SchedulerSpec) error {
-	if instances < 2 {
-		return errors.Errorf("scheduling requires at least two instances")
+	if instances < 1 {
+		return errors.Errorf("scheduling requires at least one instance")
 	}
 
 	// Cron and Timeline can be active at the same time.

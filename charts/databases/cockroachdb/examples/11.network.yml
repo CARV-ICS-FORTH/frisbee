@@ -57,3 +57,11 @@ spec:
         templateRef: system.chaos.network.partition.partial
         inputs:
           - { source: masters-0, duration: 10m , direction: "to", dst: "masters-1, masters-2, masters-3" }
+
+
+    # Step 5: Teardown
+    - action: Delete
+      name: teardown
+      depends: { running: [ masters ], success: [ partition0, run-workload] }
+      delete:
+        jobs: [ masters ]

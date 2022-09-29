@@ -17,43 +17,36 @@ limitations under the License.
 package commands
 
 import (
+	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/common"
+	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/tests"
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/env"
 	"github.com/carv-ics-forth/frisbee/pkg/ui"
 	"github.com/spf13/cobra"
 )
 
-func NewRootCmd() *cobra.Command {
+func NewValidateCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "kubectl-frisbee",
-		Short: "Frisbee entrypoint for kubectl plugin",
-		Run: func(cmd *cobra.Command, args []string) {
+		Use:     "validate <resourceName>",
+		Aliases: []string{"check"},
+		Short:   "Validate a new test",
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			ui.Logo()
 			ui.SetVerbose(env.Settings.Debug)
 
+			env.Settings.CheckKubePerms()
+
+			ui.Info("Using config:", env.Settings.KubeConfig)
+
+			if !common.CRDsExist(common.Scenarios) {
+				ui.Failf("Frisbee is not installed on the kubernetes cluster.")
+			}
+		},
+		Run: func(cmd *cobra.Command, args []string) {
 			ui.PrintOnError("Displaying help", cmd.Help())
 		},
 	}
 
-	// Add global flags
-	env.Settings.AddFlags(cmd)
-
-	// Add subcommands
-	cmd.AddCommand(
-		// Platform Installation
-		NewInstallCmd(),
-		NewUninstallCmd(),
-
-		// Test Management
-		NewValidateCmd(),
-		NewSubmitCmd(),
-		NewGetCmd(),
-		NewDeleteCmd(),
-		NewInspectCmd(),
-
-		// Analysis Tools
-		NewSaveCmd(),
-		NewReportCmd(),
-	)
+	cmd.AddCommand(tests.NewValidateCmd())
 
 	return cmd
 }

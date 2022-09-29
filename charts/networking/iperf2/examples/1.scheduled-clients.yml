@@ -21,7 +21,14 @@ spec:
         templateRef: iperf2.client
         instances: 10
         inputs:
-          - { server: .service.server.one, seconds: "120" }
-          - { server: .service.server.one, seconds: "60" }
+          - { server: server, seconds: "120" }
+          - { server: server, seconds: "60" }
         schedule:
           cron: "@every 1m"
+
+    # Step: Teardown
+    - action: Delete
+      name: teardown
+      depends: { running: [ server ], success: [ clients ] }
+      delete:
+        jobs: [ server ]

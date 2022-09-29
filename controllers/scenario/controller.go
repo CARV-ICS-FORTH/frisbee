@@ -212,18 +212,16 @@ func (r *Controller) Initialize(ctx context.Context, scenario *v1alpha1.Scenario
 	/* FIXME: we set the configuration be global here. is there any better way ? */
 	configuration.SetGlobal(sysconf)
 
-	{
-		/*  Not the best place, but the webhook should start after we get the configuration parameters.
-		Given that, we need to start it here, and only once. An alternative solution would be to get
-		the webhook port and developer mode as parameters on the executable.
-		*/
-		startWebhookOnce.Do(func() {
-			err = r.CreateWebhookServer(ctx, r.alertingPort)
-		})
+	/*  Not the best place, but the webhook should start after we get the configuration parameters.
+	Given that, we need to start it here, and only once. An alternative solution would be to get
+	the webhook port and developer mode as parameters on the executable.
+	*/
+	startWebhookOnce.Do(func() {
+		err = r.CreateWebhookServer(ctx, r.alertingPort)
+	})
 
-		if err != nil {
-			return errors.Wrapf(err, "cannot create grafana webhook")
-		}
+	if err != nil {
+		return errors.Wrapf(err, "cannot create grafana webhook")
 	}
 
 	// Ensure that the scenario is OK
@@ -465,19 +463,15 @@ func NewController(mgr ctrl.Manager, logger logr.Logger, alertingPort int) error
 	gvk := v1alpha1.GroupVersion.WithKind("Scenario")
 
 	// known types
-	var scenario v1alpha1.Scenario
-
-	var service v1alpha1.Service
-
-	var cluster v1alpha1.Cluster
-
-	var chaos v1alpha1.Chaos
-
-	var cascade v1alpha1.Cascade
-
-	var vobject v1alpha1.VirtualObject
-
-	var call v1alpha1.Call
+	var (
+		scenario v1alpha1.Scenario
+		service  v1alpha1.Service
+		cluster  v1alpha1.Cluster
+		chaos    v1alpha1.Chaos
+		cascade  v1alpha1.Cascade
+		vobject  v1alpha1.VirtualObject
+		call     v1alpha1.Call
+	)
 
 	// register types to the controller
 	return ctrl.NewControllerManagedBy(mgr).
