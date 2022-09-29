@@ -13,17 +13,20 @@ spec:
         templateRef: cockroach.single.master
 
     # Step 2. Preload the server with keys
-    - action: Service
+    - action: Cluster
       depends: { running: [ master ] }
-      name: loader
-      service:
+      name: loaders
+      cluster:
         templateRef: ycsb.cockroach.loader
         inputs:
           - { server: master, workload: workloada, recordcount: "1000000", threads: "400", delay: "15" }
+        resources:
+          total: { cpu: "2", memory: "100Mi" }
+          distribution: constant
 
     # Step 3. Run YCSB workload A
     - action: Service
-      depends: { success: [ loader ] }
+      depends: { success: [ loaders ] }
       name: workload-a
       service:
         templateRef: ycsb.cockroach.runner

@@ -79,6 +79,11 @@ func (in *Scenario) ValidateCreate() error {
 	return nil
 }
 
+// BuildDependencyGraph validates the execution workflow.
+// 1. Ensures that action names are qualified (since they are used as generators to jobs)
+// 2. Ensures that there are no two actions with the same name.
+// 3. Ensure that dependencies point to a valid action.
+// 4. Ensure that macros point to a valid action.
 func BuildDependencyGraph(scenario *Scenario) (map[string]*Action, error) {
 	// callIndex maintains a map of all the action in the scenario
 	callIndex := make(map[string]*Action, len(scenario.Spec.Actions))

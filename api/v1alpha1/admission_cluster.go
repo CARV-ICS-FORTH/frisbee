@@ -73,8 +73,8 @@ func (in *Cluster) ValidateCreate() error {
 			return errors.Errorf("resource distribution conflicts with Until conditions")
 		}
 
-		if in.Spec.MaxInstances < 2 {
-			return errors.Errorf("resource distribution requires at least two services")
+		if in.Spec.MaxInstances < 1 {
+			return errors.Errorf("resource distribution requires at least one services")
 		}
 
 		if err := ValidateDistribution(resources.DistributionSpec); err != nil {
