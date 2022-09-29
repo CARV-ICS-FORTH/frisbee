@@ -187,40 +187,6 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 }
 
 func (r *Controller) Initialize(ctx context.Context, cluster *v1alpha1.Cluster) error {
-	// Validate job requirements
-	if cluster.Spec.Placement != nil {
-		// ensure there are at least two physical nodes for placement to make sense
-		var nodes corev1.NodeList
-
-		if err := r.GetClient().List(ctx, &nodes); err != nil {
-			return errors.Wrapf(err, "cannot list physical nodes")
-		}
-
-		{ // Ensure that there are enough nodes for placement to make sense.
-			var ready []string
-			var notReady []string
-
-			for _, node := range nodes.Items {
-				// search at the node's condition for the "NodeReady".
-				for _, cond := range node.Status.Conditions {
-					if cond.Type == corev1.NodeReady && cond.Status == corev1.ConditionTrue {
-						ready = append(ready, node.GetName())
-
-						goto next
-					}
-				}
-				notReady = append(notReady, node.GetName())
-			next:
-			}
-
-			if len(ready) < 2 {
-				return errors.Errorf("placement policies require at least two ready physical nodes."+
-					" Ready:'%v', NotReady:'%v'", ready, notReady)
-			}
-		}
-		// TODO: check compatibility with labels and taints
-	}
-
 	/*
 		We construct a list of job specifications based on the CR's template.
 		This list is used by the execution step to create the actual job.
