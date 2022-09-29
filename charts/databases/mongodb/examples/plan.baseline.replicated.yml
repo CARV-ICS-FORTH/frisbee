@@ -11,8 +11,6 @@ spec:
       cluster:
         templateRef: mongo.cluster.slave
         instances: 2
-        inputs:
-          - { cpu: "8", memory: "32Gi" }
 
     - action: Service
       name: master
@@ -20,7 +18,7 @@ spec:
       service:
         templateRef: mongo.cluster.master
         inputs:
-          - { slaves: .cluster.slaves.all, cpu: "8", memory: "32Gi" }
+          - { slaves: .cluster.slaves.all }
 
     # Step 1: Load a new dataset, using the parameters of workload A.
     # We use no throttling to maximize this step and complete it soon.
@@ -41,8 +39,7 @@ spec:
         
         templateRef: ycsb.mongo.runner
         inputs:
-          - { server: master, workload: workloada, operationcount: "1000000",
-              cpu: "8", memory: "8Gi", threads: "40" }
+          - { server: master, workload: workloada, operationcount: "1000000", threads: "40" }
 
     # Step 3: Run workload B
     - action: Service
@@ -52,8 +49,7 @@ spec:
         
         templateRef: ycsb.mongo.runner
         inputs:
-          - { server: master, workload: workloadb, operationcount: "1000000",
-              cpu: "8", memory: "8Gi", threads: "40" }
+          - { server: master, workload: workloadb, operationcount: "1000000", threads: "40" }
 
     # Step 4: Run workload C
     - action: Service
@@ -63,8 +59,7 @@ spec:
         
         templateRef: ycsb.mongo.runner
         inputs:
-          - { server: master, workload: workloadc, operationcount: "1000000",
-              cpu: "8", memory: "8Gi", threads: "40" }
+          - { server: master, workload: workloadc, operationcount: "1000000", threads: "40" }
 
 
     # Step 5: Run workload F
@@ -75,8 +70,7 @@ spec:
         
         templateRef: ycsb.mongo.runner
         inputs:
-          - { server: master, workload: workloadf, operationcount: "1000000",
-              cpu: "8", memory: "8Gi", threads: "40" }
+          - { server: master, workload: workloadf, operationcount: "1000000", threads: "40" }
 
 
     # Step 6: Run workload D.
@@ -87,8 +81,7 @@ spec:
         
         templateRef: ycsb.mongo.runner
         inputs:
-          - { server: master, workload: workloadd, operationcount: "1000000",
-              cpu: "8", memory: "8Gi", threads: "40" }
+          - { server: master, workload: workloadd, operationcount: "1000000", threads: "40" }
 
 
     # Step 7,8: Reload the data with parameters of workload E.
@@ -112,8 +105,7 @@ spec:
         
         templateRef: ycsb.mongo.runner
         inputs:
-          - { server: master, workload: workloade, operationcount: "1000000",
-              cpu: "8", memory: "8Gi", threads: "40" }
+          - { server: master, workload: workloade, operationcount: "1000000", threads: "40" }
 
 
     # Step 10: Teardown

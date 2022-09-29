@@ -10,8 +10,6 @@ spec:
       port: "26257"
       offset: "0"
       recordcount: "10000000"
-      cpu: ""     # Example: 8
-      memory: ""  # Example: 8Gi
       threads: "1"
       workload: "workloada"
       dropdata: "false"
@@ -21,10 +19,6 @@ spec:
       telemetry:
         - system.telemetry.agent
         - ycsb.telemetry.client
-
-      resources: # Resources
-        cpu: {{"{{.inputs.parameters.cpu}}" | quote}}
-        memory: {{"{{.inputs.parameters.memory}}" | quote}}
 
     containers: # Container(s)
       - name: app
@@ -68,17 +62,12 @@ spec:
       port: "26257"
       workload: "workloada"
       operationcount: "5000000"
-      cpu: "8"
-      memory: "8Gi"
       threads: "1"
   service:
     decorators: # Decorators
       telemetry:
         - system.telemetry.agent
         - ycsb.telemetry.client
-      resources: # Resources
-        cpu: {{"{{.inputs.parameters.cpu}}" | quote}}
-        memory: {{"{{.inputs.parameters.memory}}" | quote}}
 
     containers: # Container(s)
       - name: app

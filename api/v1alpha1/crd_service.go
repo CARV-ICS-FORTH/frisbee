@@ -139,12 +139,6 @@ type Decorators struct {
 	// +optional
 	SetFields []SetField `json:"setFields,omitempty"`
 
-	// Resources specifies limitations as to how the container will access host resources.
-	// +optional
-	//
-	// Deprecated: Use the Cluster.Resource.Distribution
-	Resources *Resources `json:"resources,omitempty"`
-
 	// Telemetry is a list of referenced agents responsible to monitor the Service.
 	// Agents are sidecar services will be deployed in the same Pod as the Service container.
 	// +optional

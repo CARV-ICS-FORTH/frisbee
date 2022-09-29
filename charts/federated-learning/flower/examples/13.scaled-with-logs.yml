@@ -69,3 +69,12 @@ spec:
         templateRef: fl.quickstart.client
         inputs:
           - { server: server, dataClaimName: dataset, logClaimName: logs }
+
+
+
+    # Step: Teardown
+    - action: Delete
+      name: teardown
+      depends: { running: [ server, dataviewer ], success: [ clients ] }
+      delete:
+        jobs: [ server, dataviewer ]

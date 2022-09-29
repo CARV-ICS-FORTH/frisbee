@@ -45,3 +45,11 @@ spec:
         instances: 3
         inputs:
           - { server: server, dataClaimName: dataset }
+
+
+    # Step: Teardown
+    - action: Delete
+      name: teardown
+      depends: { running: [ server ], success: [ clients ] }
+      delete:
+        jobs: [ server ]

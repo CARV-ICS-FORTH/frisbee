@@ -606,11 +606,6 @@ func (in *Decorators) DeepCopyInto(out *Decorators) {
 		*out = make([]SetField, len(*in))
 		copy(*out, *in)
 	}
-	if in.Resources != nil {
-		in, out := &in.Resources, &out.Resources
-		*out = new(Resources)
-		(*in).DeepCopyInto(*out)
-	}
 	if in.Telemetry != nil {
 		in, out := &in.Telemetry, &out.Telemetry
 		*out = make([]string, len(*in))

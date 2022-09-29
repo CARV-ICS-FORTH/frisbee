@@ -6,16 +6,9 @@ kind: Template
 metadata:
   name: tikv.cluster.placement-driver
 spec:
-  inputs:
-    parameters:
-      cpu: ""
-      memory: ""
   service:
     decorators: # Decorators
       telemetry: [system.telemetry.agent, tikv.telemetry.pd]
-      resources: # Resources
-        cpu: {{"{{.inputs.parameters.cpu}}" | quote}}
-        memory: {{"{{.inputs.parameters.memory}}" |quote}}
 
     volumes:   # Create an ephemeral volume, backed by a file
       - name: scratch-volume
@@ -28,7 +21,6 @@ spec:
               resources:
                 requests:
                   storage: 15Gi
-
 
     containers: # Container
       - name: app
@@ -72,14 +64,9 @@ spec:
   inputs:
     parameters:
       placementDriver: "localhost"
-      cpu: ""
-      memory: ""
   service:
     decorators: # Decorators
       telemetry: [ system.telemetry.agent, tikv.telemetry.worker ]
-      resources: # Resources
-        cpu: {{"{{.inputs.parameters.cpu}}" | quote}}
-        memory: {{"{{.inputs.parameters.memory}}" |quote}}
 
     volumes: # Create an ephemeral volume, backed by a file
       - name: scratch-volume

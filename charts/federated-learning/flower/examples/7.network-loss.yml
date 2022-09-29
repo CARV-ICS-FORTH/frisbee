@@ -54,3 +54,10 @@ spec:
         templateRef: system.chaos.network.loss
         inputs:
           - { source: server, duration: 5m }
+
+    # Step: Teardown
+    - action: Delete
+      name: teardown
+      depends: { running: [ server ], success: [ clients, packetloss ] }
+      delete:
+        jobs: [ server ]

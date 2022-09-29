@@ -8,8 +8,6 @@ spec:
     parameters:
       server: "127.0.0.1"
       dataClaimName: ""
-      memory: ""
-      cpu: ""
   service:
     requirements:
       ingressBackend:
@@ -21,13 +19,6 @@ spec:
     decorators:
       telemetry:
         - system.telemetry.agent
-
-      #sidecar:
-      #  - system.coverage.server
-
-      resources:
-        memory: {{"{{.inputs.parameters.memory}}" | quote}}
-        cpu: {{"{{.inputs.parameters.cpu}}" | quote}}
 
     volumes:
       - name: dataset

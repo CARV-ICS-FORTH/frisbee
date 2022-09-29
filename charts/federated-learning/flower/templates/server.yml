@@ -6,18 +6,12 @@ metadata:
 spec:
   inputs:
     parameters:
-      memory: ""
-      cpu: ""
       rounds: "3"
       clients: "2"
   service:
     decorators:
       telemetry:
         - system.telemetry.agent
-
-      resources:
-        memory: {{"{{.inputs.parameters.memory}}" | quote}}
-        cpu: {{"{{.inputs.parameters.cpu}}" | quote}}
 
     containers: # Container
       - name: app

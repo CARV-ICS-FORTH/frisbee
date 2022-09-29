@@ -8,16 +8,12 @@ spec:
     parameters:
       slaves: ""
       port: "27017"
-      memory: ""
-      cpu: ""
   service:
     decorators:
       telemetry:
         - system.telemetry.agent
         - mongo.telemetry.server
-      resources:
-        cpu: {{"{{.inputs.parameters.cpu}}" | quote}}
-        memory: {{"{{.inputs.parameters.memory}}" |quote}}
+
     containers: # Container
       - name: app
         image: bitnami/mongodb
@@ -85,14 +81,10 @@ spec:
   inputs:
     parameters:
       port: "27017"
-      memory: ""
-      cpu: ""
   service:
     decorators: # Decorators
       telemetry: [ system.telemetry.agent, mongo.telemetry.server/telegraf ]
-      resources:
-        cpu: {{"{{.inputs.parameters.cpu}}" |quote}}
-        memory: {{"{{.inputs.parameters.memory}}" |quote}}
+
     containers: # Container
       - name: app
         image: bitnami/mongodb

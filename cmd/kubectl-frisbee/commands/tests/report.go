@@ -73,13 +73,14 @@ func NewReportTestsCmd() *cobra.Command {
 			if len(args) != 2 {
 				ui.Failf("Pass Test name and destination to store the reports.")
 			}
+
 			return nil
 		},
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			ui.Logo()
 
 			if env.Settings.NodeJS() == "" || env.Settings.NPM() == "" {
-				ui.Fail(errors.Errorf("Report is disabled. It requires NodeJS and NPM to be installed in your system."))
+				ui.Fail(errors.Errorf("report is disabled. It requires NodeJS and NPM to be installed in your system"))
 			}
 		},
 		Run: func(cmd *cobra.Command, args []string) {
@@ -181,7 +182,7 @@ func SavePDFs(options *TestReportOptions, dashboardURI, destDir string, grafanaE
 	*/
 	ctx := context.Background()
 
-	c, err := grafana.New(ctx, grafana.WithHTTP(grafanaEndpoint))
+	grafanaClient, err := grafana.New(ctx, grafana.WithHTTP(grafanaEndpoint))
 	if err != nil {
 		return errors.Wrapf(err, "cannot get Grafana client")
 	}
@@ -189,7 +190,7 @@ func SavePDFs(options *TestReportOptions, dashboardURI, destDir string, grafanaE
 	/*
 		List Available Panels
 	*/
-	panels, err := c.ListPanelsWithData(ctx, dashboardUID)
+	panels, err := grafanaClient.ListPanelsWithData(ctx, dashboardUID)
 	if err != nil {
 		return err
 	}
@@ -216,7 +217,7 @@ func SavePDFs(options *TestReportOptions, dashboardURI, destDir string, grafanaE
 /*
 ******************************************************************
 
-	Install PDF-Exporter
+	Install PDF-Exporter.
 	This is required for generating pdfs from Grafana.
 
 ******************************************************************

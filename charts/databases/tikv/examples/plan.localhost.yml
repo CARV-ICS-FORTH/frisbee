@@ -39,8 +39,7 @@ spec:
       service:
         templateRef: ycsb.tikv.runner
         inputs:
-          - { server: coordinator, workload: workloada, operationcount: "1000000",
-              cpu: "8", memory: "8Gi", threads: "40" }
+          - { server: coordinator, workload: workloada, operationcount: "1000000",threads: "40" }
 
     # Step 3: Run workload B
     - action: Service
