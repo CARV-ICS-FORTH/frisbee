@@ -17,6 +17,10 @@ limitations under the License.
 package env
 
 import (
+	"os"
+	"strconv"
+	"strings"
+
 	frisbeev1alpha1 "github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	frisbeeclient "github.com/carv-ics-forth/frisbee/pkg/client"
 	"github.com/carv-ics-forth/frisbee/pkg/ui"
@@ -27,10 +31,8 @@ import (
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
-	"os"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strconv"
-	"strings"
 )
 
 var (

@@ -67,6 +67,7 @@ For quick testing, you can use [microk8s](https://microk8s.io/docs/getting-start
 added the addons and created aliases to the commands.
 
 ```shell
+sudo microk8s config > ~/.kube/config
 sudo microk8s enable dns ingress helm3
 sudo snap alias microk8s.kubectl kubectl
 sudo snap alias microk8s.helm3 helm

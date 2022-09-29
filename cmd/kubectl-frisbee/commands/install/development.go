@@ -71,9 +71,13 @@ func NewInstallDevelopmentCmd() *cobra.Command {
 				"--namespace", options.Namespace, "--create-namespace",
 				"--set", fmt.Sprintf("operator.enabled=%t", false),
 				"--set", fmt.Sprintf("operator.advertisedHost=%s", publicIP),
-				"--values", values,
-				options.Name, chartPath,
 			}
+
+			if values != "" {
+				command = append(command, "--values", values)
+			}
+
+			command = append(command, options.Name, chartPath)
 
 			common.InstallFrisbeeOnK8s(command, &options)
 		},
