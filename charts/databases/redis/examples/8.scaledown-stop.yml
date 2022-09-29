@@ -56,3 +56,11 @@ spec:
           - { target: masters-2 }
         schedule:
           cron: "@every 1m"
+
+
+    # Step: Teardown
+    - action: Delete
+      name: teardown
+      depends: { success: [loader, stop-servers ] }
+      delete:
+        jobs: [ masters, more-servers ]

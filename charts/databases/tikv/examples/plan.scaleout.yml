@@ -10,26 +10,34 @@ spec:
     # Step 0: bootstrap.
     # For TiKV, we must first create a placementDriver and then add the workers.
     - action: Service
-      name: master
+      name: coordinator
       service:
         templateRef: tikv.cluster.placement-driver
 
     - action: Cluster
-      depends: { running: [ master ] }
+      depends: { running: [ coordinator ] }
       name: workers
       cluster:
         templateRef: tikv.cluster.worker
         instances: 256
         inputs:
-          - { placementDriver: .service.master.one }
+          - { placementDriver: coordinator }
 
 
     # Step 1: Load a new dataset, using the parameters of workload A.
     # We use no throttling to maximize this step and complete it soon.
     - action: Cluster
       name: loaders
-      depends: { running: [ master, workers ] }
+      depends: { running: [ coordinator, workers ] }
       cluster:
         templateRef: ycsb.tikv.loader
         inputs:
-          - { server: .service.master.one, recordcount: "100000000000", offset: "0", threads: "32" }
+          - { server: coordinator, recordcount: "100000000000", offset: "0", threads: "32" }
+
+
+    # Step: Teardown
+    - action: Delete
+      name: teardown
+      depends: { running: [ coordinator, workers], success: [ loaders ] }
+      delete:
+        jobs: [ coordinator,  workers]

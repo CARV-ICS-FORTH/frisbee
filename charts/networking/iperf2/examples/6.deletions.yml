@@ -20,7 +20,7 @@ spec:
       service:
         templateRef: iperf2.client
         inputs:
-          - { server: .service.server.one, seconds: "300" }
+          - { server: server, seconds: "300" }
 
     # Delete the iperf client
     - action: Delete
@@ -28,3 +28,10 @@ spec:
       depends: { after: "2m" }
       delete:
         jobs: [ client ]
+
+
+    - action: Delete
+      name: teardown
+      depends: { running: [ server ], success: [ delete-client] }
+      delete:
+        jobs: [ server ]

@@ -60,3 +60,12 @@ spec:
       depends: { after: "4m" }
       delete:
         jobs: [ groupa ]
+
+
+
+    # Step: Teardown
+    - action: Delete
+      name: teardown
+      depends: { success: [ delete-client, loader ] }
+      delete:
+        jobs: [ masters, groupb ]

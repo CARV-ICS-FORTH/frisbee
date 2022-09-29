@@ -21,9 +21,15 @@ spec:
         templateRef: iperf2.client
         instances: 100
         inputs:
-          - { server: .service.server.one, seconds: "160" }
-          - { server: .service.server.one, seconds: "60" }
+          - { server: server, seconds: "160" }
+          - { server: server, seconds: "60" }
         schedule:
           cron: "@every 1m"
         until:
           metrics: 'avg() of query(wpFnYRwGk/2/bitrate, 5m, now) is below(500)'
+
+    - action: Delete
+      name: teardown
+      depends: { running: [ server ], success: [ clients] }
+      delete:
+        jobs: [ server ]

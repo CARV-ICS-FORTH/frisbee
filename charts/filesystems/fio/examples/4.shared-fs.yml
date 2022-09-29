@@ -26,3 +26,10 @@ spec:
         instances: 2
         inputs:
           - { direct: "0", claimName: fs }
+
+    # Step: Teardown
+    - action: Delete
+      name: teardown
+      depends: { success: [ fio] }
+      delete:
+        jobs: []

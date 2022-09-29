@@ -88,3 +88,12 @@ spec:
         templateRef: ycsb.redis.runner
         inputs:
           - { server: master, workload: workloade, operationcount: "1000000", threads: "40", mode: "single" }
+
+
+
+    # Step 10: Teardown
+    - action: Delete
+      name: teardown
+      depends: { running: [ master ], success: [ workload-e ] }
+      delete:
+        jobs: [ master ]

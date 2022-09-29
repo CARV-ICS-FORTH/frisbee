@@ -98,3 +98,11 @@ spec:
         templateRef: ycsb.cockroach.runner
         inputs:
           - { server: masters-0, workload: workloade, operationcount: "500000", threads: "40" }
+
+
+    # Step 9: Teardown
+    - action: Delete
+      name: teardown
+      depends: { running: [ masters ], success: [ workload-e ] }
+      delete:
+        jobs: [ masters ]

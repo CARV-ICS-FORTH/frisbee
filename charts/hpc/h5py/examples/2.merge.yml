@@ -49,3 +49,11 @@ spec:
 #        services: [ dataviewer ]
 #        expect:
 #          - { stdout: "if we now the number of files, we can use it directly" }
+
+
+
+    - action: Delete
+      name: teardown
+      depends: { success: [ concatenate ] }
+      delete:
+        jobs: []

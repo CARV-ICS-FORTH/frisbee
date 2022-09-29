@@ -39,7 +39,7 @@ func (r *Controller) runJob(ctx context.Context, service *v1alpha1.Service) erro
 	setDefaultValues(service)
 
 	if err := handleRequirements(ctx, r, service); err != nil {
-		return errors.Wrapf(err, "cannot satisfy requirements")
+		return errors.Wrapf(err, "service.%s.requirements", service.GetName())
 	}
 
 	if err := decoratePod(ctx, r, service); err != nil {
@@ -96,7 +96,7 @@ func setDefaultValues(cr *v1alpha1.Service) {
 
 var pathType = netv1.PathTypePrefix
 
-func handleRequirements(ctx context.Context, r *Controller, cr *v1alpha1.Service) error {
+func handleRequirements(ctx context.Context, controller *Controller, cr *v1alpha1.Service) error {
 	if cr.Spec.Requirements == nil {
 		return nil
 	}
@@ -135,8 +135,8 @@ func handleRequirements(ctx context.Context, r *Controller, cr *v1alpha1.Service
 			},
 		}
 
-		if err := common.Create(ctx, r, cr, &ingress); err != nil {
-			return errors.Wrapf(err, "cannot create ingress")
+		if err := common.Create(ctx, controller, cr, &ingress); err != nil {
+			return errors.Wrapf(err, ".ingress")
 		}
 	}
 

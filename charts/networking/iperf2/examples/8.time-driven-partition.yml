@@ -20,7 +20,7 @@ spec:
       service:
         templateRef: iperf2.client
         inputs:
-          - { server: .service.server.one, seconds: "800" }
+          - { server: server, seconds: "800" }
 
     # After a while, inject a network failure
     - action: Chaos
@@ -29,4 +29,10 @@ spec:
       chaos:
         templateRef: system.chaos.network.delay
         inputs:
-          - { source: .service.server.one, duration: "2m" }
+          - { source: server, duration: "2m" }
+
+    - action: Delete
+      name: teardown
+      depends: { running: [ server ], success: [ partition0, client ] }
+      delete:
+        jobs: [ server ]

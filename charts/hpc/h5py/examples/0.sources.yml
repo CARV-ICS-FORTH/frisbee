@@ -25,3 +25,10 @@ spec:
         templateRef: h5py.bytesio.from-web
         inputs:
           - { source: "https://raw.githubusercontent.com/h5py/h5py/master/examples/bytesio.py" }
+
+
+    - action: Delete
+      name: teardown
+      depends: { success: [ bytesio-embedded, bytesio-from-script, bytesio-from-web ] }
+      delete:
+        jobs: []

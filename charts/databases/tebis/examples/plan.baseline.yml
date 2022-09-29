@@ -19,7 +19,7 @@ spec:
       service:
         templateRef: tebis.cluster.bootstrap
         inputs:
-          - { zookeeper: .service.zookeeper.one }
+          - { zookeeper: zookeeper }
 
     # Initialize a data node
     - action: Service
@@ -30,7 +30,7 @@ spec:
       service:
         templateRef: tebis.cluster.master
         inputs:
-          - { zookeeper: .service.zookeeper.one, port: "6060" }
+          - { zookeeper: zookeeper, port: "6060" }
 
     # Initialize a data node
     - action: Service
@@ -41,7 +41,7 @@ spec:
       service:
         templateRef: tebis.cluster.master
         inputs:
-          - { zookeeper: .service.zookeeper.one,  port: "6061" }
+          - { zookeeper: zookeeper,  port: "6061" }
 
 
     # Initialize a data node
@@ -53,7 +53,7 @@ spec:
       service:
         templateRef: tebis.cluster.master
         inputs:
-          - { zookeeper: .service.zookeeper.one, port: "6062" }
+          - { zookeeper: zookeeper, port: "6062" }
 
 
     # Initialize a client node
@@ -65,4 +65,4 @@ spec:
       service:
         templateRef: tebis.cluster.client
         inputs:
-          - { zookeeper: .service.zookeeper.one, regions: "3" }
+          - { zookeeper: zookeeper, regions: "3" }

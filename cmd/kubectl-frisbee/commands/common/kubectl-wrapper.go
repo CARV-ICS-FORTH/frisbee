@@ -477,11 +477,22 @@ func OpenShell(testName string, podName string, shellArgs ...string) error {
 	return shell.Run()
 }
 
-func RunTest(testName string, testFile string, dryrun bool) error {
+type ValidationMode uint8
+
+const (
+	ValidationNone ValidationMode = iota
+	ValidationClient
+	ValidationServer
+)
+
+func RunTest(testName string, testFile string, mode ValidationMode) error {
 	command := []string{"apply", "--wait", "-f", testFile}
 
-	if dryrun {
+	switch mode {
+	case ValidationClient:
 		command = append(command, "--dry-run=client")
+	case ValidationServer:
+		command = append(command, "--dry-run=server")
 	}
 
 	out, err := Kubectl(testName, command...)
@@ -494,7 +505,7 @@ func RunTest(testName string, testFile string, dryrun bool) error {
 func Dashboards(testName string) error {
 	command := []string{
 		"get", "ingress",
-		"-l", fmt.Sprintf("%s", v1alpha1.LabelScenario),
+		"-l", v1alpha1.LabelScenario,
 	}
 
 	// restricted format supported by Kubectl

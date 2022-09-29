@@ -35,3 +35,10 @@ spec:
       #      depends: { success: [generator]}
       service:
         templateRef: h5py.pipeline.image-visualizer
+
+
+    - action: Delete
+      name: teardown
+      depends: { success: [ generator, visualizer ] }
+      delete:
+        jobs: []

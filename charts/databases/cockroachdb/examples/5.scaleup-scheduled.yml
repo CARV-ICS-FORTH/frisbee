@@ -44,3 +44,11 @@ spec:
           - { join: "masters-0:26257" }
         schedule:
           cron: "@every 2m"
+
+
+    # Step 9: Teardown
+    - action: Delete
+      name: teardown
+      depends: { running: [ masters, more-servers ], success: [ loader ] }
+      delete:
+        jobs: [ masters, more-servers ]

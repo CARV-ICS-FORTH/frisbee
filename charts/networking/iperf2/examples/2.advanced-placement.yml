@@ -41,3 +41,10 @@ spec:
         placement:
           collocate: true
           conflictsWith: [ clients-a ]
+
+
+    - action: Delete
+      name: teardown
+      depends: { running: [ server ], success: [ clients-a, clients-b] }
+      delete:
+        jobs: [ server ]

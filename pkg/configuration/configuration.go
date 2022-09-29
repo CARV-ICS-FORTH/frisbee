@@ -40,18 +40,22 @@ type Configuration struct {
 	ControllerName string `json:"controllerName"`
 }
 
-// Discover discovers a resource across different namespaces.
-func Discover(ctx context.Context, cli client.Client, crList client.ObjectList, id string) error {
-	// find the platform configuration (which may reside on a different namespace)
-	filters := []client.ListOption{
-		client.MatchingLabels{v1alpha1.ResourceDiscoveryLabel: id},
-	}
+func (c Configuration) Validate() error {
+	switch {
+	case c.Namespace == "":
+		return errors.Errorf("Configuration.Namespace is empty")
 
-	if err := cli.List(ctx, crList, filters...); err != nil {
-		return errors.Wrapf(err, "cannot list resources")
-	}
+	case c.DomainName == "":
+		return errors.Errorf("Configuration.DomainName is empty")
 
-	return nil
+	case c.IngressClassName == "":
+		return errors.Errorf("Configuration.IngressClassName is empty")
+
+	case c.ControllerName == "":
+		return errors.Errorf("Configuration.ControllerName is empty")
+	default:
+		return nil
+	}
 }
 
 func namesOfItems(list corev1.ConfigMapList) []string {
@@ -65,11 +69,16 @@ func namesOfItems(list corev1.ConfigMapList) []string {
 }
 
 // Get returns the system configuration
-func Get(ctx context.Context, c client.Client, logger logr.Logger) (Configuration, error) {
+func Get(ctx context.Context, cli client.Client, logger logr.Logger) (Configuration, error) {
 	// 1. Discovery the configuration across the various namespaces.
 	var list corev1.ConfigMapList
 
-	if err := Discover(ctx, c, &list, PlatformConfigurationName); err != nil {
+	// find the platform configuration (which may reside on a different namespace)
+	filters := []client.ListOption{
+		client.MatchingLabels{v1alpha1.ResourceDiscoveryLabel: PlatformConfigurationName},
+	}
+
+	if err := cli.List(ctx, &list, filters...); err != nil {
 		return Configuration{}, errors.Wrapf(err, "cannot discover '%s'", PlatformConfigurationName)
 	}
 
@@ -85,14 +94,17 @@ func Get(ctx context.Context, c client.Client, logger logr.Logger) (Configuratio
 
 	// 2. Parse the configuration
 	decoderConfig := &mapstructure.DecoderConfig{
-		DecodeHook:       nil,
-		ErrorUnused:      true,
-		ZeroFields:       true,
-		WeaklyTypedInput: true,
-		Squash:           false,
-		Metadata:         nil,
-		Result:           &sysConf,
-		TagName:          "",
+		DecodeHook:           nil,
+		ErrorUnused:          true,
+		ErrorUnset:           true,
+		ZeroFields:           true,
+		WeaklyTypedInput:     true,
+		Squash:               false,
+		Metadata:             nil,
+		Result:               &sysConf,
+		TagName:              "",
+		IgnoreUntaggedFields: false,
+		MatchName:            nil,
 	}
 
 	decoder, err := mapstructure.NewDecoder(decoderConfig)
@@ -108,6 +120,10 @@ func Get(ctx context.Context, c client.Client, logger logr.Logger) (Configuratio
 		"config", PlatformConfigurationName,
 		"parameters", sysConf,
 	)
+
+	if err := sysConf.Validate(); err != nil {
+		return Configuration{}, err
+	}
 
 	return sysConf, nil
 }

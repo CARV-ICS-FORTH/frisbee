@@ -22,7 +22,7 @@ spec:
         templateRef: iperf2.client
         instances: 10
         inputs:
-          - { server: .service.server.one, seconds: "600" }
+          - { server: server, seconds: "600" }
         tolerate: # Without this field, the cluster will fail immediately after the killing
           failedJobs: 3
 
@@ -40,3 +40,10 @@ spec:
           - { target: clients-3 }
         schedule:
           cron: "@every 1m"
+
+
+    - action: Delete
+      name: teardown
+      depends: { running: [ server ], success: [ clients, killer ] }
+      delete:
+        jobs: [ server ]
