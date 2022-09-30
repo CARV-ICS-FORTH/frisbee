@@ -35,3 +35,11 @@ spec:
         templateRef: whalesay
         inputs:
           - { message: "Thanks for all the fish!" }
+
+
+    # Teardown
+    - action: Delete
+      name: teardown
+      depends: { success: [ default-parameters, custom-parameters ] }
+      delete:
+        jobs: []

@@ -165,4 +165,4 @@ spec:
       name: teardown
       depends: { running: [ server, logviewer ], success: [ clients ] } # Notice: We want the logviewer to remain running
       delete:
-        jobs: [ server ]
+        jobs: [ server, logviewer ]

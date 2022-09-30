@@ -68,7 +68,7 @@ spec:
 
     # When all actions are done, delete looping servers to gracefully exit the experiment
     - action: Delete
-      name: delete-servers
-      depends: { running: [ node ], success: [ dns ] }
+      name: teardown
+      depends: { running: [ node ], success: [ localhost,  cni, neigh, host, internet, dns ] }
       delete:
         jobs: [ node ]
