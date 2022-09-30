@@ -23,3 +23,11 @@ spec:
       name: whalesay
       service:
         templateRef: whalesay
+
+
+    # Teardown
+    - action: Delete
+      name: teardown
+      depends: { success: [ whalesay ] }
+      delete:
+        jobs: []

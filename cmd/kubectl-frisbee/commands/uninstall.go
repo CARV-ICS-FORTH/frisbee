@@ -67,7 +67,7 @@ func NewUninstallCmd() *cobra.Command {
 				err := common.DeleteNamespaces(common.ManagedNamespace)
 				ui.ExitOnError("Deleting Tests....", err)
 
-				ui.Success("Tests deleted")
+				ui.Success("Tests", "Deleted")
 			}
 
 			// Delete Helm Charts
@@ -84,7 +84,7 @@ func NewUninstallCmd() *cobra.Command {
 				_, err := common.Helm(options.Namespace, command...)
 				ui.ExitOnError("Deleting Helm charts ....", common.HelmIgnoreNotFound(err))
 
-				ui.Success("Charts deleted")
+				ui.Success("Charts", "Deleted")
 			}
 
 			// Delete crds
@@ -97,7 +97,7 @@ func NewUninstallCmd() *cobra.Command {
 					ui.ExitOnError("Deleting CRDs ....", err)
 				}
 
-				ui.Success("CRDs  deleted")
+				ui.Success("CRDs", "Deleted")
 			}
 
 			// Delete cache
@@ -107,15 +107,17 @@ func NewUninstallCmd() *cobra.Command {
 					ui.ExitOnError("Deleting Cache ....", err)
 				}
 
-				ui.Success("Cache  deleted")
+				ui.Success("Cache", "Deleted")
 			}
 
 			// Delete namespace
 			if options.DeleteNamespace || options.All {
-				_, err := common.Kubectl("", "delete", "namespace", options.Namespace)
-				ui.ExitOnError("Deleting namespace ....", err)
+				out, err := common.Kubectl("", "delete", "namespace", options.Namespace)
+				if !common.ErrNotFound(out) {
+					ui.ExitOnError("Deleting namespace ....", err)
+				}
 
-				ui.Success("Namespace  deleted")
+				ui.Success("Namespace", "Deleted")
 			}
 		},
 		PersistentPostRun: func(cmd *cobra.Command, args []string) {

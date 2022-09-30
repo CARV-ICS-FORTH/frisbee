@@ -95,6 +95,6 @@ spec:
     # When all actions are done, delete looping servers to gracefully exit the experiment
     - action: Delete
       name: teardown
-      depends: { running: [ server ], success: [ delete-group-b ] }
+      depends: { running: [ server ], success: [ delete-group-b,  group-a ] }
       delete:
         jobs: [ server ]

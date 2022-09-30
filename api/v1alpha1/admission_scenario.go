@@ -173,10 +173,16 @@ func CheckForBoundedExecution(callIndex map[string]*Action) error {
 	}
 
 	// Find jobs are that not completed
+	var nonCompleted []string
+
 	for actionName, completed := range jobCompletionIndex {
 		if !completed {
-			return errors.Errorf("action '%s' is not completed at the end of the scenario", actionName)
+			nonCompleted = append(nonCompleted, actionName)
 		}
+	}
+
+	if len(nonCompleted) > 0 {
+		return errors.Errorf("actions '%s' are not completed at the end of the scenario", nonCompleted)
 	}
 
 	return nil
