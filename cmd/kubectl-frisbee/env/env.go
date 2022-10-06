@@ -31,13 +31,13 @@ import (
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
-
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
-	Settings = New()
-	scheme   = runtime.NewScheme()
+	Default = New()
+
+	scheme = runtime.NewScheme()
 )
 
 func init() {
@@ -66,17 +66,7 @@ type EnvironmentSettings struct {
 	Path
 
 	// namespace string
-	config *genericclioptions.ConfigFlags
-
-	// KubeConfig is the path to the kubeconfig file
-	KubeConfig string
-
-	// KubeContext is the name of the kubeconfig context.
-	//	KubeContext string
-	// Bearer KubeToken used for authentication
-	//	KubeToken string
-	// Username to impersonate for the operation
-	// KubeAsUser string
+	Config *genericclioptions.ConfigFlags
 
 	// MaxHistory is the max tests history maintained.
 	MaxHistory int
@@ -90,7 +80,7 @@ type EnvironmentSettings struct {
 	// OutputType indicate the format out message in the output.
 	OutputType string
 
-	// GoTemplate (if selected by outpute type)
+	// GoTemplate (if selected by OutputType type)
 	GoTemplate string
 
 	// cached objects
@@ -99,33 +89,21 @@ type EnvironmentSettings struct {
 
 func New() *EnvironmentSettings {
 	env := &EnvironmentSettings{
-		// interaction with Kubernetes
-		// namespace: os.Getenv("FRISBEE_NAMESPACE"),
-		//		KubeContext: os.Getenv("FRISBEE_KUBECONTEXT"),
-		//		KubeToken:   os.Getenv("FRISBEE_KUBETOKEN"),
-		// KubeAsUser: os.Getenv("FRISBEE_KUBEASUSER"),
-		KubeConfig: os.Getenv("KUBECONFIG"),
-
+		Path: Path{}, // will be set by LookupBinaries
+		Config: &genericclioptions.ConfigFlags{
+			KubeConfig: envOrPtr("KUBECONFIG", ""),
+			WrapConfigFn: func(config *rest.Config) *rest.Config {
+				// config.Burst = env.BurstLimit
+				return config
+			},
+		},
 		// Operation
 		MaxHistory: envIntOr("FRISBEE_MAX_HISTORY", defaultMaxHistory),
+		Debug:      envBoolOr("FRISBEE_DEBUG", false),
+		Hints:      envBoolOr("FRISBEE_HINTS", false),
 		OutputType: envOr("FRISBEE_OUTPUT_TYPE", defaultOutputType),
-	}
-
-	env.Debug, _ = strconv.ParseBool(os.Getenv("FRISBEE_DEBUG"))
-
-	/*
-		bind to kubernetes config flags
-	*/
-	env.config = &genericclioptions.ConfigFlags{
-		//		Namespace:  &env.namespace,
-		KubeConfig: &env.KubeConfig,
-		//		Context:     &env.KubeContext,
-		//		BearerToken: &env.KubeToken,
-		// Impersonate: &env.KubeAsUser,
-		WrapConfigFn: func(config *rest.Config) *rest.Config {
-			// config.Burst = env.BurstLimit
-			return config
-		},
+		GoTemplate: "",
+		client:     nil,
 	}
 
 	/*
@@ -140,22 +118,12 @@ func New() *EnvironmentSettings {
 func (env *EnvironmentSettings) AddFlags(cmd *cobra.Command) {
 	pfs := cmd.PersistentFlags()
 
-	pfs.StringVar(&env.KubeConfig, "kubeconfig", env.KubeConfig, "path to the kubeconfig file")
+	// inherit the config flags
+	env.Config.AddFlags(pfs)
 
+	// and add new ones
 	pfs.BoolVarP(&env.Debug, "debug", "d", env.Debug, "enable verbose output")
 	pfs.BoolVar(&env.Hints, "hints", env.Hints, "enable hints in the output")
-
-	// fs := cmd.Flags()
-
-	/*
-		Top-Level Flags
-	*/
-
-	// fs.StringVarP(&env.namespace, "namespace", "n", env.namespace, "namespace scope for this request")
-
-	// fs.StringVar(&env.KubeContext, "kube-context", env.KubeContext, "name of the kubeconfig context to use")
-	// fs.StringVar(&env.KubeToken, "kube-token", env.KubeToken, "bearer token used for authentication")
-	// fs.StringVar(&env.KubeAsUser, "kube-as-user", env.KubeAsUser, "username to impersonate for the operation")
 }
 
 func envOr(name, def string) string {
@@ -164,6 +132,14 @@ func envOr(name, def string) string {
 	}
 
 	return def
+}
+
+func envOrPtr(name, def string) *string {
+	if v, ok := os.LookupEnv(name); ok {
+		return &v
+	}
+
+	return &def
 }
 
 func envBoolOr(name string, def bool) bool {
@@ -215,7 +191,7 @@ func (env *EnvSettings) SetNamespace(namespace string) {
 
 // RESTClientGetter gets the kubeconfig from EnvSettings.
 func (env *EnvironmentSettings) RESTClientGetter() genericclioptions.RESTClientGetter {
-	return env.config
+	return env.Config
 }
 
 // GetFrisbeeClient returns api client

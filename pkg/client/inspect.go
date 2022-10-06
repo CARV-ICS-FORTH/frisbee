@@ -17,12 +17,12 @@ limitations under the License.
 package client
 
 import (
-	"github.com/carv-ics-forth/frisbee/pkg/executor"
+	"github.com/carv-ics-forth/frisbee/pkg/kubexec"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // NewTestInspectionClient creates new Test client.
-func NewTestInspectionClient(client client.Client, exec executor.Executor) TestInspectionClient {
+func NewTestInspectionClient(client client.Client, exec kubexec.Executor) TestInspectionClient {
 	return TestInspectionClient{
 		client:   client,
 		executor: exec,
@@ -31,7 +31,7 @@ func NewTestInspectionClient(client client.Client, exec executor.Executor) TestI
 
 type TestInspectionClient struct {
 	client   client.Client
-	executor executor.Executor
+	executor kubexec.Executor
 }
 
 /*

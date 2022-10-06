@@ -79,7 +79,7 @@ func RenderPrettyList(obj ui.TableData, w io.Writer) error {
 }
 
 func RenderList(obj interface{}, w io.Writer) error {
-	switch OutputType(env.Settings.OutputType) {
+	switch OutputType(env.Default.OutputType) {
 	case OutputPretty:
 		list, ok := obj.(ui.TableData)
 		if !ok {
@@ -91,7 +91,7 @@ func RenderList(obj interface{}, w io.Writer) error {
 	case OutputJSON:
 		return RenderJSON(obj, w)
 	case OutputGoTemplate:
-		tpl := env.Settings.GoTemplate
+		tpl := env.Default.GoTemplate
 
 		list, ok := obj.([]interface{})
 		if !ok {

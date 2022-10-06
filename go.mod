@@ -14,7 +14,6 @@ require (
 	github.com/gookit/color v1.5.2
 	github.com/grafana-tools/sdk v0.0.0-20220718141209-53350f3fd4b9
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/kubeshop/testkube v1.5.24
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/onsi/ginkgo v1.16.5

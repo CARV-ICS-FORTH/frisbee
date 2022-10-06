@@ -62,7 +62,7 @@ func InstallFrisbeeOnK8s(command []string, options *FrisbeeInstallOptions) {
 
 	ui.Info("Installing Frisbee platform...")
 
-	if env.Settings.Debug {
+	if env.Default.Debug {
 		command = append(command, "--debug")
 
 		_, err := LoggedHelm("", command...)
@@ -122,7 +122,7 @@ func installCertManager() error {
 		"--set", "installCRDs=true",
 	}
 
-	if env.Settings.Debug {
+	if env.Default.Debug {
 		command = append(command, "--debug")
 	}
 

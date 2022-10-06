@@ -7,15 +7,16 @@ spec:
   service:
     decorators: # Add support for Telemetry
       telemetry: [ system.telemetry.agent ]
-      resources:
-        cpu: "1"
-        memory: "48Mi"
     containers:
       - name: app
         image: czero/iperf2
         ports:
           - name: listen
             containerPort: 5001
+        resources:
+          limits:
+            cpu: "0.2"
+            memory: "500Mi"
         command:
           - /bin/sh   # Run shell
           - -c        # Read from string

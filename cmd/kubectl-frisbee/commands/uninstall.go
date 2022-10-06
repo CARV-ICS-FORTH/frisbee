@@ -53,11 +53,10 @@ func NewUninstallCmd() *cobra.Command {
 		Aliases: []string{"un", "purge"},
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			ui.Logo()
-			ui.SetVerbose(env.Settings.Debug)
+			ui.SetVerbose(env.Default.Debug)
 
-			env.Settings.CheckKubePerms()
-
-			ui.Info("Using config:", env.Settings.KubeConfig)
+			// Load kubeconfig
+			env.Default.CheckKubePerms()
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			// Delete Tests
@@ -77,7 +76,7 @@ func NewUninstallCmd() *cobra.Command {
 					options.Name,
 				}
 
-				if env.Settings.Debug {
+				if env.Default.Debug {
 					command = append(command, "--debug")
 				}
 

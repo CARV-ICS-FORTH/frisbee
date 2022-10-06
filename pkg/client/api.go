@@ -18,7 +18,7 @@ package client
 
 import (
 	frisbeev1alpha1 "github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	"github.com/carv-ics-forth/frisbee/pkg/executor"
+	"github.com/carv-ics-forth/frisbee/pkg/kubexec"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -40,7 +40,7 @@ func init() {
 func NewDirectAPIClient(client client.Client) APIClient {
 	return APIClient{
 		TestManagementClient: NewTestManagementClient(client),
-		TestInspectionClient: NewTestInspectionClient(client, executor.NewExecutor(controllerruntime.GetConfigOrDie())),
+		TestInspectionClient: NewTestInspectionClient(client, kubexec.NewExecutor(controllerruntime.GetConfigOrDie())),
 	}
 }
 
