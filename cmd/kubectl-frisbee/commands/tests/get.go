@@ -44,7 +44,7 @@ func NewGetTestsCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			selectors = append(selectors, common.ManagedNamespace)
 
-			tests, err := env.Settings.GetFrisbeeClient().ListScenarios(cmd.Context(), strings.Join(selectors, ","))
+			tests, err := env.Default.GetFrisbeeClient().ListScenarios(cmd.Context(), strings.Join(selectors, ","))
 			ui.ExitOnError("Getting all tests ", err)
 
 			err = common.RenderList(&tests, os.Stdout)

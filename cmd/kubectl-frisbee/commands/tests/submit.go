@@ -100,7 +100,7 @@ func NewSubmitTestCmd() *cobra.Command {
 
 			// Query Kubernetes API for conflicting tests
 			{
-				scenario, err := env.Settings.GetFrisbeeClient().GetScenario(cmd.Context(), testName)
+				scenario, err := env.Default.GetFrisbeeClient().GetScenario(cmd.Context(), testName)
 
 				if scenario != nil {
 					ui.Failf("test '%s' already exists", testName)
@@ -161,7 +161,7 @@ func ControlOutput(testName string, options *TestSubmitOptions) {
 
 		err := common.WaitForCondition(testName, v1alpha1.ConditionAllJobsAreCompleted, options.Timeout)
 
-		env.Settings.Hint("To inspect the execution:", "kubectl frisbee inspect test ", testName)
+		env.Default.Hint("To inspect the execution:", "kubectl frisbee inspect test ", testName)
 		ui.ExitOnError("waiting for test to complete successfully", err)
 
 	case options.ExpectFailure:
@@ -169,7 +169,7 @@ func ControlOutput(testName string, options *TestSubmitOptions) {
 
 		err := common.WaitForCondition(testName, v1alpha1.ConditionJobUnexpectedTermination, options.Timeout)
 
-		env.Settings.Hint("To inspect the execution:", "kubectl frisbee inspect test ", testName)
+		env.Default.Hint("To inspect the execution:", "kubectl frisbee inspect test ", testName)
 		ui.ExitOnError("waiting for test to fail", err)
 
 	case options.ExpectError:
@@ -177,7 +177,7 @@ func ControlOutput(testName string, options *TestSubmitOptions) {
 
 		err := common.WaitForCondition(testName, v1alpha1.ConditionAssertionError, options.Timeout)
 
-		env.Settings.Hint("To inspect the execution:", "kubectl frisbee inspect test ", testName)
+		env.Default.Hint("To inspect the execution:", "kubectl frisbee inspect test ", testName)
 		ui.ExitOnError("waiting for test to raise an assertion error", err)
 
 	case options.Watch:
@@ -190,7 +190,7 @@ func ControlOutput(testName string, options *TestSubmitOptions) {
 		ui.Info("Tailing test logs ...", "log-lines", fmt.Sprint(options.Loglines))
 
 		err := common.GetPodLogs(testName, true, options.Loglines, options.Logs...)
-		env.Settings.Hint("To inspect the execution logs use:",
+		env.Default.Hint("To inspect the execution logs use:",
 			"kubectl frisbee inspect test ", testName, " --logs all")
 		ui.ExitOnError("Getting logs", err)
 	}

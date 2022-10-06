@@ -31,11 +31,10 @@ func NewInspectCmd() *cobra.Command {
 		Short:   "Inspect tests or test suites",
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			ui.Logo()
-			ui.SetVerbose(env.Settings.Debug)
+			ui.SetVerbose(env.Default.Debug)
 
-			env.Settings.CheckKubePerms()
-
-			ui.Info("Using config:", env.Settings.KubeConfig)
+			// Load kubeconfig
+			env.Default.CheckKubePerms()
 
 			if !common.CRDsExist(common.Scenarios) {
 				ui.Failf("Frisbee is not installed on the kubernetes cluster.")
@@ -46,8 +45,8 @@ func NewInspectCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&env.Settings.OutputType, "output", "o", env.Settings.OutputType, "can be one of json|yaml|pretty|go-template")
-	cmd.Flags().StringVar(&env.Settings.GoTemplate, "go-template", "{{.}}", "go template to render")
+	cmd.Flags().StringVarP(&env.Default.OutputType, "output", "o", env.Default.OutputType, "can be one of json|yaml|pretty|go-template")
+	cmd.Flags().StringVar(&env.Default.GoTemplate, "go-template", "{{.}}", "go template to render")
 
 	cmd.AddCommand(tests.NewInspectTestCmd())
 

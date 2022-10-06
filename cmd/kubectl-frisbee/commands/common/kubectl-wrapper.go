@@ -25,9 +25,9 @@ import (
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/env"
+	"github.com/carv-ics-forth/frisbee/pkg/process"
 	"github.com/carv-ics-forth/frisbee/pkg/structure"
 	"github.com/carv-ics-forth/frisbee/pkg/ui"
-	"github.com/kubeshop/testkube/pkg/process"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/utils/exec"
@@ -90,23 +90,23 @@ func ErrContainerNotReady(out []byte) bool {
 }
 
 func Kubectl(testName string, arguments ...string) ([]byte, error) {
-	arguments = append(arguments, "--kubeconfig", env.Settings.KubeConfig)
+	arguments = append(arguments, "--kubeconfig", *env.Default.Config.KubeConfig)
 
 	if testName != "" {
 		arguments = append(arguments, "-n", testName)
 	}
 
-	return process.Execute(env.Settings.Kubectl(), arguments...)
+	return process.Execute(env.Default.Kubectl(), arguments...)
 }
 
 func LoggedKubectl(testName string, arguments ...string) ([]byte, error) {
-	arguments = append(arguments, "--kubeconfig", env.Settings.KubeConfig)
+	arguments = append(arguments, "--kubeconfig", *env.Default.Config.KubeConfig)
 
 	if testName != "" {
 		arguments = append(arguments, "-n", testName)
 	}
 
-	return process.LoggedExecuteInDir("", os.Stdout, env.Settings.Kubectl(), arguments...)
+	return process.LoggedExecuteInDir("", os.Stdout, env.Default.Kubectl(), arguments...)
 }
 
 func HelmIgnoreNotFound(err error) error {
@@ -118,23 +118,34 @@ func HelmIgnoreNotFound(err error) error {
 }
 
 func Helm(testName string, arguments ...string) ([]byte, error) {
-	arguments = append(arguments, "--kubeconfig", env.Settings.KubeConfig)
+	arguments = append(arguments, "--kubeconfig", *env.Default.Config.KubeConfig)
 
 	if testName != "" {
 		arguments = append(arguments, "-n", testName)
 	}
 
-	return process.Execute(env.Settings.Helm(), arguments...)
+	return process.Execute(env.Default.Helm(), arguments...)
 }
 
 func LoggedHelm(testName string, arguments ...string) ([]byte, error) {
-	arguments = append(arguments, "--kubeconfig", env.Settings.KubeConfig)
+	arguments = append(arguments, "--kubeconfig", *env.Default.Config.KubeConfig)
 
 	if testName != "" {
 		arguments = append(arguments, "-n", testName)
 	}
 
-	return process.LoggedExecuteInDir("", os.Stdout, env.Settings.Helm(), arguments...)
+	return process.LoggedExecuteInDir("", os.Stdout, env.Default.Helm(), arguments...)
+}
+
+func setOutput(command []string) []string {
+	outputType := OutputType(env.Default.OutputType)
+	if outputType == "table" ||
+		outputType == "json" ||
+		outputType == "yaml" {
+		command = append(command, "-o", string(outputType))
+	}
+
+	return command
 }
 
 /*
@@ -173,16 +184,11 @@ func GetFrisbeeResources(testName string, watch bool) error {
 	command := []string{
 		"get",
 		"--show-kind=true",
-		"-l", fmt.Sprintf("%s", v1alpha1.LabelScenario),
+		"-l", "%s", v1alpha1.LabelScenario,
 		"-o", FrisbeeResourceInspectionFields,
 	}
 
-	outputType := OutputType(env.Settings.OutputType)
-	if outputType == "table" ||
-		outputType == "json" ||
-		outputType == "yaml" {
-		command = append(command, "-o", string(outputType))
-	}
+	command = setOutput(command)
 
 	// decide the presentation method
 	if watch {
@@ -190,21 +196,23 @@ func GetFrisbeeResources(testName string, watch bool) error {
 		command = append(command, "--watch=true", Scenarios)
 
 		_, err := LoggedKubectl(testName, command...)
-		return err
-	} else {
-		// monitor all sub-resources, sorted by creation Timestamp
-		command = append(command, "--sort-by=.metadata.creationTimestamp", strings.Join([]string{
-			Clusters, Services, Chaos, Cascades, Calls, VirtualObjects,
-		}, ","))
 
-		out, err := Kubectl(testName, command...)
-		if strings.Contains(string(out), EmptyResourceInspectionFields) {
-			return nil
-		}
-
-		ui.Info(string(out))
 		return err
 	}
+
+	// monitor all sub-resources, sorted by creation Timestamp
+	command = append(command, "--sort-by=.metadata.creationTimestamp", strings.Join([]string{
+		Clusters, Services, Chaos, Cascades, Calls, VirtualObjects,
+	}, ","))
+	out, err := Kubectl(testName, command...)
+
+	if strings.Contains(string(out), EmptyResourceInspectionFields) {
+		return nil
+	}
+
+	ui.Info(string(out))
+
+	return err
 }
 
 var TemplateInspectionFields = strings.Join([]string{
@@ -221,13 +229,7 @@ func GetTemplateResources(testName string) error {
 
 	command = append(command, Templates)
 
-	// restricted format supported by Kubectl
-	outputType := OutputType(env.Settings.OutputType)
-	if outputType == "table" ||
-		outputType == "json" ||
-		outputType == "yaml" {
-		command = append(command, "-o", string(outputType))
-	}
+	command = setOutput(command)
 
 	command = append(command, "-o", TemplateInspectionFields)
 
@@ -249,6 +251,7 @@ func WaitForCondition(testName string, condition v1alpha1.ConditionType, timeout
 	}
 
 	_, err := LoggedKubectl(testName, command...)
+
 	return err
 }
 
@@ -283,18 +286,12 @@ func GetChaosResources(testName string) error {
 		"get",
 		"--show-kind=true",
 		"--sort-by=.metadata.creationTimestamp",
-		"-l", fmt.Sprintf("%s", v1alpha1.LabelScenario),
+		"-l", "%s", v1alpha1.LabelScenario,
 	}
 
 	command = append(command, strings.Join([]string{NetworkChaos, PodChaos, IOChaos, KernelChaos, TimeChaos}, ","))
 
-	// restricted format supported by Kubectl
-	outputType := OutputType(env.Settings.OutputType)
-	if outputType == "table" ||
-		outputType == "json" ||
-		outputType == "yaml" {
-		command = append(command, "-o", string(outputType))
-	}
+	command = setOutput(command)
 
 	command = append(command, "-o", ChaosResourceInspectionFields)
 
@@ -332,8 +329,6 @@ const (
 	K8PVCs            = "persistentvolumeclaims"
 	K8PVs             = "persistentvolumes"
 	K8SStorageClasses = "storageclasses.storage.k8s.io"
-
-	// K8SVCs            = "services"
 )
 
 var K8SResourceInspectionFields = strings.Join([]string{
@@ -355,13 +350,7 @@ func GetK8sResources(testName string) error {
 
 	command = append(command, strings.Join([]string{K8PODs, K8PVCs, K8PVs, K8SStorageClasses}, ","))
 
-	// restricted format supported by Kubectl
-	outputType := OutputType(env.Settings.OutputType)
-	if outputType == "table" ||
-		outputType == "json" ||
-		outputType == "yaml" {
-		command = append(command, "-o", string(outputType))
-	}
+	command = setOutput(command)
 
 	command = append(command, "-o", K8SResourceInspectionFields)
 
@@ -382,13 +371,13 @@ const (
 
 /*
 GetPodLogs provides convenience on printing the logs from prods.
-// Filter query:
-// - Run with '--all'
-// - Run with '--logs all pod1 ...'
-// - Run with '--logs all'
-// - Run with '--logs SYS'
-// - Run with '--logs SUT'
-// - Run with '--logs pod1 pod2 ...'
+Filter query:
+  - Run with '--all'.
+  - Run with '--logs all pod1 ...'.
+  - Run with '--logs all'.
+  - Run with '--logs SYS'.
+  - Run with '--logs SUT'.
+  - Run with '--logs pod1 pod2 ...'.
 */
 func GetPodLogs(testName string, tail bool, lines int, pods ...string) error {
 	command := []string{
@@ -433,35 +422,34 @@ func GetPodLogs(testName string, tail bool, lines int, pods ...string) error {
 				return true, nil
 			}
 		})
+	}
 
-	} else {
-		command = append(command, "--ignore-errors=true")
+	command = append(command, "--ignore-errors=true")
+	out, err := Kubectl(testName, command...)
 
-		out, err := Kubectl(testName, command...)
+	switch {
+	case len(out) == 0, ErrNotFound(out), ErrContainerNotReady(out): // resource initialization
+		// ui.Info("Waiting for pods to become ready ...", string(out))
+		return nil
+	case err != nil: // abort
+		return err
+	default: // ok
+		ui.Info(string(out))
 
-		switch {
-		case len(out) == 0, ErrNotFound(out), ErrContainerNotReady(out): // resource initialization
-			// ui.Info("Waiting for pods to become ready ...", string(out))
-			return nil
-		case err != nil: // abort
-			return err
-		default: // ok
-			ui.Info(string(out))
-
-			return nil
-		}
+		return nil
 	}
 }
 
 func OpenShell(testName string, podName string, shellArgs ...string) error {
 	command := []string{
 		"exec",
-		"--kubeconfig", env.Settings.KubeConfig,
+		"--kubeconfig", *env.Default.Config.KubeConfig,
 		"--stdin", "--tty", "-n", testName, podName,
 	}
 
 	if len(shellArgs) == 0 {
 		ui.Info("Interactive Shell:")
+
 		command = append(command, "--", "/bin/sh")
 	} else {
 		ui.Info("Oneliner Shell:")
@@ -469,7 +457,7 @@ func OpenShell(testName string, podName string, shellArgs ...string) error {
 		command = append(command, shellArgs...)
 	}
 
-	shell := exec.New().Command(env.Settings.Kubectl(), command...)
+	shell := exec.New().Command(env.Default.Kubectl(), command...)
 	shell.SetStdin(os.Stdin)
 	shell.SetStdout(os.Stdout)
 	shell.SetStderr(os.Stderr)
@@ -508,13 +496,7 @@ func Dashboards(testName string) error {
 		"-l", v1alpha1.LabelScenario,
 	}
 
-	// restricted format supported by Kubectl
-	outputType := OutputType(env.Settings.OutputType)
-	if outputType == "table" ||
-		outputType == "json" ||
-		outputType == "yaml" {
-		command = append(command, "-o", string(outputType))
-	}
+	command = setOutput(command)
 
 	out, err := Kubectl(testName, command...)
 	if ErrNotFound(out) {
@@ -603,7 +585,7 @@ func ForceDelete(testName string) error {
 			patch = append(patch, K8SRemoveFinalizer...)
 			patch = append(patch, string(resources))
 
-			ui.Debug("Use patch", env.Settings.Kubectl(), strings.Join(patch, " "))
+			ui.Debug("Use patch", env.Default.Kubectl(), strings.Join(patch, " "))
 
 			if _, err := Kubectl(testName, patch...); err != nil {
 				return errors.Wrapf(err, "cannot patch '%s' finalizers", crd)
@@ -680,16 +662,11 @@ spec:
 func ListHelm(testName string) error {
 	command := []string{"list"}
 
-	// output format supported by Helm
-	outputType := OutputType(env.Settings.OutputType)
-	if outputType == "table" ||
-		outputType == "json" ||
-		outputType == "yaml" {
-		command = append(command, "-o", string(outputType))
-	}
+	command = setOutput(command)
 
 	out, err := Helm(testName, command...)
 
 	ui.Info(string(out))
+
 	return err
 }

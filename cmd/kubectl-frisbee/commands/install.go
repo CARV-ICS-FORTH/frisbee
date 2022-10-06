@@ -30,11 +30,11 @@ func NewInstallCmd() *cobra.Command {
 		Aliases: []string{"i", "deploy"},
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			ui.Logo()
-			ui.SetVerbose(env.Settings.Debug)
+			ui.SetVerbose(env.Default.Debug)
 
-			env.Settings.CheckKubePerms()
+			// Load kubeconfig
+			env.Default.CheckKubePerms()
 
-			ui.Info("Using config:", env.Settings.KubeConfig)
 			ui.Warn("If it takes long time, make sure you have used the proper values file.")
 		},
 		Run: func(cmd *cobra.Command, args []string) {

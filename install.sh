@@ -1,9 +1,8 @@
-echo "Getting kubectl-frisbee plugin"
-#!/bin/sh
+#!/bin/bash
 
-if [ ! -z "${DEBUG}" ];
-then set -x
-fi
+set -e
+
+echo "Getting kubectl-frisbee plugin"
 
 _detect_arch() {
     case $(uname -m) in
@@ -33,14 +32,17 @@ _detect_os(){
 _download_url() {
         local arch="$(_detect_arch)"
         local os="$(_detect_os)"
+
         if [ -z "$FRISBEE_VERSION" ]
         then
             local version=`curl -s https://api.github.com/repos/carv-ics-forth/frisbee/releases/latest 2>/dev/null | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/'`
+
             echo https://github.com/CARV-ICS-FORTH/frisbee/releases/download/${version}/kubectl-frisbee_${version:1}_${os}_${arch}
         else
             echo https://github.com/CARV-ICS-FORTH/frisbee/releases/download/v${FRISBEE_VERSION}/kubectl-frisbee_${FRISBEE_VERSION}_${os}_${arch}
         fi
 }
+
 
 echo "Downloading frisbee from URL: $(_download_url)"
 curl -sSLf $(_download_url) > kubectl-frisbee

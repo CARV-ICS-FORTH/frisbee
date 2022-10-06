@@ -57,7 +57,7 @@ func NewSaveTestsCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			testName, destination := args[0], args[1]
 
-			scenario, err := env.Settings.GetFrisbeeClient().GetScenario(cmd.Context(), testName)
+			scenario, err := env.Default.GetFrisbeeClient().GetScenario(cmd.Context(), testName)
 			ui.ExitOnError("Getting test information", err)
 
 			switch {
@@ -78,7 +78,7 @@ func NewSaveTestsCmd() *cobra.Command {
 			promDestination := destination + "/" + "prometheus"
 			_, err = common.Kubectl(testName, "cp", PrometheusSource, promDestination)
 
-			env.Settings.Hint("To store data from a specific location use", "kubectl cp pod:path destination -n", testName)
+			env.Default.Hint("To store data from a specific location use", "kubectl cp pod:path destination -n", testName)
 			ui.ExitOnError("Saving Prometheus data to: "+promDestination, err)
 		},
 	}

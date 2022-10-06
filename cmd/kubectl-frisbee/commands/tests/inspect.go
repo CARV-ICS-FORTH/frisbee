@@ -67,7 +67,7 @@ func NewInspectTestCmd() *cobra.Command {
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			client := env.Settings.GetFrisbeeClient()
+			client := env.Default.GetFrisbeeClient()
 
 			testName := args[0]
 
@@ -102,7 +102,7 @@ func NewInspectTestCmd() *cobra.Command {
 				{ // Action Information
 					ui.NL()
 					err = common.GetFrisbeeResources(testName, false)
-					env.Settings.Hint("For more Frisbee Resource information use:",
+					env.Default.Hint("For more Frisbee Resource information use:",
 						"kubectl describe <kind>.frisbee.dev [names...] -n", testName)
 
 					ui.ExitOnError("== Scenario Actions ==", err)
@@ -132,7 +132,7 @@ func NewInspectTestCmd() *cobra.Command {
 				ui.NL()
 				err := common.GetChaosResources(testName)
 
-				env.Settings.Hint("For more Chaos Resource information use:",
+				env.Default.Hint("For more Chaos Resource information use:",
 					"kubectl describe <kind>.chaos-mesh.org [names...] -n", testName)
 				ui.ExitOnError("== Active Chaos Resources ==", err)
 
@@ -141,7 +141,7 @@ func NewInspectTestCmd() *cobra.Command {
 				ui.NL()
 				err = common.GetK8sResources(testName)
 
-				env.Settings.Hint("For more K8s Resource information use:",
+				env.Default.Hint("For more K8s Resource information use:",
 					"kubectl describe <kind> [names...] -n", testName)
 				ui.ExitOnError("== Active K8s Resources ==", err)
 
@@ -152,7 +152,7 @@ func NewInspectTestCmd() *cobra.Command {
 				ui.NL()
 				err := common.GetTemplateResources(testName)
 
-				env.Settings.Hint("For more Template info use:",
+				env.Default.Hint("For more Template info use:",
 					"kubectl describe templates -n", testName, "[template...]")
 				ui.ExitOnError("== Frisbee Templates ==", err)
 
@@ -170,7 +170,7 @@ func NewInspectTestCmd() *cobra.Command {
 				ui.NL()
 				err := common.GetK8sEvents(testName)
 
-				env.Settings.Hint("For more events use:", "kubectl get events -n", testName)
+				env.Default.Hint("For more events use:", "kubectl get events -n", testName)
 				ui.ExitOnError("== Events ==", err)
 
 				ui.Success("== Scenario Events ==")
@@ -180,7 +180,7 @@ func NewInspectTestCmd() *cobra.Command {
 				ui.NL()
 				err := common.GetPodLogs(testName, false, options.Loglines, options.Logs...)
 
-				env.Settings.Hint("For more logs use:", "kubectl logs -n", testName, "<podnames>")
+				env.Default.Hint("For more logs use:", "kubectl logs -n", testName, "<podnames>")
 				ui.ExitOnError("== Logs From Pods ==", err)
 
 				ui.Success("== Scenario Logs ==")

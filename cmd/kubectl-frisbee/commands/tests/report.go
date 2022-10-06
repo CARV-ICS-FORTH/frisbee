@@ -30,8 +30,8 @@ import (
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/env"
 	"github.com/carv-ics-forth/frisbee/pkg/grafana"
 	"github.com/carv-ics-forth/frisbee/pkg/home"
+	"github.com/carv-ics-forth/frisbee/pkg/process"
 	"github.com/carv-ics-forth/frisbee/pkg/ui"
-	"github.com/kubeshop/testkube/pkg/process"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
@@ -79,7 +79,7 @@ func NewReportTestsCmd() *cobra.Command {
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			ui.Logo()
 
-			if env.Settings.NodeJS() == "" || env.Settings.NPM() == "" {
+			if env.Default.NodeJS() == "" || env.Default.NPM() == "" {
 				ui.Fail(errors.Errorf("report is disabled. It requires NodeJS and NPM to be installed in your system"))
 			}
 		},
@@ -96,7 +96,7 @@ func NewReportTestsCmd() *cobra.Command {
 			/*
 				Inspect the Scenario for Grafana Endpoints.
 			*/
-			scenario, err := env.Settings.GetFrisbeeClient().GetScenario(cmd.Context(), testName)
+			scenario, err := env.Default.GetFrisbeeClient().GetScenario(cmd.Context(), testName)
 			ui.ExitOnError("Getting test information", err)
 
 			switch {
@@ -160,7 +160,8 @@ func SavePDF(options *TestReportOptions, dashboardURI string, destination string
 
 	ui.Info("Saving report to", destination)
 
-	_, err = process.LoggedExecuteInDir("", os.Stdout, env.Settings.NodeJS(), command...)
+	_, err = process.LoggedExecuteInDir("", os.Stdout, env.Default.NodeJS(), command...)
+
 	return err
 }
 
@@ -257,9 +258,9 @@ func InstallPDFExporter(location string) {
 	ui.ExitOnError("Installing PDFExporter ", err)
 
 	command := []string{
-		env.Settings.NPM(), "list", location,
+		env.Default.NPM(), "list", location,
 		"|", "grep", puppeteer, "||",
-		env.Settings.NPM(), "install", puppeteer, "--package-lock", "--prefix", location,
+		env.Default.NPM(), "install", puppeteer, "--package-lock", "--prefix", location,
 	}
 
 	_, err = process.Execute("sh", "-c", strings.Join(command, " "))

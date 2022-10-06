@@ -5,16 +5,17 @@ metadata:
   name: iperf.server
 spec:
   service:
-    decorators:
-      resources:
-        cpu: "1"
-        memory: "48Mi"
     containers:
       - name: app
         image: czero/iperf2
         ports:
           - name: listen
             containerPort: 5001
+        # Set static resources
+        resources:
+          limits:
+            cpu: "0.2"
+            memory: "500Mi"
         command: [ iperf ]
         args: [ "-s", "-f", "m", "-i", "5" ]
 
@@ -29,14 +30,8 @@ spec:
     parameters:
       target: localhost
       duration: "60"
-      memory: ""
-      cpu: ""
 
   service:
-    decorators: # Decorators wrap Pod definitions with some nice features
-      resources:
-        cpu: "{{.inputs.parameters.cpu}}"
-        memory: "{{.inputs.parameters.memory}}"
     containers:
       - name: app
         image: czero/iperf2
@@ -64,9 +59,9 @@ spec:
         instances: 10
         # Create a variety of clients with different resources
         inputs:
-          - { target: server, duration: "120", cpu: "0.4", memory: "48Mi" }
-          - { target: server, duration: "120", cpu: "1", memory: "49Mi" }
-          - { target: server, duration: "120", cpu: "1.2", memory: "50Mi" }
+          - { target: server, duration: "120"}
+          - { target: server, duration: "120"}
+          - { target: server, duration: "120"}
 
 
     # When all actions are done, delete looping servers to gracefully exit the experiment

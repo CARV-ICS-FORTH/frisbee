@@ -26,8 +26,8 @@ import (
 	"github.com/carv-ics-forth/frisbee/controllers/common"
 	"github.com/carv-ics-forth/frisbee/controllers/common/scheduler"
 	"github.com/carv-ics-forth/frisbee/controllers/common/watchers"
-	"github.com/carv-ics-forth/frisbee/pkg/executor"
 	"github.com/carv-ics-forth/frisbee/pkg/expressions"
+	"github.com/carv-ics-forth/frisbee/pkg/kubexec"
 	"github.com/carv-ics-forth/frisbee/pkg/lifecycle"
 	"github.com/go-logr/logr"
 	cmap "github.com/orcaman/concurrent-map"
@@ -63,7 +63,7 @@ type Controller struct {
 	view *lifecycle.Classifier
 
 	// executor is used to run commands directly into containers
-	executor executor.Executor
+	executor kubexec.Executor
 
 	regionAnnotations cmap.ConcurrentMap
 }
@@ -347,7 +347,7 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 		Logger:            logger.WithName("call"),
 		gvk:               v1alpha1.GroupVersion.WithKind("Call"),
 		view:              &lifecycle.Classifier{},
-		executor:          executor.NewExecutor(mgr.GetConfig()),
+		executor:          kubexec.NewExecutor(mgr.GetConfig()),
 		regionAnnotations: cmap.New(),
 	}
 

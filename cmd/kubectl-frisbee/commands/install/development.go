@@ -21,7 +21,7 @@ import (
 	"net"
 	"os"
 
-	"github.com/kubeshop/testkube/pkg/process"
+	"github.com/carv-ics-forth/frisbee/pkg/process"
 
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/common"
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/env"
@@ -85,7 +85,7 @@ func NewInstallDevelopmentCmd() *cobra.Command {
 			ui.NL()
 			ui.Success("Frisbee installed in development mode. Run it with: ",
 				fmt.Sprintf("KUBECONFIG=%s FRISBEE_NAMESPACE=%s make run",
-					env.Settings.KubeConfig,
+					*env.Default.Config.KubeConfig,
 					options.Namespace))
 			ui.NL()
 

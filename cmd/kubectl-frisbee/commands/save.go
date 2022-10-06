@@ -31,10 +31,10 @@ func NewSaveCmd() *cobra.Command {
 		Short:   "Save locally the data generated throughout the test execution",
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			ui.Logo()
-			ui.SetVerbose(env.Settings.Debug)
+			ui.SetVerbose(env.Default.Debug)
 
-			env.Settings.CheckKubePerms()
-			ui.Info("Using config:", env.Settings.KubeConfig)
+			// Load kubeconfig
+			env.Default.CheckKubePerms()
 
 			if !common.CRDsExist(common.Scenarios) {
 				ui.Failf("Frisbee is not installed on the kubernetes cluster.")
