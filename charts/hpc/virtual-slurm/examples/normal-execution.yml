@@ -1,0 +1,41 @@
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Scenario
+metadata:
+  name: virtual-slurm
+spec:
+  testData:
+    volume: { claimName: shared-storage }
+    globalNamespace: true
+
+  actions:
+    - action: Service
+      name: slurmmaster # Fixed reference in the slurm-node's configuration.
+      service:
+        templateRef: slurm-master
+        inputs:
+          - nodes: 2
+
+    - action: Cluster
+      name: slurmnode
+      depends: {running: [slurmmaster]}
+      cluster:
+        templateRef: slurm-node # Fixed prefix in the slurm.conf
+        instances: 3
+        inputs:
+          - nodes: 2
+
+    - action: Service
+      name: slurm-jupyter
+      depends: {running: [slurmmaster, slurmnode]}
+      service:
+        templateRef: slurm-jupyter
+        inputs:
+          - nodes: 2
+
+    # Teardown
+    - action: Delete
+      name: teardown
+      depends: { success: [slurm-jupyter, slurmmaster, slurmnode] }
+      delete:
+        jobs: [ ]

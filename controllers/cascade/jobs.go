@@ -31,7 +31,7 @@ func (r *Controller) runJob(ctx context.Context, cascade *v1alpha1.Cascade, jobI
 	var job v1alpha1.Chaos
 
 	// Populate the job
-	job.SetName(common.GenerateName(cascade, jobIndex, cascade.Spec.MaxInstances))
+	job.SetName(common.GenerateName(cascade, jobIndex))
 	v1alpha1.PropagateLabels(&job, cascade)
 
 	// modulo is needed to re-iterate the job list, required for the implementation of "Until".

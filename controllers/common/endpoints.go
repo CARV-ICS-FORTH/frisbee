@@ -49,12 +49,8 @@ func ExternalEndpoint(name, planName string) string {
 	return fmt.Sprintf("%s-%s.%s", name, planName, configuration.Global.DomainName)
 }
 
-// GenerateName names the children of a given resource. if there is only one instance, it will be named after the group.
-// otherwise, the instances will be named as Master-0, Master-1, ...
-func GenerateName(group metav1.Object, i int, max int) string {
-	if max == 1 {
-		return group.GetName()
-	}
-
-	return fmt.Sprintf("%s-%d", group.GetName(), i)
+// GenerateName names the children of a given resource. The instances will be named as Master-1, Master-2, ...
+// see https://github.com/CARV-ICS-FORTH/frisbee/issues/339
+func GenerateName(group metav1.Object, jobIndex int) string {
+	return fmt.Sprintf("%s-%d", group.GetName(), jobIndex+1)
 }

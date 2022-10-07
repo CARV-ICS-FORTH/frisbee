@@ -1,0 +1,16 @@
+---
+# In order to have shared data environment, we must first create a network volume.
+# This volume will then be mounted across slurm nodes.
+# This is an adaptation of https://medium.com/analytics-vidhya/slurm-cluster-with-docker-9f242deee601
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: shared-storage
+spec:
+  storageClassName: network-volume
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 2Gi

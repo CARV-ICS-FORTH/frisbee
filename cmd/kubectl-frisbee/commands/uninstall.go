@@ -99,16 +99,6 @@ func NewUninstallCmd() *cobra.Command {
 				ui.Success("CRDs", "Deleted")
 			}
 
-			// Delete cache
-			if options.DeleteCache || options.All {
-				err := os.RemoveAll(options.RepositoryCache)
-				if err != nil && !os.IsNotExist(err) {
-					ui.ExitOnError("Deleting Cache ....", err)
-				}
-
-				ui.Success("Cache", "Deleted")
-			}
-
 			// Delete namespace
 			if options.DeleteNamespace || options.All {
 				out, err := common.Kubectl("", "delete", "namespace", options.Namespace)
@@ -117,6 +107,16 @@ func NewUninstallCmd() *cobra.Command {
 				}
 
 				ui.Success("Namespace", "Deleted")
+			}
+
+			// Delete cache
+			if options.DeleteCache || options.All {
+				err := os.RemoveAll(options.RepositoryCache)
+				if err != nil && !os.IsNotExist(err) {
+					ui.ExitOnError("Deleting Cache ....", err)
+				}
+
+				ui.Success("Cache", "Deleted")
 			}
 		},
 		PersistentPostRun: func(cmd *cobra.Command, args []string) {

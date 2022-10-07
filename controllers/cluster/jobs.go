@@ -28,15 +28,15 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (r *Controller) runJob(ctx context.Context, cluster *v1alpha1.Cluster, i int) error {
+func (r *Controller) runJob(ctx context.Context, cluster *v1alpha1.Cluster, jobIndex int) error {
 	var job v1alpha1.Service
 
 	// Populate the job
-	job.SetName(common.GenerateName(cluster, i, cluster.Spec.MaxInstances))
+	job.SetName(common.GenerateName(cluster, jobIndex))
 	v1alpha1.PropagateLabels(&job, cluster)
 
 	// modulo is needed to re-iterate the job list, required for the implementation of "Until".
-	jobSpec := cluster.Status.QueuedJobs[i%len(cluster.Status.QueuedJobs)]
+	jobSpec := cluster.Status.QueuedJobs[jobIndex%len(cluster.Status.QueuedJobs)]
 
 	jobSpec.DeepCopyInto(&job.Spec)
 
