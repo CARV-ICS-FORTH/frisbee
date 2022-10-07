@@ -15,11 +15,10 @@ spec:
           - /bin/sh # Run shell
           - -c # Read from string
           - |  # Multi-line str
+            set -eux
 
             cat <<EOF > create.py
-            {{ range .Files.Lines "scripts/concatenation/create.py" }}
-            {{ . }}
-            {{ end }}
+            {{ .Files.Get "scripts/concatenation/create.py" | indent 13 }}
             EOF
 
             # Create 4 files to the shared dir, and one directory for the logs.
@@ -41,11 +40,10 @@ spec:
           - /bin/sh # Run shell
           - -c # Read from string
           - |  # Multi-line str
+            set -eux
 
             cat <<EOF > concatenate.py
-            {{ range .Files.Lines "scripts/concatenation/concatenate.py" }}
-            {{ . }}
-            {{ end }}
+            {{ .Files.Get "scripts/concatenation/concatenate.py" | indent 13 }}
             EOF
 
             ls /testdata/

@@ -78,14 +78,6 @@ func (in *Service) AttachTestDataVolume(source *TestdataVolume, useSubPath bool)
 	}
 }
 
-// Requirements points to Kinds and their respective configurations required for the Service operation.
-// For example, this field can be used to create PVCs dedicated to this service.
-type Requirements struct {
-	// Ingress makes An API object that manages external access to the services in a cluster, typically HTTP.
-	// +optional
-	Ingress *netv1.IngressBackend `json:"ingressBackend,omitempty"`
-}
-
 // NIC specifies the capabilities of the emulated network interface.
 type NIC struct {
 	Rate string `json:"rate,omitempty"`
@@ -143,6 +135,10 @@ type Decorators struct {
 	// Agents are sidecar services will be deployed in the same Pod as the Service container.
 	// +optional
 	Telemetry []string `json:"telemetry,omitempty"`
+
+	// IngressPort builds an ingress for making the service's port accessible outside the Kubernetes cluster.
+	// +optional
+	IngressPort *netv1.ServiceBackendPort `json:"ingressPort,omitempty"`
 }
 
 // Callable is a script that is executed within the service container, and returns a value.
@@ -159,9 +155,6 @@ type Callable struct {
 type ServiceSpec struct {
 	// +optional
 	Decorators Decorators `json:"decorators,omitempty"`
-
-	// +optional
-	Requirements *Requirements `json:"requirements,omitempty"`
 
 	// +optional
 	Callables map[string]Callable `json:"callables,omitempty"`

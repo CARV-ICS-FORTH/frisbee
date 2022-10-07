@@ -1,0 +1,124 @@
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Template
+metadata:
+  name: slurm-master
+spec:
+  inputs:
+    parameters:
+      nodes: 10
+  service:
+    decorators:
+      telemetry:
+        - system.telemetry.agent
+    containers:
+      - name: app
+        image: rancavil/slurm-master:19.05.5-1
+        ports:
+          - name: slurmctld
+            containerPort: 6817
+          - name: slurmd
+            containerPort: 6818
+          - name: slurmdbd
+            containerPort: 6819
+        command:
+          - /bin/sh # Run shell
+          - -c # Read from string
+          - |  # Multi-line str
+            set -eux
+
+            # Replace the number of expected nodes.
+            sed -i "s/slurmnode\[1-10\]/slurmnode-[1-{{"{{.inputs.parameters.nodes}}"}}]/g" /etc/slurm-llnl/slurm.conf
+
+            # Stupid patch to fix extra line on the master's slurm.conf that make it inconsistent with node's slurm.conf
+            sed -i -z 's/#\nNodeName/NodeName/g' /etc/slurm-llnl/slurm.conf
+
+            /etc/slurm-llnl/docker-entrypoint.sh
+
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Template
+metadata:
+  name: slurm-node
+spec:
+  inputs:
+    parameters:
+      nodes: 10
+  service:
+    containers:
+      - name: app
+        image: rancavil/slurm-node:19.05.5-1
+        ports:
+          - name: slurmd
+            containerPort: 6818
+        command:
+          - /bin/sh # Run shell
+          - -c # Read from string
+          - |  # Multi-line str
+            set -eux
+
+            export SLURM_NODENAME=$(hostname)
+
+            # Replace the number of expected nodes.
+            sed -i "s/slurmnode\[1-10\]/slurmnode-[1-{{"{{.inputs.parameters.nodes}}"}}]/g" /etc/slurm-llnl/slurm.conf
+
+            /etc/slurm-llnl/docker-entrypoint.sh
+
+
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Template
+metadata:
+  name: slurm-jupyter
+spec:
+  inputs:
+    parameters:
+      nodes: 10
+  service:
+    decorators:
+      ingressPort:
+        name: http # make the http interface directly visibly outside the cluster.
+    containers:
+      - name: app
+        image: rancavil/slurm-jupyter:19.05.5-1
+        ports:
+          - name: http
+            containerPort: 8888
+        command:
+          - /bin/sh # Run shell
+          - -c # Read from string
+          - |  # Multi-line str
+            set -eux
+
+            # Replace the number of expected nodes.
+            sed -i "s/slurmnode\[1-10\]/slurmnode-[1-{{"{{.inputs.parameters.nodes}}"}}]/g" /etc/slurm-llnl/slurm.conf
+
+            # Copy dummy examples.
+            # test.py: run a python that blocks for 15 seconds
+            # job.sh create 6 instances of test.py
+            # The indent is dependent on the current indenting going on with the YAML file.
+            echo "Copy test.py"
+
+            cat <<EOF > /testdata/test.py
+            {{ .Files.Get "scripts/test.py" | indent 12}}
+            EOF
+
+            echo "Copy jobs.sh"
+
+            cat <<EOF > /testdata/job.sh
+            #!/bin/bash
+            #
+            #SBATCH --job-name=test
+            #SBATCH --output=result.out
+            #
+            #SBATCH --ntasks=6
+            #sbcast -f test.py /testdata/test.py
+            srun python3 /testdata/test.py
+            EOF
+
+            # move to the shared directory
+            echo "cd /testdata"
+            cd /testdata
+
+            /etc/slurm-llnl/docker-entrypoint.sh
+

@@ -36,10 +36,6 @@ import (
 func (r *Controller) runJob(ctx context.Context, service *v1alpha1.Service) error {
 	setDefaultValues(service)
 
-	if err := handleRequirements(ctx, r, service); err != nil {
-		return errors.Wrapf(err, "service.%s.requirements", service.GetName())
-	}
-
 	if err := decoratePod(ctx, r, service); err != nil {
 		return errors.Wrapf(err, "cannot set pod decorators")
 	}
@@ -94,36 +90,29 @@ func setDefaultValues(cr *v1alpha1.Service) {
 
 var pathType = netv1.PathTypePrefix
 
-func handleRequirements(ctx context.Context, controller *Controller, cr *v1alpha1.Service) error {
-	if cr.Spec.Requirements == nil {
-		return nil
-	}
+func createIngress(ctx context.Context, controller *Controller, service *v1alpha1.Service) error {
+	var ingress netv1.Ingress
 
-	// Ingress
-	if req := cr.Spec.Requirements.Ingress; req != nil {
-		var ingress netv1.Ingress
+	ingressClassName := configuration.Global.IngressClassName
 
-		ingressClassName := configuration.Global.IngressClassName
+	ingress.SetName(service.GetName())
+	v1alpha1.PropagateLabels(&ingress, service)
 
-		ingress.SetName(cr.GetName())
-		v1alpha1.PropagateLabels(&ingress, cr)
-
-		ingress.Spec = netv1.IngressSpec{
-			IngressClassName: &ingressClassName,
-			Rules: []netv1.IngressRule{
-				{
-					Host: common.ExternalEndpoint(cr.GetName(), cr.GetNamespace()),
-					IngressRuleValue: netv1.IngressRuleValue{
-						HTTP: &netv1.HTTPIngressRuleValue{
-							Paths: []netv1.HTTPIngressPath{
-								{
-									Path:     "/",
-									PathType: &pathType,
-									Backend: netv1.IngressBackend{
-										Service: &netv1.IngressServiceBackend{
-											Name: cr.GetName(),
-											Port: req.Service.Port,
-										},
+	ingress.Spec = netv1.IngressSpec{
+		IngressClassName: &ingressClassName,
+		Rules: []netv1.IngressRule{
+			{
+				Host: common.ExternalEndpoint(service.GetName(), service.GetNamespace()),
+				IngressRuleValue: netv1.IngressRuleValue{
+					HTTP: &netv1.HTTPIngressRuleValue{
+						Paths: []netv1.HTTPIngressPath{
+							{
+								Path:     "/",
+								PathType: &pathType,
+								Backend: netv1.IngressBackend{
+									Service: &netv1.IngressServiceBackend{
+										Name: service.GetName(),
+										Port: *service.Spec.Decorators.IngressPort,
 									},
 								},
 							},
@@ -131,11 +120,11 @@ func handleRequirements(ctx context.Context, controller *Controller, cr *v1alpha
 					},
 				},
 			},
-		}
+		},
+	}
 
-		if err := common.Create(ctx, controller, cr, &ingress); err != nil {
-			return errors.Wrapf(err, ".ingress")
-		}
+	if err := common.Create(ctx, controller, service, &ingress); err != nil {
+		return errors.Wrapf(err, ".ingress")
 	}
 
 	return nil
@@ -202,37 +191,37 @@ func SetField(service *v1alpha1.Service, val v1alpha1.SetField) (err error) {
 	return nil
 }
 
-func decoratePod(ctx context.Context, r *Controller, cr *v1alpha1.Service) error {
+func decoratePod(ctx context.Context, r *Controller, service *v1alpha1.Service) error {
 	// set labels
-	if req := cr.Spec.Decorators.Labels; req != nil {
-		cr.SetLabels(labels.Merge(cr.GetLabels(), req))
+	if req := service.Spec.Decorators.Labels; req != nil {
+		service.SetLabels(labels.Merge(service.GetLabels(), req))
 	}
 
 	// set annotations
-	if req := cr.Spec.Decorators.Annotations; req != nil {
-		cr.SetAnnotations(labels.Merge(cr.GetAnnotations(), req))
+	if req := service.Spec.Decorators.Annotations; req != nil {
+		service.SetAnnotations(labels.Merge(service.GetAnnotations(), req))
 	}
 
 	// set dynamically evaluated fields
-	if req := cr.Spec.Decorators.SetFields; req != nil {
+	if req := service.Spec.Decorators.SetFields; req != nil {
 		for _, val := range req {
-			if err := SetField(cr, val); err != nil {
+			if err := SetField(service, val); err != nil {
 				return errors.Wrapf(err, "cannot set field [%v]", val)
 			}
 		}
 	}
 
-	if len(cr.Spec.Decorators.Telemetry) > 0 {
+	if len(service.Spec.Decorators.Telemetry) > 0 {
 		//  The sidecar makes use of the shareProcessNamespace option to access the host cgroup metrics.
 		share := true
-		cr.Spec.ShareProcessNamespace = &share
+		service.Spec.ShareProcessNamespace = &share
 	}
 
 	// import telemetry agents
-	if req := cr.Spec.Decorators.Telemetry; req != nil {
+	if req := service.Spec.Decorators.Telemetry; req != nil {
 		// import dashboards for monitoring agents to the service
 		for _, monRef := range req {
-			monSpec, err := serviceutils.GetServiceSpec(ctx, r.GetClient(), cr, v1alpha1.GenerateObjectFromTemplate{TemplateRef: monRef})
+			monSpec, err := serviceutils.GetServiceSpec(ctx, r.GetClient(), service, v1alpha1.GenerateObjectFromTemplate{TemplateRef: monRef})
 			if err != nil {
 				return errors.Wrapf(err, "cannot get monitor")
 			}
@@ -242,9 +231,16 @@ func decoratePod(ctx context.Context, r *Controller, cr *v1alpha1.Service) error
 					monRef, len(monSpec.Containers))
 			}
 
-			cr.Spec.Containers = append(cr.Spec.Containers, monSpec.Containers[0])
-			cr.Spec.Volumes = append(cr.Spec.Volumes, monSpec.Volumes...)
-			cr.Spec.Volumes = append(cr.Spec.Volumes, monSpec.Volumes...)
+			service.Spec.Containers = append(service.Spec.Containers, monSpec.Containers[0])
+			service.Spec.Volumes = append(service.Spec.Volumes, monSpec.Volumes...)
+			service.Spec.Volumes = append(service.Spec.Volumes, monSpec.Volumes...)
+		}
+	}
+
+	// create ingress
+	if service.Spec.Decorators.IngressPort != nil {
+		if err := createIngress(ctx, r, service); err != nil {
+			return errors.Wrapf(err, "service.%s.decorators", service.GetName())
 		}
 	}
 

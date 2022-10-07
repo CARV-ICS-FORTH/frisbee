@@ -5,16 +5,12 @@ metadata:
   name: system.telemetry.dataviewer.template
 spec:
   service:
-    requirements:
-      ingressBackend:
-        service:
-          name: self
-          port:
-            number: {{.Values.telemetry.dataviewer.port}}
-
     decorators:
       labels:
         scenario.frisbee.dev/component: SYS
+
+      ingressPort:
+         name: http
 
     # Do a nasty touch to sync/populate the volume.
     initContainers:
