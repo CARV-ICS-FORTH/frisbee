@@ -208,7 +208,7 @@ func (env *EnvironmentSettings) GetFrisbeeClient() *frisbeeclient.APIClient {
 	genericClient, err := client.New(restConfig, client.Options{Scheme: scheme})
 	ui.ExitOnError("Setting up generic client", err)
 
-	ui.Info("Connecting to Kubernetes API Server at: ", restConfig.Host)
+	ui.Info("Connecting to Kubernetes API Server: ", restConfig.Host)
 
 	c := frisbeeclient.NewDirectAPIClient(genericClient)
 	env.client = &c

@@ -30,4 +30,4 @@ spec:
       name: teardown
       depends: { success: [ whalesay ] }
       delete:
-        jobs: []
+        jobs: [ ]

@@ -22,7 +22,7 @@ spec:
 
     containers: # Container(s)
       - name: app
-        image: busybox:latest
+        image: praqma/network-multitool
         securityContext:
           privileged: true
         command:

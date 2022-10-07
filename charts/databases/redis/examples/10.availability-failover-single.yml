@@ -59,7 +59,7 @@ spec:
         inputs:
           - { targets: master, duration: "1m" }
 
-    # Step: Teardown
+    # Teardown
     - action: Delete
       name: teardown
       depends: { running: [master, slave, sentinel], success: [loaders, partition-b] }

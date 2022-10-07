@@ -27,7 +27,7 @@ spec:
         inputs:
           - { direct: "0", claimName: fs }
 
-    # Step: Teardown
+    # Teardown
     - action: Delete
       name: teardown
       depends: { success: [ fio] }

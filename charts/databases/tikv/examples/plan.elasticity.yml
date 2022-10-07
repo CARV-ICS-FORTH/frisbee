@@ -61,7 +61,7 @@ spec:
         schedule:
           cron: "@every 1m"    
 
-    # Step: Teardown
+    # Teardown
     - action: Delete
       name: teardown
       depends: { running: [ coordinator, workers, more-workers ], success: [ killer] }

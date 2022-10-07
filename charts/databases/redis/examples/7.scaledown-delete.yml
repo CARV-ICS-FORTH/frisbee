@@ -63,7 +63,7 @@ spec:
 
 
 
-    # Step: Teardown
+    # Teardown
     - action: Delete
       name: teardown
       depends: { success: [ delete-client, loader ] }

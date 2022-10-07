@@ -35,7 +35,7 @@ spec:
           - { server: coordinator, recordcount: "100000000000", offset: "0", threads: "32" }
 
 
-    # Step: Teardown
+    # Teardown
     - action: Delete
       name: teardown
       depends: { running: [ coordinator, workers], success: [ loaders ] }

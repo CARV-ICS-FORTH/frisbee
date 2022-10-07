@@ -50,7 +50,7 @@ spec:
             metrics: "avg() of query(wpFnYRwGk/2/bitrate, 5m, now) is below(500)"
 
 
-    # Step: Teardown
+    # Teardown
     - action: Delete
       name: teardown
       depends: { running: [ server, noise ], success: [ partition0, clients ] }

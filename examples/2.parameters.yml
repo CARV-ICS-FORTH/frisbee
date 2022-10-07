@@ -42,4 +42,4 @@ spec:
       name: teardown
       depends: { success: [ default-parameters, custom-parameters ] }
       delete:
-        jobs: []
+        jobs: [ ]

@@ -54,3 +54,10 @@ spec:
         templateRef: whalesay
         inputs:
           - { message: "I am D" }
+
+    # Teardown
+    - action: Delete
+      name: teardown
+      depends: { success: [ d ] }
+      delete:
+        jobs: [ ]
