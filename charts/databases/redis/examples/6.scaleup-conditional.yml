@@ -48,7 +48,7 @@ spec:
           event:
             metrics: 'max() of query(A2EjFbsMk/26/99Latency, 5m, now) is above(80000)'
 
-    # Step: Teardown
+    # Teardown
     - action: Delete
       name: teardown
       depends: { running: [ masters, more-servers], success: [loaders] }

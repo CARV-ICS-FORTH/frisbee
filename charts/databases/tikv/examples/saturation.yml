@@ -74,7 +74,7 @@ spec:
           - { target: clients-2 }
 
 
-    # Step: Teardown
+    # Teardown
     - action: Delete
       name: teardown
       depends: { running: [ coordinator, workers, noise], success: [ killer, clients  ] }

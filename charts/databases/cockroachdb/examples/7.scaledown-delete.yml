@@ -62,7 +62,7 @@ spec:
       delete:
         jobs: [ groupa ]
 
-    # Step: Teardown
+    # Teardown
     - action: Delete
       name: teardown
       depends: { success: [ delete-client, loader ] }

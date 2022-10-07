@@ -36,29 +36,34 @@ operator:
       port: 6666
 
 
-
 ## @section Provision of dynamic volumes
 
 ## @param openebs.enabled Whether to enable OpenEBS
-## @param openebs.storagePath The filesystem dir where volumes will be provisioned
+## @param openebs.storagePath Default directory used by the provisioner to provision hostpath volumes.
 ## @param openebs.nfs-provisioner.enabled Will enable dynamic NFS servers
 ## @param openebs.ndm.enabled Whether to enable block device management
+## @param openebs.ndm.sparse.path Path to Sparse files. Set it with  "$XDG_RUNTIME_DIR/usernetes/openebs/sparse"
 ## @param openebs.ndm.filters.includePaths Include block devices for dynamic block provisioning
 ## @param openebs.ndm.filters.excludePaths Exclude block devices for dynamic block provisioning
+## @param openebs.varDirectoryPath.baseDir # Directory used by the OpenEBS to store debug information. Set it with  "$XDG_RUNTIME_DIR/usernetes/openebs/var"
 openebs:
   enabled: true
 
-  storagePath: /mnt/local
+  storagePath: /run/user/1001/usernetes/openebs/local
 
   nfs-provisioner:
     enabled: true
 
   ndm:
-    enabled: true
+    enabled: false # TODO: make it work for usernetes
+    sparse:
+      path: /run/user/1001/usernetes/openebs/sparse
     filters:
       includePaths: "" # example /dev/loop7
       excludePaths: "/dev/fd0,/dev/sr0,/dev/ram,/dev/dm-,/dev/md,/dev/rbd,/dev/zd"
 
+  varDirectoryPath:
+    baseDir: /run/user/1001/usernetes/openebs/var
 
 ## @section Chaos Injection Parameters
 

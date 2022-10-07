@@ -56,7 +56,7 @@ spec:
         inputs:
           - { source: server, duration: 5m , direction: "both", dst: "clients-0,clients-1,clients-2" }
 
-    # Step: Teardown
+    # Teardown
     - action: Delete
       name: teardown
       depends: { running: [ server ], success: [ clients, partition0 ] }

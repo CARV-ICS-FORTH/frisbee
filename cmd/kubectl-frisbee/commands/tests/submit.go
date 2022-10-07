@@ -90,7 +90,7 @@ func NewSubmitTestCmd() *cobra.Command {
 			if strings.HasSuffix(testName, "-") {
 				testName = fmt.Sprintf("%s%d", testName, rand.Intn(1000))
 			}
-			ui.Success("Submit Test", "testName", testName, "testFile", testFile)
+			ui.Success("Submit Test", testName, ":", testFile)
 
 			// Validate the scenario
 			{

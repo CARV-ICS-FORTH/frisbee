@@ -184,7 +184,7 @@ func GetFrisbeeResources(testName string, watch bool) error {
 	command := []string{
 		"get",
 		"--show-kind=true",
-		"-l", "%s", v1alpha1.LabelScenario,
+		"-l", v1alpha1.LabelScenario,
 		"-o", FrisbeeResourceInspectionFields,
 	}
 
@@ -286,7 +286,7 @@ func GetChaosResources(testName string) error {
 		"get",
 		"--show-kind=true",
 		"--sort-by=.metadata.creationTimestamp",
-		"-l", "%s", v1alpha1.LabelScenario,
+		"-l", v1alpha1.LabelScenario,
 	}
 
 	command = append(command, strings.Join([]string{NetworkChaos, PodChaos, IOChaos, KernelChaos, TimeChaos}, ","))

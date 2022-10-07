@@ -169,7 +169,7 @@ spec:
         inputs:
           - { server: coordinator, workload: workloada, operationcount: "1000000", threads: "40" }
 
-    # Step: Teardown
+    # Teardown
     - action: Delete
       name: teardown
       depends: { running: [ coordinator, workers], success: [ client-12 ] }

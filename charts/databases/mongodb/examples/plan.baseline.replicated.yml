@@ -108,7 +108,7 @@ spec:
           - { server: master, workload: workloade, operationcount: "1000000", threads: "40" }
 
 
-    # Step 10: Teardown
+    # Teardown
     - action: Delete
       name: teardown
       depends: { running: [ master, slaves], success: [ workload-e ] }

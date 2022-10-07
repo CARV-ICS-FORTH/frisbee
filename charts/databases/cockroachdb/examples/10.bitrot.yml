@@ -48,7 +48,7 @@ spec:
         callable: run-workload
         services: [ masters-0 ]
 
-    # Step 5: Teardown
+    # Teardown
     - action: Delete
       name: teardown
       depends: { running: [ masters ], success: [ run-workload] }

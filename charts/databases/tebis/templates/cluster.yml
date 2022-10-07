@@ -9,7 +9,11 @@ spec:
       - name: app
         image: zookeeper:3.5.9
         ports:
-          - name: http
+          - name: peerport
+            containerPort: 2888
+          - name: leaderport
+            containerPort: 3888
+          - name: clientport
             containerPort: 2181
         command:
           - /bin/sh   # Run shell
@@ -35,7 +39,7 @@ spec:
   service:
     containers:
       - name: app
-        image: icsforth/tebis-manager:latest
+        image: icsforth/tebis-init:latest
         command:
           - /bin/sh   # Run shell
           - -c        # Read from string
@@ -44,21 +48,21 @@ spec:
 
             echo "Create hosts file"
             cat > hosts <<EOF
-              master0-6060 leader
-              master1-6061
-              master2-6062
+              masters-0:6060 leader
+              masters-1:6061
+              masters-2:6062
             EOF
 
             echo "Create regions file"
             cat > regions <<EOF
-              0 AA AB master0-6060
-              1 AB AC master1-6061
-              2 AC +oo master2-6062
+              0 AA AB masters-0:6060
+              1 AB AC masters-1:6061
+              2 AC +oo masters-2:6062
             EOF
 
             zookeeper={{"{{.inputs.parameters.zookeeper}}:2181"}}
 
-            sleep 10
+            sleep 60
 
             echo "Contact Zookeeper at ${zookeeper}"
             python /tebis_zk_init.py hosts regions ${zookeeper}
@@ -81,7 +85,7 @@ spec:
     decorators:
       annotations:
         k8s.v1.cni.cncf.io/networks: macvlan-rdma
-      telemetry: [ system.telemetry.agent ]
+#      telemetry: [ system.telemetry.agent ]
       setFields:
         - field: PodSpec.Containers.0.Ports.0.ContainerPort
           value: {{"{{.inputs.parameters.port | int}}" | quote}}
@@ -110,9 +114,11 @@ spec:
             echo "Pre-allocate space for Tebis server"
             fallocate --length 16G ${device}
 
+            sleep 1600
+
             echo "Starting Tebis server"
-            echo /kreon-server/kreon_server ${device} ${device} ${zookeeper} ${rdma} ${port},${cores}
-            /kreon-server/kreon_server ${device} ${device} ${zookeeper} ${rdma} ${port},${cores}
+            echo /kreon-server/kreon_server ${device} ${zookeeper} ${rdma} ${port},${cores}
+            /kreon-server/kreon_server ${device} ${zookeeper} ${rdma} ${port},${cores}
 
 
 ---
@@ -131,10 +137,10 @@ spec:
     decorators:
       annotations:
         k8s.v1.cni.cncf.io/networks: macvlan-rdma
-      telemetry: [ system.telemetry.agent ]
+#      telemetry: [ system.telemetry.agent ]
     containers:
       - name: app
-        image: icsforth/tebis-client:latest
+        image: icsforth/tebis-ycsb-client:latest
         securityContext:
           privileged: true
         command:

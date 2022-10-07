@@ -26,3 +26,4 @@ testbin/*
 
 # Ignore any accidently generated main
 ./main
+./kubectl-frisbee

@@ -45,7 +45,7 @@ spec:
         inputs:
           - { server: server, dataClaimName: dataset }
 
-    # Step: Teardown
+    # Teardown
     - action: Delete
       name: teardown
       depends: { running: [ server ], success: [ clients ] }

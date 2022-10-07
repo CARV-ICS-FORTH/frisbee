@@ -46,7 +46,7 @@ spec:
           cron: "@every 2m"
 
 
-    # Step 9: Teardown
+    # Teardown
     - action: Delete
       name: teardown
       depends: { running: [ masters, more-servers ], success: [ loader ] }

@@ -49,7 +49,7 @@ spec:
 
 
 
-    # Step: Teardown
+    # Teardown
     - action: Delete
       name: teardown
       depends: { running: [ server ], success: [ clients ] }
