@@ -12,7 +12,7 @@ spec:
         inputs:
           - { direct: "1" }
 
-    # Step: Teardown
+    # Teardown
     - action: Delete
       name: teardown
       depends: { success: [ fio] }

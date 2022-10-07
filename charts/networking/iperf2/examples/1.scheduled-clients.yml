@@ -26,7 +26,7 @@ spec:
         schedule:
           cron: "@every 1m"
 
-    # Step: Teardown
+    # Teardown
     - action: Delete
       name: teardown
       depends: { running: [ server ], success: [ clients ] }

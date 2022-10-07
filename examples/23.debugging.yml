@@ -11,11 +11,6 @@ spec:
         ports:
           - name: listen
             containerPort: 5001
-        # Set static resources
-        resources:
-          limits:
-            cpu: "0.2"
-            memory: "500Mi"
         command: [ iperf ]
         args: [ "-s", "-f", "m", "-i", "5" ]
 
@@ -30,7 +25,6 @@ spec:
     parameters:
       target: localhost
       duration: "60"
-
   service:
     containers:
       - name: app
@@ -43,30 +37,36 @@ spec:
 apiVersion: frisbee.dev/v1alpha1
 kind: Scenario
 metadata:
-  name: resource-throttling
+  name: debugging
 spec:
   actions:
+    # Create an iperf server
     - action: Service
       name: server
       service:
         templateRef: iperf.server
 
+    # Create an iperf client
     - action: Cluster
-      name: clients
+      name: client
       depends: { running: [ server ] }
       cluster:
         templateRef: iperf.client
-        instances: 10
-        # Create a variety of clients with different resources
         inputs:
-          - { target: server, duration: "120" }
-          - { target: server, duration: "120" }
-          - { target: server, duration: "120" }
+          - { target: server }
+        # Ignore any potential failure of the client
+        tolerate:
+          failedJobs: 1
 
+    - action: Service
+      name: debugger
+      service:
+        templateRef: system.tools.debugger
 
     # When all actions are done, delete looping servers to gracefully exit the experiment
     - action: Delete
       name: teardown
-      depends: { running: [ server ], success: [ clients ] }
+      # With this label, the service will keep running at the end of the experiment
+      depends: { running: [ server ], success: [ client, debugger ] }
       delete:
         jobs: [ server ]

@@ -73,7 +73,7 @@ spec:
         services: [ masters-0 ]
 
 
-    # Step 5: Almost Teardown -- The logs will remain running
+    # Teardown
     - action: Delete
       name: teardown
       depends: { running: [ masters, dataviewer ], success: [ run-workload], after: 10m }

@@ -17,7 +17,6 @@ limitations under the License.
 package env
 
 import (
-	"os"
 	"os/user"
 	"path/filepath"
 
@@ -42,21 +41,6 @@ func (env *EnvironmentSettings) CheckKubePerms() {
 	}
 
 	ui.Info("Using config:", *env.Config.KubeConfig)
-
-	kubeConfigInfo, err := os.Stat(*env.Config.KubeConfig)
-	if err != nil {
-		// DO NOT error if no KubeConfig is found. Not all commands require one.
-		return
-	}
-
-	perm := kubeConfigInfo.Mode().Perm()
-	if perm&0o040 > 0 {
-		ui.Warn("Kubernetes configuration file is group-readable. This is insecure. Location: ", *env.Config.KubeConfig)
-	}
-
-	if perm&0o004 > 0 {
-		ui.Warn("Kubernetes configuration file is world-readable. This is insecure. Location: ", *env.Config.KubeConfig)
-	}
 }
 
 func (env *EnvironmentSettings) LookupBinaries() {
@@ -72,14 +56,14 @@ func (env *EnvironmentSettings) LookupBinaries() {
 
 	nodejsPath, err := exec.New().LookPath("node")
 	if err != nil {
-		ui.Warn("Disable PDF exporter. It requires 'NodeJs' to be install in your system.")
+		ui.Warn("Disable PDF exporter due to missing dependency.", "NodeJs")
 	}
 
 	env.nodejsPath = nodejsPath
 
 	npmPath, err := exec.New().LookPath("npm")
 	if err != nil {
-		ui.Warn("Disable PDF exporter. It requires 'NPM' to be install in your system.")
+		ui.Warn("Disable PDF exporter due to missing dependency.", "NPM")
 	}
 
 	env.npmPath = npmPath

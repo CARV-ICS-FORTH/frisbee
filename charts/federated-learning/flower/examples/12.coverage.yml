@@ -64,7 +64,7 @@ spec:
           - { server: server, dataClaimName: dataset }
 
 
-    # Step: Teardown
+    # Teardown
     - action: Delete
       name: teardown
       depends: { running: [ server ], success: [ clients, throttled-client, coverage-client ] }

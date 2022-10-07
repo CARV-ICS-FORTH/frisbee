@@ -72,7 +72,7 @@ spec:
 
 
 
-    # Step: Teardown
+    # Teardown
     - action: Delete
       name: teardown
       depends: { running: [ server, dataviewer ], success: [ clients ] }

@@ -91,7 +91,7 @@ spec:
 
 
 
-    # Step 10: Teardown
+    # Teardown
     - action: Delete
       name: teardown
       depends: { running: [ master ], success: [ workload-e ] }

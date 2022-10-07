@@ -23,7 +23,7 @@ spec:
           - { server: server, seconds: "300" }
 
 
-    # Step: Teardown
+    # Teardown
     - action: Delete
       name: teardown
       depends: { running: [ server ], success: [ client ] }

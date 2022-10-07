@@ -55,7 +55,7 @@ spec:
         inputs:
           - { source: server, duration: 5m }
 
-    # Step: Teardown
+    # Teardown
     - action: Delete
       name: teardown
       depends: { running: [ server ], success: [ clients, packetloss ] }

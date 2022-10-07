@@ -22,47 +22,30 @@ spec:
           - { zookeeper: zookeeper }
 
     # Initialize a data node
-    - action: Service
-      name: master0
-      depends:
-        success: [ boot ]
-        running: [ zookeeper ]
-      service:
+    - action: Cluster
+      name: masters
+      depends: {running: [ zookeeper ], success: [ boot ]}
+      cluster:
         templateRef: tebis.cluster.master
         inputs:
           - { zookeeper: zookeeper, port: "6060" }
-
-    # Initialize a data node
-    - action: Service
-      name: master1
-      depends:
-        success: [ boot ]
-        running: [ zookeeper ]
-      service:
-        templateRef: tebis.cluster.master
-        inputs:
-          - { zookeeper: zookeeper,  port: "6061" }
-
-
-    # Initialize a data node
-    - action: Service
-      name: master2
-      depends:
-        success: [ boot ]
-        running: [ zookeeper ]
-      service:
-        templateRef: tebis.cluster.master
-        inputs:
+          - { zookeeper: zookeeper, port: "6061" }
           - { zookeeper: zookeeper, port: "6062" }
 
 
     # Initialize a client node
     - action: Service
       name: client
-      depends:
-        success: [ boot ]
-        running: [ zookeeper, master0, master1, master2 ]
+      depends: { running: [zookeeper, masters], success: [boot] }
       service:
         templateRef: tebis.cluster.client
         inputs:
           - { zookeeper: zookeeper, regions: "3" }
+
+    # Teardown
+    - action: Delete
+      name: teardown
+      depends: { running: [ masters, zookeeper ], success: [ client ] }
+      delete:
+        jobs: [ masters, zookeeper ]
+

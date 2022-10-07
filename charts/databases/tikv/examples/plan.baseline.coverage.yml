@@ -108,7 +108,7 @@ spec:
         inputs:
           - { server: coordinator, workload: workloade, operationcount: "1000000", }
 
-    # Step 10: Teardown
+    # Teardown
     - action: Delete
       name: teardown
       depends: { running: [ coordinator, workers, workers-normal ], success: [ workload-e ] }
