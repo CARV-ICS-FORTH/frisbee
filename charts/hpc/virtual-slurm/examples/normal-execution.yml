@@ -14,7 +14,7 @@ spec:
       service:
         templateRef: slurm-master
         inputs:
-          - nodes: 2
+          - nodes: 3
 
     - action: Cluster
       name: slurmnode
@@ -23,7 +23,7 @@ spec:
         templateRef: slurm-node # Fixed prefix in the slurm.conf
         instances: 3
         inputs:
-          - nodes: 2
+          - nodes: 3
 
     - action: Service
       name: slurm-jupyter
@@ -31,7 +31,7 @@ spec:
       service:
         templateRef: slurm-jupyter
         inputs:
-          - nodes: 2
+          - nodes: 3
 
     # Teardown
     - action: Delete

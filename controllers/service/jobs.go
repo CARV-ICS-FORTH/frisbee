@@ -240,7 +240,7 @@ func decoratePod(ctx context.Context, r *Controller, service *v1alpha1.Service) 
 	// create ingress
 	if service.Spec.Decorators.IngressPort != nil {
 		if err := createIngress(ctx, r, service); err != nil {
-			return errors.Wrapf(err, "service.%s.requirements", service.GetName())
+			return errors.Wrapf(err, "service.%s.decorators", service.GetName())
 		}
 	}
 

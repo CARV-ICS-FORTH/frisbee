@@ -5,16 +5,12 @@ metadata:
   name: system.telemetry.grafana.template
 spec:
   service:
-    requirements:
-      ingressBackend:
-        service:
-          name: self
-          port:
-            number: {{.Values.telemetry.grafana.port}}
-
     decorators:
       labels:
         scenario.frisbee.dev/component: SYS
+
+      ingressPort:
+        name: http
 
     volumes:
       - name: config

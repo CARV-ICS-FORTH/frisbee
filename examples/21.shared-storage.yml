@@ -73,16 +73,11 @@ spec:
       claim_name: ""
 
   service:
-    requirements:
-      ingressBackend:
-        service:
-          name: self
-          port:
-            number: 80
-
     decorators:
       labels:
         scenario.frisbee.dev/component: SYS
+      ingressPort:
+        name: http
 
     volumes: # Match the pod to the log volume
       - name: logs

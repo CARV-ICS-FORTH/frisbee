@@ -45,16 +45,12 @@ spec:
     scenario: "default"
 
   service:
-    requirements:
-      ingressBackend:
-        service:
-          name: self
-          port:
-            number: {{.Values.telemetry.prometheus.port}}
-
     decorators:
       labels:
         scenario.frisbee.dev/component: SYS
+
+      ingressPort:
+        name: http
 
     volumes:
       - name: config # Parameterized config using the reflective information

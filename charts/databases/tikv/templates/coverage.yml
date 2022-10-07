@@ -7,17 +7,11 @@ metadata:
   name: tikv.cluster.coverage.placement-driver
 spec:
   service:
-    requirements: # Requirements
-      ingressBackend:
-        service:
-          name: self
-          port:
-            number: 80
+    decorators:
+      telemetry: [system.telemetry.agent, tikv.telemetry.pd]
 
-    decorators: # Decorators
-      telemetry:
-        - system.telemetry.agent
-        - tikv.telemetry.pd
+      ingressPort:
+        name: coverage
 
     volumes:   # Create an ephemeral volume, backed by a file
       - name: scratch-volume
@@ -98,17 +92,10 @@ spec:
       placementDriver: "localhost"
 
   service:
-    requirements: # Requirements
-      ingressBackend:
-        service:
-          name: self
-          port:
-            number: 80
-
     decorators: # Decorators
-      telemetry:
-        - system.telemetry.agent
-        - tikv.telemetry.worker
+      telemetry: [system.telemetry.agent, tikv.telemetry.worker]
+      ingressPort:
+        name: coverage
 
     volumes:   # Create an ephemeral volume, backed by a file
       - name: scratch-volume

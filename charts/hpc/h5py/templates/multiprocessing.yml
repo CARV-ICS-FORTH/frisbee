@@ -14,9 +14,7 @@ spec:
           - |  # Multi-line str
 
             python3 - <<EOF
-            {{ range .Files.Lines "scripts/multiprocessing/image-generator.py" }}
-            {{ . }}
-            {{ end }}
+            {{ .Files.Get "scripts/multiprocessing/image-generator.py" | indent 13 }}
             EOF
 
 
@@ -27,12 +25,9 @@ metadata:
   name: h5py.pipeline.image-visualizer
 spec:
   service:
-    requirements:
-      ingressBackend:
-        service:
-          name: self
-          port:
-            number: 80
+    decorators:
+      ingressPort:
+        name: http
 
     containers:
       - name: app
@@ -44,6 +39,7 @@ spec:
           - /bin/sh # Run shell
           - -c # Read from string
           - |  # Multi-line str
+            set -eux
 
             # Install h5py
             apt-get update -y
@@ -53,9 +49,7 @@ spec:
             # Run the plotter
             # For direct use: python3 - <<EOF
             cat <<EOF > plotter.py
-            {{ range .Files.Lines "scripts/multiprocessing/image-visualizer.py" }}
-            {{ . }}
-            {{ end }}
+            {{ .Files.Get "scripts/multiprocessing/image-visualizer.py" | indent 13 }}
             EOF
 
             # Start Xserver
