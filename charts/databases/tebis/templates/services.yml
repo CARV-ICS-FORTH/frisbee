@@ -5,6 +5,8 @@ metadata:
   name: tebis.cluster.zookeeper
 spec:
   service:
+    decorators:
+      telemetry: [ system.telemetry.agent]
     containers:
       - name: app
         image: zookeeper:3.5.9
@@ -37,6 +39,8 @@ spec:
       serverHost: "localhost"
       serverPort: "6060"
   service:
+    decorators:
+      telemetry: [ system.telemetry.agent]
     containers:
       - name: app
         image: icsforth/tebis-init:latest
@@ -48,16 +52,16 @@ spec:
 
             echo "Create hosts file"
             cat > hosts <<EOF
-              masters-0:6060 leader
-              masters-1:6061
-              masters-2:6062
+              masters-1:6060 leader
+              masters-2:6061
+              masters-3:6062
             EOF
 
             echo "Create regions file"
             cat > regions <<EOF
-              0 AA AB masters-0:6060
-              1 AB AC masters-1:6061
-              2 AC +oo masters-2:6062
+              0 -oo AB masters-1:6060
+              1 AB AC masters-2:6061
+              2 AC +oo masters-3:6062
             EOF
 
             zookeeper={{"{{.inputs.parameters.zookeeper}}:2181"}}
@@ -83,8 +87,9 @@ spec:
       port: "6060"
   service:
     decorators:
-      annotations:
-        k8s.v1.cni.cncf.io/networks: macvlan-rdma
+      telemetry: [ system.telemetry.agent]
+#      annotations:
+#        k8s.v1.cni.cncf.io/networks: macvlan-rdma
 #      telemetry: [ system.telemetry.agent ]
       setFields:
         - field: PodSpec.Containers.0.Ports.0.ContainerPort
@@ -105,20 +110,21 @@ spec:
             cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
 
             device={{"{{.inputs.parameters.device}}"}}
-            zookeeper={{"{{.inputs.parameters.zookeeper}}:2181"}}
+            zookeeper={{"{{.inputs.parameters.zookeeper}}"}}
             port={{"{{.inputs.parameters.port}}"}}
             cores="0,1,2"
 
-            rdma=$(hostname -I | awk '{print $2}')
+            rdma=$(hostname -I)
+
+            echo "RDMA " ${rdma}
+            sleep infinity
 
             echo "Pre-allocate space for Tebis server"
             fallocate --length 16G ${device}
 
-            sleep 1600
-
             echo "Starting Tebis server"
-            echo /kreon-server/kreon_server ${device} ${zookeeper} ${rdma} ${port},${cores}
-            /kreon-server/kreon_server ${device} ${zookeeper} ${rdma} ${port},${cores}
+            echo ./kreon_server/kreon_server ${device} ${zookeeper}:2181 ${rdma} 65536 8 send_index ${port},${cores}
+            ./kreon_server/kreon_server ${device} ${zookeeper}:2181 ${rdma} 65536 8 send_index ${port},${cores}
 
 
 ---
@@ -135,12 +141,12 @@ spec:
       regions: "1"
   service:
     decorators:
-      annotations:
-        k8s.v1.cni.cncf.io/networks: macvlan-rdma
-#      telemetry: [ system.telemetry.agent ]
+      telemetry: [ system.telemetry.agent]
+#      annotations:
+#        k8s.v1.cni.cncf.io/networks: macvlan-rdma
     containers:
       - name: app
-        image: icsforth/tebis-ycsb-client:latest
+        image:  icsforth/tebis-node:latest
         securityContext:
           privileged: true
         command:
@@ -152,14 +158,11 @@ spec:
 
             echo "Starting Tebis client"
 
-             /ycsb-async-kreon                                \
-            -e {{"{{.inputs.parameters.scenario}}"}}              \
+            cd /build/tebis/build/YCSB-CXX
+
+             ./ycsb-async-kreon                               \
+            -e {{"{{.inputs.parameters.scenario}}"}}          \
             -threads {{"{{.inputs.parameters.threads}}"}}     \
             -dbnum 1                                          \
             -w sd                                             \
-            -r {{"{{.inputs.parameters.regions}}"}}           \
-            -zk_host  {{"{{.inputs.parameters.zookeeper}}"}}  \
-            -zk_port  2181
-
-            echo "Exit code $?"
-            sleep 3600
+            -zookeeper  {{"{{.inputs.parameters.zookeeper}}"}}:2181
