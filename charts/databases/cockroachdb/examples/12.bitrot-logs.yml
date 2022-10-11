@@ -38,7 +38,7 @@ spec:
         templateRef: cockroach.cluster.master-with-logger
         instances: 3
         inputs:
-          - { join: "masters-0:26257,masters-1:26257,masters-2:26257", logClaimName: shared-dir }
+          - { join: "masters-1:26257,masters-2:26257,masters-3:26257", logClaimName: shared-dir }
 
     # Step 1. Create a cockroach cluster from the individual servers
     - action: Call
@@ -46,7 +46,7 @@ spec:
       depends: { running: [ masters ] }
       call:
         callable: boot
-        services: [ masters-0 ]
+        services: [ masters-1 ]
 
     # Step 2. import TPC-C data from the workload node (node 1)
     - action: Call
@@ -54,7 +54,7 @@ spec:
       depends: { success: [ boot ] }
       call:
         callable: import-tpcc
-        services: [ masters-0 ]
+        services: [ masters-1 ]
 
     # Step 3. corrupt 6 random SST files on each node (abort if node has fewer)
     - action: Call
@@ -62,7 +62,7 @@ spec:
       depends: { success: [ import-workload ] }
       call:
         callable: bitrot
-        services: [ masters-0, masters-1, masters-2 ]
+        services: [ masters-1, masters-2, masters-3 ]
 
     # Step 4. run TPC-C workload for up-to 10 mins (node1)
     - action: Call
@@ -70,8 +70,7 @@ spec:
       depends: { success: [ bitrot ] }
       call:
         callable: run-workload
-        services: [ masters-0 ]
-
+        services: [ masters-1 ]
 
     # Teardown
     - action: Delete

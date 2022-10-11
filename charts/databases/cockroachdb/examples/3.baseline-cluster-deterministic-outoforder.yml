@@ -12,7 +12,7 @@ spec:
         templateRef: cockroach.cluster.master
         instances: 3
         inputs:
-          - { join: "masters-0:26257,masters-1:26257,masters-2:26257" }
+          - { join: "masters-1:26257,masters-2:26257,masters-3:26257" }
 
 
     # Step 1. Create a cockroach cluster from the individual servers
