@@ -4,7 +4,7 @@ FROM alpine/git as builder
 WORKDIR /
 
 # Fetch Tebis
-RUN git clone --branch metadata_string_format "https://tebis-docker-container:kEmvUT1ZaceUsad6usGF@carvgit.ics.forth.gr/storage/tebis.git" 
+RUN git clone --branch master "https://tebis-docker-container:kEmvUT1ZaceUsad6usGF@carvgit.ics.forth.gr/storage/tebis.git"
 
 
 # Create the manager container
