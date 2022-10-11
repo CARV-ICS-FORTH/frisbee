@@ -53,7 +53,7 @@ spec:
       chaos:
         templateRef: system.chaos.network.partition.partial
         inputs:
-          - { source: server, duration: 5m , direction: "both", dst: "clients-0,clients-1,clients-2" }
+          - { source: server, duration: 5m , direction: "both", dst: "clients-1,clients-2,clients-3" }
 
     # Teardown
     - action: Delete

@@ -12,8 +12,7 @@ spec:
         templateRef: cockroach.cluster.master
         instances: 3
         inputs:
-          - { join: "masters-0:26257,masters-1:26257,masters-2:26257" }
-
+          - { join: "masters-1:26257,masters-2:26257,masters-3:26257" }
 
     # Step 1. Create a cockroach cluster from the individual servers
     - action: Call
@@ -21,8 +20,7 @@ spec:
       depends: { running: [ masters ] }
       call:
         callable: boot
-        services: [ masters-0 ]
-
+        services: [ masters-1 ]
 
     # Step 2. Preload the server with keys
     - action: Service
@@ -31,7 +29,7 @@ spec:
       service:
         templateRef: ycsb.cockroach.loader
         inputs:
-          - { server: masters-0, workload: workloada, recordcount: "500000", threads: "40" }
+          - { server: masters-1, workload: workloada, recordcount: "500000", threads: "40" }
 
     # Step 2. Run YCSB workload A
     - action: Service
@@ -40,7 +38,7 @@ spec:
       service:
         templateRef: ycsb.cockroach.runner
         inputs:
-          - { server: masters-0, workload: workloada, operationcount: "500000", threads: "40" }
+          - { server: masters-1, workload: workloada, operationcount: "500000", threads: "40" }
 
     # Step 3. Run YCSB workload B
     - action: Service
@@ -49,7 +47,7 @@ spec:
       service:
         templateRef: ycsb.cockroach.runner
         inputs:
-          - { server: masters-0, workload: workloadb, operationcount: "500000", threads: "40" }
+          - { server: masters-1, workload: workloadb, operationcount: "500000", threads: "40" }
 
     # Step 4. Run YCSB workload C
     - action: Service
@@ -58,7 +56,7 @@ spec:
       service:
         templateRef: ycsb.cockroach.runner
         inputs:
-          - { server: masters-0, workload: workloadc, operationcount: "500000", threads: "40" }
+          - { server: masters-1, workload: workloadc, operationcount: "500000", threads: "40" }
 
     # Step 5. Run YCSB workload F
     - action: Service
@@ -67,7 +65,7 @@ spec:
       service:
         templateRef: ycsb.cockroach.runner
         inputs:
-          - { server: masters-0, workload: workloadf, operationcount: "500000", threads: "40" }
+          - { server: masters-1, workload: workloadf, operationcount: "500000", threads: "40" }
 
     # Step 6. Run YCSB workload D
     - action: Service
@@ -76,7 +74,7 @@ spec:
       service:
         templateRef: ycsb.cockroach.runner
         inputs:
-          - { server: masters-0, workload: workloadd, operationcount: "500000", threads: "40" }
+          - { server: masters-1, workload: workloadd, operationcount: "500000", threads: "40" }
 
     # Step 7: Reload the data with parameters of workload E.
     # Otherwise, the remaining data of the cluster might affect the results
@@ -87,7 +85,7 @@ spec:
       service:
         templateRef: ycsb.cockroach.loader
         inputs:
-          - { server: masters-0, workload: workloade, recordcount: "500000", threads: "40", dropdata: "true" }
+          - { server: masters-1, workload: workloade, recordcount: "500000", threads: "40", dropdata: "true" }
 
 
     # Step 8: Run workload E
@@ -97,8 +95,7 @@ spec:
       service:
         templateRef: ycsb.cockroach.runner
         inputs:
-          - { server: masters-0, workload: workloade, operationcount: "500000", threads: "40" }
-
+          - { server: masters-1, workload: workloade, operationcount: "500000", threads: "40" }
 
     # Teardown
     - action: Delete

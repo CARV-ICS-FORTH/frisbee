@@ -15,7 +15,7 @@
 
 1) Start a set of individual Redis servers
 2) Combine the individual servers into a Redis cluster.
-3) Run a sequence of YCSB workloads (A,B, C,F, D, E), sending traffic to masters-0
+3) Run a sequence of YCSB workloads (A,B, C,F, D, E), sending traffic to masters-1
 
 #### Observations
 

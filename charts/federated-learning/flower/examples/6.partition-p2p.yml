@@ -46,14 +46,14 @@ spec:
           - { server: server, dataClaimName: dataset }
 
 
-    # Make client-0 unreachable from other clients (but not from the server)
+    # Make client-1 unreachable from other clients (but not from the server)
     - action: Chaos
       name: partition0
       depends: { running: [ clients ] }
       chaos:
         templateRef: system.chaos.network.partition.partial
         inputs:
-          - { source: clients-0, duration: 5m , direction: "both", dst: "clients-1,clients-2" }
+          - { source: clients-1, duration: 5m , direction: "both", dst: "clients-2,clients-3" }
 
     # Teardown
     - action: Delete

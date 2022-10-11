@@ -12,7 +12,7 @@ spec:
         templateRef: cockroach.cluster.master
         instances: 3
         inputs:
-          - { join: "masters-0:26257,masters-1:26257,masters-2:26257" }
+          - { join: "masters-1:26257,masters-2:26257,masters-3:26257" }
 
 
     # Step 1. Create a cockroach cluster from the individual servers
@@ -21,7 +21,7 @@ spec:
       depends: { running: [ masters ] }
       call:
         callable: boot
-        services: [ masters-0 ]
+        services: [ masters-1 ]
 
 
     # Step 2. Hammer the server with requests
@@ -42,7 +42,7 @@ spec:
         templateRef: cockroach.cluster.master
         instances: 5
         inputs:
-          - { join: "masters-0:26257" }
+          - { join: "masters-1:26257" }
 
     # Add 5 new servers.
     - action: Cluster
@@ -52,7 +52,7 @@ spec:
         templateRef: cockroach.cluster.master
         instances: 5
         inputs:
-          - { join: "masters-0:26257" }
+          - { join: "masters-1:26257" }
 
     # When all servers are up and running, delete some of them.
     # Currently, deletion is supported only at the level of "Actions" -- you cannot delete services within a cluster.
