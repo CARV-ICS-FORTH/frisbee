@@ -87,6 +87,11 @@ Through **Frisbee Terminal** we can easily install the **Frisbee Platform**.
 kubectl frisbee install production
 ```
 
+Once installed, you can follow the controller's output using:
+```
+kubectl logs -l control-plane=frisbee-operator -n frisbee --follow
+```
+
 Finally, download the Frisbee repo from GitHub.
 
 ```shell

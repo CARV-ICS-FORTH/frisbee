@@ -27,10 +27,9 @@ spec:
       depends: {running: [ zookeeper ], success: [ boot ]}
       cluster:
         templateRef: tebis.cluster.master
+        instances: 1
         inputs:
-          - { zookeeper: zookeeper, port: "6060" }
-          - { zookeeper: zookeeper, port: "6061" }
-#          - { zookeeper: zookeeper, port: "6062" }
+          - { zookeeper: zookeeper }
 
 
     # Initialize a client node

@@ -32,7 +32,7 @@ spec:
       service:
         templateRef: ycsb.cockroach.loader
         inputs:
-          - { server: .cluster.masters.one , workload: workloada, recordcount: "100000000", threads: "4", delay: "15" }
+          - { server: masters-1 , workload: workloada, recordcount: "100000000", threads: "4", delay: "15" }
 
 
     # Periodically add new servers
