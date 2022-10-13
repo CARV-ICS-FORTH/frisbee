@@ -4,7 +4,7 @@ kind: PersistentVolumeClaim
 metadata:
   name: fs
 spec:
-  storageClassName: network-volume
+  storageClassName: platform.storageclass.network
   volumeMode: Filesystem
   accessModes:
     - ReadWriteMany

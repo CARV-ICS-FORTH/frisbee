@@ -9,14 +9,10 @@ spec:
       server: "127.0.0.1"
       dataClaimName: ""
   service:
-    requirements:
-      ingressBackend:
-        service:
-          name: self
-          port:
-            number: 80
-
     decorators:
+      ingressPort:
+        name: coverage
+
       telemetry:
         - system.telemetry.agent
 

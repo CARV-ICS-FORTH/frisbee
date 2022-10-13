@@ -1,0 +1,39 @@
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Scenario
+metadata:
+  name: baseline
+spec:
+  actions:
+    # Step 0: Prepare the dataset
+    - action: Service
+      name: cifar10-download
+      service:
+        templateRef: fl.datasets.cifar10.copyfrom
+        inputs:
+          - { localcopy: "/tmp/dataset" }
+
+    # Step 1: Create FedBed server
+    - action: Service
+      name: server
+      service:
+        templateRef: fedbed.server
+        inputs:
+          - { min_fit_clients: 2 }
+
+   # Step 2: Create FedBed clients
+    - action: Cluster
+      name: clients
+      depends: { running: [ server ], success: [ cifar10-download ]  }
+      cluster:
+        templateRef: fedbed.client
+        inputs:
+          - { fl_server: server, dataset: fl.datasets.cifar10, node_id: 0 }
+          - { fl_server: server, dataset: fl.datasets.cifar10, node_id: 1 }
+
+    # Teardown
+    - action: Delete
+      name: teardown
+      depends: { running: [ server ], success: [ clients ] }
+      delete:
+        jobs: [ server ]

@@ -26,21 +26,21 @@ import (
 )
 
 type InspectOptions struct {
-	Overview, Events, ExternalResources, Charts bool
-	All                                         bool
-	Shell                                       string
+	NoOverview, Events, ExternalResources, Templates bool
+	Deep                                             bool
+	Shell                                            string
 
 	Logs     []string
 	Loglines int
 }
 
 func PopulateInspectFlags(cmd *cobra.Command, options *InspectOptions) {
-	cmd.Flags().BoolVar(&options.Overview, "overview", true, "show test overview")
-	cmd.Flags().BoolVar(&options.ExternalResources, "all-resources", false, "list Chaos and K8s resources")
+	cmd.Flags().BoolVar(&options.NoOverview, "no-overview", false, "disable printing test overview")
+	cmd.Flags().BoolVar(&options.ExternalResources, "external-resources", false, "list Chaos and K8s resources")
 	cmd.Flags().BoolVar(&options.Events, "events", false, "show events hinting what's happening")
-	cmd.Flags().BoolVar(&options.Charts, "charts", false, "show installed templates from dependent Helm charts")
+	cmd.Flags().BoolVar(&options.Templates, "templates", false, "show installed templates")
 
-	cmd.Flags().BoolVar(&options.All, "all", false, "enable all features (except for shell)")
+	cmd.Flags().BoolVar(&options.Deep, "deep", false, "perform deep inspection (enable everything except shell)")
 	cmd.Flags().StringVar(&options.Shell, "shell", "", "opens a shell to a running container")
 
 	cmd.Flags().StringSliceVarP(&options.Logs, "logs", "l", nil, "show logs output from executor pod (if unsure, use 'all')")
@@ -60,8 +60,8 @@ func NewInspectTestCmd() *cobra.Command {
 				ui.Failf("Please Pass Test name as argument")
 			}
 
-			if options.Logs != nil {
-				options.Overview = false
+			if options.Logs != nil || options.Shell != "" {
+				options.NoOverview = true
 			}
 
 			return nil
@@ -83,9 +83,13 @@ func NewInspectTestCmd() *cobra.Command {
 
 			// Always-on functions
 
-			if options.Overview || options.All {
+			if (!options.NoOverview) || options.Deep {
 				test, err := client.GetScenario(cmd.Context(), testName)
 				ui.ExitOnError("Getting Test Information", err)
+
+				if test == nil && options.Deep == false {
+					ui.Failf("No such test")
+				}
 
 				if test != nil {
 					ui.NL()
@@ -109,12 +113,14 @@ func NewInspectTestCmd() *cobra.Command {
 				}
 
 				{ // Virtual Objects
-					ui.NL()
 					vObjList, err := client.ListVirtualObjects(cmd.Context(), testName)
 					ui.ExitOnError("Getting list of virtual objects", err)
 
-					err = common.RenderList(&vObjList, os.Stdout)
-					ui.ExitOnError("Rendering virtual object list", err)
+					if len(vObjList.Items) > 0 {
+						ui.NL()
+						err = common.RenderList(&vObjList, os.Stdout)
+						ui.ExitOnError("Rendering virtual object list", err)
+					}
 				}
 
 				ui.Success("== Action Information ==")
@@ -128,7 +134,7 @@ func NewInspectTestCmd() *cobra.Command {
 				}
 			}
 
-			if options.ExternalResources || options.All {
+			if options.ExternalResources || options.Deep {
 				ui.NL()
 				err := common.GetChaosResources(testName)
 
@@ -148,7 +154,7 @@ func NewInspectTestCmd() *cobra.Command {
 				ui.Success("== Kubernetes Resources ==")
 			}
 
-			if options.Charts || options.All {
+			if options.Templates || options.Deep {
 				ui.NL()
 				err := common.GetTemplateResources(testName)
 
@@ -166,7 +172,7 @@ func NewInspectTestCmd() *cobra.Command {
 				*/
 			}
 
-			if options.Events || options.All {
+			if options.Events || options.Deep {
 				ui.NL()
 				err := common.GetK8sEvents(testName)
 
@@ -176,7 +182,7 @@ func NewInspectTestCmd() *cobra.Command {
 				ui.Success("== Scenario Events ==")
 			}
 
-			if options.Logs != nil || options.All {
+			if options.Logs != nil || options.Deep {
 				ui.NL()
 				err := common.GetPodLogs(testName, false, options.Loglines, options.Logs...)
 

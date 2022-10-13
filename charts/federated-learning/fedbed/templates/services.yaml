@@ -1,0 +1,104 @@
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Template
+metadata:
+  name: fedbed.server
+spec:
+  inputs:
+    parameters:
+      min_eval_clients: 2
+      min_fit_clients: 2
+      min_available_clients: 2
+  service:
+    containers:
+      - name: app
+        image: icsforth/fedbed:latest
+        env:
+          - name:  FL_STRATEGY
+            value: FedAvg
+          - name:  FL_NUM_OF_ROUNDS
+            value: "100"
+          - name:  FL_FRACTION_FIT
+            value: "0.1"
+          - name:  FL_FRACTION_EVAL
+            value: "0.1"
+          - name:  FL_MIN_EVAL_CLIENTS
+            value: {{"{{.inputs.parameters.min_eval_clients}}" | quote}}
+          - name:  FL_MIN_FIT_CLIENTS
+            value: {{"{{.inputs.parameters.min_fit_clients}}" | quote }}
+          - name:  FL_MIN_AVAILABLE_CLIENTS
+            value: {{"{{.inputs.parameters.min_available_clients}}" | quote}}
+          - name:  FL_EVAL_DATASET
+            value: "false"
+          - name:  FL_DATASET
+            value: "CIFAR100"
+          - name:  FL_TRAINING_SET_SIZE
+            value: "50_000"
+          - name:  FL_TEST_SET_SIZE
+            value: "50_000"
+        ports:
+          - name: http
+            containerPort: 8080
+
+        command: ["/bin/sh", "-c"]
+        args:
+          - | # Script
+            set -eux
+
+            tail -f /dev/null
+
+
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Template
+metadata:
+  name: fedbed.client
+spec:
+  inputs:
+    parameters:
+      fl_server: "server"
+      dataset: "fl.dataset.cifar10"
+      backend: "pytorch"
+      node_id: 0
+  service:
+    volumes:
+      - name: dataset
+        persistentVolumeClaim:
+          claimName: {{"{{.inputs.parameters.dataset}}" | quote}}
+
+    containers:
+      - name: app
+        image: icsforth/fedbed:latest
+        volumeMounts:
+          - name: dataset
+            mountPath: /data
+        env:
+          - name:  FL_BACKEND
+            value: pytorch
+          - name:  FL_NUM_OF_THREADS
+            value: "1"
+          - name:  FL_SERVER
+            value: {{"{{.inputs.parameters.fl_server}}" | quote }}
+
+          # Are these values really neeeded here?
+          - name:  FL_NODES
+            value: "2"
+          - name:  FL_NODE_ID
+            value: {{"{{.inputs.parameters.node_id}}" | quote}}
+          - name:  FL_DATASET_DISTRIBUTION
+            value: "flat"
+          - name:  FL_DATASET_DISTRIBUTION_PARAMETERS
+            value: "{}"
+          - name:  FL_DATASET_RANDOM
+            value: "false"
+
+        command: ["/bin/sh", "-c"]
+        args:
+          - | # Script
+            set -eux
+
+            # do it like until I find a better way to go from fl.dataset.cifar10 to cifar10.
+            FL_DATASET=$(basename {{"{{.inputs.parameters.dataset}}"}})
+
+            tail -f /dev/null
+

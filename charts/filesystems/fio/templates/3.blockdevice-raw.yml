@@ -22,7 +22,7 @@ spec:
         ephemeral:
           volumeClaimTemplate:
             spec:
-              storageClassName: exclusive-device
+              storageClassName: platform.storageclass.device
               volumeMode: Block
               accessModes:
                 - ReadWriteOnce

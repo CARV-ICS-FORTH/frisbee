@@ -1,0 +1,101 @@
+---
+# In order to have shared datasets, we must first create a network volume.
+# This volume will then be mounted across the various containers.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: fl.datasets.cifar10
+spec:
+  storageClassName: platform.storageclass.network
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 2Gi
+
+
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Template
+metadata:
+  name: fl.datasets.cifar10.download
+spec:
+  service:
+    volumes:
+      - name: cifar10
+        persistentVolumeClaim:
+          claimName: fl.datasets.cifar10
+    containers:
+      - name: app
+        image: busybox
+        volumeMounts:
+          - name: cifar10
+            mountPath: /cifar10
+
+        command: ["/bin/sh", "-c"]
+        args:
+          - | # Script
+            set -eum
+
+            echo "Download CIFAR10"
+            wget https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz
+
+            echo "Extract Cifar10"
+            tar -xzvf cifar-10-python.tar.gz -C /cifar10
+
+
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Template
+metadata:
+  name: fl.datasets.cifar10.copyfrom
+spec:
+  inputs:
+    parameters:
+      localcopy: "/tmp"
+
+  service:
+    volumes:
+      - name: cifar10
+        persistentVolumeClaim:
+          claimName: fl.datasets.cifar10
+
+      - name: localcopy
+        hostPath:
+          path: {{"{{.inputs.parameters.localcopy}}" | quote}}
+
+    containers:
+      - name: app
+        image: busybox
+        volumeMounts:
+          - name: localcopy
+            mountPath: /local
+
+          - name: cifar10
+            mountPath: /cifar10
+
+        command: ["/bin/sh", "-c"]
+        args:
+          - | # Script
+            set -eux
+
+            if [ -d "/local/cifar-10-batches-py" ]
+            then
+              echo "Copy cifar-10-batches-py from {{"{{.inputs.parameters.localcopy}}" | quote}}."
+              cp -r /local/cifar-10-batches-py /cifar10/
+            else
+              echo "Directory cifar-10-batches-py does not exists on {{"{{.inputs.parameters.localcopy}}" | quote}}."
+
+              echo "Download CIFAR10"
+              wget https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz
+
+              echo "Extract Cifar10"
+              tar -xzvf cifar-10-python.tar.gz -C /local/
+
+              echo "Copy cifar-10-batches-py from {{"{{.inputs.parameters.localcopy}}" | quote}}."
+              cp -r /local/cifar-10-batches-py /cifar10/
+            fi
+
+            echo "Transfer completed"
+            ls -lah
