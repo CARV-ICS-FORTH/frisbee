@@ -64,7 +64,7 @@ kind: PersistentVolumeClaim
 metadata:
   name: logs
 spec:
-  storageClassName: network-volume
+  storageClassName: platform.storageclass.network
   volumeMode: Filesystem
   accessModes:
     - ReadWriteMany

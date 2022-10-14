@@ -11,10 +11,6 @@ spec:
       name: server
       cluster:
         templateRef: iperf2.server
-        inputs:
-          - { "cpu": "2", memory: "4Gi" }
-    #        placement:
-    #          nodes: [jedi8.cluster.ics.forth.gr]
 
     # Create a cluster of iperf clients
     - action: Cluster

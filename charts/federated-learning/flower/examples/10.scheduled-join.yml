@@ -4,7 +4,7 @@ kind: PersistentVolumeClaim
 metadata:
   name: dataset
 spec:
-  storageClassName: network-volume
+  storageClassName: platform.storageclass.network
   volumeMode: Filesystem
   accessModes:
     - ReadOnlyMany
@@ -46,8 +46,6 @@ spec:
           - { server: server, dataClaimName: dataset }
         schedule:
           cron: "@every 2m"
-
-
 
     # Teardown
     - action: Delete

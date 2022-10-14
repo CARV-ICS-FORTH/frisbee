@@ -38,6 +38,7 @@ func NewGetTestsCmd() *cobra.Command {
 			if len(args) > 0 {
 				ui.Failf("To get information for a test use: `kubectl frisbee inspect test <testName>`")
 			}
+
 			return nil
 		},
 
@@ -45,7 +46,7 @@ func NewGetTestsCmd() *cobra.Command {
 			selectors = append(selectors, common.ManagedNamespace)
 
 			tests, err := env.Default.GetFrisbeeClient().ListScenarios(cmd.Context(), strings.Join(selectors, ","))
-			ui.ExitOnError("Getting all tests ", err)
+			ui.PrintOnError("Getting all tests ", err)
 
 			err = common.RenderList(&tests, os.Stdout)
 			ui.PrintOnError("Rendering list", err)

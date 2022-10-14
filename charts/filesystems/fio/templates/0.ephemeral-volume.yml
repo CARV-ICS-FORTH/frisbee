@@ -20,7 +20,7 @@ spec:
         ephemeral:
           volumeClaimTemplate:
             spec:
-              storageClassName: local-volume
+              storageClassName: platform.storageclass.local
               volumeMode: Filesystem
               accessModes:
                 - ReadWriteOnce

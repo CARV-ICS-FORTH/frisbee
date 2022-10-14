@@ -6,7 +6,7 @@ kind: PersistentVolumeClaim
 metadata:
   name: shared-dir
 spec:
-  storageClassName: network-volume
+  storageClassName: platform.storageclass.network
   volumeMode: Filesystem
   accessModes:
     - ReadWriteMany

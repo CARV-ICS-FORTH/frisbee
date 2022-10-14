@@ -216,20 +216,17 @@ func GetFrisbeeResources(testName string, watch bool) error {
 }
 
 var TemplateInspectionFields = strings.Join([]string{
-	"custom-columns=API:.apiVersion",
-	"Kind:.kind",
-	"Name:.metadata.name",
-	"HelmRelease:.metadata.annotations.meta\\.helm\\.sh\\/release-name",
+	"custom-columns=Chart:.metadata.annotations.meta\\.helm\\.sh\\/release-name",
+	"Template:.metadata.name",
+	"Parameters:spec.inputs.parameters",
 }, ",")
 
-const EmptyTemplateResources = "API   Kind   Name   HelmRelease"
+const EmptyTemplateResources = "Chart   Template   Parameters"
 
 func GetTemplateResources(testName string) error {
 	command := []string{"get"}
 
 	command = append(command, Templates)
-
-	command = setOutput(command)
 
 	command = append(command, "-o", TemplateInspectionFields)
 
@@ -314,7 +311,7 @@ func GetChaosResources(testName string) error {
 */
 
 func GetK8sEvents(testName string) error {
-	out, err := Kubectl(testName, "get", "events", "--sort-by='.metadata.creationTimestamp'")
+	out, err := Kubectl(testName, "get", "events")
 	if ErrNotFound(out) {
 		return nil
 	}

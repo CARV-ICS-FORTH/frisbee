@@ -1,0 +1,68 @@
+---
+# In order to have shared datasets, we must first create a network volume.
+# This volume will then be mounted across the various containers.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: fl.datasets.cifar10
+spec:
+  storageClassName: platform.storageclass.network
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 2Gi
+
+
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Template
+metadata:
+  name: fl.datasets.cifar10.download
+spec:
+  inputs:
+    parameters:
+      cache: "/tmp"
+
+  service:
+    volumes:
+      - name: cifar10
+        persistentVolumeClaim:
+          claimName: fl.datasets.cifar10
+
+      - name: cache
+        hostPath:
+          path: {{"{{.inputs.parameters.cache}}" | quote}}
+
+    containers:
+      - name: app
+        image: busybox
+        volumeMounts:
+          - name: cache
+            mountPath: /cache
+
+          - name: cifar10
+            mountPath: /cifar10
+
+        command: ["/bin/sh", "-c"]
+        args:
+          - | # Script
+            set -eux
+
+            if [ ! -d "/cache/cifar-10-batches-py" ]
+            then
+              echo "Directory cifar-10-batches-py does not exists on {{"{{.inputs.parameters.cache}}" | quote}}."
+
+              echo "Download CIFAR10"
+              wget https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz
+
+              echo "Extract Cifar10"
+              tar -xzvf cifar-10-python.tar.gz -C /cache/
+            fi
+
+            echo "Copy cifar-10-batches-py from {{"{{.inputs.parameters.cache}}" | quote}}."
+            cp -r /cache/cifar-10-batches-py /cifar10/
+
+            echo "Transfer completed"
+            ls -lah

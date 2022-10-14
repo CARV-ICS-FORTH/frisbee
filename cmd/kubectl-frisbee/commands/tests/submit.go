@@ -76,6 +76,17 @@ func NewSubmitTestCmd() *cobra.Command {
 				ui.Failf("Pass Test Name and Test File Path")
 			}
 
+			if strings.Contains(args[0], "/") {
+				ui.Failf("Invalid format for test name: %s. \n%s", args[0],
+					"Allowed formats are: 1) example (fixed name) and 2) example- (auto-generated)")
+			}
+
+			testFileExt := filepath.Ext(args[1])
+			if testFileExt != ".yaml" && testFileExt != ".yml" {
+				ui.Failf("Invalid format for test file: %s \n%s", args[1],
+					"Allowed formats are: .yaml or .yml")
+			}
+
 			if options.ExpectSuccess && options.ExpectFailure && options.ExpectError {
 				ui.Failf("Use one of --expect-success or --expect-failure or --expect-error.")
 			}
@@ -90,9 +101,11 @@ func NewSubmitTestCmd() *cobra.Command {
 			if strings.HasSuffix(testName, "-") {
 				testName = fmt.Sprintf("%s%d", testName, rand.Intn(1000))
 			}
-			ui.Success("Submit Test", testName, ":", testFile)
 
-			// Validate the scenario
+			// Lightweight validation of the scenario performed on the client side.
+			// This allows us to filter-out some poorly written scenarios before interacting with the server.
+			// More complex validation is performed on the server side (using admission webhooks) during
+			// the actual submission.
 			{
 				err := common.RunTest(testName, testFile, common.ValidationClient)
 				ui.ExitOnError("Validating testfile: "+testFile, err)
@@ -142,7 +155,7 @@ func NewSubmitTestCmd() *cobra.Command {
 				ui.ExitOnError("Starting test-case execution ", err)
 			}
 
-			ui.Success("Test has been successfully submitted.")
+			ui.Success("Test has been successfully submitted.", testName, "(", testFile, ")")
 
 			// Control test output
 			ControlOutput(testName, &options)
