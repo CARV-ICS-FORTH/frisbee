@@ -35,6 +35,6 @@ spec:
     # Teardown
     - action: Delete
       name: teardown
-      depends: { running: [ server ], success: [ clients ] }
+      depends: { success: [ clients, server ] }
       delete:
-        jobs: [ server ]
+        jobs: []
