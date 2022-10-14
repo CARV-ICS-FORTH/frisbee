@@ -101,7 +101,7 @@ func NewInspectTestCmd() *cobra.Command {
 					ui.ExitOnError("== Scenario Status ==", err)
 				}
 
-				ui.Success("== Scenario Information ==")
+				ui.Success("== Scenario Overview ==")
 
 				{ // Action Information
 					ui.NL()
@@ -123,7 +123,7 @@ func NewInspectTestCmd() *cobra.Command {
 					}
 				}
 
-				ui.Success("== Action Information ==")
+				ui.Success("== Frisbee-Managed Resources ==")
 
 				{ // Visualization Tools
 					ui.NL()

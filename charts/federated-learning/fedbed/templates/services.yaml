@@ -17,7 +17,7 @@ spec:
           - name:  FL_STRATEGY
             value: FedAvg
           - name:  FL_NUM_OF_ROUNDS
-            value: "100"
+            value: "5"
           - name:  FL_FRACTION_FIT
             value: "0.1"
           - name:  FL_FRACTION_EVAL
@@ -45,7 +45,9 @@ spec:
           - | # Script
             set -eux
 
-            tail -f /dev/null
+            python server.py
+
+            sleep infinity
 
 
 ---
@@ -59,6 +61,8 @@ spec:
       fl_server: "server"
       dataset: "fl.dataset.cifar10"
       backend: "pytorch"
+
+      total_nodes: 10
       node_id: 0
   service:
     volumes:
@@ -71,18 +75,19 @@ spec:
         image: icsforth/fedbed:latest
         volumeMounts:
           - name: dataset
-            mountPath: /data
+            mountPath: /data/{{"{{.inputs.parameters.backend}}"}}/cifar10
         env:
+          - name:  FL_SERVER
+            value: {{"{{.inputs.parameters.fl_server}}" | quote }}
+
           - name:  FL_BACKEND
             value: pytorch
           - name:  FL_NUM_OF_THREADS
             value: "1"
-          - name:  FL_SERVER
-            value: {{"{{.inputs.parameters.fl_server}}" | quote }}
 
           # Are these values really neeeded here?
           - name:  FL_NODES
-            value: "2"
+            value: {{"{{.inputs.parameters.total_nodes}}" | quote}}
           - name:  FL_NODE_ID
             value: {{"{{.inputs.parameters.node_id}}" | quote}}
           - name:  FL_DATASET_DISTRIBUTION
@@ -92,12 +97,27 @@ spec:
           - name:  FL_DATASET_RANDOM
             value: "false"
 
+          - name: SKATA
+            value: {{"{{ (.inputs.parameters.dataset) }}" | quote}}
+
+          - name: SKATA1
+            value: {{"{{ (base .inputs.parameters.dataset) }}" | quote}}
+
+          - name: SKATA2
+            value: {{"{{ (osBase .inputs.parameters.dataset) }}" | quote}}
+
+          - name: SKATA3
+            value: {{"{{ (.inputs.parameters.dataset | base) }}" | quote}}
+
+          - name: SKATA4
+            value: {{"{{ (.inputs.parameters.dataset | osBase) }}" | quote}}
+
         command: ["/bin/sh", "-c"]
         args:
           - | # Script
             set -eux
 
-            # do it like until I find a better way to go from fl.dataset.cifar10 to cifar10.
+            # do it like that until I find a better way to go from fl.dataset.cifar10 to cifar10.
             FL_DATASET=$(basename {{"{{.inputs.parameters.dataset}}"}})
 
             tail -f /dev/null

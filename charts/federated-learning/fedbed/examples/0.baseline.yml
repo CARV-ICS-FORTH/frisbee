@@ -9,9 +9,9 @@ spec:
     - action: Service
       name: cifar10-download
       service:
-        templateRef: fl.datasets.cifar10.copyfrom
+        templateRef: fl.datasets.cifar10.download
         inputs:
-          - { localcopy: "/tmp/dataset" }
+          - { cache: "/tmp/dataset" }
 
     # Step 1: Create FedBed server
     - action: Service
@@ -19,7 +19,7 @@ spec:
       service:
         templateRef: fedbed.server
         inputs:
-          - { min_fit_clients: 2 }
+          - {min_fit_clients: 2,  min_available_clients: 3 }
 
    # Step 2: Create FedBed clients
     - action: Cluster
@@ -28,8 +28,9 @@ spec:
       cluster:
         templateRef: fedbed.client
         inputs:
-          - { fl_server: server, dataset: fl.datasets.cifar10, node_id: 0 }
-          - { fl_server: server, dataset: fl.datasets.cifar10, node_id: 1 }
+          - { fl_server: server, dataset: fl.datasets.cifar10, node_id: 0, total_nodes: 3 }
+          - { fl_server: server, dataset: fl.datasets.cifar10, node_id: 1, total_nodes: 3 }
+          - { fl_server: server, dataset: fl.datasets.cifar10, node_id: 2, total_nodes: 3 }
 
     # Teardown
     - action: Delete

@@ -10,8 +10,6 @@ spec:
       name: server
       service:
         templateRef: iperf3.server
-        inputs:
-          - { "cpu": "2", memory: "4Gi" }
 
     # Create an iperf client
     - action: Service
