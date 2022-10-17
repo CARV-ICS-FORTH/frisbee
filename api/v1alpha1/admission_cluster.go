@@ -28,7 +28,7 @@ import (
 
 var _ webhook.Defaulter = &Cluster{}
 
-// +kubebuilder:webhook:path=/validate-frisbee-dev-v1alpha1-cluster,mutating=true,failurePolicy=fail,sideEffects=None,groups=frisbee.dev,resources=clusters,verbs=create;update,versions=v1alpha1,name=vcluster.kb.io,admissionReviewVersions={v1,v1alpha1}
+// +kubebuilder:webhook:path=/validate-frisbee-dev-v1alpha1-cluster,mutating=false,failurePolicy=fail,sideEffects=None,groups=frisbee.dev,resources=clusters,verbs=create,versions=v1alpha1,name=vcluster.kb.io,admissionReviewVersions={v1,v1alpha1}
 
 var _ webhook.Validator = &Cluster{}
 

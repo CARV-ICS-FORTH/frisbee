@@ -2,301 +2,303 @@
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
-  name: {{.Release.Name}}-mutating-webhook
+    name: {{.Release.Name}}-mutating-webhook
+    annotations:
+      cert-manager.io/inject-ca-from: {{.Release.Namespace}}/webhook-tls
+webhooks:
+- admissionReviewVersions:
+  - v1
+  - v1alpha1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: {{.Release.Namespace}}
+      path: /mutate-frisbee-dev-v1alpha1-call
+  failurePolicy: Fail
+  name: mcall.kb.io
+  rules:
+  - apiGroups:
+    - frisbee.dev
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    resources:
+    - calls
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1alpha1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: {{.Release.Namespace}}
+      path: /mutate-frisbee-dev-v1alpha1-cascade
+  failurePolicy: Fail
+  name: mcascade.kb.io
+  rules:
+  - apiGroups:
+    - frisbee.dev
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    resources:
+    - cascades
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1alpha1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: {{.Release.Namespace}}
+      path: /mutate-frisbee-dev-v1alpha1-chaos
+  failurePolicy: Fail
+  name: mchaos.kb.io
+  rules:
+  - apiGroups:
+    - frisbee.dev
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    resources:
+    - chaos
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1alpha1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: {{.Release.Namespace}}
+      path: /mutate-frisbee-dev-v1alpha1-cluster
+  failurePolicy: Fail
+  name: mcluster.kb.io
+  rules:
+  - apiGroups:
+    - frisbee.dev
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    resources:
+    - clusters
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1alpha1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: {{.Release.Namespace}}
+      path: /mutate-frisbee-dev-v1alpha1-scenario
+  failurePolicy: Fail
+  name: mscenario.kb.io
+  rules:
+  - apiGroups:
+    - frisbee.dev
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    resources:
+    - scenarios
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1alpha1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: {{.Release.Namespace}}
+      path: /mutate-frisbee-dev-v1alpha1-service
+  failurePolicy: Fail
+  name: mservice.kb.io
+  rules:
+  - apiGroups:
+    - frisbee.dev
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    resources:
+    - services
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1alpha1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: {{.Release.Namespace}}
+      path: /mutate-frisbee-dev-v1alpha1-template
+  failurePolicy: Fail
+  name: mtemplate.kb.io
+  rules:
+  - apiGroups:
+    - frisbee.dev
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    resources:
+    - templates
+  sideEffects: None
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: {{.Release.Name}}-validating-webhook
   annotations:
     cert-manager.io/inject-ca-from: {{.Release.Namespace}}/webhook-tls
+
 webhooks:
-  - admissionReviewVersions:
-      - v1
-      - v1alpha1
-    clientConfig:
-      service:
-        name: webhook-service
-        namespace: {{.Release.Namespace}}
-        path: /mutate-frisbee-dev-v1alpha1-call
-    failurePolicy: Fail
-    name: mcall.kb.io
-    rules:
-      - apiGroups:
-          - frisbee.dev
-        apiVersions:
-          - v1alpha1
-        operations:
-          - CREATE
-          - UPDATE
-        resources:
-          - calls
-    sideEffects: None
-  - admissionReviewVersions:
-      - v1
-      - v1alpha1
-    clientConfig:
-      service:
-        name: webhook-service
-        namespace: {{.Release.Namespace}}
-        path: /validate-frisbee-dev-v1alpha1-call
-    failurePolicy: Fail
-    name: vcall.kb.io
-    rules:
-      - apiGroups:
-          - frisbee.dev
-        apiVersions:
-          - v1alpha1
-        operations:
-          - CREATE
-          - UPDATE
-        resources:
-          - calls
-    sideEffects: None
-  - admissionReviewVersions:
-      - v1
-      - v1alpha1
-    clientConfig:
-      service:
-        name: webhook-service
-        namespace: {{.Release.Namespace}}
-        path: /mutate-frisbee-dev-v1alpha1-cascade
-    failurePolicy: Fail
-    name: mcascade.kb.io
-    rules:
-      - apiGroups:
-          - frisbee.dev
-        apiVersions:
-          - v1alpha1
-        operations:
-          - CREATE
-          - UPDATE
-        resources:
-          - cascades
-    sideEffects: None
-  - admissionReviewVersions:
-      - v1
-      - v1alpha1
-    clientConfig:
-      service:
-        name: webhook-service
-        namespace: {{.Release.Namespace}}
-        path: /validate-frisbee-dev-v1alpha1-cascade
-    failurePolicy: Fail
-    name: vcascade.kb.io
-    rules:
-      - apiGroups:
-          - frisbee.dev
-        apiVersions:
-          - v1alpha1
-        operations:
-          - CREATE
-          - UPDATE
-        resources:
-          - cascades
-    sideEffects: None
-  - admissionReviewVersions:
-      - v1
-      - v1alpha1
-    clientConfig:
-      service:
-        name: webhook-service
-        namespace: {{.Release.Namespace}}
-        path: /mutate-frisbee-dev-v1alpha1-chaos
-    failurePolicy: Fail
-    name: mchaos.kb.io
-    rules:
-      - apiGroups:
-          - frisbee.dev
-        apiVersions:
-          - v1alpha1
-        operations:
-          - CREATE
-          - UPDATE
-        resources:
-          - chaos
-    sideEffects: None
-  - admissionReviewVersions:
-      - v1
-      - v1alpha1
-    clientConfig:
-      service:
-        name: webhook-service
-        namespace: {{.Release.Namespace}}
-        path: /validate-frisbee-dev-v1alpha1-chaos
-    failurePolicy: Fail
-    name: vchaos.kb.io
-    rules:
-      - apiGroups:
-          - frisbee.dev
-        apiVersions:
-          - v1alpha1
-        operations:
-          - CREATE
-          - UPDATE
-        resources:
-          - chaos
-    sideEffects: None
-  - admissionReviewVersions:
-      - v1
-      - v1alpha1
-    clientConfig:
-      service:
-        name: webhook-service
-        namespace: {{.Release.Namespace}}
-        path: /mutate-frisbee-dev-v1alpha1-cluster
-    failurePolicy: Fail
-    name: mcluster.kb.io
-    rules:
-      - apiGroups:
-          - frisbee.dev
-        apiVersions:
-          - v1alpha1
-        operations:
-          - CREATE
-          - UPDATE
-        resources:
-          - clusters
-    sideEffects: None
-  - admissionReviewVersions:
-      - v1
-      - v1alpha1
-    clientConfig:
-      service:
-        name: webhook-service
-        namespace: {{.Release.Namespace}}
-        path: /validate-frisbee-dev-v1alpha1-cluster
-    failurePolicy: Fail
-    name: vcluster.kb.io
-    rules:
-      - apiGroups:
-          - frisbee.dev
-        apiVersions:
-          - v1alpha1
-        operations:
-          - CREATE
-          - UPDATE
-        resources:
-          - clusters
-    sideEffects: None
-  - admissionReviewVersions:
-      - v1
-      - v1alpha1
-    clientConfig:
-      service:
-        name: webhook-service
-        namespace: {{.Release.Namespace}}
-        path: /mutate-frisbee-dev-v1alpha1-scenario
-    failurePolicy: Fail
-    name: mscenario.kb.io
-    rules:
-      - apiGroups:
-          - frisbee.dev
-        apiVersions:
-          - v1alpha1
-        operations:
-          - CREATE
-          - UPDATE
-        resources:
-          - scenarios
-    sideEffects: None
-  - admissionReviewVersions:
-      - v1
-      - v1alpha1
-    clientConfig:
-      service:
-        name: webhook-service
-        namespace: {{.Release.Namespace}}
-        path: /validate-frisbee-dev-v1alpha1-scenario
-    failurePolicy: Fail
-    name: vscenario.kb.io
-    rules:
-      - apiGroups:
-          - frisbee.dev
-        apiVersions:
-          - v1alpha1
-        operations:
-          - CREATE
-          - UPDATE
-        resources:
-          - scenarios
-    sideEffects: None
-  - admissionReviewVersions:
-      - v1
-      - v1alpha1
-    clientConfig:
-      service:
-        name: webhook-service
-        namespace: {{.Release.Namespace}}
-        path: /mutate-frisbee-dev-v1alpha1-service
-    failurePolicy: Fail
-    name: mservice.kb.io
-    rules:
-      - apiGroups:
-          - frisbee.dev
-        apiVersions:
-          - v1alpha1
-        operations:
-          - CREATE
-          - UPDATE
-        resources:
-          - services
-    sideEffects: None
-  - admissionReviewVersions:
-      - v1
-      - v1alpha1
-    clientConfig:
-      service:
-        name: webhook-service
-        namespace: {{.Release.Namespace}}
-        path: /validate-frisbee-dev-v1alpha1-service
-    failurePolicy: Fail
-    name: vservice.kb.io
-    rules:
-      - apiGroups:
-          - frisbee.dev
-        apiVersions:
-          - v1alpha1
-        operations:
-          - CREATE
-          - UPDATE
-        resources:
-          - services
-    sideEffects: None
-  - admissionReviewVersions:
-      - v1
-      - v1alpha1
-    clientConfig:
-      service:
-        name: webhook-service
-        namespace: {{.Release.Namespace}}
-        path: /mutate-frisbee-dev-v1alpha1-template
-    failurePolicy: Fail
-    name: mtemplate.kb.io
-    rules:
-      - apiGroups:
-          - frisbee.dev
-        apiVersions:
-          - v1alpha1
-        operations:
-          - CREATE
-          - UPDATE
-        resources:
-          - templates
-    sideEffects: None
-  - admissionReviewVersions:
-      - v1
-      - v1alpha1
-    clientConfig:
-      service:
-        name: webhook-service
-        namespace: {{.Release.Namespace}}
-        path: /validate-frisbee-dev-v1alpha1-template
-    failurePolicy: Fail
-    name: vtemplate.kb.io
-    rules:
-      - apiGroups:
-          - frisbee.dev
-        apiVersions:
-          - v1alpha1
-        operations:
-          - CREATE
-          - UPDATE
-        resources:
-          - templates
-    sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1alpha1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: {{.Release.Namespace}}
+      path: /validate-frisbee-dev-v1alpha1-call
+  failurePolicy: Fail
+  name: vcall.kb.io
+  rules:
+  - apiGroups:
+    - frisbee.dev
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - calls
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1alpha1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: {{.Release.Namespace}}
+      path: /validate-frisbee-dev-v1alpha1-cascade
+  failurePolicy: Fail
+  name: vcascade.kb.io
+  rules:
+  - apiGroups:
+    - frisbee.dev
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - cascades
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1alpha1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: {{.Release.Namespace}}
+      path: /validate-frisbee-dev-v1alpha1-chaos
+  failurePolicy: Fail
+  name: vchaos.kb.io
+  rules:
+  - apiGroups:
+    - frisbee.dev
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - chaos
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1alpha1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: {{.Release.Namespace}}
+      path: /validate-frisbee-dev-v1alpha1-cluster
+  failurePolicy: Fail
+  name: vcluster.kb.io
+  rules:
+  - apiGroups:
+    - frisbee.dev
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - clusters
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1alpha1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: {{.Release.Namespace}}
+      path: /validate-frisbee-dev-v1alpha1-scenario
+  failurePolicy: Fail
+  name: vscenario.kb.io
+  rules:
+  - apiGroups:
+    - frisbee.dev
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - scenarios
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1alpha1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: {{.Release.Namespace}}
+      path: /validate-frisbee-dev-v1alpha1-service
+  failurePolicy: Fail
+  name: vservice.kb.io
+  rules:
+  - apiGroups:
+    - frisbee.dev
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - services
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1alpha1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: {{.Release.Namespace}}
+      path: /validate-frisbee-dev-v1alpha1-template
+  failurePolicy: Fail
+  name: vtemplate.kb.io
+  rules:
+  - apiGroups:
+    - frisbee.dev
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - templates
+  sideEffects: None

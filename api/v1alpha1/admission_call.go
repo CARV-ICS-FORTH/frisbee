@@ -30,7 +30,7 @@ import (
 
 var _ webhook.Defaulter = &Call{}
 
-// +kubebuilder:webhook:path=/validate-frisbee-dev-v1alpha1-call,mutating=true,failurePolicy=fail,sideEffects=None,groups=frisbee.dev,resources=calls,verbs=create;update,versions=v1alpha1,name=vcall.kb.io,admissionReviewVersions={v1,v1alpha1}
+// +kubebuilder:webhook:path=/validate-frisbee-dev-v1alpha1-call,mutating=false,failurePolicy=fail,sideEffects=None,groups=frisbee.dev,resources=calls,verbs=create,versions=v1alpha1,name=vcall.kb.io,admissionReviewVersions={v1,v1alpha1}
 
 var _ webhook.Validator = &Call{}
 
