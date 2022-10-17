@@ -30,69 +30,49 @@ import (
 )
 
 func (r *Controller) RunAction(ctx context.Context, scenario *v1alpha1.Scenario, action v1alpha1.Action) error {
-	var (
-		job client.Object
-		err error
-	)
-
 	switch action.ActionType {
 	case v1alpha1.ActionService:
-		if err := action.Service.Prepare(false); err != nil {
-			return errors.Wrapf(err, "definition error on action '%s'", action.Name)
+		job, err := r.service(ctx, scenario, action)
+		if err != nil {
+			return errors.Wrapf(err, "preparation of action '%s' has failed", action.Name)
 		}
 
-		if err := expandMacros(ctx, r, scenario.GetNamespace(), &action.Service.Inputs); err != nil {
-			return errors.Wrapf(err, "input error")
-		}
-
-		job, err = r.service(ctx, scenario, action)
+		return common.Create(ctx, r, scenario, job)
 
 	case v1alpha1.ActionCluster:
-		if err := expandMacros(ctx, r, scenario.GetNamespace(), &action.Cluster.Inputs); err != nil {
-			return errors.Wrapf(err, "input error")
-		}
+		job := r.cluster(scenario, action)
 
-		job = r.cluster(scenario, action)
+		return common.Create(ctx, r, scenario, job)
 
 	case v1alpha1.ActionChaos:
-		if err := action.Chaos.Prepare(false); err != nil {
-			return errors.Wrapf(err, "definition error on action '%s'", action.Name)
+		job, err := r.chaos(ctx, scenario, action)
+		if err != nil {
+			return errors.Wrapf(err, "preparation of action '%s' has failed", action.Name)
 		}
 
-		if err := expandMacros(ctx, r, scenario.GetNamespace(), &action.Chaos.Inputs); err != nil {
-			return errors.Wrapf(err, "input error")
-		}
-
-		job, err = r.chaos(ctx, scenario, action)
+		return common.Create(ctx, r, scenario, job)
 
 	case v1alpha1.ActionCascade:
-		if err := expandMacros(ctx, r, scenario.GetNamespace(), &action.Cascade.Inputs); err != nil {
-			return errors.Wrapf(err, "input error")
-		}
+		job := r.cascade(scenario, action)
 
-		job = r.cascade(scenario, action)
+		return common.Create(ctx, r, scenario, job)
 
 	case v1alpha1.ActionCall:
-		if err := expandSliceInputs(ctx, r, scenario.GetNamespace(), &action.Call.Services); err != nil {
-			return errors.Wrapf(err, "input error")
-		}
+		job := r.call(scenario, action)
 
-		job = r.call(scenario, action)
+		return common.Create(ctx, r, scenario, job)
 
 	case v1alpha1.ActionDelete:
-		// Some jobs are virtual and do not require something to be created.
 		if err := r.delete(ctx, scenario, action); err != nil {
 			return errors.Errorf("delete action '%s' has failed", action.Name)
 		}
 
+		// Some jobs are virtual and do not require something to be created.
 		return nil
-	}
 
-	if err != nil {
-		return errors.Wrapf(err, "preparation of action '%s' has failed", action.Name)
+	default:
+		panic("should never happen")
 	}
-
-	return common.Create(ctx, r, scenario, job)
 }
 
 func (r *Controller) service(ctx context.Context, scenario *v1alpha1.Scenario, action v1alpha1.Action) (*v1alpha1.Service, error) {
