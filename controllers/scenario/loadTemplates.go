@@ -99,6 +99,8 @@ func (r *Controller) LoadTemplates(ctx context.Context, scenario *v1alpha1.Scena
 				return errors.Wrapf(err, "input error")
 			}
 
+			// TODO: now that the templates are loaded, ensure that the referenced callables exist.
+
 		case v1alpha1.ActionDelete:
 			// calls and deletes do not involve templates.
 			return nil
