@@ -93,12 +93,15 @@ help: ## Display this help.
 
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 # CRD_OPTIONS ?= "crd:trivialVersions=true" # "crd:trivialVersions=true,preserveUnknownFields=false"
-CRD_OPTIONS ?= crd
+# crd:allowDangerousTypes=true is used to enable float64.
+# They are considered danger as support for them varies across languages. However, since they are
+# intended for use within the controllers, they are safe to use.
+CRD_OPTIONS ?= crd:allowDangerousTypes=true
 
 ##@ Development
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
-	$(CONTROLLER_GEN) $(CRD_OPTIONS) paths="./..."  output:crd:artifacts:config=${CRD_DIR}
+	$(CONTROLLER_GEN) $(CRD_OPTIONS) paths="./..." output:crd:artifacts:config=${CRD_DIR}
 	# $(CONTROLLER_GEN) webhook paths="./..."  output:webhook:artifacts:config=${WEBHOOK_DIR}
 	$(CONTROLLER_GEN) rbac:roleName=frisbee paths="./..."  output:rbac:artifacts:config=${RBAC_DIR}
 

@@ -81,17 +81,20 @@ func ValidateScheduler(instances int, sch *SchedulerSpec) error {
 }
 
 func ValidateDistribution(dist *DistributionSpec) error {
-	switch dist.Distribution {
-	case "constant":
+	switch dist.Name {
+	case DistributionConstant:
 		return nil
 
-	case "uniform":
+	case DistributionUniform:
 		return nil
 
-	case "zipfian":
+	case DistributionZipfian:
 		return nil
 
-	case "histogram":
+	case DistributionHistogram:
+		return nil
+
+	case DistributionDefault:
 		return nil
 	}
 	/* TODO: continue with the other distributions */

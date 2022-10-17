@@ -493,20 +493,20 @@ func (in *ClusterList) DeepCopyObject() runtime.Object {
 func (in *ClusterSpec) DeepCopyInto(out *ClusterSpec) {
 	*out = *in
 	in.GenerateObjectFromTemplate.DeepCopyInto(&out.GenerateObjectFromTemplate)
-	if in.Resources != nil {
-		in, out := &in.Resources, &out.Resources
-		*out = new(ResourceDistributionSpec)
-		(*in).DeepCopyInto(*out)
-	}
 	if in.TestData != nil {
 		in, out := &in.TestData, &out.TestData
 		*out = new(TestdataVolume)
 		**out = **in
 	}
-	if in.Tolerate != nil {
-		in, out := &in.Tolerate, &out.Tolerate
-		*out = new(TolerateSpec)
-		**out = **in
+	if in.DefaultDistributionSpec != nil {
+		in, out := &in.DefaultDistributionSpec, &out.DefaultDistributionSpec
+		*out = new(DistributionSpec)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.Resources != nil {
+		in, out := &in.Resources, &out.Resources
+		*out = new(ResourceDistributionSpec)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.Schedule != nil {
 		in, out := &in.Schedule, &out.Schedule
@@ -521,6 +521,11 @@ func (in *ClusterSpec) DeepCopyInto(out *ClusterSpec) {
 	if in.Suspend != nil {
 		in, out := &in.Suspend, &out.Suspend
 		*out = new(bool)
+		**out = **in
+	}
+	if in.Tolerate != nil {
+		in, out := &in.Tolerate, &out.Tolerate
+		*out = new(TolerateSpec)
 		**out = **in
 	}
 }
@@ -539,6 +544,11 @@ func (in *ClusterSpec) DeepCopy() *ClusterSpec {
 func (in *ClusterStatus) DeepCopyInto(out *ClusterStatus) {
 	*out = *in
 	in.Lifecycle.DeepCopyInto(&out.Lifecycle)
+	if in.DefaultDistribution != nil {
+		in, out := &in.DefaultDistribution, &out.DefaultDistribution
+		*out = make([]float64, len(*in))
+		copy(*out, *in)
+	}
 	if in.QueuedJobs != nil {
 		in, out := &in.QueuedJobs, &out.QueuedJobs
 		*out = make([]ServiceSpec, len(*in))

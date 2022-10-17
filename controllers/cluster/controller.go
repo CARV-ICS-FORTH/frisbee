@@ -26,6 +26,7 @@ import (
 	"github.com/carv-ics-forth/frisbee/controllers/common"
 	"github.com/carv-ics-forth/frisbee/controllers/common/scheduler"
 	"github.com/carv-ics-forth/frisbee/controllers/common/watchers"
+	"github.com/carv-ics-forth/frisbee/pkg/distributions"
 	"github.com/carv-ics-forth/frisbee/pkg/expressions"
 	"github.com/carv-ics-forth/frisbee/pkg/lifecycle"
 	"github.com/go-logr/logr"
@@ -187,6 +188,13 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 }
 
 func (r *Controller) Initialize(ctx context.Context, cluster *v1alpha1.Cluster) error {
+	/*
+		calculate any top-level distribution. this distribution will be respected during the construction of the jobs.
+	*/
+	if distName := cluster.Spec.DefaultDistributionSpec; distName != nil {
+		cluster.Status.DefaultDistribution = distributions.GetPointDistribution(int64(cluster.Spec.MaxInstances), distName)
+	}
+
 	/*
 		We construct a list of job specifications based on the CR's template.
 		This list is used by the execution step to create the actual job.

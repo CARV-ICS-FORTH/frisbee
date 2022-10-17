@@ -56,7 +56,8 @@ spec:
         # Create a variety of clients with different resource distribution
         resources:
           total: { cpu: "2", memory: "1Gi" }
-          distribution: zipfian
+          distribution:
+            name: zipfian
 
     # When all actions are done, delete looping servers to gracefully exit the experiment
     - action: Delete

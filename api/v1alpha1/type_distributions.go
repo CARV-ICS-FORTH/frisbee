@@ -25,32 +25,30 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type ResourceDistributionSpec struct {
-	// DistributionSpec defines how the TotalResources will be assigned to resources.
-	*DistributionSpec `json:","`
+const (
+	DistributionConstant  = "constant"
+	DistributionUniform   = "uniform"
+	DistributionZipfian   = "zipfian"
+	DistributionHistogram = "histogram"
 
-	// TotalResources defines the total resources that will be distributed among the cluster's services.
-	TotalResources corev1.ResourceList `json:"total"`
-}
-
-type TimelineDistributionSpec struct {
-	// DistributionSpec defines how the TotalDuration will be divided into time-based events.
-	*DistributionSpec `json:","`
-
-	// TotalDuration defines the total duration within which events will happen.
-	TotalDuration *metav1.Duration `json:"total"`
-}
+	// DistributionDefault instructs the controller to use an already evaluated distribution.
+	DistributionDefault = "default"
+)
 
 type DistributionSpec struct {
-	// +kubebuilder:validation:Enum=constant;uniform;zipfian;histogram
-	Distribution string `json:"distribution"`
+	// +kubebuilder:validation:Enum=constant;uniform;zipfian;histogram;default
+	Name string `json:"name"`
 
+	// +optional
 	*DistParamsConstant `json:"constant,omitempty"`
 
+	// +optional
 	*DistParamsUniform `json:"uniform,omitempty"`
 
+	// +optional
 	*DistParamsZipfian `json:"zipfian,omitempty"`
 
+	// +optional
 	*DistParamsHistogram `json:"histogram,omitempty"`
 }
 
@@ -78,9 +76,17 @@ type DistParamsHistogram struct {
 
 /*
 
-	Results of evaluated distributions
+	Timeline Distribution
 
 */
+
+type TimelineDistributionSpec struct {
+	// DistributionSpec defines how the TotalDuration will be divided into time-based events.
+	DistributionSpec *DistributionSpec `json:"distribution"`
+
+	// TotalDuration defines the total duration within which events will happen.
+	TotalDuration *metav1.Duration `json:"total"`
+}
 
 type Timeline []metav1.Time
 
@@ -100,13 +106,27 @@ func (in Timeline) Next(ref time.Time) time.Time {
 func (in Timeline) String() string {
 	var out strings.Builder
 
-	out.WriteString(fmt.Sprint("\n=== Timeline ===\n"))
+	out.WriteString("\n=== Timeline ===\n")
 
 	for _, node := range in {
 		out.WriteString(fmt.Sprintf("\n * %s", node.Time.Format(time.StampMilli)))
 	}
 
 	return out.String()
+}
+
+/*
+
+	Resource Distribution
+
+*/
+
+type ResourceDistributionSpec struct {
+	// DistributionSpec defines how the TotalResources will be assigned to resources.
+	DistributionSpec *DistributionSpec `json:"distribution"`
+
+	// TotalResources defines the total resources that will be distributed among the cluster's services.
+	TotalResources corev1.ResourceList `json:"total"`
 }
 
 type ResourceDistribution []corev1.ResourceList

@@ -24,6 +24,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 
 	embed "github.com/carv-ics-forth/frisbee"
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
@@ -34,6 +35,7 @@ import (
 	"github.com/carv-ics-forth/frisbee/pkg/ui"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"k8s.io/apimachinery/pkg/api/meta"
 )
 
 const (
@@ -114,7 +116,7 @@ func NewReportTestsCmd() *cobra.Command {
 			/*
 				Filter time to the beginning/ending of the scenario.
 			*/
-			from, to := scenario.FindTimeline()
+			from, to := FindTimeline(scenario)
 			uri := GenerateQuotedURL(scenario.Status.GrafanaEndpoint, options.DashboardUID, from, to)
 
 			/*
@@ -286,4 +288,50 @@ func InstallPDFExporter(location string) {
 	os.Setenv("NODE_PATH", os.Getenv("NODE_PATH")+":"+location)
 
 	ui.Success("PDFExporter is installed at ", location)
+}
+
+/*
+FindTimeline parses the scenario to find timeline that make sense (formatted into time.UnixMilli).
+For the starting time we adhere to these rules:
+ 1. If possible, we use the time that the first job was scheduled.
+ 2. Otherwise, we use the Creation time.
+
+For the ending time we adhere to these rules:
+ 1. If the scenario is successful, we return the ConditionAllJobsAreCompleted time.
+ 2. If the scenario has failed, we return the Failure time.
+ 3. Otherwise, we report time.Now().
+*/
+func FindTimeline(in *v1alpha1.Scenario) (from int64, to int64) {
+	initialized := meta.FindStatusCondition(in.Status.Conditions, v1alpha1.ConditionCRInitialized.String())
+	if initialized != nil {
+		from = initialized.LastTransitionTime.Time.UnixMilli()
+	} else {
+		from = in.GetCreationTimestamp().Time.UnixMilli()
+	}
+
+	to = time.Now().UnixMilli()
+
+	switch in.Status.Phase {
+	case v1alpha1.PhaseSuccess:
+		success := meta.FindStatusCondition(in.Status.Conditions, v1alpha1.ConditionAllJobsAreCompleted.String())
+		to = success.LastTransitionTime.Time.UnixMilli()
+
+	case v1alpha1.PhaseFailed:
+		// Failure may come from various reasons. Unfortunately we have to go through all of them.
+		unexpected := meta.FindStatusCondition(in.Status.Conditions, v1alpha1.ConditionJobUnexpectedTermination.String())
+		if unexpected != nil {
+			to = unexpected.LastTransitionTime.Time.UnixMilli()
+
+			break
+		}
+
+		assert := meta.FindStatusCondition(in.Status.Conditions, v1alpha1.ConditionAssertionError.String())
+		if assert != nil {
+			to = assert.LastTransitionTime.Time.UnixMilli()
+
+			break
+		}
+	}
+
+	return from, to
 }

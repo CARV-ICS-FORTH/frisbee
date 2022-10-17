@@ -35,8 +35,11 @@ type Generator interface {
 }
 
 func GetPointDistribution(nodes int64, spec *v1alpha1.DistributionSpec) PointDistribution {
-	switch spec.Distribution {
-	case "constant":
+	switch spec.Name {
+	case v1alpha1.DistributionDefault:
+		panic("default distribution is a pointer to an already evaluated distribution, and therefore it should be handled before reaching this point")
+
+	case v1alpha1.DistributionConstant:
 		if spec.DistParamsConstant == nil {
 			spec.DistParamsConstant = &v1alpha1.DistParamsConstant{Value: nodes}
 		}
@@ -44,7 +47,7 @@ func GetPointDistribution(nodes int64, spec *v1alpha1.DistributionSpec) PointDis
 		return NewPointDistribution(nodes,
 			generator.NewConstant(spec.DistParamsConstant.Value))
 
-	case "uniform":
+	case v1alpha1.DistributionUniform:
 		if spec.DistParamsUniform == nil {
 			spec.DistParamsUniform = &v1alpha1.DistParamsUniform{MaxValue: nodes}
 		}
@@ -52,7 +55,7 @@ func GetPointDistribution(nodes int64, spec *v1alpha1.DistributionSpec) PointDis
 		return NewPointDistribution(nodes,
 			generator.NewUniform(1, spec.DistParamsUniform.MaxValue))
 
-	case "zipfian":
+	case v1alpha1.DistributionZipfian:
 		if spec.DistParamsZipfian == nil {
 			spec.DistParamsZipfian = &v1alpha1.DistParamsZipfian{MaxValue: nodes}
 		}
@@ -60,7 +63,7 @@ func GetPointDistribution(nodes int64, spec *v1alpha1.DistributionSpec) PointDis
 		return NewPointDistribution(nodes,
 			generator.NewZipfianWithRange(1, spec.DistParamsZipfian.MaxValue, generator.ZipfianConstant))
 
-	case "histogram":
+	case v1alpha1.DistributionHistogram:
 		if spec.DistParamsHistogram == nil {
 			spec.DistParamsHistogram = &v1alpha1.DistParamsHistogram{ // fixme: are these defaults reasonable ?
 				Buckets:   []int64{10, 10, 10, 10},
@@ -72,13 +75,14 @@ func GetPointDistribution(nodes int64, spec *v1alpha1.DistributionSpec) PointDis
 			generator.NewHistogram(spec.DistParamsHistogram.Buckets, spec.DistParamsHistogram.BlockSize))
 	default:
 		// This condition should be captured by upper layers.
-		panic(errors.Errorf("unknown resource distribution %s", spec.Distribution))
+		panic(errors.Errorf("unknown resource distribution %s", spec.Name))
 	}
 }
 
 func NewPointDistribution(nodes int64, distgenerator Generator) PointDistribution {
 	// calculate distribution
 	s1 := rand.NewSource(0)
+
 	r1 := rand.New(s1)
 
 	r1.Int63()
