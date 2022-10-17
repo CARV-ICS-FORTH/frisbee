@@ -156,7 +156,15 @@ func SetResources(cluster *v1alpha1.Cluster, services []v1alpha1.ServiceSpec) {
 		return
 	}
 
-	generator := distributions.GetPointDistribution(int64(cluster.Spec.MaxInstances), cluster.Spec.Resources.DistributionSpec)
+	var generator distributions.PointDistribution
+
+	// Default distributions means loads the evaluated distribution from the status of the resource.
+	if cluster.Spec.Resources.DistributionSpec.Name == v1alpha1.DistributionDefault {
+		generator = cluster.Status.DefaultDistribution
+	} else {
+		generator = distributions.GetPointDistribution(int64(cluster.Spec.MaxInstances), cluster.Spec.Resources.DistributionSpec)
+	}
+
 	resources := generator.ApplyToResources(cluster.Spec.Resources.TotalResources)
 
 	// apply the resource distribution to the Main container of each pod.
@@ -175,8 +183,14 @@ func SetTimeline(cluster *v1alpha1.Cluster) {
 		return
 	}
 
-	generator := distributions.GetPointDistribution(int64(cluster.Spec.MaxInstances),
-		cluster.Spec.Schedule.Timeline.DistributionSpec)
+	var generator distributions.PointDistribution
+
+	if cluster.Spec.Schedule.Timeline.DistributionSpec.Name == v1alpha1.DistributionDefault {
+		generator = cluster.Status.DefaultDistribution
+	} else {
+		generator = distributions.GetPointDistribution(int64(cluster.Spec.MaxInstances),
+			cluster.Spec.Schedule.Timeline.DistributionSpec)
+	}
 
 	cluster.Status.Timeline = generator.ApplyToTimeline(cluster.GetCreationTimestamp(),
 		*cluster.Spec.Schedule.Timeline.TotalDuration)

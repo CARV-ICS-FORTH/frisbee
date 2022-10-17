@@ -6,7 +6,6 @@ metadata:
 spec:
   inputs:
     parameters:
-      min_eval_clients: 2
       min_fit_clients: 2
       min_available_clients: 2
   service:
@@ -23,7 +22,7 @@ spec:
           - name:  FL_FRACTION_EVAL
             value: "0.1"
           - name:  FL_MIN_EVAL_CLIENTS
-            value: {{"{{.inputs.parameters.min_eval_clients}}" | quote}}
+            value: {{"{{.inputs.parameters.min_available_clients}}" | quote}}
           - name:  FL_MIN_FIT_CLIENTS
             value: {{"{{.inputs.parameters.min_fit_clients}}" | quote }}
           - name:  FL_MIN_AVAILABLE_CLIENTS
@@ -79,13 +78,12 @@ spec:
         env:
           - name:  FL_SERVER
             value: {{"{{.inputs.parameters.fl_server}}" | quote }}
-
           - name:  FL_BACKEND
-            value: pytorch
+            value:  {{"{{.inputs.parameters.backend}}" | quote }}
           - name:  FL_NUM_OF_THREADS
             value: "1"
 
-          # Are these values really neeeded here?
+          # Are these values really needed here?
           - name:  FL_NODES
             value: {{"{{.inputs.parameters.total_nodes}}" | quote}}
           - name:  FL_NODE_ID
@@ -97,21 +95,6 @@ spec:
           - name:  FL_DATASET_RANDOM
             value: "false"
 
-          - name: SKATA
-            value: {{"{{ (.inputs.parameters.dataset) }}" | quote}}
-
-          - name: SKATA1
-            value: {{"{{ (base .inputs.parameters.dataset) }}" | quote}}
-
-          - name: SKATA2
-            value: {{"{{ (osBase .inputs.parameters.dataset) }}" | quote}}
-
-          - name: SKATA3
-            value: {{"{{ (.inputs.parameters.dataset | base) }}" | quote}}
-
-          - name: SKATA4
-            value: {{"{{ (.inputs.parameters.dataset | osBase) }}" | quote}}
-
         command: ["/bin/sh", "-c"]
         args:
           - | # Script
@@ -120,5 +103,4 @@ spec:
             # do it like that until I find a better way to go from fl.dataset.cifar10 to cifar10.
             FL_DATASET=$(basename {{"{{.inputs.parameters.dataset}}"}})
 
-            tail -f /dev/null
-
+            python client.py

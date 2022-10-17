@@ -52,18 +52,27 @@ type PlacementSpec struct {
 type ClusterSpec struct {
 	GenerateObjectFromTemplate `json:",inline"`
 
-	// Resources defines how a set of resources will be distributed among the cluster's services.
-	// +optional
-	Resources *ResourceDistributionSpec `json:"resources,omitempty"`
+	/*
+		Preparation of Grouped Environment
+	*/
 
 	// TestData defines a volume that will be mounted across the Scenario's Services.
 	// +optional
 	TestData *TestdataVolume `json:"testData,omitempty"`
 
-	// Tolerate specifies the conditions under which the cluster will fail. If undefined, the cluster fails
-	// immediately when a service has failed.
+	// DefaultDistributionSpec pre-calculates a scoped distribution that can be accessed by other entities
+	// using  "distribution.name : default". This default distribution allows us to describe complex relations
+	// across features managed by different entities  (e.g, place the largest dataset on the largest node).
 	// +optional
-	Tolerate *TolerateSpec `json:"tolerate,omitempty"`
+	DefaultDistributionSpec *DistributionSpec `json:"defaultDistribution,omitempty"`
+
+	/*
+		Instance Creation Functions
+	*/
+
+	// Resources defines how a set of resources will be distributed among the cluster's services.
+	// +optional
+	Resources *ResourceDistributionSpec `json:"resources,omitempty"`
 
 	// Schedule defines the interval between the creation of services in the group.
 	// +optional
@@ -73,15 +82,28 @@ type ClusterSpec struct {
 	// +optional
 	Placement *PlacementSpec `json:"placement,omitempty"`
 
+	/*
+		Error Management
+	*/
+
 	// Suspend flag tells the controller to suspend subsequent executions, it does not apply to already started
 	// executions.  Defaults to false.
 	// +optional
 	Suspend *bool `json:"suspend,omitempty"`
+
+	// Tolerate specifies the conditions under which the cluster will fail. If undefined, the cluster fails
+	// immediately when a service has failed.
+	// +optional
+	Tolerate *TolerateSpec `json:"tolerate,omitempty"`
 }
 
 // ClusterStatus defines the observed state of Cluster.
 type ClusterStatus struct {
 	Lifecycle `json:",inline"`
+
+	// DefaultDistribution keeps the evaluated expression of GenerateObjectFromTemplate.DefaultDistributionSpec.
+	// +optional
+	DefaultDistribution []float64 `json:"defaultDistribution,omitempty"`
 
 	// QueuedJobs is a list of services scheduled for creation by the cluster.
 	// +optional

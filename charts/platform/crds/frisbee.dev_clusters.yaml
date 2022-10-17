@@ -35,6 +35,70 @@ spec:
           spec:
             description: ClusterSpec defines the desired state of Cluster.
             properties:
+              defaultDistribution:
+                description: 'DefaultDistributionSpec pre-calculates a scoped distribution
+                  that can be accessed by other entities using  "distribution.name
+                  : default". This default distribution allows us to describe complex
+                  relations across features managed by different entities  (e.g, place
+                  the largest dataset on the largest node).'
+                properties:
+                  constant:
+                    description: DistParamsConstant are parameters for the constant
+                      distribution.
+                    properties:
+                      value:
+                        format: int64
+                        type: integer
+                    required:
+                    - value
+                    type: object
+                  histogram:
+                    description: DistParamsHistogram are parameters for the constant
+                      distribution.
+                    properties:
+                      blockSize:
+                        format: int64
+                        type: integer
+                      buckets:
+                        items:
+                          format: int64
+                          type: integer
+                        type: array
+                    required:
+                    - blockSize
+                    - buckets
+                    type: object
+                  name:
+                    enum:
+                    - constant
+                    - uniform
+                    - zipfian
+                    - histogram
+                    - default
+                    type: string
+                  uniform:
+                    description: DistParamsUniform are parameters for the constant
+                      distribution.
+                    properties:
+                      max:
+                        format: int64
+                        type: integer
+                    required:
+                    - max
+                    type: object
+                  zipfian:
+                    description: DistParamsZipfian are parameters for the constant
+                      distribution.
+                    properties:
+                      max:
+                        format: int64
+                        type: integer
+                    required:
+                    - max
+                    type: object
+                required:
+                - name
+                type: object
               inputs:
                 description: UserParameters is a map of parameters passed to the objects.
                   Event used in conjunction with instances, if the number of instances
@@ -78,38 +142,66 @@ spec:
                 description: Resources defines how a set of resources will be distributed
                   among the cluster's services.
                 properties:
-                  constant:
-                    description: DistParamsConstant are parameters for the constant
-                      distribution.
-                    properties:
-                      value:
-                        format: int64
-                        type: integer
-                    required:
-                    - value
-                    type: object
                   distribution:
-                    enum:
-                    - constant
-                    - uniform
-                    - zipfian
-                    - histogram
-                    type: string
-                  histogram:
-                    description: DistParamsHistogram are parameters for the constant
-                      distribution.
+                    description: DistributionSpec defines how the TotalResources will
+                      be assigned to resources.
                     properties:
-                      blockSize:
-                        format: int64
-                        type: integer
-                      buckets:
-                        items:
-                          format: int64
-                          type: integer
-                        type: array
+                      constant:
+                        description: DistParamsConstant are parameters for the constant
+                          distribution.
+                        properties:
+                          value:
+                            format: int64
+                            type: integer
+                        required:
+                        - value
+                        type: object
+                      histogram:
+                        description: DistParamsHistogram are parameters for the constant
+                          distribution.
+                        properties:
+                          blockSize:
+                            format: int64
+                            type: integer
+                          buckets:
+                            items:
+                              format: int64
+                              type: integer
+                            type: array
+                        required:
+                        - blockSize
+                        - buckets
+                        type: object
+                      name:
+                        enum:
+                        - constant
+                        - uniform
+                        - zipfian
+                        - histogram
+                        - default
+                        type: string
+                      uniform:
+                        description: DistParamsUniform are parameters for the constant
+                          distribution.
+                        properties:
+                          max:
+                            format: int64
+                            type: integer
+                        required:
+                        - max
+                        type: object
+                      zipfian:
+                        description: DistParamsZipfian are parameters for the constant
+                          distribution.
+                        properties:
+                          max:
+                            format: int64
+                            type: integer
+                        required:
+                        - max
+                        type: object
                     required:
-                    - blockSize
-                    - buckets
+                    - name
                     type: object
                   total:
                     additionalProperties:
@@ -120,26 +212,6 @@ spec:
                       x-kubernetes-int-or-string: true
                     description: TotalResources defines the total resources that will
                       be distributed among the cluster's services.
-                    type: object
-                  uniform:
-                    description: DistParamsUniform are parameters for the constant
-                      distribution.
-                    properties:
-                      max:
-                        format: int64
-                        type: integer
-                    required:
-                    - max
-                    type: object
-                  zipfian:
-                    description: DistParamsZipfian are parameters for the constant
-                      distribution.
-                    properties:
-                      max:
-                        format: int64
-                        type: integer
-                    required:
-                    - max
                     type: object
                 required:
                 - distribution
@@ -183,63 +255,71 @@ spec:
                     description: Timeline creates a timeline that honors the underlying
                       distribution.
                     properties:
-                      constant:
-                        description: DistParamsConstant are parameters for the constant
-                          distribution.
-                        properties:
-                          value:
-                            format: int64
-                            type: integer
-                        required:
-                        - value
-                        type: object
                       distribution:
-                        enum:
-                        - constant
-                        - uniform
-                        - zipfian
-                        - histogram
-                        type: string
-                      histogram:
-                        description: DistParamsHistogram are parameters for the constant
-                          distribution.
+                        description: DistributionSpec defines how the TotalDuration
+                          will be divided into time-based events.
                         properties:
-                          blockSize:
-                            format: int64
-                            type: integer
-                          buckets:
-                            items:
-                              format: int64
-                              type: integer
-                            type: array
+                          constant:
+                            description: DistParamsConstant are parameters for the
+                              constant distribution.
+                            properties:
+                              value:
+                                format: int64
+                                type: integer
+                            required:
+                            - value
+                            type: object
+                          histogram:
+                            description: DistParamsHistogram are parameters for the
+                              constant distribution.
+                            properties:
+                              blockSize:
+                                format: int64
+                                type: integer
+                              buckets:
+                                items:
+                                  format: int64
+                                  type: integer
+                                type: array
+                            required:
+                            - blockSize
+                            - buckets
+                            type: object
+                          name:
+                            enum:
+                            - constant
+                            - uniform
+                            - zipfian
+                            - histogram
+                            - default
+                            type: string
+                          uniform:
+                            description: DistParamsUniform are parameters for the
+                              constant distribution.
+                            properties:
+                              max:
+                                format: int64
+                                type: integer
+                            required:
+                            - max
+                            type: object
+                          zipfian:
+                            description: DistParamsZipfian are parameters for the
+                              constant distribution.
+                            properties:
+                              max:
+                                format: int64
+                                type: integer
+                            required:
+                            - max
+                            type: object
                         required:
-                        - blockSize
-                        - buckets
+                        - name
                         type: object
                       total:
                         description: TotalDuration defines the total duration within
                           which events will happen.
                         type: string
-                      uniform:
-                        description: DistParamsUniform are parameters for the constant
-                          distribution.
-                        properties:
-                          max:
-                            format: int64
-                            type: integer
-                        required:
-                        - max
-                        type: object
-                      zipfian:
-                        description: DistParamsZipfian are parameters for the constant
-                          distribution.
-                        properties:
-                          max:
-                            format: int64
-                            type: integer
-                        required:
-                        - max
-                        type: object
                     required:
                     - distribution
                     - total
@@ -387,6 +467,12 @@ spec:
                   - status
                   - type
                   type: object
+                type: array
+              defaultDistribution:
+                description: DefaultDistribution keeps the evaluated expression of
+                  GenerateObjectFromTemplate.DefaultDistributionSpec.
+                items:
+                  type: number
                 type: array
               lastScheduleTime:
                 description: LastScheduleTime provide information about  the last

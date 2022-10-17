@@ -57,7 +57,8 @@ spec:
         schedule:
           timeline:
             total: 3m
-            distribution: zipfian
+            distribution:
+              name: zipfian
 
     # When all actions are done, delete looping servers to gracefully exit the experiment
     - action: Delete

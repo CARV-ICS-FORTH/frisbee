@@ -21,8 +21,9 @@ spec:
         inputs:
           - { server: master, workload: workloada, recordcount: "1000000", threads: "400", delay: "15" }
         resources:
+          distribution:
+            name: constant
           total: { cpu: "2", memory: "100Mi" }
-          distribution: constant
 
     # Step 3. Run YCSB workload A
     - action: Service
