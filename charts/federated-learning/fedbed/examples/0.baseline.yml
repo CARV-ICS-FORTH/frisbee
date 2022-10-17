@@ -28,7 +28,7 @@ spec:
       cluster:
         templateRef: fedbed.client
         defaultDistribution:
-          name: constant
+          name: zipfian
         inputs:
           - { fl_server: server, dataset: fl.datasets.cifar10, node_id: 0, total_nodes: 3 }
           - { fl_server: server, dataset: fl.datasets.cifar10, node_id: 1, total_nodes: 3 }

@@ -25,46 +25,24 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+type DistributionName string
+
 const (
-	DistributionConstant  = "constant"
-	DistributionUniform   = "uniform"
-	DistributionZipfian   = "zipfian"
-	DistributionHistogram = "histogram"
+	DistributionConstant  DistributionName = "constant"
+	DistributionUniform   DistributionName = "uniform"
+	DistributionZipfian   DistributionName = "zipfian"
+	DistributionHistogram DistributionName = "histogram"
 
 	// DistributionDefault instructs the controller to use an already evaluated distribution.
-	DistributionDefault = "default"
+	DistributionDefault DistributionName = "default"
 )
 
 type DistributionSpec struct {
 	// +kubebuilder:validation:Enum=constant;uniform;zipfian;histogram;default
-	Name string `json:"name"`
-
-	// +optional
-	*DistParamsConstant `json:"constant,omitempty"`
-
-	// +optional
-	*DistParamsUniform `json:"uniform,omitempty"`
-
-	// +optional
-	*DistParamsZipfian `json:"zipfian,omitempty"`
+	Name DistributionName `json:"name"`
 
 	// +optional
 	*DistParamsHistogram `json:"histogram,omitempty"`
-}
-
-// DistParamsConstant are parameters for the constant distribution.
-type DistParamsConstant struct {
-	Value int64 `json:"value"`
-}
-
-// DistParamsUniform are parameters for the constant distribution.
-type DistParamsUniform struct {
-	MaxValue int64 `json:"max"`
-}
-
-// DistParamsZipfian are parameters for the constant distribution.
-type DistParamsZipfian struct {
-	MaxValue int64 `json:"max"`
 }
 
 // DistParamsHistogram are parameters for the constant distribution.

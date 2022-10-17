@@ -40,28 +40,13 @@ func GetPointDistribution(nodes int64, spec *v1alpha1.DistributionSpec) PointDis
 		panic("default distribution is a pointer to an already evaluated distribution, and therefore it should be handled before reaching this point")
 
 	case v1alpha1.DistributionConstant:
-		if spec.DistParamsConstant == nil {
-			spec.DistParamsConstant = &v1alpha1.DistParamsConstant{Value: nodes}
-		}
-
-		return NewPointDistribution(nodes,
-			generator.NewConstant(spec.DistParamsConstant.Value))
+		return NewPointDistribution(nodes, generator.NewConstant(nodes))
 
 	case v1alpha1.DistributionUniform:
-		if spec.DistParamsUniform == nil {
-			spec.DistParamsUniform = &v1alpha1.DistParamsUniform{MaxValue: nodes}
-		}
-
-		return NewPointDistribution(nodes,
-			generator.NewUniform(1, spec.DistParamsUniform.MaxValue))
+		return NewPointDistribution(nodes, generator.NewUniform(1, nodes))
 
 	case v1alpha1.DistributionZipfian:
-		if spec.DistParamsZipfian == nil {
-			spec.DistParamsZipfian = &v1alpha1.DistParamsZipfian{MaxValue: nodes}
-		}
-
-		return NewPointDistribution(nodes,
-			generator.NewZipfianWithRange(1, spec.DistParamsZipfian.MaxValue, generator.ZipfianConstant))
+		return NewPointDistribution(nodes, generator.NewZipfianWithRange(1, nodes, generator.ZipfianConstant))
 
 	case v1alpha1.DistributionHistogram:
 		if spec.DistParamsHistogram == nil {
