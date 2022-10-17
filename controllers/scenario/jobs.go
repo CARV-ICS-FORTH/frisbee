@@ -71,7 +71,7 @@ func (r *Controller) RunAction(ctx context.Context, scenario *v1alpha1.Scenario,
 		return nil
 
 	default:
-		panic("should not happen")
+		panic("should never happen")
 	}
 }
 

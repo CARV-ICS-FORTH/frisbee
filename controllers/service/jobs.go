@@ -211,6 +211,8 @@ func decoratePod(ctx context.Context, r *Controller, service *v1alpha1.Service) 
 		}
 	}
 
+	// TODO: Since Telemetry-related things are common across instnaces. they could be moved to serviceutils.
+
 	if len(service.Spec.Decorators.Telemetry) > 0 {
 		//  The sidecar makes use of the shareProcessNamespace option to access the host cgroup metrics.
 		share := true
@@ -221,7 +223,9 @@ func decoratePod(ctx context.Context, r *Controller, service *v1alpha1.Service) 
 	if req := service.Spec.Decorators.Telemetry; req != nil {
 		// import dashboards for monitoring agents to the service
 		for _, monRef := range req {
-			monSpec, err := serviceutils.GetServiceSpec(ctx, r.GetClient(), service, v1alpha1.GenerateObjectFromTemplate{TemplateRef: monRef})
+			monTemplate := v1alpha1.GenerateObjectFromTemplate{TemplateRef: monRef, MaxInstances: 1}
+
+			monSpec, err := serviceutils.GetServiceSpec(ctx, r.GetClient(), service, monTemplate)
 			if err != nil {
 				return errors.Wrapf(err, "cannot get monitor")
 			}
