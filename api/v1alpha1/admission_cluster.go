@@ -45,13 +45,6 @@ func (in *Cluster) SetupWebhookWithManager(mgr ctrl.Manager) error {
 func (in *Cluster) Default() {
 	clusterlog.Info("default", "name", in.Name)
 
-	/*
-		Make the inputs consistent with MaxInstances.
-	*/
-	if err := in.Spec.GenerateObjectFromTemplate.Prepare(true); err != nil {
-		clusterlog.Error(err, "template error")
-	}
-
 	// Schedule field
 	if schedule := in.Spec.Schedule; schedule != nil {
 		if schedule.StartingDeadlineSeconds == nil {

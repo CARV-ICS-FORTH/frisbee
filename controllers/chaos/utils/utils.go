@@ -20,51 +20,43 @@ import (
 	"context"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	templateutils "github.com/carv-ics-forth/frisbee/controllers/template/utils"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/json"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func GetChaosSpec(ctx context.Context, c client.Client, parent metav1.Object, fromTemplate v1alpha1.GenerateObjectFromTemplate) (v1alpha1.ChaosSpec, error) {
-	template, err := templateutils.GetTemplate(ctx, c, parent, fromTemplate.TemplateRef)
+func GetChaosSpec(ctx context.Context, cli client.Client, parent metav1.Object, fromTemplate v1alpha1.GenerateObjectFromTemplate) (v1alpha1.ChaosSpec, error) {
+	specs, err := GetChaosSpecList(ctx, cli, parent, fromTemplate)
 	if err != nil {
-		return v1alpha1.ChaosSpec{}, errors.Wrapf(err, "getTemplate error")
+		return v1alpha1.ChaosSpec{}, errors.Wrapf(err, "failed to get chaos spec")
 	}
 
-	// convert the chaos to a json and then expand templated values.
-	body, err := json.Marshal(template.Spec.Chaos)
-	if err != nil {
-		return v1alpha1.ChaosSpec{}, errors.Errorf("cannot marshal chaos of %s", fromTemplate.TemplateRef)
+	if len(specs) != 1 {
+		panic(errors.Errorf("Expected 1 spec but got '%d'", len(specs)))
 	}
 
-	var spec v1alpha1.ChaosSpec
-
-	// set extra runtime fields.
-	if template.Spec.Inputs == nil {
-		var inputs v1alpha1.TemplateInputs
-		template.Spec.Inputs = &inputs
-	}
-
-	// add extra fields in the template
-	template.Spec.Inputs.Scenario = v1alpha1.GetScenarioLabel(parent)
-	template.Spec.Inputs.Namespace = parent.GetNamespace()
-
-	if err := fromTemplate.Generate(&spec, 0, template.Spec, body); err != nil {
-		return v1alpha1.ChaosSpec{}, errors.Wrapf(err, "evaluation of template '%s' has failed", fromTemplate.TemplateRef)
-	}
-
-	return spec, nil
+	return specs[0], nil
 }
 
-func GetChaosSpecList(ctx context.Context, c client.Client, parent metav1.Object, fromTemplate v1alpha1.GenerateObjectFromTemplate) ([]v1alpha1.ChaosSpec, error) {
-	template, err := templateutils.GetTemplate(ctx, c, parent, fromTemplate.TemplateRef)
-	if err != nil {
-		return nil, errors.Wrapf(err, "template %s error", fromTemplate.TemplateRef)
+func GetChaosSpecList(ctx context.Context, cli client.Client, parent metav1.Object, fromTemplate v1alpha1.GenerateObjectFromTemplate) ([]v1alpha1.ChaosSpec, error) {
+	/*
+		Get Chaos Templates
+	*/
+	var template v1alpha1.Template
+
+	key := client.ObjectKey{
+		Namespace: parent.GetNamespace(),
+		Name:      fromTemplate.TemplateRef,
 	}
 
-	// convert the chaos to a json and then expand templated values.
+	if err := cli.Get(ctx, key, &template); err != nil {
+		return []v1alpha1.ChaosSpec{}, errors.Wrapf(err, "cannot find template '%s'", key.String())
+	}
+
+	/*
+		Convert Chaos Template to JSON and expand inputs
+	*/
 	body, err := json.Marshal(template.Spec.Chaos)
 	if err != nil {
 		return nil, errors.Errorf("cannot marshal chaos of %s", fromTemplate.TemplateRef)
@@ -81,6 +73,9 @@ func GetChaosSpecList(ctx context.Context, c client.Client, parent metav1.Object
 	template.Spec.Inputs.Scenario = v1alpha1.GetScenarioLabel(parent)
 	template.Spec.Inputs.Namespace = parent.GetNamespace()
 
+	/*
+		Generate Chaos Specs using the expanded inputs
+	*/
 	if err := fromTemplate.IterateInputs(func(nextInputSet uint) error {
 		var spec v1alpha1.ChaosSpec
 

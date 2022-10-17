@@ -224,9 +224,9 @@ func (r *Controller) Initialize(ctx context.Context, scenario *v1alpha1.Scenario
 		return errors.Wrapf(err, "cannot create grafana webhook")
 	}
 
-	// Ensure that the scenario is OK
-	if errValidate := r.Validate(ctx, scenario); errValidate != nil {
-		return errors.Wrapf(errValidate, "validation error")
+	// load the templates required by the scenario.
+	if errValidate := r.LoadTemplates(ctx, scenario); errValidate != nil {
+		return errors.Wrapf(errValidate, "template error")
 	}
 
 	// Start Prometheus + Grafana

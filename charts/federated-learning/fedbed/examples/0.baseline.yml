@@ -36,8 +36,7 @@ spec:
         resources:
           distribution:
             name: default
-          total: {mem: 500Mi}
-
+          total: { mem: 500Mi }
 
     # Teardown
     - action: Delete

@@ -49,6 +49,37 @@ func (in *Scenario) SetupWebhookWithManager(mgr ctrl.Manager) error {
 // Default implements webhook.Defaulter so a webhook will be registered for the type.
 func (in *Scenario) Default() {
 	scenariolog.Info("default", "name", in.Name)
+
+	// Align Inputs with MaxInstances
+	for i := 0; i < len(in.Spec.Actions); i++ {
+		action := &in.Spec.Actions[i]
+
+		switch action.ActionType {
+		case ActionService:
+			if err := action.Service.Prepare(false); err != nil {
+				scenariolog.Error(err, "definition error", "action", action.Name)
+			}
+
+		case ActionCluster:
+			if err := action.Cluster.GenerateObjectFromTemplate.Prepare(true); err != nil {
+				scenariolog.Error(err, "definition error", "action", action.Name)
+			}
+
+		case ActionChaos:
+			if err := action.Chaos.Prepare(false); err != nil {
+				scenariolog.Error(err, "definition error", "action", action.Name)
+			}
+
+		case ActionCascade:
+			if err := action.Cascade.GenerateObjectFromTemplate.Prepare(true); err != nil {
+				scenariolog.Error(err, "definition error", "action", action.Name)
+			}
+
+		case ActionCall, ActionDelete:
+			// calls and deletes do not involve templates.
+			return
+		}
+	}
 }
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type.

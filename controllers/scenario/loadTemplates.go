@@ -28,7 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-func (r *Controller) Validate(ctx context.Context, scenario *v1alpha1.Scenario) error {
+func (r *Controller) LoadTemplates(ctx context.Context, scenario *v1alpha1.Scenario) error {
 	// list the available nodes
 	readyNodes, err := r.getReadyNodes(ctx)
 	if err != nil {
@@ -38,19 +38,30 @@ func (r *Controller) Validate(ctx context.Context, scenario *v1alpha1.Scenario) 
 	// list the total allocatable resources from all nodes
 	allocatableResources := totalAllocatableResources(readyNodes...)
 
-	// Validate Reference Graph
-	for _, action := range scenario.Spec.Actions {
+	// LoadTemplates Reference Graph
+	for i := 0; i < len(scenario.Spec.Actions); i++ {
+		action := &scenario.Spec.Actions[i]
+
 		switch action.ActionType {
 		case v1alpha1.ActionService:
+			if err := expandMacros(ctx, r, scenario.GetNamespace(), &action.Service.Inputs); err != nil {
+				return errors.Wrapf(err, "input error")
+			}
+
 			if _, err := serviceutils.GetServiceSpec(ctx, r.GetClient(), scenario, *action.Service); err != nil {
 				return errors.Wrapf(err, "service '%s' error", action.Name)
 			}
+
 		case v1alpha1.ActionCluster:
-			if _, err := serviceutils.GetServiceSpec(ctx, r.GetClient(), scenario, action.Cluster.GenerateObjectFromTemplate); err != nil {
+			if err := expandMacros(ctx, r, scenario.GetNamespace(), &action.Cluster.Inputs); err != nil {
+				return errors.Wrapf(err, "input error")
+			}
+
+			if _, err := serviceutils.GetServiceSpecList(ctx, r.GetClient(), scenario, action.Cluster.GenerateObjectFromTemplate); err != nil {
 				return errors.Wrapf(err, "cluster '%s' error", action.Name)
 			}
 
-			// Validate Placement Policies
+			// LoadTemplates Placement Policies
 			if action.Cluster.Placement != nil {
 				// ensure there are at least two physical nodes for placement to make sense
 				if len(readyNodes) < 2 {
@@ -58,7 +69,7 @@ func (r *Controller) Validate(ctx context.Context, scenario *v1alpha1.Scenario) 
 				}
 			}
 
-			// Validate Resource Policies
+			// LoadTemplates Resource Policies
 			if action.Cluster.Resources != nil {
 				if err := resourceRequestIsWithinLimits(action.Cluster.Resources.TotalResources, allocatableResources); err != nil {
 					return errors.Wrapf(err, "Overprovisioning error for Cluster '%s'", action.Name)
@@ -66,17 +77,30 @@ func (r *Controller) Validate(ctx context.Context, scenario *v1alpha1.Scenario) 
 			}
 
 		case v1alpha1.ActionChaos:
+			if err := expandMacros(ctx, r, scenario.GetNamespace(), &action.Chaos.Inputs); err != nil {
+				return errors.Wrapf(err, "input error")
+			}
+
 			if _, err := chaosutils.GetChaosSpec(ctx, r.GetClient(), scenario, *action.Chaos); err != nil {
 				return errors.Wrapf(err, "chaos '%s' error", action.Name)
 			}
 
 		case v1alpha1.ActionCascade:
-			if _, err := chaosutils.GetChaosSpec(ctx, r.GetClient(), scenario, action.Cascade.GenerateObjectFromTemplate); err != nil {
+			if err := expandMacros(ctx, r, scenario.GetNamespace(), &action.Cascade.Inputs); err != nil {
+				return errors.Wrapf(err, "input error")
+			}
+
+			if _, err := chaosutils.GetChaosSpecList(ctx, r.GetClient(), scenario, action.Cascade.GenerateObjectFromTemplate); err != nil {
 				return errors.Wrapf(err, "cascade '%s' error", action.Name)
 			}
 
-		case v1alpha1.ActionCall, v1alpha1.ActionDelete:
-			// TODO: should we add something here?
+		case v1alpha1.ActionCall:
+			if err := expandSliceInputs(ctx, r, scenario.GetNamespace(), &action.Call.Services); err != nil {
+				return errors.Wrapf(err, "input error")
+			}
+
+		case v1alpha1.ActionDelete:
+			// calls and deletes do not involve templates.
 			return nil
 		}
 	}

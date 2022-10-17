@@ -57,26 +57,26 @@ const (
 
 var GrafanaPort = int64(3000)
 
-func (r *Controller) StartTelemetry(ctx context.Context, t *v1alpha1.Scenario) error {
+func (r *Controller) StartTelemetry(ctx context.Context, scenario *v1alpha1.Scenario) error {
 	// the filebrowser makes sense only if test data are enabled.
-	if t.Spec.TestData != nil {
-		if err := r.installDataviewer(ctx, t); err != nil {
+	if scenario.Spec.TestData != nil {
+		if err := r.installDataviewer(ctx, scenario); err != nil {
 			return errors.Wrapf(err, "cannot provision testdata")
 		}
 	}
 
 	// there is no need to import the stack of the is no dashboard.
-	telemetryAgents, err := r.ListTelemetryAgents(ctx, t)
+	telemetryAgents, err := r.ListTelemetryAgents(ctx, scenario)
 	if err != nil {
 		return errors.Wrapf(err, "importing dashboards")
 	}
 
 	if len(telemetryAgents) > 0 {
-		if err := r.installPrometheus(ctx, t); err != nil {
+		if err := r.installPrometheus(ctx, scenario); err != nil {
 			return errors.Wrapf(err, "prometheus error")
 		}
 
-		if err := r.installGrafana(ctx, t, telemetryAgents); err != nil {
+		if err := r.installGrafana(ctx, scenario, telemetryAgents); err != nil {
 			return errors.Wrapf(err, "grafana error")
 		}
 	}
@@ -285,7 +285,7 @@ func (r *Controller) ListTelemetryAgents(ctx context.Context, scenario *v1alpha1
 	for _, action := range scenario.Spec.Actions {
 		var fromTemplate *v1alpha1.GenerateObjectFromTemplate
 
-		// only Services and Clusters may container Telemetry Agents.
+		// only Service and Cluster Templates may container Telemetry Agents.
 		switch action.ActionType {
 		case v1alpha1.ActionService:
 			fromTemplate = action.Service
@@ -295,14 +295,18 @@ func (r *Controller) ListTelemetryAgents(ctx context.Context, scenario *v1alpha1
 			continue
 		}
 
-		spec, err := serviceutils.GetServiceSpec(ctx, r.GetClient(), scenario, *fromTemplate)
+		// get the spec from instances, not directly from the template.
+		// this allows us to support conditional includes.
+		specs, err := serviceutils.GetServiceSpecList(ctx, r.GetClient(), scenario, *fromTemplate)
 		if err != nil {
 			return nil, errors.Wrapf(err, "cannot retrieve service spec")
 		}
 
-		// store everything on a map to avoid duplicates
-		for _, dashboard := range spec.Decorators.Telemetry {
-			dedup[dashboard] = struct{}{}
+		// store everything on a map to avoid duplicates.
+		for _, spec := range specs {
+			for _, dashboard := range spec.Decorators.Telemetry {
+				dedup[dashboard] = struct{}{}
+			}
 		}
 	}
 
