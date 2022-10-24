@@ -78,7 +78,7 @@ sudo snap alias microk8s.helm3 helm
 Then, run the `install.sh`, that will deploy the **Frisbee Terminal**  as an extension to  `kubectl`.
 
 ```shell
-curl -sSLf https://frisbee.dev/install.sh | bash
+curl -sSLf https://frisbee.dev/install.sh | sudo bash
 ```
 
 Through **Frisbee Terminal** we can easily install the **Frisbee Platform**.
