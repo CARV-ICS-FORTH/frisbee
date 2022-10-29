@@ -35,13 +35,9 @@
 
 ## What is Frisbee ?
 
-**Frisbee** is a **workflow-based engine** for testing containerized applications on Kubernetes.
+**Frisbee** is the first Kubernetes framework designed to support **declarative end-to-end testing** of containerized applications.
 
-It is implemented as a set of Kubernetes CRDs that that lowers the threshold of applying **declarative testing** to distributed applications. 
-
-Frisbee can help tester to:
-
-:heavy_check_mark: Setup initial application stack – easily!
+:heavy_check_mark: Setup application and dependency stack – easily!
 
 :heavy_check_mark: Test against actual, close to production software - no mocks!
 
@@ -52,7 +48,17 @@ Frisbee can help tester to:
 :heavy_check_mark: Assert actual program behavior and side effects. 
 
 
+To learn more about Frisbee, check the **[QuickStart](https://frisbee.dev/docs/quick-start/)** tutorial or visit
+our **[Website](https://frisbee.dev)**.
+
+
 ## Use-Cases and Testing Patterns
+
+In declarative testing, a test scenario focuses on what to accomplish rather than on the imperative details of how to manipulate the state of an application under test and verify the final application state against an expected state. 
+
+This approach not make tests more *readable, maintainable, and reproducible*, but it also help devops in identifying testing patterns.
+
+Here, you can see some testing patterns we have identified across different application domains.
 
 👉 [Databases](charts/databases)
 
@@ -64,8 +70,6 @@ Frisbee can help tester to:
 
 👉 [Networking](charts/networking)
 
-To learn more about Frisbee, check the **[QuickStart](https://frisbee.dev/docs/quick-start/)** tutorial or visit
-our **[Website](https://frisbee.dev)**.
 
 ## Getting Started
 
