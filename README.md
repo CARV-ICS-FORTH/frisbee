@@ -29,9 +29,11 @@
 
 ## What is Frisbee ?
 
-Frisbee is a workflow-based engine that lowers the threshold of testing containerized applications on Kubernetes.
+**Frisbee** is a **workflow-based engine** for testing containerized applications on Kubernetes.
 
-Frisbee is implemented as a set of Kubernetes CRD (Custom Resource Definition) that:
+It is implemented as a set of Kubernetes CRDs that that lowers the threshold of applying **declarative testing** to distributed applications. 
+
+Frisbee can help tester to:
 
 :heavy_check_mark: Setup initial application stack – easily!
 
@@ -43,8 +45,6 @@ Frisbee is implemented as a set of Kubernetes CRD (Custom Resource Definition) t
 
 :heavy_check_mark: Assert actual program behavior and side effects. 
 
-To learn more about Frisbee, check the **[QuickStart](https://frisbee.dev/docs/quick-start/)** tutorial or visit
-our **[Website](https://frisbee.dev)**.
 
 ## Use-Cases and Testing Patterns
 
@@ -57,6 +57,9 @@ our **[Website](https://frisbee.dev)**.
 👉 [HPC](charts/hpc)
 
 👉 [Networking](charts/networking)
+
+To learn more about Frisbee, check the **[QuickStart](https://frisbee.dev/docs/quick-start/)** tutorial or visit
+our **[Website](https://frisbee.dev)**.
 
 ## Getting Started
 
