@@ -16,15 +16,21 @@
 </p>
 
 <p align="center">
-    <a href="https://github.com/carv-ics-forth/frisbee/blob/main/LICENSE">
-        <img src="https://img.shields.io/github/license/carv-ics-forth/frisbee">
-    </a>    
-    <a href="https://github.com/carv-ics-forth/frisbee/blob/main/CONTRIBUTING.md">
-        <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg">
-    </a>    
     <a Code build and checks>
         <img src="https://github.com/CARV-ICS-FORTH/frisbee/actions/workflows/test-unit.yml/badge.svg">
     </a>        
+    <a href="https://github.com/carv-ics-forth/frisbee/blob/main/CONTRIBUTING.md">
+        <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg">
+    </a>    
+    <a Releases>
+        <img src="https://img.shields.io/github/v/release/carv-ics-forth/frisbee.svg?include_prereleases">
+    </a>    
+    <a Downloads>
+        <img src="https://img.shields.io/github/downloads/carv-ics-forth/frisbee/total.svg">
+    </a>
+    <a href="https://github.com/carv-ics-forth/frisbee/blob/main/LICENSE">
+        <img src="https://img.shields.io/github/license/carv-ics-forth/frisbee">
+    </a>    
 </p>    
 
 ## What is Frisbee ?
