@@ -33,15 +33,15 @@ Frisbee is a workflow-based engine that lowers the threshold of testing containe
 
 Frisbee is implemented as a set of Kubernetes CRD (Custom Resource Definition) that:
 
-* Setup initial application stack – easily!
+:heavy_check_mark: Setup initial application stack – easily!
 
-* Test against actual, close to production software - no mocks!
+:heavy_check_mark: Test against actual, close to production software - no mocks!
 
-* Replay complex workloads written in an intuitive language!
+:heavy_check_mark: Replay complex workloads written in an intuitive language!
 
-* Combine Chaos Engineering with large-scale performance testing!
+:heavy_check_mark: Combine Chaos Engineering with large-scale performance testing!
 
-* Assert actual program behavior and side effects.
+:heavy_check_mark: Assert actual program behavior and side effects. 
 
 To learn more about Frisbee, check the **[QuickStart](https://frisbee.dev/docs/quick-start/)** tutorial or visit
 our **[Website](https://frisbee.dev)**.
