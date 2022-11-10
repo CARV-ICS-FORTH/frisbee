@@ -44,8 +44,8 @@ const (
 	SummaryDashboardUID = "summary"
 )
 
-func GenerateQuotedURL(grafanaEndpoint string, dashboard string, from int64, to int64) string {
-	return fmt.Sprintf("http://%s/d/%s?orgId=1&from=%d&to=%d&kiosk=", grafanaEndpoint, dashboard, from, to)
+func GenerateQuotedURL(grafanaEndpoint string, dashboard string, from int64, to int64, postfix string) string {
+	return fmt.Sprintf("http://%s/d/%s?orgId=1&from=%d&to=%d%s", grafanaEndpoint, dashboard, from, to, postfix)
 }
 
 type TestReportOptions struct {
@@ -95,9 +95,9 @@ func NewReportTestsCmd() *cobra.Command {
 				ui.Fail(errors.Wrap(err, "Cannot chdir to Frisbee cache"))
 			}
 
-			/*
-				Inspect the Scenario for Grafana Endpoints.
-			*/
+			/*---------------------------------------------------*
+			 * Inspect the Scenario for Grafana Endpoints.
+			 *---------------------------------------------------*/
 			scenario, err := env.Default.GetFrisbeeClient().GetScenario(cmd.Context(), testName)
 			ui.ExitOnError("Getting test information", err)
 
@@ -113,19 +113,20 @@ func NewReportTestsCmd() *cobra.Command {
 				}
 			}
 
-			/*
-				Filter time to the beginning/ending of the scenario.
-			*/
+			/*-- Filter time to the beginning/ending of the scenario. --*/
 			from, to := FindTimeline(scenario)
-			uri := GenerateQuotedURL(scenario.Status.GrafanaEndpoint, options.DashboardUID, from, to)
 
-			/*
-				Generate PDFs for each panel, in parallel.
-			*/
+			/*---------------------------------------------------*
+			 * Generate PDFs for the specific timeline
+			 *---------------------------------------------------*/
 			if options.Aggregate {
+				uri := GenerateQuotedURL(scenario.Status.GrafanaEndpoint, options.DashboardUID, from, to, "")
+
 				err = SavePDF(&options, uri, destination)
 				ui.ExitOnError("Saving aggregated report to: "+destination, err)
 			} else {
+				uri := GenerateQuotedURL(scenario.Status.GrafanaEndpoint, options.DashboardUID, from, to, "&kiosk")
+
 				err = SavePDFs(&options, uri, destination, scenario.Status.GrafanaEndpoint, options.DashboardUID)
 				ui.ExitOnError("Saving reports to: "+destination, err)
 			}
@@ -173,16 +174,16 @@ var (
 )
 
 func SavePDFs(options *TestReportOptions, dashboardURI, destDir string, grafanaEndpoint string, dashboardUID string) error {
-	/*
-		Ensure destination exists
-	*/
+	/*---------------------------------------------------*
+	 * Ensure destination exists
+	 *---------------------------------------------------*/
 	if err := os.MkdirAll(destDir, os.ModePerm); err != nil {
 		return errors.Wrapf(err, "destination error")
 	}
 
-	/*
-		Open Connection to Grafana.
-	*/
+	/*---------------------------------------------------*
+	 * Query Grafna for Available Pannels.
+	 *---------------------------------------------------*/
 	ctx := context.Background()
 
 	grafanaClient, err := grafana.New(ctx, grafana.WithHTTP(grafanaEndpoint))
@@ -190,20 +191,18 @@ func SavePDFs(options *TestReportOptions, dashboardURI, destDir string, grafanaE
 		return errors.Wrapf(err, "cannot get Grafana client")
 	}
 
-	/*
-		List Available Panels
-	*/
 	panels, err := grafanaClient.ListPanelsWithData(ctx, dashboardUID)
 	if err != nil {
 		return err
 	}
 
-	/*
-		Generate PDF for each Panel.
-	*/
+	/*---------------------------------------------------*
+	 * Generate PDF for each Panel.
+	 *---------------------------------------------------*/
 	for i, panel := range panels {
 		panelURI := fmt.Sprintf("%s&viewPanel=%d", dashboardURI, panel.ID)
-		// replace special characters with underscore
+
+		/*-- replace special characters with underscore --*/
 		title := nonAlphanumericRegex.ReplaceAllString(panel.Title, "_")
 		title = removeDuplicatesRegex.ReplaceAllString(title, "_")
 
@@ -217,14 +216,11 @@ func SavePDFs(options *TestReportOptions, dashboardURI, destDir string, grafanaE
 	return nil
 }
 
-/*
-******************************************************************
-
-	Install PDF-Exporter.
+/*---------------------------------------------------*
+ 	Install PDF-Exporter.
 	This is required for generating pdfs from Grafana.
+ *---------------------------------------------------*/
 
-******************************************************************
-*/
 const (
 	puppeteer = "puppeteer"
 )
@@ -238,9 +234,9 @@ var (
 )
 
 func InstallPDFExporter(location string) {
-	/*
-		Ensure that the Cache Dir exists.
-	*/
+	/*---------------------------------------------------*
+	 * Ensure that the Cache Dir exists.
+	 *---------------------------------------------------*/
 	_, err := os.Open(location)
 	if err != nil && !os.IsNotExist(err) {
 		ui.Failf("failed to open cache directory " + location)
@@ -249,9 +245,9 @@ func InstallPDFExporter(location string) {
 	err = os.MkdirAll(location, os.ModePerm)
 	ui.ExitOnError("create cache directory:"+location, err)
 
-	/*
-		Install NodeJS dependencies
-	*/
+	/*---------------------------------------------------*
+	 * Install NodeJS dependencies
+	 *---------------------------------------------------*/
 	ui.Info("Installing PDFExporter ...")
 
 	oldPwd, _ := os.Getwd()
@@ -268,19 +264,18 @@ func InstallPDFExporter(location string) {
 	_, err = process.Execute("sh", "-c", strings.Join(command, " "))
 	ui.ExitOnError(" --> Installing Puppeteer", err)
 
-	/*
-		Copy the embedded pdf exporter in the underlying filesystem.
-	*/
+	/*---------------------------------------------------*
+	 * Copy the embedded pdf exporter into fs
+	 *---------------------------------------------------*/
 	err = embed.CopyLocallyIfNotExists(embed.Hack, location)
 	ui.ExitOnError(" --> Install PDF Renderer", err)
 
 	err = os.Chdir(oldPwd)
 	ui.ExitOnError("Returning to "+oldPwd, err)
 
-	/*
-		Update path to binary
-	*/
-
+	/*---------------------------------------------------*
+	 * Update path to the pdf-exporter binary
+	 *---------------------------------------------------*/
 	FastPDFExporter = filepath.Join(location, "hack/pdf-exporter/fast-generator.js")
 	LongPDFExporter = filepath.Join(location, "hack/pdf-exporter/long-dashboards.js")
 
@@ -290,42 +285,42 @@ func InstallPDFExporter(location string) {
 	ui.Success("PDFExporter is installed at ", location)
 }
 
-/*
-FindTimeline parses the scenario to find timeline that make sense (formatted into time.UnixMilli).
-For the starting time we adhere to these rules:
- 1. If possible, we use the time that the first job was scheduled.
- 2. Otherwise, we use the Creation time.
+// FindTimeline parses the scenario to find timeline that make sense (formatted into time.UnixMilli).
+/*---------------------------------------------------*
+	For the starting time we adhere to these rules:
+	 1. If possible, we use the time that the first job was scheduled.
+	 2. Otherwise, we use the Creation time.
 
-For the ending time we adhere to these rules:
- 1. If the scenario is successful, we return the ConditionAllJobsAreCompleted time.
- 2. If the scenario has failed, we return the Failure time.
- 3. Otherwise, we report time.Now().
-*/
-func FindTimeline(in *v1alpha1.Scenario) (from int64, to int64) {
-	initialized := meta.FindStatusCondition(in.Status.Conditions, v1alpha1.ConditionCRInitialized.String())
+	For the ending time we adhere to these rules:
+	 1. If the scenario is successful, we return the ConditionAllJobsAreCompleted time.
+	 2. If the scenario has failed, we return the Failure time.
+	 3. Otherwise, we report time.Now().
+ *---------------------------------------------------*/
+func FindTimeline(scenario *v1alpha1.Scenario) (from int64, to int64) {
+	initialized := meta.FindStatusCondition(scenario.Status.Conditions, v1alpha1.ConditionCRInitialized.String())
 	if initialized != nil {
 		from = initialized.LastTransitionTime.Time.UnixMilli()
 	} else {
-		from = in.GetCreationTimestamp().Time.UnixMilli()
+		from = scenario.GetCreationTimestamp().Time.UnixMilli()
 	}
 
 	to = time.Now().UnixMilli()
 
-	switch in.Status.Phase {
+	switch scenario.Status.Phase {
 	case v1alpha1.PhaseSuccess:
-		success := meta.FindStatusCondition(in.Status.Conditions, v1alpha1.ConditionAllJobsAreCompleted.String())
+		success := meta.FindStatusCondition(scenario.Status.Conditions, v1alpha1.ConditionAllJobsAreCompleted.String())
 		to = success.LastTransitionTime.Time.UnixMilli()
 
 	case v1alpha1.PhaseFailed:
 		// Failure may come from various reasons. Unfortunately we have to go through all of them.
-		unexpected := meta.FindStatusCondition(in.Status.Conditions, v1alpha1.ConditionJobUnexpectedTermination.String())
+		unexpected := meta.FindStatusCondition(scenario.Status.Conditions, v1alpha1.ConditionJobUnexpectedTermination.String())
 		if unexpected != nil {
 			to = unexpected.LastTransitionTime.Time.UnixMilli()
 
 			break
 		}
 
-		assert := meta.FindStatusCondition(in.Status.Conditions, v1alpha1.ConditionAssertionError.String())
+		assert := meta.FindStatusCondition(scenario.Status.Conditions, v1alpha1.ConditionAssertionError.String())
 		if assert != nil {
 			to = assert.LastTransitionTime.Time.UnixMilli()
 

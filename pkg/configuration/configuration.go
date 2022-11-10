@@ -68,7 +68,7 @@ func namesOfItems(list corev1.ConfigMapList) []string {
 	return names
 }
 
-// Get returns the system configuration
+// Get returns the system configuration.
 func Get(ctx context.Context, cli client.Client, logger logr.Logger) (Configuration, error) {
 	// 1. Discovery the configuration across the various namespaces.
 	var list corev1.ConfigMapList

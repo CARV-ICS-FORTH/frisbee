@@ -154,12 +154,12 @@ docker-run: docker-build ## Build and Run docker image for the Frisbee controlle
 ##@ Deployment
 docker-push: docker-build ## Push the latest docker image for Frisbee controller.
 	@echo "===> Tag ${IMG} as frisbee-operator:latest <==="
-	docker tag ${IMG} $(IMAGE_TAG_BASE)/frisbee-operator:${FrisbeeVersion}
-	docker tag ${IMG} $(IMAGE_TAG_BASE)/frisbee-operator:latest
+	docker tag ${IMG} ${IMAGE_TAG_BASE}/frisbee-operator:${FrisbeeVersion}
+	docker tag ${IMG} ${IMAGE_TAG_BASE}/frisbee-operator:latest
 
 	@echo "===> Push frisbee operator ${FrisbeeVersion} as latest <==="
-	docker push $(IMAGE_TAG_BASE)/frisbee-operator:${FrisbeeVersion}
-	docker push $(IMAGE_TAG_BASE)/frisbee-operator:latest
+	docker push ${IMAGE_TAG_BASE}/frisbee-operator:${FrisbeeVersion}
+	docker push ${IMAGE_TAG_BASE}/frisbee-operator:latest
 
 
 install: generate ## Deploy platform to the K8s cluster specified in ~/.kube/config.
