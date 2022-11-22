@@ -1,0 +1,20 @@
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Scenario
+metadata:
+  name: advanced-tensorflow
+spec:
+  actions:
+    # Run the default script
+    - action: Service
+      name: script
+      service:
+        templateRef: flower.advanced-tensorflow.standalone
+
+    # Teardown
+    - action: Delete
+      name: teardown
+      depends: {  success: [ script ] }
+      delete:
+        jobs: []
+

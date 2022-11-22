@@ -50,7 +50,6 @@ spec:
             # Tap into the cgroup of the main container, and mount it locally
             nsenter -t $(cat /dev/shm/app) -C -- mount -t cgroup2 none /sys/fs/cgroup
 
-
             cadvisor --port=9442                  \
             --docker_only=true                   \
             --store_container_labels=false        \

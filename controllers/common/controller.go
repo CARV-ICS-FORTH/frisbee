@@ -56,6 +56,26 @@ func RequeueWithError(err error) (ctrl.Result, error) {
 	return ctrl.Result{}, err
 }
 
+type Logger interface {
+	// Info logs a non-error message with the given key/value pairs as context.
+	// The level argument is provided for optional logging.  This method will
+	// only be called when Enabled(level) is true. See Logger.Info for more
+	// details.
+	Info(msg string, keysAndValues ...interface{})
+
+	// Error logs an error, with the given message and key/value pairs as
+	// context.  See Logger.Error for more details.
+	Error(err error, msg string, keysAndValues ...interface{})
+
+	// WithValues returns a new LogSink with additional key/value pairs.  See
+	// Logger.WithValues for more details.
+	WithValues(keysAndValues ...interface{}) logr.Logger
+
+	// WithName returns a new LogSink with the specified name appended.  See
+	// Logger.WithName for more details.
+	WithName(name string) logr.Logger
+}
+
 // Reconciler implements basic functionality that is common to every solid reconciler (e.g, finalizers).
 type Reconciler interface {
 	GetClient() client.Client
@@ -63,11 +83,7 @@ type Reconciler interface {
 
 	GetEventRecorderFor(name string) record.EventRecorder
 
-	// Logging
-
-	Error(err error, msg string, keysAndValues ...interface{})
-	Info(msg string, keysAndValues ...interface{})
-	V(level int) logr.Logger
+	Logger
 
 	Finalizer() string
 
@@ -87,17 +103,20 @@ type Reconciler interface {
 // Bool indicate whether the caller should return immediately (true) or continue (false).
 // The reconciliation cycle is where the framework gives us back control after a watch has passed up an event.
 func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.Object, requeue *bool) (ctrl.Result, error) {
-	// make the calling controller to return
+	/*-- make the calling controller to return --*/
 	*requeue = true
 
-	/*
-		### 1: Retrieve the CR by name
-	*/
+	/*---------------------------------------------------
+	 * Retrieve CR by name
+	 *---------------------------------------------------*/
+
 	if err := r.GetClient().Get(ctx, req.NamespacedName, obj); err != nil {
-		// Request object not found, could have been deleted after reconcile request.
-		// We'll ignore not-found errors, since they can't be fixed by an immediate
-		// requeue (we'll need to wait for a new notification), and we can get them
-		// on added / deleted requests.
+		/*--
+			Request object not found, could have been deleted after reconcile request.
+			We'll ignore not-found errors, since they can't be fixed by an immediate
+			requeue (we'll need to wait for a new notification), and we can get them
+			on added / deleted requests.
+		 --*/
 		if k8errors.IsNotFound(err) {
 			return Stop()
 		}
@@ -105,19 +124,19 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 		return RequeueWithError(err)
 	}
 
+	logger := r.WithValues("obj", client.ObjectKeyFromObject(obj))
+
+	/*---------------------------------------------------
+	 * Set Finalizers for CR
+	 *---------------------------------------------------*/
 	/*
-		### 2: Manage Resource initialization
 		Finalizers provide a mechanism to inform the Kubernetes control plane that an action needs to take place
 		before the standard Kubernetes garbage collection logic can be performed.
 	*/
-
 	if obj.GetDeletionTimestamp().IsZero() {
-		// The object is not being deleted, so if it does not have our finalizer,
-		// then lets add the finalizer and Update the object. This is equivalent
-		// registering our finalizer.
+		/*-- Add Finalizers to a new CR--*/
 		if controllerutil.AddFinalizer(obj, r.Finalizer()) {
-			r.Info("AddFinalizer",
-				"obj", client.ObjectKeyFromObject(obj),
+			logger.Info("AddFinalizer",
 				"finalizer", r.Finalizer(),
 				"current", obj.GetFinalizers())
 
@@ -130,30 +149,28 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 					return true, nil
 				},
 			); err != nil {
-				r.Error(err, "Abort retrying to add finalizer", "obj", client.ObjectKeyFromObject(obj))
+				logger.Error(err, "Abort retrying to add finalizer")
 			}
 
 			return Stop()
 		}
 	} else {
-		// The object is being deleted
+		/*-- Handle and Remove Finalizers for a deleted CR-*/
 		if controllerutil.ContainsFinalizer(obj, r.Finalizer()) {
-			// our finalizer is present, so lets handle any external dependency.
+			/*-- Handle finalization logic to remove external dependencies. --*/
 			if err := r.Finalize(obj); err != nil {
-				// Run finalization logic to remove external dependencies.
-				// If the finalization logic fails, don't remove the finalizer
-				// so that we can retry during the next reconciliation.
-				r.Error(err, "Finalize error",
-					"obj", client.ObjectKeyFromObject(obj),
-					"finalizer", r.Finalizer())
+				logger.Error(err, "Finalize error", "finalizer", r.Finalizer())
 
+				/*--
+					If the finalization logic fails, don't remove the finalizer
+					so that we can retry during the next reconciliation.
+				 --*/
 				return RequeueWithError(err)
 			}
 
-			// Once all finalizers have been removed, the object will be deleted.
+			/*-- Remove Finalizer. Once all finalizers have been removed, the object will be deleted. --*/
 			if controllerutil.RemoveFinalizer(obj, r.Finalizer()) {
-				r.Info("RemoveFinalizer",
-					"obj", client.ObjectKeyFromObject(obj),
+				logger.Info("RemoveFinalizer",
 					"finalizer", r.Finalizer(),
 					"current", obj.GetFinalizers(),
 				)
@@ -167,7 +184,7 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 						return true, nil
 					},
 				); err != nil {
-					r.Error(err, "Abort retrying to remove finalizer", "obj", client.ObjectKeyFromObject(obj))
+					logger.Error(err, "Abort retrying to remove finalizer")
 				}
 
 				return Stop()

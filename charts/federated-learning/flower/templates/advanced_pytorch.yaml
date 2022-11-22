@@ -1,0 +1,20 @@
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Template
+metadata:
+  name: flower.advanced-pytorch.standalone
+spec:
+  service:
+    decorators:
+      telemetry: [ system.telemetry.agent]
+
+    containers:
+      - name: app
+        image: icsforth/advanced_pytorch
+        command: ["/bin/sh", "-c"]
+        args:
+          - | # Script
+            set -eum
+            cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
+
+            poetry run ./run.sh
