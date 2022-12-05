@@ -18,7 +18,7 @@ spec:
         "sidecar.frisbee.dev/telemetry": cadvisor
     containers:
       - name: cadvisor
-        image: gcr.io/cadvisor/cadvisor:v0.44.0
+        image: gcr.io/cadvisor/cadvisor:v0.46.0
         ports:
           - name: tel-sys
             containerPort: 9442
