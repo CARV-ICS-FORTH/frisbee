@@ -48,6 +48,8 @@ spec:
           - -c        # Read from string
           - |         # Multi-line str
             set -eux
+            cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
+
 
             python server.py
 
@@ -109,6 +111,7 @@ spec:
           - -c        # Read from string
           - |         # Multi-line str
             set -eux
+            cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
 
             # do it like that until I find a better way to go from fl.dataset.cifar10 to cifar10.
             FL_DATASET=$(basename {{"{{.inputs.parameters.dataset}}"}})
