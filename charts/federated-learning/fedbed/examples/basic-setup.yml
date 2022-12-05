@@ -19,28 +19,26 @@ spec:
       service:
         templateRef: fedbed.server
         inputs:
-          - {min_fit_clients: 2,  min_available_clients: 3 }
+          - { min_fit_clients: 2,  min_available_clients: 3 }
 
-   # Step 2: Create FedBed clients
+    # Step 2: Create FedBed clients
     - action: Cluster
       name: clients
-      depends: { running: [ server ], success: [ cifar10-download ]  }
+      depends: { running: [ server ], success: [ cifar10-download ] }
       cluster:
         templateRef: fedbed.client
-        defaultDistribution:
-          name: zipfian
+        defaultDistribution: { name: uniform }
         inputs:
           - { fl_server: server, dataset: fl.datasets.cifar10, node_id: 0, total_nodes: 3 }
           - { fl_server: server, dataset: fl.datasets.cifar10, node_id: 1, total_nodes: 3 }
           - { fl_server: server, dataset: fl.datasets.cifar10, node_id: 2, total_nodes: 3 }
         resources:
-          distribution:
-            name: default
           total: { mem: 500Mi }
+          distribution: { name: default }
 
     # Teardown
     - action: Delete
       name: teardown
       depends: { success: [ clients, server ] }
       delete:
-        jobs: []
+        jobs: [ ]

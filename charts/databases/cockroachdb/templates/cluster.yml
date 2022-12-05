@@ -15,7 +15,7 @@ spec:
         - cockroach.telemetry.server
 
     containers:
-      - name: app
+      - name: main
         image: cockroachdb/cockroach:v22.1.2
         ports:
           - name: grpc

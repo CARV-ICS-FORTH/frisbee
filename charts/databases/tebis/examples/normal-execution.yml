@@ -24,7 +24,7 @@ spec:
     # Initialize a data node
     - action: Cluster
       name: masters
-      depends: {running: [ zookeeper ], success: [ boot ]}
+      depends: { running: [ zookeeper ], success: [ boot ] }
       cluster:
         templateRef: tebis.cluster.master
         instances: 1
@@ -35,7 +35,7 @@ spec:
     # Initialize a client node
     - action: Service
       name: client
-      depends: { running: [zookeeper, masters], success: [boot] }
+      depends: { running: [ zookeeper, masters ], success: [ boot ] }
       service:
         templateRef: tebis.cluster.client
         inputs:

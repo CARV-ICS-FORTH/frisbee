@@ -6,7 +6,7 @@ metadata:
 spec:
   service:
     containers:
-      - name: app
+      - name: main
         image: czero/iperf2
         ports:
           - name: listen
@@ -32,7 +32,7 @@ spec:
       exit: "false"
   service:
     containers:
-      - name: app
+      - name: main
         image: czero/iperf2
         command:
           - /bin/sh   # Run shell

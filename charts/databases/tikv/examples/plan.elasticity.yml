@@ -59,11 +59,11 @@ spec:
           - { target: more-workers-7 }
           - { target: more-workers-3 }
         schedule:
-          cron: "@every 1m"    
+          cron: "@every 1m"
 
     # Teardown
     - action: Delete
       name: teardown
-      depends: { running: [ coordinator, workers, more-workers ], success: [ killer] }
+      depends: { running: [ coordinator, workers, more-workers ], success: [ killer ] }
       delete:
         jobs: [ coordinator,  workers, more-workers ]

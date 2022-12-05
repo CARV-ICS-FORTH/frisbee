@@ -16,7 +16,7 @@ spec:
       - name: docker-graph-storage
         emptyDir: { }
     containers: # Container(s)
-      - name: app
+      - name: main
         image: 192.168.1.213:5000/docker:latest
         securityContext:
           privileged: true

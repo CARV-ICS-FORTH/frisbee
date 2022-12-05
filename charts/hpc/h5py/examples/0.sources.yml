@@ -31,4 +31,4 @@ spec:
       name: teardown
       depends: { success: [ bytesio-embedded, bytesio-from-script, bytesio-from-web ] }
       delete:
-        jobs: []
+        jobs: [ ]

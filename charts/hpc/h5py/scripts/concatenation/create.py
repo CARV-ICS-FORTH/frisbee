@@ -1,25 +1,27 @@
-import sys
 import os
+import socket
+import sys
+
 import h5py
 import numpy as np
-import socket
+
 
 def create_random_file(dir, index):
     """create one random file"""
-    filename = 'myfile_' + str(index) + "_"+  socket.gethostname() + ".h5"
+    filename = 'myfile_' + str(index) + "_" + socket.gethostname() + ".h5"
     name = os.path.join(dir, filename)
 
     f = h5py.File(name=name, mode='w')
 
     d = f.create_dataset('data', (5, 10, 20), 'i4')
-    data = np.random.randint(low=0, high=100, size=(5*10*20))
+    data = np.random.randint(low=0, high=100, size=(5 * 10 * 20))
     data = data.reshape(5, 10, 20)
     d[:] = data
 
-    print("Flushing dataset") # That used to be missing, resulting into erroneous behaviors.
+    print("Flushing dataset")  # That used to be missing, resulting into erroneous behaviors.
     d.flush()
 
-    print("Closing HDF5 file") # That used to be missing, resulting into erroneous behaviors.
+    print("Closing HDF5 file")  # That used to be missing, resulting into erroneous behaviors.
     f.flush()
     f.close()
 
@@ -37,8 +39,8 @@ def main(argv):
     print("ShareDir:", shared_dir, " num_of_files:", num_of_files)
 
     for i_file in range(num_of_files):
-            name = create_random_file(dir=shared_dir, index=i_file)
-            print("Creating ", name)
+        name = create_random_file(dir=shared_dir, index=i_file)
+        print("Creating ", name)
 
 
 if __name__ == '__main__':

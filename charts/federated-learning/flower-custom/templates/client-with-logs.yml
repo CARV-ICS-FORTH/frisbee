@@ -23,7 +23,7 @@ spec:
         persistentVolumeClaim:
           claimName: {{"{{.inputs.parameters.logClaimName}}" | quote}}
     containers:
-      - name: app
+      - name: main
         image: icsforth/fl-demo:latest
         volumeMounts:
           - name: dataset

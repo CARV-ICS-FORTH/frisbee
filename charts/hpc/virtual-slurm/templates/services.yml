@@ -12,7 +12,7 @@ spec:
       telemetry:
         - system.telemetry.agent
     containers:
-      - name: app
+      - name: main
         image: rancavil/slurm-master:19.05.5-1
         ports:
           - name: slurmctld
@@ -46,7 +46,7 @@ spec:
       nodes: 10
   service:
     containers:
-      - name: app
+      - name: main
         image: rancavil/slurm-node:19.05.5-1
         ports:
           - name: slurmd
@@ -79,7 +79,7 @@ spec:
       ingressPort:
         name: http # make the http interface directly visibly outside the cluster.
     containers:
-      - name: app
+      - name: main
         image: rancavil/slurm-jupyter:19.05.5-1
         ports:
           - name: http

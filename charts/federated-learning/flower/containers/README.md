@@ -1,5 +1,3 @@
-
-
 == Advanced Pytorch ==
 ``` shell
 docker build -t icsforth/advanced_pytorch -f advanced_pytorch.Dockerfile .

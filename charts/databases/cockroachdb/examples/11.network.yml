@@ -62,6 +62,6 @@ spec:
     # Teardown
     - action: Delete
       name: teardown
-      depends: { running: [ masters ], success: [ partition0, run-workload] }
+      depends: { running: [ masters ], success: [ partition0, run-workload ] }
       delete:
         jobs: [ masters ]

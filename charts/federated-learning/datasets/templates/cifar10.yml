@@ -36,8 +36,8 @@ spec:
           path: {{"{{.inputs.parameters.cache}}" | quote}}
 
     containers:
-      - name: app
-        image: busybox
+      - name: main
+        image: alpine
         volumeMounts:
           - name: cache
             mountPath: /cache
@@ -45,10 +45,11 @@ spec:
           - name: cifar10
             mountPath: /cifar10
 
-        command: ["/bin/sh", "-c"]
-        args:
-          - | # Script
-            set -eux
+        command:
+          - /bin/sh   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
+            set -eu
 
             if [ ! -d "/cache/cifar-10-batches-py" ]
             then

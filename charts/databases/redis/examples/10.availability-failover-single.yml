@@ -62,6 +62,6 @@ spec:
     # Teardown
     - action: Delete
       name: teardown
-      depends: { running: [master, slave, sentinel], success: [loaders, partition-b] }
+      depends: { running: [ master, slave, sentinel ], success: [ loaders, partition-b ] }
       delete:
-        jobs: [ master, slave, sentinel]
+        jobs: [ master, slave, sentinel ]

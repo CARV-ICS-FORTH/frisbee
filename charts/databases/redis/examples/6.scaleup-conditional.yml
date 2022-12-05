@@ -51,6 +51,6 @@ spec:
     # Teardown
     - action: Delete
       name: teardown
-      depends: { running: [ masters, more-servers], success: [loaders] }
+      depends: { running: [ masters, more-servers ], success: [ loaders ] }
       delete:
         jobs: [ masters, more-servers ]

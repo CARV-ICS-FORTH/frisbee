@@ -9,7 +9,7 @@ spec:
       telemetry:
         - system.telemetry.agent
     containers:
-      - name: app
+      - name: main
         image: "czero/iperf2"
         ports:
           - name: tcp
@@ -41,7 +41,7 @@ spec:
         - iperf2.telemetry.client
 
     containers:
-      - name: app
+      - name: main
         image: "czero/iperf2"
         command:
           - /bin/sh # Run shell

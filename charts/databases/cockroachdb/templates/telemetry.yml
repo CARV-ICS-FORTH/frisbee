@@ -16,9 +16,9 @@ spec:
           - name: tel-cock
             containerPort: 9443
         command:
-          - /bin/sh # Run shell
-          - -c # Read from string
-          - |  # Multi-line str
+          - /bin/sh   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
             set -eum
 
             # Read metrics from one or many prometheus clients.

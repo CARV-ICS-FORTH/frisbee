@@ -17,7 +17,7 @@ spec:
         configMap:
           name: system.telemetry.grafana.config
     containers:
-      - name: app
+      - name: main
         image: "grafana/grafana-oss:8.2.3"
         ports:
           - name: http

@@ -7,7 +7,7 @@ metadata:
 spec:
   service:
     containers:
-      - name: app
+      - name: main
         image: hdfgroup/hdf5lib:1.13.1
         command:
           - /bin/sh # Run shell
@@ -44,7 +44,7 @@ spec:
     parameters: { source: "" }
   service:
     containers:
-      - name: app
+      - name: main
         image: hdfgroup/hdf5lib:1.13.1
         command:
           - /bin/sh # Run shell
@@ -65,7 +65,7 @@ metadata:
 spec:
   service:
     containers:
-      - name: app
+      - name: main
         image: hdfgroup/hdf5lib:1.13.1
         command:
           - /bin/sh # Run shell

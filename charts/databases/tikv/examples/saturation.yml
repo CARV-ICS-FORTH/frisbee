@@ -77,6 +77,6 @@ spec:
     # Teardown
     - action: Delete
       name: teardown
-      depends: { running: [ coordinator, workers, noise], success: [ killer, clients  ] }
+      depends: { running: [ coordinator, workers, noise ], success: [ killer, clients ] }
       delete:
-        jobs: [ coordinator,  workers, noise]
+        jobs: [ coordinator,  workers, noise ]

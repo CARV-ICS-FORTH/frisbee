@@ -21,7 +21,7 @@ spec:
         - ycsb.telemetry.client
 
     containers: # Container(s)
-      - name: app
+      - name: main
         image: aylei/go-ycsb:20201029
         command:
           - /bin/sh   # Run shell
@@ -70,7 +70,7 @@ spec:
         - ycsb.telemetry.client
 
     containers: # Container(s)
-      - name: app
+      - name: main
         image: aylei/go-ycsb:20201029
         command:
           - /bin/sh   # Run shell

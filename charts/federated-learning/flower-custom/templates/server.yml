@@ -14,7 +14,7 @@ spec:
         - system.telemetry.agent
 
     containers: # Container
-      - name: app
+      - name: main
         image: icsforth/fl-demo:latest
         ports:
           - name: tcp

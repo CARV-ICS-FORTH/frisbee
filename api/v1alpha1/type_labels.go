@@ -193,7 +193,7 @@ const (
 	PrometheusDiscoverablePort = "tel-"
 
 	// MainContainerName  is the main application that run the service. A service can be either "Main" or "Sidecar".
-	MainContainerName = "app"
+	MainContainerName = "main"
 )
 
 // ///////////////////////////////////////////

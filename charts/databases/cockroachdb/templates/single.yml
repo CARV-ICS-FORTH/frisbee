@@ -20,7 +20,7 @@ spec:
             cockroach node drain --insecure --host $(hostname)
 
     containers:
-      - name: app
+      - name: main
         image: cockroachdb/cockroach:v21.2.4
         ports:
           - name: grpc

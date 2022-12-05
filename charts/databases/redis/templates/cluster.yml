@@ -29,7 +29,7 @@ spec:
         - redis.telemetry.server
 
     containers: # Container
-      - name: app
+      - name: main
         image: redis
         ports:
           - name: to-clients
@@ -112,7 +112,7 @@ spec:
       delay: "0"
   service:
     containers:
-      - name: app
+      - name: main
         image: redis
         command:
           - /bin/bash   # Run shell

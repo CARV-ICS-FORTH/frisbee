@@ -75,6 +75,6 @@ spec:
     # Teardown
     - action: Delete
       name: teardown
-      depends: { running: [ masters, dataviewer ], success: [ run-workload], after: 10m }
+      depends: { running: [ masters, dataviewer ], success: [ run-workload ], after: 10m }
       delete:
         jobs: [ masters, dataviewer ]

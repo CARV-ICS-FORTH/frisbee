@@ -24,7 +24,7 @@ spec:
         #"grafana.frisbee.dev/draw": "range"
 
     containers: # Container(s)
-      - name: app
+      - name: main
         image: aylei/go-ycsb:20201029
         command:
           - /bin/sh   # Run shell
@@ -73,7 +73,7 @@ spec:
         #"grafana.frisbee.dev/draw": "range"
 
     containers: # Container(s)
-      - name: app
+      - name: main
         image: aylei/go-ycsb:20201029
         command:
           - /bin/sh   # Run shell

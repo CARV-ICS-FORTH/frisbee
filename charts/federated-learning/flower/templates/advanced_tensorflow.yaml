@@ -6,14 +6,15 @@ metadata:
 spec:
   service:
     decorators:
-      telemetry: [ system.telemetry.agent]
+      telemetry: [ system.telemetry.agent ]
 
     containers:
-      - name: app
+      - name: main
         image: icsforth/advanced_tensorflow
-        command: ["/bin/sh", "-c"]
-        args:
-          - | # Script
+        command:
+          - /bin/sh   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
             set -eum
             cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
 

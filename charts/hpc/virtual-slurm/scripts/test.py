@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-import time
 import os
 import socket
+import time
 from datetime import datetime as dt
 
 if __name__ == '__main__':
