@@ -6,7 +6,7 @@ metadata:
 spec:
   service:
     containers: # application container
-      - name: app
+      - name: main
         image: docker/whalesay
         command: [ cowsay ]
         args: [ "hello-world" ]

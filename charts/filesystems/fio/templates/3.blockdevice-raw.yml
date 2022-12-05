@@ -32,7 +32,7 @@ spec:
 
 
     containers: # Container
-      - name: app
+      - name: main
         image: xridge/fio
         volumeDevices:
           - name: scratch-volume

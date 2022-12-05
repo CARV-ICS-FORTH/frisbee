@@ -14,7 +14,7 @@ spec:
     # Teardown
     - action: Delete
       name: teardown
-      depends: {  success: [ script ] }
+      depends: { success: [ script ] }
       delete:
-        jobs: []
+        jobs: [ ]
 

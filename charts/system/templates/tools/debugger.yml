@@ -21,7 +21,7 @@ spec:
         scenario.frisbee.dev/component: SYS
 
     containers: # Container(s)
-      - name: app
+      - name: main
         image: praqma/network-multitool
         securityContext:
           privileged: true

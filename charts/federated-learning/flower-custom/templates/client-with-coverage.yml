@@ -22,7 +22,7 @@ spec:
           claimName: {{"{{.inputs.parameters.dataClaimName}}" | quote}}
 
     containers:
-      - name: app
+      - name: main
         image: icsforth/fl-demo:latest
         volumeMounts:
           - name: dataset

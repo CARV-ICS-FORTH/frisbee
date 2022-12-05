@@ -51,6 +51,11 @@ func (in *Cluster) Default() {
 			schedule.StartingDeadlineSeconds = &DefaultStartingDeadlineSeconds
 		}
 	}
+
+	if in.Spec.DefaultDistributionSpec != nil {
+		in.Spec.DefaultDistributionSpec = &DistributionSpec{Name: DistributionUniform}
+	}
+
 	// TODO(user): fill in your defaulting logic.
 }
 

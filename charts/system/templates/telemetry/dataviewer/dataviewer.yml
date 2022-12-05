@@ -10,7 +10,7 @@ spec:
         scenario.frisbee.dev/component: SYS
 
       ingressPort:
-         name: http
+        name: http
 
     # Do a nasty touch to sync/populate the volume.
     initContainers:
@@ -19,7 +19,7 @@ spec:
         command: [ "touch", "/testdata/init" ]
 
     containers: # Expose collected logs
-      - name: app
+      - name: main
         image: filebrowser/filebrowser
         command: [ "/filebrowser" ]
         args: [ "-r", "/testdata" ]

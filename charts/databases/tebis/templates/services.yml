@@ -5,10 +5,10 @@ metadata:
   name: tebis.cluster.zookeeper
 spec:
   service:
-#    decorators:
-#      telemetry: [ system.telemetry.agent]
+    #    decorators:
+    #      telemetry: [ system.telemetry.agent]
     containers:
-      - name: app
+      - name: main
         image: zookeeper:3.5.9
         ports:
           - name: peerport
@@ -38,10 +38,10 @@ spec:
       serverHost: "localhost"
       serverPort: "6060"
   service:
-#    decorators:
-#      telemetry: [ system.telemetry.agent]
+    #    decorators:
+    #      telemetry: [ system.telemetry.agent]
     containers:
-      - name: app
+      - name: main
         image: icsforth/tebis-init:latest
         command:
           - /bin/sh   # Run shell
@@ -86,13 +86,13 @@ spec:
       zookeeper: localhost
       device: "/tmp/tebis.dat"
   service:
-#    decorators:
-#      telemetry: [ system.telemetry.agent]
-#      annotations:
-#        k8s.v1.cni.cncf.io/networks: macvlan-rdma
-#      telemetry: [ system.telemetry.agent ]
+    #    decorators:
+    #      telemetry: [ system.telemetry.agent]
+    #      annotations:
+    #        k8s.v1.cni.cncf.io/networks: macvlan-rdma
+    #      telemetry: [ system.telemetry.agent ]
     containers:
-      - name: app
+      - name: main
         image: icsforth/tebis-node:latest
         ports:
           - name: to-clients
@@ -137,13 +137,13 @@ spec:
       threads: "4"
       regions: "1"
   service:
-#    decorators:
-#      telemetry: [ system.telemetry.agent]
-#      annotations:
-#        k8s.v1.cni.cncf.io/networks: macvlan-rdma
+    #    decorators:
+    #      telemetry: [ system.telemetry.agent]
+    #      annotations:
+    #        k8s.v1.cni.cncf.io/networks: macvlan-rdma
     containers:
-      - name: app
-        image:  icsforth/tebis-node:latest
+      - name: main
+        image: icsforth/tebis-node:latest
         securityContext:
           privileged: true
         command:

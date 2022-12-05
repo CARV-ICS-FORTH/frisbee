@@ -30,7 +30,7 @@ spec:
         command: [ "ls", "/logs" ]
 
     containers:
-      - name: app
+      - name: main
         image: cockroachdb/cockroach:latest
         volumeMounts: # Mount the log volume
           - name: logs

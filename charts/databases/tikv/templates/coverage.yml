@@ -8,12 +8,12 @@ metadata:
 spec:
   service:
     decorators:
-      telemetry: [system.telemetry.agent, tikv.telemetry.pd]
+      telemetry: [ system.telemetry.agent, tikv.telemetry.pd ]
 
       ingressPort:
         name: coverage
 
-    volumes:   # Create an ephemeral volume, backed by a file
+    volumes: # Create an ephemeral volume, backed by a file
       - name: scratch-volume
         ephemeral:
           volumeClaimTemplate:
@@ -28,7 +28,7 @@ spec:
 
 
     containers: # Container(s)
-      - name: app
+      - name: main
         image: icsforth/tikv-pd-coverage
         volumeMounts:
           - name: scratch-volume
@@ -93,11 +93,11 @@ spec:
 
   service:
     decorators: # Decorators
-      telemetry: [system.telemetry.agent, tikv.telemetry.worker]
+      telemetry: [ system.telemetry.agent, tikv.telemetry.worker ]
       ingressPort:
         name: coverage
 
-    volumes:   # Create an ephemeral volume, backed by a file
+    volumes: # Create an ephemeral volume, backed by a file
       - name: scratch-volume
         ephemeral:
           volumeClaimTemplate:
@@ -111,7 +111,7 @@ spec:
                   storage: 15Gi
 
     containers: # Container(s)
-      - name: app
+      - name: main
         image: icsforth/tikv-coverage-evolve
         securityContext:
           privileged: true

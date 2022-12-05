@@ -41,14 +41,14 @@ spec:
 
 
     # Fancy method to ensure validity after each step.
-#    - action: Call
-#      name: validate
-#      depends: { success: [creators]}
-#      call:
-#        callable: num-of-files
-#        services: [ dataviewer ]
-#        expect:
-#          - { stdout: "if we now the number of files, we can use it directly" }
+    #    - action: Call
+    #      name: validate
+    #      depends: { success: [creators]}
+    #      call:
+    #        callable: num-of-files
+    #        services: [ dataviewer ]
+    #        expect:
+    #          - { stdout: "if we now the number of files, we can use it directly" }
 
 
 
@@ -56,4 +56,4 @@ spec:
       name: teardown
       depends: { success: [ concatenate ] }
       delete:
-        jobs: []
+        jobs: [ ]

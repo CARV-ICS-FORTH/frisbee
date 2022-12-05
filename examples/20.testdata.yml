@@ -8,7 +8,7 @@ spec:
     decorators:
       telemetry: [ system.telemetry.agent ]
     containers:
-      - name: app
+      - name: main
         image: czero/iperf2
         ports:
           - name: listen
@@ -41,7 +41,7 @@ spec:
         - system.telemetry.agent
 
     containers:
-      - name: app
+      - name: main
         image: czero/iperf2
         resources:
           limits:

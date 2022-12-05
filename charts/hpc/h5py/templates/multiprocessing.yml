@@ -6,7 +6,7 @@ metadata:
 spec:
   service:
     containers:
-      - name: app
+      - name: main
         image: hdfgroup/hdf5lib:1.13.1
         command:
           - /bin/sh # Run shell
@@ -30,7 +30,7 @@ spec:
         name: http
 
     containers:
-      - name: app
+      - name: main
         ports:
           - name: http
             containerPort: 80

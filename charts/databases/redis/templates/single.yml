@@ -9,7 +9,7 @@ spec:
       telemetry: [ system.telemetry.agent, redis.telemetry.server ]
 
     containers:
-      - name: app
+      - name: main
         image: redis
         ports:
           - name: to-clients
@@ -60,7 +60,7 @@ spec:
     decorators:
       telemetry: [ system.telemetry.agent, redis.telemetry.server ]
     containers:
-      - name: app
+      - name: main
         image: redis
         ports:
           - name: to-clients
@@ -111,7 +111,7 @@ spec:
       master: localhost
   service:
     containers:
-      - name: app
+      - name: main
         image: redis
         ports:
           - name: sentinel

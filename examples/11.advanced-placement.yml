@@ -6,7 +6,7 @@ metadata:
 spec:
   service:
     containers:
-      - name: app
+      - name: main
         image: czero/iperf2
         ports:
           - name: listen
@@ -31,7 +31,7 @@ spec:
       duration: "60"
   service:
     containers:
-      - name: app
+      - name: main
         image: czero/iperf2
         command: [ iperf ]
         args: [ "-c", "{{.inputs.parameters.target}}", "-t", "{{.inputs.parameters.duration}}" ]

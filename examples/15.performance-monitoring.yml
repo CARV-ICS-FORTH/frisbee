@@ -8,7 +8,7 @@ spec:
     decorators: # Add support for Telemetry22
       telemetry: [ system.telemetry.agent ]
     containers:
-      - name: app
+      - name: main
         image: czero/iperf2
         ports:
           - name: listen
@@ -42,7 +42,7 @@ spec:
         - system.telemetry.agent  # Collect Generic System's Metrics
         - iperf2.telemetry.client # Collect App Specific Metrics
     containers:
-      - name: app
+      - name: main
         image: czero/iperf2
         command:
           - /bin/sh   # Run shell

@@ -15,7 +15,7 @@ spec:
       telemetry:
         - system.telemetry.agent
 
-    volumes:   # Create an ephemeral volume, backed by a file
+    volumes: # Create an ephemeral volume, backed by a file
       - name: scratch-volume
         ephemeral:
           volumeClaimTemplate:
@@ -29,7 +29,7 @@ spec:
                   storage: 500Mi
 
     containers: # Container
-      - name: app
+      - name: main
         image: xridge/fio
         volumeMounts:
           - name: scratch-volume

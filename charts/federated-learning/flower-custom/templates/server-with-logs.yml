@@ -19,7 +19,7 @@ spec:
           claimName: {{"{{.inputs.parameters.logClaimName}}" | quote}}
 
     containers: # Container
-      - name: app
+      - name: main
         image: icsforth/fl-demo:latest
         ports:
           - name: tcp

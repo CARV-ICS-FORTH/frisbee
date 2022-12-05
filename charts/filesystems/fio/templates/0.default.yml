@@ -16,7 +16,7 @@ spec:
         - system.telemetry.agent
 
     containers: # Container
-      - name: app
+      - name: main
         image: xridge/fio
         command:
           - /bin/sh # Run shell

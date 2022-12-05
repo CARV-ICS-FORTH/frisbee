@@ -19,10 +19,10 @@ spec:
           claimName: {{"{{.inputs.parameters.claimName}}" | quote}}
 
     decorators: # decorators
-      telemetry: [system.telemetry.agent, fio.telemetry.client]
+      telemetry: [ system.telemetry.agent, fio.telemetry.client ]
 
     containers: # Container
-      - name: app
+      - name: main
         image: xridge/fio
         volumeMounts:
           - name: scratch-volume

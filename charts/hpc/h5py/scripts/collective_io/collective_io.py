@@ -1,7 +1,8 @@
-from mpi4py import MPI
-import numpy as np
-import h5py
 import sys
+
+import h5py
+import numpy as np
+from mpi4py import MPI
 
 
 # "run as "mpirun -np 64 python-mpi collective_io.py 1 file.h5"

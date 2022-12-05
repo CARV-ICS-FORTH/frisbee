@@ -5,413 +5,413 @@ metadata:
   creationTimestamp: null
   name: frisbee
 rules:
-- apiGroups:
-  - chaos-mesh.org
-  resources:
-  - '*'
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - chaos-mesh.org
-  resources:
-  - '*/finalizers'
-  verbs:
-  - update
-- apiGroups:
-  - chaos-mesh.org
-  resources:
-  - '*/status'
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - ""
-  resources:
-  - configmaps
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - configmaps/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - ""
-  resources:
-  - configmaps/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - ""
-  resources:
-  - events
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes/status
-  verbs:
-  - get
-- apiGroups:
-  - ""
-  resources:
-  - persistentvolumeclaims
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - persistentvolumeclaims/status
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - pods
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - pods/exec
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - pods/status
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - services
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - services/status
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - frisbee.dev
-  resources:
-  - calls
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - frisbee.dev
-  resources:
-  - calls/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - frisbee.dev
-  resources:
-  - calls/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - frisbee.dev
-  resources:
-  - cascades
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - frisbee.dev
-  resources:
-  - cascades/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - frisbee.dev
-  resources:
-  - cascades/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - frisbee.dev
-  resources:
-  - chaos
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - frisbee.dev
-  resources:
-  - chaos/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - frisbee.dev
-  resources:
-  - chaos/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - frisbee.dev
-  resources:
-  - clusters
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - frisbee.dev
-  resources:
-  - clusters/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - frisbee.dev
-  resources:
-  - clusters/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - frisbee.dev
-  resources:
-  - scenarios
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - frisbee.dev
-  resources:
-  - scenarios/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - frisbee.dev
-  resources:
-  - scenarios/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - frisbee.dev
-  resources:
-  - services
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - frisbee.dev
-  resources:
-  - services/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - frisbee.dev
-  resources:
-  - services/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - frisbee.dev
-  resources:
-  - templates
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - frisbee.dev
-  resources:
-  - templates/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - frisbee.dev
-  resources:
-  - templates/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - frisbee.dev
-  resources:
-  - virtualobjects
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - frisbee.dev
-  resources:
-  - virtualobjects/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - frisbee.dev
-  resources:
-  - virtualobjects/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - networking.k8s.io
-  resources:
-  - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - networking.k8s.io
-  resources:
-  - ingresses/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - networking.k8s.io
-  resources:
-  - ingresses/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - storage.k8s.io
-  resources:
-  - storageclasses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - storage.k8s.io
-  resources:
-  - storageclasses/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - storage.k8s.io
-  resources:
-  - storageclasses/status
-  verbs:
-  - get
-  - patch
-  - update
+  - apiGroups:
+      - chaos-mesh.org
+    resources:
+      - '*'
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - chaos-mesh.org
+    resources:
+      - '*/finalizers'
+    verbs:
+      - update
+  - apiGroups:
+      - chaos-mesh.org
+    resources:
+      - '*/status'
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - nodes
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - nodes/status
+    verbs:
+      - get
+  - apiGroups:
+      - ""
+    resources:
+      - persistentvolumeclaims
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - persistentvolumeclaims/status
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - pods/exec
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - pods/status
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - services
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - services/status
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - frisbee.dev
+    resources:
+      - calls
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - frisbee.dev
+    resources:
+      - calls/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - frisbee.dev
+    resources:
+      - calls/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - frisbee.dev
+    resources:
+      - cascades
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - frisbee.dev
+    resources:
+      - cascades/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - frisbee.dev
+    resources:
+      - cascades/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - frisbee.dev
+    resources:
+      - chaos
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - frisbee.dev
+    resources:
+      - chaos/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - frisbee.dev
+    resources:
+      - chaos/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - frisbee.dev
+    resources:
+      - clusters
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - frisbee.dev
+    resources:
+      - clusters/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - frisbee.dev
+    resources:
+      - clusters/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - frisbee.dev
+    resources:
+      - scenarios
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - frisbee.dev
+    resources:
+      - scenarios/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - frisbee.dev
+    resources:
+      - scenarios/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - frisbee.dev
+    resources:
+      - services
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - frisbee.dev
+    resources:
+      - services/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - frisbee.dev
+    resources:
+      - services/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - frisbee.dev
+    resources:
+      - templates
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - frisbee.dev
+    resources:
+      - templates/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - frisbee.dev
+    resources:
+      - templates/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - frisbee.dev
+    resources:
+      - virtualobjects
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - frisbee.dev
+    resources:
+      - virtualobjects/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - frisbee.dev
+    resources:
+      - virtualobjects/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - networking.k8s.io
+    resources:
+      - ingresses
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - networking.k8s.io
+    resources:
+      - ingresses/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - networking.k8s.io
+    resources:
+      - ingresses/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - storage.k8s.io
+    resources:
+      - storageclasses
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - storage.k8s.io
+    resources:
+      - storageclasses/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - storage.k8s.io
+    resources:
+      - storageclasses/status
+    verbs:
+      - get
+      - patch
+      - update

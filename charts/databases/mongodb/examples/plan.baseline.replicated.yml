@@ -111,6 +111,6 @@ spec:
     # Teardown
     - action: Delete
       name: teardown
-      depends: { running: [ master, slaves], success: [ workload-e ] }
+      depends: { running: [ master, slaves ], success: [ workload-e ] }
       delete:
         jobs: [ master, slaves ]

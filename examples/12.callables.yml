@@ -9,7 +9,7 @@ spec:
       message: "hello-world"
   service:
     containers:
-      - name: app
+      - name: main
         image: docker/whalesay
         command: [ "tail", "-f", "/dev/null" ]
 

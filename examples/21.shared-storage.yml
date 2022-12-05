@@ -8,7 +8,7 @@ spec:
     decorators:
       telemetry: [ system.telemetry.agent ]
     containers:
-      - name: app
+      - name: main
         image: czero/iperf2
         ports:
           - name: listen
@@ -43,7 +43,7 @@ spec:
           claimName: "{{.inputs.parameters.claim_name}}"
 
     containers:
-      - name: app
+      - name: main
         image: czero/iperf2
         volumeMounts: # Need to mount the volume here
           - name: logvolume
@@ -94,7 +94,7 @@ spec:
         command: [ "touch", "/srv/init" ]
 
     containers: # Expose collected logs
-      - name: app
+      - name: main
         image: filebrowser/filebrowser
         ports:
           - name: http

@@ -8,9 +8,9 @@ metadata:
 spec:
   service:
     decorators: # Decorators
-      telemetry: [system.telemetry.agent, tikv.telemetry.pd]
+      telemetry: [ system.telemetry.agent, tikv.telemetry.pd ]
 
-    volumes:   # Create an ephemeral volume, backed by a file
+    volumes: # Create an ephemeral volume, backed by a file
       - name: scratch-volume
         ephemeral:
           volumeClaimTemplate:
@@ -23,10 +23,10 @@ spec:
                   storage: 15Gi
 
     containers: # Container
-      - name: app
+      - name: main
         image: pingcap/pd:v5.1.2
         volumeMounts:
-          - name:  scratch-volume
+          - name: scratch-volume
             mountPath: /store
         ports:
           - name: to-clients
@@ -81,7 +81,7 @@ spec:
                   storage: 15Gi
 
     containers: # Container
-      - name: app
+      - name: main
         image: pingcap/tikv:v5.1.2
         volumeMounts:
           - name: scratch-volume

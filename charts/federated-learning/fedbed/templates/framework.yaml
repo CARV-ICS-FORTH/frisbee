@@ -9,39 +9,44 @@ spec:
       min_fit_clients: 2
       min_available_clients: 2
   service:
+    decorators:
+      telemetry:
+        - system.telemetry.agent
+
     containers:
-      - name: app
+      - name: main
         image: icsforth/fedbed:latest
         env:
-          - name:  FL_STRATEGY
+          - name: FL_STRATEGY
             value: FedAvg
-          - name:  FL_NUM_OF_ROUNDS
+          - name: FL_NUM_OF_ROUNDS
             value: "5"
-          - name:  FL_FRACTION_FIT
+          - name: FL_FRACTION_FIT
             value: "0.1"
-          - name:  FL_FRACTION_EVAL
+          - name: FL_FRACTION_EVAL
             value: "0.1"
-          - name:  FL_MIN_EVAL_CLIENTS
+          - name: FL_MIN_EVAL_CLIENTS
             value: {{"{{.inputs.parameters.min_available_clients}}" | quote}}
-          - name:  FL_MIN_FIT_CLIENTS
+          - name: FL_MIN_FIT_CLIENTS
             value: {{"{{.inputs.parameters.min_fit_clients}}" | quote }}
-          - name:  FL_MIN_AVAILABLE_CLIENTS
+          - name: FL_MIN_AVAILABLE_CLIENTS
             value: {{"{{.inputs.parameters.min_available_clients}}" | quote}}
-          - name:  FL_EVAL_DATASET
+          - name: FL_EVAL_DATASET
             value: "false"
-          - name:  FL_DATASET
+          - name: FL_DATASET
             value: "CIFAR100"
-          - name:  FL_TRAINING_SET_SIZE
+          - name: FL_TRAINING_SET_SIZE
             value: "50_000"
-          - name:  FL_TEST_SET_SIZE
+          - name: FL_TEST_SET_SIZE
             value: "50_000"
         ports:
           - name: http
             containerPort: 8080
 
-        command: ["/bin/sh", "-c"]
-        args:
-          - | # Script
+        command:
+          - /bin/sh   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
             set -eux
 
             python server.py
@@ -64,40 +69,45 @@ spec:
       total_nodes: 10
       node_id: 0
   service:
+    decorators:
+      telemetry:
+        - system.telemetry.agent
+
     volumes:
       - name: dataset
         persistentVolumeClaim:
           claimName: {{"{{.inputs.parameters.dataset}}" | quote}}
 
     containers:
-      - name: app
+      - name: main
         image: icsforth/fedbed:latest
         volumeMounts:
           - name: dataset
             mountPath: /data/{{"{{.inputs.parameters.backend}}"}}/cifar10
         env:
-          - name:  FL_SERVER
+          - name: FL_SERVER
             value: {{"{{.inputs.parameters.fl_server}}" | quote }}
-          - name:  FL_BACKEND
-            value:  {{"{{.inputs.parameters.backend}}" | quote }}
-          - name:  FL_NUM_OF_THREADS
+          - name: FL_BACKEND
+            value: {{"{{.inputs.parameters.backend}}" | quote }}
+          - name: FL_NUM_OF_THREADS
             value: "1"
 
           # Are these values really needed here?
-          - name:  FL_NODES
+          - name: FL_NODES
             value: {{"{{.inputs.parameters.total_nodes}}" | quote}}
-          - name:  FL_NODE_ID
+          - name: FL_NODE_ID
             value: {{"{{.inputs.parameters.node_id}}" | quote}}
-          - name:  FL_DATASET_DISTRIBUTION
+          - name: FL_DATASET_DISTRIBUTION
             value: "flat"
-          - name:  FL_DATASET_DISTRIBUTION_PARAMETERS
+          - name: FL_DATASET_DISTRIBUTION_PARAMETERS
             value: "{}"
-          - name:  FL_DATASET_RANDOM
+          - name: FL_DATASET_RANDOM
             value: "false"
 
-        command: ["/bin/sh", "-c"]
-        args:
-          - | # Script
+        command:
+          - /bin/sh   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
             set -eux
 
             # do it like that until I find a better way to go from fl.dataset.cifar10 to cifar10.

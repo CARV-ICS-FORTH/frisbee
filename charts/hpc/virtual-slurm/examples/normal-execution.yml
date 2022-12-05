@@ -18,7 +18,7 @@ spec:
 
     - action: Cluster
       name: slurmnode
-      depends: {running: [slurmmaster]}
+      depends: { running: [ slurmmaster ] }
       cluster:
         templateRef: slurm-node # Fixed prefix in the slurm.conf
         instances: 3
@@ -27,7 +27,7 @@ spec:
 
     - action: Service
       name: slurm-jupyter
-      depends: {running: [slurmmaster, slurmnode]}
+      depends: { running: [ slurmmaster, slurmnode ] }
       service:
         templateRef: slurm-jupyter
         inputs:
@@ -36,6 +36,6 @@ spec:
     # Teardown
     - action: Delete
       name: teardown
-      depends: { success: [slurm-jupyter, slurmmaster, slurmnode] }
+      depends: { success: [ slurm-jupyter, slurmmaster, slurmnode ] }
       delete:
         jobs: [ ]

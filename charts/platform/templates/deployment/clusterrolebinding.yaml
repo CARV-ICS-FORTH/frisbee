@@ -24,8 +24,8 @@ subjects:
   - kind: ServiceAccount
     name: default
     namespace: {{.Release.Namespace}}
-#    {{if .Values.operator.enabled}}
-#    name: {{.Values.operator.name}}-account
-#    {{ else }}
-#    name: default
+  #    {{if .Values.operator.enabled}}
+  #    name: {{.Values.operator.name}}-account
+  #    {{ else }}
+  #    name: default
   #    {{ end }}

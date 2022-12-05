@@ -15,7 +15,7 @@ spec:
         - mongo.telemetry.server
 
     containers: # Container
-      - name: app
+      - name: main
         image: bitnami/mongodb
         ports:
           - name: to-clients
@@ -86,7 +86,7 @@ spec:
       telemetry: [ system.telemetry.agent, mongo.telemetry.server/telegraf ]
 
     containers: # Container
-      - name: app
+      - name: main
         image: bitnami/mongodb
         ports:
           - name: to-clients

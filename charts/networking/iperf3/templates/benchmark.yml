@@ -10,7 +10,7 @@ spec:
         - system.telemetry.agent
 
     containers: # Container
-      - name: app
+      - name: main
         image: "networkstatic/iperf3"
         ports:
           - name: tcp
@@ -35,7 +35,7 @@ spec:
         - iperf3.telemetry.client
 
     containers:
-      - name: app
+      - name: main
         image: "networkstatic/iperf3"
         ports:
           - name: tcp

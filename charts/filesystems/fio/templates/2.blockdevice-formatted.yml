@@ -16,7 +16,7 @@ spec:
         - system.telemetry.agent
         - fio.telemetry.client
 
-    volumes:   # Create an ephemeral volume, backed by a formatted block device
+    volumes: # Create an ephemeral volume, backed by a formatted block device
       - name: scratch-volume
         ephemeral:
           volumeClaimTemplate:
@@ -30,7 +30,7 @@ spec:
                   storage: 500Mi
 
     containers: # Container
-      - name: app
+      - name: main
         image: xridge/fio
         volumeMounts:
           - name: scratch-volume

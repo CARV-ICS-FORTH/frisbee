@@ -4,7 +4,6 @@ This document focuses on setting up a development environment for the
 distributed of Tebis on a local machine.
 
 
-
 ## Build Tebis Containers
 
 
@@ -21,13 +20,11 @@ docker build -t icsforth/tebis-node . -f tebis.Dockerfile
 ```
 
 
-
 ## Set up Execution Environment
 
 Tebis uses RDMA for all network communication, which requires support from the
 network interface to run. A software implementation (soft-RoCE) exists and can
 run on all network interfaces.
-
 
 
 ### Install dependencies
@@ -39,7 +36,7 @@ These packages should be in most distirbutions' repositories.
 apt install ibverbs-utils rdma-core perftest
 ```
 
-#### 
+####
 
 ### Enabling soft-RoCE
 
@@ -67,7 +64,6 @@ link rxe0/1 state ACTIVE physical_state LINK_UP netdev eno1
 ```
 
 
-
 #### Verify soft-RoCE is working
 To verify that soft-RoCE is working, we can run a simple RDMA Write throuhgput
 benchmark.
@@ -86,15 +82,15 @@ Example output:
 ************************************
 ---------------------------------------------------------------------------------------
 RDMA_Write BW Test
-Dual-port       : OFF		Device         : rxe0
-Number of qps   : 1		Transport type : IB
-Connection type : RC		Using SRQ      : OFF
+Dual-port       : OFF        Device         : rxe0
+Number of qps   : 1        Transport type : IB
+Connection type : RC        Using SRQ      : OFF
 CQ Moderation   : 100
 Mtu             : 1024[B]
 Link type       : Ethernet
 GID index       : 1
 Max inline data : 0[B]
-rdma_cm QPs	 : OFF
+rdma_cm QPs     : OFF
 Data ex. method : Ethernet
 ---------------------------------------------------------------------------------------
 local address: LID 0000 QPN 0x0011 PSN 0x3341fd RKey 0x000204 VAddr 0x007f7e1b8fa000
@@ -103,7 +99,7 @@ remote address: LID 0000 QPN 0x0012 PSN 0xbfbac5 RKey 0x000308 VAddr 0x007f70f58
 GID: 00:00:00:00:00:00:00:00:00:00:255:255:192:168:122:205
 ---------------------------------------------------------------------------------------
 #bytes     #iterations    BW peak[MB/sec]    BW average[MB/sec]   MsgRate[Mpps]
-65536      5000             847.44             827.84 		   0.013245
+65536      5000             847.44             827.84           0.013245
 ---------------------------------------------------------------------------------------
 ```
 
@@ -111,16 +107,16 @@ GID: 00:00:00:00:00:00:00:00:00:00:255:255:192:168:122:205
 ```
 ---------------------------------------------------------------------------------------
 RDMA_Write BW Test
-Dual-port       : OFF		Device         : rxe0
-Number of qps   : 1		Transport type : IB
-Connection type : RC		Using SRQ      : OFF
+Dual-port       : OFF        Device         : rxe0
+Number of qps   : 1        Transport type : IB
+Connection type : RC        Using SRQ      : OFF
 TX depth        : 128
 CQ Moderation   : 100
 Mtu             : 1024[B]
 Link type       : Ethernet
 GID index       : 1
 Max inline data : 0[B]
-rdma_cm QPs	 : OFF
+rdma_cm QPs     : OFF
 Data ex. method : Ethernet
 ---------------------------------------------------------------------------------------
 local address: LID 0000 QPN 0x0012 PSN 0xbfbac5 RKey 0x000308 VAddr 0x007f70f5843000
@@ -129,19 +125,15 @@ remote address: LID 0000 QPN 0x0011 PSN 0x3341fd RKey 0x000204 VAddr 0x007f7e1b8
 GID: 00:00:00:00:00:00:00:00:00:00:255:255:192:168:122:205
 ---------------------------------------------------------------------------------------
 #bytes     #iterations    BW peak[MB/sec]    BW average[MB/sec]   MsgRate[Mpps]
-65536      5000             847.44             827.84 		   0.013245
+65536      5000             847.44             827.84           0.013245
 ---------------------------------------------------------------------------------------
 ```
-
 
 
 ```shell
 server: ibv_rc_pingpong -d rxe0 -g 1
 client: ibv_rc_pingpong -d rxe0 -g 1 10.1.128.51
 ```
-
-
-
 
 
 ### Others
@@ -174,10 +166,6 @@ On /etc/security/limits.conf you must add
 https://bbs.archlinux.org/viewtopic.php?id=273059
 
 https://ask.cyberinfrastructure.org/t/access-to-dev-infiniband-from-user-space/854/2
-
-
-
-
 
 
 ## Parameters
