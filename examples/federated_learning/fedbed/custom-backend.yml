@@ -1,0 +1,32 @@
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Scenario
+metadata:
+  name: custom-backend
+spec:
+  actions:
+    # Step 1: Create FedBed server
+    - action: Service
+      name: server
+      service:
+        templateRef: fedbed.server
+        inputs:
+          - { min_fit_clients: 3 }
+
+    # Step 2: Create FedBed clients
+    - action: Cluster
+      name: clients
+      depends: { running: [ server ], success: [ cifar10-download ] }
+      cluster:
+        templateRef: fedbed.client
+        inputs:
+          - { fl_server: server, node_id: 0, total_nodes: 3, backend: "pytorch" }
+          - { fl_server: server, node_id: 1, total_nodes: 3, backend: "pytorch" }
+          - { fl_server: server, node_id: 2, total_nodes: 3, backend: "pytorch" }
+
+    # Teardown
+    - action: Delete
+      name: teardown
+      depends: { success: [ clients ] }
+      delete:
+        jobs: [ server ]

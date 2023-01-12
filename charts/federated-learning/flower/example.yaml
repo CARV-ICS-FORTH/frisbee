@@ -2,14 +2,14 @@
 apiVersion: frisbee.dev/v1alpha1
 kind: Scenario
 metadata:
-  name: advanced-tensorflow
+  name: advanced-pytorch
 spec:
   actions:
     # Run the default script
     - action: Service
       name: script
       service:
-        templateRef: flower.advanced-tensorflow.standalone
+        templateRef: flower.advanced-pytorch.standalone
 
     # Teardown
     - action: Delete
