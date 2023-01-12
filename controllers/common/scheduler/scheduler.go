@@ -91,10 +91,11 @@ func Schedule(log logr.Logger, obj client.Object, params Parameters) (goToNextJo
 			return true, nextTick, nil
 		}
 
-		// if a job is running, make sure that it is complete
+		// if a job is running, make sure that it is complete, where complete means
+		// either successful or failed.
 		lastJob := fmt.Sprintf("%s-%d", params.JobName, params.ScheduledJobs)
 
-		if params.State.IsSuccessful(lastJob) {
+		if params.State.IsSuccessful(lastJob) || params.State.IsFailed(lastJob) {
 			return true, nextTick, nil
 		}
 
