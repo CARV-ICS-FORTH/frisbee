@@ -1,5 +1,5 @@
 /*
-Copyright 2022 ICS-FORTH.
+Copyright 2022-2023 ICS-FORTH.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/robfig/cron/v3"
 )
@@ -45,39 +46,49 @@ func ValidateExpr(expr *ConditionalExpr) error {
 	return nil
 }
 
-func ValidateScheduler(instances int, sch *SchedulerSpec) error {
-	if instances < 1 {
-		return errors.Errorf("scheduling requires at least one instance")
-	}
+func ValidateTaskScheduler(sch *TaskSchedulerSpec) error {
+	var merr *multierror.Error
 
-	// Cron and Timeline can be active at the same time.
-	// However, both Cron and Timeline can be used in conjuction with Events.
-	if sch.Cron != nil && sch.Timeline != nil {
-		return errors.Errorf("cron and timeline distribution cannot be activated in paralle")
+	var enabledPolicies uint8
+
+	// sequential
+	if sch.Sequential != nil && *sch.Sequential {
+		enabledPolicies++
 	}
 
 	// cron
 	if cronspec := sch.Cron; cronspec != nil {
+		enabledPolicies++
+
 		if _, err := cron.ParseStandard(*cronspec); err != nil {
-			return errors.Wrapf(err, "invalid schedule %q", *cronspec)
+			merr = multierror.Append(merr, errors.Wrapf(err, "CronError"))
 		}
 	}
 
 	// event
 	if conditions := sch.Event; conditions != nil {
+		enabledPolicies++
+
 		if err := ValidateExpr(conditions); err != nil {
-			return errors.Wrapf(err, "conditions error")
+			merr = multierror.Append(merr, errors.Wrapf(err, "EventError"))
 		}
 	}
 
 	// timeline
 	if timeline := sch.Timeline; timeline != nil {
+		enabledPolicies++
+
 		if err := ValidateDistribution(timeline.DistributionSpec); err != nil {
-			return errors.Wrapf(err, "conditions error")
+			merr = multierror.Append(merr, errors.Wrapf(err, "TimelineError"))
 		}
 	}
 
-	return nil
+	// check for conflicts
+	if enabledPolicies != 1 {
+		merr = multierror.Append(merr, errors.Errorf("Expected 1 scheduling policy but got %d", enabledPolicies))
+	}
+
+	return merr.ErrorOrNil()
 }
 
 func ValidateDistribution(dist *DistributionSpec) error {

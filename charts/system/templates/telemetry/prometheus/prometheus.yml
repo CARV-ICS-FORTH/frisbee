@@ -59,7 +59,7 @@ spec:
 
     containers:
       - name: main
-        image: "prom/prometheus"
+        image: icsforth/prometheus
         ports:
           - name: http
             containerPort: 9090
@@ -73,18 +73,11 @@ spec:
           - |         # Multi-line str
             set -eum
 
-            echo "AltName: {{.Release.Name}}"
-
             # Create local envs that will be used to substitute the configuration placeholders
             export SCENARIO={{"{{.inputs.scenario}}"}}
 
-            # Use envsubst to replace ${var} or $var according to the values of the current environment variables.
-            wget https://github.com/a8m/envsubst/releases/download/v1.2.0/envsubst-Linux-x86_64
-            chmod +x envsubst-Linux-x86_64
-
             # Run Prometheus with the new modified configuration
-            ./envsubst-Linux-x86_64 -i /etc/prometheus/prometheus.yml -o ./prometheus.yml
-
+            envsubst -i /etc/prometheus/prometheus.yml -o ./prometheus.yml
 
             /bin/prometheus --config.file=./prometheus.yml --query.lookback-delta={{.Values.telemetry.prometheus.queryLookbackDelta}}
 

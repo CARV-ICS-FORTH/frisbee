@@ -1,5 +1,5 @@
 /*
-Copyright 2021 ICS-FORTH.
+Copyright 2021-2023 ICS-FORTH.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ func (r *Controller) calculateLifecycle(cr *v1alpha1.Cluster) bool {
 	}
 
 	// Step 3. Check if "Until" conditions are met.
-	if !cr.Spec.Until.IsZero() {
+	if !cr.Spec.SuspendWhen.IsZero() {
 		if meta.IsStatusConditionTrue(cr.Status.Conditions, v1alpha1.ConditionAllJobsAreScheduled.String()) {
 			// The Until condition is already handled, and we are in the Running Phase.
 			// From now on, the lifecycle depends on the progress of the already scheduled jobs.
@@ -43,7 +43,7 @@ func (r *Controller) calculateLifecycle(cr *v1alpha1.Cluster) bool {
 			return lifecycle.GroupedJobs(totalJobs, r.view, &cr.Status.Lifecycle, cr.Spec.Tolerate)
 		}
 
-		eval := expressions.Condition{Expr: cr.Spec.Until}
+		eval := expressions.Condition{Expr: cr.Spec.SuspendWhen}
 		if eval.IsTrue(r.view, cr) {
 			cr.Status.Lifecycle.Phase = v1alpha1.PhaseRunning
 			cr.Status.Lifecycle.Reason = "UntilCondition"

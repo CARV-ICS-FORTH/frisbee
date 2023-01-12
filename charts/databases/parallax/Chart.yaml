@@ -1,9 +1,9 @@
 ---
 apiVersion: v2
 appVersion: "1.16.0"
-description: "Tebis is a rack-scale key/value store optimized for replication over RDMA"
+description: "Parallax is an embedded key value store for  fast storage devices"
 
-name: tebis
+name: parallax
 type: application
 
 maintainers:

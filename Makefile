@@ -133,6 +133,7 @@ certs:  ## Download certs under 'certs' folder
 
 build: generate fmt vet ## Build manager binary.
 	go build -o bin/manager cmd/manager/main.go
+	go build -o bin/kubectl-frisbee cmd/kubectl-frisbee/main.go
 
 run: generate fmt vet certs ## Run a controller from your host.
 	@echo "===> Run Frisbee Controller on Namespace ${FRISBEE_NAMESPACE} <==="

@@ -1,5 +1,5 @@
 /*
-Copyright 2021 ICS-FORTH.
+Copyright 2021-2023 ICS-FORTH.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -43,7 +43,9 @@ func (in *Cluster) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type.
 func (in *Cluster) Default() {
-	clusterlog.Info("default", "name", in.Name)
+	clusterlog.Info("SetDefaults",
+		"name", in.GetNamespace()+"/"+in.GetName(),
+	)
 
 	// Schedule field
 	if schedule := in.Spec.Schedule; schedule != nil {
@@ -55,13 +57,13 @@ func (in *Cluster) Default() {
 	if in.Spec.DefaultDistributionSpec != nil {
 		in.Spec.DefaultDistributionSpec = &DistributionSpec{Name: DistributionUniform}
 	}
-
-	// TODO(user): fill in your defaulting logic.
 }
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
 func (in *Cluster) ValidateCreate() error {
-	clusterlog.Info("validate create", "name", in.Name)
+	clusterlog.Info("ValidateCreateRequest",
+		"name", in.GetNamespace()+"/"+in.GetName(),
+	)
 
 	// Set missing values for the template
 	if err := in.Spec.GenerateObjectFromTemplate.Prepare(true); err != nil {
@@ -70,8 +72,8 @@ func (in *Cluster) ValidateCreate() error {
 
 	// Resources field
 	if resources := in.Spec.Resources; resources != nil {
-		if in.Spec.Until != nil {
-			return errors.Errorf("resource distribution conflicts with Until conditions")
+		if in.Spec.SuspendWhen != nil {
+			return errors.Errorf("resource distribution conflicts with SuspendWhen conditions")
 		}
 
 		if in.Spec.MaxInstances < 1 {
@@ -97,15 +99,19 @@ func (in *Cluster) ValidateCreate() error {
 	}
 
 	// Until field
-	if until := in.Spec.Until; until != nil {
+	if until := in.Spec.SuspendWhen; until != nil {
 		if err := ValidateExpr(until); err != nil {
-			return errors.Wrapf(err, "until error")
+			return errors.Wrapf(err, "SuspendWhen error")
 		}
 	}
 
 	// Schedule field
 	if schedule := in.Spec.Schedule; schedule != nil {
-		if err := ValidateScheduler(in.Spec.MaxInstances, schedule); err != nil {
+		if in.Spec.MaxInstances < 1 {
+			return errors.Errorf("scheduling requires at least one instance")
+		}
+
+		if err := ValidateTaskScheduler(schedule); err != nil {
 			return errors.Wrapf(err, "schedule error")
 		}
 	}
@@ -125,9 +131,6 @@ func (in *Cluster) ValidateCreate() error {
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
 func (in *Cluster) ValidateUpdate(runtime.Object) error {
-	clusterlog.Info("validate update", "name", in.Name)
-
-	// TODO(user): fill in your validation logic upon object update.
 	return nil
 }
 

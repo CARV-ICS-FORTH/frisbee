@@ -1,5 +1,5 @@
 /*
-Copyright 2021 ICS-FORTH.
+Copyright 2021-2023 ICS-FORTH.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -94,7 +94,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	)
 
 	defer func() {
-		r.Logger.Info("<- Reconcile",
+		r.Logger.Info("<- Reconciler",
 			"obj", client.ObjectKeyFromObject(&service),
 			"phase", service.Status.Phase,
 			"version", service.GetResourceVersion(),
@@ -145,7 +145,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	case v1alpha1.PhaseRunning:
 		// Nothing to do. Just wait for something to happen.
-		r.Logger.Info(".. Awaiting",
+		r.Logger.Info(".. DequeueEvent",
 			"obj", client.ObjectKeyFromObject(&service),
 			service.Status.Reason, service.Status.Message,
 		)
@@ -210,8 +210,11 @@ func (r *Controller) HasSucceed(ctx context.Context, cr *v1alpha1.Service) error
 }
 
 func (r *Controller) HasFailed(ctx context.Context, cr *v1alpha1.Service) error {
-	r.Logger.Error(errors.Errorf(cr.Status.Message), "!! "+cr.Status.Reason,
-		"obj", client.ObjectKeyFromObject(cr).String())
+	r.Logger.Info("!! JobError",
+		"obj", client.ObjectKeyFromObject(cr).String(),
+		"reason ", cr.Status.Reason,
+		"message", cr.Status.Message,
+	)
 
 	// Remove the non-failed components. Leave the failed jobs and system jobs for postmortem analysis.
 	for _, job := range r.view.GetPendingJobs() {

@@ -1,5 +1,5 @@
 /*
-Copyright 2021 ICS-FORTH.
+Copyright 2021-2023 ICS-FORTH.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -73,7 +73,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	)
 
 	defer func() {
-		r.Logger.Info("<- Reconcile",
+		r.Logger.Info("<- Reconciler",
 			"obj", client.ObjectKeyFromObject(&cluster),
 			"phase", cluster.Status.Phase,
 			"version", cluster.GetResourceVersion(),
@@ -133,7 +133,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	case v1alpha1.PhaseRunning:
 		// Nothing to do. Just wait for something to happen.
-		log.Info(".. Awaiting", cluster.Status.Reason, cluster.Status.Message)
+		log.Info(".. DequeueEvent", cluster.Status.Reason, cluster.Status.Message)
 
 		return common.Stop()
 
@@ -149,8 +149,8 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		//	If all jobs are scheduled but are not in the Running phase, they may be in the Pending phase.
 		//	In both cases, we have nothing else to do but waiting for the next reconciliation cycle.
-		if cluster.Spec.Until == nil && (nextJob >= len(cluster.Status.QueuedJobs)) {
-			log.Info(".. Awaiting", cluster.Status.Reason, cluster.Status.Message)
+		if cluster.Spec.SuspendWhen == nil && (nextJob >= len(cluster.Status.QueuedJobs)) {
+			log.Info(".. DequeueEvent", cluster.Status.Reason, cluster.Status.Message)
 
 			return common.Stop()
 		}
@@ -158,15 +158,19 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		// Get the next scheduled job
 		{
 			hasJob, nextTick, err := scheduler.Schedule(log, &cluster, scheduler.Parameters{
+				State:            *r.view,
 				ScheduleSpec:     cluster.Spec.Schedule,
-				LastScheduled:    cluster.Status.LastScheduleTime,
-				ExpectedTimeline: cluster.Status.Timeline,
-				State:            r.view,
+				LastScheduleTime: cluster.Status.LastScheduleTime,
+				ExpectedTimeline: cluster.Status.ExpectedTimeline,
+				JobName:          cluster.GetName(),
+				ScheduledJobs:    cluster.Status.ScheduledJobs,
 			})
 			if err != nil {
 				return lifecycle.Failed(ctx, r, &cluster, errors.Wrapf(err, "scheduling error"))
 			}
+
 			if !hasJob {
+				// nothing to do in this around. wake me up again after some time.
 				return common.RequeueAfter(time.Until(nextTick))
 			}
 		}
@@ -178,7 +182,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		// Update the scheduling information
 		cluster.Status.ScheduledJobs = nextJob
-		cluster.Status.LastScheduleTime = &metav1.Time{Time: time.Now()}
+		cluster.Status.LastScheduleTime = metav1.Time{Time: time.Now()}
 
 		return lifecycle.Pending(ctx, r, &cluster, fmt.Sprintf("Scheduled jobs: '%d/%d'",
 			cluster.Status.ScheduledJobs+1, cluster.Spec.MaxInstances))
@@ -209,9 +213,9 @@ func (r *Controller) Initialize(ctx context.Context, cluster *v1alpha1.Cluster) 
 	cluster.Status.ScheduledJobs = -1
 
 	// Metrics-driven execution requires to set alerts on Grafana.
-	if until := cluster.Spec.Until; until != nil && until.HasMetricsExpr() {
+	if until := cluster.Spec.SuspendWhen; until != nil && until.HasMetricsExpr() {
 		if err := expressions.SetAlert(ctx, cluster, until.Metrics); err != nil {
-			return errors.Wrapf(err, "spec.until")
+			return errors.Wrapf(err, "spec.suspendWhen")
 		}
 	}
 
@@ -264,8 +268,11 @@ func (r *Controller) HasSucceed(ctx context.Context, cluster *v1alpha1.Cluster) 
 }
 
 func (r *Controller) HasFailed(ctx context.Context, cluster *v1alpha1.Cluster) error {
-	r.Logger.Error(errors.Errorf(cluster.Status.Message), "!! "+cluster.Status.Reason,
-		"obj", client.ObjectKeyFromObject(cluster).String())
+	r.Logger.Info("!! JobError",
+		"obj", client.ObjectKeyFromObject(cluster).String(),
+		"reason ", cluster.Status.Reason,
+		"message", cluster.Status.Message,
+	)
 
 	// Remove the non-failed components. Leave the failed jobs and system jobs for postmortem analysis.
 	for _, job := range r.view.GetPendingJobs() {

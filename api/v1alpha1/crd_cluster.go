@@ -1,5 +1,5 @@
 /*
-Copyright 2021 ICS-FORTH.
+Copyright 2021-2023 ICS-FORTH.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -67,7 +67,7 @@ type ClusterSpec struct {
 	DefaultDistributionSpec *DistributionSpec `json:"defaultDistribution,omitempty"`
 
 	/*
-		Instance Creation Functions
+		Job Scheduling
 	*/
 
 	// Resources defines how a set of resources will be distributed among the cluster's services.
@@ -76,23 +76,25 @@ type ClusterSpec struct {
 
 	// Schedule defines the interval between the creation of services in the group.
 	// +optional
-	Schedule *SchedulerSpec `json:"schedule,omitempty"`
+	Schedule *TaskSchedulerSpec `json:"schedule,omitempty"`
 
 	// Placement defines rules for placing the containers across the available nodes.
 	// +optional
 	Placement *PlacementSpec `json:"placement,omitempty"`
 
 	/*
-		Error Management
+		Execution Flow
 	*/
 
-	// Suspend flag tells the controller to suspend subsequent executions, it does not apply to already started
-	// executions.  Defaults to false.
+	// Suspend forces the Controller to stop scheduling any new jobs until it is resumed. Defaults to false.
 	// +optional
 	Suspend *bool `json:"suspend,omitempty"`
 
-	// Tolerate specifies the conditions under which the cluster will fail. If undefined, the cluster fails
-	// immediately when a service has failed.
+	// SuspendWhen automatically sets Suspend to True, when certain conditions are met.
+	// +optional
+	SuspendWhen *ConditionalExpr `json:"suspendWhen,omitempty"`
+
+	// Tolerate forces the Controller to continue in spite of failed jobs.
 	// +optional
 	Tolerate *TolerateSpec `json:"tolerate,omitempty"`
 }
@@ -101,23 +103,23 @@ type ClusterSpec struct {
 type ClusterStatus struct {
 	Lifecycle `json:",inline"`
 
+	// QueuedJobs is a list of jobs that the controller has to scheduled.
+	// +optional
+	QueuedJobs []ServiceSpec `json:"queuedJobs,omitempty"`
+
 	// DefaultDistribution keeps the evaluated expression of GenerateObjectFromTemplate.DefaultDistributionSpec.
 	// +optional
 	DefaultDistribution []float64 `json:"defaultDistribution,omitempty"`
 
-	// QueuedJobs is a list of services scheduled for creation by the cluster.
+	// ExpectedTimeline is the result of evaluating a timeline distribution into specific points in time.
 	// +optional
-	QueuedJobs []ServiceSpec `json:"queuedJobs,omitempty"`
-
-	// Timeline is the result of evaluating a timeline distribution.
-	// +optional
-	Timeline []metav1.Time `json:"timeline,omitempty"`
+	ExpectedTimeline Timeline `json:"expectedTimeline,omitempty"`
 
 	// ScheduledJobs points to the next QueuedJobs.
 	ScheduledJobs int `json:"scheduledJobs,omitempty"`
 
-	// LastScheduleTime provide information about  the last time a Service was successfully scheduled.
-	LastScheduleTime *metav1.Time `json:"lastScheduleTime,omitempty"`
+	// LastScheduleTime provide information about  the last time a Job was successfully scheduled.
+	LastScheduleTime metav1.Time `json:"lastScheduleTime,omitempty"`
 }
 
 func (in *Cluster) GetReconcileStatus() Lifecycle {

@@ -1,5 +1,5 @@
 /*
-Copyright 2021 ICS-FORTH.
+Copyright 2021-2023 ICS-FORTH.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -39,12 +39,15 @@ type CascadeSpec struct {
 
 	// Schedule defines the interval between the creation of services within the group.
 	// +optional
-	Schedule *SchedulerSpec `json:"schedule,omitempty"`
+	Schedule *TaskSchedulerSpec `json:"schedule,omitempty"`
 
-	// Suspend flag tells the controller to suspend subsequent executions, it does
-	// not apply to already started executions.  Defaults to false.
+	// Suspend forces the Controller to stop scheduling any new jobs until it is resumed. Defaults to false.
 	// +optional
 	Suspend *bool `json:"suspend,omitempty"`
+
+	// SuspendWhen automatically sets Suspend to True, when certain conditions are met.
+	// +optional
+	SuspendWhen *ConditionalExpr `json:"suspendWhen,omitempty"`
 }
 
 // CascadeStatus defines the observed state of Cascade.
@@ -55,15 +58,15 @@ type CascadeStatus struct {
 	// +optional
 	QueuedJobs []ChaosSpec `json:"queuedJobs,omitempty"`
 
-	// Timeline is the result of evaluating a timeline distribution.
+	// ExpectedTimeline is the result of evaluating a timeline distribution into specific points in time.
 	// +optional
-	Timeline []metav1.Time `json:"timeline,omitempty"`
+	ExpectedTimeline Timeline `json:"expectedTimeline,omitempty"`
 
 	// ScheduledJobs points to the next QueuedJobs.
 	ScheduledJobs int `json:"scheduledJobs,omitempty"`
 
 	// LastScheduleTime provide information about  the last time a Chaos job was successfully scheduled.
-	LastScheduleTime *metav1.Time `json:"lastScheduleTime,omitempty"`
+	LastScheduleTime metav1.Time `json:"lastScheduleTime,omitempty"`
 }
 
 func (in *Cascade) GetReconcileStatus() Lifecycle {

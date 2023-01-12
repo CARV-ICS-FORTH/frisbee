@@ -1,5 +1,5 @@
 #!/bin/bash
 
-docker build . -t icsforth/prometheus -f prometheus.Dockerfile
+docker build . -t icsforth/cadvisor
 
-docker push icsforth/prometheus:latest
+docker push icsforth/cadvisor:latest

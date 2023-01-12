@@ -1,5 +1,5 @@
 /*
-Copyright 2022 ICS-FORTH.
+Copyright 2022-2023 ICS-FORTH.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -47,7 +47,9 @@ func (in *Cascade) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type.
 func (in *Cascade) Default() {
-	cascadelog.V(5).Info("default", "name", in.Name)
+	cascadelog.Info("SetDefaults",
+		"name", in.GetNamespace()+"/"+in.GetName(),
+	)
 
 	// Schedule field
 	if schedule := in.Spec.Schedule; schedule != nil {
@@ -55,41 +57,42 @@ func (in *Cascade) Default() {
 			schedule.StartingDeadlineSeconds = &DefaultStartingDeadlineSeconds
 		}
 	}
-	// TODO(user): fill in your defaulting logic.
 }
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
 func (in *Cascade) ValidateCreate() error {
+	cascadelog.Info("ValidateCreateRequest",
+		"name", in.GetNamespace()+"/"+in.GetName(),
+	)
+
 	// Set missing values for the template
 	if err := in.Spec.GenerateObjectFromTemplate.Prepare(true); err != nil {
 		clusterlog.Error(err, "template error")
 	}
 
 	// Until field
-	if until := in.Spec.Until; until != nil {
+	if until := in.Spec.SuspendWhen; until != nil {
 		if err := ValidateExpr(until); err != nil {
-			return errors.Wrapf(err, "until error")
+			return errors.Wrapf(err, "SuspendWhen error")
 		}
 	}
 
 	// Schedule field
 	if schedule := in.Spec.Schedule; schedule != nil {
-		if err := ValidateScheduler(in.Spec.MaxInstances, schedule); err != nil {
+		if in.Spec.MaxInstances < 1 {
+			return errors.Errorf("scheduling requires at least one instance")
+		}
+
+		if err := ValidateTaskScheduler(schedule); err != nil {
 			return errors.Wrapf(err, "schedule error")
 		}
 	}
 
-	cascadelog.V(5).Info("validate create", "name", in.Name)
-
-	// TODO(user): fill in your validation logic upon object creation.
 	return nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
 func (in *Cascade) ValidateUpdate(runtime.Object) error {
-	cascadelog.Info("validate update", "name", in.Name)
-
-	// TODO(user): fill in your validation logic upon object update.
 	return nil
 }
 

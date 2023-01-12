@@ -1,5 +1,5 @@
 /*
-Copyright 2021 ICS-FORTH.
+Copyright 2021-2023 ICS-FORTH.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -60,7 +60,7 @@ func (w *simpleWatch) watchCreate(reconciler common.Reconciler, gvk schema.Group
 			return false
 		}
 
-		reconciler.Info("** Detected",
+		reconciler.Info("** EnqueueEvent",
 			"Request", "Create",
 			"kind", reflect.TypeOf(event.Object),
 			"obj", client.ObjectKeyFromObject(event.Object),
@@ -95,7 +95,7 @@ func (w *simpleWatch) watchUpdate(reconciler common.Reconciler, gvk schema.Group
 		prev := event.ObjectOld.(v1alpha1.ReconcileStatusAware)
 		latest := event.ObjectNew.(v1alpha1.ReconcileStatusAware)
 
-		reconciler.Info("** Detected",
+		reconciler.Info("** EnqueueEvent",
 			"Request", "Update",
 			"kind", reflect.TypeOf(event.ObjectNew),
 			"obj", client.ObjectKeyFromObject(event.ObjectNew),
@@ -129,7 +129,7 @@ func (w *simpleWatch) watchDelete(reconciler common.Reconciler, gvk schema.Group
 			return false
 		}
 
-		reconciler.Info("** Detected",
+		reconciler.Info("** EnqueueEvent",
 			"Request", "Delete",
 			"kind", reflect.TypeOf(event.Object),
 			"obj", client.ObjectKeyFromObject(event.Object),

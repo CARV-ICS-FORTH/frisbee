@@ -1,5 +1,5 @@
 /*
-Copyright 2021 ICS-FORTH.
+Copyright 2021-2023 ICS-FORTH.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -64,7 +64,7 @@ func (w *watchWithRangeAnnotator) watchCreate(reconciler common.Reconciler, gvk 
 			return false
 		}
 
-		reconciler.Info("** Detected",
+		reconciler.Info("** EnqueueEvent",
 			"Request", "Create",
 			"kind", reflect.TypeOf(event.Object),
 			"obj", client.ObjectKeyFromObject(event.Object),
@@ -110,7 +110,7 @@ func (w *watchWithRangeAnnotator) watchUpdate(reconciler common.Reconciler, gvk 
 			return false
 		}
 
-		reconciler.Info("** Detected",
+		reconciler.Info("** EnqueueEvent",
 			"Request", "Update",
 			"kind", reflect.TypeOf(event.ObjectNew),
 			"obj", client.ObjectKeyFromObject(event.ObjectNew),
@@ -138,7 +138,7 @@ func (w *watchWithRangeAnnotator) watchDelete(reconciler common.Reconciler, gvk 
 			return false
 		}
 
-		reconciler.Info("** Detected",
+		reconciler.Info("** EnqueueEvent",
 			"Request", "Delete",
 			"kind", reflect.TypeOf(event.Object),
 			"obj", client.ObjectKeyFromObject(event.Object),

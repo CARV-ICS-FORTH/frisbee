@@ -6,7 +6,7 @@ metadata:
 spec:
   service:
     decorators:
-      annotations:
+      annotations: # Declare it explicitly as sidecar.
         "sidecar.frisbee.dev/telemetry": telegraf
 
     containers:

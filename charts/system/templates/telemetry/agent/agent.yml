@@ -18,7 +18,7 @@ spec:
         "sidecar.frisbee.dev/telemetry": cadvisor
     containers:
       - name: cadvisor
-        image: gcr.io/cadvisor/cadvisor:v0.46.0
+        image: icsforth/cadvisor
         ports:
           - name: tel-sys
             containerPort: 9442
@@ -31,12 +31,6 @@ spec:
           - -c # Read from string
           - |  # Multi-line str
             set -eum
-
-            # Needed to fix DNS issues
-            echo "$( cat /etc/resolv.conf | sed 's/ndots:5/ndots:1/')"  >  /etc/resolv.conf
-
-            # Add a newer version of nsenter that supports cgroup
-            apk add util-linux --no-cache
 
             # Wait a bit to obtain the PID of the main container
             while [ ! -f "/dev/shm/app" ];

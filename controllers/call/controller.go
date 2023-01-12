@@ -1,5 +1,5 @@
 /*
-Copyright 2021 ICS-FORTH.
+Copyright 2021-2023 ICS-FORTH.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -91,7 +91,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	)
 
 	defer func() {
-		r.Logger.Info("<- Reconcile",
+		r.Logger.Info("<- Reconciler",
 			"obj", client.ObjectKeyFromObject(&call),
 			"phase", call.Status.Phase,
 			"version", call.GetResourceVersion(),
@@ -152,7 +152,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	case v1alpha1.PhaseRunning:
 		// Nothing to do. Just wait for something to happen.
-		log.Info(".. Awaiting", call.Status.Reason, call.Status.Message)
+		log.Info(".. DequeueEvent", call.Status.Reason, call.Status.Message)
 
 		return common.Stop()
 
@@ -170,8 +170,8 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			If all jobs are scheduled but are not in the Running phase, they may be in the Pending phase.
 			In both cases, we have nothing else to do but waiting for the next reconciliation cycle.
 		*/
-		if call.Spec.Until == nil && (nextJob >= len(call.Status.QueuedJobs)) {
-			log.Info(".. Awaiting", call.Status.Reason, call.Status.Message)
+		if call.Spec.SuspendWhen == nil && (nextJob >= len(call.Status.QueuedJobs)) {
+			log.Info(".. DequeueEvent", call.Status.Reason, call.Status.Message)
 
 			return common.Stop()
 		}
@@ -179,15 +179,19 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		// Get the next scheduled job
 		{
 			hasJob, nextTick, err := scheduler.Schedule(log, &call, scheduler.Parameters{
+				State:            *r.view,
 				ScheduleSpec:     call.Spec.Schedule,
-				LastScheduled:    call.Status.LastScheduleTime,
-				ExpectedTimeline: call.Status.Timeline,
-				State:            r.view,
+				LastScheduleTime: call.Status.LastScheduleTime,
+				ExpectedTimeline: call.Status.ExpectedTimeline,
+				JobName:          call.GetName(),
+				ScheduledJobs:    call.Status.ScheduledJobs,
 			})
 			if err != nil {
 				return lifecycle.Failed(ctx, r, &call, errors.Wrapf(err, "scheduling error"))
 			}
+
 			if !hasJob {
+				// nothing to do in this around. wake me up again after some time.
 				return common.RequeueAfter(time.Until(nextTick))
 			}
 		}
@@ -199,7 +203,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		// Update the scheduling information
 		call.Status.ScheduledJobs = nextJob
-		call.Status.LastScheduleTime = &metav1.Time{Time: time.Now()}
+		call.Status.LastScheduleTime = metav1.Time{Time: time.Now()}
 
 		return lifecycle.Pending(ctx, r, &call, fmt.Sprintf("Scheduled jobs: '%d/%d'",
 			call.Status.ScheduledJobs+1, len(call.Spec.Services)))
@@ -223,9 +227,9 @@ func (r *Controller) Initialize(ctx context.Context, call *v1alpha1.Call) error 
 	call.Status.ScheduledJobs = -1
 
 	// Metrics-driven execution requires to set alerts on Grafana.
-	if until := call.Spec.Until; until != nil && until.HasMetricsExpr() {
+	if until := call.Spec.SuspendWhen; until != nil && until.HasMetricsExpr() {
 		if err := expressions.SetAlert(ctx, call, until.Metrics); err != nil {
-			return errors.Wrapf(err, "spec.until")
+			return errors.Wrapf(err, "spec.suspendWhen")
 		}
 	}
 
@@ -278,8 +282,11 @@ func (r *Controller) HasSucceed(ctx context.Context, cr *v1alpha1.Call) error {
 }
 
 func (r *Controller) HasFailed(ctx context.Context, call *v1alpha1.Call) error {
-	r.Logger.Error(errors.Errorf(call.Status.Message), "!! "+call.Status.Reason,
-		"obj", client.ObjectKeyFromObject(call).String())
+	r.Logger.Info("!! JobError",
+		"obj", client.ObjectKeyFromObject(call).String(),
+		"reason ", call.Status.Reason,
+		"message", call.Status.Message,
+	)
 
 	// Remove the non-failed components. Leave the failed jobs and system jobs for postmortem analysis.
 	for _, job := range r.view.GetPendingJobs() {

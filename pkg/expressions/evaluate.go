@@ -1,5 +1,5 @@
 /*
-Copyright 2022 ICS-FORTH.
+Copyright 2022-2023 ICS-FORTH.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ type Condition struct {
 	Info string
 }
 
-func (c *Condition) IsTrue(state lifecycle.ClassifierReader, job metav1.Object) bool {
+func (c Condition) IsTrue(state lifecycle.ClassifierReader, job metav1.Object) bool {
 	// Check for state expressions
 	if c.Expr.HasStateExpr() {
 		pass, err := c.Expr.State.GoValuate(state)
@@ -57,6 +57,6 @@ func (c *Condition) IsTrue(state lifecycle.ClassifierReader, job metav1.Object) 
 	return false
 }
 
-func (c *Condition) GetInfo() string {
+func (c Condition) GetInfo() string {
 	return c.Info
 }
