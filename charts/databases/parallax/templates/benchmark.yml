@@ -1,0 +1,169 @@
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Template
+metadata:
+  name: tebis.cluster.zookeeper
+spec:
+  service:
+    #    decorators:
+    #      telemetry: [ system.telemetry.agent]
+    containers:
+      - name: main
+        image: zookeeper:3.5.9
+        ports:
+          - name: peerport
+            containerPort: 2888
+          - name: leaderport
+            containerPort: 3888
+          - name: clientport
+            containerPort: 2181
+        command:
+          - /bin/sh   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
+            set -eum
+
+            echo "Initiate Zookeeper at 0.0.0.0:2181"
+            /docker-entrypoint.sh zkServer.sh start-foreground
+
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Template
+metadata:
+  name: tebis.cluster.bootstrap
+spec:
+  inputs:
+    parameters:
+      zookeeper: localhost
+      serverHost: "localhost"
+      serverPort: "6060"
+  service:
+    #    decorators:
+    #      telemetry: [ system.telemetry.agent]
+    containers:
+      - name: main
+        image: icsforth/tebis-init:latest
+        command:
+          - /bin/sh   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
+            set -eum
+
+            echo "Create hosts file"
+            cat > hosts <<EOF
+              masters-1:6060 leader
+            EOF
+
+            echo "Create regions file"
+            cat > regions <<EOF
+            0  -oo  AB    masters-1:6060
+            1  AB   AC    masters-1:6060
+            2  AC   AD    masters-1:6060
+            3  AD   AE    masters-1:6060
+            4  AE   AF    masters-1:6060
+            5  AF   AG    masters-1:6060
+            6  AG   AH    masters-1:6060
+            7  AH   +oo   masters-1:6060
+            EOF
+
+            zookeeper={{"{{.inputs.parameters.zookeeper}}:2181"}}
+
+            sleep 60
+
+            echo "Contact Zookeeper at ${zookeeper}"
+            python /tebis_zk_init.py hosts regions ${zookeeper}
+
+            echo "Regions have been successfully created"
+
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Template
+metadata:
+  name: tebis.cluster.master
+spec:
+  inputs:
+    parameters:
+      zookeeper: localhost
+      device: "/tmp/tebis.dat"
+  service:
+    #    decorators:
+    #      telemetry: [ system.telemetry.agent]
+    #      annotations:
+    #        k8s.v1.cni.cncf.io/networks: macvlan-rdma
+    #      telemetry: [ system.telemetry.agent ]
+    containers:
+      - name: main
+        image: icsforth/tebis-node:latest
+        ports:
+          - name: to-clients
+            containerPort: 6060 # Will be populated by set field
+        securityContext:
+          privileged: true
+        command:
+          - /bin/sh   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
+            set -eum
+            cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
+
+            device={{"{{.inputs.parameters.device}}"}}
+            zookeeper={{"{{.inputs.parameters.zookeeper}}"}}
+            cores="0,1"
+
+            rdma=$(hostname -I)
+
+            echo "RDMA " ${rdma}
+
+            echo "Pre-allocate space for Tebis server"
+            fallocate --length 16G ${device}
+
+            cd /build/tebis/build/kreon_server
+
+            echo "Starting Tebis server"
+            echo ./kreon_server ${device} ${zookeeper}:2181 ${rdma} 65536 8 send_index "6060,${cores}"
+            ./kreon_server ${device} ${zookeeper}:2181 ${rdma} 65536 8 send_index "6060,${cores}"
+
+
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Template
+metadata:
+  name: tebis.cluster.client
+spec:
+  inputs:
+    parameters:
+      zookeeper: localhost
+      scenario: "./execution_plan.txt"
+      threads: "4"
+      regions: "1"
+  service:
+    #    decorators:
+    #      telemetry: [ system.telemetry.agent]
+    #      annotations:
+    #        k8s.v1.cni.cncf.io/networks: macvlan-rdma
+    containers:
+      - name: main
+        image: icsforth/tebis-node:latest
+        securityContext:
+          privileged: true
+        command:
+          - /bin/sh   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
+            set -eum
+            cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
+
+            echo "Starting Tebis client"
+
+            cd /build/tebis/build/YCSB-CXX
+
+            sleep infinity
+
+             ./ycsb-async-kreon                                     \
+            -threads {{"{{.inputs.parameters.threads}}"}}           \
+            -w sd                                                   \
+            -zookeeper  {{"{{.inputs.parameters.zookeeper}}"}}:2181 \
+            -dbnum 1                                                \
+            -e {{"{{.inputs.parameters.scenario}}"}}                \
+            insertStart 0
+

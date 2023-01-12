@@ -25,5 +25,5 @@
 # Docs
 *.md
 
-# Ignore any figures used in the README.md
-examples/README.assets
+# Tools
+build

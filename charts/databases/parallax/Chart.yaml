@@ -1,0 +1,14 @@
+---
+apiVersion: v2
+appVersion: "1.16.0"
+description: "Tebis is a rack-scale key/value store optimized for replication over RDMA"
+
+name: tebis
+type: application
+
+maintainers:
+  - name: Fotis Nikolaidis
+    email: nikolaidis.fotis@gmail.com
+    url: https://www.linkedin.com/in/fotis-nikolaidis-444a6634/
+
+version: 0.0.0
