@@ -57,7 +57,7 @@ spec:
           - { server: coordinator, workload: workloada, operationcount: "10000000", threads: "10" }
         schedule:
           cron: "@every 1m"
-        until:
+        suspendWhen:
           metrics: 'percent_diff() of query(A2EjFbsMk/86/Average, 5m, now) is below(5)'
         tolerate:
           failedJobs: 1

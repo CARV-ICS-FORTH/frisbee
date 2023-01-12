@@ -1,5 +1,5 @@
 /*
-Copyright 2021 ICS-FORTH.
+Copyright 2021-2023 ICS-FORTH.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -71,7 +71,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		)
 
 		defer func() {
-			r.Logger.Info("<- Reconcile",
+			r.Logger.Info("<- Reconciler",
 				"obj", client.ObjectKeyFromObject(&cr),
 				"phase", cr.Status.Phase,
 				"version", cr.GetResourceVersion(),

@@ -1,5 +1,5 @@
 /*
-Copyright 2021 ICS-FORTH.
+Copyright 2021-2023 ICS-FORTH.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -67,6 +67,8 @@ func SetTimeline(cascade *v1alpha1.Cascade) {
 	generator := distributions.GetPointDistribution(int64(cascade.Spec.MaxInstances),
 		cascade.Spec.Schedule.Timeline.DistributionSpec)
 
-	cascade.Status.Timeline = generator.ApplyToTimeline(cascade.GetCreationTimestamp(),
-		*cascade.Spec.Schedule.Timeline.TotalDuration)
+	cascade.Status.ExpectedTimeline = generator.ApplyToTimeline(
+		cascade.GetCreationTimestamp(),
+		*cascade.Spec.Schedule.Timeline.TotalDuration,
+	)
 }

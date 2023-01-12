@@ -1,5 +1,5 @@
 /*
-Copyright 2021 ICS-FORTH.
+Copyright 2021-2023 ICS-FORTH.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -151,11 +151,6 @@ func (u UserInputs) Unmarshal() (map[string]interface{}, error) {
 type GenerateObjectFromTemplate struct {
 	// TemplateRef refers to a  template (e.g, iperf-server).
 	TemplateRef string `json:"templateRef"`
-
-	// Until defines the conditions under which the CR will stop spawning new jobs.
-	// If used in conjunction with inputs, it will loop over inputs until the conditions are met.
-	// +optional
-	Until *ConditionalExpr `json:"until,omitempty"`
 
 	// MaxInstances dictate the number of objects to be created for the CR.
 	// If no inputs are defined, then all instances will be initiated using the default parameters of the template.

@@ -1,5 +1,5 @@
 /*
-Copyright 2021 ICS-FORTH.
+Copyright 2021-2023 ICS-FORTH.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -142,6 +142,8 @@ func SetTimeline(call *v1alpha1.Call) {
 	generator := distributions.GetPointDistribution(int64(len(call.Spec.Services)),
 		call.Spec.Schedule.Timeline.DistributionSpec)
 
-	call.Status.Timeline = generator.ApplyToTimeline(call.GetCreationTimestamp(),
-		*call.Spec.Schedule.Timeline.TotalDuration)
+	call.Status.ExpectedTimeline = generator.ApplyToTimeline(
+		call.GetCreationTimestamp(),
+		*call.Spec.Schedule.Timeline.TotalDuration,
+	)
 }

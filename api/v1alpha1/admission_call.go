@@ -1,5 +1,5 @@
 /*
-Copyright 2022 ICS-FORTH.
+Copyright 2022-2023 ICS-FORTH.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -47,7 +47,9 @@ func (in *Call) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type.
 func (in *Call) Default() {
-	calllog.V(5).Info("default", "name", in.Name)
+	calllog.Info("SetDefaults",
+		"name", in.GetNamespace()+"/"+in.GetName(),
+	)
 
 	// Schedule field
 	if schedule := in.Spec.Schedule; schedule != nil {
@@ -55,13 +57,13 @@ func (in *Call) Default() {
 			schedule.StartingDeadlineSeconds = &DefaultStartingDeadlineSeconds
 		}
 	}
-
-	// TODO(user): fill in your defaulting logic.
 }
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
 func (in *Call) ValidateCreate() error {
-	calllog.V(5).Info("validate create", "name", in.Name)
+	calllog.Info("ValidateCreateRequest",
+		"name", in.GetNamespace()+"/"+in.GetName(),
+	)
 
 	// Expect field
 	if expect := in.Spec.Expect; expect != nil {
@@ -77,16 +79,20 @@ func (in *Call) ValidateCreate() error {
 		}
 	}
 
-	// Until field
-	if until := in.Spec.Until; until != nil {
+	// SuspendWhen field
+	if until := in.Spec.SuspendWhen; until != nil {
 		if err := ValidateExpr(until); err != nil {
-			return errors.Wrapf(err, "until error")
+			return errors.Wrapf(err, "SuspendWhen error")
 		}
 	}
 
 	// Schedule field
 	if schedule := in.Spec.Schedule; schedule != nil {
-		if err := ValidateScheduler(len(in.Spec.Services), schedule); err != nil {
+		if len(in.Spec.Services) < 1 {
+			return errors.Errorf("scheduling requires at least one instance")
+		}
+
+		if err := ValidateTaskScheduler(schedule); err != nil {
 			return errors.Wrapf(err, "schedule error")
 		}
 	}
@@ -103,9 +109,6 @@ func (in *Call) ValidateCreate() error {
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
 func (in *Call) ValidateUpdate(runtime.Object) error {
-	calllog.Info("validate update", "name", in.Name)
-
-	// TODO(user): fill in your validation logic upon object update.
 	return nil
 }
 

@@ -1,5 +1,5 @@
 /*
-Copyright 2021 ICS-FORTH.
+Copyright 2021-2023 ICS-FORTH.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -45,23 +45,22 @@ func (in *Chaos) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type.
 func (in *Chaos) Default() {
-	chaoslog.Info("default", "name", in.Name)
-	// TODO(user): fill in your defaulting logic.
+	chaoslog.Info("SetDefaults",
+		"name", in.GetNamespace()+"/"+in.GetName(),
+	)
 }
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
 func (in *Chaos) ValidateCreate() error {
-	chaoslog.Info("validate create", "name", in.Name)
+	chaoslog.Info("ValidateCreateRequest",
+		"name", in.GetNamespace()+"/"+in.GetName(),
+	)
 
-	// TODO(user): fill in your validation logic upon object creation.
 	return nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
 func (in *Chaos) ValidateUpdate(runtime.Object) error {
-	chaoslog.Info("validate update", "name", in.Name)
-
-	// TODO(user): fill in your validation logic upon object update.
 	return nil
 }
 

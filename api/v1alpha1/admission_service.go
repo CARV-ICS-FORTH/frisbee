@@ -1,5 +1,5 @@
 /*
-Copyright 2021 ICS-FORTH.
+Copyright 2021-2023 ICS-FORTH.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -50,12 +50,16 @@ func (in *Service) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type.
 func (in *Service) Default() {
-	servicelog.Info("default", "name", in.Name)
+	servicelog.Info("SetDefaults",
+		"name", in.GetNamespace()+"/"+in.GetName(),
+	)
 }
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
 func (in *Service) ValidateCreate() error {
-	servicelog.Info("validate create", "name", in.GetName())
+	servicelog.Info("ValidateCreateRequest",
+		"name", in.GetNamespace()+"/"+in.GetName(),
+	)
 
 	for i := range in.Spec.Containers {
 		container := in.Spec.Containers[i]
@@ -127,9 +131,6 @@ func (in *Service) validateSidecarContainer(container *corev1.Container) error {
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
 func (in *Service) ValidateUpdate(_ runtime.Object) error {
-	servicelog.Info("validate update", "name", in.Name)
-
-	// TODO(user): fill in your validation logic upon object update.
 	return nil
 }
 

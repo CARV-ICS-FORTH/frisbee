@@ -23,7 +23,7 @@ spec:
           - { server: server, seconds: "60" }
         schedule:
           cron: "@every 1m"
-        until:
+        suspendWhen:
           metrics: 'avg() of query(wpFnYRwGk/2/bitrate, 5m, now) is below(500)'
 
     - action: Delete

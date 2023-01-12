@@ -10,47 +10,46 @@ spec:
       cluster:
         templateRef: parallax.ycsb
         schedule:
-          event:
-            state: '{{.NumPendingJobs}} == 0 && {{.NumRunningJobs}} == 0'
+          sequential: true
         tolerate:
-          failedJobs: 35 # number of tests
+          failedJobs: 35 # number of expected tests that fail
         inputs:
-          - { test: test_small }
-          - { test: test_medium }
-          - { test: test_large }
-          - { test: test_smalld }
-          - { test: test_mediumd }
-          - { test: test_larged }
-          - { test: test_index_node }
-          - { test: test_dirty_scans_sd_greater }
-          - { test: test_dirty_scans_small }
-          - { test: test_dirty_scans_medium }
-          - { test: test_dirty_scans_large }
-          - { test: test_dirty_scans_smalld }
-          - { test: test_dirty_scans_mediumd }
-          - { test: test_dirty_scans_larged }
-          - { test: test_dirty_scans_smallp }
-          - { test: test_dirty_scans_mediump }
-          - { test: test_dirty_scans_largep }
-          - { test: test_dirty_scans_smalldp }
-          - { test: test_dirty_scans_mediumdp }
-          - { test: test_dirty_scans_largedp }
-          - { test: test_options }
-          - { test: test_categories }
-          - { test: test_sanitizers }
-          - { test: test_gc }
-          - { test: test_medium }
-          - { test: test_mixes_99_small_1_medium }
-          - { test: test_mixes_45_small_50_medium_5_big }
-          - { test: simple_test_delete }
-          - { test: test_leaf_root_delete_get_scan }
-          - { test: test_region_allocations }
-          - { test: test_redo_undo_log }
-          - { test: test_optional_logging }
-          - { test: test_par_format }
-          - { test: test_par_put_serialized }
-          - { test: test_par_put_metadata }
-          - { test: tracer}
+          - { test: test_small, volumeSize: 10Gi }
+          - { test: test_medium, volumeSize: 10Gi }
+          - { test: test_large, volumeSize: 10Gi }
+          - { test: test_smalld, volumeSize: 10Gi }
+          - { test: test_mediumd, volumeSize: 10Gi }
+          - { test: test_larged, volumeSize: 10Gi }
+          - { test: test_index_node, volumeSize: 10Gi }
+          - { test: test_dirty_scans_sd_greater, volumeSize: 10Gi }
+          - { test: test_dirty_scans_small, volumeSize: 10Gi }
+          - { test: test_dirty_scans_medium, volumeSize: 10Gi }
+          - { test: test_dirty_scans_large, volumeSize: 10Gi }
+          - { test: test_dirty_scans_smalld, volumeSize: 10Gi }
+          - { test: test_dirty_scans_mediumd, volumeSize: 10Gi }
+          - { test: test_dirty_scans_larged, volumeSize: 10Gi }
+          - { test: test_dirty_scans_smallp, volumeSize: 10Gi }
+          - { test: test_dirty_scans_mediump, volumeSize: 10Gi }
+          - { test: test_dirty_scans_largep, volumeSize: 10Gi }
+          - { test: test_dirty_scans_smalldp, volumeSize: 10Gi }
+          - { test: test_dirty_scans_mediumdp, volumeSize: 10Gi }
+          - { test: test_dirty_scans_largedp, volumeSize: 10Gi }
+          - { test: test_options, volumeSize: 10Gi }
+          - { test: test_categories, volumeSize: 10Gi }
+          - { test: test_sanitizers, volumeSize: 10Gi }
+          - { test: test_gc, volumeSize: 10Gi }
+          - { test: test_medium, volumeSize: 10Gi }
+          - { test: test_mixes_99_small_1_medium, volumeSize: 10Gi }
+          - { test: test_mixes_45_small_50_medium_5_big, volumeSize: 10Gi }
+          - { test: simple_test_delete, volumeSize: 10Gi }
+          - { test: test_leaf_root_delete_get_scan, volumeSize: 10Gi }
+          - { test: test_region_allocations, volumeSize: 10Gi }
+          - { test: test_redo_undo_log, volumeSize: 10Gi }
+          - { test: test_optional_logging, volumeSize: 10Gi }
+          - { test: test_par_format, volumeSize: 10Gi }
+          - { test: test_par_put_serialized, volumeSize: 10Gi }
+          - { test: test_par_put_metadata, volumeSize: 10Gi }
+          - { test: tracer, volumeSize: 10Gi}
 
   # Teardown
     - action: Delete

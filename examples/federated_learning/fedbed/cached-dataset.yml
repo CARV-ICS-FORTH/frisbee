@@ -2,7 +2,7 @@
 apiVersion: frisbee.dev/v1alpha1
 kind: Scenario
 metadata:
-  name: cached-datasets
+  name: cached-dataset
 spec:
   actions:
     # Step 0: Cache the downloaded dataset to the host (for multi-host setups, the host may change across executions)
@@ -26,11 +26,11 @@ spec:
       name: clients
       depends: { running: [ server ], success: [ cifar10-download ] }
       cluster:
-        templateRef: fedbed.client
+        templateRef: fedbed.client-with-dataset
         inputs:
-          - { fl_server: server, dataset: fl.datasets.cifar10, node_id: 0, total_nodes: 3, }
-          - { fl_server: server, dataset: fl.datasets.cifar10, node_id: 1, total_nodes: 3 }
-          - { fl_server: server, dataset: fl.datasets.cifar10, node_id: 2, total_nodes: 3 }
+          - { fl_server: server, dataset: fl.datasets.cifar10, backend: "pytorch", total_nodes: 3, node_id: 0 }
+          - { fl_server: server, dataset: fl.datasets.cifar10, backend: "pytorch", total_nodes: 3, node_id: 1 }
+          - { fl_server: server, dataset: fl.datasets.cifar10, backend: "pytorch", total_nodes: 3, node_id: 2 }
 
     # Teardown
     - action: Delete

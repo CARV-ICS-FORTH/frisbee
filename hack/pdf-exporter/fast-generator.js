@@ -72,7 +72,7 @@ const auth_header = 'Basic ' + new Buffer.from(auth_string).toString('base64');
         path: outfile,
         width: width_px + 'px',
         height: height_px + 'px',
-        format: 'Letter',  // <-- see note above for generating "paper-sized" outputs
+        // format: 'Letter',  // <-- see note above for generating "paper-sized" outputs
         scale: 1,
         displayHeaderFooter: false,
         printBackground: true,

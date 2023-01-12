@@ -1,5 +1,5 @@
 /*
-Copyright 2021 ICS-FORTH.
+Copyright 2021-2023 ICS-FORTH.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -192,6 +192,8 @@ func SetTimeline(cluster *v1alpha1.Cluster) {
 			cluster.Spec.Schedule.Timeline.DistributionSpec)
 	}
 
-	cluster.Status.Timeline = generator.ApplyToTimeline(cluster.GetCreationTimestamp(),
-		*cluster.Spec.Schedule.Timeline.TotalDuration)
+	cluster.Status.ExpectedTimeline = generator.ApplyToTimeline(
+		cluster.GetCreationTimestamp(),
+		*cluster.Spec.Schedule.Timeline.TotalDuration,
+	)
 }

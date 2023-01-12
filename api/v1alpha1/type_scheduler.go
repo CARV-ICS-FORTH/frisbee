@@ -1,5 +1,5 @@
 /*
-Copyright 2021 ICS-FORTH.
+Copyright 2021-2023 ICS-FORTH.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,9 +16,18 @@ limitations under the License.
 
 package v1alpha1
 
-// SchedulerSpec defines information about schedule of the chaos experiment.
+// TaskSchedulerSpec determines the conditions for creating new tasks of a Job.
 // The scheduler will schedule up to spec.GenerateObjectFromTemplate.Instances or spec.GenerateObjectFromTemplate.Until.
-type SchedulerSpec struct {
+type TaskSchedulerSpec struct {
+	// Sequential schedules a new task once the previous task is complete.
+	Sequential *bool `json:"sequential,omitempty"`
+
+	// StartingDeadlineSeconds is an optional deadline in seconds for starting the job if it misses scheduled
+	// time for any reason. if we miss this deadline, we'll just wait till the next scheduled time
+	//
+	// +optional
+	StartingDeadlineSeconds *int64 `json:"startingDeadlineSeconds,omitempty"`
+
 	// Cron defines a cron job rule.
 	//
 	// Some rule examples:
@@ -31,19 +40,15 @@ type SchedulerSpec struct {
 	// +optional
 	Cron *string `json:"cron,omitempty"`
 
-	// Timeline creates a timeline that honors the underlying distribution.
+	// Timeline schedules new tasks deterministically, based on predefined times that honors the underlying distribution.
+	// Multiple tasks may run concurrently.
 	// +optional
 	Timeline *TimelineDistributionSpec `json:"timeline,omitempty"`
 
-	// Event schedules a new every when an event has happened.
+	// Event schedules new tasks in a non-deterministic manner, based on system-driven events.
+	// Multiple tasks may run concurrently.
 	// +optional
 	Event *ConditionalExpr `json:"event,omitempty"`
-
-	// StartingDeadlineSeconds is an optional deadline in seconds for starting the job if it misses scheduled
-	// time for any reason. if we miss this deadline, we'll just wait till the next scheduled time
-	//
-	// +optional
-	StartingDeadlineSeconds *int64 `json:"startingDeadlineSeconds,omitempty"`
 }
 
 // DefaultStartingDeadlineSeconds hints to abort the experiment if the schedule is skewed more than 1 minuted.

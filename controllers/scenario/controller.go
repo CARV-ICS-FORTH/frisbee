@@ -1,5 +1,5 @@
 /*
-Copyright 2021 ICS-FORTH.
+Copyright 2021-2023 ICS-FORTH.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -83,7 +83,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	)
 
 	defer func() {
-		r.Logger.Info("<- Reconcile",
+		r.Logger.Info("<- Reconciler",
 			"obj", client.ObjectKeyFromObject(&scenario),
 			"phase", scenario.Status.Phase,
 			"version", scenario.GetResourceVersion(),
@@ -156,7 +156,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	case v1alpha1.PhaseRunning:
 		// Nothing to do. Just wait for something to happen.
-		r.Logger.Info(".. Awaiting",
+		r.Logger.Info(".. DequeueEvent",
 			"obj", client.ObjectKeyFromObject(&scenario),
 			scenario.Status.Reason, scenario.Status.Message,
 		)
@@ -184,7 +184,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 				return common.Stop()
 			}
 
-			r.Logger.Info(".. Awaiting",
+			r.Logger.Info(".. RequeueEvent",
 				"obj", client.ObjectKeyFromObject(&scenario),
 				"sleep until", nextRun)
 
@@ -347,8 +347,11 @@ func (r *Controller) HasSucceed(ctx context.Context, scenario *v1alpha1.Scenario
 }
 
 func (r *Controller) HasFailed(ctx context.Context, scenario *v1alpha1.Scenario) error {
-	r.Logger.Error(errors.Errorf(scenario.Status.Message), "!! "+scenario.Status.Reason,
-		"obj", client.ObjectKeyFromObject(scenario).String())
+	r.Logger.Info("!! JobError",
+		"obj", client.ObjectKeyFromObject(scenario).String(),
+		"reason ", scenario.Status.Reason,
+		"message", scenario.Status.Message,
+	)
 
 	// TODO: What should we do when a call action fails ? Should we delete all services ?
 

@@ -1,5 +1,5 @@
 /*
-Copyright 2021 ICS-FORTH.
+Copyright 2021-2023 ICS-FORTH.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -44,12 +44,16 @@ func (in *Template) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type.
 func (in *Template) Default() {
-	templatelog.Info("default", "name", in.Name)
+	templatelog.Info("SetDefaults",
+		"name", in.GetNamespace()+"/"+in.GetName(),
+	)
 }
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
 func (in *Template) ValidateCreate() error {
-	templatelog.Info("validate create", "name", in.Name)
+	templatelog.Info("ValidateCreateRequest",
+		"name", in.GetNamespace()+"/"+in.GetName(),
+	)
 
 	if err := in.validateTemplateLanguage(); err != nil {
 		return errors.Wrapf(err, "erroneous template '%s'", in.GetName())
@@ -102,9 +106,6 @@ func (in *Template) validateTemplateLanguage() error {
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
 func (in *Template) ValidateUpdate(runtime.Object) error {
-	templatelog.Info("validate update", "name", in.Name)
-
-	// TODO(user): fill in your validation logic upon object update.
 	return nil
 }
 

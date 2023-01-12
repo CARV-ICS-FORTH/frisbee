@@ -62,7 +62,7 @@ spec:
         schedule:
           cron: "@every 1m"
         # Suspend the execution if more than 6 clients are created
-        until:
+        suspendWhen:
           state: '{{.NumSuccessfulJobs}} >= 6'
 
     # When all actions are done, delete looping servers to gracefully exit the experiment

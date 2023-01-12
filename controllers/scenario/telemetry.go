@@ -1,5 +1,5 @@
 /*
-Copyright 2021 ICS-FORTH.
+Copyright 2021-2023 ICS-FORTH.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -154,7 +154,6 @@ func (r *Controller) installPrometheus(ctx context.Context, t *v1alpha1.Scenario
 			TemplateRef:  configuration.PrometheusTemplate,
 			MaxInstances: 1,
 			Inputs:       nil,
-			Until:        nil,
 		})
 		if err != nil {
 			return errors.Wrapf(err, "cannot get spec")
@@ -190,7 +189,6 @@ func (r *Controller) installGrafana(ctx context.Context, scenario *v1alpha1.Scen
 			TemplateRef:  configuration.GrafanaTemplate,
 			MaxInstances: 1,
 			Inputs:       nil,
-			Until:        nil,
 		})
 		if err != nil {
 			return errors.Wrapf(err, "cannot get spec")

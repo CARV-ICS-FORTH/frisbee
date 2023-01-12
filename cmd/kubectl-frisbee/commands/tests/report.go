@@ -1,5 +1,5 @@
 /*
-Copyright 2022 ICS-FORTH.
+Copyright 2022-2023 ICS-FORTH.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -59,7 +59,7 @@ func PopulateReportTestFlags(cmd *cobra.Command, options *TestReportOptions) {
 
 	cmd.Flags().StringVar(&options.DashboardUID, "dashboard", SummaryDashboardUID, "The dashboard to generate report from.")
 
-	cmd.Flags().BoolVar(&options.Aggregate, "aggregate", true, "Generate a single PDF for the entire dashboard.")
+	cmd.Flags().BoolVar(&options.Aggregate, "aggregate", false, "Generate a single PDF for the entire dashboard.")
 
 	cmd.Flags().StringVar(&options.RepositoryCache, "repository-cache", home.CachePath("repository"), "path to the file containing cached repository indexes")
 }

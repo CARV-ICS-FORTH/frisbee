@@ -1,5 +1,5 @@
 /*
-Copyright 2021 ICS-FORTH.
+Copyright 2021-2023 ICS-FORTH.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -57,29 +57,33 @@ type CallSpec struct {
 	// +kubebuilder:validation:minimum=1
 	Services []string `json:"services"`
 
+	/*
+		Job Scheduling
+	*/
+	// Schedule defines the interval between the invocations of the callable.
+	// +optional
+	Schedule *TaskSchedulerSpec `json:"schedule,omitempty"`
+
 	// Expect declares a list of expected outputs. The number of expected outputs must be the same
 	// as the number of defined services.
 	// +optional
 	Expect []MatchOutputs `json:"expect,omitempty"`
 
+	/*
+		Execution Flow
+	*/
+	// Suspend forces the Controller to stop scheduling any new jobs until it is resumed. Defaults to false.
+	// +optional
+	Suspend *bool `json:"suspend,omitempty"`
+
+	// SuspendWhen automatically sets Suspend to True, when certain conditions are met.
+	// +optional
+	SuspendWhen *ConditionalExpr `json:"suspendWhen,omitempty"`
+
 	// Tolerate specifies the conditions under which the call will fail. If undefined, the call fails
 	// immediately when a call to service has failed.
 	// +optional
 	Tolerate *TolerateSpec `json:"tolerate,omitempty"`
-
-	// Until defines the conditions under which the CR will stop spawning new jobs.
-	// If used in conjunction with inputs, it will loop over inputs until the conditions are met.
-	// +optional
-	Until *ConditionalExpr `json:"until,omitempty"`
-
-	// Schedule defines the interval between the invocations of the callable.
-	// +optional
-	Schedule *SchedulerSpec `json:"schedule,omitempty"`
-
-	// Suspend flag tells the controller to suspend subsequent executions, it does
-	// not apply to already started executions.  Defaults to false.
-	// +optional
-	Suspend *bool `json:"suspend,omitempty"`
 }
 
 // CallStatus defines the observed state of Call.
@@ -90,15 +94,15 @@ type CallStatus struct {
 	// +optional
 	QueuedJobs []Callable `json:"queuedJobs,omitempty"`
 
-	// Timeline is the result of evaluating a timeline distribution.
+	// ExpectedTimeline is the result of evaluating a timeline distribution into specific points in time.
 	// +optional
-	Timeline []metav1.Time `json:"timeline,omitempty"`
+	ExpectedTimeline Timeline `json:"expectedTimeline,omitempty"`
 
 	// ScheduledJobs points to the next QueuedJobs.
 	ScheduledJobs int `json:"scheduledJobs,omitempty"`
 
 	// LastScheduleTime provide information about  the last time a Service was successfully scheduled.
-	LastScheduleTime *metav1.Time `json:"lastScheduleTime,omitempty"`
+	LastScheduleTime metav1.Time `json:"lastScheduleTime,omitempty"`
 }
 
 func (in *Call) GetReconcileStatus() Lifecycle {

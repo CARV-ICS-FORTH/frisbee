@@ -1,5 +1,5 @@
 /*
-Copyright 2021 ICS-FORTH.
+Copyright 2021-2023 ICS-FORTH.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -312,9 +312,6 @@ func CheckAction(action *Action, references map[string]*Action) error {
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
 func (in *Scenario) ValidateUpdate(runtime.Object) error {
-	scenariolog.Info("validate update", "name", in.Name)
-
-	// TODO(user): fill in your validation logic upon object update.
 	return nil
 }
 

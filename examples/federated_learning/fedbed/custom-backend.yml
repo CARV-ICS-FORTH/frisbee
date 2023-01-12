@@ -16,13 +16,13 @@ spec:
     # Step 2: Create FedBed clients
     - action: Cluster
       name: clients
-      depends: { running: [ server ], success: [ cifar10-download ] }
+      depends: { running: [ server ]}
       cluster:
         templateRef: fedbed.client
         inputs:
-          - { fl_server: server, node_id: 0, total_nodes: 3, backend: "pytorch" }
-          - { fl_server: server, node_id: 1, total_nodes: 3, backend: "pytorch" }
-          - { fl_server: server, node_id: 2, total_nodes: 3, backend: "pytorch" }
+          - { fl_server: server, dataset: "MNIST", backend: "mxnet", total_nodes: 3, node_id: 0 }
+          - { fl_server: server, dataset: "MNIST", backend: "mxnet", total_nodes: 3, node_id: 1 }
+          - { fl_server: server, dataset: "MNIST", backend: "mxnet", total_nodes: 3, node_id: 2  }
 
     # Teardown
     - action: Delete

@@ -1,5 +1,5 @@
 /*
-Copyright 2022 ICS-FORTH.
+Copyright 2022-2023 ICS-FORTH.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import (
 func ReadManifest(manifestPaths ...string) ([][]byte, error) {
 	var manifestContents [][]byte
 	var err error
+
 	if len(manifestPaths) == 1 && manifestPaths[0] == "-" {
 		body, err := ReadFromStdin()
 		if err != nil {
@@ -41,6 +42,7 @@ func ReadManifest(manifestPaths ...string) ([][]byte, error) {
 			return [][]byte{}, err
 		}
 	}
+
 	return manifestContents, err
 }
 
@@ -60,6 +62,7 @@ func ReadFromFilePathsOrUrls(filePathsOrUrls ...string) ([][]byte, error) {
 	var fileContents [][]byte
 	var body []byte
 	var err error
+
 	for _, filePathOrUrl := range filePathsOrUrls {
 		if IsURL(filePathOrUrl) {
 			body, err = ReadFromUrl(filePathOrUrl)
@@ -106,5 +109,6 @@ func IsURL(u string) bool {
 			return true
 		}
 	}
+
 	return false
 }

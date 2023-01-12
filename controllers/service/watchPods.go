@@ -1,5 +1,5 @@
 /*
-Copyright 2021 ICS-FORTH.
+Copyright 2021-2023 ICS-FORTH.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ func (r *Controller) create(event event.CreateEvent) bool {
 		return false
 	}
 
-	r.Logger.Info("** Detected",
+	r.Logger.Info("** EnqueueEvent",
 		"Request", "Create",
 		"kind", reflect.TypeOf(event.Object),
 		"obj", client.ObjectKeyFromObject(event.Object),
@@ -102,7 +102,7 @@ func (r *Controller) update(event event.UpdateEvent) bool {
 
 	*/
 
-	r.Logger.Info("** Detected",
+	r.Logger.Info("** EnqueueEvent",
 		"Request", "Update",
 		"kind", reflect.TypeOf(event.ObjectNew),
 		"obj", client.ObjectKeyFromObject(event.ObjectNew),
@@ -128,7 +128,7 @@ func (r *Controller) delete(event event.DeleteEvent) bool {
 		return false
 	}
 
-	r.Logger.Info("** Detected",
+	r.Logger.Info("** EnqueueEvent",
 		"Request", "Delete",
 		"kind", reflect.TypeOf(event.Object),
 		"obj", client.ObjectKeyFromObject(event.Object),
