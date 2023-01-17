@@ -4,10 +4,9 @@ kind: Template
 metadata:
   name: parallax.ycsb
 spec:
-  inputs: # get a test name
+  inputs: # test parameters
     parameters:
       test: simple_test_delete
-      volumeSize: 1Gi
 
   service:
     decorators: # Monitoring the resources consumed by the test
@@ -23,7 +22,7 @@ spec:
               accessModes: [ReadWriteOnce]
               resources:
                 requests:
-                  storage: {{"{{.inputs.parameters.volumeSize}}"}}
+                  storage: 20Gi
 
     containers:
       - name: main
@@ -39,5 +38,6 @@ spec:
             cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
 
             cd /parallax/build
-            ctest -R {{"{{.inputs.parameters.test}}"}} --verbose
-            sleep infinity
+            export testName={{"{{.inputs.parameters.test}}"}}
+
+            ctest -R ^${testName}$ --verbose

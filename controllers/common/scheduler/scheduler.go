@@ -73,34 +73,24 @@ func Schedule(log logr.Logger, obj client.Object, params Parameters) (goToNextJo
 		return true, time.Time{}, nil
 	}
 
-	// due to the delay between API server and the controller, and the lack of local state,
-	// we may serve a request twice if the next reconciliation cycle starts too fast.
-	// In that case, we may violate sequential and event-based scheduling.
-	// Until we find a better solution, we simply delay the next tick.
-	nextTick = time.Now().Add(DefaultTickDelay)
-
-	if params.ScheduleSpec.StartingDeadlineSeconds == nil {
-		delay := time.Duration(*params.ScheduleSpec.StartingDeadlineSeconds) * time.Second
-		nextTick = time.Now().Add(delay)
-	}
+	// logrus.Warn("Scheduling Info", params.State.ListAll())
 
 	// Sequential scheduling
 	if params.ScheduleSpec.Sequential != nil {
 		// if nothing is running, start a new job
 		if params.ScheduledJobs == -1 {
-			return true, nextTick, nil
+			return true, time.Time{}, nil
 		}
 
 		// if a job is running, make sure that it is complete, where complete means
-		// either successful or failed.
-		lastJob := fmt.Sprintf("%s-%d", params.JobName, params.ScheduledJobs)
-
+		// that it is either successful or failed.
+		lastJob := fmt.Sprintf("%s-%d", params.JobName, params.ScheduledJobs+1)
 		if params.State.IsSuccessful(lastJob) || params.State.IsFailed(lastJob) {
-			return true, nextTick, nil
+			return true, time.Time{}, nil
 		}
 
-		// otherwise, do not schedule anything
-		return false, nextTick, nil
+		// otherwise, do not schedule anything, but requeue the request
+		return false, time.Time{}, nil
 	}
 
 	// Cron-based scheduling
@@ -121,7 +111,7 @@ func Schedule(log logr.Logger, obj client.Object, params Parameters) (goToNextJo
 	if !params.ScheduleSpec.Event.IsZero() {
 		eval := expressions.Condition{Expr: params.ScheduleSpec.Event}
 
-		return eval.IsTrue(&params.State, obj), nextTick, nil
+		return eval.IsTrue(&params.State, obj), time.Time{}, nil
 	}
 
 	panic("this should never happen")

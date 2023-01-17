@@ -36,24 +36,25 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-func Stop() (ctrl.Result, error) {
-	return ctrl.Result{}, nil
+func Stop(r Reconciler, req ctrl.Request) (ctrl.Result, error) {
+	r.Info("Dequeue", "request", req)
+
+	return ctrl.Result{Requeue: false, RequeueAfter: 0}, nil
 }
 
 // RequeueAfter will place the request in a queue, but it will be dequeue after the specified period.
-func RequeueAfter(delay time.Duration) (ctrl.Result, error) {
-	return ctrl.Result{RequeueAfter: delay, Requeue: true}, nil
-}
+func RequeueAfter(r Reconciler, req ctrl.Request, delay time.Duration) (ctrl.Result, error) {
+	r.Info("Requeue", "request", req, "delay", delay)
 
-// Requeue will place the request in a queue, and will be immediately dequeued.
-func Requeue() (ctrl.Result, error) {
-	return ctrl.Result{Requeue: true}, nil
+	return ctrl.Result{Requeue: true, RequeueAfter: delay}, nil
 }
 
 // RequeueWithError will place the request in a queue, and will be immediately dequeued.
 // State dequeuing the request, the controller will report the error.
-func RequeueWithError(err error) (ctrl.Result, error) {
-	return ctrl.Result{}, err
+func RequeueWithError(r Reconciler, req ctrl.Request, err error) (ctrl.Result, error) {
+	r.Info("Requeue", "request", req, "error", err)
+
+	return ctrl.Result{Requeue: true, RequeueAfter: 0}, err
 }
 
 type Logger interface {
@@ -118,10 +119,10 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 			on added / deleted requests.
 		 --*/
 		if k8errors.IsNotFound(err) {
-			return Stop()
+			return Stop(r, req)
 		}
 
-		return RequeueWithError(err)
+		return RequeueWithError(r, req, err)
 	}
 
 	logger := r.WithValues("obj", client.ObjectKeyFromObject(obj))
@@ -152,7 +153,7 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 				logger.Error(err, "Abort retrying to add finalizer")
 			}
 
-			return Stop()
+			return Stop(r, req)
 		}
 	} else {
 		/*-- Handle and Remove Finalizers for a deleted CR-*/
@@ -165,7 +166,7 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 					If the finalization logic fails, don't remove the finalizer
 					so that we can retry during the next reconciliation.
 				 --*/
-				return RequeueWithError(err)
+				return RequeueWithError(r, req, err)
 			}
 
 			/*-- Remove Finalizer. Once all finalizers have been removed, the object will be deleted. --*/
@@ -187,14 +188,14 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 					logger.Error(err, "Abort retrying to remove finalizer")
 				}
 
-				return Stop()
+				return Stop(r, req)
 			}
 		}
 	}
 
 	*requeue = false
 
-	return Stop()
+	return Stop(r, req)
 }
 
 // Update will update the metadata and the spec of the Object. If there is a conflict, it will retry again.
@@ -213,8 +214,8 @@ func UpdateStatus(ctx context.Context, reconciler Reconciler, obj client.Object)
 	if ok {
 		reconciler.Info("OO UpdtStatus",
 			"obj", client.ObjectKeyFromObject(obj),
+			"phase", statusAwre.GetReconcileStatus().Phase,
 			"version", obj.GetResourceVersion(),
-			"become", statusAwre.GetReconcileStatus().Phase,
 		)
 
 		return reconciler.GetClient().Status().Update(ctx, obj)
@@ -256,7 +257,7 @@ func Create(ctx context.Context, reconciler Reconciler, parent, child client.Obj
 
 	switch {
 	case k8errors.IsAlreadyExists(err):
-		panic(err) // This should never happen under normal conditions
+		return nil // already exists. nothing to do.
 	case err != nil:
 		return errors.Wrapf(err, "creation error")
 	default:

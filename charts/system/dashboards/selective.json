@@ -123,7 +123,8 @@
   "fiscalYearStartMonth": 0,
   "gnetId": null,
   "graphTooltip": 1,
-  "id": 3,
+  "id": 5,
+  "iteration": 1673967687364,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -205,7 +206,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(container_memory_working_set_bytes{}) / max (machine_memory_bytes{}) * 100",
+          "expr": "sum(container_memory_working_set_bytes{instance=~\"$Instance\", node=~\"$Node\"}) / max (machine_memory_bytes{instance=~\"$Instance\", node=~\"$Node\"}) * 100",
           "hide": false,
           "instant": false,
           "interval": "",
@@ -278,7 +279,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(rate(container_cpu_usage_seconds_total{ id=\"/\"}[$__rate_interval]))  / sum(max(machine_cpu_cores{}) by (node)) * 100",
+          "expr": "sum(rate(container_cpu_usage_seconds_total{instance=~\"$Instance\", node=~\"$Node\"}[$__rate_interval]))  / sum(max(machine_cpu_cores{ instance=~\"$Instance\", node=~\"$Node\"}) by (node)) * 100",
           "hide": false,
           "interval": "",
           "legendFormat": "",
@@ -350,7 +351,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "(sum(max(container_fs_usage_bytes{id=\"/\",device=~\"^(^$)|(overlay_.*)|(/dev/[sv]d[a-z][1-9]*)$\"}))  / \nsum(max(container_fs_limit_bytes{id=\"/\",device=~\"^(^$)|(overlay_.*)|(/dev/[sv]d[a-z][1-9]*)$\"}))) * 100\n",
+          "expr": "(sum(max(container_fs_usage_bytes{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", device=~\"^(^$)|(overlay_.*)|(/dev/[sv]d[a-z][1-9]*)$\"}))  / \nsum(max(container_fs_limit_bytes{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", device=~\"^(^$)|(overlay_.*)|(/dev/[sv]d[a-z][1-9]*)$\"}))) * 100\n",
           "hide": false,
           "interval": "",
           "legendFormat": "",
@@ -430,7 +431,9 @@
       "sparkline": {},
       "targets": [
         {
-          "expr": "count(max(up) by (node))",
+          "exemplar": true,
+          "expr": "count(max(up{instance=~\"$Instance\", node=~\"$Node\"}) by (node))",
+          "interval": "",
           "intervalFactor": 1,
           "legendFormat": "nodes",
           "refId": "A",
@@ -513,7 +516,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "count(max(up) by (instance))",
+          "expr": "count(max(up{instance=~\"$Instance\", node=~\"$Node\", }) by (instance))",
           "format": "table",
           "interval": "",
           "intervalFactor": 1,
@@ -585,7 +588,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "max(up) by (node)",
+          "expr": "max(up{instance=~\"$Instance\", node=~\"$Node\", }) by (node)",
           "hide": false,
           "interval": "",
           "legendFormat": "{{node}}",
@@ -679,7 +682,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(process_resident_memory_bytes{})",
+          "expr": "sum(process_resident_memory_bytes{instance=~\"$Instance\", node=~\"$Node\", })",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -762,7 +765,10 @@
       "sparkline": {},
       "targets": [
         {
-          "expr": "sum(max(machine_memory_bytes{}) by (node)) ",
+          "exemplar": true,
+          "expr": "sum(max(machine_memory_bytes{instance=~\"$Instance\", node=~\"$Node\", }) by (node)) ",
+          "interval": "",
+          "legendFormat": "",
           "refId": "total"
         }
       ],
@@ -840,7 +846,10 @@
       "sparkline": {},
       "targets": [
         {
-          "expr": "sum(rate(container_cpu_usage_seconds_total{ id=\"/\"}[$__rate_interval]))",
+          "exemplar": true,
+          "expr": "sum(rate(container_cpu_usage_seconds_total{instance=~\"$Instance\", node=~\"$Node\", }[$__rate_interval]))",
+          "interval": "",
+          "legendFormat": "",
           "refId": "vcores"
         }
       ],
@@ -918,9 +927,12 @@
       "sparkline": {},
       "targets": [
         {
-          "expr": "sum(max(machine_cpu_cores{}) by (node)) ",
+          "exemplar": true,
+          "expr": "sum(max(machine_cpu_cores{instance=~\"$Instance\", node=~\"$Node\", }) by (node)) ",
           "format": "time_series",
+          "interval": "",
           "intervalFactor": 1,
+          "legendFormat": "",
           "refId": "cores"
         }
       ],
@@ -999,7 +1011,10 @@
       "sparkline": {},
       "targets": [
         {
-          "expr": "sum(max(container_fs_usage_bytes{id=\"/\",device=~\"^(^$)|(overlay_.*)|(/dev/[sv]d[a-z][1-9]*)$\"}) by (instance))",
+          "exemplar": true,
+          "expr": "sum(max(container_fs_usage_bytes{instance=~\"$Instance\", node=~\"$Node\", device=~\"^(^$)|(overlay_.*)|(/dev/[sv]d[a-z][1-9]*)$\"}) by (instance))",
+          "interval": "",
+          "legendFormat": "",
           "refId": "total"
         }
       ],
@@ -1078,7 +1093,10 @@
       "sparkline": {},
       "targets": [
         {
-          "expr": "sum(max by (device) (container_fs_limit_bytes{id=\"/\",device=~\"^(^$)|(overlay_.*)|(/dev/[sv]d[a-z][1-9]*)$\"}))",
+          "exemplar": true,
+          "expr": "sum(max by (device) (container_fs_limit_bytes{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", device=~\"^(^$)|(overlay_.*)|(/dev/[sv]d[a-z][1-9]*)$\"}))",
+          "interval": "",
+          "legendFormat": "",
           "refId": "A"
         }
       ],
@@ -1135,8 +1153,9 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "max(up) by (node, instance)",
+          "expr": "max(up{instance=~\"$Instance\", node=~\"$Node\", }) by (node, instance)",
           "format": "table",
+          "hide": false,
           "instant": false,
           "interval": "",
           "intervalFactor": 1,
@@ -1154,7 +1173,7 @@
               "Time": {
                 "aggregations": [
                   "first",
-                  "last"
+                  "lastNotNull"
                 ],
                 "operation": "aggregate"
               },
@@ -1286,7 +1305,6 @@
         "alertName": "",
         "dashboardAlerts": false,
         "dashboardTitle": "",
-        "folderId": null,
         "maxItems": 10,
         "showOptions": "current",
         "sortOrder": 1,
@@ -1516,7 +1534,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "max(rate(container_cpu_usage_seconds_total{id=\"/\"}[$__rate_interval]))  != 0",
+          "expr": "max(rate(container_cpu_usage_seconds_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", }[$__rate_interval]))  != 0",
           "hide": false,
           "interval": "",
           "legendFormat": "max",
@@ -1524,7 +1542,7 @@
         },
         {
           "exemplar": true,
-          "expr": "avg(rate(container_cpu_usage_seconds_total{id=\"/\"}[$__rate_interval]))  != 0",
+          "expr": "avg(rate(container_cpu_usage_seconds_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", }[$__rate_interval]))  != 0",
           "hide": false,
           "interval": "",
           "legendFormat": "avg",
@@ -1532,7 +1550,7 @@
         },
         {
           "exemplar": true,
-          "expr": "min(rate(container_cpu_usage_seconds_total{id=\"/\"}[$__rate_interval]))  != 0",
+          "expr": "min(rate(container_cpu_usage_seconds_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", }[$__rate_interval]))  != 0",
           "hide": false,
           "interval": "",
           "legendFormat": "min",
@@ -1662,7 +1680,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "avg(rate(container_cpu_system_seconds_total{id=\"/\"}[$__rate_interval]))  != 0",
+          "expr": "avg(rate(container_cpu_system_seconds_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", }[$__rate_interval]))  != 0",
           "hide": false,
           "interval": "",
           "legendFormat": "kernel",
@@ -1670,7 +1688,7 @@
         },
         {
           "exemplar": true,
-          "expr": "avg(rate(container_cpu_user_seconds_total{id=\"/\"}[$__rate_interval]))  != 0",
+          "expr": "avg(rate(container_cpu_user_seconds_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", }[$__rate_interval]))  != 0",
           "hide": false,
           "interval": "",
           "legendFormat": "user",
@@ -1832,7 +1850,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "avg(rate(container_cpu_usage_seconds_total{id=\"/\"}[$__rate_interval]))  != 0",
+          "expr": "avg(rate(container_cpu_usage_seconds_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", }[$__rate_interval]))  != 0",
           "hide": false,
           "interval": "",
           "legendFormat": "cpu",
@@ -1840,7 +1858,7 @@
         },
         {
           "exemplar": true,
-          "expr": "avg(rate(container_memory_working_set_bytes{id=\"/\"}[$__rate_interval]))  != 0",
+          "expr": "avg(rate(container_memory_working_set_bytes{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", }[$__rate_interval]))  != 0",
           "hide": false,
           "interval": "",
           "legendFormat": "RAM",
@@ -1981,7 +1999,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "avg(container_memory_usage_bytes{id=\"/\"})   != 0",
+          "expr": "avg(container_memory_usage_bytes{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", })   != 0",
           "hide": false,
           "interval": "",
           "legendFormat": "Usage",
@@ -1989,7 +2007,7 @@
         },
         {
           "exemplar": true,
-          "expr": "avg(container_memory_working_set_bytes{id=\"/\"})   != 0",
+          "expr": "avg(container_memory_working_set_bytes{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", })   != 0",
           "hide": false,
           "interval": "",
           "legendFormat": "WorkingSet",
@@ -1997,7 +2015,7 @@
         },
         {
           "exemplar": true,
-          "expr": "avg(container_memory_rss{id=\"/\"})   != 0",
+          "expr": "avg(container_memory_rss{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", })   != 0",
           "hide": false,
           "interval": "",
           "legendFormat": "RSS",
@@ -2005,7 +2023,7 @@
         },
         {
           "exemplar": true,
-          "expr": "avg(container_memory_swap{id=\"/\"})   != 0",
+          "expr": "avg(container_memory_swap{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", })   != 0",
           "hide": false,
           "interval": "",
           "legendFormat": "Swap",
@@ -2013,7 +2031,7 @@
         },
         {
           "exemplar": true,
-          "expr": "avg(container_memory_mapped_file{id=\"/\"})   != 0",
+          "expr": "avg(container_memory_mapped_file{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", })   != 0",
           "hide": false,
           "interval": "",
           "legendFormat": "MMAP",
@@ -2168,7 +2186,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "avg(rate(container_memory_failures_total{id=\"/\"}[$__rate_interval])) != 0",
+          "expr": "avg(rate(container_memory_failures_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", }[$__rate_interval])) != 0",
           "hide": false,
           "interval": "",
           "legendFormat": "PageFaults",
@@ -2176,7 +2194,7 @@
         },
         {
           "exemplar": true,
-          "expr": "avg(container_memory_working_set_bytes{id=\"/\"})  != 0",
+          "expr": "avg(container_memory_working_set_bytes{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", })  != 0",
           "hide": false,
           "interval": "",
           "legendFormat": "RAM",
@@ -2270,7 +2288,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "avg(rate(container_memory_failures_total{id=\"/\", failure_type=\"pgfault\"}[$__rate_interval])) by (failure_type) != 0",
+          "expr": "avg(rate(container_memory_failures_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\",  failure_type=\"pgfault\"}[$__rate_interval])) by (failure_type) != 0",
           "interval": "",
           "legendFormat": "{{failure_type}}",
           "refId": "avg"
@@ -2373,7 +2391,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "max(container_fs_writes_bytes_total{id=\"/\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\"}) by (instance, device)  != 0",
+          "expr": "max(container_fs_writes_bytes_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\",  device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\"}) by (instance, device)  != 0",
           "format": "table",
           "hide": false,
           "instant": false,
@@ -2383,7 +2401,7 @@
         },
         {
           "exemplar": true,
-          "expr": "max(container_fs_reads_bytes_total{id=\"/\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\"}) by (instance, device) != 0",
+          "expr": "max(container_fs_reads_bytes_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\",  device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\"}) by (instance, device) != 0",
           "format": "table",
           "hide": false,
           "interval": "",
@@ -2527,7 +2545,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "max(container_fs_writes_bytes_total{id=\"/\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\"}) by (instance, device)  != 0",
+          "expr": "max(container_fs_writes_bytes_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\",  device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\"}) by (instance, device)  != 0",
           "format": "table",
           "hide": false,
           "instant": false,
@@ -2537,7 +2555,7 @@
         },
         {
           "exemplar": true,
-          "expr": "max(container_fs_reads_bytes_total{id=\"/\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\"}) by (instance, device) != 0",
+          "expr": "max(container_fs_reads_bytes_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\",  device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\"}) by (instance, device) != 0",
           "format": "table",
           "hide": false,
           "interval": "",
@@ -2664,7 +2682,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "max(container_fs_writes_total{id=\"/\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\"}) by (instance, device)  != 0",
+          "expr": "max(container_fs_writes_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\",  device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\"}) by (instance, device)  != 0",
           "format": "table",
           "hide": false,
           "instant": false,
@@ -2674,7 +2692,7 @@
         },
         {
           "exemplar": true,
-          "expr": "max(container_fs_reads_total{id=\"/\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\"}) by (instance, device) != 0",
+          "expr": "max(container_fs_reads_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\",  device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\"}) by (instance, device) != 0",
           "format": "table",
           "hide": false,
           "interval": "",
@@ -2818,7 +2836,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "max(container_fs_writes_total{id=\"/\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\"}) by (instance, device)  != 0",
+          "expr": "max(container_fs_writes_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\",  device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\"}) by (instance, device)  != 0",
           "format": "table",
           "hide": false,
           "instant": false,
@@ -2828,7 +2846,7 @@
         },
         {
           "exemplar": true,
-          "expr": "max(container_fs_reads_total{id=\"/\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\"}) by (instance, device) != 0",
+          "expr": "max(container_fs_reads_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\",  device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\"}) by (instance, device) != 0",
           "format": "table",
           "hide": false,
           "interval": "",
@@ -2928,7 +2946,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "max(container_fs_writes_bytes_total{id=\"/\",device=~\"^(^$)|(overlay_.*)|(/dev/[sv]d[a-z][1-9]*)$\"}) by (instance, device) != 0",
+          "expr": "max(container_fs_writes_bytes_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", device=~\"^(^$)|(overlay_.*)|(/dev/[sv]d[a-z][1-9]*)$\"}) by (instance, device) != 0",
           "interval": "",
           "legendFormat": "{{instance}}:{{device}}",
           "refId": "storage"
@@ -3017,7 +3035,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "avg(rate(container_fs_writes_bytes_total{id=\"/\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\"}[$__rate_interval])) != 0",
+          "expr": "avg(rate(container_fs_writes_bytes_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\",  device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\"}[$__rate_interval])) != 0",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -3027,7 +3045,7 @@
         },
         {
           "exemplar": true,
-          "expr": "avg(rate(container_fs_reads_bytes_total{id=\"/\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\"}[$__rate_interval])) != 0",
+          "expr": "avg(rate(container_fs_reads_bytes_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\",  device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\"}[$__rate_interval])) != 0",
           "hide": false,
           "interval": "",
           "legendFormat": "Read",
@@ -3122,7 +3140,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "avg(rate(container_fs_writes_total{id=\"/\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\"}[$__rate_interval])) != 0",
+          "expr": "avg(rate(container_fs_writes_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\",  device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\"}[$__rate_interval])) != 0",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -3132,7 +3150,7 @@
         },
         {
           "exemplar": true,
-          "expr": "avg(rate(container_fs_reads_total{id=\"/\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\"}[$__rate_interval])) != 0",
+          "expr": "avg(rate(container_fs_reads_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\",  device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\"}[$__rate_interval])) != 0",
           "hide": false,
           "interval": "",
           "legendFormat": "Read",
@@ -3232,7 +3250,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "avg(rate(container_fs_writes_bytes_total{id=\"/\", device=~\"^(^$)|(overlay_.*)|(/dev/[sv]d[a-z][1-9]*)$\"}[$__rate_interval])   / rate(container_fs_writes_total{id=\"/\", device=~\"^(^$)|(overlay_.*)|(/dev/[sv]d[a-z][1-9]*)$\"}[$__rate_interval])) ",
+          "expr": "avg(rate(container_fs_writes_bytes_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\",  device=~\"^(^$)|(overlay_.*)|(/dev/[sv]d[a-z][1-9]*)$\"}[$__rate_interval])   / rate(container_fs_writes_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\",  device=~\"^(^$)|(overlay_.*)|(/dev/[sv]d[a-z][1-9]*)$\"}[$__rate_interval])) ",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -3242,7 +3260,7 @@
         },
         {
           "exemplar": true,
-          "expr": "avg(rate(container_fs_reads_bytes_total{id=\"/\", device=~\"^(^$)|(overlay_.*)|(/dev/[sv]d[a-z][1-9]*)$\"}[$__rate_interval])   / rate(container_fs_reads_total{id=\"/\", device=~\"^(^$)|(overlay_.*)|(/dev/[sv]d[a-z][1-9]*)$\"}[$__rate_interval])) ",
+          "expr": "avg(rate(container_fs_reads_bytes_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\",  device=~\"^(^$)|(overlay_.*)|(/dev/[sv]d[a-z][1-9]*)$\"}[$__rate_interval])   / rate(container_fs_reads_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\",  device=~\"^(^$)|(overlay_.*)|(/dev/[sv]d[a-z][1-9]*)$\"}[$__rate_interval])) ",
           "format": "heatmap",
           "hide": false,
           "instant": false,
@@ -3344,7 +3362,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "avg(container_fs_write_seconds_total{id=\"/\", device=~\"^/dev/mapper/.*$\", }) != 0",
+          "expr": "avg(container_fs_write_seconds_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\",  device=~\"^/dev/mapper/.*$\", }) != 0",
           "hide": false,
           "interval": "",
           "intervalFactor": 1,
@@ -3353,7 +3371,7 @@
         },
         {
           "exemplar": true,
-          "expr": "avg(container_fs_read_seconds_total{id=\"/\", device=~\"^/dev/mapper/.*$\", }) != 0",
+          "expr": "avg(container_fs_read_seconds_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\",  device=~\"^/dev/mapper/.*$\", }) != 0",
           "hide": false,
           "interval": "",
           "intervalFactor": 1,
@@ -3438,7 +3456,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(max(container_network_transmit_bytes_total{id=\"/\"})) != 0",
+          "expr": "sum(max(container_network_transmit_bytes_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", })) != 0",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -3448,7 +3466,7 @@
         },
         {
           "exemplar": true,
-          "expr": "sum(max(container_network_receive_bytes_total{id=\"/\"})) != 0",
+          "expr": "sum(max(container_network_receive_bytes_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", })) != 0",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -3517,7 +3535,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(max(container_network_transmit_bytes_total{id=\"/\"})) != 0",
+          "expr": "sum(max(container_network_transmit_bytes_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", })) != 0",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -3527,7 +3545,7 @@
         },
         {
           "exemplar": true,
-          "expr": "sum(max(container_network_receive_bytes_total{id=\"/\"})) != 0",
+          "expr": "sum(max(container_network_receive_bytes_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", })) != 0",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -3593,7 +3611,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(max(container_network_transmit_packets_total{id=\"/\"})) != 0",
+          "expr": "sum(max(container_network_transmit_packets_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", })) != 0",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -3603,7 +3621,7 @@
         },
         {
           "exemplar": true,
-          "expr": "sum(max(container_network_receive_packets_total{id=\"/\"})) != 0",
+          "expr": "sum(max(container_network_receive_packets_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", })) != 0",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -3672,7 +3690,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(max(container_network_transmit_packets_total{id=\"/\"})) != 0",
+          "expr": "sum(max(container_network_transmit_packets_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", })) != 0",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -3682,7 +3700,7 @@
         },
         {
           "exemplar": true,
-          "expr": "sum(max(container_network_receive_packets_total{id=\"/\"})) != 0",
+          "expr": "sum(max(container_network_receive_packets_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", })) != 0",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -3807,7 +3825,7 @@
         "x": 0,
         "y": 138
       },
-      "id": 178,
+      "id": 186,
       "isNew": false,
       "links": [],
       "options": {
@@ -3829,7 +3847,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "max(rate(container_network_transmit_bytes_total{id=\"/\"}[$__rate_interval]))  != 0",
+          "expr": "max(rate(container_network_receive_bytes_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", }[$__rate_interval]))  != 0",
           "hide": false,
           "interval": "",
           "legendFormat": "max",
@@ -3837,7 +3855,7 @@
         },
         {
           "exemplar": true,
-          "expr": "avg(rate(container_network_transmit_bytes_total{id=\"/\"}[$__rate_interval]))  != 0",
+          "expr": "avg(rate(container_network_receive_bytes_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", }[$__rate_interval]))  != 0",
           "hide": false,
           "interval": "",
           "legendFormat": "avg",
@@ -3845,7 +3863,7 @@
         },
         {
           "exemplar": true,
-          "expr": "min(rate(container_network_transmit_bytes_total{id=\"/\"}[$__rate_interval]))  != 0",
+          "expr": "min(rate(container_network_receive_bytes_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", }[$__rate_interval]))  != 0",
           "hide": false,
           "interval": "",
           "legendFormat": "min",
@@ -3854,7 +3872,7 @@
       ],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Outbound Network Traffic",
+      "title": "Inbound Network Traffic",
       "type": "timeseries"
     },
     {
@@ -3967,7 +3985,7 @@
         "x": 0,
         "y": 146
       },
-      "id": 186,
+      "id": 178,
       "isNew": false,
       "links": [],
       "options": {
@@ -3989,7 +4007,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "max(rate(container_network_receive_bytes_total{id=\"/\"}[$__rate_interval]))  != 0",
+          "expr": "max(rate(container_network_transmit_bytes_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", }[$__rate_interval]))  != 0",
           "hide": false,
           "interval": "",
           "legendFormat": "max",
@@ -3997,7 +4015,7 @@
         },
         {
           "exemplar": true,
-          "expr": "avg(rate(container_network_receive_bytes_total{id=\"/\"}[$__rate_interval]))  != 0",
+          "expr": "avg(rate(container_network_transmit_bytes_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", }[$__rate_interval]))  != 0",
           "hide": false,
           "interval": "",
           "legendFormat": "avg",
@@ -4005,7 +4023,7 @@
         },
         {
           "exemplar": true,
-          "expr": "min(rate(container_network_receive_bytes_total{id=\"/\"}[$__rate_interval]))  != 0",
+          "expr": "min(rate(container_network_transmit_bytes_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", }[$__rate_interval]))  != 0",
           "hide": false,
           "interval": "",
           "legendFormat": "min",
@@ -4014,169 +4032,7 @@
       ],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Inbound Network Traffic",
-      "type": "timeseries"
-    },
-    {
-      "datasource": null,
-      "description": "\n\n",
-      "editable": false,
-      "error": false,
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 54,
-            "gradientMode": "opacity",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "smooth",
-            "lineStyle": {
-              "fill": "solid"
-            },
-            "lineWidth": 0,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": true,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "line"
-            }
-          },
-          "decimals": 1,
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "unit": "bytes"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Throughput"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "red",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.fillOpacity",
-                "value": 0
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
-              },
-              {
-                "id": "unit",
-                "value": "Bps"
-              },
-              {
-                "id": "min",
-                "value": 0
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Packets"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#6ed0e0",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.pointSize",
-                "value": 6
-              },
-              {
-                "id": "custom.showPoints",
-                "value": "always"
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 9,
-        "w": 24,
-        "x": 0,
-        "y": 154
-      },
-      "id": 158,
-      "isNew": false,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "single"
-        }
-      },
-      "pluginVersion": "8.2.1",
-      "span": 0,
-      "targets": [
-        {
-          "exemplar": true,
-          "expr": "avg(rate(container_network_transmit_bytes_total{id=\"/\"}[$__rate_interval]))  != 0",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "Packets",
-          "refId": "Throughput"
-        },
-        {
-          "exemplar": true,
-          "expr": "avg(rate(container_network_transmit_packets_total{id=\"/\"}[$__rate_interval]))  != 0",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "Throughput",
-          "refId": "Packets"
-        }
-      ],
-      "thresholds": [
-        {
-          "colorMode": "critical",
-          "op": "lt",
-          "value": 0.20000000298023224,
-          "visible": true
-        }
-      ],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "Correlated Outbound Network Traffic",
+      "title": "Outbound Network Traffic",
       "type": "timeseries"
     },
     {
@@ -4294,7 +4150,7 @@
         "h": 11,
         "w": 24,
         "x": 0,
-        "y": 163
+        "y": 154
       },
       "id": 167,
       "isNew": false,
@@ -4313,7 +4169,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "avg(rate(container_network_receive_bytes_total{id=\"/\"}[$__rate_interval]))  != 0",
+          "expr": "avg(rate(container_network_receive_bytes_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", }[$__rate_interval]))  != 0",
           "hide": false,
           "interval": "",
           "legendFormat": "Throughput",
@@ -4321,7 +4177,7 @@
         },
         {
           "exemplar": true,
-          "expr": "avg(rate(container_network_receive_packets_total{id=\"/\"}[$__rate_interval]))  != 0",
+          "expr": "avg(rate(container_network_receive_packets_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", }[$__rate_interval]))  != 0",
           "hide": false,
           "interval": "",
           "legendFormat": "Packets",
@@ -4339,6 +4195,168 @@
       "timeFrom": null,
       "timeShift": null,
       "title": "Correlated Inbound Network Traffic",
+      "type": "timeseries"
+    },
+    {
+      "datasource": null,
+      "description": "\n\n",
+      "editable": false,
+      "error": false,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 54,
+            "gradientMode": "opacity",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 0,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "line"
+            }
+          },
+          "decimals": 1,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Throughput"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "unit",
+                "value": "Bps"
+              },
+              {
+                "id": "min",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Packets"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#6ed0e0",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.pointSize",
+                "value": 6
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "always"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 165
+      },
+      "id": 158,
+      "isNew": false,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "pluginVersion": "8.2.1",
+      "span": 0,
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "avg(rate(container_network_transmit_packets_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", }[$__rate_interval]))  != 0",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "Throughput",
+          "refId": "cpu"
+        },
+        {
+          "exemplar": true,
+          "expr": "avg(rate(container_network_transmit_bytes_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", }[$__rate_interval]))  != 0",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "Packets",
+          "refId": "memory"
+        }
+      ],
+      "thresholds": [
+        {
+          "colorMode": "critical",
+          "op": "lt",
+          "value": 0.20000000298023224,
+          "visible": true
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Correlated Outbound Network Traffic",
       "type": "timeseries"
     },
     {
@@ -4443,7 +4461,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "max(rate(container_oom_events_total{id=\"/\"}[$__rate_interval])) != 0",
+          "expr": "max(rate(container_oom_events_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", }[$__rate_interval])) != 0",
           "hide": false,
           "interval": "",
           "intervalFactor": 1,
@@ -4452,7 +4470,7 @@
         },
         {
           "exemplar": true,
-          "expr": "avg(rate(container_oom_events_total{id=\"/\"}[$__rate_interval])) != 0",
+          "expr": "avg(rate(container_oom_events_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", }[$__rate_interval])) != 0",
           "hide": false,
           "interval": "",
           "intervalFactor": 1,
@@ -4461,7 +4479,7 @@
         },
         {
           "exemplar": true,
-          "expr": "min(rate(container_oom_events_total{id=\"/\"}[$__rate_interval])) != 0",
+          "expr": "min(rate(container_oom_events_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", }[$__rate_interval])) != 0",
           "hide": false,
           "interval": "",
           "intervalFactor": 1,
@@ -4605,7 +4623,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "max(rate(container_fs_sector_writes_total{id=\"/\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\", }[$__rate_interval]))  != 0",
+          "expr": "max(rate(container_fs_sector_writes_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\",  device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\", }[$__rate_interval]))  != 0",
           "hide": false,
           "interval": "",
           "legendFormat": "max",
@@ -4613,7 +4631,7 @@
         },
         {
           "exemplar": true,
-          "expr": "avg(rate(container_fs_sector_writes_total{id=\"/\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\", }[$__rate_interval]))  != 0",
+          "expr": "avg(rate(container_fs_sector_writes_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\",  device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\", }[$__rate_interval]))  != 0",
           "hide": false,
           "interval": "",
           "legendFormat": "avg",
@@ -4621,7 +4639,7 @@
         },
         {
           "exemplar": true,
-          "expr": "min(rate(container_fs_sector_writes_total{id=\"/\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\", }[$__rate_interval]))  != 0",
+          "expr": "min(rate(container_fs_sector_writes_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\", }[$__rate_interval]))  != 0",
           "hide": false,
           "interval": "",
           "legendFormat": "min",
@@ -4764,7 +4782,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "max(rate(container_fs_sector_reads_total{id=\"/\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\", }[$__rate_interval]))  != 0",
+          "expr": "max(rate(container_fs_sector_reads_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\",  device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\", }[$__rate_interval]))  != 0",
           "hide": false,
           "interval": "",
           "legendFormat": "max",
@@ -4772,7 +4790,7 @@
         },
         {
           "exemplar": true,
-          "expr": "avg(rate(container_fs_sector_reads_total{id=\"/\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\", }[$__rate_interval]))  != 0",
+          "expr": "avg(rate(container_fs_sector_reads_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\",  device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\", }[$__rate_interval]))  != 0",
           "hide": false,
           "interval": "",
           "legendFormat": "avg",
@@ -4780,7 +4798,7 @@
         },
         {
           "exemplar": true,
-          "expr": "min(rate(container_fs_sector_reads_total{id=\"/\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\", }[$__rate_interval]))  != 0",
+          "expr": "min(rate(container_fs_sector_reads_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\",  device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\", }[$__rate_interval]))  != 0",
           "hide": false,
           "interval": "",
           "legendFormat": "min",
@@ -4801,7 +4819,70 @@
     "frisbee"
   ],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "allValue": null,
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": null,
+        "definition": "label_values(instance)",
+        "description": null,
+        "error": null,
+        "hide": 0,
+        "includeAll": true,
+        "label": null,
+        "multi": true,
+        "name": "Instance",
+        "options": [],
+        "query": {
+          "query": "label_values(instance)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 3,
+        "type": "query"
+      },
+      {
+        "allValue": null,
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": null,
+        "definition": "label_values(node)",
+        "description": null,
+        "error": null,
+        "hide": 0,
+        "includeAll": true,
+        "label": null,
+        "multi": true,
+        "name": "Node",
+        "options": [],
+        "query": {
+          "query": "label_values(node)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 3,
+        "type": "query"
+      }
+    ]
   },
   "time": {
     "from": "now-15m",
@@ -4833,7 +4914,7 @@
     ]
   },
   "timezone": "",
-  "title": "Frisbee SUT Monitoring (Summary)",
-  "uid": "summary",
+  "title": "Frisbee SUT Monitoring (Selective)",
+  "uid": "l8iTXmoVz",
   "version": 1
 }

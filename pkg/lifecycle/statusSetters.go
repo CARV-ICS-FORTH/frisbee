@@ -23,6 +23,7 @@ import (
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
 	corev1 "k8s.io/api/core/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -51,7 +52,7 @@ func Pending(ctx context.Context, r common.Reconciler, obj client.Object, msg st
 				"obj", client.ObjectKeyFromObject(obj),
 				"phase", status.Phase)
 
-			return common.RequeueAfter(time.Second)
+			return ctrl.Result{RequeueAfter: time.Second, Requeue: true}, nil
 		}
 	} else {
 		r.Info("Object does not support RecocileStatusAware interface. Not setting status",
@@ -61,7 +62,7 @@ func Pending(ctx context.Context, r common.Reconciler, obj client.Object, msg st
 
 	r.GetEventRecorderFor(obj.GetName()).Event(obj, corev1.EventTypeNormal, status.Reason, status.Message)
 
-	return common.Stop()
+	return ctrl.Result{}, nil
 }
 
 // Failed is a wrap that logs the error, updates the status, and does not requeue the request.
@@ -84,7 +85,7 @@ func Failed(ctx context.Context, r common.Reconciler, obj client.Object, issue e
 				"obj", client.ObjectKeyFromObject(obj),
 				"phase", status.Phase)
 
-			return common.RequeueAfter(time.Second)
+			return ctrl.Result{RequeueAfter: time.Second, Requeue: true}, nil
 		}
 	} else {
 		r.Info("Object does not support RecocileStatusAware interface. Not setting status",
@@ -98,5 +99,5 @@ func Failed(ctx context.Context, r common.Reconciler, obj client.Object, issue e
 		r.GetEventRecorderFor(obj.GetName()).Event(obj, corev1.EventTypeWarning, status.Reason, status.Message)
 	}
 
-	return common.Stop()
+	return ctrl.Result{}, nil
 }

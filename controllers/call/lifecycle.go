@@ -26,8 +26,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// calculateLifecycle returns the update lifecycle of the cluster.
-func (r *Controller) calculateLifecycle(cr *v1alpha1.Call) bool {
+// updateLifecycle returns the update lifecycle of the cluster.
+func (r *Controller) updateLifecycle(cr *v1alpha1.Call) bool {
 	// Step 1. Skip any CR which are already completed, or uninitialized.
 	if cr.Status.Phase.Is(v1alpha1.PhaseUninitialized, v1alpha1.PhaseSuccess, v1alpha1.PhaseFailed) {
 		return false

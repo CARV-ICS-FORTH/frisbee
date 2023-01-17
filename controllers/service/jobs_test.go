@@ -54,7 +54,18 @@ func Test_setField(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "test-port",
+			name: "set-port",
+			args: args{
+				cr: &cr,
+				val: v1alpha1.SetField{
+					Field: "PodSpec.Containers.0.Ports.0.ContainerPort",
+					Value: "66",
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "set-volume",
 			args: args{
 				cr: &cr,
 				val: v1alpha1.SetField{

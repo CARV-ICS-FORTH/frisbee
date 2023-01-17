@@ -32,6 +32,7 @@ spec:
       containers:
         - name: manager
           image: icsforth/frisbee-operator:latest
+          imagePullPolicy: Always
           ports:
             - name: "admission-hook"                   # Admission Webhooks
               containerPort: {{.Values.operator.webhook.k8s.port | int64}}

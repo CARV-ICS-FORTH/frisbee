@@ -100,12 +100,12 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		The Update serves as "journaling" for the upcoming operations,
 		and as a roadblock for stall (queued) requests.
 	*/
-	r.updateLifecycle(&chaos)
-
-	if err := common.UpdateStatus(ctx, r, &chaos); err != nil {
-		// due to the multiple updates, it is possible for this function to
-		// be in conflict. We fix this issue by re-queueing the request.
-		return common.RequeueAfter(time.Second)
+	if r.updateLifecycle(&chaos) {
+		if err := common.UpdateStatus(ctx, r, &chaos); err != nil {
+			// due to the multiple updates, it is possible for this function to
+			// be in conflict. We fix this issue by re-queueing the request.
+			return common.RequeueAfter(r, req, time.Second)
+		}
 	}
 
 	/*
@@ -113,34 +113,10 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		------------------------------------------------------------------
 	*/
 	switch chaos.Status.Phase {
-	case v1alpha1.PhaseSuccess:
-		if err := r.HasSucceed(ctx, &chaos); err != nil {
-			return common.RequeueAfter(time.Second)
-		}
-
-		return common.Stop()
-
-	case v1alpha1.PhaseFailed:
-		if err := r.HasFailed(ctx, &chaos); err != nil {
-			return common.RequeueAfter(time.Second)
-		}
-
-		return common.Stop()
-
-	case v1alpha1.PhaseRunning:
-		// Nothing to do. Just wait for something to happen.
-		r.Logger.Info(".. DequeueEvent",
-			"obj", client.ObjectKeyFromObject(&chaos),
-			chaos.Status.Reason, chaos.Status.Message,
-		)
-
-		return common.Stop()
-
 	case v1alpha1.PhaseUninitialized, v1alpha1.PhasePending:
-
 		// Avoid re-scheduling a scheduled job
 		if chaos.Status.LastScheduleTime != nil {
-			return common.Stop()
+			return common.Stop(r, req)
 		}
 
 		// Build the job in kubernetes
@@ -152,6 +128,21 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		chaos.Status.LastScheduleTime = &metav1.Time{Time: time.Now()}
 
 		return lifecycle.Pending(ctx, r, &chaos, "injecting fault")
+
+	case v1alpha1.PhaseRunning:
+		// Nothing to do. Just wait for something to happen.
+
+		return common.Stop(r, req)
+
+	case v1alpha1.PhaseSuccess:
+		r.HasSucceed(ctx, &chaos)
+
+		return common.Stop(r, req)
+
+	case v1alpha1.PhaseFailed:
+		r.HasFailed(ctx, &chaos)
+
+		return common.Stop(r, req)
 	}
 
 	panic(errors.New("This should never happen"))
@@ -231,7 +222,7 @@ func (r *Controller) PopulateView(ctx context.Context, req types.NamespacedName)
 	return nil
 }
 
-func (r *Controller) HasSucceed(ctx context.Context, chaos *v1alpha1.Chaos) error {
+func (r *Controller) HasSucceed(ctx context.Context, chaos *v1alpha1.Chaos) {
 	r.Logger.Info("CleanOnSuccess",
 		"obj", client.ObjectKeyFromObject(chaos).String(),
 		"successfulJobs", r.view.ListSuccessfulJobs(),
@@ -240,11 +231,9 @@ func (r *Controller) HasSucceed(ctx context.Context, chaos *v1alpha1.Chaos) erro
 	for _, job := range r.view.GetSuccessfulJobs() {
 		common.Delete(ctx, r, job)
 	}
-
-	return nil
 }
 
-func (r *Controller) HasFailed(ctx context.Context, chaos *v1alpha1.Chaos) error {
+func (r *Controller) HasFailed(ctx context.Context, chaos *v1alpha1.Chaos) {
 	r.Logger.Info("!! JobError",
 		"obj", client.ObjectKeyFromObject(chaos).String(),
 		"reason ", chaos.Status.Reason,
@@ -259,8 +248,6 @@ func (r *Controller) HasFailed(ctx context.Context, chaos *v1alpha1.Chaos) error
 	for _, job := range r.view.GetRunningJobs() {
 		common.Delete(ctx, r, job)
 	}
-
-	return nil
 }
 
 /*
