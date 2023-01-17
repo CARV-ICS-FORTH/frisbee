@@ -22,6 +22,7 @@ import (
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
+	"github.com/carv-ics-forth/frisbee/pkg/grafana"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"
@@ -60,7 +61,7 @@ func (w *simpleWatch) watchCreate(reconciler common.Reconciler, gvk schema.Group
 			return false
 		}
 
-		reconciler.Info("** EnqueueEvent",
+		reconciler.Info("** Enqueue",
 			"Request", "Create",
 			"kind", reflect.TypeOf(event.Object),
 			"obj", client.ObjectKeyFromObject(event.Object),
@@ -88,23 +89,29 @@ func (w *simpleWatch) watchUpdate(reconciler common.Reconciler, gvk schema.Group
 			// and after such time has passed, the kubelet actually deletes it from the store. We receive an update
 			// for modification of the deletion timestamp and expect the reconciler to act asap, not to wait until the
 			// kubelet actually deletes the object.
-			return true
+			return false
 		}
 
-		// if the status is the same, there is no need to inform the service
-		prev := event.ObjectOld.(v1alpha1.ReconcileStatusAware)
-		latest := event.ObjectNew.(v1alpha1.ReconcileStatusAware)
+		prev := event.ObjectOld.(v1alpha1.ReconcileStatusAware).GetReconcileStatus()
+		latest := event.ObjectNew.(v1alpha1.ReconcileStatusAware).GetReconcileStatus()
 
-		reconciler.Info("** EnqueueEvent",
+		// push an annotation that the frisbee object has failed.
+		// the comparison with prev ensures that annotation will be just passed once.
+		if !prev.Phase.Is(v1alpha1.PhaseFailed) && latest.Phase.Is(v1alpha1.PhaseFailed) {
+			annotation := &grafana.PointAnnotation{}
+			annotation.Add(event.ObjectNew, grafana.TagFailed)
+		}
+
+		reconciler.Info("** Enqueue",
 			"Request", "Update",
 			"kind", reflect.TypeOf(event.ObjectNew),
 			"obj", client.ObjectKeyFromObject(event.ObjectNew),
-			"phase", fmt.Sprintf("%s -> %s", prev.GetReconcileStatus().Phase, latest.GetReconcileStatus().Phase),
-			"version", fmt.Sprintf("%s -> %s", prev.GetResourceVersion(), latest.GetResourceVersion()),
+			"phase", fmt.Sprintf("%s -> %s", prev.Phase, latest.Phase),
+			"version", fmt.Sprintf("%s -> %s", event.ObjectOld.GetResourceVersion(), event.ObjectNew.GetResourceVersion()),
 		)
 
 		// a controller never initiates a phase change, and so is never asleep waiting for the same.
-		if prev.GetReconcileStatus().Phase == latest.GetReconcileStatus().Phase {
+		if prev.Phase == latest.Phase {
 			reconciler.Info("Ignore Update", "obj", client.ObjectKeyFromObject(event.ObjectNew))
 
 			return false
@@ -129,7 +136,7 @@ func (w *simpleWatch) watchDelete(reconciler common.Reconciler, gvk schema.Group
 			return false
 		}
 
-		reconciler.Info("** EnqueueEvent",
+		reconciler.Info("** Enqueue",
 			"Request", "Delete",
 			"kind", reflect.TypeOf(event.Object),
 			"obj", client.ObjectKeyFromObject(event.Object),

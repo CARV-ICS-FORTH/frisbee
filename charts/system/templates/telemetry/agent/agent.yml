@@ -30,20 +30,31 @@ spec:
           - /bin/sh # Run shell
           - -c # Read from string
           - |  # Multi-line str
-            set -eum
+            set -eux
 
-            # Wait a bit to obtain the PID of the main container
-            while [ ! -f "/dev/shm/app" ];
-            do
-              sleep 3
-            done
+            get_main_pid() {
+              # Wait a bit to obtain the PID of the main container
+              [ -f "/dev/shm/app" ] || inotifywait /dev/shm --include 'app'
 
-            # Unmount the local cgroup
-            umount /sys/fs/cgroup
+              export mainPID=$(cat /dev/shm/app)
+            }
 
-            # Tap into the cgroup of the main container, and mount it locally
-            nsenter -t $(cat /dev/shm/app) -C -- mount -t cgroup2 none /sys/fs/cgroup
+            enter_ns() {
+              # Check that main's PID corresponds to an actual process.
+              # If it doesn't, it may be already complete. In any case, it is not our job
+              # to find out the reason. Just exit with success and let experiment to continue.
+              [ -d "/proc/${mainPID}" ] || { echo "/proc/${mainPID} does not exists.";  exit 0; }
 
+              # Unmount the local cgroup
+              umount /sys/fs/cgroup
+
+              # Tap into the cgroup of the main container, and mount it locally
+              nsenter -t ${mainPID} -C -- mount -t cgroup2 none /sys/fs/cgroup
+            }
+
+            get_main_pid && enter_ns
+
+            # Start the monitoring
             cadvisor --port=9442                  \
             --docker_only=true                   \
             --store_container_labels=false        \

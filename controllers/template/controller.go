@@ -55,12 +55,12 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		// requeue (we'll need to wait for a new notification), and we can get them
 		// on added / deleted requests.
 		if k8errors.IsNotFound(err) {
-			return common.Stop()
+			return common.Stop(r, req)
 		}
 
 		r.Error(err, "obj retrieval")
 
-		return common.RequeueAfter(time.Second)
+		return common.RequeueAfter(r, req, time.Second)
 	}
 
 	/*
@@ -107,7 +107,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	case v1alpha1.PhaseUninitialized:
 		r.Logger.Info("Import", "obj", req.NamespacedName)
 
-		return common.Stop()
+		return common.Stop(r, req)
 	default:
 		panic("Should never happen: " + template.Status.Lifecycle.Phase)
 	}

@@ -50,7 +50,7 @@ func (r *Controller) create(event event.CreateEvent) bool {
 		return false
 	}
 
-	r.Logger.Info("** EnqueueEvent",
+	r.Logger.Info("** Enqueue",
 		"Request", "Create",
 		"kind", reflect.TypeOf(event.Object),
 		"obj", client.ObjectKeyFromObject(event.Object),
@@ -59,12 +59,12 @@ func (r *Controller) create(event event.CreateEvent) bool {
 
 	if v1alpha1.DrawRegion(event.Object) {
 		annotation := &grafana.RangeAnnotation{}
-		annotation.Add(event.Object, grafana.TagFailure)
+		annotation.Add(event.Object, grafana.TagChaos)
 
 		r.regionAnnotations.Set(event.Object.GetName(), annotation)
 	} else {
 		annotation := &grafana.PointAnnotation{}
-		annotation.Add(event.Object, grafana.TagFailure)
+		annotation.Add(event.Object, grafana.TagChaos)
 	}
 
 	return true
@@ -86,10 +86,10 @@ func (r *Controller) update(event event.UpdateEvent) bool {
 		// and after such time has passed, the kubelet actually deletes it from the store. We receive an update
 		// for modification of the deletion timestamp and expect the reconciler to act asap, not to wait until the
 		// kubelet actually deletes the object.
-		return true
+		return false
 	}
 
-	r.Logger.Info("** EnqueueEvent",
+	r.Logger.Info("** Enqueue",
 		"Request", "Update",
 		"kind", reflect.TypeOf(event.ObjectNew),
 		"obj", client.ObjectKeyFromObject(event.ObjectNew),
@@ -113,7 +113,7 @@ func (r *Controller) delete(event event.DeleteEvent) bool {
 		return false
 	}
 
-	r.Logger.Info("** EnqueueEvent",
+	r.Logger.Info("** Enqueue",
 		"Request", "Delete",
 		"kind", reflect.TypeOf(event.Object),
 		"obj", client.ObjectKeyFromObject(event.Object),
@@ -127,12 +127,12 @@ func (r *Controller) delete(event event.DeleteEvent) bool {
 			return false
 		}
 
-		annotation.(*grafana.RangeAnnotation).Delete(event.Object, grafana.TagFailure)
+		annotation.(*grafana.RangeAnnotation).Delete(event.Object, grafana.TagChaos)
 
 		r.regionAnnotations.Remove(event.Object.GetName())
 	} else {
 		annotation := &grafana.PointAnnotation{}
-		annotation.Delete(event.Object, grafana.TagFailure)
+		annotation.Delete(event.Object, grafana.TagChaos)
 	}
 
 	return true

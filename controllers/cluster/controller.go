@@ -94,12 +94,12 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		The Update serves as "journaling" for the upcoming operations,
 		and as a roadblock for stall (queued) requests.
 	*/
-	r.calculateLifecycle(&cluster)
-
-	if err := common.UpdateStatus(ctx, r, &cluster); err != nil {
-		// due to the multiple updates, it is possible for this function to
-		// be in conflict. We fix this issue by re-queueing the request.
-		return common.RequeueAfter(time.Second)
+	if r.updateLifecycle(&cluster) {
+		if err := common.UpdateStatus(ctx, r, &cluster); err != nil {
+			// due to the multiple updates, it is possible for this function to
+			// be in conflict. We fix this issue by re-queueing the request.
+			return common.RequeueAfter(r, req, time.Second)
+		}
 	}
 
 	/*
@@ -111,32 +111,12 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		// If this object is suspended, we don't want to run any jobs, so we'll stop now.
 		// This is useful if something's broken with the job we're running, and we want to
 		// pause runs to investigate the cluster, without deleting the object.
-		return common.Stop()
+		return common.Stop(r, req)
 	}
 
 	log := r.Logger.WithValues("object", client.ObjectKeyFromObject(&cluster))
 
 	switch cluster.Status.Phase {
-	case v1alpha1.PhaseSuccess:
-		if err := r.HasSucceed(ctx, &cluster); err != nil {
-			return common.RequeueAfter(time.Second)
-		}
-
-		return common.Stop()
-
-	case v1alpha1.PhaseFailed:
-		if err := r.HasFailed(ctx, &cluster); err != nil {
-			return common.RequeueAfter(time.Second)
-		}
-
-		return common.Stop()
-
-	case v1alpha1.PhaseRunning:
-		// Nothing to do. Just wait for something to happen.
-		log.Info(".. DequeueEvent", cluster.Status.Reason, cluster.Status.Message)
-
-		return common.Stop()
-
 	case v1alpha1.PhaseUninitialized:
 		if err := r.Initialize(ctx, &cluster); err != nil {
 			return lifecycle.Failed(ctx, r, &cluster, errors.Wrapf(err, "initialization error"))
@@ -150,29 +130,30 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		//	If all jobs are scheduled but are not in the Running phase, they may be in the Pending phase.
 		//	In both cases, we have nothing else to do but waiting for the next reconciliation cycle.
 		if cluster.Spec.SuspendWhen == nil && (nextJob >= len(cluster.Status.QueuedJobs)) {
-			log.Info(".. DequeueEvent", cluster.Status.Reason, cluster.Status.Message)
-
-			return common.Stop()
+			return common.Stop(r, req)
 		}
 
 		// Get the next scheduled job
-		{
-			hasJob, nextTick, err := scheduler.Schedule(log, &cluster, scheduler.Parameters{
-				State:            *r.view,
-				ScheduleSpec:     cluster.Spec.Schedule,
-				LastScheduleTime: cluster.Status.LastScheduleTime,
-				ExpectedTimeline: cluster.Status.ExpectedTimeline,
-				JobName:          cluster.GetName(),
-				ScheduledJobs:    cluster.Status.ScheduledJobs,
-			})
-			if err != nil {
-				return lifecycle.Failed(ctx, r, &cluster, errors.Wrapf(err, "scheduling error"))
+		hasJob, nextTick, err := scheduler.Schedule(log, &cluster, scheduler.Parameters{
+			State:            *r.view,
+			ScheduleSpec:     cluster.Spec.Schedule,
+			LastScheduleTime: cluster.Status.LastScheduleTime,
+			ExpectedTimeline: cluster.Status.ExpectedTimeline,
+			JobName:          cluster.GetName(),
+			ScheduledJobs:    cluster.Status.ScheduledJobs,
+		})
+		if err != nil {
+			return lifecycle.Failed(ctx, r, &cluster, errors.Wrapf(err, "scheduling error"))
+		}
+
+		if !hasJob {
+			r.Logger.Info("Nothing to do right now. Requeue request.", "nextTick", nextTick)
+
+			if nextTick.IsZero() {
+				return common.Stop(r, req)
 			}
 
-			if !hasJob {
-				// nothing to do in this around. wake me up again after some time.
-				return common.RequeueAfter(time.Until(nextTick))
-			}
+			return common.RequeueAfter(r, req, time.Until(nextTick))
 		}
 
 		// Build the job in kubernetes
@@ -186,6 +167,24 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		return lifecycle.Pending(ctx, r, &cluster, fmt.Sprintf("Scheduled jobs: '%d/%d'",
 			cluster.Status.ScheduledJobs+1, cluster.Spec.MaxInstances))
+
+	case v1alpha1.PhaseRunning:
+		// Nothing to do. Just wait for something to happen.
+		return common.Stop(r, req)
+
+	case v1alpha1.PhaseSuccess:
+		if err := r.HasSucceed(ctx, &cluster); err != nil {
+			return common.RequeueAfter(r, req, time.Second)
+		}
+
+		return common.Stop(r, req)
+
+	case v1alpha1.PhaseFailed:
+		if err := r.HasFailed(ctx, &cluster); err != nil {
+			return common.RequeueAfter(r, req, time.Second)
+		}
+
+		return common.Stop(r, req)
 	}
 
 	panic(errors.New("This should never happen"))

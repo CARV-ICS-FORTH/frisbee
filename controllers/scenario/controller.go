@@ -106,7 +106,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		}
 
 		// Just stop, waiting for system services to come up.
-		return common.Stop()
+		return common.Stop(r, req)
 	}
 
 	/*
@@ -115,12 +115,12 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		The Update serves as "journaling" for the upcoming operations,
 		and as a roadblock for stall (queued) requests.
 	*/
-	r.updateLifecycle(&scenario)
-
-	if err := common.UpdateStatus(ctx, r, &scenario); err != nil {
-		// due to the multiple updates, it is possible for this function to
-		// be in conflict. We fix this issue by re-queueing the request.
-		return common.RequeueAfter(time.Second)
+	if r.updateLifecycle(&scenario) {
+		if err := common.UpdateStatus(ctx, r, &scenario); err != nil {
+			// due to the multiple updates, it is possible for this function to
+			// be in conflict. We fix this issue by re-queueing the request.
+			return common.RequeueAfter(r, req, time.Second)
+		}
 	}
 
 	/*
@@ -132,7 +132,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// This is useful if something's broken with the job we're running, and we want to
 	// pause runs to investigate the cluster, without deleting the object.
 	if scenario.Spec.Suspend != nil && *scenario.Spec.Suspend {
-		return common.Stop()
+		return common.Stop(r, req)
 	}
 
 	// Label this resource with the name of the scenario.
@@ -140,29 +140,6 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	v1alpha1.SetScenarioLabel(&scenario.ObjectMeta, scenario.GetName())
 
 	switch scenario.Status.Phase {
-	case v1alpha1.PhaseSuccess:
-		if err := r.HasSucceed(ctx, &scenario); err != nil {
-			return common.RequeueAfter(time.Second)
-		}
-
-		return common.Stop()
-
-	case v1alpha1.PhaseFailed:
-		if err := r.HasFailed(ctx, &scenario); err != nil {
-			return common.RequeueAfter(time.Second)
-		}
-
-		return common.Stop()
-
-	case v1alpha1.PhaseRunning:
-		// Nothing to do. Just wait for something to happen.
-		r.Logger.Info(".. DequeueEvent",
-			"obj", client.ObjectKeyFromObject(&scenario),
-			scenario.Status.Reason, scenario.Status.Message,
-		)
-
-		return common.Stop()
-
 	case v1alpha1.PhaseUninitialized:
 		if err := r.Initialize(ctx, &scenario); err != nil {
 			return lifecycle.Failed(ctx, r, &scenario, errors.Wrapf(err, "initialization error"))
@@ -170,7 +147,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		// We could use common.Stop() to simply wait, but we need update status because Initialize()
 		// sets the endpoints, and we want to maintain this information for connectToGrafana().
-		return lifecycle.Pending(ctx, r, &scenario, "Initializing system (SYS) services.")
+		return lifecycle.Pending(ctx, r, &scenario, "Initializing the testing environment")
 
 	case v1alpha1.PhasePending:
 		actionList, nextRun, err := r.NextJobs(&scenario)
@@ -181,14 +158,14 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		if len(actionList) == 0 {
 			if nextRun.IsZero() {
 				// nothing to do on this cycle. wait the next cycle trigger by watchers.
-				return common.Stop()
+				return common.Stop(r, req)
 			}
 
 			r.Logger.Info(".. RequeueEvent",
 				"obj", client.ObjectKeyFromObject(&scenario),
 				"sleep until", nextRun)
 
-			return common.RequeueAfter(time.Until(nextRun))
+			return common.RequeueAfter(r, req, time.Until(nextRun))
 		}
 
 		if err := r.RunActions(ctx, &scenario, actionList); err != nil {
@@ -197,6 +174,24 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		return lifecycle.Pending(ctx, r, &scenario, fmt.Sprintf("Scheduled jobs: '%d/%d'",
 			len(scenario.Status.ScheduledJobs), len(scenario.Spec.Actions)))
+
+	case v1alpha1.PhaseRunning:
+		// Nothing to do. Just wait for something to happen.
+		return common.Stop(r, req)
+
+	case v1alpha1.PhaseSuccess:
+		if err := r.HasSucceed(ctx, &scenario); err != nil {
+			return common.RequeueAfter(r, req, time.Second)
+		}
+
+		return common.Stop(r, req)
+
+	case v1alpha1.PhaseFailed:
+		if err := r.HasFailed(ctx, &scenario); err != nil {
+			return common.RequeueAfter(r, req, time.Second)
+		}
+
+		return common.Stop(r, req)
 	}
 
 	panic(errors.New("This should never happen"))

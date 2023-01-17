@@ -115,12 +115,12 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		The Update serves as "journaling" for the upcoming operations,
 		and as a roadblock for stall (queued) requests.
 	*/
-	r.updateLifecycle(&service)
-
-	if err := common.UpdateStatus(ctx, r, &service); err != nil {
-		// due to the multiple updates, it is possible for this function to
-		// be in conflict. We fix this issue by re-queueing the request.
-		return common.RequeueAfter(time.Second)
+	if r.updateLifecycle(&service) {
+		if err := common.UpdateStatus(ctx, r, &service); err != nil {
+			// due to the multiple updates, it is possible for this function to
+			// be in conflict. We fix this issue by re-queueing the request.
+			return common.RequeueAfter(r, req, time.Second)
+		}
 	}
 
 	/*
@@ -129,34 +129,11 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	*/
 
 	switch service.Status.Phase {
-	case v1alpha1.PhaseSuccess:
-		if err := r.HasSucceed(ctx, &service); err != nil {
-			return common.RequeueAfter(time.Second)
-		}
-
-		return common.Stop()
-
-	case v1alpha1.PhaseFailed:
-		if err := r.HasFailed(ctx, &service); err != nil {
-			return common.RequeueAfter(time.Second)
-		}
-
-		return common.Stop()
-
-	case v1alpha1.PhaseRunning:
-		// Nothing to do. Just wait for something to happen.
-		r.Logger.Info(".. DequeueEvent",
-			"obj", client.ObjectKeyFromObject(&service),
-			service.Status.Reason, service.Status.Message,
-		)
-
-		return common.Stop()
-
 	case v1alpha1.PhaseUninitialized:
 		// Avoid re-scheduling a scheduled job
 		if service.Status.LastScheduleTime != nil {
 			// next reconciliation cycle will be trigger by the watchers
-			return common.Stop()
+			return common.Stop(r, req)
 		}
 
 		// Build the job in kubernetes
@@ -169,12 +146,22 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		return lifecycle.Pending(ctx, r, &service, "Submit pod create request")
 
-	case v1alpha1.PhasePending:
-		// Nothing to do
-		return common.Stop()
+	case v1alpha1.PhasePending, v1alpha1.PhaseRunning:
+		// Nothing to do. We are not waiting for Pod to begin.
+		return common.Stop(r, req)
+
+	case v1alpha1.PhaseSuccess:
+		r.HasSucceed(ctx, &service)
+
+		return common.Stop(r, req)
+
+	case v1alpha1.PhaseFailed:
+		r.HasFailed(ctx, &service)
+
+		return common.Stop(r, req)
 	}
 
-	panic(errors.New("This should never happen"))
+	panic("this should never happen")
 }
 
 func (r *Controller) PopulateView(ctx context.Context, req types.NamespacedName) error {
@@ -194,7 +181,7 @@ func (r *Controller) PopulateView(ctx context.Context, req types.NamespacedName)
 	return nil
 }
 
-func (r *Controller) HasSucceed(ctx context.Context, cr *v1alpha1.Service) error {
+func (r *Controller) HasSucceed(ctx context.Context, cr *v1alpha1.Service) {
 	r.Logger.Info("CleanOnSuccess",
 		"obj", client.ObjectKeyFromObject(cr).String(),
 		"successfulJobs", r.view.ListSuccessfulJobs(),
@@ -203,13 +190,9 @@ func (r *Controller) HasSucceed(ctx context.Context, cr *v1alpha1.Service) error
 	for _, job := range r.view.GetSuccessfulJobs() {
 		common.Delete(ctx, r, job)
 	}
-
-	// TODO: remove dns service.
-
-	return nil
 }
 
-func (r *Controller) HasFailed(ctx context.Context, cr *v1alpha1.Service) error {
+func (r *Controller) HasFailed(ctx context.Context, cr *v1alpha1.Service) {
 	r.Logger.Info("!! JobError",
 		"obj", client.ObjectKeyFromObject(cr).String(),
 		"reason ", cr.Status.Reason,
@@ -224,8 +207,6 @@ func (r *Controller) HasFailed(ctx context.Context, cr *v1alpha1.Service) error 
 	for _, job := range r.view.GetRunningJobs() {
 		common.Delete(ctx, r, job)
 	}
-
-	return nil
 }
 
 /*

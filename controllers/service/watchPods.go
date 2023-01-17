@@ -51,7 +51,7 @@ func (r *Controller) create(event event.CreateEvent) bool {
 		return false
 	}
 
-	r.Logger.Info("** EnqueueEvent",
+	r.Logger.Info("** Enqueue",
 		"Request", "Create",
 		"kind", reflect.TypeOf(event.Object),
 		"obj", client.ObjectKeyFromObject(event.Object),
@@ -87,27 +87,18 @@ func (r *Controller) update(event event.UpdateEvent) bool {
 		// and after such time has passed, the kubelet actually deletes it from the store. We receive an update
 		// for modification of the deletion timestamp and expect the reconciler to act asap, not to wait until the
 		// kubelet actually deletes the object.
-		return true
+		return false
 	}
 
-	// if the status is the same, there is no need to inform the service
 	prev := event.ObjectOld.(*corev1.Pod)
+
 	latest := event.ObjectNew.(*corev1.Pod)
 
-	/*
-		if prev.Status.Phase == latest.Status.Phase {
-			// a controller never initiates a phase change, and so is never asleep waiting for the same.
-			return false
-		}
-
-	*/
-
-	r.Logger.Info("** EnqueueEvent",
+	r.Logger.Info("** Enqueue",
 		"Request", "Update",
 		"kind", reflect.TypeOf(event.ObjectNew),
 		"obj", client.ObjectKeyFromObject(event.ObjectNew),
-		"from", prev.Status.Phase,
-		"to", latest.Status.Phase,
+		"phase", fmt.Sprintf("%s -> %s", prev.Status.Phase, latest.Status.Phase),
 		"version", fmt.Sprintf("%s -> %s", prev.GetResourceVersion(), latest.GetResourceVersion()),
 	)
 
@@ -128,7 +119,7 @@ func (r *Controller) delete(event event.DeleteEvent) bool {
 		return false
 	}
 
-	r.Logger.Info("** EnqueueEvent",
+	r.Logger.Info("** Enqueue",
 		"Request", "Delete",
 		"kind", reflect.TypeOf(event.Object),
 		"obj", client.ObjectKeyFromObject(event.Object),

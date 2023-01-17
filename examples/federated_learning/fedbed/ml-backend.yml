@@ -1,8 +1,10 @@
+# This experiment is designed for the evaluation of various ML frameworks on the client.
+# For this purpose, we use a single client, and we change its backend.
 ---
 apiVersion: frisbee.dev/v1alpha1
 kind: Scenario
 metadata:
-  name: custom-backend
+  name: ml-backend
 spec:
   actions:
     # Step 1: Create FedBed server
@@ -11,7 +13,7 @@ spec:
       service:
         templateRef: fedbed.server
         inputs:
-          - { min_fit_clients: 3 }
+          - { min_fit_clients: 1, min_available_clients: 1 }
 
     # Step 2: Create FedBed clients
     - action: Cluster
@@ -20,9 +22,8 @@ spec:
       cluster:
         templateRef: fedbed.client
         inputs:
-          - { fl_server: server, dataset: "MNIST", backend: "mxnet", total_nodes: 3, node_id: 0 }
-          - { fl_server: server, dataset: "MNIST", backend: "mxnet", total_nodes: 3, node_id: 1 }
-          - { fl_server: server, dataset: "MNIST", backend: "mxnet", total_nodes: 3, node_id: 2  }
+          - { fl_server: server, dataset: "MNIST", backend: "mxnet", total_nodes: 1, node_id: 0 }
+
 
     # Teardown
     - action: Delete

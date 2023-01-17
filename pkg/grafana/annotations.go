@@ -33,9 +33,10 @@ import (
 type Tag = string
 
 const (
-	TagRun     = "run"
-	TagExit    = "exit"
-	TagFailure = "failure"
+	TagCreated = "create"
+	TagDeleted = "delete"
+	TagFailed  = "failed"
+	TagChaos   = "chaos"
 )
 
 // Annotation provides a way to mark points on the graph with rich events.
@@ -53,7 +54,7 @@ type PointAnnotation struct{}
 
 func (a *PointAnnotation) Add(obj client.Object, tags ...Tag) {
 	if tags == nil {
-		tags = []Tag{TagRun}
+		tags = []Tag{TagCreated}
 	}
 
 	ga := sdk.CreateAnnotationRequest{
@@ -68,7 +69,7 @@ func (a *PointAnnotation) Add(obj client.Object, tags ...Tag) {
 
 func (a *PointAnnotation) Delete(obj client.Object, tags ...Tag) {
 	if tags == nil {
-		tags = []Tag{TagExit}
+		tags = []Tag{TagDeleted}
 	}
 
 	delTime := obj.GetDeletionTimestamp()
@@ -98,7 +99,7 @@ type RangeAnnotation struct {
 
 func (a *RangeAnnotation) Add(obj client.Object, tags ...Tag) {
 	if tags == nil {
-		tags = []Tag{TagRun}
+		tags = []Tag{TagCreated}
 	}
 
 	// In order to make the annotation open-ended, I added a date in the future.
@@ -116,7 +117,7 @@ func (a *RangeAnnotation) Add(obj client.Object, tags ...Tag) {
 
 func (a *RangeAnnotation) Delete(obj client.Object, tags ...Tag) {
 	if tags == nil {
-		tags = []Tag{TagExit}
+		tags = []Tag{TagDeleted}
 	}
 
 	timeStart := obj.GetCreationTimestamp()

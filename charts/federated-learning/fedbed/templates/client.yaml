@@ -26,20 +26,21 @@ spec:
             value: {{"{{.inputs.parameters.backend}}" | quote }}
           - name: FL_NUM_OF_THREADS
             value: "1"
+
           - name: FL_DATASET
             value: {{"{{.inputs.parameters.dataset}}" | quote }}
+          - name: FL_DATASET_DISTRIBUTION
+            value: "flat"
+          - name: FL_DATASET_DISTRIBUTION_PARAMETERS
+            value: '{"random_state":1}'
+          - name: FL_DATASET_RANDOM
+            value: "False"
 
           # Are these values really needed here?
           - name: FL_NODES
             value: {{"{{.inputs.parameters.total_nodes}}" | quote}}
           - name: FL_NODE_ID
             value: {{"{{.inputs.parameters.node_id}}" | quote}}
-          - name: FL_DATASET_DISTRIBUTION
-            value: "flat"
-          - name: FL_DATASET_DISTRIBUTION_PARAMETERS
-            value: "{}"
-          - name: FL_DATASET_RANDOM
-            value: "false"
 
         command:
           - /bin/sh   # Run shell
