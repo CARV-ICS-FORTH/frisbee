@@ -156,13 +156,13 @@ func SetResources(cluster *v1alpha1.Cluster, services []v1alpha1.ServiceSpec) {
 		return
 	}
 
-	var generator distributions.PointDistribution
+	var generator distributions.ProbabilitySlice
 
 	// Default distributions means loads the evaluated distribution from the status of the resource.
 	if cluster.Spec.Resources.DistributionSpec.Name == v1alpha1.DistributionDefault {
 		generator = cluster.Status.DefaultDistribution
 	} else {
-		generator = distributions.GetPointDistribution(int64(cluster.Spec.MaxInstances), cluster.Spec.Resources.DistributionSpec)
+		generator = distributions.GenerateProbabilitySliceFromSpec(int64(cluster.Spec.MaxInstances), cluster.Spec.Resources.DistributionSpec)
 	}
 
 	resources := generator.ApplyToResources(cluster.Spec.Resources.TotalResources)
@@ -183,16 +183,16 @@ func SetTimeline(cluster *v1alpha1.Cluster) {
 		return
 	}
 
-	var generator distributions.PointDistribution
+	var probabilitySlice distributions.ProbabilitySlice
 
 	if cluster.Spec.Schedule.Timeline.DistributionSpec.Name == v1alpha1.DistributionDefault {
-		generator = cluster.Status.DefaultDistribution
+		probabilitySlice = cluster.Status.DefaultDistribution
 	} else {
-		generator = distributions.GetPointDistribution(int64(cluster.Spec.MaxInstances),
+		probabilitySlice = distributions.GenerateProbabilitySliceFromSpec(int64(cluster.Spec.MaxInstances),
 			cluster.Spec.Schedule.Timeline.DistributionSpec)
 	}
 
-	cluster.Status.ExpectedTimeline = generator.ApplyToTimeline(
+	cluster.Status.ExpectedTimeline = probabilitySlice.ApplyToTimeline(
 		cluster.GetCreationTimestamp(),
 		*cluster.Spec.Schedule.Timeline.TotalDuration,
 	)

@@ -7,9 +7,9 @@ spec:
   inputs:
     parameters:
       fl_server: "server"
-      dataset: "fl.dataset.cifar10"
       backend: "pytorch"
-
+      dataset: "fl.dataset.cifar10"
+      dataset_distribution: flat
       total_nodes: 10
       node_id: 0
   service:
@@ -42,7 +42,7 @@ spec:
           - name: FL_NODE_ID
             value: {{"{{.inputs.parameters.node_id}}" | quote}}
           - name: FL_DATASET_DISTRIBUTION
-            value: "flat"
+            value: {{"{{.inputs.parameters.dataset_distribution}}" | quote }}
           - name: FL_DATASET_DISTRIBUTION_PARAMETERS
             value: "{}"
           - name: FL_DATASET_RANDOM

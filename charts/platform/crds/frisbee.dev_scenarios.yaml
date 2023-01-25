@@ -154,27 +154,23 @@ spec:
                                     will be divided into time-based events.
                                   properties:
                                     histogram:
-                                      description: DistParamsHistogram are parameters
-                                        for the constant distribution.
+                                      description: DistParamsPareto are parameters
+                                        for the Pareto distribution.
                                       properties:
-                                        blockSize:
-                                          format: int64
-                                          type: integer
-                                        buckets:
-                                          items:
-                                            format: int64
-                                            type: integer
-                                          type: array
+                                        scale:
+                                          type: number
+                                        shape:
+                                          type: number
                                       required:
-                                      - blockSize
-                                      - buckets
+                                      - scale
+                                      - shape
                                       type: object
                                     name:
                                       enum:
                                       - constant
                                       - uniform
-                                      - zipfian
-                                      - histogram
+                                      - normal
+                                      - pareto
                                       - default
                                       type: string
                                   required:
@@ -306,27 +302,23 @@ spec:
                                     will be divided into time-based events.
                                   properties:
                                     histogram:
-                                      description: DistParamsHistogram are parameters
-                                        for the constant distribution.
+                                      description: DistParamsPareto are parameters
+                                        for the Pareto distribution.
                                       properties:
-                                        blockSize:
-                                          format: int64
-                                          type: integer
-                                        buckets:
-                                          items:
-                                            format: int64
-                                            type: integer
-                                          type: array
+                                        scale:
+                                          type: number
+                                        shape:
+                                          type: number
                                       required:
-                                      - blockSize
-                                      - buckets
+                                      - scale
+                                      - shape
                                       type: object
                                     name:
                                       enum:
                                       - constant
                                       - uniform
-                                      - zipfian
-                                      - histogram
+                                      - normal
+                                      - pareto
                                       - default
                                       type: string
                                   required:
@@ -409,27 +401,23 @@ spec:
                             node).'
                           properties:
                             histogram:
-                              description: DistParamsHistogram are parameters for
-                                the constant distribution.
+                              description: DistParamsPareto are parameters for the
+                                Pareto distribution.
                               properties:
-                                blockSize:
-                                  format: int64
-                                  type: integer
-                                buckets:
-                                  items:
-                                    format: int64
-                                    type: integer
-                                  type: array
+                                scale:
+                                  type: number
+                                shape:
+                                  type: number
                               required:
-                              - blockSize
-                              - buckets
+                              - scale
+                              - shape
                               type: object
                             name:
                               enum:
                               - constant
                               - uniform
-                              - zipfian
-                              - histogram
+                              - normal
+                              - pareto
                               - default
                               type: string
                           required:
@@ -484,27 +472,23 @@ spec:
                                 will be assigned to resources.
                               properties:
                                 histogram:
-                                  description: DistParamsHistogram are parameters
-                                    for the constant distribution.
+                                  description: DistParamsPareto are parameters for
+                                    the Pareto distribution.
                                   properties:
-                                    blockSize:
-                                      format: int64
-                                      type: integer
-                                    buckets:
-                                      items:
-                                        format: int64
-                                        type: integer
-                                      type: array
+                                    scale:
+                                      type: number
+                                    shape:
+                                      type: number
                                   required:
-                                  - blockSize
-                                  - buckets
+                                  - scale
+                                  - shape
                                   type: object
                                 name:
                                   enum:
                                   - constant
                                   - uniform
-                                  - zipfian
-                                  - histogram
+                                  - normal
+                                  - pareto
                                   - default
                                   type: string
                               required:
@@ -577,27 +561,23 @@ spec:
                                     will be divided into time-based events.
                                   properties:
                                     histogram:
-                                      description: DistParamsHistogram are parameters
-                                        for the constant distribution.
+                                      description: DistParamsPareto are parameters
+                                        for the Pareto distribution.
                                       properties:
-                                        blockSize:
-                                          format: int64
-                                          type: integer
-                                        buckets:
-                                          items:
-                                            format: int64
-                                            type: integer
-                                          type: array
+                                        scale:
+                                          type: number
+                                        shape:
+                                          type: number
                                       required:
-                                      - blockSize
-                                      - buckets
+                                      - scale
+                                      - shape
                                       type: object
                                     name:
                                       enum:
                                       - constant
                                       - uniform
-                                      - zipfian
-                                      - histogram
+                                      - normal
+                                      - pareto
                                       - default
                                       type: string
                                   required:

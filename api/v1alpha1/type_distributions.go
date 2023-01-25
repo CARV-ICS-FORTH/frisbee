@@ -28,28 +28,31 @@ import (
 type DistributionName string
 
 const (
-	DistributionConstant  DistributionName = "constant"
-	DistributionUniform   DistributionName = "uniform"
-	DistributionZipfian   DistributionName = "zipfian"
-	DistributionHistogram DistributionName = "histogram"
+	// DistributionUniform draws samples from a continuous uniform distribution
+	DistributionUniform DistributionName = "uniform"
+
+	// DistributionNormal draws samples from a normal (Gaussian) distribution
+	DistributionNormal DistributionName = "normal"
+
+	// DistributionPareto draws samples from a Pareto distribution
+	DistributionPareto DistributionName = "pareto"
 
 	// DistributionDefault instructs the controller to use an already evaluated distribution.
 	DistributionDefault DistributionName = "default"
 )
 
 type DistributionSpec struct {
-	// +kubebuilder:validation:Enum=constant;uniform;zipfian;histogram;default
+	// +kubebuilder:validation:Enum=constant;uniform;normal;pareto;default
 	Name DistributionName `json:"name"`
 
 	// +optional
-	*DistParamsHistogram `json:"histogram,omitempty"`
+	*DistParamsPareto `json:"histogram,omitempty"`
 }
 
-// DistParamsHistogram are parameters for the constant distribution.
-type DistParamsHistogram struct {
-	Buckets []int64 `json:"buckets"`
-
-	BlockSize int64 `json:"blockSize"`
+// DistParamsPareto are parameters for the Pareto distribution.
+type DistParamsPareto struct {
+	Scale float64 `json:"scale"`
+	Shape float64 `json:"shape"`
 }
 
 /*

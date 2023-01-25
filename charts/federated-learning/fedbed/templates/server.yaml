@@ -6,8 +6,10 @@ metadata:
 spec:
   inputs:
     parameters:
-      min_fit_clients: 2
-      min_available_clients: 2
+      min_fit_clients: 1
+      min_available_clients: 1
+      dataset: "MNIST"
+      rounds: 5
   service:
     decorators:
       telemetry:
@@ -20,7 +22,8 @@ spec:
           - name: FL_STRATEGY
             value: FedAvg
           - name: FL_NUM_OF_ROUNDS
-            value: "5"
+            value: {{"{{.inputs.parameters.rounds}}" | quote}}
+
           - name: FL_FRACTION_FIT
             value: "0.1"
           - name: FL_FRACTION_EVAL
@@ -31,14 +34,11 @@ spec:
             value: {{"{{.inputs.parameters.min_fit_clients}}" | quote }}
           - name: FL_MIN_AVAILABLE_CLIENTS
             value: {{"{{.inputs.parameters.min_available_clients}}" | quote}}
+
+          - name: FL_DATASET
+            value: {{"{{.inputs.parameters.dataset}}" | quote}}
           - name: FL_EVAL_DATASET
             value: "false"
-          - name: FL_DATASET
-            value: "CIFAR100"
-          - name: FL_TRAINING_SET_SIZE
-            value: "-1"
-#          - name: FL_TEST_SET_SIZE
-#            value: "-1"
         ports:
           - name: http
             containerPort: 8080
