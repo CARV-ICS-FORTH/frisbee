@@ -64,10 +64,10 @@ func SetTimeline(cascade *v1alpha1.Cascade) {
 		return
 	}
 
-	generator := distributions.GetPointDistribution(int64(cascade.Spec.MaxInstances),
+	probabilitySlice := distributions.GenerateProbabilitySliceFromSpec(int64(cascade.Spec.MaxInstances),
 		cascade.Spec.Schedule.Timeline.DistributionSpec)
 
-	cascade.Status.ExpectedTimeline = generator.ApplyToTimeline(
+	cascade.Status.ExpectedTimeline = probabilitySlice.ApplyToTimeline(
 		cascade.GetCreationTimestamp(),
 		*cascade.Spec.Schedule.Timeline.TotalDuration,
 	)

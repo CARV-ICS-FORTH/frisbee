@@ -23,6 +23,7 @@ import (
 	"time"
 
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/json"
 )
@@ -47,6 +48,7 @@ func (in *Scenario) Table() (header []string, data [][]string) {
 		"Age",
 		"Actions",
 		"Phase",
+		"Duration",
 	}
 
 	var scheduled string
@@ -56,12 +58,35 @@ func (in *Scenario) Table() (header []string, data [][]string) {
 		scheduled = fmt.Sprintf("%d/%d", len(in.Status.ScheduledJobs), len(in.Spec.Actions))
 	}
 
+	// age is the elapsed time since the test was created
+	age := time.Since(in.GetCreationTimestamp().Time)
+
+	// duration is the elapsed time until the test was completed (either succeeded or failed).
+	// if the test is not  yet completed, it is equal to the age.
+	duration := age
+
+	if meta.IsStatusConditionTrue(in.Status.Conditions, ConditionAllJobsAreCompleted.String()) {
+		cond := meta.FindStatusCondition(in.Status.Conditions, ConditionAllJobsAreCompleted.String())
+		duration = cond.LastTransitionTime.Sub(in.GetCreationTimestamp().Time)
+	}
+
+	if meta.IsStatusConditionTrue(in.Status.Conditions, ConditionJobUnexpectedTermination.String()) {
+		cond := meta.FindStatusCondition(in.Status.Conditions, ConditionJobUnexpectedTermination.String())
+		duration = cond.LastTransitionTime.Sub(in.GetCreationTimestamp().Time)
+	}
+
+	if meta.IsStatusConditionTrue(in.Status.Conditions, ConditionAssertionError.String()) {
+		cond := meta.FindStatusCondition(in.Status.Conditions, ConditionAssertionError.String())
+		duration = cond.LastTransitionTime.Sub(in.GetCreationTimestamp().Time)
+	}
+
 	data = append(data, []string{
 		in.GetNamespace(),
 		in.GetName(),
-		time.Since(in.GetCreationTimestamp().Time).Round(time.Second).String(),
+		age.Round(time.Second).String(),
 		scheduled,
 		in.Status.Phase.String(),
+		duration.Round(time.Second).String(),
 	})
 
 	return header, data
@@ -245,6 +270,7 @@ func (in *ScenarioList) Table() (header []string, data [][]string) {
 		"Age",
 		"Actions",
 		"Phase",
+		"Duration",
 	}
 
 	// arrange in descending order (latest created goes first)

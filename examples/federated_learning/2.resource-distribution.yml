@@ -1,0 +1,54 @@
+# This experiment is designed for the evaluation of resource heterogeneity.
+# For this purpose, we use multiple clients and assign the total resources to clients according to a  distribution.
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Scenario
+metadata:
+  name: resource-distribution
+spec:
+  actions:
+    # Step 1: Create FedBed server
+    - action: Service
+      name: server
+      service:
+        templateRef: fedbed.server
+        inputs:
+          - { min_fit_clients: 20, min_available_clients: 20 }
+
+    # Step 2: Create FedBed clients
+    - action: Cluster
+      name: clients
+      depends: { running: [ server ] }
+      cluster:
+        templateRef: fedbed.client
+        resources:                          # Change values here
+          total: { cpu: 60, mem: 60Gi }
+          distribution: { name: uniform }
+        inputs:
+          - { fl_server: server,  total_nodes: 20, node_id: 0 }
+          - { fl_server: server,  total_nodes: 20, node_id: 1 }
+          - { fl_server: server,  total_nodes: 20, node_id: 2 }
+          - { fl_server: server,  total_nodes: 20, node_id: 3 }
+          - { fl_server: server,  total_nodes: 20, node_id: 4 }
+          - { fl_server: server,  total_nodes: 20, node_id: 5 }
+          - { fl_server: server,  total_nodes: 20, node_id: 6 }
+          - { fl_server: server,  total_nodes: 20, node_id: 7 }
+          - { fl_server: server,  total_nodes: 20, node_id: 8 }
+          - { fl_server: server,  total_nodes: 20, node_id: 9 }
+          - { fl_server: server,  total_nodes: 20, node_id: 10 }
+          - { fl_server: server,  total_nodes: 20, node_id: 11 }
+          - { fl_server: server,  total_nodes: 20, node_id: 12 }
+          - { fl_server: server,  total_nodes: 20, node_id: 13 }
+          - { fl_server: server,  total_nodes: 20, node_id: 14 }
+          - { fl_server: server,  total_nodes: 20, node_id: 15 }
+          - { fl_server: server,  total_nodes: 20, node_id: 16 }
+          - { fl_server: server,  total_nodes: 20, node_id: 17 }
+          - { fl_server: server,  total_nodes: 20, node_id: 18 }
+          - { fl_server: server,  total_nodes: 20, node_id: 19 }
+
+    # Teardown
+    - action: Delete
+      name: teardown
+      depends: { success: [ clients ] }
+      delete:
+        jobs: [ server ]

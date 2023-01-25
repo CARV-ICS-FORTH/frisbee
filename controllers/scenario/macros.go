@@ -336,7 +336,7 @@ func filterByMode(services SList, mode v1alpha1.Mode, value string) (SList, erro
 			return nil, errors.Errorf("fixed percentage value of %d is invalid, Must be (0,100]", percentage)
 		}
 
-		num := int(math.Floor(float64(len(services)) * float64(percentage) / 100))
+		num := int(math.Round(float64(len(services)) * float64(percentage) / 100))
 
 		return getFixedSubListFromServiceList(services, num), nil
 	case v1alpha1.RandomMaxPercentMode:
@@ -355,7 +355,7 @@ func filterByMode(services SList, mode v1alpha1.Mode, value string) (SList, erro
 
 		// + 1 because Intn works with half open interval [0,n) and we want [0,n]
 		percentage := getRandomNumber(maxPercentage + 1)
-		num := int(math.Floor(float64(len(services)) * float64(percentage) / 100))
+		num := int(math.Round(float64(len(services)) * float64(percentage) / 100))
 
 		return getFixedSubListFromServiceList(services, num), nil
 	default:

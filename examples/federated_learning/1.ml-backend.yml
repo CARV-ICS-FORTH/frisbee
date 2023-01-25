@@ -13,17 +13,16 @@ spec:
       service:
         templateRef: fedbed.server
         inputs:
-          - { min_fit_clients: 1, min_available_clients: 1 }
+          - { dataset: "MNIST" } # Change values here
 
     # Step 2: Create FedBed clients
     - action: Cluster
       name: clients
-      depends: { running: [ server ]}
+      depends: { running: [ server ] }
       cluster:
         templateRef: fedbed.client
         inputs:
-          - { fl_server: server, dataset: "MNIST", backend: "mxnet", total_nodes: 1, node_id: 0 }
-
+          - { fl_server: server, dataset: "MNIST", backend: "pytorch" } # Change values here
 
     # Teardown
     - action: Delete

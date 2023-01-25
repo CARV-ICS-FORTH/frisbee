@@ -1,0 +1,85 @@
+# This experiment is designed for placing different sets of clients on different nodes.
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Scenario
+metadata:
+  name: client-placement
+spec:
+  actions:
+    # Step 1: Create FedBed server
+    - action: Service
+      name: server
+      service:
+        templateRef: fedbed.server
+        inputs:
+          - { min_fit_clients: 20, min_available_clients: 20 }
+
+    # Step 2: Place clients[0,4] to Node A
+    - action: Cluster
+      name: group-a
+      depends: { running: [ server ] }
+      cluster:
+        placement:
+          nodes: [ k8s-node1 ]  # Change values here
+        templateRef: fedbed.client
+        inputs:
+          - { fl_server: server,  total_nodes: 20, node_id: 0 }
+          - { fl_server: server, total_nodes: 20, node_id: 1 }
+          - { fl_server: server,  total_nodes: 20, node_id: 2 }
+          - { fl_server: server, total_nodes: 20, node_id: 3 }
+          - { fl_server: server, total_nodes: 20, node_id: 4 }
+
+    # Step 2: Place clients[5,9] to Node B
+    - action: Cluster
+      name: group-b
+      depends: { running: [ server ] }
+      cluster:
+        placement:
+          nodes: [ k8s-node2 ]  # Change values here
+        templateRef: fedbed.client
+        inputs:
+          - { fl_server: server, total_nodes: 20, node_id: 5 }
+          - { fl_server: server, total_nodes: 20, node_id: 6 }
+          - { fl_server: server, total_nodes: 20, node_id: 7 }
+          - { fl_server: server,  total_nodes: 20, node_id: 8 }
+          - { fl_server: server,  total_nodes: 20, node_id: 9 }
+
+
+    # Step 2: Place clients[10,14] of clients to Node C
+    - action: Cluster
+      name: group-c
+      depends: { running: [ server ] }
+      cluster:
+        placement:
+          nodes: [ k8s-node3 ]  # Change values here
+        templateRef: fedbed.client
+        inputs:
+          - { fl_server: server, total_nodes: 20, node_id: 10 }
+          - { fl_server: server, total_nodes: 20, node_id: 11 }
+          - { fl_server: server, total_nodes: 20, node_id: 12 }
+          - { fl_server: server, total_nodes: 20, node_id: 13 }
+          - { fl_server: server, total_nodes: 20, node_id: 14 }
+
+
+    # Step 2: Place clients[15,19] to Node D
+    - action: Cluster
+      name: group-d
+      depends: { running: [ server ] }
+      cluster:
+        placement:
+          nodes: [ k8s-node4 ]  # Change values here
+        templateRef: fedbed.client
+        inputs:
+          - { fl_server: server, total_nodes: 20, node_id: 15 }
+          - { fl_server: server,  total_nodes: 20, node_id: 16 }
+          - { fl_server: server,  total_nodes: 20, node_id: 17 }
+          - { fl_server: server,  total_nodes: 20, node_id: 18 }
+          - { fl_server: server,  total_nodes: 20, node_id: 19 }
+
+
+    # Teardown
+    - action: Delete
+      name: teardown
+      depends: { success: [ group-a, group-b, group-c, group-d ] }
+      delete:
+        jobs: [ server ]

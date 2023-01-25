@@ -7,10 +7,15 @@ spec:
   inputs:
     parameters:
       fl_server: "server"
-      dataset: "CIFAR10"
       backend: "pytorch"
-      total_nodes: 10
+      total_nodes: 1
       node_id: 0
+
+      dataset: "MNIST"
+      dataset_distribution: flat
+
+      training_setsize: 60000
+      test_setsize: 10000
   service:
     decorators:
       telemetry:
@@ -29,18 +34,23 @@ spec:
 
           - name: FL_DATASET
             value: {{"{{.inputs.parameters.dataset}}" | quote }}
-          - name: FL_DATASET_DISTRIBUTION
-            value: "flat"
-          - name: FL_DATASET_DISTRIBUTION_PARAMETERS
-            value: '{"random_state":1}'
           - name: FL_DATASET_RANDOM
             value: "False"
+          - name: FL_DATASET_DISTRIBUTION
+            value: {{"{{.inputs.parameters.dataset_distribution}}" | quote }}
+          - name: FL_DATASET_DISTRIBUTION_PARAMETERS
+            value: '{"random_state":1}'
 
           # Are these values really needed here?
           - name: FL_NODES
             value: {{"{{.inputs.parameters.total_nodes}}" | quote}}
           - name: FL_NODE_ID
             value: {{"{{.inputs.parameters.node_id}}" | quote}}
+
+          - name: FL_TRAINING_SET_SIZE
+            value: {{"{{.inputs.parameters.training_setsize}}" | quote}}
+          - name: FL_TEST_SET_SIZE
+            value: {{"{{.inputs.parameters.test_setsize}}" | quote}}
 
         command:
           - /bin/sh   # Run shell

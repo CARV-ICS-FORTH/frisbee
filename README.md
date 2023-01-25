@@ -122,7 +122,7 @@ We use it to get local access in `examples` and `charts` directories.
 Let's start by running the hello-world.
 
 ```shell
-kubectl frisbee submit test demo- ./examples/1.hello-world.yml
+kubectl frisbee submit test demo- ./examples/tutorial/1.hello-world.yml
 ```
 
 <p align="center">
@@ -164,7 +164,7 @@ kubectl frisbee inspect tests demo-482
 Let's try something more complex to demonstrate the integration of Frisbee with Prometheus/Grafana.
 
 ```shell
-kubectl frisbee submit test demo- examples/15.performance-monitoring.yml charts/system charts/networking/iperf2
+kubectl frisbee submit test demo- examples/tutorial/15.performance-monitoring.yml charts/system charts/networking/iperf2
 ```
 
 Notice that we modified the command to include `dependencies` required for the execution of the scenario.
@@ -187,6 +187,7 @@ firefox $(kubectl frisbee inspect tests demo-710 | grep grafana- | awk '{print $
 
 <p align="center">
     <img src="docs/readme.assets/grafana.png" width="900">
+    <img src="docs/readme.assets/grafana2.png" width="900">
 </p>
 
 

@@ -195,7 +195,7 @@ func (r *Controller) Initialize(ctx context.Context, cluster *v1alpha1.Cluster) 
 		calculate any top-level distribution. this distribution will be respected during the construction of the jobs.
 	*/
 	if distName := cluster.Spec.DefaultDistributionSpec; distName != nil {
-		cluster.Status.DefaultDistribution = distributions.GetPointDistribution(int64(cluster.Spec.MaxInstances), distName)
+		cluster.Status.DefaultDistribution = distributions.GenerateProbabilitySliceFromSpec(int64(cluster.Spec.MaxInstances), distName)
 	}
 
 	/*

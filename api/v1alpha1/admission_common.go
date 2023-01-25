@@ -93,16 +93,13 @@ func ValidateTaskScheduler(sch *TaskSchedulerSpec) error {
 
 func ValidateDistribution(dist *DistributionSpec) error {
 	switch dist.Name {
-	case DistributionConstant:
-		return nil
-
 	case DistributionUniform:
 		return nil
 
-	case DistributionZipfian:
+	case DistributionNormal:
 		return nil
 
-	case DistributionHistogram:
+	case DistributionPareto:
 		return nil
 
 	case DistributionDefault:
@@ -110,7 +107,7 @@ func ValidateDistribution(dist *DistributionSpec) error {
 	}
 	/* TODO: continue with the other distributions */
 
-	return nil
+	return errors.Errorf("no such distribution '%s'", dist.Name)
 }
 
 // ValidatePlacement validates the placement policy. However, because it may involve references to other

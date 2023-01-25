@@ -139,10 +139,10 @@ func SetTimeline(call *v1alpha1.Call) {
 		return
 	}
 
-	generator := distributions.GetPointDistribution(int64(len(call.Spec.Services)),
+	probabilitySlice := distributions.GenerateProbabilitySliceFromSpec(int64(len(call.Spec.Services)),
 		call.Spec.Schedule.Timeline.DistributionSpec)
 
-	call.Status.ExpectedTimeline = generator.ApplyToTimeline(
+	call.Status.ExpectedTimeline = probabilitySlice.ApplyToTimeline(
 		call.GetCreationTimestamp(),
 		*call.Spec.Schedule.Timeline.TotalDuration,
 	)
