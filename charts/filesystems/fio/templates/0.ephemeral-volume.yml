@@ -13,7 +13,7 @@ spec:
   service:
     decorators: # decorators
       telemetry:
-        - system.telemetry.agent
+        - system.telemetry.resources
 
     volumes: # Create an ephemeral volume, backed by a file
       - name: scratch-volume

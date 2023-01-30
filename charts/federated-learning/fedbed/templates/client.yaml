@@ -19,7 +19,7 @@ spec:
   service:
     decorators:
       telemetry:
-        - system.telemetry.agent
+        - system.telemetry.resources
 
     containers:
       - name: main

@@ -7,7 +7,7 @@ spec:
   service:
     decorators:
       telemetry:
-        - system.telemetry.agent
+        - system.telemetry.resources
 
     containers: # Container
       - name: main
@@ -31,7 +31,7 @@ spec:
   service:
     decorators:
       telemetry:
-        - system.telemetry.agent
+        - system.telemetry.resources
         - iperf3.telemetry.client
 
     containers:

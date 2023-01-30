@@ -17,7 +17,7 @@ spec:
   service:
     decorators: # Decorators
       telemetry:
-        - system.telemetry.agent
+        - system.telemetry.resources
         - ycsb.telemetry.client
 
         #annotations:
@@ -66,7 +66,7 @@ spec:
   service:
     decorators: # Decorators
       telemetry:
-        - system.telemetry.agent
+        - system.telemetry.resources
         - ycsb.telemetry.client
 
         #annotations:

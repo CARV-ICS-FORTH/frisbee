@@ -123,8 +123,8 @@
   "fiscalYearStartMonth": 0,
   "gnetId": null,
   "graphTooltip": 1,
-  "id": 1,
-  "iteration": 1674647418014,
+  "id": 2,
+  "iteration": 1674828891011,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -680,7 +680,7 @@
           "refId": "allocations"
         }
       ],
-      "title": "Used",
+      "title": "Memory Used",
       "transformations": [],
       "type": "stat"
     },
@@ -743,7 +743,7 @@
           "refId": "allocations"
         }
       ],
-      "title": "Used",
+      "title": "Memory  Available",
       "transformations": [],
       "type": "stat"
     },
@@ -826,7 +826,7 @@
         }
       ],
       "thresholds": "",
-      "title": "Used",
+      "title": "CPU Used",
       "type": "stat",
       "valueFontSize": "",
       "valueMaps": null,
@@ -909,7 +909,7 @@
         }
       ],
       "thresholds": "",
-      "title": "Total",
+      "title": "CPU available",
       "type": "stat",
       "valueFontSize": "",
       "valueMaps": null,
@@ -991,7 +991,7 @@
         }
       ],
       "thresholds": "",
-      "title": "Mounted",
+      "title": "Capacity Mounted",
       "type": "stat",
       "valueFontSize": "",
       "valueMaps": null,
@@ -1073,7 +1073,7 @@
         }
       ],
       "thresholds": "",
-      "title": "Total",
+      "title": "Capacity Available",
       "type": "stat",
       "valueFontSize": "",
       "valueMaps": null,

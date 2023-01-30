@@ -14,7 +14,7 @@ spec:
         name: coverage
 
       telemetry:
-        - system.telemetry.agent
+        - system.telemetry.resources
 
     volumes:
       - name: dataset

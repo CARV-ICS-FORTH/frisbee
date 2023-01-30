@@ -11,7 +11,7 @@ spec:
   service:
     decorators:
       telemetry:
-        - system.telemetry.agent
+        - system.telemetry.resources
         - mongo.telemetry.server
 
     containers: # Container
@@ -83,7 +83,7 @@ spec:
       port: "27017"
   service:
     decorators: # Decorators
-      telemetry: [ system.telemetry.agent, mongo.telemetry.server/telegraf ]
+      telemetry: [ system.telemetry.resources, mongo.telemetry.server/telegraf ]
 
     containers: # Container
       - name: main

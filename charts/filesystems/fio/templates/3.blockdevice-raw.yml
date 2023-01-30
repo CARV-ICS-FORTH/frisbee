@@ -14,7 +14,7 @@ spec:
   service:
     decorators: # decorators
       telemetry:
-        - system.telemetry.agent
+        - system.telemetry.resources
         - fio.telemetry.client
 
     volumes: # Create an ephemeral volume, backed by a raw block device

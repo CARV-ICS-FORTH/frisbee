@@ -56,6 +56,7 @@ const (
 type Path struct {
 	kubectlPath string
 	helmPath    string
+	sternPath   string
 	nodejsPath  string
 	npmPath     string
 }
@@ -202,7 +203,7 @@ func (env *EnvironmentSettings) GetFrisbeeClient() *frisbeeclient.APIClient {
 
 	// extract rest configuration
 	restConfig, err := env.RESTClientGetter().ToRESTConfig()
-	ui.ExitOnError("Extract config", err)
+	ui.ExitOnError("Extract client config", err)
 
 	// create generic client
 	genericClient, err := client.New(restConfig, client.Options{Scheme: scheme})
@@ -238,6 +239,15 @@ func (p *Path) Helm() string {
 	}
 
 	return p.helmPath
+}
+
+// Stern returns path to the logging binary.
+func (p *Path) Stern() string {
+	if p.sternPath == "" {
+		ui.Fail(errors.Errorf("command requires 'stern' to be installed in your system"))
+	}
+
+	return p.sternPath
 }
 
 // NodeJS returns path to the node binary.

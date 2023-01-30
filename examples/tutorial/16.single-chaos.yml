@@ -6,7 +6,7 @@ metadata:
 spec:
   service:
     decorators: # Add support for Telemetry
-      telemetry: [ system.telemetry.agent ]
+      telemetry: [ system.telemetry.resources ]
     containers:
       - name: main
         image: czero/iperf2
@@ -38,7 +38,7 @@ spec:
   service:
     decorators:
       telemetry: # Register Telemetry Agents
-        - system.telemetry.agent  # Collect Generic System's Metrics
+        - system.telemetry.resources  # Collect Generic System's Metrics
         - iperf2.telemetry.client # Collect App Specific Metrics
     containers:
       - name: main

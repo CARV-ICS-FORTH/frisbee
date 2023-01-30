@@ -10,7 +10,7 @@
 apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
-  name: system.telemetry.agent
+  name: system.telemetry.resources
 spec:
   service:
     decorators:
@@ -71,5 +71,5 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: system.telemetry.agent.config
+  name: system.telemetry.resources.config
 data: {{(.Files.Glob "dashboards/*.json").AsConfig | nindent 2}}
