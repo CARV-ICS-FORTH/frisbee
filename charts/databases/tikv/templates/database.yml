@@ -8,7 +8,7 @@ metadata:
 spec:
   service:
     decorators: # Decorators
-      telemetry: [ system.telemetry.agent, tikv.telemetry.pd ]
+      telemetry: [ system.telemetry.resources, tikv.telemetry.pd ]
 
     volumes: # Create an ephemeral volume, backed by a file
       - name: scratch-volume
@@ -66,7 +66,7 @@ spec:
       placementDriver: "localhost"
   service:
     decorators: # Decorators
-      telemetry: [ system.telemetry.agent, tikv.telemetry.worker ]
+      telemetry: [ system.telemetry.resources, tikv.telemetry.worker ]
 
     volumes: # Create an ephemeral volume, backed by a file
       - name: scratch-volume

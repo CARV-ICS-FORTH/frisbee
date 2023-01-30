@@ -7,7 +7,7 @@ spec:
   service:
     decorators:
       telemetry:
-        - system.telemetry.agent
+        - system.telemetry.resources
     containers:
       - name: main
         image: "czero/iperf2"
@@ -37,7 +37,7 @@ spec:
   service:
     decorators:
       telemetry:
-        - system.telemetry.agent
+        - system.telemetry.resources
         - iperf2.telemetry.client
 
     containers:

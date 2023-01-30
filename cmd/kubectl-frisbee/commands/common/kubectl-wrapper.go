@@ -26,7 +26,6 @@ import (
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/env"
 	"github.com/carv-ics-forth/frisbee/pkg/process"
-	"github.com/carv-ics-forth/frisbee/pkg/structure"
 	"github.com/carv-ics-forth/frisbee/pkg/ui"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -46,9 +45,50 @@ const (
 	NoPodsFoundReg       = `.* pods "\w+" not found`
 	NotResourcesFoundReg = `No resources found*`
 	NotFound             = `Error from server (NotFound)`
+
+	NoResources       = `No resources found in .+ namespace.`
+	PodNotFound       = `Error from server \(NotFound\): pods ".+" not found`
+	NamespaceNotFound = `Error from server \(NotFound\): namespaces ".+" not found`
 )
 
+func ErrContainerNotReady(out []byte) bool {
+	match, err := regexp.Match(NotReadyRegex, out)
+	if err != nil {
+		panic("unhandled output")
+	}
+
+	return match
+}
+
+func ErrNamespaceNotFound(out []byte) bool {
+	match, err := regexp.Match(NamespaceNotFound, out)
+	if err != nil {
+		panic("unhandled output")
+	}
+
+	return match
+}
+
+func ErrPodNotFound(out []byte) bool {
+	match, err := regexp.Match(PodNotFound, out)
+	if err != nil {
+		panic("unhandled output")
+	}
+
+	return match
+}
+
+func ErrNoResources(out []byte) bool {
+	match, err := regexp.Match(NoResources, out)
+	if err != nil {
+		panic("unhandled output")
+	}
+
+	return match
+}
+
 func ErrNotFound(out []byte) bool {
+
 	{ // First form
 		if strings.Contains(string(out), NotFound) {
 			return true
@@ -78,15 +118,6 @@ func ErrNotFound(out []byte) bool {
 	}
 
 	return false
-}
-
-func ErrContainerNotReady(out []byte) bool {
-	match, err := regexp.Match(NotReadyRegex, out)
-	if err != nil {
-		panic("unhandled output")
-	}
-
-	return match
 }
 
 func Kubectl(testName string, arguments ...string) ([]byte, error) {
@@ -367,49 +398,56 @@ const (
 )
 
 /*
-GetPodLogs provides convenience on printing the logs from prods.
+KubectlLogs provides convenience on printing the logs from prods.
 Filter query:
-  - Run with '--all'.
-  - Run with '--logs all pod1 ...'.
-  - Run with '--logs all'.
-  - Run with '--logs SYS'.
-  - Run with '--logs SUT'.
-  - Run with '--logs pod1 pod2 ...'.
+  - Run with '--logs all'. -> monitor all pods (SYS + SUT)
+  - Run with '--logs SYS'. -> monitor only SYS pods
+  - Run with '--logs SUT'. -> monitor only SUT pods
+  - Run with '--logs pod1'. -> monitor a specific pod
+  - Run with '--logs pod1,pod2,pod3,...'. -> monitoring multiple pods
 */
-func GetPodLogs(testName string, tail bool, lines int, pods ...string) error {
+func KubectlLogs(testName string, tail bool, lines int, pods ...string) error {
 	command := []string{
 		"logs",
-		"-c", v1alpha1.MainContainerName,
+		// "-c", v1alpha1.MainContainerName,
+		"--all-containers",
 		"--prefix=true",
-		fmt.Sprintf("--tail=%d", lines),
 	}
 
-	switch {
-	case len(pods) == 0:
-		command = append(command, "-l", v1alpha1.LabelScenario)
-	case len(pods) > 1 && structure.ContainsStrings(pods, "all"):
-		return errors.Errorf("expects either 'all' or pod names")
-	case len(pods) == 1 && pods[0] == "all":
-		command = append(command, "-l", v1alpha1.LabelScenario)
-	case len(pods) == 1 && pods[0] == string(v1alpha1.ComponentSys):
-		command = append(command, "-l", strings.Join([]string{v1alpha1.LabelScenario, FilterSYS}, ","))
-	case len(pods) == 1 && pods[0] == string(v1alpha1.ComponentSUT):
-		command = append(command, "-l", strings.Join([]string{v1alpha1.LabelScenario, FilterSUT}, ","))
-	case pods != nil:
+	if len(pods) == 0 {
+		return errors.Errorf("no logging rules have been specified")
+	}
+
+	if len(pods) == 1 {
+		switch pods[0] {
+		case "all":
+			command = append(command, "-l", v1alpha1.LabelScenario)
+		case "SYS":
+			command = append(command, "-l", strings.Join([]string{v1alpha1.LabelScenario, FilterSYS}, ","))
+		case "SUT":
+			command = append(command, "-l", strings.Join([]string{v1alpha1.LabelScenario, FilterSUT}, ","))
+		default:
+			command = append(command, pods...)
+		}
+	}
+
+	if len(pods) > 1 {
 		command = append(command, pods...)
-	default:
-		panic(errors.Errorf("invalid GetPodLogs arguments: '%v'", pods))
 	}
 
-	// set output and retry policy
+	// with tail
 	if tail {
-		command = append(command, "--ignore-errors=false", "--follow=true")
+		command = append(command, "--ignore-errors=false", "--follow")
+
+		ui.Debug(env.Default.Kubectl(), strings.Join(command, " "))
 
 		return wait.PollImmediate(pollInterval, pollTimeout, func() (done bool, err error) {
 			out, err := LoggedKubectl(testName, command...)
 
 			switch {
-			case len(out) == 0, ErrNotFound(out), ErrContainerNotReady(out): // resource initialization
+			case ErrNamespaceNotFound(out):
+				return true, nil
+			case len(out) == 0, ErrPodNotFound(out), ErrNoResources(out), ErrContainerNotReady(out): // resource initialization
 				// ui.Info("Waiting for pods to become ready ...", string(out))
 				return false, nil
 			case err != nil: // abort
@@ -421,7 +459,10 @@ func GetPodLogs(testName string, tail bool, lines int, pods ...string) error {
 		})
 	}
 
-	command = append(command, "--ignore-errors=true")
+	// without tail
+	command = append(command, "--ignore-errors=true", fmt.Sprintf("--tail=%d", lines))
+
+	ui.Debug(env.Default.Kubectl(), strings.Join(command, " "))
 	out, err := Kubectl(testName, command...)
 
 	switch {

@@ -8,17 +8,15 @@ spec:
     decorators:
       labels:
         scenario.frisbee.dev/component: SYS
-
       ingressPort:
         name: http
-
     volumes:
       - name: config
         configMap:
           name: system.telemetry.grafana.config
     containers:
       - name: main
-        image: "grafana/grafana-oss:8.2.3"
+        image: "grafana/grafana-oss:9.3.4"
         ports:
           - name: http
             containerPort: {{.Values.telemetry.grafana.port}}

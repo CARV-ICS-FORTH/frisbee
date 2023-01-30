@@ -44,16 +44,25 @@ func (env *EnvironmentSettings) CheckKubePerms() {
 }
 
 func (env *EnvironmentSettings) LookupBinaries() {
+	// kubectl
 	kubectlPath, err := exec.New().LookPath("kubectl")
 	ui.ExitOnError("Frisbee requires 'kubectl' to be installed in your system.", err)
 
 	env.kubectlPath = kubectlPath
 
+	// helm
 	helmPath, err := exec.New().LookPath("helm")
 	ui.ExitOnError("Frisbee requires 'helm' to be installed in your system.", err)
 
 	env.helmPath = helmPath
 
+	// stern
+	sternPath, err := exec.New().LookPath("stern")
+	ui.ExitOnError("Frisbee requires 'stern' to be installed in your system.", err)
+
+	env.sternPath = sternPath
+
+	// nodejs
 	nodejsPath, err := exec.New().LookPath("node")
 	if err != nil {
 		ui.Warn("Disable PDF exporter due to missing dependency.", "NodeJs")
@@ -61,6 +70,7 @@ func (env *EnvironmentSettings) LookupBinaries() {
 
 	env.nodejsPath = nodejsPath
 
+	// npm
 	npmPath, err := exec.New().LookPath("npm")
 	if err != nil {
 		ui.Warn("Disable PDF exporter due to missing dependency.", "NPM")

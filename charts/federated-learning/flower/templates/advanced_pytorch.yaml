@@ -6,7 +6,7 @@ metadata:
 spec:
   service:
     decorators:
-      telemetry: [ system.telemetry.agent ]
+      telemetry: [ system.telemetry.resources ]
 
     containers:
       - name: main

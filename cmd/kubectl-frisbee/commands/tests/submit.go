@@ -36,15 +36,13 @@ type TestSubmitOptions struct {
 	ExpectSuccess, ExpectFailure, ExpectError bool
 	Timeout                                   string
 
-	Logs     []string
-	Loglines int
+	Logs []string
 }
 
 func PopulateTestSubmitFlags(cmd *cobra.Command, options *TestSubmitOptions) {
 	// cmd.Flags().StringVar(&options.CPUQuota, "cpu", "", "set quotas for the total CPUs (e.g, 0.5) that can be used by all Pods running in the test.")
 	// cmd.Flags().StringVar(&options.MemoryQuota, "memory", "", "set quotas for the total Memory (e.g, 100Mi) that can be used by all Pods running in the test.")
 	cmd.Flags().StringSliceVarP(&options.Logs, "logs", "l", nil, "show logs output from executor pod (if unsure, use 'all')")
-	cmd.Flags().IntVar(&options.Loglines, "log-lines", 5, "Lines of recent log file to display.")
 
 	cmd.Flags().BoolVarP(&options.Watch, "watch", "w", false, "watch status")
 
@@ -200,9 +198,9 @@ func ControlOutput(testName string, options *TestSubmitOptions) {
 		ui.ExitOnError("Watching for changes in the test status error", err)
 
 	case options.Logs != nil:
-		ui.Info("Tailing test logs ...", "log-lines", fmt.Sprint(options.Loglines))
+		ui.Info("Tailing test logs ...")
 
-		err := common.GetPodLogs(testName, true, options.Loglines, options.Logs...)
+		err := common.KubectlLogs(testName, true, -1, options.Logs...)
 		env.Default.Hint("To inspect the execution logs use:",
 			"kubectl frisbee inspect test ", testName, " --logs all")
 		ui.ExitOnError("Getting logs", err)

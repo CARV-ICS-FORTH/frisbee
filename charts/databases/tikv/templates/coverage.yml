@@ -8,7 +8,7 @@ metadata:
 spec:
   service:
     decorators:
-      telemetry: [ system.telemetry.agent, tikv.telemetry.pd ]
+      telemetry: [ system.telemetry.resources, tikv.telemetry.pd ]
 
       ingressPort:
         name: coverage
@@ -93,7 +93,7 @@ spec:
 
   service:
     decorators: # Decorators
-      telemetry: [ system.telemetry.agent, tikv.telemetry.worker ]
+      telemetry: [ system.telemetry.resources, tikv.telemetry.worker ]
       ingressPort:
         name: coverage
 

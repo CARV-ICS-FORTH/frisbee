@@ -123,7 +123,7 @@
   "fiscalYearStartMonth": 0,
   "gnetId": null,
   "graphTooltip": 1,
-  "id": 3,
+  "id": 1,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -657,7 +657,7 @@
         }
       ],
       "thresholds": "",
-      "title": "Used",
+      "title": "Memory Used",
       "transformations": [
         {
           "id": "reduce",
@@ -751,7 +751,7 @@
         }
       ],
       "thresholds": "",
-      "title": "Total",
+      "title": "Memory Available",
       "transformations": [
         {
           "id": "reduce",
@@ -848,7 +848,7 @@
         }
       ],
       "thresholds": "",
-      "title": "Used",
+      "title": "CPU Used",
       "transformations": [
         {
           "id": "reduce",
@@ -944,7 +944,7 @@
         }
       ],
       "thresholds": "",
-      "title": "Total",
+      "title": "CPU Available",
       "transformations": [],
       "type": "stat",
       "valueFontSize": "",
@@ -1028,7 +1028,7 @@
         }
       ],
       "thresholds": "",
-      "title": "Mounted",
+      "title": "Capacity Mounted",
       "type": "stat",
       "valueFontSize": "",
       "valueMaps": null,
@@ -1110,7 +1110,7 @@
         }
       ],
       "thresholds": "",
-      "title": "Total",
+      "title": "Capacity Available",
       "type": "stat",
       "valueFontSize": "",
       "valueMaps": null,

@@ -6,7 +6,7 @@ metadata:
 spec:
   service:
     decorators:
-      telemetry: [ system.telemetry.agent ]
+      telemetry: [ system.telemetry.resources ]
     containers:
       - name: main
         image: czero/iperf2
@@ -35,7 +35,7 @@ spec:
   service:
     decorators:
       telemetry:
-        - system.telemetry.agent
+        - system.telemetry.resources
 
     volumes: # Need to declare the volume here
       - name: logvolume

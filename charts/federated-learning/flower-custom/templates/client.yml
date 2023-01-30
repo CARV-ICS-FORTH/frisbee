@@ -10,7 +10,7 @@ spec:
       dataClaimName: ""
   service:
     decorators:
-      telemetry: [ system.telemetry.agent ]
+      telemetry: [ system.telemetry.resources ]
 
     volumes:
       - name: dataset
