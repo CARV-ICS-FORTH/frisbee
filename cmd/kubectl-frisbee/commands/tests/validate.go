@@ -28,11 +28,11 @@ import (
 
 type TestValidateOptions struct{}
 
-func PopulateTestValidateFlags(cmd *cobra.Command, options *TestSubmitOptions) {
+func PopulateTestValidateFlags(cmd *cobra.Command, options *SubmitTestOptions) {
 }
 
 func NewValidateCmd() *cobra.Command {
-	var options TestSubmitOptions
+	var options SubmitTestOptions
 
 	cmd := &cobra.Command{
 		Use:     "test <Scenario>",
@@ -93,7 +93,7 @@ func NewValidateCmd() *cobra.Command {
 		},
 	}
 
-	PopulateTestSubmitFlags(cmd, &options)
+	SubmitTestFlags(cmd, &options)
 
 	return cmd
 }

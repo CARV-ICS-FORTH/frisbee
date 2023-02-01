@@ -74,9 +74,7 @@ func (c TestManagementClient) ListScenarios(ctx context.Context, selector string
 	}
 
 	// find namespaces where scenarios are running
-	filters := &client.ListOptions{
-		LabelSelector: labels.SelectorFromValidatedSet(set),
-	}
+	filters := &client.ListOptions{LabelSelector: labels.SelectorFromValidatedSet(set)}
 
 	var namespaces corev1.NamespaceList
 

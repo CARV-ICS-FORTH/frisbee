@@ -82,41 +82,36 @@ type Query struct {
 	Reducer sdk.AlertReducer
 }
 
-type Execution struct {
-	Every string
-
-	For string
-}
-
-type TimeRange struct {
-	From string
-	To   string
-}
-
-type Alert struct {
+// AlertRule is a set of evaluation criteria that determines whether an alert will fire.
+// The alert rule consists of one or more queries and expressions, a condition, the frequency of evaluation,
+// and optionally, the duration over which the condition is met.
+type AlertRule struct {
 	Metric
-
-	TimeRange
 
 	Query
 
-	Execution
+	// FromTime indicate a relative duration accounted for the alerting. e.g, 15m ago
+	FromTime string
+
+	// ToTime indicate a point of reference accounted for the alerting. e.g, now
+	ToTime string
+
+	// Frequency specifies how frequently an alert rule is evaluated Must be a multiple of 10 seconds. For examples, 1m, 30s.
+	Frequency string
+
+	// Duration, when configured, specifies the duration for which the condition must be true before an alert fires.
+	Duration string
 }
 
-func ParseAlertExpr(query v1alpha1.ExprMetrics) (*Alert, error) {
+func ParseAlertExpr(query v1alpha1.ExprMetrics) (*AlertRule, error) {
 	matches, err := query.Parse()
 	if err != nil {
 		return nil, errors.Wrapf(err, "parsing error")
 	}
 
-	alert := Alert{
-		Metric:    Metric{},
-		TimeRange: TimeRange{},
-		Query:     Query{},
-		Execution: Execution{ // These are optional, so we must have a default value.
-			Every: DefaultEvaluationFrequency,
-			For:   DefaultStabilityWindow,
-		},
+	alert := AlertRule{
+		Frequency: DefaultEvaluationFrequency,
+		Duration:  DefaultDecisionWindow,
 	}
 
 	for _, field := range v1alpha1.ExprMetricsValidator.SubexpNames() {
@@ -151,10 +146,10 @@ func ParseAlertExpr(query v1alpha1.ExprMetrics) (*Alert, error) {
 			alert.Metric.MetricName = match
 
 		case "from":
-			alert.TimeRange.From = match
+			alert.FromTime = match
 
 		case "to":
-			alert.TimeRange.To = match
+			alert.ToTime = match
 
 		case "evaluator":
 			alert.Evaluator.Type = ConvertEvaluatorAlias(match)
@@ -176,10 +171,10 @@ func ParseAlertExpr(query v1alpha1.ExprMetrics) (*Alert, error) {
 			alert.Evaluator.Params = params
 
 		case "for":
-			alert.For = match
+			alert.Duration = match
 
 		case "every":
-			alert.Every = match
+			alert.Frequency = match
 
 		default:
 			panic(errors.Errorf("invalid field %s", field))
@@ -199,23 +194,15 @@ func ParseAlertExpr(query v1alpha1.ExprMetrics) (*Alert, error) {
 
 const (
 	DefaultEvaluationFrequency = "1m"
-	DefaultStabilityWindow     = "0s"
-)
+	DefaultDecisionWindow      = "0s"
 
-const (
 	KeepState = "keep_state"
-	NoData    = "no_data"
-
-	// OK is a resolve Message, sent when the alerting state returns to false.
-	OK = "ok"
-
-	Alerting = "alerting"
 )
 
-const StatusSuccess = "success"
+const RespStatusSuccess = "success"
 
 // SetAlert adds a new alert to Grafana.
-func (c *Client) SetAlert(ctx context.Context, alert *Alert, name string, msg string) error {
+func (c *Client) SetAlert(ctx context.Context, alert *AlertRule, name string, msg string) error {
 	if c == nil {
 		panic("empty client was given")
 	}
@@ -224,73 +211,93 @@ func (c *Client) SetAlert(ctx context.Context, alert *Alert, name string, msg st
 		return errors.New("NIL alert was given")
 	}
 
+	// get the dashboard
 	board, _, err := c.Conn.GetDashboardByUID(ctx, alert.DashboardUID)
 	if err != nil {
 		return errors.Wrapf(err, "cannot retrieve dashboard %s", alert.DashboardUID)
 	}
 
+	var needsUpdate bool
+
+	// iterate panels
 	for _, panel := range board.Panels {
-		if panel.ID == alert.PanelID {
-			if panel.Alert != nil {
-				return errors.Errorf("alert [%s] has already been set for this panel", panel.Alert.Name)
-			}
+		// skip irrelevant panels
+		if panel.ID != alert.PanelID {
+			continue
+		}
 
-			panel.Alert = &sdk.Alert{
-				Name:    name,
-				Message: msg,
-				Conditions: []sdk.AlertCondition{
-					{
-						Evaluator: alert.Evaluator,
-						Operator: sdk.AlertOperator{
-							Type: "and",
-						},
-						Query: sdk.AlertQuery{
-							Params: []string{alert.Metric.MetricName, alert.TimeRange.From, alert.TimeRange.To},
-						},
-						Reducer: alert.Reducer,
-						Type:    "query",
+		// set alert for the particular panel
+		if panel.Alert != nil {
+			return errors.Errorf("alert [%s] has already been set for this panel", panel.Alert.Name)
+		}
+
+		panel.Alert = &sdk.Alert{
+			Name:    name,
+			Message: msg,
+			Conditions: []sdk.AlertCondition{
+				{
+					Evaluator: alert.Evaluator,
+					Operator: sdk.AlertOperator{
+						Type: "and",
 					},
+					Query: sdk.AlertQuery{
+						Params: []string{alert.Metric.MetricName, alert.FromTime, alert.ToTime},
+					},
+					Reducer: alert.Reducer,
+					Type:    "query",
 				},
-				ExecutionErrorState: KeepState,
-				NoDataState:         KeepState,
-				Notifications:       nil,
+			},
+			ExecutionErrorState: KeepState,
+			NoDataState:         KeepState,
+			Notifications:       nil,
 
-				Handler: 1, // Send to default notification channel (should be the controller)
+			Handler: 1, // Send to default notification channel (should be the controller)
 
-				// Frequency specifies how often the scheduler should evaluate the alert rule.
-				// This is referred to as the evaluation interval. Because in Frisbee we use alerts as
-				// assertions, we only need to run them once. Default: 1m
-				Frequency: alert.Every,
+			// Frequency specifies how often the scheduler should evaluate the alert rule.
+			// This is referred to as the evaluation interval. Because in Frisbee we use alerts as
+			// assertions, we only need to run them once. Default: 1m
+			Frequency: alert.Frequency,
 
-				// For specifies how long the query needs to violate the configured thresholds before the alert notification
-				// triggers. Default: 5m
-				For: alert.For,
+			// For specifies how long the query needs to violate the configured thresholds before the alert notification
+			// triggers. Default: 5m
+			For: alert.Duration,
+		}
+
+		needsUpdate = true
+	}
+
+	if needsUpdate {
+		params := sdk.SetDashboardParams{
+			Overwrite:  true,
+			PreserveId: true,
+		}
+
+		if err := wait.ExponentialBackoffWithContext(ctx, common.BackoffForServiceEndpoint, func() (done bool, err error) {
+			resp, errReq := c.Conn.SetDashboard(ctx, board, params)
+
+			if errReq != nil {
+				// if there is a message, it is probably a query error (e.g, invalid panel)
+				if resp.Message != nil {
+					c.logger.Info("Connection error. Retry", "alertName", name, "resp", resp)
+
+					return true, errors.Wrapf(errReq, *resp.Message)
+				}
+
+				// otherwise, it is probably a connection error, and we should retry
+				return false, errors.Wrapf(errReq, "connection error")
 			}
 
-			break
+			// done
+			if resp.Status != nil && *resp.Status == RespStatusSuccess {
+				return true, nil
+			}
+
+			panic("should not go here")
+		}); err != nil {
+			return errors.Wrapf(err, "cannot set alert '%s'", name)
 		}
-	}
-
-	params := sdk.SetDashboardParams{
-		Overwrite:  true,
-		PreserveId: true,
-	}
-
-	if err := wait.ExponentialBackoffWithContext(ctx, common.BackoffForServiceEndpoint, func() (done bool, err error) {
-		resp, errReq := c.Conn.SetDashboard(ctx, board, params)
-		switch {
-		case errReq != nil: // API connection error. Just retry
-			c.logger.Info("Failed to set alert. Retry", "alertName", name, "resp", resp)
-			return false, nil //nolint:nilerr
-
-		case *resp.Status != StatusSuccess: // Unexpected response
-			return false, errors.Errorf("expected status '%s', but got '%s'", StatusSuccess, *resp.Status)
-
-		default: // Done
-			return true, nil
-		}
-	}); err != nil {
-		return errors.Wrapf(err, "cannot set alert '%s'", name)
+	} else {
+		c.logger.Info("No matches has been found for alert", "alertRule", alert)
 	}
 
 	return nil

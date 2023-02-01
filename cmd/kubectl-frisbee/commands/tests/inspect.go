@@ -20,12 +20,23 @@ import (
 	"os"
 
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/common"
+	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/completion"
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/env"
 	"github.com/carv-ics-forth/frisbee/pkg/ui"
 	"github.com/spf13/cobra"
 )
 
-type InspectOptions struct {
+func InspectTestCmdCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	switch {
+	case len(args) == 0:
+		return completion.CompleteScenarios(cmd, args, toComplete)
+
+	default:
+		return completion.CompleteFlags(cmd, args, toComplete)
+	}
+}
+
+type InspectTestCmdOptions struct {
 	NoOverview, Events, ExternalResources, Templates bool
 	Deep                                             bool
 	Shell                                            string
@@ -34,7 +45,7 @@ type InspectOptions struct {
 	Loglines int
 }
 
-func PopulateInspectFlags(cmd *cobra.Command, options *InspectOptions) {
+func InspectTestCmdFlags(cmd *cobra.Command, options *InspectTestCmdOptions) {
 	cmd.Flags().BoolVar(&options.NoOverview, "no-overview", false, "disable printing test overview")
 	cmd.Flags().BoolVar(&options.ExternalResources, "external-resources", false, "list Chaos and K8s resources")
 	cmd.Flags().BoolVar(&options.Events, "events", false, "show events hinting what's happening")
@@ -48,13 +59,14 @@ func PopulateInspectFlags(cmd *cobra.Command, options *InspectOptions) {
 }
 
 func NewInspectTestCmd() *cobra.Command {
-	var options InspectOptions
+	var options InspectTestCmdOptions
 
 	cmd := &cobra.Command{
-		Use:     "test <testName> [--interactive podName [-- ShellArgs]]",
-		Aliases: []string{"tests", "t"},
-		Short:   "Get all available test information",
-		Long:    "Gets test execution details, until it's in success/error state, blocks until gets complete state",
+		Use:               "test <testName> [--interactive podName [-- ShellArgs]]",
+		Aliases:           []string{"tests", "t"},
+		Short:             "Get all available test information",
+		Long:              "Gets test execution details, until it's in success/error state, blocks until gets complete state",
+		ValidArgsFunction: InspectTestCmdCompletion,
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) < 1 {
 				ui.Failf("Please Pass Test name as argument")
@@ -187,14 +199,14 @@ func NewInspectTestCmd() *cobra.Command {
 				err := common.KubectlLogs(testName, false, options.Loglines, options.Logs...)
 
 				env.Default.Hint("For more logs use:", "kubectl logs -n", testName, "<podnames>")
-				ui.ExitOnError("== Logs From Pods ==", err)
+				ui.ExitOnError("== Logs FromTime Pods ==", err)
 
 				ui.Success("== Scenario Logs ==")
 			}
 		},
 	}
 
-	PopulateInspectFlags(cmd, &options)
+	InspectTestCmdFlags(cmd, &options)
 
 	return cmd
 }

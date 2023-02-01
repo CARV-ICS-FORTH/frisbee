@@ -71,7 +71,7 @@ spec:
       name: client
       depends: { running: [ server ] }
       assert:
-        metrics: "avg() of query(summary/152/rx-max, 1m, now) is below(-3000000000)"
+        metrics: "avg() of query(summary/184/transmit, 1m, now) is above(300000000)"
       service:
         templateRef: iperf.client
         inputs:

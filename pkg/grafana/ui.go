@@ -22,13 +22,13 @@ import (
 	"github.com/pkg/errors"
 )
 
-type Panel struct {
+type PanelRef struct {
 	Title string
 	ID    uint
 }
 
-// ListPanelsWithData returns a list of Panels ID with  a Grafana dashboard.
-func (c *Client) ListPanelsWithData(ctx context.Context, dashboardUID string) ([]Panel, error) {
+// ListPanels returns a list of Panels ID with  a Grafana dashboard.
+func (c *Client) ListPanels(ctx context.Context, dashboardUID string) ([]PanelRef, error) {
 	if c == nil {
 		panic("empty client was given")
 	}
@@ -38,10 +38,10 @@ func (c *Client) ListPanelsWithData(ctx context.Context, dashboardUID string) ([
 		return nil, errors.Wrapf(err, "cannot retrieve dashboard %s", dashboardUID)
 	}
 
-	panels := make([]Panel, 0, len(board.Panels))
+	panels := make([]PanelRef, 0, len(board.Panels))
 
 	for _, panel := range board.Panels {
-		panels = append(panels, Panel{
+		panels = append(panels, PanelRef{
 			Title: panel.Title,
 			ID:    panel.ID,
 		})

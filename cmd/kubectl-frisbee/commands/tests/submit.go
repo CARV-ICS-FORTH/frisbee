@@ -30,7 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type TestSubmitOptions struct {
+type SubmitTestOptions struct {
 	CPUQuota, MemoryQuota                     string
 	Watch                                     bool
 	ExpectSuccess, ExpectFailure, ExpectError bool
@@ -39,10 +39,10 @@ type TestSubmitOptions struct {
 	Logs []string
 }
 
-func PopulateTestSubmitFlags(cmd *cobra.Command, options *TestSubmitOptions) {
+func SubmitTestFlags(cmd *cobra.Command, options *SubmitTestOptions) {
 	// cmd.Flags().StringVar(&options.CPUQuota, "cpu", "", "set quotas for the total CPUs (e.g, 0.5) that can be used by all Pods running in the test.")
 	// cmd.Flags().StringVar(&options.MemoryQuota, "memory", "", "set quotas for the total Memory (e.g, 100Mi) that can be used by all Pods running in the test.")
-	cmd.Flags().StringSliceVarP(&options.Logs, "logs", "l", nil, "show logs output from executor pod (if unsure, use 'all')")
+	cmd.Flags().StringSliceVarP(&options.Logs, "logs", "l", nil, "show logs output from executor pod (all|SUT|SYS|pod)")
 
 	cmd.Flags().BoolVarP(&options.Watch, "watch", "w", false, "watch status")
 
@@ -53,7 +53,7 @@ func PopulateTestSubmitFlags(cmd *cobra.Command, options *TestSubmitOptions) {
 }
 
 func NewSubmitTestCmd() *cobra.Command {
-	var options TestSubmitOptions
+	var options SubmitTestOptions
 
 	cmd := &cobra.Command{
 		Use:     "test <Name> <Scenario> <Dependencies...> ",
@@ -95,11 +95,6 @@ func NewSubmitTestCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			testName, testFile := args[0], args[1]
 
-			// Generate test name, if needed
-			if strings.HasSuffix(testName, "-") {
-				testName = fmt.Sprintf("%s%d", testName, rand.Intn(1000))
-			}
-
 			// Lightweight validation of the scenario performed on the client side.
 			// This allows us to filter-out some poorly written scenarios before interacting with the server.
 			// More complex validation is performed on the server side (using admission webhooks) during
@@ -107,6 +102,11 @@ func NewSubmitTestCmd() *cobra.Command {
 			{
 				err := common.RunTest(testName, testFile, common.ValidationClient)
 				ui.ExitOnError("Validating testfile: "+testFile, err)
+			}
+
+			// Generate test name, if needed
+			if strings.HasSuffix(testName, "-") {
+				testName = fmt.Sprintf("%s%d", testName, rand.Intn(1000))
 			}
 
 			// Query Kubernetes API for conflicting tests
@@ -160,12 +160,12 @@ func NewSubmitTestCmd() *cobra.Command {
 		},
 	}
 
-	PopulateTestSubmitFlags(cmd, &options)
+	SubmitTestFlags(cmd, &options)
 
 	return cmd
 }
 
-func ControlOutput(testName string, options *TestSubmitOptions) {
+func ControlOutput(testName string, options *SubmitTestOptions) {
 	switch {
 	case options.ExpectSuccess:
 		ui.Info("Expecting the test to complete successfully within ", options.Timeout)

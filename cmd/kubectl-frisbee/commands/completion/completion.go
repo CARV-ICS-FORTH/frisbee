@@ -16,6 +16,13 @@ limitations under the License.
 
 package completion
 
+import (
+	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/common"
+	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/env"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
+)
+
 const completionDesc = `
 Generate autocompletion scripts for Frisbee for the specified shell.
 `
@@ -30,3 +37,27 @@ To load completions for every new session, execute once:
 - MacOS:
       frisbee completion bash > /usr/local/etc/bash_completion.d/helm.bash
 `
+
+func NoArgs(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	return nil, cobra.ShellCompDirectiveNoFileComp
+}
+
+// CompleteScenarios list the available test-cases
+func CompleteScenarios(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	scenarios, err := env.Default.GetFrisbeeClient().ListScenarios(cmd.Context(), common.ManagedNamespace)
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+
+	return scenarios.TestNames(), cobra.ShellCompDirectiveDefault
+}
+
+func CompleteFlags(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	var flags []string
+
+	cmd.Flags().VisitAll(func(flag *pflag.Flag) {
+		flags = append(flags, "--"+flag.Name)
+	})
+
+	return flags, cobra.ShellCompDirectiveNoFileComp
+}

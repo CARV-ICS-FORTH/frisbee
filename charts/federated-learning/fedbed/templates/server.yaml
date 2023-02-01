@@ -8,8 +8,12 @@ spec:
     parameters:
       min_fit_clients: 1
       min_available_clients: 1
-      dataset: "MNIST"
       rounds: 5
+
+      # should be used with FL_EVAL_DATASET
+      dataset_eval: "true"
+      dataset: "MNIST"
+      backend: "pytorch"
   service:
     decorators:
       telemetry:
@@ -35,10 +39,12 @@ spec:
           - name: FL_MIN_AVAILABLE_CLIENTS
             value: {{"{{.inputs.parameters.min_available_clients}}" | quote}}
 
+          - name: FL_EVAL_DATASET
+            value: {{"{{.inputs.parameters.dataset_eval}}" | quote}}
           - name: FL_DATASET
             value: {{"{{.inputs.parameters.dataset}}" | quote}}
-          - name: FL_EVAL_DATASET
-            value: "false"
+          - name: FL_BACKEND
+            value: {{"{{.inputs.parameters.backend}}" | quote }}
         ports:
           - name: http
             containerPort: 8080

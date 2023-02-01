@@ -17,7 +17,7 @@ func TestParseAlert(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    *grafana.Alert
+		want    *grafana.AlertRule
 		wantErr bool
 	}{
 		{
@@ -29,15 +29,11 @@ func TestParseAlert(t *testing.T) {
 		{
 			name: "single-params",
 			args: args{query: "avg() of query(wpFnYRwGk/2/bitrate, 15m, now) is below(14)"},
-			want: &grafana.Alert{
+			want: &grafana.AlertRule{
 				Metric: grafana.Metric{
 					DashboardUID: "wpFnYRwGk",
 					PanelID:      2,
 					MetricName:   "bitrate",
-				},
-				TimeRange: grafana.TimeRange{
-					From: "15m",
-					To:   "now",
 				},
 				Query: grafana.Query{
 					Evaluator: sdk.AlertEvaluator{
@@ -49,10 +45,10 @@ func TestParseAlert(t *testing.T) {
 						Params: nil,
 					},
 				},
-				Execution: grafana.Execution{
-					Every: grafana.DefaultEvaluationFrequency,
-					For:   grafana.DefaultStabilityWindow,
-				},
+				FromTime:  "15m",
+				ToTime:    "now",
+				Frequency: grafana.DefaultEvaluationFrequency,
+				Duration:  grafana.DefaultDecisionWindow,
 			},
 			wantErr: false,
 		},
@@ -60,15 +56,11 @@ func TestParseAlert(t *testing.T) {
 		{
 			name: "no-params",
 			args: args{query: "avg() of query(wpFnYRwGk/2/bitrate, 15m, now) is novalue()"},
-			want: &grafana.Alert{
+			want: &grafana.AlertRule{
 				Metric: grafana.Metric{
 					DashboardUID: "wpFnYRwGk",
 					PanelID:      2,
 					MetricName:   "bitrate",
-				},
-				TimeRange: grafana.TimeRange{
-					From: "15m",
-					To:   "now",
 				},
 				Query: grafana.Query{
 					Evaluator: sdk.AlertEvaluator{
@@ -80,25 +72,21 @@ func TestParseAlert(t *testing.T) {
 						Params: nil,
 					},
 				},
-				Execution: grafana.Execution{
-					Every: grafana.DefaultEvaluationFrequency,
-					For:   grafana.DefaultStabilityWindow,
-				},
+				FromTime:  "15m",
+				ToTime:    "now",
+				Frequency: grafana.DefaultEvaluationFrequency,
+				Duration:  grafana.DefaultDecisionWindow,
 			},
 			wantErr: false,
 		},
 		{
 			name: "multi-params",
 			args: args{query: "avg() of query(wpFnYRwGk/2/bitrate, 15m, now) is within_range(10,50)"},
-			want: &grafana.Alert{
+			want: &grafana.AlertRule{
 				Metric: grafana.Metric{
 					DashboardUID: "wpFnYRwGk",
 					PanelID:      2,
 					MetricName:   "bitrate",
-				},
-				TimeRange: grafana.TimeRange{
-					From: "15m",
-					To:   "now",
 				},
 				Query: grafana.Query{
 					Evaluator: sdk.AlertEvaluator{
@@ -110,10 +98,10 @@ func TestParseAlert(t *testing.T) {
 						Params: nil,
 					},
 				},
-				Execution: grafana.Execution{
-					Every: grafana.DefaultEvaluationFrequency,
-					For:   grafana.DefaultStabilityWindow,
-				},
+				FromTime:  "15m",
+				ToTime:    "now",
+				Frequency: grafana.DefaultEvaluationFrequency,
+				Duration:  grafana.DefaultDecisionWindow,
 			},
 			wantErr: false,
 		},

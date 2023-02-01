@@ -28,6 +28,7 @@ import (
 
 	embed "github.com/carv-ics-forth/frisbee"
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
+	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/completion"
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/env"
 	"github.com/carv-ics-forth/frisbee/pkg/grafana"
 	"github.com/carv-ics-forth/frisbee/pkg/home"
@@ -44,20 +45,30 @@ const (
 	SummaryDashboardUID = "summary"
 )
 
-func GenerateQuotedURL(grafanaEndpoint string, dashboard string, from int64, to int64, postfix string) string {
-	return fmt.Sprintf("http://%s/d/%s?orgId=1&from=%d&to=%d%s", grafanaEndpoint, dashboard, from, to, postfix)
-}
-
 type TestReportOptions struct {
 	Force, Aggregate bool
 	DashboardUID     string
 	RepositoryCache  string
+
+	Data bool
+}
+
+func ReportTestCmdCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	switch {
+	case len(args) == 0:
+		return completion.CompleteScenarios(cmd, args, toComplete)
+
+	default:
+		return completion.CompleteFlags(cmd, args, toComplete)
+	}
 }
 
 func PopulateReportTestFlags(cmd *cobra.Command, options *TestReportOptions) {
 	cmd.Flags().BoolVar(&options.Force, "force", false, "Force reporting test data despite test phase.")
 
 	cmd.Flags().StringVar(&options.DashboardUID, "dashboard", SummaryDashboardUID, "The dashboard to generate report from.")
+
+	cmd.Flags().BoolVar(&options.Data, "data", false, "download grafana data as csv (experimental)")
 
 	cmd.Flags().BoolVar(&options.Aggregate, "aggregate", false, "Generate a single PDF for the entire dashboard.")
 
@@ -68,9 +79,10 @@ func NewReportTestsCmd() *cobra.Command {
 	var options TestReportOptions
 
 	cmd := &cobra.Command{
-		Use:     "test <testName> <destination>",
-		Aliases: []string{"tests", "t"},
-		Short:   "Generate PDFs for every dashboard in Grafana.",
+		Use:               "test <testName> <destination>",
+		Aliases:           []string{"tests", "t"},
+		Short:             "Generate PDFs for every dashboard in Grafana.",
+		ValidArgsFunction: ReportTestCmdCompletion,
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) != 2 {
 				ui.Failf("Pass Test name and destination to store the reports.")
@@ -114,18 +126,31 @@ func NewReportTestsCmd() *cobra.Command {
 			}
 
 			/*-- Filter time to the beginning/ending of the scenario. --*/
-			from, to := FindTimeline(scenario)
+			fromTS, toTS := FindTimeline(scenario)
+
+			/*---------------------------------------------------*
+			 * Download data as CSV for the specific timeline
+			 *---------------------------------------------------*/
+			if options.Data {
+				url := grafana.NewURL(scenario.Status.GrafanaEndpoint).
+					WithDashboard(options.DashboardUID).
+					WithFromTS(time.UnixMilli(fromTS)).
+					WithToTS(time.UnixMilli(toTS))
+
+				err = SaveData(url, destination)
+				ui.ExitOnError("Saving metrics to: "+destination, err)
+			}
 
 			/*---------------------------------------------------*
 			 * Generate PDFs for the specific timeline
 			 *---------------------------------------------------*/
 			if options.Aggregate {
-				uri := GenerateQuotedURL(scenario.Status.GrafanaEndpoint, options.DashboardUID, from, to, "")
+				url := grafana.BuildURL(scenario.Status.GrafanaEndpoint, options.DashboardUID, fromTS, toTS, "")
 
-				err = SavePDF(&options, uri, destination)
+				err = SavePDF(&options, url, destination)
 				ui.ExitOnError("Saving aggregated report to: "+destination, err)
 			} else {
-				uri := GenerateQuotedURL(scenario.Status.GrafanaEndpoint, options.DashboardUID, from, to, "&kiosk")
+				uri := grafana.BuildURL(scenario.Status.GrafanaEndpoint, options.DashboardUID, fromTS, toTS, "&kiosk")
 
 				err = SavePDFs(&options, uri, destination, scenario.Status.GrafanaEndpoint, options.DashboardUID)
 				ui.ExitOnError("Saving reports to: "+destination, err)
@@ -191,7 +216,7 @@ func SavePDFs(options *TestReportOptions, dashboardURI, destDir string, grafanaE
 		return errors.Wrapf(err, "cannot get Grafana client")
 	}
 
-	panels, err := grafanaClient.ListPanelsWithData(ctx, dashboardUID)
+	panels, err := grafanaClient.ListPanels(ctx, dashboardUID)
 	if err != nil {
 		return err
 	}
@@ -211,6 +236,34 @@ func SavePDFs(options *TestReportOptions, dashboardURI, destDir string, grafanaE
 		if err := SavePDF(options, panelURI, filepath.Join(destDir, title)+".pdf"); err != nil {
 			return errors.Wrapf(err, "cannot save panel '%d (%s)'", panel.ID, panel.Title)
 		}
+	}
+
+	return nil
+}
+
+func SaveData(url *grafana.URL, dstDir string) error {
+	/*---------------------------------------------------*
+	 * Ensure destination exists
+	 *---------------------------------------------------*/
+	if err := os.MkdirAll(dstDir, os.ModePerm); err != nil {
+		return errors.Wrapf(err, "destination error")
+	}
+
+	/*---------------------------------------------------*
+	 * APIQuery Grafana for Available Panels.
+	 *---------------------------------------------------*/
+	ctx := context.Background()
+
+	grafanaClient, err := grafana.New(ctx, grafana.WithHTTP(url.Endpoint))
+	if err != nil {
+		return errors.Wrapf(err, "cannot get Grafana client")
+	}
+
+	/*---------------------------------------------------*
+	 * Download CSV data from each panel
+	 *---------------------------------------------------*/
+	if err := grafanaClient.DownloadData(ctx, url, dstDir); err != nil {
+		return errors.Wrapf(err, "failed to get Grafana data")
 	}
 
 	return nil
