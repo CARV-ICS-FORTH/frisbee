@@ -137,7 +137,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 1,
+  "id": 2,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -1529,6 +1529,184 @@
       "type": "annolist"
     },
     {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "description": "\n\n",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "cpu"
+            },
+            "properties": [
+              {
+                "id": "custom.axisPlacement",
+                "value": "left"
+              },
+              {
+                "id": "unit",
+                "value": "s"
+              },
+              {
+                "id": "custom.axisLabel",
+                "value": "vCore(s)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "io"
+            },
+            "properties": [
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              },
+              {
+                "id": "unit",
+                "value": "Bps"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "net"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "Bps"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 17
+      },
+      "id": 196,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "9.3.4",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "editorMode": "code",
+          "exemplar": true,
+          "expr": "avg(rate(container_cpu_usage_seconds_total{id=\"/\"}[$__rate_interval])) != 0 ",
+          "hide": false,
+          "instant": false,
+          "interval": "",
+          "legendFormat": "cpu",
+          "range": true,
+          "refId": "cpu"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "editorMode": "code",
+          "exemplar": true,
+          "expr": "avg(rate(container_fs_reads_bytes_total{id=\"/\"}[$__rate_interval]) +  \nrate(container_fs_writes_bytes_total{id=\"/\"}[$__rate_interval])) != 0",
+          "hide": false,
+          "instant": false,
+          "interval": "",
+          "legendFormat": "io",
+          "range": true,
+          "refId": "io"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "editorMode": "code",
+          "exemplar": true,
+          "expr": "avg(rate(container_network_receive_bytes_total{id=\"/\"}[$__rate_interval]) +  \nrate(container_network_transmit_bytes_total{id=\"/\"}[$__rate_interval])) != 0",
+          "hide": false,
+          "instant": false,
+          "interval": "",
+          "legendFormat": "net",
+          "range": true,
+          "refId": "net"
+        }
+      ],
+      "title": "CPU/IO/Net Usage",
+      "type": "timeseries"
+    },
+    {
       "collapsed": false,
       "datasource": {
         "type": "prometheus",
@@ -1540,7 +1718,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 17
+        "y": 26
       },
       "id": 129,
       "isNew": false,
@@ -1671,7 +1849,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 18
+        "y": 27
       },
       "id": 109,
       "isNew": false,
@@ -1830,7 +2008,7 @@
         "h": 9,
         "w": 24,
         "x": 0,
-        "y": 26
+        "y": 35
       },
       "id": 154,
       "isNew": false,
@@ -2012,7 +2190,7 @@
         "h": 9,
         "w": 24,
         "x": 0,
-        "y": 35
+        "y": 44
       },
       "id": 78,
       "isNew": false,
@@ -2079,7 +2257,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 44
+        "y": 53
       },
       "id": 131,
       "isNew": false,
@@ -2176,7 +2354,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 45
+        "y": 54
       },
       "id": 171,
       "isNew": false,
@@ -2396,7 +2574,7 @@
         "h": 9,
         "w": 24,
         "x": 0,
-        "y": 53
+        "y": 62
       },
       "id": 170,
       "isNew": false,
@@ -2509,7 +2687,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 62
+        "y": 71
       },
       "id": 106,
       "options": {
@@ -2552,7 +2730,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 70
+        "y": 79
       },
       "id": 133,
       "isNew": false,
@@ -2597,7 +2775,7 @@
         "h": 6,
         "w": 24,
         "x": 0,
-        "y": 71
+        "y": 80
       },
       "id": 137,
       "options": {
@@ -2690,7 +2868,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 77
+        "y": 86
       },
       "id": 197,
       "links": [],
@@ -2768,7 +2946,7 @@
         "h": 8,
         "w": 4,
         "x": 8,
-        "y": 77
+        "y": 86
       },
       "id": 200,
       "links": [],
@@ -2889,7 +3067,7 @@
         "h": 8,
         "w": 7,
         "x": 12,
-        "y": 77
+        "y": 86
       },
       "id": 199,
       "links": [],
@@ -2967,7 +3145,7 @@
         "h": 8,
         "w": 5,
         "x": 19,
-        "y": 77
+        "y": 86
       },
       "id": 201,
       "links": [],
@@ -3090,7 +3268,7 @@
         "h": 11,
         "w": 24,
         "x": 0,
-        "y": 85
+        "y": 94
       },
       "id": 172,
       "isNew": false,
@@ -3209,7 +3387,7 @@
         "h": 11,
         "w": 24,
         "x": 0,
-        "y": 96
+        "y": 105
       },
       "id": 176,
       "isNew": false,
@@ -3327,7 +3505,7 @@
         "h": 11,
         "w": 24,
         "x": 0,
-        "y": 107
+        "y": 116
       },
       "id": 117,
       "isNew": false,
@@ -3447,7 +3625,7 @@
         "h": 11,
         "w": 24,
         "x": 0,
-        "y": 118
+        "y": 127
       },
       "id": 121,
       "isNew": false,
@@ -3516,7 +3694,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 129
+        "y": 138
       },
       "id": 136,
       "isNew": false,
@@ -3592,7 +3770,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 130
+        "y": 139
       },
       "id": 184,
       "links": [],
@@ -3670,7 +3848,7 @@
         "h": 8,
         "w": 5,
         "x": 8,
-        "y": 130
+        "y": 139
       },
       "id": 195,
       "links": [],
@@ -3791,7 +3969,7 @@
         "h": 8,
         "w": 7,
         "x": 13,
-        "y": 130
+        "y": 139
       },
       "id": 192,
       "links": [],
@@ -3869,7 +4047,7 @@
         "h": 8,
         "w": 4,
         "x": 20,
-        "y": 130
+        "y": 139
       },
       "id": 196,
       "links": [],
@@ -4044,7 +4222,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 138
+        "y": 147
       },
       "id": 178,
       "isNew": false,
@@ -4220,7 +4398,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 146
+        "y": 155
       },
       "id": 186,
       "isNew": false,
@@ -4411,7 +4589,7 @@
         "h": 9,
         "w": 24,
         "x": 0,
-        "y": 154
+        "y": 163
       },
       "id": 158,
       "isNew": false,
@@ -4589,7 +4767,7 @@
         "h": 11,
         "w": 24,
         "x": 0,
-        "y": 163
+        "y": 172
       },
       "id": 167,
       "isNew": false,
@@ -4656,7 +4834,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 174
+        "y": 183
       },
       "id": 151,
       "isNew": false,
@@ -4738,7 +4916,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 175
+        "y": 184
       },
       "id": 126,
       "isNew": false,
@@ -4916,7 +5094,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 183
+        "y": 192
       },
       "id": 168,
       "isNew": false,
@@ -5091,7 +5269,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 191
+        "y": 200
       },
       "id": 169,
       "isNew": false,
@@ -5198,6 +5376,6 @@
   "timezone": "",
   "title": "Frisbee SUT Monitoring (Summary)",
   "uid": "summary",
-  "version": 4,
+  "version": 2,
   "weekStart": ""
 }

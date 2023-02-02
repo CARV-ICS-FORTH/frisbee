@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/go-logr/logr"
 	"github.com/gosimple/slug"
@@ -42,7 +43,7 @@ type DataRequest struct {
 }
 
 // DownloadData returns data for the given panel.
-func (c *Client) DownloadData(ctx context.Context, url *URL, dstDir string) error {
+func (c *Client) DownloadData(ctx context.Context, url *URL, destDir string) error {
 	if c == nil {
 		panic("empty client was given")
 	}
@@ -91,9 +92,9 @@ func (c *Client) DownloadData(ctx context.Context, url *URL, dstDir string) erro
 				To:      fmt.Sprint(url.ToTS.UnixMilli()),
 			}
 
-			dstFile := fmt.Sprintf("%s/%s.json", dstDir, slug.Make(panel.Title))
+			file := filepath.Join(destDir, slug.Make(panel.Title)+".json")
 
-			if err := downloadData(c.logger, url, req, dstFile); err != nil {
+			if err := downloadData(c.logger, url, req, file); err != nil {
 				return errors.Wrapf(err, "unable to download csv data")
 			}
 		}
