@@ -56,7 +56,6 @@ const (
 type Path struct {
 	kubectlPath string
 	helmPath    string
-	sternPath   string
 	nodejsPath  string
 	npmPath     string
 }
@@ -237,15 +236,6 @@ func (p *Path) Helm() string {
 	}
 
 	return p.helmPath
-}
-
-// Stern returns path to the logging binary.
-func (p *Path) Stern() string {
-	if p.sternPath == "" {
-		ui.Fail(errors.Errorf("command requires 'stern' to be installed in your system"))
-	}
-
-	return p.sternPath
 }
 
 // NodeJS returns path to the node binary.
