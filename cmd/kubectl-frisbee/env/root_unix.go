@@ -56,12 +56,6 @@ func (env *EnvironmentSettings) LookupBinaries() {
 
 	env.helmPath = helmPath
 
-	// stern
-	sternPath, err := exec.New().LookPath("stern")
-	ui.ExitOnError("Frisbee requires 'stern' to be installed in your system.", err)
-
-	env.sternPath = sternPath
-
 	// nodejs
 	nodejsPath, err := exec.New().LookPath("node")
 	if err != nil {
