@@ -20,16 +20,27 @@ import (
 	"strings"
 
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/common"
+	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/completion"
 	"github.com/carv-ics-forth/frisbee/pkg/ui"
 	"github.com/spf13/cobra"
 )
 
-type TestDeleteOptions struct {
+func DeleteTestCmdCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	switch {
+	case len(args) == 0:
+		return completion.CompleteScenarios(cmd, args, toComplete)
+
+	default:
+		return completion.CompleteFlags(cmd, args, toComplete)
+	}
+}
+
+type DeleteTestCmdOptions struct {
 	DeleteAll, Force bool
 	Selectors        []string
 }
 
-func PopulateTestDeleteFlags(cmd *cobra.Command, options *TestDeleteOptions) {
+func DeleteTestCmdFlags(cmd *cobra.Command, options *DeleteTestCmdOptions) {
 	cmd.Flags().BoolVar(&options.DeleteAll, "all", false, "Delete all tests")
 	cmd.Flags().StringSliceVarP(&options.Selectors, "label", "l", nil, "label key value pair: --label key1=value1")
 
@@ -37,12 +48,13 @@ func PopulateTestDeleteFlags(cmd *cobra.Command, options *TestDeleteOptions) {
 }
 
 func NewDeleteTestsCmd() *cobra.Command {
-	var options TestDeleteOptions
+	var options DeleteTestCmdOptions
 
 	cmd := &cobra.Command{
-		Use:     "test <testName>",
-		Aliases: []string{"tests", "t"},
-		Short:   "Delete Test",
+		Use:               "test <testName>",
+		Aliases:           []string{"tests", "t"},
+		Short:             "Delete Test",
+		ValidArgsFunction: DeleteTestCmdCompletion,
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 && !options.DeleteAll {
 				ui.Failf("Pass Test name, --all flag to delete all or labels to delete by labels.")
@@ -93,7 +105,7 @@ func NewDeleteTestsCmd() *cobra.Command {
 		},
 	}
 
-	PopulateTestDeleteFlags(cmd, &options)
+	DeleteTestCmdFlags(cmd, &options)
 
 	return cmd
 }

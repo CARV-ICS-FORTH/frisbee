@@ -88,7 +88,6 @@ func ErrNoResources(out []byte) bool {
 }
 
 func ErrNotFound(out []byte) bool {
-
 	{ // First form
 		if strings.Contains(string(out), NotFound) {
 			return true
@@ -415,7 +414,7 @@ func KubectlLogs(testName string, tail bool, lines int, pods ...string) error {
 	}
 
 	if len(pods) == 0 {
-		return errors.Errorf("no logging rules have been specified")
+		command = append(command, "-l", v1alpha1.LabelScenario)
 	}
 
 	if len(pods) == 1 {

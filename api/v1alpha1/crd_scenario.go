@@ -262,6 +262,16 @@ type ScenarioList struct {
 	Items           []Scenario `json:"items"`
 }
 
+func (in *ScenarioList) TestNames() []string {
+	testNames := make([]string, len(in.Items))
+
+	for i, scenario := range in.Items {
+		testNames[i] = scenario.GetNamespace()
+	}
+
+	return testNames
+}
+
 // Table returns a tabular form of the structure for pretty printing.
 func (in *ScenarioList) Table() (header []string, data [][]string) {
 	header = []string{

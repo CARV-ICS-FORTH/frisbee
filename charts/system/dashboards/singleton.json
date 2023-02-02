@@ -3,7 +3,10 @@
     "list": [
       {
         "builtIn": 1,
-        "datasource": "-- Grafana --",
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
         "enable": true,
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
@@ -17,7 +20,10 @@
         "type": "dashboard"
       },
       {
-        "datasource": "-- Grafana --",
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
         "enable": true,
         "expr": "",
         "iconColor": "blue",
@@ -46,7 +52,10 @@
         "type": "tags"
       },
       {
-        "datasource": "-- Grafana --",
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
         "enable": true,
         "expr": "",
         "iconColor": "#FF9830",
@@ -75,7 +84,10 @@
         "type": "tags"
       },
       {
-        "datasource": "-- Grafana --",
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
         "enable": true,
         "expr": "",
         "iconColor": "#F2495C",
@@ -104,7 +116,10 @@
         "type": "tags"
       },
       {
-        "datasource": "-- Grafana --",
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
         "enable": true,
         "iconColor": "purple",
         "name": "Chaos",
@@ -121,16 +136,17 @@
   },
   "editable": true,
   "fiscalYearStartMonth": 0,
-  "gnetId": null,
   "graphTooltip": 1,
   "id": 1,
-  "iteration": 1674554329948,
   "links": [],
   "liveNow": false,
   "panels": [
     {
       "collapsed": false,
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
       "editable": false,
       "error": false,
       "gridPos": {
@@ -143,19 +159,31 @@
       "isNew": false,
       "panels": [],
       "span": 0,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "refId": "A"
+        }
+      ],
       "title": "Infrastructure Overview ",
       "type": "row"
     },
     {
-      "columns": null,
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
       "editable": false,
       "error": false,
       "fieldConfig": {
         "defaults": {
           "custom": {
             "align": "auto",
-            "displayMode": "auto"
+            "displayMode": "auto",
+            "inspect": false
           },
           "mappings": [],
           "thresholds": {
@@ -183,14 +211,24 @@
       "id": 74,
       "isNew": false,
       "options": {
+        "footer": {
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
         "showHeader": true
       },
-      "pluginVersion": "8.2.3",
+      "pluginVersion": "9.3.4",
       "scroll": false,
       "span": 0,
-      "styles": null,
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "exemplar": true,
           "expr": "max(up) by (node, instance)",
           "format": "table",
@@ -243,7 +281,10 @@
       "type": "table"
     },
     {
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
       "gridPos": {
         "h": 7,
         "w": 9,
@@ -265,6 +306,10 @@
       "pluginVersion": "8.2.3",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "exemplar": false,
           "expr": "container_memory_usage_bytes{}",
           "format": "table",
@@ -276,6 +321,10 @@
           "refId": "Used"
         },
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "exemplar": true,
           "expr": "sum(container_spec_memory_limit_bytes{} - container_memory_usage_bytes{}) by (instance) ",
           "format": "table",
@@ -287,8 +336,6 @@
           "refId": "Remaining"
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Scenario Events",
       "transformations": [
         {
@@ -328,7 +375,10 @@
       "type": "annolist"
     },
     {
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
       "editable": false,
       "error": false,
       "gridPos": {
@@ -340,27 +390,38 @@
       "id": 70,
       "isNew": false,
       "options": {
+        "alertInstanceLabelFilter": "",
         "alertName": "",
         "dashboardAlerts": false,
         "dashboardTitle": "",
-        "folderId": null,
+        "groupBy": [],
+        "groupMode": "default",
         "maxItems": 10,
         "showOptions": "current",
         "sortOrder": 1,
         "stateFilter": {
           "alerting": false,
+          "error": true,
           "execution_error": false,
+          "firing": true,
+          "noData": false,
           "no_data": false,
+          "normal": false,
           "ok": false,
           "paused": false,
           "pending": false
         },
-        "tags": []
+        "tags": [],
+        "viewMode": "list"
       },
       "pluginVersion": "8.2.3",
       "span": 0,
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "exemplar": false,
           "expr": "container_memory_usage_bytes{}",
           "format": "table",
@@ -372,6 +433,10 @@
           "refId": "Used"
         },
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "exemplar": true,
           "expr": "sum(container_spec_memory_limit_bytes{} - container_memory_usage_bytes{}) by (instance) ",
           "format": "table",
@@ -383,8 +448,6 @@
           "refId": "Remaining"
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Alert Status",
       "transformations": [
         {
@@ -425,7 +488,10 @@
     },
     {
       "collapsed": false,
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
       "editable": false,
       "error": false,
       "gridPos": {
@@ -438,11 +504,23 @@
       "isNew": false,
       "panels": [],
       "span": 0,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "refId": "A"
+        }
+      ],
       "title": "__CPU Section__",
       "type": "row"
     },
     {
-      "datasource": "Prometheus",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
       "description": "container_cpu_usage_seconds_total which gives you how long the CPU has been occupied. 1s = a single Core for a whole second.\n\n",
       "editable": false,
       "error": false,
@@ -452,6 +530,8 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
             "axisLabel": "vCore(s)",
             "axisPlacement": "auto",
             "barAlignment": 0,
@@ -562,16 +642,22 @@
             "lastNotNull"
           ],
           "displayMode": "table",
-          "placement": "bottom"
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
-          "mode": "multi"
+          "mode": "multi",
+          "sort": "none"
         }
       },
       "pluginVersion": "8.2.1",
       "span": 0,
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "exemplar": true,
           "expr": "avg(rate(container_cpu_usage_seconds_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\"}[$__rate_interval]))  by (instance) != 0",
           "hide": false,
@@ -580,13 +666,14 @@
           "refId": "avg"
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "CPU Utilization [ Userspace/Kernelspace  ]",
       "type": "timeseries"
     },
     {
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
       "description": "container_cpu_usage_seconds_total which gives you how long the CPU has been occupied. 1s = a single Core for a whole second.\n\n",
       "editable": false,
       "error": false,
@@ -596,6 +683,8 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
             "axisLabel": "vCore(s)",
             "axisPlacement": "auto",
             "barAlignment": 0,
@@ -692,16 +781,22 @@
             "lastNotNull"
           ],
           "displayMode": "table",
-          "placement": "bottom"
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
-          "mode": "single"
+          "mode": "single",
+          "sort": "none"
         }
       },
       "pluginVersion": "8.2.1",
       "span": 0,
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "exemplar": true,
           "expr": "avg(rate(container_cpu_user_seconds_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\"}[$__rate_interval]))  by (instance) != 0",
           "hide": false,
@@ -718,13 +813,14 @@
           "visible": true
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "CPU Utilization [  Userspace  ]",
       "type": "timeseries"
     },
     {
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
       "description": "container_cpu_usage_seconds_total which gives you how long the CPU has been occupied. 1s = a single Core for a whole second.\n\n",
       "editable": false,
       "error": false,
@@ -770,8 +866,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -830,7 +925,8 @@
             "lastNotNull"
           ],
           "displayMode": "table",
-          "placement": "bottom"
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "single"
@@ -840,6 +936,10 @@
       "span": 0,
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "exemplar": true,
           "expr": "avg(rate(container_cpu_system_seconds_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\"}[$__rate_interval]))  by (instance) != 0",
           "hide": false,
@@ -856,14 +956,15 @@
           "visible": true
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "CPU Utilization [  Kernelspace  ]",
       "type": "timeseries"
     },
     {
       "collapsed": false,
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
       "editable": false,
       "error": false,
       "gridPos": {
@@ -876,11 +977,23 @@
       "isNew": false,
       "panels": [],
       "span": 0,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "refId": "A"
+        }
+      ],
       "title": "__Memory Section__",
       "type": "row"
     },
     {
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
       "description": "\n\n",
       "editable": false,
       "error": false,
@@ -926,8 +1039,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
@@ -951,7 +1063,8 @@
             "lastNotNull"
           ],
           "displayMode": "table",
-          "placement": "bottom"
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "single"
@@ -961,6 +1074,10 @@
       "span": 0,
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "exemplar": true,
           "expr": "avg(container_memory_usage_bytes{id=\"/\", instance=~\"$Instance\", node=~\"$Node\"})  by (instance) != 0",
           "hide": false,
@@ -977,13 +1094,14 @@
           "visible": true
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Memory Usage (All types)",
       "type": "timeseries"
     },
     {
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
       "description": "\n\n",
       "editable": false,
       "error": false,
@@ -1029,8 +1147,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
@@ -1054,7 +1171,8 @@
             "lastNotNull"
           ],
           "displayMode": "table",
-          "placement": "bottom"
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "single"
@@ -1064,6 +1182,10 @@
       "span": 0,
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "exemplar": true,
           "expr": "avg(rate(container_memory_mapped_file{id=\"/\", instance=~\"$Instance\", node=~\"$Node\"}[$__rate_interval]))  by (instance) != 0",
           "hide": false,
@@ -1080,13 +1202,14 @@
           "visible": true
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Memory Mapped Files",
       "type": "timeseries"
     },
     {
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
       "description": "\n\n",
       "editable": false,
       "error": false,
@@ -1132,8 +1255,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
@@ -1181,7 +1303,8 @@
             "lastNotNull"
           ],
           "displayMode": "table",
-          "placement": "bottom"
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "single"
@@ -1191,6 +1314,10 @@
       "span": 0,
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "exemplar": true,
           "expr": "avg(rate(container_memory_failures_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\"}[$__rate_interval]))  by (instance) != 0",
           "hide": false,
@@ -1207,14 +1334,15 @@
           "visible": true
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Page Faults",
       "type": "timeseries"
     },
     {
       "collapsed": false,
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
       "editable": false,
       "error": false,
       "gridPos": {
@@ -1227,11 +1355,23 @@
       "isNew": false,
       "panels": [],
       "span": 0,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "refId": "A"
+        }
+      ],
       "title": "__IO Section__",
       "type": "row"
     },
     {
-      "datasource": "Prometheus",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
       "description": "This value counts the number of I/O requests that have been issued to the device driver but have not yet completed. It does not include I/O requests that are in the queue but not yet issued to the device driver",
       "fieldConfig": {
         "defaults": {
@@ -1271,8 +1411,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1321,7 +1460,8 @@
         "legend": {
           "calcs": [],
           "displayMode": "list",
-          "placement": "bottom"
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "single"
@@ -1330,6 +1470,10 @@
       "pluginVersion": "8.2.3",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "exemplar": true,
           "expr": "sum(container_fs_writes_bytes_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\"}) != 0",
           "format": "time_series",
@@ -1340,6 +1484,10 @@
           "refId": "Write"
         },
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "exemplar": true,
           "expr": "sum(container_fs_reads_bytes_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\"}) != 0",
           "format": "time_series",
@@ -1349,15 +1497,16 @@
           "refId": "Read"
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "IO Traffic (Bytes)",
       "transformations": [],
       "transparent": true,
       "type": "timeseries"
     },
     {
-      "datasource": "Prometheus",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
       "description": "This value counts the number of I/O requests that have been issued to the device driver but have not yet completed. It does not include I/O requests that are in the queue but not yet issued to the device driver",
       "fieldConfig": {
         "defaults": {
@@ -1391,8 +1540,9 @@
           "percent"
         ],
         "legend": {
-          "displayMode": "hidden",
-          "placement": "bottom"
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
         },
         "pieType": "pie",
         "reduceOptions": {
@@ -1409,6 +1559,10 @@
       "pluginVersion": "8.2.3",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "exemplar": true,
           "expr": "sum(container_fs_writes_bytes_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\"})  != 0",
           "format": "time_series",
@@ -1419,6 +1573,10 @@
           "refId": "Write"
         },
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "exemplar": true,
           "expr": "sum(container_fs_reads_bytes_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\"}) != 0",
           "format": "time_series",
@@ -1428,15 +1586,16 @@
           "refId": "Read"
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Total IO Traffic (Bytes)",
       "transformations": [],
       "transparent": true,
       "type": "piechart"
     },
     {
-      "datasource": "Prometheus",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
       "description": "This value counts the number of I/O requests that have been issued to the device driver but have not yet completed. It does not include I/O requests that are in the queue but not yet issued to the device driver",
       "fieldConfig": {
         "defaults": {
@@ -1476,8 +1635,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1526,7 +1684,8 @@
         "legend": {
           "calcs": [],
           "displayMode": "list",
-          "placement": "bottom"
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "single"
@@ -1535,6 +1694,10 @@
       "pluginVersion": "8.2.3",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "exemplar": true,
           "expr": "sum(container_fs_writes_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\"}) != 0",
           "format": "time_series",
@@ -1545,6 +1708,10 @@
           "refId": "Write"
         },
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "exemplar": true,
           "expr": "sum(container_fs_reads_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\"}) != 0",
           "format": "time_series",
@@ -1554,15 +1721,16 @@
           "refId": "Read"
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "IO Operations",
       "transformations": [],
       "transparent": true,
       "type": "timeseries"
     },
     {
-      "datasource": "Prometheus",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
       "description": "This value counts the number of I/O requests that have been issued to the device driver but have not yet completed. It does not include I/O requests that are in the queue but not yet issued to the device driver",
       "fieldConfig": {
         "defaults": {
@@ -1596,8 +1764,9 @@
           "percent"
         ],
         "legend": {
-          "displayMode": "hidden",
-          "placement": "bottom"
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
         },
         "pieType": "pie",
         "reduceOptions": {
@@ -1614,6 +1783,10 @@
       "pluginVersion": "8.2.3",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "exemplar": true,
           "expr": "sum(container_fs_writes_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\"})  != 0",
           "format": "time_series",
@@ -1624,6 +1797,10 @@
           "refId": "Write"
         },
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "exemplar": true,
           "expr": "sum(container_fs_reads_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\"}) != 0",
           "format": "time_series",
@@ -1633,15 +1810,16 @@
           "refId": "Read"
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Total IO Traffic (Operations)",
       "transformations": [],
       "transparent": true,
       "type": "piechart"
     },
     {
-      "datasource": "Prometheus",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1652,8 +1830,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
@@ -1684,6 +1861,10 @@
       "pluginVersion": "8.2.3",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "exemplar": true,
           "expr": "max(container_fs_writes_bytes_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\",device=~\"^(^$)|(overlay_.*)|(/dev/[sv]d[a-z][1-9]*)$\"}) by (instance, device) != 0",
           "interval": "",
@@ -1695,7 +1876,10 @@
       "type": "bargauge"
     },
     {
-      "datasource": "Prometheus",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
       "description": "This value counts the number of I/O requests that have been issued to the device driver but have not yet completed. It does not include I/O requests that are in the queue but not yet issued to the device driver",
       "editable": false,
       "error": false,
@@ -1738,8 +1922,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
@@ -1764,7 +1947,8 @@
             "lastNotNull"
           ],
           "displayMode": "table",
-          "placement": "bottom"
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "single"
@@ -1774,6 +1958,10 @@
       "span": 0,
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "exemplar": true,
           "expr": "avg(rate(container_fs_writes_bytes_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\"}[$__rate_interval])) by (instance) != 0",
           "format": "time_series",
@@ -1785,15 +1973,16 @@
         }
       ],
       "thresholds": [],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "IO Throughput (Write)",
       "transformations": [],
       "transparent": true,
       "type": "timeseries"
     },
     {
-      "datasource": "Prometheus",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
       "description": "This value counts the number of I/O requests that have been issued to the device driver but have not yet completed. It does not include I/O requests that are in the queue but not yet issued to the device driver",
       "editable": false,
       "error": false,
@@ -1836,8 +2025,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
@@ -1862,7 +2050,8 @@
             "lastNotNull"
           ],
           "displayMode": "table",
-          "placement": "bottom"
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "single"
@@ -1872,6 +2061,10 @@
       "span": 0,
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "exemplar": true,
           "expr": "avg(rate(container_fs_reads_bytes_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\"}[$__rate_interval]))  by (instance) != 0",
           "hide": false,
@@ -1881,15 +2074,16 @@
         }
       ],
       "thresholds": [],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "IO Throughput (Read)",
       "transformations": [],
       "transparent": true,
       "type": "timeseries"
     },
     {
-      "datasource": "Prometheus",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
       "description": "",
       "editable": false,
       "error": false,
@@ -1932,8 +2126,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
@@ -1958,7 +2151,8 @@
             "lastNotNull"
           ],
           "displayMode": "table",
-          "placement": "bottom"
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "single"
@@ -1968,6 +2162,10 @@
       "span": 0,
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "exemplar": true,
           "expr": "avg(rate(container_fs_writes_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\"}[$__rate_interval])) by (instance) != 0",
           "format": "time_series",
@@ -1979,15 +2177,16 @@
         }
       ],
       "thresholds": [],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "IOPS (Write)",
       "transformations": [],
       "transparent": true,
       "type": "timeseries"
     },
     {
-      "datasource": "Prometheus",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
       "description": "",
       "editable": false,
       "error": false,
@@ -2030,8 +2229,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
@@ -2056,7 +2254,8 @@
             "lastNotNull"
           ],
           "displayMode": "table",
-          "placement": "bottom"
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "single"
@@ -2066,6 +2265,10 @@
       "span": 0,
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "exemplar": true,
           "expr": "avg(rate(container_fs_reads_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\"}[$__rate_interval])) by (instance) != 0",
           "hide": false,
@@ -2075,15 +2278,16 @@
         }
       ],
       "thresholds": [],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "IOPS (Read)",
       "transformations": [],
       "transparent": true,
       "type": "timeseries"
     },
     {
-      "datasource": "Prometheus",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
       "description": "I/O request size which is also referred as block size is the size of request that application uses to perform I/O operation on storage device. Every application uses a different I/O request size and based on how big the request size is, it can have pretty good impact on storage performance.",
       "editable": false,
       "error": false,
@@ -2126,8 +2330,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -2156,7 +2359,8 @@
             "lastNotNull"
           ],
           "displayMode": "table",
-          "placement": "bottom"
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "single"
@@ -2166,6 +2370,10 @@
       "span": 0,
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "exemplar": true,
           "expr": "avg(rate(container_fs_writes_bytes_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", device=~\"^(^$)|(overlay_.*)|(/dev/[sv]d[a-z][1-9]*)$\"}[$__rate_interval])   / rate(container_fs_writes_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", device=~\"^(^$)|(overlay_.*)|(/dev/[sv]d[a-z][1-9]*)$\"}[$__rate_interval])) by (instance) != 0",
           "format": "time_series",
@@ -2177,15 +2385,16 @@
         }
       ],
       "thresholds": [],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Estimated IO Request Size (Write)",
       "transformations": [],
       "transparent": true,
       "type": "timeseries"
     },
     {
-      "datasource": "Prometheus",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
       "description": "I/O request size which is also referred as block size is the size of request that application uses to perform I/O operation on storage device. Every application uses a different I/O request size and based on how big the request size is, it can have pretty good impact on storage performance.",
       "editable": false,
       "error": false,
@@ -2228,8 +2437,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -2258,7 +2466,8 @@
             "lastNotNull"
           ],
           "displayMode": "table",
-          "placement": "bottom"
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "single"
@@ -2268,6 +2477,10 @@
       "span": 0,
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "exemplar": true,
           "expr": "avg(rate(container_fs_reads_bytes_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", device=~\"^(^$)|(overlay_.*)|(/dev/[sv]d[a-z][1-9]*)$\"}[$__rate_interval])   / rate(container_fs_reads_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", device=~\"^(^$)|(overlay_.*)|(/dev/[sv]d[a-z][1-9]*)$\"}[$__rate_interval]))  by (instance) != 0",
           "format": "heatmap",
@@ -2280,15 +2493,16 @@
         }
       ],
       "thresholds": [],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Estimated IO Request Size (Read)",
       "transformations": [],
       "transparent": true,
       "type": "timeseries"
     },
     {
-      "datasource": "Prometheus",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
       "description": "read_time & write_time:\nThese values count the number of milliseconds that I/O requests have waited on this block device. If there are multiple I/O requests waiting, these values will increase at a rate greater than 1000/second; for example, if 60 read requests wait for an average of 30 ms, the read_time field will increase by 60*30 = 1800.",
       "editable": false,
       "error": false,
@@ -2330,8 +2544,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -2360,7 +2573,8 @@
             "lastNotNull"
           ],
           "displayMode": "table",
-          "placement": "bottom"
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "single"
@@ -2370,6 +2584,10 @@
       "span": 0,
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "exemplar": true,
           "expr": "avg(container_fs_write_seconds_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", device=~\"^/dev/mapper/.*$\"}) by (instance) != 0",
           "hide": false,
@@ -2380,15 +2598,16 @@
         }
       ],
       "thresholds": [],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Cummulative Time spent in IO (Write)",
       "transformations": [],
       "transparent": true,
       "type": "timeseries"
     },
     {
-      "datasource": "Prometheus",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
       "description": "read_time & write_time:\nThese values count the number of milliseconds that I/O requests have waited on this block device. If there are multiple I/O requests waiting, these values will increase at a rate greater than 1000/second; for example, if 60 read requests wait for an average of 30 ms, the read_time field will increase by 60*30 = 1800.",
       "editable": false,
       "error": false,
@@ -2430,8 +2649,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -2460,7 +2678,8 @@
             "lastNotNull"
           ],
           "displayMode": "table",
-          "placement": "bottom"
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "single"
@@ -2470,6 +2689,10 @@
       "span": 0,
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "exemplar": true,
           "expr": "avg(container_fs_read_seconds_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", device=~\"^/dev/mapper/.*$\"})  by (instance) != 0",
           "hide": false,
@@ -2480,8 +2703,6 @@
         }
       ],
       "thresholds": [],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Cummulative Time spent in IO (Read)",
       "transformations": [],
       "transparent": true,
@@ -2489,7 +2710,10 @@
     },
     {
       "collapsed": false,
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
       "editable": false,
       "error": false,
       "gridPos": {
@@ -2502,11 +2726,23 @@
       "isNew": false,
       "panels": [],
       "span": 0,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "refId": "A"
+        }
+      ],
       "title": "__Network Section__",
       "type": "row"
     },
     {
-      "datasource": "Prometheus",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
       "description": "Cumulative count of bytes transmitted/received.",
       "fieldConfig": {
         "defaults": {
@@ -2546,8 +2782,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -2571,7 +2806,8 @@
         "legend": {
           "calcs": [],
           "displayMode": "list",
-          "placement": "bottom"
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "single"
@@ -2580,6 +2816,10 @@
       "pluginVersion": "8.2.3",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "exemplar": true,
           "expr": "sum(container_network_transmit_bytes_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\"}) != 0",
           "format": "time_series",
@@ -2587,27 +2827,32 @@
           "instant": false,
           "interval": "",
           "legendFormat": "Transmit",
-          "refId": "Transmit"
+          "refId": "transmit"
         },
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "exemplar": true,
           "expr": "sum(container_network_receive_bytes_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\"}) != 0",
           "format": "time_series",
           "hide": false,
           "interval": "",
           "legendFormat": "Receive",
-          "refId": "Receive"
+          "refId": "receive"
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Network Traffic (Bytes)",
       "transformations": [],
       "transparent": true,
       "type": "timeseries"
     },
     {
-      "datasource": "Prometheus",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
       "description": "Cumulative count of bytes transmitted/received.",
       "fieldConfig": {
         "defaults": {
@@ -2641,8 +2886,9 @@
           "percent"
         ],
         "legend": {
-          "displayMode": "hidden",
-          "placement": "bottom"
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
         },
         "pieType": "pie",
         "reduceOptions": {
@@ -2659,6 +2905,10 @@
       "pluginVersion": "8.2.3",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "exemplar": true,
           "expr": "sum(container_network_transmit_bytes_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\"}) != 0",
           "format": "time_series",
@@ -2666,27 +2916,32 @@
           "instant": false,
           "interval": "",
           "legendFormat": "Transmit",
-          "refId": "Transmit"
+          "refId": "transmit"
         },
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "exemplar": true,
           "expr": "sum(container_network_receive_bytes_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\"}) != 0",
           "format": "time_series",
           "hide": false,
           "interval": "",
           "legendFormat": "Receive",
-          "refId": "Receive"
+          "refId": "receive"
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Total Network Traffic (Bytes)",
       "transformations": [],
       "transparent": true,
       "type": "piechart"
     },
     {
-      "datasource": "Prometheus",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
       "description": "Cumulative count of packets transmitted/received",
       "fieldConfig": {
         "defaults": {
@@ -2726,8 +2981,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -2751,7 +3005,8 @@
         "legend": {
           "calcs": [],
           "displayMode": "list",
-          "placement": "bottom"
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "single"
@@ -2760,6 +3015,10 @@
       "pluginVersion": "8.2.3",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "exemplar": true,
           "expr": "sum(container_network_transmit_packets_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\"}) != 0",
           "format": "time_series",
@@ -2767,27 +3026,32 @@
           "instant": false,
           "interval": "",
           "legendFormat": "Transmit",
-          "refId": "Transmit"
+          "refId": "transmit"
         },
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "exemplar": true,
           "expr": "sum(container_network_receive_packets_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\"}) != 0",
           "format": "time_series",
           "hide": false,
           "interval": "",
           "legendFormat": "Receive",
-          "refId": "Receive"
+          "refId": "receive"
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Network Traffic (Packets)",
       "transformations": [],
       "transparent": true,
       "type": "timeseries"
     },
     {
-      "datasource": "Prometheus",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
       "description": "Cumulative count of packets transmitted/received",
       "fieldConfig": {
         "defaults": {
@@ -2821,8 +3085,9 @@
           "percent"
         ],
         "legend": {
-          "displayMode": "hidden",
-          "placement": "bottom"
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
         },
         "pieType": "pie",
         "reduceOptions": {
@@ -2839,6 +3104,10 @@
       "pluginVersion": "8.2.3",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "exemplar": true,
           "expr": "sum(container_network_transmit_packets_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\"}) != 0",
           "format": "time_series",
@@ -2846,27 +3115,32 @@
           "instant": false,
           "interval": "",
           "legendFormat": "Transmit",
-          "refId": "Transmit"
+          "refId": "transmit"
         },
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "exemplar": true,
           "expr": "sum(container_network_receive_packets_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\"}) != 0",
           "format": "time_series",
           "hide": false,
           "interval": "",
           "legendFormat": "Receive",
-          "refId": "Receive"
+          "refId": "receive"
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Total Network Traffic (Packets)",
       "transformations": [],
       "transparent": true,
       "type": "piechart"
     },
     {
-      "datasource": "Prometheus",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
       "description": "\n\n",
       "editable": false,
       "error": false,
@@ -2909,8 +3183,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
@@ -2986,7 +3259,8 @@
             "lastNotNull"
           ],
           "displayMode": "table",
-          "placement": "bottom"
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "multi"
@@ -2996,6 +3270,10 @@
       "span": 0,
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "exemplar": true,
           "expr": "avg(rate(container_network_receive_bytes_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\"}[$__rate_interval])) by (instance) != 0",
           "hide": false,
@@ -3004,13 +3282,14 @@
           "refId": "avg"
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Inbound Network Traffic",
       "type": "timeseries"
     },
     {
-      "datasource": "Prometheus",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
       "description": "\n\n",
       "editable": false,
       "error": false,
@@ -3053,8 +3332,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
@@ -3130,7 +3408,8 @@
             "last"
           ],
           "displayMode": "table",
-          "placement": "bottom"
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "multi"
@@ -3140,6 +3419,10 @@
       "span": 0,
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "exemplar": true,
           "expr": "avg(rate(container_network_transmit_bytes_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\"}[$__rate_interval])) by (instance) != 0",
           "hide": false,
@@ -3148,13 +3431,14 @@
           "refId": "avg"
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Outbound Network Traffic",
       "type": "timeseries"
     },
     {
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
       "description": "\n\n",
       "editable": false,
       "error": false,
@@ -3199,8 +3483,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
@@ -3224,7 +3507,8 @@
             "lastNotNull"
           ],
           "displayMode": "table",
-          "placement": "bottom"
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "single"
@@ -3234,6 +3518,10 @@
       "span": 0,
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "exemplar": true,
           "expr": "avg(rate(container_network_receive_packets_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\"}[$__rate_interval])) by (instance) != 0",
           "hide": false,
@@ -3250,13 +3538,14 @@
           "visible": true
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Inbound Network Traffic (Packets)",
       "type": "timeseries"
     },
     {
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
       "description": "\n\n",
       "editable": false,
       "error": false,
@@ -3301,8 +3590,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
@@ -3326,7 +3614,8 @@
             "lastNotNull"
           ],
           "displayMode": "table",
-          "placement": "bottom"
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "single"
@@ -3336,6 +3625,10 @@
       "span": 0,
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "exemplar": true,
           "expr": "avg(rate(container_network_transmit_packets_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\"}[$__rate_interval])) by (instance) != 0",
           "hide": false,
@@ -3352,14 +3645,15 @@
           "visible": true
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Outbound Network Traffic (Packets)",
       "type": "timeseries"
     },
     {
       "collapsed": false,
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
       "editable": false,
       "error": false,
       "gridPos": {
@@ -3372,11 +3666,23 @@
       "isNew": false,
       "panels": [],
       "span": 0,
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "refId": "A"
+        }
+      ],
       "title": "__Rare Section__",
       "type": "row"
     },
     {
-      "datasource": "Prometheus",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
       "description": "",
       "editable": false,
       "error": false,
@@ -3418,8 +3724,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -3448,7 +3753,8 @@
             "last"
           ],
           "displayMode": "table",
-          "placement": "bottom"
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "single"
@@ -3458,6 +3764,10 @@
       "span": 0,
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "exemplar": true,
           "expr": "max(rate(container_oom_events_total{id=\"/\"}[$__rate_interval])) != 0",
           "hide": false,
@@ -3467,6 +3777,10 @@
           "refId": "max"
         },
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "exemplar": true,
           "expr": "avg(rate(container_oom_events_total{id=\"/\"}[$__rate_interval])) != 0",
           "hide": false,
@@ -3476,6 +3790,10 @@
           "refId": "avg"
         },
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "exemplar": true,
           "expr": "min(rate(container_oom_events_total{id=\"/\"}[$__rate_interval])) != 0",
           "hide": false,
@@ -3485,13 +3803,14 @@
           "refId": "min"
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "OOM-Killer events",
       "type": "timeseries"
     },
     {
-      "datasource": "Prometheus",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
       "description": "Contains the number of 512-bytes sectors read and written by the processes member of the cgroup, device by device. \n\n",
       "editable": false,
       "error": false,
@@ -3533,8 +3852,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
@@ -3610,7 +3928,8 @@
             "lastNotNull"
           ],
           "displayMode": "table",
-          "placement": "bottom"
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "multi"
@@ -3620,6 +3939,10 @@
       "span": 0,
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "exemplar": true,
           "expr": "avg(rate(container_fs_sector_writes_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\", }[$__rate_interval])) by (instance) != 0",
           "hide": false,
@@ -3628,13 +3951,14 @@
           "refId": "avg"
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Sectors Written",
       "type": "timeseries"
     },
     {
-      "datasource": "Prometheus",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
       "description": "Contains the number of 512-bytes sectors read and written by the processes member of the cgroup, device by device. \n\n",
       "editable": false,
       "error": false,
@@ -3676,8 +4000,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
@@ -3753,7 +4076,8 @@
             "last"
           ],
           "displayMode": "table",
-          "placement": "bottom"
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "multi"
@@ -3763,6 +4087,10 @@
       "span": 0,
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "exemplar": true,
           "expr": "avg(rate(container_fs_sector_reads_total{id=\"/\", instance=~\"$Instance\", node=~\"$Node\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\", }[$__rate_interval])) by (instance) != 0",
           "hide": false,
@@ -3771,16 +4099,17 @@
           "refId": "avg"
         }
       ],
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Sectors Read",
       "type": "timeseries"
     }
   ],
   "refresh": "30s",
-  "schemaVersion": 31,
+  "schemaVersion": 37,
   "style": "dark",
-  "tags": [],
+  "tags": [
+    "kubernetes",
+    "frisbee"
+  ],
   "templating": {
     "list": [
       {
@@ -3794,13 +4123,13 @@
             "$__all"
           ]
         },
-        "datasource": null,
+        "datasource": {
+          "type": "prometheus",
+          "uid": "PBFA97CFB590B2093"
+        },
         "definition": "label_values(instance)",
-        "description": null,
-        "error": null,
         "hide": 0,
         "includeAll": true,
-        "label": null,
         "multi": true,
         "name": "Instance",
         "options": [],
@@ -3815,19 +4144,18 @@
         "type": "query"
       },
       {
-        "allValue": null,
         "current": {
           "selected": false,
           "text": "All",
           "value": "$__all"
         },
-        "datasource": null,
+        "datasource": {
+          "type": "prometheus",
+          "uid": "PBFA97CFB590B2093"
+        },
         "definition": "label_values(node)",
-        "description": null,
-        "error": null,
         "hide": 0,
         "includeAll": true,
-        "label": null,
         "multi": true,
         "name": "Node",
         "options": [],
@@ -3875,5 +4203,6 @@
   "timezone": "",
   "title": "Frisbee SUT Monitoring (Singleton)",
   "uid": "singleton",
-  "version": 2
+  "version": 3,
+  "weekStart": ""
 }

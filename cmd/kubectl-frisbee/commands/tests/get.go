@@ -18,22 +18,21 @@ package tests
 
 import (
 	"os"
-	"strings"
 
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/common"
+	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/completion"
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/env"
 	"github.com/carv-ics-forth/frisbee/pkg/ui"
 	"github.com/spf13/cobra"
 )
 
 func NewGetTestsCmd() *cobra.Command {
-	var selectors []string
-
 	cmd := &cobra.Command{
-		Use:     "test <testName>",
-		Aliases: []string{"tests", "t"},
-		Short:   "Get all available tests",
-		Long:    `Getting all available tests from given namespace - if no namespace given "frisbee" namespace is used`,
+		Use:               "test <testName>",
+		Aliases:           []string{"tests", "t"},
+		Short:             "Get all available tests",
+		Long:              `Getting all available tests from given namespace - if no namespace given "frisbee" namespace is used`,
+		ValidArgsFunction: completion.NoArgs,
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) > 0 {
 				ui.Failf("To get information for a test use: `kubectl frisbee inspect test <testName>`")
@@ -43,17 +42,13 @@ func NewGetTestsCmd() *cobra.Command {
 		},
 
 		Run: func(cmd *cobra.Command, args []string) {
-			selectors = append(selectors, common.ManagedNamespace)
-
-			tests, err := env.Default.GetFrisbeeClient().ListScenarios(cmd.Context(), strings.Join(selectors, ","))
+			tests, err := env.Default.GetFrisbeeClient().ListScenarios(cmd.Context(), common.ManagedNamespace)
 			ui.PrintOnError("Getting all tests ", err)
 
 			err = common.RenderList(&tests, os.Stdout)
 			ui.PrintOnError("Rendering list", err)
 		},
 	}
-
-	cmd.Flags().StringSliceVarP(&selectors, "label", "l", nil, "label key value pair: --label key1=value1")
 
 	return cmd
 }

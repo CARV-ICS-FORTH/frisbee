@@ -127,7 +127,12 @@ func DispatchAlert(ctx context.Context, r common.Reconciler, b *notifier.Body) e
 	}{}
 
 	switch b.State {
-	case grafana.NoData:
+	case notifier.StatePaused:
+		r.Info("Ignore paused alert", "alertName", b.RuleName, "state", b.State)
+
+		return nil
+
+	case notifier.StateNoData:
 		/*
 		  Spurious Alert may be risen if the expr evaluation frequency is less than the scheduled interval.
 		  In this case, Grafana faces an idle period, and raises a NoData Alert.
@@ -137,7 +142,7 @@ func DispatchAlert(ctx context.Context, r common.Reconciler, b *notifier.Body) e
 
 		return nil
 
-	case grafana.Alerting, grafana.OK:
+	case notifier.StateAlerting, notifier.StateOk:
 		patchStruct.Metadata.Annotations = map[string]string{
 			alertName:      b.RuleName,
 			alertState:     string(b.State),
@@ -195,14 +200,14 @@ func AlertIsFired(job metav1.Object) (*time.Time, string, bool) {
 	}
 
 	switch state {
-	case grafana.Alerting:
+	case string(notifier.StateAlerting):
 		// Step 2. Parse the timestamp
-		tsS, ok := annotations[alertTimestamp]
+		tsString, ok := annotations[alertTimestamp]
 		if !ok {
 			return nil, notifyChannelError, false
 		}
 
-		ts, err := time.Parse(time.RFC3339, tsS)
+		ts, err := time.Parse(time.RFC3339, tsString)
 		if err != nil {
 			// return nil, notifyChannelError, false
 			panic(errors.Wrapf(err, "cannot parse time"))
@@ -215,7 +220,7 @@ func AlertIsFired(job metav1.Object) (*time.Time, string, bool) {
 
 		return &ts, info, true
 
-	case grafana.OK:
+	case string(notifier.StateOk):
 		/*
 		 This is the equivalent of revoking an alert. It happens when, after sending an Alert, decides
 		 that the latest evaluation no longer matches the given rule.

@@ -19,10 +19,21 @@ package tests
 import (
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/common"
+	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/completion"
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/env"
 	"github.com/carv-ics-forth/frisbee/pkg/ui"
 	"github.com/spf13/cobra"
 )
+
+func SaveTestCmdCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	switch {
+	case len(args) == 0:
+		return completion.CompleteScenarios(cmd, args, toComplete)
+
+	default:
+		return completion.CompleteFlags(cmd, args, toComplete)
+	}
+}
 
 const (
 	TestdataSource   = "dataviewer:/testdata"
@@ -44,10 +55,11 @@ func NewSaveTestsCmd() *cobra.Command {
 	var options TestSaveOptions
 
 	cmd := &cobra.Command{
-		Use:     "test <testName> <destination>",
-		Aliases: []string{"tests", "t"},
-		Short:   "Store locally data generated throughout the test execution",
-		Long:    `Getting all available tests from given namespace - if no namespace given "frisbee" namespace is used`,
+		Use:               "test <testName> <destination>",
+		Aliases:           []string{"tests", "t"},
+		Short:             "Store locally data generated throughout the test execution",
+		Long:              `Getting all available tests from given namespace - if no namespace given "frisbee" namespace is used`,
+		ValidArgsFunction: SaveTestCmdCompletion,
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) != 2 {
 				ui.Failf("Pass Test name and destination to store the data.")
@@ -78,7 +90,7 @@ func NewSaveTestsCmd() *cobra.Command {
 			promDestination := destination + "/" + "prometheus"
 			_, err = common.Kubectl(testName, "cp", PrometheusSource, promDestination)
 
-			env.Default.Hint("To store data from a specific location use", "kubectl cp pod:path destination -n", testName)
+			env.Default.Hint("ToTime store data from a specific location use", "kubectl cp pod:path destination -n", testName)
 			ui.ExitOnError("Saving Prometheus data to: "+promDestination, err)
 		},
 	}
