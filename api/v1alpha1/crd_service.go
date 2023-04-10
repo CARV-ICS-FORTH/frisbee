@@ -35,49 +35,6 @@ type Service struct {
 	Status ServiceStatus `json:"status,omitempty"`
 }
 
-func (in *Service) AttachTestDataVolume(source *TestdataVolume, useSubPath bool) {
-	if source == nil {
-		return
-	}
-
-	// add volume to the pod
-	in.Spec.Volumes = append(in.Spec.Volumes, corev1.Volume{
-		Name: source.Claim.ClaimName,
-		VolumeSource: corev1.VolumeSource{
-			PersistentVolumeClaim: &source.Claim,
-		},
-	})
-
-	subpath := ""
-	if useSubPath && !source.GlobalNamespace {
-		subpath = in.GetName()
-	}
-
-	// mount volume to initContainers
-	for i := 0; i < len(in.Spec.InitContainers); i++ {
-		in.Spec.InitContainers[i].VolumeMounts = append(in.Spec.InitContainers[i].VolumeMounts, corev1.VolumeMount{
-			Name:             source.Claim.ClaimName, // Name of a Volume.
-			ReadOnly:         source.Claim.ReadOnly,
-			MountPath:        "/testdata", // Path within the container
-			SubPath:          subpath,     //  Path within the volume
-			MountPropagation: nil,
-			SubPathExpr:      "",
-		})
-	}
-
-	// mount volume to application containers
-	for i := 0; i < len(in.Spec.Containers); i++ {
-		in.Spec.Containers[i].VolumeMounts = append(in.Spec.Containers[i].VolumeMounts, corev1.VolumeMount{
-			Name:             source.Claim.ClaimName, // Name of a Volume.
-			ReadOnly:         source.Claim.ReadOnly,
-			MountPath:        "/testdata", // Path within the container
-			SubPath:          subpath,     //  Path within the volume
-			MountPropagation: nil,
-			SubPathExpr:      "",
-		})
-	}
-}
-
 // NIC specifies the capabilities of the emulated network interface.
 type NIC struct {
 	Rate string `json:"rate,omitempty"`

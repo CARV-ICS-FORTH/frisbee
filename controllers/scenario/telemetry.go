@@ -111,7 +111,7 @@ func (r *Controller) installDataviewer(ctx context.Context, scenario *v1alpha1.S
 		spec.DeepCopyInto(&job.Spec)
 
 		// the dataviewer is the only service that has complete access to the volume's content.
-		job.AttachTestDataVolume(scenario.Spec.TestData, false)
+		serviceutils.AttachTestDataVolume(&job, scenario.Spec.TestData, false)
 	}
 
 	if err := common.Create(ctx, r, scenario, &job); err != nil {
@@ -179,7 +179,7 @@ func (r *Controller) installGrafana(ctx context.Context, scenario *v1alpha1.Scen
 
 		spec.DeepCopyInto(&job.Spec)
 
-		job.AttachTestDataVolume(scenario.Spec.TestData, true)
+		serviceutils.AttachTestDataVolume(&job, scenario.Spec.TestData, true)
 
 		if err := r.importDashboards(ctx, scenario, &job.Spec, agentRefs); err != nil {
 			return errors.Wrapf(err, "import dashboards")

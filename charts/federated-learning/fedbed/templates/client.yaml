@@ -28,6 +28,7 @@ spec:
     containers:
       - name: main
         image: icsforth/fedbed:latest
+        imagePullPolicy: IfNotPresent
         volumeMounts:
           - name: varlog
             mountPath: /var/log
@@ -66,19 +67,13 @@ spec:
             set -eu
             cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
 
-            env
-
-            echo "-- GRAFANA ${GRAFANA}"
-
-            tail -f /dev/null
-
-            echo "arxidia kapama" >> /var/log/client.log
-
-            tail -f /dev/null
-            // python client.py | tee /var/log/client.log
+            python client.py | tee -a /var/log/client.log
 
       - name: annotator # push events to grafana
-        image: alpine:latest
+        image: alpine/curl:latest
+        volumeMounts:
+          - name: varlog
+            mountPath: /var/log
         command:
           - /bin/sh   # Run shell
           - -c        # Read from string
@@ -86,15 +81,18 @@ spec:
             set -eux
 
             export logfile=/var/log/client.log
+            export GRAFANA=http://${GRAFANA_SERVICE_HOST}:${GRAFANA_SERVICE_PORT}
 
             # Wait a bit for the log file to become ready
-            [ -f "${logfile}" ]
+            sleep 10
+
+            echo "Tail tailing the log ${logfile} for events"
 
             tail -f ${logfile}  | while read line ; do
                 echo -e "new event: $line"
                 annotation={\"tags\":[\"app\"],\"text\":\"$line\"}
 
-                curl -H "Content-Type: application/json" -X POST -d ${annotation} ${GRAFANA}/api/annotations || exit -1
+                curl -s -H "Content-Type: application/json" -X POST -d ${annotation} ${GRAFANA}/api/annotations || exit -1
 
                 echo -e "\n--"
             done

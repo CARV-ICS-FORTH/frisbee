@@ -105,7 +105,7 @@ func (r *Controller) service(ctx context.Context, scenario *v1alpha1.Scenario, a
 
 	// Add shared storage
 	if scenario.Spec.TestData != nil {
-		job.AttachTestDataVolume(scenario.Spec.TestData, true)
+		serviceutils.AttachTestDataVolume(&job, scenario.Spec.TestData, true)
 	}
 
 	return &job, nil

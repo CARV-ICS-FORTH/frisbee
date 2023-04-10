@@ -22,7 +22,6 @@ import (
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
 	serviceutils "github.com/carv-ics-forth/frisbee/controllers/service/utils"
-	"github.com/carv-ics-forth/frisbee/pkg/grafana"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -58,19 +57,6 @@ func (r *Controller) runJob(ctx context.Context, service *v1alpha1.Service) erro
 func setDefaultValues(service *v1alpha1.Service) {
 	// Set the restart policy
 	service.Spec.RestartPolicy = corev1.RestartPolicyNever
-
-	// Set Grafana endpoints as environment variables for SUT components
-	if v1alpha1.IsSUTComponent(service) {
-		for i := range service.Spec.Containers {
-			// we need the container reference to append the env variables.
-			container := &service.Spec.Containers[i]
-
-			container.Env = append(container.Env, corev1.EnvVar{
-				Name:  "GRAFANA",
-				Value: grafana.GetClientFor(service).BaseURL,
-			})
-		}
-	}
 
 	// Set the pre/post execution hooks
 	/*
