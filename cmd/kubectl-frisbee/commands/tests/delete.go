@@ -26,13 +26,7 @@ import (
 )
 
 func DeleteTestCmdCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	switch {
-	case len(args) == 0:
-		return completion.CompleteScenarios(cmd, args, toComplete)
-
-	default:
-		return completion.CompleteFlags(cmd, args, toComplete)
-	}
+	return completion.CompleteScenarios(cmd, args, toComplete)
 }
 
 type DeleteTestCmdOptions struct {

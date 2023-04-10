@@ -18,11 +18,26 @@ package install
 
 import (
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/common"
+	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/completion"
+	"github.com/carv-ics-forth/frisbee/pkg/netutils"
 	"github.com/carv-ics-forth/frisbee/pkg/ui"
 	"github.com/spf13/cobra"
 )
 
 const FrisbeeChartInRepo = "frisbee/platform"
+
+func NewInstallProductionCmdCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	switch {
+	case len(args) == 0:
+		return []string{"./"}, cobra.ShellCompDirectiveFilterDirs
+
+	case len(args) == 1:
+		return []string{netutils.GetOutboundIP().String()}, cobra.ShellCompDirectiveNoFileComp
+
+	default:
+		return completion.CompleteFlags(cmd, args, toComplete)
+	}
+}
 
 func NewInstallProductionCmd() *cobra.Command {
 	var (
@@ -32,9 +47,10 @@ func NewInstallProductionCmd() *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:   "production",
-		Short: "Install Frisbee in production mode.",
-		Long:  "Install all Frisbee components, including the controller.",
+		Use:               "production",
+		Short:             "Install Frisbee in production mode.",
+		Long:              "Install all Frisbee components, including the controller.",
+		ValidArgsFunction: NewInstallProductionCmdCompletion,
 		Run: func(cmd *cobra.Command, args []string) {
 			command := []string{
 				"upgrade", "--install", "--wait",

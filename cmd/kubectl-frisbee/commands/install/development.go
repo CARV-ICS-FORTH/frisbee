@@ -21,6 +21,8 @@ import (
 	"net"
 	"os"
 
+	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/completion"
+	"github.com/carv-ics-forth/frisbee/pkg/netutils"
 	"github.com/carv-ics-forth/frisbee/pkg/process"
 
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/common"
@@ -31,6 +33,19 @@ import (
 
 const FrisbeeChartLocalPath = "charts/platform" // relative to Frisbee root.
 
+func NewInstallDevelopmentCmdCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	switch {
+	case len(args) == 0:
+		return []string{"./"}, cobra.ShellCompDirectiveFilterDirs
+
+	case len(args) == 1:
+		return []string{netutils.GetOutboundIP().String()}, cobra.ShellCompDirectiveNoFileComp
+
+	default:
+		return completion.CompleteFlags(cmd, args, toComplete)
+	}
+}
+
 func NewInstallDevelopmentCmd() *cobra.Command {
 	var (
 		options   common.FrisbeeInstallOptions
@@ -40,9 +55,10 @@ func NewInstallDevelopmentCmd() *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:   "development <FrisbeePath> <PublicIP>",
-		Short: "Install Frisbee in development mode.",
-		Long:  "Install all Frisbee components, except for the controller which will run externally.",
+		Use:               "development <FrisbeePath> <PublicIP>",
+		Short:             "Install Frisbee in development mode.",
+		Long:              "Install all Frisbee components, except for the controller which will run externally.",
+		ValidArgsFunction: NewInstallDevelopmentCmdCompletion,
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) < 2 {
 				ui.Failf("please pass project path and public ip as argument")

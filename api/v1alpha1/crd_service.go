@@ -187,6 +187,16 @@ type ServiceList struct {
 	Items           []Service `json:"items"`
 }
 
+func (list ServiceList) Names() []string {
+	names := make([]string, len(list.Items))
+
+	for _, item := range list.Items {
+		names = append(names, item.GetName())
+	}
+
+	return names
+}
+
 func init() {
 	SchemeBuilder.Register(&Service{}, &ServiceList{})
 }

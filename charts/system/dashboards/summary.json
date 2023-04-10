@@ -1598,7 +1598,7 @@
               },
               {
                 "id": "unit",
-                "value": "s"
+                "value": "short"
               },
               {
                 "id": "custom.axisLabel",
@@ -1965,7 +1965,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               }
             ]
           },
@@ -5376,6 +5377,6 @@
   "timezone": "",
   "title": "Frisbee SUT Monitoring (Summary)",
   "uid": "summary",
-  "version": 2,
+  "version": 1,
   "weekStart": ""
 }

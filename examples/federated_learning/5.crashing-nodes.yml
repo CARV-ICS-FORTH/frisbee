@@ -1,0 +1,53 @@
+# This experiment is designed for the evaluation of failed clients.
+# For this purpose, we use start with multiple clients and periodically kill three of them.
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Scenario
+metadata:
+  name: crashing-nodes
+spec:
+  actions:
+    # Step 1: Create FedBed server
+    - action: Service
+      name: server
+      service:
+        templateRef: fedbed.server
+        inputs:
+          - { backend: "tensorflow", min_fit_clients: 5, min_available_clients: 5 }
+
+    # Step 2: Create FedBed clients
+    - action: Cluster
+      name: clients
+      depends: { running: [ server ] }
+      cluster:
+        templateRef: fedbed.client
+        resources:                          # Change values here
+          total: { cpu: 5, mem: 40Gi }
+          distribution: { name: uniform }
+        inputs:
+          - { fl_server: server, backend: "tensorflow",  total_nodes: 20, node_id: 0 }
+          - { fl_server: server, backend: "tensorflow",  total_nodes: 20, node_id: 1 }
+          - { fl_server: server, backend: "tensorflow",  total_nodes: 20, node_id: 2 }
+          - { fl_server: server, backend: "tensorflow",  total_nodes: 20, node_id: 3 }
+          - { fl_server: server, backend: "tensorflow",  total_nodes: 20, node_id: 4 }
+
+
+    # When all clients are up and running, kill some of them periodically
+#    - action: Cascade
+#      name: killer
+#      depends: { running: [ clients ] }
+#      cascade:
+#        templateRef: system.chaos.pod.kill
+#        inputs:
+#          - { target: clients-1 }
+#          - { target: clients-7 }
+#         - { target: clients-13 }
+#        schedule:
+#          cron: "@every 1m"
+
+    # Teardown
+    - action: Delete
+      name: teardown
+      depends: { success: [ clients ] }
+      delete:
+        jobs: [ server ]
