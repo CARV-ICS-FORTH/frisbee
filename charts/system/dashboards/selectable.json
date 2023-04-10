@@ -131,6 +131,22 @@
           ],
           "type": "tags"
         }
+      },
+      {
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
+        "enable": true,
+        "iconColor": "semi-dark-yellow",
+        "name": "App",
+        "target": {
+          "refId": "Anno",
+          "tags": [
+            "app"
+          ],
+          "type": "tags"
+        }
       }
     ]
   },

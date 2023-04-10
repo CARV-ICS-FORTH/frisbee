@@ -151,6 +151,14 @@ func GetScenarioLabel(obj metav1.Object) string {
 	return scenario
 }
 
+func IsSYSComponent(obj metav1.Object) bool {
+	return obj.GetLabels()[LabelComponent] == string(ComponentSys)
+}
+
+func IsSUTComponent(obj metav1.Object) bool {
+	return obj.GetLabels()[LabelComponent] == string(ComponentSUT)
+}
+
 // GetCreatedByLabel returns the creator of the resource.
 func GetCreatedByLabel(obj metav1.Object) map[string]string {
 	creator, ok := obj.GetLabels()[LabelCreatedBy]

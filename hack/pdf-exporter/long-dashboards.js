@@ -13,7 +13,7 @@ const outfile = process.argv[4];
 
 // Set the browser width in pixels. The paper size will be calculated on the basus of 96dpi,
 // so 1200 corresponds to 12.5".
-const width_px = 1200;
+const width_px = 1632;
 // Note that to get an actual paper size, e.g. Letter, you will want to *not* simply set the pixel
 // size here, since that would lead to a "mobile-sized" screen (816px), and mess up the rendering.
 // Instead, set e.g. double the size here (1632px), and call page.pdf() with format: 'Letter' and
@@ -44,7 +44,7 @@ const auth_header = 'Basic ' + new Buffer.from(auth_string).toString('base64');
         await page.setViewport({
             width: width_px,
             height: 800,
-            deviceScaleFactor: 2,
+            deviceScaleFactor: 1,
             isMobile: false
         })
 

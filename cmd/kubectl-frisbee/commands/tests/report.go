@@ -163,12 +163,12 @@ func NewReportTestCmd() *cobra.Command {
 				 * Store data
 				 *---------------------------------------------------*/
 				if options.Data {
-					url := grafana.NewURL(scenario.Status.GrafanaEndpoint).
+					grafanaEndpoint := grafana.NewURL(scenario.Status.GrafanaEndpoint).
 						WithDashboard(dashboardUID).
 						WithFromTS(time.UnixMilli(fromTS)).
 						WithToTS(time.UnixMilli(toTS))
 
-					err = SaveData(cmd.Context(), grafanaClient, url, dashboardDir)
+					err = SaveData(cmd.Context(), grafanaClient, grafanaEndpoint, dashboardDir)
 					ui.ExitOnError("Saving Data to: "+dashboardDir+" for "+dashboardUID, err)
 				}
 
@@ -178,9 +178,9 @@ func NewReportTestCmd() *cobra.Command {
 				if options.PDF {
 					DefaultPDFExport = FastPDFExporter
 
-					uri := grafana.BuildURL(scenario.Status.GrafanaEndpoint, dashboardUID, fromTS, toTS, "&kiosk")
+					grafanaEndpoint := grafana.BuildURL(scenario.Status.GrafanaEndpoint, dashboardUID, fromTS, toTS, "&kiosk")
 
-					err = SavePDFs(cmd.Context(), grafanaClient, uri, dashboardDir, dashboardUID)
+					err = SavePDFs(cmd.Context(), grafanaClient, grafanaEndpoint, dashboardDir, dashboardUID)
 					ui.ExitOnError("Saving PDF to: "+dashboardDir+" for "+dashboardUID, err)
 				}
 

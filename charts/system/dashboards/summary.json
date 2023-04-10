@@ -131,13 +131,29 @@
           ],
           "type": "tags"
         }
+      },
+      {
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
+        "enable": true,
+        "iconColor": "semi-dark-yellow",
+        "name": "App",
+        "target": {
+          "refId": "Anno",
+          "tags": [
+            "app"
+          ],
+          "type": "tags"
+        }
       }
     ]
   },
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 2,
+  "id": 3,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -1965,8 +1981,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
@@ -5335,7 +5350,7 @@
       "type": "timeseries"
     }
   ],
-  "refresh": "30s",
+  "refresh": false,
   "schemaVersion": 37,
   "style": "dark",
   "tags": [

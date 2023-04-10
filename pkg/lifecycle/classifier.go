@@ -50,7 +50,7 @@ type ClassifierReader interface {
 var _ ClassifierReader = (*Classifier)(nil)
 
 // Classifier splits jobs into Pending, Running, Successful, and Failed.
-// To relief the garbage collector, we use a embeddable structure that we reset at every reconciliation cycle.
+// To relief the garbage collector, we use an embeddable structure that we reset at every reconciliation cycle.
 type Classifier struct {
 	pendingJobs     map[string]client.Object
 	runningJobs     map[string]client.Object

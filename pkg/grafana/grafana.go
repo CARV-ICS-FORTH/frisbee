@@ -109,7 +109,7 @@ func New(ctx context.Context, setters ...Option) (*Client, error) {
 			return nil, errors.Wrapf(err, "client error")
 		}
 
-		if err := wait.ExponentialBackoffWithContext(ctx, common.BackoffForServiceEndpoint, func() (done bool, err error) {
+		if err := wait.ExponentialBackoffWithContext(ctx, common.DefaultBackoffForServiceEndpoint, func() (done bool, err error) {
 			resp, errHealth := conn.GetHealth(ctx)
 			switch {
 			case errHealth != nil: // API connection error. Just retry
@@ -125,6 +125,7 @@ func New(ctx context.Context, setters ...Option) (*Client, error) {
 		}
 
 		client.Conn = conn
+		client.BaseURL = *args.HTTPEndpoint
 	}
 
 	// connect Grafana to controller for receiving alerts.
@@ -155,6 +156,8 @@ type Client struct {
 	logger logr.Logger
 
 	Conn *sdk.Client
+
+	BaseURL string
 }
 
 func getKey(obj metav1.Object) types.NamespacedName {
@@ -192,7 +195,7 @@ func SetClientFor(obj metav1.Object, client *Client) {
 }
 
 // GetClientFor returns the client with the given name. It panics if it cannot parse the object's metadata,
-// if the client does not exist or if the client is empty.
+// if the client does not exist, or if the client is empty.
 func GetClientFor(obj metav1.Object) *Client {
 	if !v1alpha1.HasScenarioLabel(obj) {
 		logrus.Warn("No Scenario FOR ", obj.GetName(), " type ", reflect.TypeOf(obj))
@@ -203,10 +206,33 @@ func GetClientFor(obj metav1.Object) *Client {
 	key := getKey(obj)
 
 	clientsLocker.RLock()
-	c := clients[key]
-	clientsLocker.RUnlock()
+	defer clientsLocker.RUnlock()
 
-	return c
+	client, exists := clients[key]
+	if !exists || client == nil {
+		panic("nil grafana client was found for object: " + obj.GetName())
+	}
+
+	return client
+}
+
+// HasClientFor returns whether there is a non-nil grafana client is registered for the given object.
+func HasClientFor(obj metav1.Object) bool {
+	if !v1alpha1.HasScenarioLabel(obj) {
+		return false
+	}
+
+	key := getKey(obj)
+
+	clientsLocker.RLock()
+	defer clientsLocker.RUnlock()
+
+	client, exists := clients[key]
+	if !exists || client == nil {
+		return false
+	}
+
+	return true
 }
 
 // DeleteClientFor removes the client registered for the given object.
@@ -214,6 +240,7 @@ func DeleteClientFor(obj metav1.Object) {
 	key := getKey(obj)
 
 	clientsLocker.Lock()
+	defer clientsLocker.Unlock()
+
 	delete(clients, key)
-	clientsLocker.Unlock()
 }

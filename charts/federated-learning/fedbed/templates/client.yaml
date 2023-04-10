@@ -17,13 +17,20 @@ spec:
       training_setsize: 60000
       test_setsize: 10000
   service:
-    decorators:
-      telemetry:
-        - system.telemetry.resources
+#    decorators:
+ #     telemetry:
+  #      - system.telemetry.resources
+
+    volumes:
+      - name: varlog
+        emptyDir: {}
 
     containers:
       - name: main
         image: icsforth/fedbed:latest
+        volumeMounts:
+          - name: varlog
+            mountPath: /var/log
         env:
           - name: FL_SERVER
             value: {{"{{.inputs.parameters.fl_server}}" | quote }}
@@ -56,7 +63,38 @@ spec:
           - /bin/sh   # Run shell
           - -c        # Read from string
           - |         # Multi-line str
-            set -eux
+            set -eu
             cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
 
-            python client.py
+            env
+
+            echo "-- GRAFANA ${GRAFANA}"
+
+            tail -f /dev/null
+
+            echo "arxidia kapama" >> /var/log/client.log
+
+            tail -f /dev/null
+            // python client.py | tee /var/log/client.log
+
+      - name: annotator # push events to grafana
+        image: alpine:latest
+        command:
+          - /bin/sh   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
+            set -eux
+
+            export logfile=/var/log/client.log
+
+            # Wait a bit for the log file to become ready
+            [ -f "${logfile}" ]
+
+            tail -f ${logfile}  | while read line ; do
+                echo -e "new event: $line"
+                annotation={\"tags\":[\"app\"],\"text\":\"$line\"}
+
+                curl -H "Content-Type: application/json" -X POST -d ${annotation} ${GRAFANA}/api/annotations || exit -1
+
+                echo -e "\n--"
+            done

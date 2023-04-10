@@ -14,17 +14,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package service_test
+package utils_test
 
 import (
 	"testing"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	"github.com/carv-ics-forth/frisbee/controllers/service"
+	serviceutils "github.com/carv-ics-forth/frisbee/controllers/service/utils"
 	corev1 "k8s.io/api/core/v1"
 )
 
-func Test_setField(t *testing.T) {
+func TestSetField(t *testing.T) {
 	cr := v1alpha1.Service{
 		Spec: v1alpha1.ServiceSpec{
 			PodSpec: corev1.PodSpec{
@@ -90,7 +90,7 @@ func Test_setField(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := service.SetField(tt.args.cr, tt.args.val); (err != nil) != tt.wantErr {
+			if err := serviceutils.SetField(tt.args.cr, tt.args.val); (err != nil) != tt.wantErr {
 				t.Errorf("SetField() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

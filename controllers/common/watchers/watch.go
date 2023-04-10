@@ -95,11 +95,14 @@ func (w *simpleWatch) watchUpdate(reconciler common.Reconciler, gvk schema.Group
 		prev := event.ObjectOld.(v1alpha1.ReconcileStatusAware).GetReconcileStatus()
 		latest := event.ObjectNew.(v1alpha1.ReconcileStatusAware).GetReconcileStatus()
 
-		// push an annotation that the frisbee object has failed.
+		// push an annotation that the Frisbee object has failed.
 		// the comparison with prev ensures that annotation will be just passed once.
-		if !prev.Phase.Is(v1alpha1.PhaseFailed) && latest.Phase.Is(v1alpha1.PhaseFailed) {
-			annotation := &grafana.PointAnnotation{}
-			annotation.Add(event.ObjectNew, grafana.TagFailed)
+		// we are interested only in SUT components
+		if v1alpha1.IsSUTComponent(event.ObjectNew) {
+			if !prev.Phase.Is(v1alpha1.PhaseFailed) && latest.Phase.Is(v1alpha1.PhaseFailed) {
+				annotation := &grafana.PointAnnotation{}
+				annotation.Add(event.ObjectNew, grafana.TagFailed)
+			}
 		}
 
 		reconciler.Info("** Enqueue",

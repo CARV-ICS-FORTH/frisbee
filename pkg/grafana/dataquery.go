@@ -85,7 +85,7 @@ func (c *Client) DownloadData(ctx context.Context, url *URL, destDir string) err
 
 		// submit the query
 		if len(queries) > 0 {
-			req := &DataRequest{
+			dataReq := &DataRequest{
 				Queries: queries,
 				Range:   dataRange,
 				From:    fmt.Sprint(url.FromTS.UnixMilli()),
@@ -94,7 +94,7 @@ func (c *Client) DownloadData(ctx context.Context, url *URL, destDir string) err
 
 			file := filepath.Join(destDir, slug.Make(panel.Title)+".json")
 
-			if err := downloadData(c.logger, url, req, file); err != nil {
+			if err := downloadData(c.logger, url, dataReq, file); err != nil {
 				return errors.Wrapf(err, "unable to download csv data")
 			}
 		}

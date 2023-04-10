@@ -22,7 +22,7 @@ spec:
       cluster:
         templateRef: fedbed.client
         resources:                          # Change values here
-          total: { cpu: 5, mem: 40Gi }
+          total: { cpu: 2, mem: 40Gi }
           distribution: { name: uniform }
         inputs:
           - { fl_server: server, backend: "tensorflow",  total_nodes: 20, node_id: 0 }
@@ -35,11 +35,11 @@ spec:
     # When all clients are up and running, kill some of them periodically
 #    - action: Cascade
 #      name: killer
-#      depends: { running: [ clients ] }
-#      cascade:
-#        templateRef: system.chaos.pod.kill
-#        inputs:
-#          - { target: clients-1 }
+ #     depends: { running: [ clients ] }
+  #    cascade:
+   #     templateRef: system.chaos.pod.kill
+    #    inputs:
+     #     - { target: clients-1 }
 #          - { target: clients-7 }
 #         - { target: clients-13 }
 #        schedule:

@@ -37,7 +37,7 @@ const (
 	DataHomeEnvVar = "FRISBEE_DATA_HOME"
 )
 
-// lazypath is an lazy-loaded path buffer for the XDG base directory specification.
+// lazypath is a lazy-loaded path buffer for the XDG base directory specification.
 type lazypath string
 
 func (l lazypath) path(frisbeeEnvVar, xdgEnvVar string, defaultFn func() string, elem ...string) string {
