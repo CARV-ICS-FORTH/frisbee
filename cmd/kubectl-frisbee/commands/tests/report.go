@@ -22,7 +22,6 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"time"
 
@@ -46,27 +45,29 @@ const (
 	SummaryDashboardUID = "summary"
 )
 
-type TestReportOptions struct {
-	Force           bool
-	Dashboards      []string
-	RepositoryCache string
-
-	PDF           bool
-	AggregatedPDF bool
-	Data          bool
-}
-
 func ReportTestCmdCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	switch {
 	case len(args) == 0:
 		return completion.CompleteScenarios(cmd, args, toComplete)
+
+	case len(args) == 1:
+		return nil, cobra.ShellCompDirectiveFilterDirs
 
 	default:
 		return completion.CompleteFlags(cmd, args, toComplete)
 	}
 }
 
-func ReportTestCmdFlags(cmd *cobra.Command, options *TestReportOptions) {
+type ReportTestCmdOptions struct {
+	RepositoryCache string
+	Dashboards      []string
+	Force           bool
+	PDF             bool
+	AggregatedPDF   bool
+	Data            bool
+}
+
+func ReportTestCmdFlags(cmd *cobra.Command, options *ReportTestCmdOptions) {
 	cmd.Flags().BoolVar(&options.Force, "force", false, "Force reporting test data despite test phase.")
 
 	cmd.Flags().StringSliceVar(&options.Dashboards, "dashboard", []string{SummaryDashboardUID}, "The dashboard(s) to generate report from.")
@@ -80,8 +81,8 @@ func ReportTestCmdFlags(cmd *cobra.Command, options *TestReportOptions) {
 	cmd.Flags().BoolVar(&options.AggregatedPDF, "aggregated-pdf", false, "Generate a single PDF for the entire dashboard.")
 }
 
-func NewReportTestsCmd() *cobra.Command {
-	var options TestReportOptions
+func NewReportTestCmd() *cobra.Command {
+	var options ReportTestCmdOptions
 
 	cmd := &cobra.Command{
 		Use:               "test <testName> <dstDir>",
@@ -91,6 +92,10 @@ func NewReportTestsCmd() *cobra.Command {
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) != 2 {
 				ui.Failf("Pass Test name and destination to store the reports.")
+			}
+
+			if !(options.PDF || options.Data || options.AggregatedPDF) {
+				ui.Failf("at least one of [--pdf|--aggregated-pdf|--data] flags must be enabled")
 			}
 
 			return nil
@@ -185,11 +190,9 @@ func NewReportTestsCmd() *cobra.Command {
 				if options.AggregatedPDF {
 					DefaultPDFExport = LongPDFExporter
 
-					url := grafana.BuildURL(scenario.Status.GrafanaEndpoint, dashboardUID, fromTS, toTS, "")
+					uri := grafana.BuildURL(scenario.Status.GrafanaEndpoint, dashboardUID, fromTS, toTS, "")
 
-					aggregatedFile := filepath.Join(dashboardDir, "aggregate.pdf")
-
-					err = SavePDF(url, filepath.Join(dstDir, dashboardUID, aggregatedFile))
+					err = SavePDF(uri, dashboardDir)
 					ui.ExitOnError("Saving Aggregated PDF to: "+dashboardDir+" for "+dashboardUID, err)
 				}
 			}
@@ -202,34 +205,30 @@ func NewReportTestsCmd() *cobra.Command {
 }
 
 // SavePDF extracts the pdf from Grafana and stores it to the destination.
-func SavePDF(dashboardURI string, destination string) error {
+func SavePDF(dashboardURI string, destDir string) error {
 	/*
 		Validate the URI. This is because if the URI is wrong, the
 		nodejs will block forever.
 	*/
-	_, err := url.ParseRequestURI(dashboardURI)
-	if err != nil {
+	if _, err := url.ParseRequestURI(dashboardURI); err != nil {
 		return err
 	}
+
+	aggregatedFile := filepath.Join(destDir, "__aggregated__.pdf")
+
+	ui.Info("Saving report to", aggregatedFile)
 
 	command := []string{
 		string(DefaultPDFExport),
 		dashboardURI,
 		User,
-		destination,
+		aggregatedFile,
 	}
 
-	ui.Info("Saving report to", destination)
-
-	_, err = process.LoggedExecuteInDir("", os.Stdout, env.Default.NodeJS(), command...)
+	_, err := process.LoggedExecuteInDir("", os.Stdout, env.Default.NodeJS(), command...)
 
 	return err
 }
-
-var (
-	nonAlphanumericRegex  = regexp.MustCompile(`[^a-zA-Z0-9]+`)
-	removeDuplicatesRegex = regexp.MustCompile(`/_{2,}/g`)
-)
 
 func SavePDFs(ctx context.Context, grafanaClient *grafana.Client, dashboardURI, destDir, dashboardUID string) error {
 	/*---------------------------------------------------*
