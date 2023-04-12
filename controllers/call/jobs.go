@@ -22,7 +22,7 @@ import (
 	"regexp"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	"github.com/carv-ics-forth/frisbee/pkg/distributions"
+	"github.com/carv-ics-forth/frisbee/controllers/call/callutils"
 	"github.com/carv-ics-forth/frisbee/pkg/lifecycle"
 	"github.com/carv-ics-forth/frisbee/pkg/structure"
 	"github.com/pkg/errors"
@@ -129,21 +129,7 @@ func (r *Controller) constructJobSpecList(ctx context.Context, call *v1alpha1.Ca
 		specs = append(specs, callable)
 	}
 
-	SetTimeline(call)
+	callutils.SetTimeline(call)
 
 	return specs, nil
-}
-
-func SetTimeline(call *v1alpha1.Call) {
-	if call.Spec.Schedule == nil || call.Spec.Schedule.Timeline == nil {
-		return
-	}
-
-	probabilitySlice := distributions.GenerateProbabilitySliceFromSpec(int64(len(call.Spec.Services)),
-		call.Spec.Schedule.Timeline.DistributionSpec)
-
-	call.Status.ExpectedTimeline = probabilitySlice.ApplyToTimeline(
-		call.GetCreationTimestamp(),
-		*call.Spec.Schedule.Timeline.TotalDuration,
-	)
 }

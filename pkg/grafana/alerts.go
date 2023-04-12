@@ -272,7 +272,7 @@ func (c *Client) SetAlert(ctx context.Context, alert *AlertRule, name string, ms
 			PreserveId: true,
 		}
 
-		if err := wait.ExponentialBackoffWithContext(ctx, common.BackoffForServiceEndpoint, func() (done bool, err error) {
+		if err := wait.ExponentialBackoffWithContext(ctx, common.DefaultBackoffForServiceEndpoint, func() (done bool, err error) {
 			resp, errReq := c.Conn.SetDashboard(ctx, board, params)
 
 			if errReq != nil {

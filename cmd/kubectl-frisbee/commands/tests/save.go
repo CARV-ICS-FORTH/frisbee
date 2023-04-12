@@ -30,6 +30,9 @@ func SaveTestCmdCompletion(cmd *cobra.Command, args []string, toComplete string)
 	case len(args) == 0:
 		return completion.CompleteScenarios(cmd, args, toComplete)
 
+	case len(args) == 1:
+		return nil, cobra.ShellCompDirectiveFilterDirs
+
 	default:
 		return completion.CompleteFlags(cmd, args, toComplete)
 	}
@@ -41,8 +44,8 @@ const (
 )
 
 type TestSaveOptions struct {
-	Force      bool
 	Datasource string
+	Force      bool
 }
 
 func PopulateSaveTestFlags(cmd *cobra.Command, options *TestSaveOptions) {

@@ -57,14 +57,16 @@ func (r *Controller) create(event event.CreateEvent) bool {
 		"version", event.Object.GetResourceVersion(),
 	)
 
-	if v1alpha1.DrawRegion(event.Object) {
-		annotation := &grafana.RangeAnnotation{}
-		annotation.Add(event.Object, grafana.TagChaos)
+	if grafana.HasClientFor(event.Object) {
+		if v1alpha1.DrawRegion(event.Object) {
+			annotation := &grafana.RangeAnnotation{}
+			annotation.Add(event.Object, grafana.TagChaos)
 
-		r.regionAnnotations.Set(event.Object.GetName(), annotation)
-	} else {
-		annotation := &grafana.PointAnnotation{}
-		annotation.Add(event.Object, grafana.TagChaos)
+			r.regionAnnotations.Set(event.Object.GetName(), annotation)
+		} else {
+			annotation := &grafana.PointAnnotation{}
+			annotation.Add(event.Object, grafana.TagChaos)
+		}
 	}
 
 	return true
@@ -120,19 +122,22 @@ func (r *Controller) delete(event event.DeleteEvent) bool {
 		"version", event.Object.GetResourceVersion(),
 	)
 
-	if v1alpha1.DrawRegion(event.Object) {
-		annotation, ok := r.regionAnnotations.Get(event.Object.GetName())
-		if !ok {
-			// this is a stall condition that happens when the controller is restarted. just ignore it
-			return false
+	// we are interested only in SUT components
+	if grafana.HasClientFor(event.Object) {
+		if v1alpha1.DrawRegion(event.Object) {
+			annotation, ok := r.regionAnnotations.Get(event.Object.GetName())
+			if !ok {
+				// this is a stall condition that happens when the controller is restarted. just ignore it
+				return false
+			}
+
+			annotation.(*grafana.RangeAnnotation).Delete(event.Object, grafana.TagChaos)
+
+			r.regionAnnotations.Remove(event.Object.GetName())
+		} else {
+			annotation := &grafana.PointAnnotation{}
+			annotation.Delete(event.Object, grafana.TagChaos)
 		}
-
-		annotation.(*grafana.RangeAnnotation).Delete(event.Object, grafana.TagChaos)
-
-		r.regionAnnotations.Remove(event.Object.GetName())
-	} else {
-		annotation := &grafana.PointAnnotation{}
-		annotation.Delete(event.Object, grafana.TagChaos)
 	}
 
 	return true

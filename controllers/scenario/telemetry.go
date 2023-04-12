@@ -40,23 +40,6 @@ import (
 
 // {{{ Internal types
 
-const (
-	// grafana specific.
-	defaultPathToGrafanaDashboards = "/etc/grafana/provisioning/dashboards"
-)
-
-const (
-	// Prometheus should be a fixed name because it is used within the Grafana configuration.
-	// Otherwise, we should find a way to replace the value.
-	defaultPrometheusName = "prometheus"
-
-	defaultGrafanaName = "grafana"
-
-	defaultDataviewerName = "dataviewer"
-)
-
-var GrafanaPort = int64(3000)
-
 func (r *Controller) StartTelemetry(ctx context.Context, scenario *v1alpha1.Scenario) error {
 	// the filebrowser makes sense only if test data are enabled.
 	if scenario.Spec.TestData != nil {
@@ -86,10 +69,10 @@ func (r *Controller) StartTelemetry(ctx context.Context, scenario *v1alpha1.Scen
 
 // StopTelemetry removes the annotations from the target object, removes the Alert from Grafana, and deleted the
 // client for the specific scenario.
-func (r *Controller) StopTelemetry(t *v1alpha1.Scenario) {
+func (r *Controller) StopTelemetry(scenario *v1alpha1.Scenario) {
 	// If the resource is not initialized, then there is not registered telemetry client.
-	if meta.IsStatusConditionTrue(t.Status.Conditions, v1alpha1.ConditionCRInitialized.String()) {
-		grafana.DeleteClientFor(t)
+	if meta.IsStatusConditionTrue(scenario.Status.Conditions, v1alpha1.ConditionCRInitialized.String()) {
+		grafana.DeleteClientFor(scenario)
 	}
 }
 
@@ -109,7 +92,7 @@ func (r *Controller) installDataviewer(ctx context.Context, scenario *v1alpha1.S
 	// Now we can use it to create the data viewer
 	var job v1alpha1.Service
 
-	job.SetName(defaultDataviewerName)
+	job.SetName(common.DefaultDataviewerName)
 
 	// set labels
 	v1alpha1.SetScenarioLabel(&job.ObjectMeta, scenario.GetName())
@@ -128,14 +111,14 @@ func (r *Controller) installDataviewer(ctx context.Context, scenario *v1alpha1.S
 		spec.DeepCopyInto(&job.Spec)
 
 		// the dataviewer is the only service that has complete access to the volume's content.
-		job.AttachTestDataVolume(scenario.Spec.TestData, false)
+		serviceutils.AttachTestDataVolume(&job, scenario.Spec.TestData, false)
 	}
 
 	if err := common.Create(ctx, r, scenario, &job); err != nil {
 		return errors.Wrapf(err, "cannot create %s", job.GetName())
 	}
 
-	scenario.Status.DataviewerEndpoint = common.ExternalEndpoint(defaultDataviewerName, scenario.GetNamespace())
+	scenario.Status.DataviewerEndpoint = common.ExternalEndpoint(common.DefaultDataviewerName, scenario.GetNamespace())
 
 	return nil
 }
@@ -143,7 +126,7 @@ func (r *Controller) installDataviewer(ctx context.Context, scenario *v1alpha1.S
 func (r *Controller) installPrometheus(ctx context.Context, t *v1alpha1.Scenario) error {
 	var job v1alpha1.Service
 
-	job.SetName(defaultPrometheusName)
+	job.SetName(common.DefaultPrometheusName)
 
 	// set labels
 	v1alpha1.SetScenarioLabel(&job.ObjectMeta, t.GetName())
@@ -171,7 +154,7 @@ func (r *Controller) installPrometheus(ctx context.Context, t *v1alpha1.Scenario
 		return errors.Wrapf(err, "cannot create %s", job.GetName())
 	}
 
-	t.Status.PrometheusEndpoint = common.ExternalEndpoint(defaultPrometheusName, t.GetNamespace())
+	t.Status.PrometheusEndpoint = common.ExternalEndpoint(common.DefaultPrometheusName, t.GetNamespace())
 
 	return nil
 }
@@ -179,7 +162,7 @@ func (r *Controller) installPrometheus(ctx context.Context, t *v1alpha1.Scenario
 func (r *Controller) installGrafana(ctx context.Context, scenario *v1alpha1.Scenario, agentRefs []string) error {
 	var job v1alpha1.Service
 
-	job.SetName(defaultGrafanaName)
+	job.SetName(common.DefaultGrafanaName)
 
 	v1alpha1.SetScenarioLabel(&job.ObjectMeta, scenario.GetName())
 	v1alpha1.SetComponentLabel(&job.ObjectMeta, v1alpha1.ComponentSys)
@@ -196,7 +179,7 @@ func (r *Controller) installGrafana(ctx context.Context, scenario *v1alpha1.Scen
 
 		spec.DeepCopyInto(&job.Spec)
 
-		job.AttachTestDataVolume(scenario.Spec.TestData, true)
+		serviceutils.AttachTestDataVolume(&job, scenario.Spec.TestData, true)
 
 		if err := r.importDashboards(ctx, scenario, &job.Spec, agentRefs); err != nil {
 			return errors.Wrapf(err, "import dashboards")
@@ -207,7 +190,7 @@ func (r *Controller) installGrafana(ctx context.Context, scenario *v1alpha1.Scen
 		return errors.Wrapf(err, "cannot create %s", job.GetName())
 	}
 
-	scenario.Status.GrafanaEndpoint = common.ExternalEndpoint(defaultGrafanaName, scenario.GetNamespace())
+	scenario.Status.GrafanaEndpoint = common.ExternalEndpoint(common.DefaultGrafanaName, scenario.GetNamespace())
 
 	return nil
 }
@@ -261,8 +244,8 @@ func (r *Controller) importDashboards(ctx context.Context, scenario *v1alpha1.Sc
 				mainContainer.VolumeMounts = append(mainContainer.VolumeMounts, corev1.VolumeMount{
 					Name:             volumeName, // Name of a Volume.
 					ReadOnly:         true,
-					MountPath:        filepath.Join(defaultPathToGrafanaDashboards, file), // Path within the container
-					SubPath:          file,                                                //  Path within the volume
+					MountPath:        filepath.Join(common.DefaultGrafanaDashboardsPath, file), // Path within the container
+					SubPath:          file,                                                     //  Path within the volume
 					MountPropagation: nil,
 					SubPathExpr:      "",
 				})
@@ -314,30 +297,24 @@ func (r *Controller) ListTelemetryAgents(ctx context.Context, scenario *v1alpha1
 // connectToGrafana creates a dedicated link between the scenario controller and the Grafana service.
 // The link must be destroyed if the scenario is deleted, since any new instance will change the ip of Grafana.
 func (r *Controller) connectToGrafana(ctx context.Context, scenario *v1alpha1.Scenario) error {
-	if scenario.Status.GrafanaEndpoint == "" {
-		r.Logger.Info("The Grafana endpoint is empty. Skip telemetry.", "scenario", scenario.GetName())
-
-		return nil
-	}
-
-	// if a client exists, return the client directly.
-	if c := grafana.GetClientFor(scenario); c != nil {
+	// if a client exists, there is no need to create another one.
+	if grafana.HasClientFor(scenario) {
 		return nil
 	}
 
 	// otherwise, re-create a client.
 	// this condition captures both the cases:
 	// 1) this is the first time we create a client to the controller
-	// 2) the controller has been restarted and lost all of the create controllers.
+	// 2) the controller has been restarted and lost all the create controllers.
 
 	var endpoint string
 
 	if configuration.Global.DeveloperMode {
 		/* If in developer mode, the operator runs outside the cluster, and will reach Grafana via the ingress */
-		endpoint = common.ExternalEndpoint(defaultGrafanaName, scenario.GetNamespace())
+		endpoint = common.ExternalEndpoint(common.DefaultGrafanaName, scenario.GetNamespace())
 	} else {
 		/* If the operator runs within the cluster, it will reach Grafana via the service */
-		endpoint = common.InternalEndpoint(defaultGrafanaName, scenario.GetNamespace(), GrafanaPort)
+		endpoint = common.InternalEndpoint(common.DefaultGrafanaName, scenario.GetNamespace(), common.DefaultGrafanaPort)
 	}
 
 	_, err := grafana.New(ctx,

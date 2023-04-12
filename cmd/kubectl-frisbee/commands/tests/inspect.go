@@ -17,6 +17,7 @@ limitations under the License.
 package tests
 
 import (
+	"log"
 	"os"
 
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/common"
@@ -27,6 +28,7 @@ import (
 )
 
 func InspectTestCmdCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	// args completion
 	switch {
 	case len(args) == 0:
 		return completion.CompleteScenarios(cmd, args, toComplete)
@@ -51,10 +53,24 @@ func InspectTestCmdFlags(cmd *cobra.Command, options *InspectTestCmdOptions) {
 	cmd.Flags().BoolVar(&options.Events, "events", false, "show events hinting what's happening")
 	cmd.Flags().BoolVar(&options.Templates, "templates", false, "show installed templates")
 
+	// deep
 	cmd.Flags().BoolVar(&options.Deep, "deep", false, "perform deep inspection (enable everything except shell)")
+
+	// shell
 	cmd.Flags().StringVar(&options.Shell, "shell", "", "opens a shell to a running container")
 
+	if err := cmd.RegisterFlagCompletionFunc("shell", completion.CompleteServices); err != nil {
+		log.Fatal(err)
+	}
+
+	// logs
 	cmd.Flags().StringSliceVarP(&options.Logs, "logs", "l", nil, "show logs output from executor pod (if unsure, use 'all')")
+
+	if err := cmd.RegisterFlagCompletionFunc("logs", completion.CompleteServices); err != nil {
+		log.Fatal(err)
+	}
+
+	// log-lines
 	cmd.Flags().IntVar(&options.Loglines, "log-lines", 5, "Lines of recent log file to display.")
 }
 
@@ -99,7 +115,7 @@ func NewInspectTestCmd() *cobra.Command {
 				test, err := client.GetScenario(cmd.Context(), testName)
 				ui.ExitOnError("Getting Test Information", err)
 
-				if test == nil && options.Deep == false {
+				if test == nil && !options.Deep {
 					ui.Failf("No such test")
 				}
 

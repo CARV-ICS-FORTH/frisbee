@@ -58,14 +58,16 @@ func (r *Controller) create(event event.CreateEvent) bool {
 		"version", event.Object.GetResourceVersion(),
 	)
 
-	if v1alpha1.DrawRegion(event.Object) {
-		annotation := &grafana.RangeAnnotation{}
-		annotation.Add(event.Object)
+	if grafana.HasClientFor(event.Object) {
+		if v1alpha1.DrawRegion(event.Object) {
+			annotation := &grafana.RangeAnnotation{}
+			annotation.Add(event.Object)
 
-		r.regionAnnotations.Set(event.Object.GetName(), annotation)
-	} else {
-		annotation := &grafana.PointAnnotation{}
-		annotation.Add(event.Object)
+			r.regionAnnotations.Set(event.Object.GetName(), annotation)
+		} else {
+			annotation := &grafana.PointAnnotation{}
+			annotation.Add(event.Object)
+		}
 	}
 
 	return false
@@ -126,19 +128,21 @@ func (r *Controller) delete(event event.DeleteEvent) bool {
 		"version", event.Object.GetResourceVersion(),
 	)
 
-	if v1alpha1.DrawRegion(event.Object) {
-		annotation, ok := r.regionAnnotations.Get(event.Object.GetName())
-		if !ok {
-			// this is a stall condition that happens when the controller is restarted. just ignore it
-			return false
+	if grafana.HasClientFor(event.Object) {
+		if v1alpha1.DrawRegion(event.Object) {
+			annotation, ok := r.regionAnnotations.Get(event.Object.GetName())
+			if !ok {
+				// this is a stall condition that happens when the controller is restarted. just ignore it
+				return false
+			}
+
+			annotation.(*grafana.RangeAnnotation).Delete(event.Object)
+
+			r.regionAnnotations.Remove(event.Object.GetName())
+		} else {
+			annotation := &grafana.PointAnnotation{}
+			annotation.Delete(event.Object)
 		}
-
-		annotation.(*grafana.RangeAnnotation).Delete(event.Object)
-
-		r.regionAnnotations.Remove(event.Object.GetName())
-	} else {
-		annotation := &grafana.PointAnnotation{}
-		annotation.Delete(event.Object)
 	}
 
 	return true

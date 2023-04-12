@@ -160,7 +160,7 @@ func (c *Client) SetAnnotation(annotationRequest sdk.CreateAnnotationRequest) (r
 	ctx := context.Background()
 
 	// retry until Grafana is ready to receive annotations.
-	if err := wait.ExponentialBackoff(common.BackoffForServiceEndpoint, func() (done bool, err error) {
+	if err := wait.ExponentialBackoff(common.DefaultBackoffForServiceEndpoint, func() (done bool, err error) {
 		gaResp, err := c.Conn.CreateAnnotation(ctx, annotationRequest)
 		switch {
 		case err != nil: // API connection error. Just retry
@@ -192,7 +192,7 @@ func (c *Client) PatchAnnotation(reqID uint, annotationRequest sdk.PatchAnnotati
 	ctx := context.Background()
 
 	// retry until Grafana is ready to receive annotations.
-	if err := wait.ExponentialBackoffWithContext(ctx, common.BackoffForServiceEndpoint, func() (done bool, err error) {
+	if err := wait.ExponentialBackoffWithContext(ctx, common.DefaultBackoffForServiceEndpoint, func() (done bool, err error) {
 		gaResp, err := c.Conn.PatchAnnotation(ctx, reqID, annotationRequest)
 		switch {
 		case err != nil: // API connection error. Just retry

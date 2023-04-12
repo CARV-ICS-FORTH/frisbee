@@ -79,30 +79,15 @@ func (in *Service) ValidateCreate() error {
 }
 
 func (in *Service) validateMainContainer(container *corev1.Container) error {
-	// Ensure that are no other main containers
-	if len(in.Spec.Containers) > 1 {
-		return errors.Errorf("only one container can defined in the template of a Main container")
-	}
-
 	// Ensure that there are no sidecar decorations
 	if _, exists := in.Spec.Decorators.Annotations[SidecarTelemetry]; exists {
 		return errors.Errorf("unclear if it's a main container or a telemetry sidecar")
 	}
 
-	/*
-		if in.Spec.Decorators.Resources != nil && (container.Resources.Limits != nil || container.Resources.Requests != nil) {
-			return errors.Errorf("pod-level decorators.resources are in conflict with container[%s].resources", container.Name)
-		}
-	*/
-
 	return nil
 }
 
 func (in *Service) validateSidecarContainer(container *corev1.Container) error {
-	if in.Spec.Decorators.Annotations == nil {
-		return errors.Errorf("follow either the Main container or the Sidecar container rules")
-	}
-
 	// Ensure that there are no sidecar decorations
 	if value, exists := in.Spec.Decorators.Annotations[SidecarTelemetry]; exists {
 		if value == MainContainerName {
@@ -126,7 +111,7 @@ func (in *Service) validateSidecarContainer(container *corev1.Container) error {
 		return nil
 	}
 
-	return errors.Errorf("no sidecar annotations where found")
+	return nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.

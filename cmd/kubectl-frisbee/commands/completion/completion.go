@@ -38,21 +38,31 @@ To load completions for every new session, execute once:
       frisbee completion bash > /usr/local/etc/bash_completion.d/helm.bash
 `
 
-func NoArgs(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+func NoArgs(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
 	return nil, cobra.ShellCompDirectiveNoFileComp
 }
 
 // CompleteScenarios list the available test-cases
-func CompleteScenarios(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	scenarios, err := env.Default.GetFrisbeeClient().ListScenarios(cmd.Context(), common.ManagedNamespace)
+func CompleteScenarios(cmd *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
+	list, err := env.Default.GetFrisbeeClient().ListScenarios(cmd.Context(), common.ManagedNamespace)
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
 
-	return scenarios.TestNames(), cobra.ShellCompDirectiveDefault
+	return list.TestNames(), cobra.ShellCompDirectiveDefault
 }
 
-func CompleteFlags(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+// CompleteServices list the available services. Assumes that args[0] is the namespace
+func CompleteServices(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	list, err := env.Default.GetFrisbeeClient().ListServices(cmd.Context(), args[0])
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+
+	return list.Names(), cobra.ShellCompDirectiveDefault
+}
+
+func CompleteFlags(cmd *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
 	var flags []string
 
 	cmd.Flags().VisitAll(func(flag *pflag.Flag) {

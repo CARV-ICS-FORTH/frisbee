@@ -20,9 +20,9 @@ import (
 	"context"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
+	cascadeutils "github.com/carv-ics-forth/frisbee/controllers/cascade/utils"
 	chaosutils "github.com/carv-ics-forth/frisbee/controllers/chaos/utils"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
-	"github.com/carv-ics-forth/frisbee/pkg/distributions"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -54,21 +54,7 @@ func (r *Controller) constructJobSpecList(ctx context.Context, cascade *v1alpha1
 		return nil, errors.Wrapf(err, "cannot get specs")
 	}
 
-	SetTimeline(cascade)
+	cascadeutils.SetTimeline(cascade)
 
 	return specs, nil
-}
-
-func SetTimeline(cascade *v1alpha1.Cascade) {
-	if cascade.Spec.Schedule == nil || cascade.Spec.Schedule.Timeline == nil {
-		return
-	}
-
-	probabilitySlice := distributions.GenerateProbabilitySliceFromSpec(int64(cascade.Spec.MaxInstances),
-		cascade.Spec.Schedule.Timeline.DistributionSpec)
-
-	cascade.Status.ExpectedTimeline = probabilitySlice.ApplyToTimeline(
-		cascade.GetCreationTimestamp(),
-		*cascade.Spec.Schedule.Timeline.TotalDuration,
-	)
 }

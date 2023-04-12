@@ -120,7 +120,7 @@ func (w *watchWithRangeAnnotator) watchUpdate(reconciler common.Reconciler, gvk 
 		prevPhase := prev.GetReconcileStatus().Phase
 		latestPhase := latest.GetReconcileStatus().Phase
 
-		// push an annotation that the frisbee object has failed.
+		// push an annotation that the Frisbee object has failed.
 		// the comparison with prev ensures that annotation will be just passed once.
 		if !prevPhase.Is(v1alpha1.PhaseFailed) && latestPhase.Is(v1alpha1.PhaseFailed) {
 			annotation := &grafana.PointAnnotation{}

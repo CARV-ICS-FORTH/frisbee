@@ -388,8 +388,12 @@ func (r *Controller) HasFailed(ctx context.Context, scenario *v1alpha1.Scenario)
 }
 
 func (r *Controller) RunActions(ctx context.Context, scenario *v1alpha1.Scenario, actionList []v1alpha1.Action) error {
-	if err := r.connectToGrafana(ctx, scenario); err != nil {
-		return errors.Wrapf(err, "connect to grafana")
+	if scenario.Status.GrafanaEndpoint == "" {
+		r.Logger.Info("The Grafana endpoint is empty. Skip telemetry.", "scenario", scenario.GetName())
+	} else {
+		if err := r.connectToGrafana(ctx, scenario); err != nil {
+			return errors.Wrapf(err, "connect to grafana")
+		}
 	}
 
 	for _, action := range actionList {

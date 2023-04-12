@@ -30,7 +30,20 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type SubmitTestOptions struct {
+func SubmitTestCmdCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	switch {
+	case len(args) == 0:
+		return []string{"test-"}, cobra.ShellCompDirectiveDefault
+
+	case len(args) == 1:
+		return nil, cobra.ShellCompDirectiveDefault
+
+	default:
+		return nil, cobra.ShellCompDirectiveDefault
+	}
+}
+
+type SubmitTestCmdOptions struct {
 	CPUQuota, MemoryQuota                     string
 	Watch                                     bool
 	ExpectSuccess, ExpectFailure, ExpectError bool
@@ -39,7 +52,7 @@ type SubmitTestOptions struct {
 	Logs []string
 }
 
-func SubmitTestFlags(cmd *cobra.Command, options *SubmitTestOptions) {
+func SubmitTestCmdFlags(cmd *cobra.Command, options *SubmitTestCmdOptions) {
 	// cmd.Flags().StringVar(&options.CPUQuota, "cpu", "", "set quotas for the total CPUs (e.g, 0.5) that can be used by all Pods running in the test.")
 	// cmd.Flags().StringVar(&options.MemoryQuota, "memory", "", "set quotas for the total Memory (e.g, 100Mi) that can be used by all Pods running in the test.")
 	cmd.Flags().StringSliceVarP(&options.Logs, "logs", "l", nil, "show logs output from executor pod (all|SUT|SYS|pod)")
@@ -53,7 +66,7 @@ func SubmitTestFlags(cmd *cobra.Command, options *SubmitTestOptions) {
 }
 
 func NewSubmitTestCmd() *cobra.Command {
-	var options SubmitTestOptions
+	var options SubmitTestCmdOptions
 
 	cmd := &cobra.Command{
 		Use:     "test <Name> <Scenario> <Dependencies...> ",
@@ -69,6 +82,8 @@ func NewSubmitTestCmd() *cobra.Command {
 # Submit and tail logs until completion:
   kubectl frisbee submit test --log my-wf.yaml
 `,
+		ValidArgsFunction: SubmitTestCmdCompletion,
+
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) < 2 {
 				ui.Failf("Pass Test Name and Test File Path")
@@ -160,12 +175,12 @@ func NewSubmitTestCmd() *cobra.Command {
 		},
 	}
 
-	SubmitTestFlags(cmd, &options)
+	SubmitTestCmdFlags(cmd, &options)
 
 	return cmd
 }
 
-func ControlOutput(testName string, options *SubmitTestOptions) {
+func ControlOutput(testName string, options *SubmitTestCmdOptions) {
 	switch {
 	case options.ExpectSuccess:
 		ui.Info("Expecting the test to complete successfully within ", options.Timeout)

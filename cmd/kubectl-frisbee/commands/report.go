@@ -45,7 +45,7 @@ func NewReportCmd() *cobra.Command {
 		},
 	}
 
-	cmd.AddCommand(tests.NewReportTestsCmd())
+	cmd.AddCommand(tests.NewReportTestCmd())
 
 	return cmd
 }

@@ -213,7 +213,7 @@ func CheckForBoundedExecution(callIndex map[string]*Action) error {
 	}
 
 	if len(nonCompleted) > 0 {
-		return errors.Errorf("actions '%s' are not completed at the end of the scenario", nonCompleted)
+		return errors.Errorf("actions '%s' are neither completed nor waited at the end of the scenario", nonCompleted)
 	}
 
 	return nil

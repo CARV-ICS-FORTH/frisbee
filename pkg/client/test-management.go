@@ -152,6 +152,28 @@ func (c TestManagementClient) ListVirtualObjects(ctx context.Context, namespace 
 	return list, err
 }
 
+// ListServices list all services.
+func (c TestManagementClient) ListServices(ctx context.Context, namespace string, selectors ...string) (list v1alpha1.ServiceList, err error) {
+	var filter client.ListOptions
+	filter.Namespace = namespace
+
+	if selectors != nil {
+		set, err := labels.ConvertSelectorToLabelsMap(strings.Join(selectors, ","))
+		if err != nil {
+			return v1alpha1.ServiceList{}, errors.Wrapf(err, "invalid selector")
+		}
+
+		// find namespaces where tests are running
+		filter.LabelSelector = labels.SelectorFromValidatedSet(set)
+	}
+
+	if err = c.client.List(ctx, &list, &filter); err != nil {
+		return v1alpha1.ServiceList{}, errors.Wrapf(err, "cannot list resources")
+	}
+
+	return list, err
+}
+
 // DeleteTests deletes all tests
 // Deprecated: Use the respective kubectl command.
 func (c TestManagementClient) DeleteTests(selector string) (testNames []string, err error) {
