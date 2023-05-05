@@ -28,6 +28,7 @@ import (
 // ReadManifest reads from stdin, a single file/url, or a list of files and/or urls.
 func ReadManifest(manifestPaths ...string) ([][]byte, error) {
 	var manifestContents [][]byte
+
 	var err error
 
 	if len(manifestPaths) == 1 && manifestPaths[0] == "-" {
@@ -35,6 +36,7 @@ func ReadManifest(manifestPaths ...string) ([][]byte, error) {
 		if err != nil {
 			return [][]byte{}, err
 		}
+
 		manifestContents = append(manifestContents, body)
 	} else {
 		manifestContents, err = ReadFromFilePathsOrUrls(manifestPaths...)
@@ -49,6 +51,7 @@ func ReadManifest(manifestPaths ...string) ([][]byte, error) {
 // ReadFromStdin reads the manifest from standard input.
 func ReadFromStdin() ([]byte, error) {
 	reader := bufio.NewReader(os.Stdin)
+
 	body, err := io.ReadAll(reader)
 	if err != nil {
 		return []byte{}, err
@@ -60,7 +63,9 @@ func ReadFromStdin() ([]byte, error) {
 // ReadFromFilePathsOrUrls reads the content of a single or a list of file paths and/or urls.
 func ReadFromFilePathsOrUrls(filePathsOrUrls ...string) ([][]byte, error) {
 	var fileContents [][]byte
+
 	var body []byte
+
 	var err error
 
 	for _, filePathOrUrl := range filePathsOrUrls {
@@ -90,10 +95,11 @@ func ReadFromUrl(url string) ([]byte, error) {
 	}
 
 	body, err := io.ReadAll(response.Body)
-	_ = response.Body.Close()
 	if err != nil {
 		return nil, err
 	}
+
+	_ = response.Body.Close()
 
 	return body, err
 }
@@ -101,6 +107,7 @@ func ReadFromUrl(url string) ([]byte, error) {
 // IsURL returns whether a string is a URL.
 func IsURL(u string) bool {
 	var parsedURL *url.URL
+
 	var err error
 
 	parsedURL, err = url.ParseRequestURI(u)

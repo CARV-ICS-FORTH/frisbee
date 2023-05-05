@@ -23,6 +23,7 @@ func ContainsStrings(slice []string, item string) bool {
 			return true
 		}
 	}
+
 	return false
 }
 

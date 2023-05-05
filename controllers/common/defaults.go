@@ -31,18 +31,26 @@ const (
 
 // Grafana Section
 const (
-	DefaultGrafanaName = "grafana"
+	DefaultGrafanaServiceName = "grafana"
 
 	DefaultGrafanaDashboardsPath = "/etc/grafana/provisioning/dashboards"
 
 	DefaultGrafanaPort = int64(3000)
+
+	DefaultAdvertisedAlertingServiceHost = "alerting-service"
+
+	DefaultAdvertisedAlertingServicePort = "6666"
 )
 
 // DataViewer Section
 const (
+	// DefaultDataviewerName is the default name for the dataviewer service
 	DefaultDataviewerName = "dataviewer"
 )
 
+// Communication Section
+
+// DefaultBackoffForK8sEndpoint is the default backoff for controller-to-k8s communication.
 var DefaultBackoffForK8sEndpoint = wait.Backoff{
 	Duration: 1 * time.Second,
 	Factor:   5,
@@ -50,6 +58,7 @@ var DefaultBackoffForK8sEndpoint = wait.Backoff{
 	Steps:    3,
 }
 
+// DefaultBackoffForServiceEndpoint is the default backoff for controller-to-pod communication
 var DefaultBackoffForServiceEndpoint = wait.Backoff{
 	Duration: 5 * time.Second,
 	Factor:   5,

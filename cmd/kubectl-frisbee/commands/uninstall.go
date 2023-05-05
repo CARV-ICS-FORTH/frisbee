@@ -54,9 +54,6 @@ func NewUninstallCmd() *cobra.Command {
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			ui.Logo()
 			ui.SetVerbose(env.Default.Debug)
-
-			// Load kubeconfig
-			env.Default.CheckKubePerms()
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			// Delete Tests

@@ -70,28 +70,27 @@ func CopyLocallyIfNotExists(static embed.FS, installationDir string) error {
 				if err := os.WriteFile(filepath.Join(installationDir, path), data, os.ModePerm); err != nil {
 					return errors.Wrapf(err, "cannot copy '%s' to installation dir", path)
 				}
+
 				return nil
 			case err != nil:
 				return errors.Wrapf(err, "cannot stat installation path '%s'", path)
 			case !localInfo.Mode().IsRegular():
-				return errors.Errorf("Expected '%s' to be a file, but it's '%s'.", path, localInfo.Mode().Type())
+				return errors.Errorf("expected '%s' to be a file, but it's '%s'.", path, localInfo.Mode().Type())
 			default:
 				return nil
 			}
 
 		case fInfo.IsDir():
 			ufInfo, err := os.Stat(path)
-			if os.IsNotExist(err) {
-				// open or create dir in the installation fs
+			switch {
+			case os.IsNotExist(err):
 				err := os.MkdirAll(filepath.Join(installationDir, path), os.ModePerm)
-
 				return errors.Wrapf(err, "cannot create dir '%s' in the installation fs", path)
-			} else if err != nil {
+			case err != nil:
 				return errors.Wrapf(err, "cannot stat installation path '%s'", path)
-			} else if !ufInfo.IsDir() {
+			case !ufInfo.IsDir():
 				return errors.Errorf("Expected '%s' to be a dir, but it's '%s'.", path, ufInfo.Mode().Type())
-			} else {
-				// the dir is as expected. nothing to do.
+			default:
 				return nil
 			}
 		default:

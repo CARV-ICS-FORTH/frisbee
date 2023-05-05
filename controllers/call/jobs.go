@@ -22,7 +22,7 @@ import (
 	"regexp"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	"github.com/carv-ics-forth/frisbee/controllers/call/callutils"
+	"github.com/carv-ics-forth/frisbee/controllers/call/utils"
 	"github.com/carv-ics-forth/frisbee/pkg/lifecycle"
 	"github.com/carv-ics-forth/frisbee/pkg/structure"
 	"github.com/pkg/errors"
@@ -47,7 +47,7 @@ func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Call, i int) error
 	// managing dependencies between jobs. For that, we return a dummy virtual object without dedicated controller.
 	// FIXME: if the call fails, this object will be re-created, and the call will fail with an "existing object" error.
 	return lifecycle.VirtualExecution(ctx, r, cr, jobName, func(task *v1alpha1.VirtualObject) error {
-		res, err := r.executor.Exec(pod, callable.Container, callable.Command, true)
+		res, err := r.executor.Exec(ctx, pod, callable.Container, callable.Command, true)
 
 		defer func() {
 			// Use the virtual object to store the remote execution logs.
@@ -129,7 +129,7 @@ func (r *Controller) constructJobSpecList(ctx context.Context, call *v1alpha1.Ca
 		specs = append(specs, callable)
 	}
 
-	callutils.SetTimeline(call)
+	utils.SetTimeline(call)
 
 	return specs, nil
 }

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package scenario
+package utils
 
 import (
 	"context"
@@ -85,7 +85,7 @@ func parseMacro(namespace string, selector *v1alpha1.ServiceSelector) error {
 	return nil
 }
 
-func expandSliceInputs(ctx context.Context, controller *Controller, namespace string, inputs *[]string) error {
+func ExpandSliceInputs(ctx context.Context, cli client.Client, namespace string, inputs *[]string) error {
 	if inputs == nil || *inputs == nil {
 		return nil
 	}
@@ -107,7 +107,7 @@ func expandSliceInputs(ctx context.Context, controller *Controller, namespace st
 
 			services, exists := cache[value]
 			if !exists {
-				runningServices, err := selectServices(ctx, controller, &ss.Match)
+				runningServices, err := selectServices(ctx, cli, &ss.Match)
 				if err != nil {
 					return errors.Wrapf(err, "service selection error")
 				}
@@ -135,7 +135,7 @@ func expandSliceInputs(ctx context.Context, controller *Controller, namespace st
 	return nil
 }
 
-func expandMacros(ctx context.Context, controller *Controller, nm string, inputs *[]v1alpha1.UserInputs) error {
+func ExpandMacros(ctx context.Context, cli client.Client, nm string, inputs *[]v1alpha1.UserInputs) error {
 	if inputs == nil || *inputs == nil {
 		return nil
 	}
@@ -161,7 +161,7 @@ func expandMacros(ctx context.Context, controller *Controller, nm string, inputs
 
 				services, exists := cache[value]
 				if !exists {
-					runningServices, err := selectServices(ctx, controller, &ss.Match)
+					runningServices, err := selectServices(ctx, cli, &ss.Match)
 					if err != nil {
 						return errors.Wrapf(err, "service selection error")
 					}
@@ -190,7 +190,7 @@ func expandMacros(ctx context.Context, controller *Controller, nm string, inputs
 	return nil
 }
 
-func selectServices(ctx context.Context, r common.Reconciler, ss *v1alpha1.MatchBy) (SList, error) {
+func selectServices(ctx context.Context, cli client.Client, ss *v1alpha1.MatchBy) (SList, error) {
 	if ss == nil {
 		return nil, nil
 	}
@@ -208,7 +208,7 @@ func selectServices(ctx context.Context, r common.Reconciler, ss *v1alpha1.Match
 					Name:      name,
 				}
 
-				if err := r.GetClient().Get(ctx, key, &service); err != nil {
+				if err := cli.Get(ctx, key, &service); err != nil {
 					return nil, errors.Wrapf(err, "cannot find service %s", key)
 				}
 
@@ -230,7 +230,7 @@ func selectServices(ctx context.Context, r common.Reconciler, ss *v1alpha1.Match
 		{
 			var cluster v1alpha1.Cluster
 
-			if err := r.GetClient().Get(ctx, key, &cluster); err != nil {
+			if err := cli.Get(ctx, key, &cluster); err != nil {
 				return nil, errors.Wrapf(err, "cannot find cluster %s", key)
 			}
 
@@ -238,7 +238,7 @@ func selectServices(ctx context.Context, r common.Reconciler, ss *v1alpha1.Match
 
 			req := types.NamespacedName{Namespace: cluster.GetNamespace(), Name: cluster.GetName()}
 
-			if err := common.ListChildren(ctx, r, &slist, req); err != nil {
+			if err := common.ListChildren(ctx, cli, &slist, req); err != nil {
 				return nil, errors.Wrapf(err, "cannot get services for '%s'", cluster.GetName())
 			}
 

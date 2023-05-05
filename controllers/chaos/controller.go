@@ -158,7 +158,7 @@ func (r *Controller) PopulateView(ctx context.Context, req types.NamespacedName)
 
 	networkChaosList.SetGroupVersionKind(NetworkChaosGVK)
 	{
-		if err := common.ListChildren(ctx, r, &networkChaosList, req); err != nil {
+		if err := common.ListChildren(ctx, r.GetClient(), &networkChaosList, req); err != nil {
 			return errors.Wrapf(err, "cannot list children for '%s'", req)
 		}
 
@@ -171,7 +171,7 @@ func (r *Controller) PopulateView(ctx context.Context, req types.NamespacedName)
 
 	podChaosList.SetGroupVersionKind(PodChaosGVK)
 	{
-		if err := common.ListChildren(ctx, r, &podChaosList, req); err != nil {
+		if err := common.ListChildren(ctx, r.GetClient(), &podChaosList, req); err != nil {
 			return errors.Wrapf(err, "cannot list children for '%s'", req)
 		}
 
@@ -184,7 +184,7 @@ func (r *Controller) PopulateView(ctx context.Context, req types.NamespacedName)
 
 	ioChaosList.SetGroupVersionKind(IOChaosGVK)
 	{
-		if err := common.ListChildren(ctx, r, &ioChaosList, req); err != nil {
+		if err := common.ListChildren(ctx, r.GetClient(), &ioChaosList, req); err != nil {
 			return errors.Wrapf(err, "cannot list children for '%s'", req)
 		}
 
@@ -197,7 +197,7 @@ func (r *Controller) PopulateView(ctx context.Context, req types.NamespacedName)
 
 	kernelChaosList.SetGroupVersionKind(KernelChaosGVK)
 	{
-		if err := common.ListChildren(ctx, r, &kernelChaosList, req); err != nil {
+		if err := common.ListChildren(ctx, r.GetClient(), &kernelChaosList, req); err != nil {
 			return errors.Wrapf(err, "cannot list children for '%s'", req)
 		}
 
@@ -210,7 +210,7 @@ func (r *Controller) PopulateView(ctx context.Context, req types.NamespacedName)
 
 	timeChaosList.SetGroupVersionKind(TimeChaosGVK)
 	{
-		if err := common.ListChildren(ctx, r, &timeChaosList, req); err != nil {
+		if err := common.ListChildren(ctx, r.GetClient(), &timeChaosList, req); err != nil {
 			return errors.Wrapf(err, "cannot list children for '%s'", req)
 		}
 

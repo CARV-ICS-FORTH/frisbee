@@ -236,7 +236,7 @@ func (r *Controller) PopulateView(ctx context.Context, req types.NamespacedName)
 
 	var serviceJobs v1alpha1.ServiceList
 	{
-		if err := common.ListChildren(ctx, r, &serviceJobs, req); err != nil {
+		if err := common.ListChildren(ctx, r.GetClient(), &serviceJobs, req); err != nil {
 			return errors.Wrapf(err, "cannot list children for '%s'", req)
 		}
 

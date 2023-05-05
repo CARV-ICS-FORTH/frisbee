@@ -2,7 +2,7 @@
 apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
-  name: fedbed.client
+  name: fedbed.client-annotation
 spec:
   inputs:
     parameters:
@@ -17,14 +17,21 @@ spec:
       training_setsize: 60000
       test_setsize: 10000
   service:
-    decorators:
-      telemetry:
-        - system.telemetry.resources
+#    decorators:
+ #     telemetry:
+  #      - system.telemetry.resources
+
+    volumes:
+      - name: varlog
+        emptyDir: {}
 
     containers:
       - name: main
         image: icsforth/fedbed:latest
         imagePullPolicy: IfNotPresent
+        volumeMounts:
+          - name: varlog
+            mountPath: /var/log
         env:
           - name: FL_SERVER
             value: {{"{{.inputs.parameters.fl_server}}" | quote }}
@@ -60,4 +67,32 @@ spec:
             set -eu
             cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
 
-            python client.py
+            python client.py |& tee -a /var/log/client.log
+
+      - name: annotator # push events to grafana
+        image: alpine/curl:latest
+        volumeMounts:
+          - name: varlog
+            mountPath: /var/log
+        command:
+          - /bin/sh   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
+            set -eux
+
+            export logfile=/var/log/client.log
+            export GRAFANA=http://${GRAFANA_SERVICE_HOST}:${GRAFANA_SERVICE_PORT}
+
+            # Wait a bit for the log file to become ready
+            sleep 10
+
+            echo "Tail tailing the log ${logfile} for events"
+
+            tail -f ${logfile} | grep  "ChannelConnectivity" | while read line ; do
+                echo -e "new event: $line"
+                annotation=\'{\"tags\":[\"app\"],\"text\":\"$line\"}\'
+
+                curl -s -H "Content-Type: application/json" -X POST -d ${annotation} ${GRAFANA}/api/annotations
+
+                echo -e "\n--"
+            done

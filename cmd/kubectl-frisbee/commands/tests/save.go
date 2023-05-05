@@ -67,6 +67,7 @@ func NewSaveTestsCmd() *cobra.Command {
 			if len(args) != 2 {
 				ui.Failf("Pass Test name and destination to store the data.")
 			}
+
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {

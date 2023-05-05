@@ -33,9 +33,6 @@ func NewValidateCmd() *cobra.Command {
 			ui.Logo()
 			ui.SetVerbose(env.Default.Debug)
 
-			// Load kubeconfig
-			env.Default.CheckKubePerms()
-
 			if !common.CRDsExist(common.Scenarios) {
 				ui.Failf("Frisbee is not installed on the kubernetes cluster.")
 			}
@@ -45,7 +42,7 @@ func NewValidateCmd() *cobra.Command {
 		},
 	}
 
-	cmd.AddCommand(tests.NewValidateCmd())
+	cmd.AddCommand(tests.NewValidateTestCmd())
 
 	return cmd
 }

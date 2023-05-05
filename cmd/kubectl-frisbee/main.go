@@ -18,7 +18,7 @@ package main
 
 import (
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands"
-	"github.com/carv-ics-forth/frisbee/pkg/ui"
+	"github.com/kubeshop/testkube/pkg/ui"
 )
 
 func main() {
