@@ -2,7 +2,7 @@
 apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
-  name: fedbed.client-with-dataset
+  name: fedbed.client-shared-dataset
 spec:
   inputs:
     parameters:

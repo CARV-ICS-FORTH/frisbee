@@ -171,8 +171,6 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	case v1alpha1.PhaseRunning:
 		// Nothing to do. Just wait for something to happen.
-		log.Info(".. Dequeue", cascade.Status.Reason, cascade.Status.Message)
-
 		return common.Stop(r, req)
 
 	case v1alpha1.PhaseSuccess:
@@ -232,7 +230,7 @@ func (r *Controller) PopulateView(ctx context.Context, req types.NamespacedName)
 
 	var chaosJobs v1alpha1.ChaosList
 	{
-		if err := common.ListChildren(ctx, r, &chaosJobs, req); err != nil {
+		if err := common.ListChildren(ctx, r.GetClient(), &chaosJobs, req); err != nil {
 			return errors.Wrapf(err, "cannot list children for '%s'", req)
 		}
 

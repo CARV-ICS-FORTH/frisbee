@@ -25,6 +25,7 @@ import (
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
 	"github.com/carv-ics-forth/frisbee/controllers/common/watchers"
+	scenarioutils "github.com/carv-ics-forth/frisbee/controllers/scenario/utils"
 	"github.com/carv-ics-forth/frisbee/pkg/configuration"
 	"github.com/carv-ics-forth/frisbee/pkg/expressions"
 	"github.com/carv-ics-forth/frisbee/pkg/lifecycle"
@@ -59,7 +60,7 @@ type Controller struct {
 
 	view *lifecycle.Classifier
 
-	alertingPort int
+	notificationEndpoint string
 }
 
 func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -212,15 +213,13 @@ func (r *Controller) Initialize(ctx context.Context, scenario *v1alpha1.Scenario
 	the webhook port and developer mode as parameters on the executable.
 	*/
 	startWebhookOnce.Do(func() {
-		err = r.CreateWebhookServer(ctx, r.alertingPort)
+		if err := r.CreateWebhookServer(ctx); err != nil {
+			panic(errors.Wrapf(err, "cannot create grafana webhook"))
+		}
 	})
 
-	if err != nil {
-		return errors.Wrapf(err, "cannot create grafana webhook")
-	}
-
 	// load the templates required by the scenario.
-	if errValidate := r.LoadTemplates(ctx, scenario); errValidate != nil {
+	if errValidate := scenarioutils.LoadTemplates(ctx, r.GetClient(), scenario); errValidate != nil {
 		return errors.Wrapf(errValidate, "template error")
 	}
 
@@ -250,7 +249,7 @@ func (r *Controller) PopulateView(ctx context.Context, req types.NamespacedName)
 
 	var serviceJobs v1alpha1.ServiceList
 	{
-		if err := common.ListChildren(ctx, r, &serviceJobs, req); err != nil {
+		if err := common.ListChildren(ctx, r.GetClient(), &serviceJobs, req); err != nil {
 			return errors.Wrapf(err, "cannot list child services for '%s'", req)
 		}
 
@@ -261,7 +260,7 @@ func (r *Controller) PopulateView(ctx context.Context, req types.NamespacedName)
 
 	var clusterJobs v1alpha1.ClusterList
 	{
-		if err := common.ListChildren(ctx, r, &clusterJobs, req); err != nil {
+		if err := common.ListChildren(ctx, r.GetClient(), &clusterJobs, req); err != nil {
 			return errors.Wrapf(err, "cannot list child clusters for '%s'", req)
 		}
 
@@ -272,7 +271,7 @@ func (r *Controller) PopulateView(ctx context.Context, req types.NamespacedName)
 
 	var chaosJobs v1alpha1.ChaosList
 	{
-		if err := common.ListChildren(ctx, r, &chaosJobs, req); err != nil {
+		if err := common.ListChildren(ctx, r.GetClient(), &chaosJobs, req); err != nil {
 			return errors.Wrapf(err, "cannot list child chaos for '%s'", req)
 		}
 
@@ -283,7 +282,7 @@ func (r *Controller) PopulateView(ctx context.Context, req types.NamespacedName)
 
 	var cascadeJobs v1alpha1.CascadeList
 	{
-		if err := common.ListChildren(ctx, r, &cascadeJobs, req); err != nil {
+		if err := common.ListChildren(ctx, r.GetClient(), &cascadeJobs, req); err != nil {
 			return errors.Wrapf(err, "cannot list child cascades for '%s'", req)
 		}
 
@@ -294,7 +293,7 @@ func (r *Controller) PopulateView(ctx context.Context, req types.NamespacedName)
 
 	var virtualJobs v1alpha1.VirtualObjectList
 	{
-		if err := common.ListChildren(ctx, r, &virtualJobs, req); err != nil {
+		if err := common.ListChildren(ctx, r.GetClient(), &virtualJobs, req); err != nil {
 			return errors.Wrapf(err, "cannot list child virtualobjects for '%s'", req)
 		}
 
@@ -305,7 +304,7 @@ func (r *Controller) PopulateView(ctx context.Context, req types.NamespacedName)
 
 	var callJobs v1alpha1.CallList
 	{
-		if err := common.ListChildren(ctx, r, &callJobs, req); err != nil {
+		if err := common.ListChildren(ctx, r.GetClient(), &callJobs, req); err != nil {
 			return errors.Wrapf(err, "cannot list child calls for '%s'", req)
 		}
 
@@ -391,7 +390,7 @@ func (r *Controller) RunActions(ctx context.Context, scenario *v1alpha1.Scenario
 	if scenario.Status.GrafanaEndpoint == "" {
 		r.Logger.Info("The Grafana endpoint is empty. Skip telemetry.", "scenario", scenario.GetName())
 	} else {
-		if err := r.connectToGrafana(ctx, scenario); err != nil {
+		if err := r.connectToGrafana(ctx, scenario, r.notificationEndpoint); err != nil {
 			return errors.Wrapf(err, "connect to grafana")
 		}
 	}
@@ -453,13 +452,12 @@ func (r *Controller) Finalize(obj client.Object) error {
 	deleted, etc.
 */
 
-func NewController(mgr ctrl.Manager, logger logr.Logger, alertingPort int) error {
+func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 	// instantiate the controller
 	controller := &Controller{
-		Manager:      mgr,
-		Logger:       logger.WithName("scenario"),
-		alertingPort: alertingPort,
-		view:         &lifecycle.Classifier{},
+		Manager: mgr,
+		Logger:  logger.WithName("scenario"),
+		view:    &lifecycle.Classifier{},
 	}
 
 	gvk := v1alpha1.GroupVersion.WithKind("Scenario")

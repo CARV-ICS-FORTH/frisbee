@@ -17,6 +17,7 @@ limitations under the License.
 package kubexec
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/armon/circbuf"
@@ -55,7 +56,7 @@ const (
 )
 
 // Exec runs an exec call on the container without a shell.
-func (e *Executor) Exec(pod types.NamespacedName, containerID string, command []string, blocking bool) (Result, error) {
+func (e *Executor) Exec(ctx context.Context, pod types.NamespacedName, containerID string, command []string, blocking bool) (Result, error) {
 	request := e.KubeClient.
 		CoreV1().
 		RESTClient().
@@ -84,7 +85,7 @@ func (e *Executor) Exec(pod types.NamespacedName, containerID string, command []
 	stdErrBuffer, _ := circbuf.NewBuffer(4096)
 
 	// Connect this process' std{in,out,err} to the remote shell process.
-	if err := exec.Stream(remotecommand.StreamOptions{Stdout: stdOutBuffer, Stderr: stdErrBuffer}); err != nil {
+	if err := exec.StreamWithContext(ctx, remotecommand.StreamOptions{Stdout: stdOutBuffer, Stderr: stdErrBuffer}); err != nil {
 		return Result{Stdout: stdOutBuffer.String(), Stderr: stdErrBuffer.String()}, err
 	}
 

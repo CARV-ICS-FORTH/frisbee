@@ -43,7 +43,8 @@ import (
 )
 
 var (
-	scheme   = runtime.NewScheme()
+	scheme = runtime.NewScheme()
+
 	setupLog = ctrl.Log.WithName("setup")
 )
 
@@ -57,11 +58,7 @@ func init() {
 func main() {
 	var (
 		// admission webhooks
-		certDir     string
-		webhookPort int
-
-		// grafana webhook
-		alertingPort int
+		certDir string
 
 		//	namespace            string
 		metricsAddr          string
@@ -73,10 +70,6 @@ func main() {
 	)
 
 	flag.StringVar(&certDir, "cert-dir", "/tmp/k8s-webhook-server/serving-certs/", "Points to the directory with webhook certificates.")
-
-	flag.IntVar(&webhookPort, "webhook-port", 9443, "Listening port for admission controller.")
-
-	flag.IntVar(&alertingPort, "alerting-port", 6666, "Listening port for Grafana alerts.")
 
 	// flag.StringVar(&namespace, "namespace", "default", "Restricts the manager's cache to watch objects in this namespace ")
 
@@ -107,7 +100,6 @@ func main() {
 		// DeleteNamespace:              namespace,
 		//	MetricsBindAddress: metricsAddr,
 		Host:                   "0.0.0.0",
-		Port:                   webhookPort,
 		CertDir:                certDir,
 		HealthProbeBindAddress: probeAddr,
 		//	LeaderElection:         enableLeaderElection,
@@ -156,7 +148,7 @@ func main() {
 			os.Exit(1)
 		}
 
-		if err := scenario.NewController(mgr, setupLog, alertingPort); err != nil {
+		if err := scenario.NewController(mgr, setupLog); err != nil {
 			utilruntime.HandleError(errors.Wrapf(err, "cannot create Scenario controller"))
 
 			os.Exit(1)

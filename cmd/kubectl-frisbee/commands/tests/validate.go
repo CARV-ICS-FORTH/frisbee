@@ -26,12 +26,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type TestValidateOptions struct{}
-
-func PopulateTestValidateFlags(cmd *cobra.Command, options *SubmitTestCmdOptions) {
-}
-
-func NewValidateCmd() *cobra.Command {
+func NewValidateTestCmd() *cobra.Command {
 	var options SubmitTestCmdOptions
 
 	cmd := &cobra.Command{

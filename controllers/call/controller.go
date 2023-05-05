@@ -252,7 +252,7 @@ func (r *Controller) PopulateView(ctx context.Context, req types.NamespacedName)
 
 	var streamJobs v1alpha1.VirtualObjectList
 	{
-		if err := common.ListChildren(ctx, r, &streamJobs, req); err != nil {
+		if err := common.ListChildren(ctx, r.GetClient(), &streamJobs, req); err != nil {
 			return errors.Wrapf(err, "cannot list children for '%s'", req)
 		}
 

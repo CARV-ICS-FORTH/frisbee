@@ -17,31 +17,9 @@ limitations under the License.
 package env
 
 import (
-	"os/user"
-	"path/filepath"
-
 	"github.com/carv-ics-forth/frisbee/pkg/ui"
 	"k8s.io/utils/exec"
 )
-
-// CheckKubePerms MUST NOT FAIL, as it is just a check for a common permissions' problem.
-// If for some reason the function hits a stopping condition, it may panic. But only if
-// we can be sure that it is panicking because Helm cannot proceed.
-func (env *EnvironmentSettings) CheckKubePerms() {
-	if env.Config.KubeConfig == nil || *env.Config.KubeConfig == "" {
-		currentUser, err := user.Current()
-		if err != nil {
-			// No idea where to find KubeConfig, so return silently. Many helm commands
-			// can proceed happily without a KUBECONFIG, so this is not a fatal error.
-			return
-		}
-
-		defaultPath := filepath.Join(currentUser.HomeDir, ".kube", "config")
-		env.Config.KubeConfig = &defaultPath
-	}
-
-	ui.Info("Using config:", *env.Config.KubeConfig)
-}
 
 func (env *EnvironmentSettings) LookupBinaries() {
 	// kubectl

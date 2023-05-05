@@ -67,12 +67,16 @@ func (url *URL) WithDashboard(dashboardUID string) *URL {
 	return url
 }
 
-func (url *URL) APIQuery() string {
+func (url *URL) DataSourceQuery() string {
 	return fmt.Sprintf("http://%s/api/ds/query", url.Endpoint)
 }
 
+func (url *URL) AnnotationsQuery() string {
+	return fmt.Sprintf("http://%s/api/annotations", url.Endpoint)
+}
+
 /*
-func (url *URL) APIQuery() string {
+func (url *URL) DataSourceQuery() string {
 	var final strings.Builder
 
 	final.WriteString("http://" + url.Endpoint + string(url.RelPath))

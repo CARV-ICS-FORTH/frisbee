@@ -26,16 +26,10 @@ import (
 	"github.com/gosimple/slug"
 	"github.com/imroc/req/v3"
 	"github.com/pkg/errors"
-	"k8s.io/apimachinery/pkg/util/json"
 )
 
-type DataQuery struct {
-	Datasource interface{} `json:"datasource"`
-	Expr       string      `json:"expr"`
-}
-
 type DataRequest struct {
-	Queries []DataQuery `json:"queries"`
+	Queries []interface{} `json:"queries"`
 
 	Range TimeRange `json:"range"`
 	From  string    `json:"from"`
@@ -48,13 +42,14 @@ func (c *Client) DownloadData(ctx context.Context, url *URL, destDir string) err
 		panic("empty client was given")
 	}
 
-	// select the dashboard.
+	/*---------------------------------------------------*
+	 * Select Dashboard and Timerange
+	 *---------------------------------------------------*/
 	board, _, err := c.Conn.GetDashboardByUID(ctx, *url.DashboardUID)
 	if err != nil {
 		return errors.Wrapf(err, "cannot retrieve dashboard %s", *url.DashboardUID)
 	}
 
-	// set the time-range we are interested in.
 	dataRange := TimeRange{
 		From: url.FromTS.UTC(),
 		To:   url.ToTS.UTC(),
@@ -64,26 +59,84 @@ func (c *Client) DownloadData(ctx context.Context, url *URL, destDir string) err
 		},
 	}
 
-	// iterate the panels of the dashboard.
-	for _, panel := range board.Panels {
-		var queries []DataQuery
+	/*---------------------------------------------------*
+	 * Download Annotations
+	 *---------------------------------------------------*/
+	annotationsFilepath := filepath.Join(destDir, "annotations.json")
 
-		// iterate the metrics of the panel.
+	if err := downloadAnnotations(c.logger, url, annotationsFilepath); err != nil {
+		return errors.Wrapf(err, "failed to download annotations")
+	}
+
+	/*---------------------------------------------------*
+	 * Download DataFrames
+	 *---------------------------------------------------*/
+	for _, panel := range board.Panels {
+		var queries []interface{}
+
+		// extract queries per panel type
 		switch {
+		case panel.GraphPanel != nil:
+			for _, target := range panel.GraphPanel.Targets {
+				queries = append(queries, target)
+			}
+		case panel.TablePanel != nil:
+			for _, target := range panel.TablePanel.Targets {
+				queries = append(queries, target)
+			}
+		case panel.SinglestatPanel != nil:
+			for _, target := range panel.SinglestatPanel.Targets {
+				queries = append(queries, target)
+			}
+		case panel.StatPanel != nil:
+			for _, target := range panel.StatPanel.Targets {
+				queries = append(queries, target)
+			}
+		case panel.BarGaugePanel != nil:
+			for _, target := range panel.BarGaugePanel.Targets {
+				queries = append(queries, target)
+			}
+		case panel.HeatmapPanel != nil:
+			for _, target := range panel.HeatmapPanel.Targets {
+				queries = append(queries, target)
+			}
 		case panel.TimeseriesPanel != nil:
 			for _, target := range panel.TimeseriesPanel.Targets {
-				queries = append(queries, DataQuery{
-					Datasource: target.Datasource,
-					Expr:       target.Expr,
-				})
+				queries = append(queries, target)
 			}
+		case panel.CustomPanel != nil:
+			c.logger.Info("CustomPanel is not supported. Skip it", "panelTitle", panel.Title)
+
+			continue
+		case panel.TextPanel != nil:
+			c.logger.Info("TextPanel is not supported. Skip it", "panelTitle", panel.Title)
+
+			continue
+		case panel.DashlistPanel != nil:
+			c.logger.Info("DashlistPanel is not supported. Skip it", "panelTitle", panel.Title)
+
+			continue
+		case panel.PluginlistPanel != nil:
+			c.logger.Info("PluginlistPanel is not supported. Skip it", "panelTitle", panel.Title)
+
+			continue
+		case panel.RowPanel != nil:
+			c.logger.Info("RowPanel is not supported. Skip it", "panelTitle", panel.Title)
+
+			continue
+		case panel.AlertlistPanel != nil:
+			c.logger.Info("AlertlistPanel is not supported. Skip it", "panelTitle", panel.Title)
+
+			continue
 		default:
-			c.logger.V(5).Info("Skip panel. Data can be extracted only from Timeseries",
+			c.logger.V(5).Info("Unhandled panel type. skip it",
 				"panelTitle", panel.Title,
 			)
+
+			continue
 		}
 
-		// submit the query
+		// submit queries
 		if len(queries) > 0 {
 			dataReq := &DataRequest{
 				Queries: queries,
@@ -92,9 +145,9 @@ func (c *Client) DownloadData(ctx context.Context, url *URL, destDir string) err
 				To:      fmt.Sprint(url.ToTS.UnixMilli()),
 			}
 
-			file := filepath.Join(destDir, slug.Make(panel.Title)+".json")
+			dataFilepath := filepath.Join(destDir, slug.Make(panel.Title)+".json")
 
-			if err := downloadData(c.logger, url, dataReq, file); err != nil {
+			if err := downloadDataFrame(c.logger, url, dataReq, dataFilepath); err != nil {
 				return errors.Wrapf(err, "unable to download csv data")
 			}
 		}
@@ -103,20 +156,48 @@ func (c *Client) DownloadData(ctx context.Context, url *URL, destDir string) err
 	return nil
 }
 
-func downloadData(logger logr.Logger, url *URL, reqBody *DataRequest, dstFile string) error {
-	reqBodyJSON, err := json.Marshal(reqBody)
+func downloadAnnotations(logger logr.Logger, url *URL, dstFile string) error {
+	/*---------------------------------------------------*
+	 * Fetch annotations from Grafana in JSON
+	 *---------------------------------------------------*/
+	client := req.NewClient()
+
+	resp, err := client.R().Get(url.AnnotationsQuery())
 	if err != nil {
-		return errors.Wrapf(err, "failed to create request")
+		return errors.Wrapf(err, "GET has failed")
 	}
 
+	if !resp.IsSuccessState() {
+		return errors.Errorf("bad response status: %s", resp.Status)
+	}
+
+	/*---------------------------------------------------*
+	 * Store annotations to file
+	 *---------------------------------------------------*/
+	if err := os.WriteFile(dstFile, resp.Bytes(), 0o600); err != nil {
+		return errors.Wrapf(err, "failed to write annotations to '%s'", dstFile)
+	}
+
+	logger.Info("Annotations saved.", "file", dstFile)
+
+	return nil
+}
+
+// downloadPanelData downloads the raw models passed to the panel visualization.
+func downloadPanelData(logger logr.Logger, url *URL, reqBody *DataRequest, dstFile string) error {
+	return nil
+}
+
+// downloadDataFrame downloads raw data without transformations and field config applied.
+func downloadDataFrame(logger logr.Logger, url *URL, reqBody *DataRequest, dstFile string) error {
 	/*---------------------------------------------------*
 	 * Fetch data from Grafana in JSON format
 	 *---------------------------------------------------*/
 	client := req.NewClient()
 
 	resp, err := client.R().
-		SetBodyJsonBytes(reqBodyJSON).
-		Post(url.APIQuery())
+		SetBodyJsonMarshal(reqBody).
+		Post(url.DataSourceQuery())
 	if err != nil {
 		return errors.Wrapf(err, "POST has failed")
 	}

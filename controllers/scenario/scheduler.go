@@ -33,11 +33,11 @@ import (
 // However, if there are no actions, the workflow will call the reconciliation cycle, and we will miss the
 // next timeout. To handle this scenario, we have to requeue the request with the given duration.
 // In this case, the given duration is the nearest expected timeout.
-func (r *Controller) NextJobs(cr *v1alpha1.Scenario) (runNext []v1alpha1.Action, nextCycle time.Time, err error) {
+func (r *Controller) NextJobs(scenario *v1alpha1.Scenario) (runNext []v1alpha1.Action, nextCycle time.Time, err error) {
 	timeOK := func(deps *v1alpha1.WaitSpec) bool {
 		if dur := deps.After; dur != nil {
 			cur := metav1.Now()
-			deadline := cr.GetCreationTimestamp().Add(dur.Duration)
+			deadline := scenario.GetCreationTimestamp().Add(dur.Duration)
 
 			// the deadline has expired.
 			if deadline.Before(cur.Time) {
@@ -58,8 +58,8 @@ func (r *Controller) NextJobs(cr *v1alpha1.Scenario) (runNext []v1alpha1.Action,
 	}
 
 	// check what actions are eligible for execution in this cycle.
-	all := cr.Spec.Actions
-	scheduled := cr.Status.ScheduledJobs
+	all := scenario.Spec.Actions
+	scheduled := scenario.Status.ScheduledJobs
 
 	for _, action := range all {
 		// ignore scheduled jobs

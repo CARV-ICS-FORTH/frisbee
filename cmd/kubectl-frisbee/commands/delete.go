@@ -33,9 +33,6 @@ func NewDeleteCmd() *cobra.Command {
 			ui.Logo()
 			ui.SetVerbose(env.Default.Debug)
 
-			// Load kubeconfig
-			env.Default.CheckKubePerms()
-
 			if !common.CRDsExist(common.Scenarios) {
 				ui.Failf("Frisbee is not installed on the kubernetes cluster.")
 			}

@@ -32,9 +32,6 @@ func NewInstallCmd() *cobra.Command {
 			ui.Logo()
 			ui.SetVerbose(env.Default.Debug)
 
-			// Load kubeconfig
-			env.Default.CheckKubePerms()
-
 			ui.Warn("If it takes long time, make sure you have used the proper values file.")
 		},
 		Run: func(cmd *cobra.Command, args []string) {

@@ -1,233 +1,97 @@
-# Contributing to Frisbee
-
-<!-- toc -->
-
-- [What can you do](#what-can-you-do)
-- [Contributing](#contributing)
-- [Preparation](#preparation)
-- [Workflow](#workflow)
-- [Compile](#compile)
-- [Code Style](#code-style)
-- [Commit Rules](#commit-rules)
-- [Commit Message](#commit-message)
-- [Commit Content](#commit-content)
-- [Pull Request](#pull-request)
-- [Code Review](#code-review)
-- [Others](#others)
-- [Code of Conduct](#code-of-conduct)
-- [Sign your work](#sign-your-work)
-
-<!-- /toc -->
-
-
-Welcome to Frisbee world, here is a list of contributing guide for you. If you find something incorrect or missing
-content in the page, please submit an issue or PR to fix it.
-
-## What can you do
-
-Every action to make the project better is encouraged. On GitHub, every improvement for the project could be via a PR
-(short for pull request).
-
-* If you find a typo, try to fix it!
-* If you find a bug, try to fix it!
-* If you find some redundant codes, try to remove them!
-* If you find some test cases missing, try to add them!
-* If you could enhance a feature, please **DO NOT** hesitate!
-* If you find code implicit, try to add comments to make it clear!
-* If you find code ugly, try to refactor that!
-* If you can help to improve documents, it could not be better!
-* If you find document incorrect, just do it and fix that!
-* ...
-
-Actually, it is impossible to list them completely. Just remember one principle:
-
-**WE ARE LOOKING FORWARD TO ANY PR FROM YOU.**
-
-## Contributing
-
-### Preparation
-
-Before you contribute, you need to register a GitHub ID. Prepare the following environment:
-
-* go
-* git
-
-### Workflow
-
-We use the `master` branch as the development branch, which indicates that this is an unstable branch.
-
-Here is the workflow for contributors:
-
-1. Fork to your own
-2. Clone fork to the local repository
-3. Create a new branch and work on it
-4. Keep your branch in sync
-5. Commit your changes (make sure your commit message concise)
-6. Push your commits to your forked repository
-7. Create a pull request
-
-Please
-follow [Creating a pull request](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request)
-. Please make sure the PR has a corresponding issue.
-
-After creating a PR, one or more reviewers will be assigned to the pull request. The reviewers will review the code.
-
-Before merging a PR, squash any fix review feedback, typo, merged, and rebased sorts of commits. The final commit
-message should be clear and concise.
-
-### Compile
-
-Go to the project root directory which you cloned and execute compile:
-
-```bash
-make
-```
-
-If you compile the Linux package on the Mac operating system, you can do:
-
-```bash
-make build_linux
-```
-
-If you compile the Frisbee image, you can do:
-
-```bash
-make build_image
-```
-
-clean compilation:
-
-```bash
-make clean
-```
-
-### Code Style
-
-See details of [CODE STYLE](code_styles.md)
-
-### Commit Rules
-
-#### Commit Message
-
-Commit message could help reviewers better understand what is the purpose of submitted PR. It could help accelerate the
-code review procedure as well. We encourage contributors to use **EXPLICIT** commit message rather than an ambiguous
-message. In general, we advocate the following commit message type:
-
-* feat: A new feature
-* fix: A bug fix
-* docs: Documentation only changes
-* style: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc.)
-* refactor: A code change that neither fixes a bug nor adds a feature
-* perf: A code change that improves performance
-* test: Adding missing or correcting existing tests
-* chore: Changes to the build process or auxiliary tools and libraries such as documentation generation
-
-On the other side, we discourage contributors from committing message like the following ways:
-
-* ~~fix bug~~
-* ~~update~~
-* ~~add doc~~
-
-If you get lost, please see [How to Write a Git Commit Message](http://chris.beams.io/posts/git-commit/) for a start.
-
-#### Commit Content
-
-Commit content represents all content changes included in one commit. We had better include things in one single commit
-which could support the reviewer's complete review without any other commits' help. In other word, contents in one
-single commit can pass the CI to avoid code mess. In brief, there are two minor rules for us to keep in mind:
-
-* avoid very large change in a commit;
-* complete and reviewable for each commit.
-
-No matter commit message or commit content, we do take more emphasis on code review.
-
-### Pull Request
-
-We use [GitHub Issues](https://github.com/CARV-ICS-FORTH/frisbee/issues)
-and [Pull Requests](https://github.com/CARV-ICS-FORTH/frisbee/pulls) for trackers.
-
-If you find a typo in document, find a bug in code, or want new features, or want to give suggestions, you
-can [open an issue on GitHub](https://github.com/CARV-ICS-FORTH/frisbee/issues/new) to report it. Please follow the
-guideline message in the issue template.
-
-If you want to contribute, please follow the [contribution workflow](#Workflow) and create a new pull request. If your
-PR contains large changes, e.g. component refactor or new components, please write detailed documents about its design
-and usage.
-
-Note that a single PR should not be too large. If heavy changes are required, it's better to separate the changes to a
-few individual PRs.
-
-### Code Review
-
-All code should be well reviewed by one or more committers. Some principles:
-
-- Readability: Important code should be well-documented. Comply with our code style.
-- Elegance: New functions, classes or components should be well-designed.
-- Testability: Important code should be well-tested (high unit test coverage).
-
-## Others
-
-### Code of Conduct
-
-*"In the interest of fostering an open and welcoming environment, we as contributors and maintainers pledge to make
-participation in our project and our community a harassment-free experience for everyone, regardless of age, body size,
-disability, ethnicity, sex characteristics, gender identity and expression, level of experience, education,
-socio-economic status, nationality, personal appearance, race, religion, or sexual identity and orientation..."*
-
-See details
-of [CONTRIBUTOR COVENANT CODE OF CONDUCT](https://github.com/CARV-ICS-FORTH/frisbee/blob/master/docs/CODE_OF_CONDUCT.md)
-
-### Sign your work
-
-The sign-off is a simple line at the end of the explanation for the patch, which certifies that you wrote it or
-otherwise have the right to pass it on as an open-source patch. The rules are pretty simple: if you can certify the
-below (from [developercertificate.org](http://developercertificate.org/)):
-
-```
-Developer Certificate of Origin
-Version 1.1
-
-Copyright (C) 2004, 2006 The Linux Foundation and its contributors.
-660 York Street, Suite 102,
-San Francisco, CA 94110 USA
-
-Everyone is permitted to copy and distribute verbatim copies of this
-license document, but changing it is not allowed.
-
-Developer's Certificate of Origin 1.1
-
-By making a contribution to this project, I certify that:
-
-(a) The contribution was created in whole or in part by me and I
-have the right to submit it under the open source license
-indicated in the file; or
-
-(b) The contribution is based upon previous work that, to the best
-of my knowledge, is covered under an appropriate open source
-license and I have the right under that license to submit that
-work with modifications, whether created in whole or in part
-by me, under the same open source license (unless I am
-permitted to submit under a different license), as indicated
-in the file; or
-
-(c) The contribution was provided directly to me by some other
-person who certified (a), (b) or (c) and I have not modified
-it.
-
-(d) I understand and agree that this project and the contribution
-are public and that a record of the contribution (including all
-personal information I submit with it, including my sign-off) is
-maintained indefinitely and may be redistributed consistent with
-this project or the open source license(s) involved.
-```
-
-Then you just add a line to every git commit message:
-
-```
-Signed-off-by: Joe Smith
-<joe.smith@email.com>
-```
-
-Use your real name (sorry, no pseudonyms or anonymous contributions.)
-
-If you set your `user.name` and `user.email` git configs, you can sign your commit automatically with `git commit -s`.
+# Contributing
+
+## Contributor's Agreement
+
+You are under no obligation whatsoever to provide any bug fixes, patches, or
+upgrades to the features, functionality or performance of the source code
+("Enhancements") to anyone; however, if you choose to make your Enhancements
+available either publicly, or directly to the project, without imposing a
+separate written license agreement for such Enhancements, then you hereby grant
+the following license: a non-exclusive, royalty-free perpetual license to
+install, use, modify, prepare derivative works, incorporate into other computer
+software, distribute, and sublicense such enhancements or derivative works
+thereof, in binary and source code form.
+
+## Getting Started
+
+When contributing to Frisbee, it is important to properly communicate the
+gist of the contribution. If it is a simple code or editorial fix, simply
+explaining this within the GitHub Pull Request (PR) will suffice. But if this is
+a larger fix or Enhancement, you are advised to first discuss the change with
+the project leader or developers.
+
+
+## Pull Requests (PRs)
+
+1. Essential bug fix PRs should be sent to both main and release branches.
+1. Small bug fix and feature enhancement PRs should be sent to main only.
+1. Follow the existing code style precedent, especially for C. For Go, you
+will mostly conform to the style and form enforced by the "go fmt" and
+"golint" tools for proper formatting.
+1. For any new functionality, please write appropriate go tests that will run as
+part of the Continuous Integration (Circle CI) system.
+1. Make sure that the project's default copyright and header have been included
+in any new source files.
+1. Make sure your code passes linting, by running `make check` before submitting
+the PR. We use `golangci-lint` as our linter. You may need to address linting
+errors by:
+- Running `gofumpt .` to format all `.go` files. To do this in place you can
+do `gofumpt -w .`. We use [gofumpt](https://github.com/mvdan/gofumpt)
+instead of `gofmt` as it adds additional formatting rules which are helpful
+for clarity.
+- Leaving a function comment on **every** new exported function and package
+that your PR has introduced. To learn about how to properly comment Go
+code, read
+[this post on golang.org](https://golang.org/doc/effective_go.html#commentary)
+1. Make sure you have locally tested using `make -C builddir test` and that all
+tests succeed before submitting the PR.
+1. If you accidentally changed code in a submodule, you can undo it like
+`git submodule foreach --recursive git reset --hard` before committing.
+1. If possible, run `make -C builddir testall` locally, after setting the
+environment variables `E2E_DOCKER_USERNAME` and `E2E_DOCKER_PASSWORD`
+appropriately for an authorized Docker Hub account. This is required as
+Frisbee's end-to-end tests perform many tests that build from or
+execute docker images. Our CI is authorized to run these tests if you cannot.
+1. Ask yourself is the code human understandable? This can be accomplished via a
+clear code style as well as documentation and/or comments.
+1. The pull request will be reviewed by others, and finally merged when all
+requirements are met.
+1. The `CHANGELOG.md` must be updated for any of the following changes:
+- Renamed commands
+- Deprecated / removed commands
+- Changed defaults / behaviors
+- Backwards incompatible changes
+- New features / functionalities
+1. PRs which introduce a new Go dependency to the project via `go get` and
+additions to `go.mod` should explain why the dependency is required.
+1. Any new or updated dependency should be reflected in
+`LICENSE_DEPENDENCIES.md`, by running
+`scripts/update-license-dependencies.sh`
+
+## Documentation
+
+There are a few places where documentation for the Frisbee project lives.
+The [changelog](CHANGELOG.md) is where PRs should include documentation if
+necessary. When a new release is tagged, the
+[user-docs](https://frisbee.dev/docs/users-guide/) and
+[admin-docs](https://frisbee.dev/docs/operators-manual) will be updated
+using the contents of the `CHANGELOG.md` file as reference.
+
+1. The [changelog](CHANGELOG.md) is a place to document **functional**
+differences between versions of SingularityCE. PRs which require
+documentation must update this file. This should be a document which can be
+used to explain what the new features of each version of SingularityCE are,
+and should **not** read like a commit log. Once a release is tagged (*e.g.
+v3.0.0*), a new top level section will be made titled **Changes Since
+vX.Y.Z** (*e.g. Changes Since v3.0.0*) where new changes will now be
+documented, leaving the previous section immutable.
+1. The [README](README.md) is a place to document critical information for new
+users of Frisbee. It should typically not change, but in the case where
+a change is necessary a PR may update it.
+1. The [user-docs](https://github.com/fnikolai/frisbee-www/tree/main/content/en/docs/users-guide) should
+document anything pertinent to the usage of Frisbee.
+1. The [admin-docs](https://github.com/fnikolai/frisbee-www/tree/main/content/en/docs/operators-manual)
+document anything that is pertinent to a system administrator who manages a
+system with Frisbee installed.
+1. If necessary, changes to the message displayed when running
+`singularity help *` can be made by editing `docs/content.go`.

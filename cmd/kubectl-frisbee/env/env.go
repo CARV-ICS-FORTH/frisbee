@@ -28,9 +28,11 @@ import (
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
+
+	// "k8s.io/cli-runtime/pkg/genericclioptions"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -65,8 +67,7 @@ type EnvironmentSettings struct {
 	// Paths to external commands
 	Path
 
-	// namespace string
-	Config *genericclioptions.ConfigFlags
+	KubeConfig *rest.Config
 
 	// MaxHistory is the max tests history maintained.
 	MaxHistory int
@@ -89,14 +90,8 @@ type EnvironmentSettings struct {
 
 func New() *EnvironmentSettings {
 	env := &EnvironmentSettings{
-		Path: Path{}, // will be set by LookupBinaries
-		Config: &genericclioptions.ConfigFlags{
-			KubeConfig: envOrPtr("KUBECONFIG", ""),
-			WrapConfigFn: func(config *rest.Config) *rest.Config {
-				// config.Burst = env.BurstLimit
-				return config
-			},
-		},
+		Path:       Path{}, // will be set by LookupBinaries
+		KubeConfig: config.GetConfigOrDie(),
 		// Operation
 		MaxHistory: envIntOr("FRISBEE_MAX_HISTORY", defaultMaxHistory),
 		Debug:      envBoolOr("FRISBEE_DEBUG", false),
@@ -119,7 +114,7 @@ func (env *EnvironmentSettings) AddFlags(cmd *cobra.Command) {
 	pfs := cmd.PersistentFlags()
 
 	// inherit the config flags
-	env.Config.AddFlags(pfs)
+	// env.Config.AddFlags(pfs)
 
 	// and add new ones
 	pfs.BoolVarP(&env.Debug, "debug", "d", env.Debug, "enable verbose output")
@@ -189,23 +184,14 @@ func (env *EnvSettings) SetNamespace(namespace string) {
 
 */
 
-// RESTClientGetter gets the kubeconfig from EnvSettings.
-func (env *EnvironmentSettings) RESTClientGetter() genericclioptions.RESTClientGetter {
-	return env.Config
-}
-
 // GetFrisbeeClient returns api client
 func (env *EnvironmentSettings) GetFrisbeeClient() *frisbeeclient.APIClient {
 	if env.client != nil {
 		return env.client
 	}
 
-	// extract rest configuration
-	restConfig, err := env.RESTClientGetter().ToRESTConfig()
-	ui.ExitOnError("Extract client config", err)
-
 	// create generic client
-	genericClient, err := client.New(restConfig, client.Options{Scheme: scheme})
+	genericClient, err := client.New(env.KubeConfig, client.Options{Scheme: scheme})
 	ui.ExitOnError("Setting up generic client", err)
 
 	c := frisbeeclient.NewDirectAPIClient(genericClient)

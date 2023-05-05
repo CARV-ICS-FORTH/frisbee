@@ -7,6 +7,8 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 var GoEnviron []string // "MY_VAR=some_value"
@@ -48,6 +50,7 @@ func LoggedExecuteInDir(dir string, writer io.Writer, command string, arguments 
 	if dir != "" {
 		cmd.Dir = dir
 	}
+
 	buffer := new(bytes.Buffer)
 
 	// set multiwriter write to writer and to buffer in parallel
@@ -88,16 +91,18 @@ func ExecuteAsyncInDir(dir string, command string, arguments ...string) (cmd *ex
 // ExecuteString executes string based command.
 func ExecuteString(command string) (out []byte, err error) {
 	parts := strings.Split(command, " ")
-	if len(parts) == 1 {
+
+	switch {
+	case len(parts) == 1:
 		out, err = Execute(parts[0])
-	} else if len(parts) > 1 {
+	case len(parts) > 1:
 		out, err = Execute(parts[0], parts[1:]...)
-	} else {
-		return out, fmt.Errorf("invalid command to run '%s'", command)
+	default:
+		return out, errors.Errorf("invalid command to run '%s'", command)
 	}
 
 	if err != nil {
-		return out, fmt.Errorf("error: %w, output: %s", err, out)
+		return out, errors.Wrapf(err, "output: %s", out)
 	}
 
 	return out, nil

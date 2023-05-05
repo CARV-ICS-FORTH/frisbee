@@ -30,8 +30,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const DefaultTickDelay = 5 * time.Second
-
 type Parameters struct {
 	// ScheduleSpec is the scheduling options
 	ScheduleSpec *v1alpha1.TaskSchedulerSpec

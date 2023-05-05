@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package callutils
+package utils
 
 import (
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"

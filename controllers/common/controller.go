@@ -37,14 +37,14 @@ import (
 )
 
 func Stop(r Reconciler, req ctrl.Request) (ctrl.Result, error) {
-	r.Info("Dequeue", "request", req)
+	r.Info("** Dequeue", "request", req)
 
 	return ctrl.Result{Requeue: false, RequeueAfter: 0}, nil
 }
 
 // RequeueAfter will place the request in a queue, but it will be dequeue after the specified period.
 func RequeueAfter(r Reconciler, req ctrl.Request, delay time.Duration) (ctrl.Result, error) {
-	r.Info("Requeue", "request", req, "delay", delay)
+	r.Info("** Requeue", "request", req, "delay", delay)
 
 	return ctrl.Result{Requeue: true, RequeueAfter: delay}, nil
 }
@@ -52,7 +52,7 @@ func RequeueAfter(r Reconciler, req ctrl.Request, delay time.Duration) (ctrl.Res
 // RequeueWithError will place the request in a queue, and will be immediately dequeued.
 // State dequeuing the request, the controller will report the error.
 func RequeueWithError(r Reconciler, req ctrl.Request, err error) (ctrl.Result, error) {
-	r.Info("Requeue", "request", req, "error", err)
+	r.Info("** Requeue", "request", req, "error", err)
 
 	return ctrl.Result{Requeue: true, RequeueAfter: 0}, err
 }
@@ -265,13 +265,13 @@ func Create(ctx context.Context, reconciler Reconciler, parent, child client.Obj
 	}
 }
 
-func ListChildren(ctx context.Context, reconciler Reconciler, childJobs client.ObjectList, req types.NamespacedName) error {
+func ListChildren(ctx context.Context, cli client.Client, childJobs client.ObjectList, req types.NamespacedName) error {
 	filters := []client.ListOption{
 		client.InNamespace(req.Namespace),
 		client.MatchingLabels{v1alpha1.LabelCreatedBy: req.Name},
 	}
 
-	if err := reconciler.GetClient().List(ctx, childJobs, filters...); err != nil {
+	if err := cli.List(ctx, childJobs, filters...); err != nil {
 		return errors.Wrapf(err, "cannot list children")
 	}
 

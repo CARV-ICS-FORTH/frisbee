@@ -98,7 +98,7 @@ func (w *simpleWatch) watchUpdate(reconciler common.Reconciler, gvk schema.Group
 		// push an annotation that the Frisbee object has failed.
 		// the comparison with prev ensures that annotation will be just passed once.
 		// we are interested only in SUT components
-		if v1alpha1.IsSUTComponent(event.ObjectNew) {
+		if grafana.HasClientFor(event.ObjectNew) {
 			if !prev.Phase.Is(v1alpha1.PhaseFailed) && latest.Phase.Is(v1alpha1.PhaseFailed) {
 				annotation := &grafana.PointAnnotation{}
 				annotation.Add(event.ObjectNew, grafana.TagFailed)

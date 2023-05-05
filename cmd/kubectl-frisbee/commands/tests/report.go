@@ -19,6 +19,7 @@ package tests
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -151,17 +152,13 @@ func NewReportTestCmd() *cobra.Command {
 			 * Perform Reporting Activities
 			 *---------------------------------------------------*/
 			for _, dashboardUID := range options.Dashboards {
-				/*---------------------------------------------------*
-				 * Ensure dashboard directory exists
-				 *---------------------------------------------------*/
+				// ensure dashboard directory exists
 				dashboardDir := filepath.Join(dstDir, dashboardUID)
 
 				err := os.MkdirAll(dashboardDir, os.ModePerm)
 				ui.ExitOnError("Destination error: ", err)
 
-				/*---------------------------------------------------*
-				 * Store data
-				 *---------------------------------------------------*/
+				// store data
 				if options.Data {
 					grafanaEndpoint := grafana.NewURL(scenario.Status.GrafanaEndpoint).
 						WithDashboard(dashboardUID).
@@ -192,7 +189,9 @@ func NewReportTestCmd() *cobra.Command {
 
 					uri := grafana.BuildURL(scenario.Status.GrafanaEndpoint, dashboardUID, fromTS, toTS, "")
 
-					err = SavePDF(uri, dashboardDir)
+					aggregatedFile := filepath.Join(dashboardDir, "__aggregated__.pdf")
+
+					err = SavePDF(uri, aggregatedFile)
 					ui.ExitOnError("Saving Aggregated PDF to: "+dashboardDir+" for "+dashboardUID, err)
 				}
 			}
@@ -205,24 +204,20 @@ func NewReportTestCmd() *cobra.Command {
 }
 
 // SavePDF extracts the pdf from Grafana and stores it to the destination.
-func SavePDF(dashboardURI string, destDir string) error {
-	/*
-		Validate the URI. This is because if the URI is wrong, the
-		nodejs will block forever.
-	*/
+func SavePDF(dashboardURI string, dstFile string) error {
+	// 	Validate the URI. This is because if the URI is wrong, the
+	// nodejs will block forever.
 	if _, err := url.ParseRequestURI(dashboardURI); err != nil {
 		return err
 	}
 
-	aggregatedFile := filepath.Join(destDir, "__aggregated__.pdf")
-
-	ui.Info("Saving report to", aggregatedFile)
+	ui.Info("Saving report to", dstFile)
 
 	command := []string{
 		string(DefaultPDFExport),
 		dashboardURI,
 		User,
-		aggregatedFile,
+		dstFile,
 	}
 
 	_, err := process.LoggedExecuteInDir("", os.Stdout, env.Default.NodeJS(), command...)
@@ -262,7 +257,7 @@ func SaveData(ctx context.Context, grafanaClient *grafana.Client, url *grafana.U
 	 * Download CSV data from each panel
 	 *---------------------------------------------------*/
 	if err := grafanaClient.DownloadData(ctx, url, destDir); err != nil {
-		return errors.Wrapf(err, "failed to get Grafana data")
+		return errors.Wrapf(err, "failed to download data from Grafana")
 	}
 
 	return nil
@@ -336,8 +331,13 @@ func InstallPDFExporter(location string) {
 	FastPDFExporter = PDFExporter(filepath.Join(location, "hack/pdf-exporter/fast-generator.js"))
 	LongPDFExporter = PDFExporter(filepath.Join(location, "hack/pdf-exporter/long-dashboards.js"))
 
-	os.Setenv("PATH", os.Getenv("PATH")+":"+location)
-	os.Setenv("NODE_PATH", os.Getenv("NODE_PATH")+":"+location)
+	if err := os.Setenv("PATH", os.Getenv("PATH")+":"+location); err != nil {
+		log.Fatal(err)
+	}
+
+	if err := os.Setenv("NODE_PATH", os.Getenv("NODE_PATH")+":"+location); err != nil {
+		log.Fatal(err)
+	}
 
 	ui.Success("PDFExporter is installed at ", location)
 }

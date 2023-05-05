@@ -1,3 +1,4 @@
+{{- if .Values.chaos.enabled }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -6,7 +7,7 @@ metadata:
 spec:
   ingressClassName: {{.Values.global.ingressClass}}
   rules:
-    {{- if .Values.chaos.enabled }}
+
     - host: chaos-frisbee.{{.Values.global.domainName}}
       http:
         paths:
@@ -17,7 +18,7 @@ spec:
                 name: chaos-dashboard
                 port:
                   number: 2333
-    {{- end}}
+{{- end}}
 ---
 # https://stackoverflow.com/questions/54506269/simple-ingress-from-host-with-microk8s
 # https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/annotations/

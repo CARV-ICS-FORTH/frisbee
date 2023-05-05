@@ -28,4 +28,11 @@ For this purpose, we use multiple clients and split the dataset to clients accor
 
 ```shell
 kubectl frisbee submit test fedbed- examples/federated_learning/4.dataset-distribution.yml  ./charts/system/ charts/federated-learning/fedbed
-```
+
+
+# Parallel Workflows
+This experiment is designed for the evaluation of parallel workflows on same clients.
+For this purpose, we run two workflows with controllable interference
+
+```shell
+kubectl frisbee submit test fedbed- examples/federated_learning/6.parallel-workflows.yml  ./charts/system/ charts/federated-learning/fedbed
