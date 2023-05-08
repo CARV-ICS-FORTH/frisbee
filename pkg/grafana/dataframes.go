@@ -28,12 +28,16 @@ import (
 	"github.com/pkg/errors"
 )
 
-type DataRequest struct {
-	Queries []interface{} `json:"queries"`
+func evaluateDashboardVariable(expr *string) {
+	// https://prometheus.io/docs/prometheus/latest/querying/basics/#instant-vector-selectors
+	*expr = os.Expand(*expr, func(s string) string {
+		val, exists := DefaultVariableEvaluation[s]
+		if exists {
+			return val
+		}
 
-	Range TimeRange `json:"range"`
-	From  string    `json:"from"`
-	To    string    `json:"to"`
+		return "$" + s
+	})
 }
 
 // DownloadData returns data for the given panel.
@@ -82,26 +86,38 @@ func (c *Client) DownloadData(ctx context.Context, url *URL, destDir string) err
 			}
 		case panel.TablePanel != nil:
 			for _, target := range panel.TablePanel.Targets {
+				evaluateDashboardVariable(&target.Expr)
+
 				queries = append(queries, target)
 			}
 		case panel.SinglestatPanel != nil:
 			for _, target := range panel.SinglestatPanel.Targets {
+				evaluateDashboardVariable(&target.Expr)
+
 				queries = append(queries, target)
 			}
 		case panel.StatPanel != nil:
 			for _, target := range panel.StatPanel.Targets {
+				evaluateDashboardVariable(&target.Expr)
+
 				queries = append(queries, target)
 			}
 		case panel.BarGaugePanel != nil:
 			for _, target := range panel.BarGaugePanel.Targets {
+				evaluateDashboardVariable(&target.Expr)
+
 				queries = append(queries, target)
 			}
 		case panel.HeatmapPanel != nil:
 			for _, target := range panel.HeatmapPanel.Targets {
+				evaluateDashboardVariable(&target.Expr)
+
 				queries = append(queries, target)
 			}
 		case panel.TimeseriesPanel != nil:
 			for _, target := range panel.TimeseriesPanel.Targets {
+				evaluateDashboardVariable(&target.Expr)
+
 				queries = append(queries, target)
 			}
 		case panel.CustomPanel != nil:
@@ -205,6 +221,8 @@ func downloadDataFrame(logger logr.Logger, url *URL, reqBody *DataRequest, dstFi
 	if !resp.IsSuccessState() {
 		return errors.Errorf("bad response status: %s", resp.Status)
 	}
+
+	//	panic("Aa")
 
 	/*---------------------------------------------------*
 	 * Store JSON to file

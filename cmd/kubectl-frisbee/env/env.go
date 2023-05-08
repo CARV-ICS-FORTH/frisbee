@@ -23,7 +23,7 @@ import (
 
 	frisbeev1alpha1 "github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	frisbeeclient "github.com/carv-ics-forth/frisbee/pkg/client"
-	"github.com/carv-ics-forth/frisbee/pkg/ui"
+	"github.com/kubeshop/testkube/pkg/ui"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -67,7 +67,8 @@ type EnvironmentSettings struct {
 	// Paths to external commands
 	Path
 
-	KubeConfig *rest.Config
+	KubeConfig     *rest.Config
+	KubeConfigPath string
 
 	// MaxHistory is the max tests history maintained.
 	MaxHistory int
@@ -90,8 +91,9 @@ type EnvironmentSettings struct {
 
 func New() *EnvironmentSettings {
 	env := &EnvironmentSettings{
-		Path:       Path{}, // will be set by LookupBinaries
-		KubeConfig: config.GetConfigOrDie(),
+		Path:           Path{}, // will be set by LookupBinaries
+		KubeConfig:     config.GetConfigOrDie(),
+		KubeConfigPath: os.Getenv("KUBECONFIG"),
 		// Operation
 		MaxHistory: envIntOr("FRISBEE_MAX_HISTORY", defaultMaxHistory),
 		Debug:      envBoolOr("FRISBEE_DEBUG", false),

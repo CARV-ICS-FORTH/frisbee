@@ -18,7 +18,12 @@ package grafana
 
 import (
 	"time"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
+
+var defaultLogger = zap.New(zap.UseDevMode(true)).WithName("default.grafana")
 
 type RawTimeRange struct {
 	From time.Time `json:"from"`
@@ -29,4 +34,38 @@ type TimeRange struct {
 	From time.Time     `json:"from"`
 	To   time.Time     `json:"to"`
 	Raw  *RawTimeRange `json:"raw"`
+}
+
+// Tag is used as tag for Grafana Annotations
+type Tag = string
+
+const (
+	TagCreated = "create"
+	TagDeleted = "delete"
+	TagFailed  = "failed"
+	TagChaos   = "chaos"
+)
+
+// Annotation provides a way to mark points on the graph with rich events.
+type Annotation interface {
+	// Add  pushes an annotation to grafana indicating that a new component has joined the experiment.
+	Add(obj client.Object)
+
+	// Delete pushes an annotation to grafana indicating that a new component has left the experiment.
+	Delete(obj client.Object)
+}
+
+// DataRequest is used to ask DataFrame from Grafana.
+type DataRequest struct {
+	Queries []interface{} `json:"queries"`
+
+	Range TimeRange `json:"range"`
+	From  string    `json:"from"`
+	To    string    `json:"to"`
+}
+
+// DefaultVariableEvaluation contains the default replacement of environment variables in Grafana expressions.
+var DefaultVariableEvaluation = map[string]string{
+	"Instance": ".+",
+	"Node":     ".+",
 }

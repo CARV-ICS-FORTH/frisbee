@@ -28,13 +28,14 @@ import (
 
 	embed "github.com/carv-ics-forth/frisbee"
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
+	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/common"
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/completion"
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/env"
 	"github.com/carv-ics-forth/frisbee/pkg/grafana"
 	"github.com/carv-ics-forth/frisbee/pkg/home"
 	"github.com/carv-ics-forth/frisbee/pkg/process"
-	"github.com/carv-ics-forth/frisbee/pkg/ui"
 	"github.com/gosimple/slug"
+	"github.com/kubeshop/testkube/pkg/ui"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -42,8 +43,12 @@ import (
 
 const (
 	User = "'':''" // Not really needed since we have no authentication in Grafana.
+)
 
-	SummaryDashboardUID = "summary"
+var (
+	DefaultDashboards = []string{"summary", "singleton"}
+
+	Timeout = 24 * time.Hour
 )
 
 func ReportTestCmdCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
@@ -60,26 +65,53 @@ func ReportTestCmdCompletion(cmd *cobra.Command, args []string, toComplete strin
 }
 
 type ReportTestCmdOptions struct {
+	// RepositoryCache points to the location where external binaries (i.e, pdf generators) will be stored.
 	RepositoryCache string
-	Dashboards      []string
-	Force           bool
-	PDF             bool
-	AggregatedPDF   bool
-	Data            bool
+
+	// Dashboards select the Grafana dashboards that will be downloaded.
+	Dashboards []string
+
+	// PDF generates one PDf per each panel in the selected dashboard.
+	PDF bool
+
+	// AggregatePDF generates one PDF for all panels in the selected dashboard.
+	AggregatedPDF bool
+
+	// Data downloads data from Grafana
+	Data bool
+
+	// Force starts the reporting regardless of the status of the Scenario (data may be inconsistent).
+	Force bool
+
+	// Wait blocks until the Scenario is in terminal phase.
+	Wait bool
 }
 
 func ReportTestCmdFlags(cmd *cobra.Command, options *ReportTestCmdOptions) {
-	cmd.Flags().BoolVar(&options.Force, "force", false, "Force reporting test data despite test phase.")
-
-	cmd.Flags().StringSliceVar(&options.Dashboards, "dashboard", []string{SummaryDashboardUID}, "The dashboard(s) to generate report from.")
-
+	// RepositoryCache
 	cmd.Flags().StringVar(&options.RepositoryCache, "repository-cache", home.CachePath("repository"), "path to the file containing cached repository indexes")
 
-	cmd.Flags().BoolVar(&options.Data, "data", false, "download grafana data as csv (experimental)")
+	// Dashboards
+	cmd.Flags().StringSliceVar(&options.Dashboards, "dashboard", DefaultDashboards, "The dashboard(s) to generate report from.")
 
+	if err := cmd.RegisterFlagCompletionFunc("dashboard", completion.CompleteServices); err != nil {
+		log.Fatal(err)
+	}
+
+	// PDF
 	cmd.Flags().BoolVar(&options.PDF, "pdf", false, "Generate one PDF for each panel in the dashboard.")
 
+	// Aggregated PDF
 	cmd.Flags().BoolVar(&options.AggregatedPDF, "aggregated-pdf", false, "Generate a single PDF for the entire dashboard.")
+
+	// Data
+	cmd.Flags().BoolVar(&options.Data, "data", false, "download grafana data as csv (experimental)")
+
+	// Force
+	cmd.Flags().BoolVar(&options.Force, "force", false, "Force reporting test data despite test phase.")
+
+	// Wait
+	cmd.Flags().BoolVar(&options.Wait, "wait", false, "Block waiting for scenario to be Success.")
 }
 
 func NewReportTestCmd() *cobra.Command {
@@ -95,6 +127,10 @@ func NewReportTestCmd() *cobra.Command {
 				ui.Failf("Pass Test name and destination to store the reports.")
 			}
 
+			if options.Wait && options.Force {
+				ui.Failf("--wait and --force cannot be used together")
+			}
+
 			if !(options.PDF || options.Data || options.AggregatedPDF) {
 				ui.Failf("at least one of [--pdf|--aggregated-pdf|--data] flags must be enabled")
 			}
@@ -102,7 +138,7 @@ func NewReportTestCmd() *cobra.Command {
 			return nil
 		},
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			ui.Logo()
+			env.Logo()
 
 			if env.Default.NodeJS() == "" || env.Default.NPM() == "" {
 				ui.Fail(errors.Errorf("report is disabled. It requires NodeJS and NPM to be installed in your system"))
@@ -116,6 +152,14 @@ func NewReportTestCmd() *cobra.Command {
 			 *---------------------------------------------------*/
 			scenario, err := env.Default.GetFrisbeeClient().GetScenario(cmd.Context(), testName)
 			ui.ExitOnError("Getting test information", err)
+
+			// wait until either all jobs are finished or timeout expired
+			if options.Wait {
+				ui.Info("Waiting for scenario actions to be completed...")
+
+				err = common.WaitForCondition(scenario.GetName(), v1alpha1.ConditionAllJobsAreCompleted, Timeout.String())
+				ui.ExitOnError("scenario has not been be successful after timeout: err", err)
+			}
 
 			switch {
 			case scenario == nil:
@@ -158,7 +202,9 @@ func NewReportTestCmd() *cobra.Command {
 				err := os.MkdirAll(dashboardDir, os.ModePerm)
 				ui.ExitOnError("Destination error: ", err)
 
-				// store data
+				/*---------------------------------------------------*
+				 * Save Data
+				 *---------------------------------------------------*/
 				if options.Data {
 					grafanaEndpoint := grafana.NewURL(scenario.Status.GrafanaEndpoint).
 						WithDashboard(dashboardUID).
@@ -238,10 +284,9 @@ func SavePDFs(ctx context.Context, grafanaClient *grafana.Client, dashboardURI, 
 	 * Generate PDF for each Panel.
 	 *---------------------------------------------------*/
 	for i, panel := range panels {
-		panelURI := fmt.Sprintf("%s&viewPanel=%d", dashboardURI, panel.ID)
-
 		ui.Debug(fmt.Sprintf("Processing %d/%d", i, len(panels)))
 
+		panelURI := fmt.Sprintf("%s&viewPanel=%d", dashboardURI, panel.ID)
 		file := filepath.Join(destDir, slug.Make(panel.Title)+".pdf")
 
 		if err := SavePDF(panelURI, file); err != nil {

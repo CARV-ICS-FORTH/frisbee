@@ -75,39 +75,6 @@ func (url *URL) AnnotationsQuery() string {
 	return fmt.Sprintf("http://%s/api/annotations", url.Endpoint)
 }
 
-/*
-func (url *URL) DataSourceQuery() string {
-	var final strings.Builder
-
-	final.WriteString("http://" + url.Endpoint + string(url.RelPath))
-
-	if url.FromTS != nil {
-		//	final.WriteString(fmt.Sprintf("&from=%d", url.FromTS.UnixMilli()))
-	}
-
-	if url.ToTS != nil {
-		//	final.WriteString(fmt.Sprintf("&to=%d", url.ToTS.UnixMilli()))
-	}
-
-	if url.PanelID != nil {
-		final.WriteString(fmt.Sprintf("&viewPanel=%d", url.PanelID))
-	}
-
-	if url.Kiosk {
-		final.WriteString("&kiosk")
-	}
-
-	/*
-		if url.InspectData {
-			final.WriteString("&inspectTab=data")
-		}
-
-
-	return final.String()
-
-}
-*/
-
 func BuildURL(grafanaEndpoint string, dashboard string, from int64, to int64, postfix string) string {
 	return fmt.Sprintf("http://%s/d/%s?orgId=1&from=%d&to=%d%s", grafanaEndpoint, dashboard, from, to, postfix)
 }

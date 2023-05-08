@@ -21,7 +21,7 @@ import (
 	"path/filepath"
 
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/common"
-	"github.com/carv-ics-forth/frisbee/pkg/ui"
+	"github.com/kubeshop/testkube/pkg/ui"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )

@@ -17,7 +17,7 @@ limitations under the License.
 package env
 
 import (
-	"github.com/carv-ics-forth/frisbee/pkg/ui"
+	"github.com/kubeshop/testkube/pkg/ui"
 	"k8s.io/utils/exec"
 )
 

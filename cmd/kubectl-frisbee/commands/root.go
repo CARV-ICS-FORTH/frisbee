@@ -18,7 +18,7 @@ package commands
 
 import (
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/env"
-	"github.com/carv-ics-forth/frisbee/pkg/ui"
+	"github.com/kubeshop/testkube/pkg/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -27,7 +27,7 @@ func NewRootCmd() *cobra.Command {
 		Use:   "kubectl-frisbee",
 		Short: "Frisbee entrypoint for kubectl plugin",
 		Run: func(cmd *cobra.Command, args []string) {
-			ui.Logo()
+			env.Logo()
 			ui.SetVerbose(env.Default.Debug)
 
 			ui.PrintOnError("Displaying help", cmd.Help())

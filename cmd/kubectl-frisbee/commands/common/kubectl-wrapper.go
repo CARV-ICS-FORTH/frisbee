@@ -26,7 +26,7 @@ import (
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/env"
 	"github.com/carv-ics-forth/frisbee/pkg/process"
-	"github.com/carv-ics-forth/frisbee/pkg/ui"
+	"github.com/kubeshop/testkube/pkg/ui"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/utils/exec"
@@ -120,6 +120,10 @@ func ErrNotFound(out []byte) bool {
 }
 
 func Kubectl(testName string, arguments ...string) ([]byte, error) {
+	if env.Default.KubeConfigPath != "" {
+		arguments = append(arguments, "--kubeconfig", env.Default.KubeConfigPath)
+	}
+
 	if testName != "" {
 		arguments = append(arguments, "-n", testName)
 	}
@@ -128,6 +132,10 @@ func Kubectl(testName string, arguments ...string) ([]byte, error) {
 }
 
 func LoggedKubectl(testName string, arguments ...string) ([]byte, error) {
+	if env.Default.KubeConfigPath != "" {
+		arguments = append(arguments, "--kubeconfig", env.Default.KubeConfigPath)
+	}
+
 	if testName != "" {
 		arguments = append(arguments, "-n", testName)
 	}
@@ -144,6 +152,10 @@ func HelmIgnoreNotFound(err error) error {
 }
 
 func Helm(testName string, arguments ...string) ([]byte, error) {
+	if env.Default.KubeConfigPath != "" {
+		arguments = append(arguments, "--kubeconfig", env.Default.KubeConfigPath)
+	}
+
 	if testName != "" {
 		arguments = append(arguments, "-n", testName)
 	}
@@ -152,6 +164,10 @@ func Helm(testName string, arguments ...string) ([]byte, error) {
 }
 
 func LoggedHelm(testName string, arguments ...string) ([]byte, error) {
+	if env.Default.KubeConfigPath != "" {
+		arguments = append(arguments, "--kubeconfig", env.Default.KubeConfigPath)
+	}
+
 	if testName != "" {
 		arguments = append(arguments, "-n", testName)
 	}
