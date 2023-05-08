@@ -81,9 +81,7 @@ data:
         editable: true
 
 
-  grafana.ini: |
-    # For more options see https://github.com/grafana/grafana/blob/main/conf/defaults.ini
-
+  grafana.ini: | # For more options see https://github.com/grafana/grafana/blob/main/conf/defaults.ini
     #################################### Paths ###############################
     #[paths]
     # Path to where grafana can store temp files, sessions, and the sqlite3 db (if that is used)
@@ -118,3 +116,8 @@ data:
 
     # specify role for unauthenticated users (Viewer, Editor, Admin)
     org_role = Admin
+
+
+    #################################### Analytics ###########################
+    check_for_updates = false
+    check_for_plugin_updates = false

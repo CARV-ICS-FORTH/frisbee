@@ -20,7 +20,7 @@ import (
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/common"
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/tests"
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/env"
-	"github.com/carv-ics-forth/frisbee/pkg/ui"
+	"github.com/kubeshop/testkube/pkg/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -30,7 +30,7 @@ func NewInspectCmd() *cobra.Command {
 		Aliases: []string{"show"},
 		Short:   "Inspect tests or test suites",
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			ui.Logo()
+			env.Logo()
 			ui.SetVerbose(env.Default.Debug)
 
 			if !common.CRDsExist(common.Scenarios) {

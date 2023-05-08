@@ -32,6 +32,7 @@ spec:
       containers:
         - name: manager
           image: icsforth/frisbee-operator:latest
+          imagePullPolicy: Always
           ports:
             - name: "admission-hook"                   # Admission Webhooks
               containerPort: {{.Values.operator.webhook.k8s.port | int64}}
@@ -46,10 +47,7 @@ spec:
             - /bin/sh   # Run shell
             - -c        # Read from string
             - |         # Multi-line str
-              ~/manager       \
-              -cert-dir=/tmp/k8s-webhook-server/serving-certs     \
-              -webhook-port={{.Values.operator.webhook.k8s.port}}  \
-              --alerting-port={{.Values.operator.webhook.grafana.port}}
+              ~/manager -cert-dir=/tmp/k8s-webhook-server/serving-certs
 
           livenessProbe:
             httpGet:

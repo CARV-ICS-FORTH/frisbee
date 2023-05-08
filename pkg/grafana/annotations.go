@@ -30,26 +30,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type Tag = string
-
-const (
-	TagCreated = "create"
-	TagDeleted = "delete"
-	TagFailed  = "failed"
-	TagChaos   = "chaos"
-)
-
-// Annotation provides a way to mark points on the graph with rich events.
-// // Event you hover over an annotation you can get event description and event tags.
-// // The text field can include links to other systems with more detail.
-type Annotation interface {
-	// Add  pushes an annotation to grafana indicating that a new component has joined the experiment.
-	Add(obj client.Object)
-
-	// Delete pushes an annotation to grafana indicating that a new component has left the experiment.
-	Delete(obj client.Object)
-}
-
 type PointAnnotation struct{}
 
 func (a *PointAnnotation) Add(obj client.Object, tags ...Tag) {

@@ -4,7 +4,7 @@
 apiVersion: frisbee.dev/v1alpha1
 kind: Scenario
 metadata:
-  name: ml-backend-mnist-python
+  name: mnist-python
 spec:
   actions:
     # Step 1: Create FedBed server

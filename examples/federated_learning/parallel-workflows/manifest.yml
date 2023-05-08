@@ -4,7 +4,7 @@
 apiVersion: frisbee.dev/v1alpha1
 kind: Scenario
 metadata:
-  name: crashing-nodes
+  name: parallel-workflows
 spec:
   actions:
     ########### Training Workflow A ################
@@ -21,7 +21,7 @@ spec:
       cluster:
         templateRef: fedbed.client
         resources:
-          total: { cpu: 2, mem: 40Gi }
+          total: { cpu: 2 }
           distribution: { name: uniform }
         inputs:
           - { fl_server: wfa-server, backend: "tensorflow",  total_nodes: 5, node_id: 0 }
@@ -34,6 +34,7 @@ spec:
     ########### Training Workflow B ################
     - action: Service
       name: wfb-server
+      depends: { running: [ wfa-server ], after: 3m }
       service:
         templateRef: fedbed.server
         inputs:

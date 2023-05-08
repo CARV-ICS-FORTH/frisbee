@@ -1,21 +1,12 @@
-package ui
+package env
 
 import (
 	"bytes"
 	"fmt"
 
 	"github.com/dimiro1/banner"
+	"github.com/kubeshop/testkube/pkg/ui"
 )
-
-func (ui *UI) Logo() {
-	fmt.Fprint(ui.Writer, Blue(logo()))
-	fmt.Fprintln(ui.Writer)
-}
-
-func (ui *UI) LogoNoColor() {
-	fmt.Fprint(ui.Writer, logo())
-	fmt.Fprintln(ui.Writer)
-}
 
 func logo() string {
 	buf := bytes.NewBuffer(nil)
@@ -45,4 +36,11 @@ func logo() string {
 	banner.InitString(buf, true, true, templ)
 
 	return buf.String()
+}
+
+func Logo() {
+	fmt.Fprint(ui.Writer, ui.Blue(logo()))
+	fmt.Fprintln(ui.Writer)
+
+	ui.Success("Connecting to:", Default.KubeConfig.Host)
 }

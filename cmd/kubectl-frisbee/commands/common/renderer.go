@@ -22,7 +22,7 @@ import (
 	"text/template"
 
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/env"
-	"github.com/carv-ics-forth/frisbee/pkg/ui"
+	"github.com/kubeshop/testkube/pkg/ui"
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/util/json"
 )

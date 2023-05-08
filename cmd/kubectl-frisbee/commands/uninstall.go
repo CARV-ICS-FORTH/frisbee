@@ -22,7 +22,7 @@ import (
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/common"
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/env"
 	"github.com/carv-ics-forth/frisbee/pkg/home"
-	"github.com/carv-ics-forth/frisbee/pkg/ui"
+	"github.com/kubeshop/testkube/pkg/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -52,7 +52,7 @@ func NewUninstallCmd() *cobra.Command {
 		Short:   "Uninstall Frisbee from current kubectl context",
 		Aliases: []string{"un", "purge"},
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			ui.Logo()
+			env.Logo()
 			ui.SetVerbose(env.Default.Debug)
 		},
 		Run: func(cmd *cobra.Command, args []string) {

@@ -153,7 +153,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 1,
+  "id": 2,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -4156,7 +4156,7 @@
         "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
-        "sort": 2,
+        "sort": 1,
         "type": "query"
       },
       {
@@ -4182,7 +4182,7 @@
         "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
-        "sort": 2,
+        "sort": 1,
         "type": "query"
       }
     ]
@@ -4219,6 +4219,6 @@
   "timezone": "",
   "title": "Frisbee SUT Monitoring (Singleton)",
   "uid": "singleton",
-  "version": 3,
+  "version": 1,
   "weekStart": ""
 }
