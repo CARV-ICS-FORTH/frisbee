@@ -505,7 +505,6 @@ spec:
                                 that will be distributed among the cluster's services.
                               type: object
                           required:
-                          - distribution
                           - total
                           type: object
                         schedule:

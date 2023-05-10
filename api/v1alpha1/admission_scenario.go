@@ -244,6 +244,7 @@ func CheckAction(action *Action, references map[string]*Action) error {
 			return errors.Wrapf(err, "cluster error")
 		}
 
+		// validated here because it involves references to other actions.
 		if placement := cluster.Spec.Placement; placement != nil {
 			if err := ValidatePlacement(placement, references); err != nil {
 				return errors.Wrapf(err, "placement error")

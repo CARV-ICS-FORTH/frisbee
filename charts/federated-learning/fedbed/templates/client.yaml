@@ -6,7 +6,7 @@ metadata:
 spec:
   inputs:
     parameters:
-      fl_server: "server"
+      fl_server: "server" # also server1 server2
       backend: "pytorch"
       total_nodes: 1
       node_id: 0
@@ -26,8 +26,6 @@ spec:
         image: icsforth/fedbed:latest
         imagePullPolicy: IfNotPresent
         env:
-          - name: FL_SERVER
-            value: {{"{{.inputs.parameters.fl_server}}" | quote }}
           - name: FL_BACKEND
             value: {{"{{.inputs.parameters.backend}}" | quote }}
           - name: FL_NUM_OF_THREADS
@@ -57,7 +55,18 @@ spec:
           - /bin/bash   # Run shell
           - -c        # Read from string
           - |         # Multi-line str
-            set -eu
+            set -eux
             cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
 
-            python client.py
+            export serverList=("{{"{{.inputs.parameters.fl_server}}" | quote}}")
+
+            ## now loop through the above array
+            for server in "${serverList[@]}"
+            do
+              export FL_SERVER=${server}
+              echo "Connecting to ${FL_SERVER}"
+              python client.py &
+            done
+
+            # Wait for all clients to temrinate
+            wait

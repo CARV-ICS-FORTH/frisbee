@@ -28,13 +28,12 @@ spec:
           - { fl_server: wfa-server, backend: "tensorflow",  total_nodes: 5, node_id: 1 }
           - { fl_server: wfa-server, backend: "tensorflow",  total_nodes: 5, node_id: 2 }
           - { fl_server: wfa-server, backend: "tensorflow",  total_nodes: 5, node_id: 3 }
-          - { fl_server: wfa-server, backend: "tensorflow",  total_nodes: 5, node_id: 4 }
 
 
     ########### Training Workflow B ################
     - action: Service
       name: wfb-server
-      depends: { running: [ wfa-server ], after: 3m }
+      depends: { running: [ wfa-server ] }
       service:
         templateRef: fedbed.server
         inputs:
@@ -46,18 +45,30 @@ spec:
       cluster:
         templateRef: fedbed.client
         resources:
-          total: { cpu: 2, mem: 40Gi }
+          total: { cpu: 2 }
           distribution: { name: uniform }
         inputs:
           - { fl_server: wfb-server, backend: "tensorflow",  total_nodes: 5, node_id: 0 }
           - { fl_server: wfb-server, backend: "tensorflow",  total_nodes: 5, node_id: 1 }
           - { fl_server: wfb-server, backend: "tensorflow",  total_nodes: 5, node_id: 2 }
           - { fl_server: wfb-server, backend: "tensorflow",  total_nodes: 5, node_id: 3 }
-          - { fl_server: wfb-server, backend: "tensorflow",  total_nodes: 5, node_id: 4 }
+
+
+    ########### Common Client among Workflows A and B ################
+    - action: Cluster
+      name: common-client
+      depends: { running: [ wfa-server, wfb-server] }
+      cluster:
+        templateRef: fedbed.client
+        resources:
+          total: { cpu: 2 }
+          distribution: { name: constant }
+        inputs:
+          - { fl_server: "wfa-server wfb-server", backend: "tensorflow",  total_nodes: 5, node_id: 4 }
 
     ########### Teardown all workflows ################
     - action: Delete
       name: teardown
-      depends: { success: [ wfa-clients, wfb-clients ] }
+      depends: { success: [ wfa-clients, wfb-clients, common-client ] }
       delete:
         jobs: [ wfa-server, wfb-server ]

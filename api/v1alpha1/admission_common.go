@@ -93,6 +93,9 @@ func ValidateTaskScheduler(sch *TaskSchedulerSpec) error {
 
 func ValidateDistribution(dist *DistributionSpec) error {
 	switch dist.Name {
+	case DistributionConstant:
+		return nil
+
 	case DistributionUniform:
 		return nil
 
@@ -100,12 +103,12 @@ func ValidateDistribution(dist *DistributionSpec) error {
 		return nil
 
 	case DistributionPareto:
+		/* TODO: validate pareto arguments */
 		return nil
 
 	case DistributionDefault:
 		return nil
 	}
-	/* TODO: continue with the other distributions */
 
 	return errors.Errorf("no such distribution '%s'", dist.Name)
 }

@@ -90,9 +90,12 @@ type EnvironmentSettings struct {
 }
 
 func New() *EnvironmentSettings {
+	kubeconfig, err := config.GetConfig()
+	ui.ExitOnError("Failed to get config", err)
+
 	env := &EnvironmentSettings{
 		Path:           Path{}, // will be set by LookupBinaries
-		KubeConfig:     config.GetConfigOrDie(),
+		KubeConfig:     kubeconfig,
 		KubeConfigPath: os.Getenv("KUBECONFIG"),
 		// Operation
 		MaxHistory: envIntOr("FRISBEE_MAX_HISTORY", defaultMaxHistory),
