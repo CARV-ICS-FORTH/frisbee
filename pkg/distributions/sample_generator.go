@@ -37,6 +37,9 @@ func GenerateProbabilitySliceFromSpec(samples int64, spec *v1alpha1.Distribution
 	case v1alpha1.DistributionDefault:
 		panic("default distribution is a pointer to an already evaluated distribution, and therefore it should be handled before reaching this point")
 
+	case v1alpha1.DistributionConstant:
+		return GenerateProbabilitySlice(samples, NewConstant())
+
 	case v1alpha1.DistributionUniform:
 		return GenerateProbabilitySlice(samples, NewUniform(1, samples))
 

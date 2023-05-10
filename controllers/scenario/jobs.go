@@ -198,6 +198,9 @@ func (r *Controller) delete(ctx context.Context, scenario *v1alpha1.Scenario, ac
 	// ensure that all references jobs are deletable
 	jobsToDelete := make([]client.Object, 0, len(action.Delete.Jobs))
 
+	/*---------------------------------------------------
+	 * Filter jobs that are ready to be deleted
+	 *---------------------------------------------------*/
 	for _, refJob := range action.Delete.Jobs {
 		switch {
 		case r.view.IsSuccessful(refJob), r.view.IsFailed(refJob), r.view.IsTerminating(refJob):
@@ -227,14 +230,26 @@ func (r *Controller) delete(ctx context.Context, scenario *v1alpha1.Scenario, ac
 		}
 	}
 
-	// Delete normally does not return anything. This however would break all the pipeline for
-	// managing dependencies between jobs. For that, we return a dummy virtual object without dedicated controller.
-	return lifecycle.VirtualExecution(ctx, r, scenario, action.Name, func(_ *v1alpha1.VirtualObject) error {
-		for _, job := range jobsToDelete {
-			// a descriptive name makes it easy to follow the deletion flow from the cli.
-			deleteJobName := fmt.Sprintf("%s-%s", action.Name, job.GetName())
+	/*---------------------------------------------------
+	 * Delete jobs and replace them with VirtualObjects
+	 *---------------------------------------------------*/
 
-			if err := lifecycle.VirtualExecution(ctx, r, scenario, deleteJobName, func(_ *v1alpha1.VirtualObject) error {
+	// Context of Delete Action
+	//
+	// Delete is an action itself and should be waitable by the scenario controller.
+	// However, since there is no dedicated controller, we need to create a virtual object that represents
+	// the Delete action.
+	return lifecycle.CreateVirtualJob(ctx, r, scenario, action.Name, func(_ *v1alpha1.VirtualObject) error {
+		for i := range jobsToDelete {
+			job := jobsToDelete[i]
+			// Context of Delete Job
+			//
+			// Deleting jobs would break the enumeration of completed actions. To avoid it,
+			// every time we delete a 'physical' job, we replace it with a 'virtual object' that is
+			// simply a dummy entry in the API server.
+			// For the entry we use a descriptive name that makes it easy to follow the deletion flow from the cli.
+			deleteJobName := fmt.Sprintf("%s-%s", action.Name, job.GetName())
+			if err := lifecycle.CreateVirtualJob(ctx, r, scenario, deleteJobName, func(_ *v1alpha1.VirtualObject) error {
 				common.Delete(ctx, r, job)
 
 				return nil

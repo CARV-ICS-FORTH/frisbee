@@ -33,7 +33,7 @@ import (
 /******************************************************/
 
 // Pending is a wrapper that sets Phase to Pending and does not requeue the request.
-func Pending(ctx context.Context, r common.Reconciler, obj client.Object, msg string) (reconcile.Result, error) {
+func Pending(ctx context.Context, reconciler common.Reconciler, obj client.Object, msg string) (reconcile.Result, error) {
 	if ctx == nil || obj == nil || msg == "" {
 		panic("invalid args")
 	}
@@ -47,26 +47,26 @@ func Pending(ctx context.Context, r common.Reconciler, obj client.Object, msg st
 	if statusAware, updateStatus := obj.(v1alpha1.ReconcileStatusAware); updateStatus {
 		statusAware.SetReconcileStatus(status)
 
-		if err := common.UpdateStatus(ctx, r, obj); err != nil {
-			r.Info("SetLifecycle",
+		if err := common.UpdateStatus(ctx, reconciler, obj); err != nil {
+			reconciler.Info("SetLifecycle",
 				"obj", client.ObjectKeyFromObject(obj),
 				"phase", status.Phase)
 
 			return ctrl.Result{RequeueAfter: time.Second, Requeue: true}, nil
 		}
 	} else {
-		r.Info("Object does not support RecocileStatusAware interface. Not setting status",
+		reconciler.Info("Object does not support RecocileStatusAware interface. Not setting status",
 			"obj", obj.GetName(), "status", status,
 		)
 	}
 
-	r.GetEventRecorderFor(obj.GetName()).Event(obj, corev1.EventTypeNormal, status.Reason, status.Message)
+	reconciler.GetEventRecorderFor(obj.GetName()).Event(obj, corev1.EventTypeNormal, status.Reason, status.Message)
 
 	return ctrl.Result{}, nil
 }
 
 // Failed is a wrap that logs the error, updates the status, and does not requeue the request.
-func Failed(ctx context.Context, r common.Reconciler, obj client.Object, issue error) (reconcile.Result, error) {
+func Failed(ctx context.Context, reconciler common.Reconciler, obj client.Object, issue error) (reconcile.Result, error) {
 	if ctx == nil || obj == nil || issue == nil {
 		panic("invalid args")
 	}
@@ -80,15 +80,15 @@ func Failed(ctx context.Context, r common.Reconciler, obj client.Object, issue e
 	if statusAware, updateStatus := obj.(v1alpha1.ReconcileStatusAware); updateStatus {
 		statusAware.SetReconcileStatus(status)
 
-		if err := common.UpdateStatus(ctx, r, obj); err != nil {
-			r.Info("SetLifecycle",
+		if err := common.UpdateStatus(ctx, reconciler, obj); err != nil {
+			reconciler.Info("SetLifecycle",
 				"obj", client.ObjectKeyFromObject(obj),
 				"phase", status.Phase)
 
 			return ctrl.Result{RequeueAfter: time.Second, Requeue: true}, nil
 		}
 	} else {
-		r.Info("Object does not support RecocileStatusAware interface. Not setting status",
+		reconciler.Info("Object does not support RecocileStatusAware interface. Not setting status",
 			"obj", obj.GetName(), "status", status,
 		)
 	}
@@ -96,7 +96,7 @@ func Failed(ctx context.Context, r common.Reconciler, obj client.Object, issue e
 	if !obj.GetDeletionTimestamp().IsZero() {
 		// If the object is deleted, then probably the namespace is deleted as well and pushing
 		// a notification will raise warnings.
-		r.GetEventRecorderFor(obj.GetName()).Event(obj, corev1.EventTypeWarning, status.Reason, status.Message)
+		reconciler.GetEventRecorderFor(obj.GetName()).Event(obj, corev1.EventTypeWarning, status.Reason, status.Message)
 	}
 
 	return ctrl.Result{}, nil

@@ -22,7 +22,6 @@ import (
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
-	"github.com/carv-ics-forth/frisbee/pkg/grafana"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"
@@ -51,6 +50,9 @@ func (w *simpleWatch) Watch(reconciler common.Reconciler, gvk schema.GroupVersio
 
 func (w *simpleWatch) watchCreate(reconciler common.Reconciler, gvk schema.GroupVersionKind) CreateFunc {
 	return func(event event.CreateEvent) bool {
+		/*---------------------------------------------------*
+		 * Filter out irrelevant of obsolete events
+		 *---------------------------------------------------*/
 		if !common.IsManagedByThisController(event.Object, gvk) {
 			return false
 		}
@@ -61,6 +63,9 @@ func (w *simpleWatch) watchCreate(reconciler common.Reconciler, gvk schema.Group
 			return false
 		}
 
+		/*---------------------------------------------------*
+		 * Print information of enqueued requests
+		 *---------------------------------------------------*/
 		reconciler.Info("** Enqueue",
 			"Request", "Create",
 			"kind", reflect.TypeOf(event.Object),
@@ -74,6 +79,9 @@ func (w *simpleWatch) watchCreate(reconciler common.Reconciler, gvk schema.Group
 
 func (w *simpleWatch) watchUpdate(reconciler common.Reconciler, gvk schema.GroupVersionKind) UpdateFunc {
 	return func(event event.UpdateEvent) bool {
+		/*---------------------------------------------------*
+		 * Filter out irrelevant of obsolete events
+		 *---------------------------------------------------*/
 		if !common.IsManagedByThisController(event.ObjectNew, gvk) {
 			return false
 		}
@@ -92,33 +100,44 @@ func (w *simpleWatch) watchUpdate(reconciler common.Reconciler, gvk schema.Group
 			return false
 		}
 
-		prev := event.ObjectOld.(v1alpha1.ReconcileStatusAware).GetReconcileStatus()
-		latest := event.ObjectNew.(v1alpha1.ReconcileStatusAware).GetReconcileStatus()
+		/*---------------------------------------------------*
+		 * Try to extract information about Phase changes
+		 *---------------------------------------------------*/
+		prev, prevOK := event.ObjectOld.(v1alpha1.ReconcileStatusAware)
+		latest, latestOK := event.ObjectNew.(v1alpha1.ReconcileStatusAware)
 
-		// push an annotation that the Frisbee object has failed.
-		// the comparison with prev ensures that annotation will be just passed once.
-		// we are interested only in SUT components
-		if grafana.HasClientFor(event.ObjectNew) {
-			if !prev.Phase.Is(v1alpha1.PhaseFailed) && latest.Phase.Is(v1alpha1.PhaseFailed) {
-				annotation := &grafana.PointAnnotation{}
-				annotation.Add(event.ObjectNew, grafana.TagFailed)
-			}
+		if !prevOK || !latestOK {
+			// this may happen for external objects like Pods, Faults, etc.
+			reconciler.Info("** Enqueue (External)",
+				"Request", "Update",
+				"kind", reflect.TypeOf(event.ObjectNew),
+				"obj", client.ObjectKeyFromObject(event.ObjectNew),
+				"version", fmt.Sprintf("%s -> %s", event.ObjectOld.GetResourceVersion(), event.ObjectNew.GetResourceVersion()),
+			)
+
+			return true
 		}
 
-		reconciler.Info("** Enqueue",
-			"Request", "Update",
-			"kind", reflect.TypeOf(event.ObjectNew),
-			"obj", client.ObjectKeyFromObject(event.ObjectNew),
-			"phase", fmt.Sprintf("%s -> %s", prev.Phase, latest.Phase),
-			"version", fmt.Sprintf("%s -> %s", event.ObjectOld.GetResourceVersion(), event.ObjectNew.GetResourceVersion()),
-		)
+		prevPhase := prev.GetReconcileStatus().Phase
+		latestPhase := latest.GetReconcileStatus().Phase
 
 		// a controller never initiates a phase change, and so is never asleep waiting for the same.
-		if prev.Phase == latest.Phase {
+		if prevPhase == latestPhase {
 			reconciler.Info("Ignore Update", "obj", client.ObjectKeyFromObject(event.ObjectNew))
 
 			return false
 		}
+
+		/*---------------------------------------------------*
+		 * Print information of enqueued requests
+		 *---------------------------------------------------*/
+		reconciler.Info("** Enqueue",
+			"Request", "Update",
+			"kind", reflect.TypeOf(event.ObjectNew),
+			"obj", client.ObjectKeyFromObject(event.ObjectNew),
+			"phase", fmt.Sprintf("%s -> %s", prevPhase, latestPhase),
+			"version", fmt.Sprintf("%s -> %s", event.ObjectOld.GetResourceVersion(), event.ObjectNew.GetResourceVersion()),
+		)
 
 		return true
 	}
@@ -126,6 +145,9 @@ func (w *simpleWatch) watchUpdate(reconciler common.Reconciler, gvk schema.Group
 
 func (w *simpleWatch) watchDelete(reconciler common.Reconciler, gvk schema.GroupVersionKind) DeleteFunc {
 	return func(event event.DeleteEvent) bool {
+		/*---------------------------------------------------*
+		 * Filter out irrelevant of obsolete events
+		 *---------------------------------------------------*/
 		if !common.IsManagedByThisController(event.Object, gvk) {
 			return false
 		}
@@ -139,6 +161,9 @@ func (w *simpleWatch) watchDelete(reconciler common.Reconciler, gvk schema.Group
 			return false
 		}
 
+		/*---------------------------------------------------*
+		 * Print information of enqueued requests
+		 *---------------------------------------------------*/
 		reconciler.Info("** Enqueue",
 			"Request", "Delete",
 			"kind", reflect.TypeOf(event.Object),

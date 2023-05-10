@@ -29,7 +29,7 @@ spec:
 
     callables:
       num-of-files:
-        container: app
+        container: main
         command:
           - /bin/sh
           - -c
@@ -37,7 +37,7 @@ spec:
             ls /testdata | wc -l
 
       list-files:
-        container: app
+        container: main
         command:
           - /bin/sh
           - -c

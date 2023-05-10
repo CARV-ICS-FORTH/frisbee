@@ -332,14 +332,9 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 
 	gvk := v1alpha1.GroupVersion.WithKind("Cascade")
 
-	var (
-		cascade v1alpha1.Cascade
-		chaos   v1alpha1.Chaos
-	)
-
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&cascade).
+		For(&v1alpha1.Cascade{}).
 		Named("cascade").
-		Owns(&chaos, watchers.Watch(controller, gvk)).
+		Owns(&v1alpha1.Chaos{}, watchers.Watch(controller, gvk)).
 		Complete(controller)
 }

@@ -1,5 +1,5 @@
 Demonstrates how to use h5py with the multiprocessing module.
-This module implements a simple multi-process program to generate
+This module implements a simple multiprocess program to generate
 Mandelbrot set images. It uses a process pool to do the computations,
 and a single process to save the results to file.
 Importantly, only one process actually reads/writes the HDF5 file.

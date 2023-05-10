@@ -61,9 +61,8 @@ func (in *Call) Default() {
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
 func (in *Call) ValidateCreate() error {
-	calllog.Info("ValidateCreateRequest",
-		"name", in.GetNamespace()+"/"+in.GetName(),
-	)
+	calllog.Info("-> ValidateCreate", "obj", in.GetNamespace()+"/"+in.GetName())
+	defer calllog.Info("<- ValidateCreate", "obj", in.GetNamespace()+"/"+in.GetName())
 
 	// Expect field
 	if expect := in.Spec.Expect; expect != nil {
@@ -73,17 +72,13 @@ func (in *Call) ValidateCreate() error {
 	}
 
 	// Tolerate field
-	if tolerate := in.Spec.Tolerate; tolerate != nil {
-		if err := ValidateTolerate(tolerate); err != nil {
-			return errors.Wrapf(err, "tolerate error")
-		}
+	if err := ValidateTolerate(in.Spec.Tolerate); err != nil {
+		return errors.Wrapf(err, "tolerate error")
 	}
 
 	// SuspendWhen field
-	if until := in.Spec.SuspendWhen; until != nil {
-		if err := ValidateExpr(until); err != nil {
-			return errors.Wrapf(err, "SuspendWhen error")
-		}
+	if err := ValidateExpr(in.Spec.SuspendWhen); err != nil {
+		return errors.Wrapf(err, "SuspendWhen error")
 	}
 
 	// Schedule field

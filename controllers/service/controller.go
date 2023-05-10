@@ -23,16 +23,14 @@ import (
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
+	"github.com/carv-ics-forth/frisbee/controllers/common/watchers"
 	"github.com/carv-ics-forth/frisbee/pkg/lifecycle"
 	"github.com/go-logr/logr"
-	cmap "github.com/orcaman/concurrent-map"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -63,12 +61,7 @@ type Controller struct {
 	ctrl.Manager
 	logr.Logger
 
-	gvk schema.GroupVersionKind
-
 	view *lifecycle.Classifier
-
-	// because the range annotator has state (uid), we need to save in the controller's store.
-	regionAnnotations cmap.ConcurrentMap
 }
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
@@ -237,17 +230,17 @@ func (r *Controller) Finalize(obj client.Object) error {
 */
 
 func NewController(mgr ctrl.Manager, logger logr.Logger) error {
-	controller := &Controller{
-		Manager:           mgr,
-		Logger:            logger.WithName("service"),
-		gvk:               v1alpha1.GroupVersion.WithKind("Service"),
-		view:              &lifecycle.Classifier{},
-		regionAnnotations: cmap.New(),
+	reconciler := &Controller{
+		Manager: mgr,
+		Logger:  logger.WithName("service"),
+		view:    &lifecycle.Classifier{},
 	}
 
+	gvk := v1alpha1.GroupVersion.WithKind("Service")
+
 	return ctrl.NewControllerManagedBy(mgr).
-		Named("service").
 		For(&v1alpha1.Service{}).
-		Owns(&corev1.Pod{}, builder.WithPredicates(controller.Watchers())).
-		Complete(controller)
+		Named("service").
+		Owns(&corev1.Pod{}, watchers.WatchWithPointAnnotation(reconciler, gvk)).
+		Complete(reconciler)
 }

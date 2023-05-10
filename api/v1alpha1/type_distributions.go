@@ -28,6 +28,9 @@ import (
 type DistributionName string
 
 const (
+	// DistributionConstant is a fixed distributed with all elements having a probability of 1.
+	DistributionConstant DistributionName = "constant"
+
 	// DistributionUniform draws samples from a continuous uniform distribution
 	DistributionUniform DistributionName = "uniform"
 
@@ -104,7 +107,7 @@ func (in Timeline) String() string {
 
 type ResourceDistributionSpec struct {
 	// DistributionSpec defines how the TotalResources will be assigned to resources.
-	DistributionSpec *DistributionSpec `json:"distribution"`
+	DistributionSpec *DistributionSpec `json:"distribution,omitempty"`
 
 	// TotalResources defines the total resources that will be distributed among the cluster's services.
 	TotalResources corev1.ResourceList `json:"total"`

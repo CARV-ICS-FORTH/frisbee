@@ -3,84 +3,150 @@
     "list": [
       {
         "builtIn": 1,
-        "datasource": "Prometheus",
-        "enable": false,
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
+        "enable": true,
         "hide": true,
-        "iconColor": "dark-purple",
-        "limit": 100,
+        "iconColor": "rgba(0, 211, 255, 1)",
         "name": "Annotations & Alerts",
-        "showIn": 0,
         "target": {
           "limit": 100,
           "matchAny": false,
           "tags": [],
           "type": "dashboard"
         },
-        "type": "dashboard",
-        "useValueForTime": true
+        "type": "dashboard"
       },
       {
-        "datasource": "-- Grafana --",
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
         "enable": true,
-        "hide": false,
-        "iconColor": "#5794F2",
-        "limit": 100,
-        "name": "run",
-        "showIn": 0,
+        "expr": "",
+        "iconColor": "blue",
+        "iconSize": 0,
+        "lineColor": "",
+        "name": "Create",
+        "query": "",
+        "showLine": false,
+        "step": "",
+        "tagKeys": "",
         "tags": [
           "run"
         ],
+        "tagsField": "",
         "target": {
           "limit": 100,
           "matchAny": false,
           "tags": [
-            "run"
+            "create"
           ],
           "type": "tags"
         },
+        "textField": "",
+        "textFormat": "",
+        "titleFormat": "",
         "type": "tags"
       },
       {
-        "datasource": "-- Grafana --",
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
         "enable": true,
-        "hide": false,
+        "expr": "",
         "iconColor": "#FF9830",
-        "limit": 100,
-        "name": "exit",
-        "showIn": 0,
+        "iconSize": 0,
+        "lineColor": "",
+        "name": "Deleted",
+        "query": "",
+        "showLine": false,
+        "step": "",
+        "tagKeys": "",
         "tags": [
           "exit"
         ],
+        "tagsField": "",
         "target": {
           "limit": 100,
           "matchAny": false,
           "tags": [
-            "exit"
+            "delete"
           ],
           "type": "tags"
         },
+        "textField": "",
+        "textFormat": "",
+        "titleFormat": "",
         "type": "tags"
       },
       {
-        "datasource": "-- Grafana --",
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
         "enable": true,
-        "hide": false,
-        "iconColor": "rgba(255, 96, 96, 1)",
-        "limit": 100,
-        "name": "failure",
-        "showIn": 0,
+        "expr": "",
+        "iconColor": "#F2495C",
+        "iconSize": 0,
+        "lineColor": "",
+        "name": "Failed",
+        "query": "",
+        "showLine": false,
+        "step": "",
+        "tagKeys": "",
         "tags": [
           "failure"
         ],
+        "tagsField": "",
         "target": {
           "limit": 100,
           "matchAny": false,
           "tags": [
-            "failure"
+            "failed"
           ],
           "type": "tags"
         },
+        "textField": "",
+        "textFormat": "",
+        "titleFormat": "",
         "type": "tags"
+      },
+      {
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
+        "enable": true,
+        "iconColor": "purple",
+        "name": "Chaos",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [
+            "chaos"
+          ],
+          "type": "tags"
+        }
+      },
+      {
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
+        "enable": true,
+        "iconColor": "semi-dark-yellow",
+        "name": "App",
+        "target": {
+          "refId": "Anno",
+          "tags": [
+            "app"
+          ],
+          "type": "tags"
+        }
       }
     ]
   },

@@ -162,10 +162,6 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 				return common.Stop(r, req)
 			}
 
-			r.Logger.Info(".. RequeueEvent",
-				"obj", client.ObjectKeyFromObject(&scenario),
-				"sleep until", nextRun)
-
 			return common.RequeueAfter(r, req, time.Until(nextRun))
 		}
 
@@ -462,26 +458,15 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 
 	gvk := v1alpha1.GroupVersion.WithKind("Scenario")
 
-	// known types
-	var (
-		scenario v1alpha1.Scenario
-		service  v1alpha1.Service
-		cluster  v1alpha1.Cluster
-		chaos    v1alpha1.Chaos
-		cascade  v1alpha1.Cascade
-		vobject  v1alpha1.VirtualObject
-		call     v1alpha1.Call
-	)
-
 	// register types to the controller
 	return ctrl.NewControllerManagedBy(mgr).
 		Named("scenario").
-		For(&scenario).
-		Owns(&service, watchers.Watch(controller, gvk)). // Logs Services
-		Owns(&cluster, watchers.Watch(controller, gvk)). // Logs Cluster
-		Owns(&chaos, watchers.Watch(controller, gvk)).   // Logs Chaos
-		Owns(&cascade, watchers.Watch(controller, gvk)). // Logs Cascade
-		Owns(&vobject, watchers.Watch(controller, gvk)). // Logs VirtualObjects
-		Owns(&call, watchers.Watch(controller, gvk)).    // Logs Calls
+		For(&v1alpha1.Scenario{}).
+		Owns(&v1alpha1.Service{}, watchers.Watch(controller, gvk)).       // Logs Services
+		Owns(&v1alpha1.Cluster{}, watchers.Watch(controller, gvk)).       // Logs Cluster
+		Owns(&v1alpha1.Chaos{}, watchers.Watch(controller, gvk)).         // Logs Chaos
+		Owns(&v1alpha1.Cascade{}, watchers.Watch(controller, gvk)).       // Logs Cascade
+		Owns(&v1alpha1.VirtualObject{}, watchers.Watch(controller, gvk)). // Logs VirtualObjects
+		Owns(&v1alpha1.Call{}, watchers.Watch(controller, gvk)).          // Logs Calls
 		Complete(controller)
 }

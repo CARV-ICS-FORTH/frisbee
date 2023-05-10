@@ -66,13 +66,13 @@ type VirtualObjectStatus struct {
 func (in *VirtualObjectStatus) Table() (header []string, data [][]string) {
 	values := make([]string, len(in.Data))
 
-	for _, key := range structure.SortedMapKeys(in.Data) {
+	for i, key := range structure.SortedMapKeys(in.Data) {
 		header = append(header, key)
 
 		// encode it to escape newlines and all that stuff that destroy the nice printing.
 		encValue, _ := json.Marshal(in.Data[key])
 
-		values = append(values, string(encValue))
+		values[i] = string(encValue)
 	}
 
 	data = append(data, values)

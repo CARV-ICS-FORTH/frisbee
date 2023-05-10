@@ -23,7 +23,6 @@ import (
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
 	"github.com/carv-ics-forth/frisbee/pkg/grafana"
-	cmap "github.com/orcaman/concurrent-map"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"
@@ -33,17 +32,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
-func WatchWithRangeAnnotations(r common.Reconciler, gvk schema.GroupVersionKind) builder.Predicates {
-	w := watchWithRangeAnnotator{open: cmap.New()}
+func WatchWithPointAnnotation(r common.Reconciler, gvk schema.GroupVersionKind) builder.Predicates {
+	w := watchWithPointAnnotation{}
 
 	return w.Watch(r, gvk)
 }
 
-type watchWithRangeAnnotator struct {
-	open cmap.ConcurrentMap
-}
+type watchWithPointAnnotation struct{}
 
-func (w *watchWithRangeAnnotator) Watch(r common.Reconciler, gvk schema.GroupVersionKind) builder.Predicates {
+func (w *watchWithPointAnnotation) Watch(r common.Reconciler, gvk schema.GroupVersionKind) builder.Predicates {
 	return builder.WithPredicates(predicate.Funcs{
 		CreateFunc:  w.watchCreate(r, gvk),
 		DeleteFunc:  w.watchDelete(r, gvk),
@@ -52,7 +49,7 @@ func (w *watchWithRangeAnnotator) Watch(r common.Reconciler, gvk schema.GroupVer
 	})
 }
 
-func (w *watchWithRangeAnnotator) watchCreate(reconciler common.Reconciler, gvk schema.GroupVersionKind) CreateFunc {
+func (w *watchWithPointAnnotation) watchCreate(reconciler common.Reconciler, gvk schema.GroupVersionKind) CreateFunc {
 	return func(event event.CreateEvent) bool {
 		/*---------------------------------------------------*
 		 * Filter out irrelevant of obsolete events
@@ -68,7 +65,7 @@ func (w *watchWithRangeAnnotator) watchCreate(reconciler common.Reconciler, gvk 
 		}
 
 		/*---------------------------------------------------*
-		 * Print information of enqueued requests
+		 * Print information of enqueued resources
 		 *---------------------------------------------------*/
 		reconciler.Info("** Enqueue",
 			"Request", "Create",
@@ -78,18 +75,15 @@ func (w *watchWithRangeAnnotator) watchCreate(reconciler common.Reconciler, gvk 
 		)
 
 		if grafana.HasClientFor(event.Object) {
-			// because the range open has state (uid), we need to save in the controller's store.
-			annotator := &grafana.RangeAnnotation{}
+			annotator := &grafana.PointAnnotation{}
 			annotator.Add(event.Object)
-
-			w.open.Set(event.Object.GetName(), annotator)
 		}
 
 		return true
 	}
 }
 
-func (w *watchWithRangeAnnotator) watchUpdate(reconciler common.Reconciler, gvk schema.GroupVersionKind) UpdateFunc {
+func (w *watchWithPointAnnotation) watchUpdate(reconciler common.Reconciler, gvk schema.GroupVersionKind) UpdateFunc {
 	return func(event event.UpdateEvent) bool {
 		/*---------------------------------------------------*
 		 * Filter out irrelevant of obsolete events
@@ -141,7 +135,7 @@ func (w *watchWithRangeAnnotator) watchUpdate(reconciler common.Reconciler, gvk 
 		}
 
 		/*---------------------------------------------------*
-		 * Print information of enqueued requests
+		 * Print information of enqueued resources
 		 *---------------------------------------------------*/
 		reconciler.Info("** Enqueue",
 			"Request", "Update",
@@ -151,6 +145,7 @@ func (w *watchWithRangeAnnotator) watchUpdate(reconciler common.Reconciler, gvk 
 			"version", fmt.Sprintf("%s -> %s", event.ObjectOld.GetResourceVersion(), event.ObjectNew.GetResourceVersion()),
 		)
 
+		// in general, we are not interested in updates, unless they indicate a failure.
 		if grafana.HasClientFor(event.ObjectNew) {
 			if !prevPhase.Is(v1alpha1.PhaseFailed) && latestPhase.Is(v1alpha1.PhaseFailed) {
 				annotation := &grafana.PointAnnotation{}
@@ -162,7 +157,7 @@ func (w *watchWithRangeAnnotator) watchUpdate(reconciler common.Reconciler, gvk 
 	}
 }
 
-func (w *watchWithRangeAnnotator) watchDelete(reconciler common.Reconciler, gvk schema.GroupVersionKind) DeleteFunc {
+func (w *watchWithPointAnnotation) watchDelete(reconciler common.Reconciler, gvk schema.GroupVersionKind) DeleteFunc {
 	return func(event event.DeleteEvent) bool {
 		/*---------------------------------------------------*
 		 * Filter out irrelevant of obsolete events
@@ -171,7 +166,7 @@ func (w *watchWithRangeAnnotator) watchDelete(reconciler common.Reconciler, gvk 
 			return false
 		}
 
-		// an object was deleted but the watch deletion event was missed while disconnected from apiserver.
+		// an object was deleted but the watch deletion event was missed while disconnected from APIserver.
 		// In this case we don't know the final "resting" state of the object,
 		// so there's a chance the included `Obj` is stale.
 		if event.DeleteStateUnknown {
@@ -181,7 +176,7 @@ func (w *watchWithRangeAnnotator) watchDelete(reconciler common.Reconciler, gvk 
 		}
 
 		/*---------------------------------------------------*
-		 * Print information of enqueued requests
+		 * Print information of enqueued resources
 		 *---------------------------------------------------*/
 		reconciler.Info("** Enqueue",
 			"Request", "Delete",
@@ -191,22 +186,15 @@ func (w *watchWithRangeAnnotator) watchDelete(reconciler common.Reconciler, gvk 
 		)
 
 		if grafana.HasClientFor(event.Object) {
-			annotator, ok := w.open.Get(event.Object.GetName())
-			if !ok {
-				// this is a stall condition that happens when the controller is restarted. just ignore it
-				return false
-			}
-
-			annotator.(*grafana.RangeAnnotation).Delete(event.Object)
-
-			w.open.Remove(event.Object.GetName())
+			annotation := &grafana.PointAnnotation{}
+			annotation.Delete(event.Object)
 		}
 
 		return true
 	}
 }
 
-func (w *watchWithRangeAnnotator) watchGeneric() GenericFunc {
+func (w *watchWithPointAnnotation) watchGeneric() GenericFunc {
 	return func(e event.GenericEvent) bool {
 		return true
 	}

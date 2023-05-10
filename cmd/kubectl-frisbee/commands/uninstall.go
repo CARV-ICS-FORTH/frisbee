@@ -27,18 +27,16 @@ import (
 )
 
 type PlatformUninstallOptions struct {
-	Namespace, Name, RepositoryCache              string
-	All, DeleteCRDS, DeleteCache, DeleteNamespace bool
+	RepositoryCache                                           string
+	DeleteTests, DeleteOperator, DeleteCRDS, DeleteCache, All bool
 }
 
 func PopulatePlatformUninstallFlags(cmd *cobra.Command, options *PlatformUninstallOptions) {
-	cmd.Flags().StringVar(&options.Namespace, "namespace", "frisbee", "namespace where to install")
+	cmd.Flags().BoolVar(&options.DeleteTests, "tests", false, "delete frisbee tests")
+	cmd.Flags().BoolVar(&options.DeleteOperator, "operator", false, "delete frisbee operator")
+	cmd.Flags().BoolVar(&options.DeleteCRDS, "crds", false, "delete frisbee crds")
+	cmd.Flags().BoolVar(&options.DeleteCache, "cache", false, "delete frisbee cache")
 
-	cmd.Flags().StringVar(&options.Name, "name", "frisbee", "installation name")
-
-	cmd.Flags().BoolVar(&options.DeleteCache, "delete-cache", false, "delete frisbee cache")
-	cmd.Flags().BoolVar(&options.DeleteCRDS, "delete-crds", false, "delete frisbee crds")
-	cmd.Flags().BoolVar(&options.DeleteNamespace, "delete-namespace", false, "delete the installation namespace")
 	cmd.Flags().BoolVar(&options.All, "all", false, "delete everything")
 
 	cmd.Flags().StringVar(&options.RepositoryCache, "repository-cache", home.CachePath("repository"), "path to the file containing cached repository indexes")
@@ -54,40 +52,52 @@ func NewUninstallCmd() *cobra.Command {
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			env.Logo()
 			ui.SetVerbose(env.Default.Debug)
+
+			if !common.CRDsExist(common.Scenarios) {
+				ui.Failf("Frisbee is not installed on the kubernetes cluster.")
+			}
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			// Delete Tests
-			if common.CRDsExist(common.Scenarios) {
+			/*---------------------------------------------------*
+			 * Delete Frisbee Tests
+			 *---------------------------------------------------*/
+			if options.DeleteTests || options.All {
 				ui.Info("Deleting Tests. If it takes long time, make sure that Frisbee controller is still running.")
 
+				// Delete namespaces of tests
 				err := common.DeleteNamespaces(common.ManagedNamespace)
 				ui.ExitOnError("Deleting Tests....", err)
-
 				ui.Success("Tests", "Deleted")
 			}
 
-			// Delete Helm Charts
-			{
-				command := []string{
-					"uninstall", "--wait",
-					options.Name,
+			/*---------------------------------------------------*
+			 * Delete Frisbee Operator
+			 *---------------------------------------------------*/
+			if options.DeleteOperator || options.All {
+				// uninstall frisbee operator
+				_, err := common.Helm(common.FrisbeeNamespace, "uninstall", "--wait", common.FrisbeeInstallation)
+				ui.ExitOnError("Deleting Operator ....", common.HelmIgnoreNotFound(err))
+				ui.Success("Operator", "Deleted")
+
+				// delete frisbee namespace
+				out, err := common.Kubectl(common.ClusterScope, "delete", "namespace", common.FrisbeeNamespace)
+				if !common.ErrNotFound(out) {
+					ui.ExitOnError("Deleting namespace ....", err)
 				}
 
-				if env.Default.Debug {
-					command = append(command, "--debug")
-				}
-
-				_, err := common.Helm(options.Namespace, command...)
-				ui.ExitOnError("Deleting Helm charts ....", common.HelmIgnoreNotFound(err))
-
-				ui.Success("Charts", "Deleted")
+				ui.Success("Operator Namespace", "Deleted")
 			}
 
-			// Delete crds
+			/*---------------------------------------------------*
+			 * Delete Frisbee CRDs
+			 *---------------------------------------------------*/
 			if options.DeleteCRDS || options.All {
-				out, err := common.Kubectl("", "delete", "crds", "--wait",
-					common.Scenarios, common.Clusters, common.Services, common.Cascades, common.Chaos,
-					common.Calls, common.VirtualObjects, common.Templates)
+				out, err := common.Kubectl(common.ClusterScope, "delete", "crds", "--wait",
+					common.Services, common.Clusters,
+					common.Chaos, common.Cascades,
+					common.VirtualObjects, common.Calls,
+					common.Templates, common.Scenarios,
+				)
 
 				if err != nil && !common.ErrNotFound(out) {
 					ui.ExitOnError("Deleting CRDs ....", err)
@@ -96,17 +106,9 @@ func NewUninstallCmd() *cobra.Command {
 				ui.Success("CRDs", "Deleted")
 			}
 
-			// Delete namespace
-			if options.DeleteNamespace || options.All {
-				out, err := common.Kubectl("", "delete", "namespace", options.Namespace)
-				if !common.ErrNotFound(out) {
-					ui.ExitOnError("Deleting namespace ....", err)
-				}
-
-				ui.Success("Namespace", "Deleted")
-			}
-
-			// Delete cache
+			/*---------------------------------------------------*
+			 * Delete Cache
+			 *---------------------------------------------------*/
 			if options.DeleteCache || options.All {
 				err := os.RemoveAll(options.RepositoryCache)
 				if err != nil && !os.IsNotExist(err) {
@@ -115,11 +117,6 @@ func NewUninstallCmd() *cobra.Command {
 
 				ui.Success("Cache", "Deleted")
 			}
-		},
-		PersistentPostRun: func(cmd *cobra.Command, args []string) {
-			ui.NL()
-			ui.Success("Frisbee has been uninstalled")
-			ui.NL()
 		},
 	}
 	PopulatePlatformUninstallFlags(cmd, &options)

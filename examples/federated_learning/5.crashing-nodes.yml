@@ -13,7 +13,7 @@ spec:
       service:
         templateRef: fedbed.server
         inputs:
-          - { backend: "tensorflow", min_fit_clients: 2, min_available_clients: 5 }
+           { backend: "tensorflow", min_fit_clients: 2, min_available_clients: 5 }
 
     # Step 2: Create FedBed clients
     - action: Cluster

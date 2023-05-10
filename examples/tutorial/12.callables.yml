@@ -16,7 +16,7 @@ spec:
     # Alter the container's execution, at runtine
     callables:
       launch:
-        container: app                                         # Target container
+        container: main                                         # Target container
         command: [ "echo", "{{.inputs.parameters.message}}" ]  # Function to call
 
 ---
@@ -43,7 +43,7 @@ spec:
       depends: { running: [ idle ] }
       call:
         callable: launch                              # Function to call
-        services: [ idle-1, idle-2, idle-0, idle-3 ]    # List of target services
+        services: [ idle-2, idle-3, idle-1, idle-4 ]    # List of target services
         expect:
           - stdout: "I am B"
           - stdout: "I am C"

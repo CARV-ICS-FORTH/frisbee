@@ -2,12 +2,12 @@
 
 set -eux
 
-export NAMESPACE=parallel-workflows
+export NAMESPACE=bitrot
 
 
 export SCENARIO=$(dirname -- "$0")/manifest.yml
 export REPORTS=${HOME}/frisbee-reports/${NAMESPACE}/
-export DEPENDENCIES=(./charts/system/ ./charts/federated-learning/fedbed/)
+export DEPENDENCIES=(./charts/system/ ./charts/databases/cockroachdb)
 
 
 # Submit the scenario

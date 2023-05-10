@@ -55,7 +55,7 @@ func (in *Cluster) Default() {
 	}
 
 	if in.Spec.DefaultDistributionSpec != nil {
-		in.Spec.DefaultDistributionSpec = &DistributionSpec{Name: DistributionUniform}
+		in.Spec.DefaultDistributionSpec = &DistributionSpec{Name: DistributionConstant}
 	}
 }
 
@@ -68,21 +68,6 @@ func (in *Cluster) ValidateCreate() error {
 	// Set missing values for the template
 	if err := in.Spec.GenerateObjectFromTemplate.Prepare(true); err != nil {
 		clusterlog.Error(err, "template error")
-	}
-
-	// Resources field
-	if resources := in.Spec.Resources; resources != nil {
-		if in.Spec.SuspendWhen != nil {
-			return errors.Errorf("resource distribution conflicts with SuspendWhen conditions")
-		}
-
-		if in.Spec.MaxInstances < 1 {
-			return errors.Errorf("resource distribution requires at least one services")
-		}
-
-		if err := ValidateDistribution(resources.DistributionSpec); err != nil {
-			return errors.Wrapf(err, "distribution error")
-		}
 	}
 
 	// TestData field
@@ -120,6 +105,24 @@ func (in *Cluster) ValidateCreate() error {
 	if suspend := in.Spec.Suspend; suspend != nil {
 		if *suspend {
 			return errors.Errorf("Cannot create a cluster that is already suspended")
+		}
+	}
+
+	// Resources field
+	if resources := in.Spec.Resources; resources != nil {
+		if in.Spec.SuspendWhen != nil {
+			return errors.Errorf("resource distribution conflicts with SuspendWhen conditions")
+		}
+
+		if in.Spec.MaxInstances < 1 {
+			return errors.Errorf("resource distribution requires at least one services")
+		}
+
+		// if nil, Default() will set it to constant
+		if resources.DistributionSpec != nil {
+			if err := ValidateDistribution(resources.DistributionSpec); err != nil {
+				return errors.Wrapf(err, "distribution error")
+			}
 		}
 	}
 

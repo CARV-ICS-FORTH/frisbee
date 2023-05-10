@@ -125,7 +125,7 @@ func Kubectl(testName string, arguments ...string) ([]byte, error) {
 	}
 
 	if testName != "" {
-		arguments = append(arguments, "-n", testName)
+		arguments = append(arguments, "--namespace", testName)
 	}
 
 	return process.Execute(env.Default.Kubectl(), arguments...)
@@ -137,7 +137,7 @@ func LoggedKubectl(testName string, arguments ...string) ([]byte, error) {
 	}
 
 	if testName != "" {
-		arguments = append(arguments, "-n", testName)
+		arguments = append(arguments, "--namespace", testName)
 	}
 
 	return process.LoggedExecuteInDir("", os.Stdout, env.Default.Kubectl(), arguments...)
@@ -156,8 +156,12 @@ func Helm(testName string, arguments ...string) ([]byte, error) {
 		arguments = append(arguments, "--kubeconfig", env.Default.KubeConfigPath)
 	}
 
+	if env.Default.Debug {
+		arguments = append(arguments, "--debug")
+	}
+
 	if testName != "" {
-		arguments = append(arguments, "-n", testName)
+		arguments = append(arguments, "--namespace", testName)
 	}
 
 	return process.Execute(env.Default.Helm(), arguments...)
@@ -169,7 +173,7 @@ func LoggedHelm(testName string, arguments ...string) ([]byte, error) {
 	}
 
 	if testName != "" {
-		arguments = append(arguments, "-n", testName)
+		arguments = append(arguments, "--namespace", testName)
 	}
 
 	return process.LoggedExecuteInDir("", os.Stdout, env.Default.Helm(), arguments...)
@@ -556,7 +560,7 @@ func CreateNamespace(name string, labels ...string) error {
 	// Create namespace
 	command := []string{"create", "namespace", name}
 
-	_, err := Kubectl("", command...)
+	_, err := Kubectl(ClusterScope, command...)
 	if err != nil {
 		return errors.Wrapf(err, "cannot create namespace")
 	}
@@ -573,7 +577,7 @@ func LabelNamespace(name string, labels ...string) error {
 			strings.Join(labels, ","),
 		}
 
-		_, err := Kubectl("", command...)
+		_, err := Kubectl(ClusterScope, command...)
 		if err != nil {
 			return errors.Wrapf(err, "cannot label namespace")
 		}
@@ -595,7 +599,7 @@ func DeleteNamespaces(selector string, testNames ...string) error {
 		command = append(command, testNames...)
 	}
 
-	out, err := Kubectl("", command...)
+	out, err := Kubectl(ClusterScope, command...)
 	if ErrNotFound(out) {
 		return nil
 	}
@@ -603,37 +607,35 @@ func DeleteNamespaces(selector string, testNames ...string) error {
 	return errors.Wrapf(err, "cannot delete namespace")
 }
 
-var K8SRemoveFinalizer = []string{
-	"--patch=\\'[", "{",
-	"op:", "remove,",
-	"path:", "/metadata/finalizers",
-	"}", "]\\'",
-}
+const (
+	K8SRemoveFinalizer = `--patch=[{"op":"remove","path":"/metadata/finalizers"}]`
+)
 
 // ForceDelete iterates the Frisbee CRDs and remove its finalizers.
 func ForceDelete(testName string) error {
-	crds := []string{Scenarios, Clusters, Services, Chaos, Cascades, Calls, VirtualObjects, Templates}
+	crds := []string{Services, Clusters, Chaos, Cascades, VirtualObjects, Calls, Templates, Scenarios}
 
 	for _, crd := range crds {
 		resourceQuery := []string{"get", crd, "-o", "jsonpath='{.items[*].metadata.name}'"}
 
-		resources, err := Kubectl(testName, resourceQuery...)
+		// get all resources of the given Kind
+		ret, err := Kubectl(testName, resourceQuery...)
+		ui.ExitOnError(crd, err)
 
-		switch {
-		case err != nil:
-			ui.Debug("skip operation", crd, err.Error())
-		case string(resources) == "''":
+		resources := strings.Trim(string(ret), "'")
+		if resources == "" {
 			ui.Debug(crd, " resources are deleted.")
-		default:
-			patch := []string{"patch", crd, "--type", "json"}
-			patch = append(patch, K8SRemoveFinalizer...)
-			patch = append(patch, string(resources))
 
-			ui.Debug("Use patch", env.Default.Kubectl(), strings.Join(patch, " "))
+			continue
+		}
 
-			if _, err := Kubectl(testName, patch...); err != nil {
-				return errors.Wrapf(err, "cannot patch '%s' finalizers", crd)
-			}
+		// remove the resource finalizer
+		patch := []string{"patch", crd, resources, "--type", "json", K8SRemoveFinalizer}
+
+		ui.Debug("Use patch", env.Default.Kubectl(), strings.Join(patch, " "))
+
+		if _, err := Kubectl(testName, patch...); err != nil {
+			return errors.Wrapf(err, "cannot patch '%s' finalizers", crd)
 		}
 	}
 

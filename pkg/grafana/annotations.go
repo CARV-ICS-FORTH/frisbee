@@ -37,14 +37,14 @@ func (a *PointAnnotation) Add(obj client.Object, tags ...Tag) {
 		tags = []Tag{TagCreated}
 	}
 
-	ga := sdk.CreateAnnotationRequest{
+	annotationRequest := sdk.CreateAnnotationRequest{
 		Time:    obj.GetCreationTimestamp().UnixMilli(),
 		TimeEnd: 0,
 		Tags:    tags,
-		Text:    fmt.Sprintf("Job added. Kind:%s Name:%s", reflect.TypeOf(obj), obj.GetName()),
+		Text:    fmt.Sprintf("Job Added. Kind:%s Name:%s", reflect.TypeOf(obj), obj.GetName()),
 	}
 
-	GetClientFor(obj).SetAnnotation(ga)
+	GetClientFor(obj).SetAnnotation(annotationRequest)
 }
 
 func (a *PointAnnotation) Delete(obj client.Object, tags ...Tag) {
@@ -57,14 +57,14 @@ func (a *PointAnnotation) Delete(obj client.Object, tags ...Tag) {
 		delTime = &metav1.Time{Time: time.Now()}
 	}
 
-	ga := sdk.CreateAnnotationRequest{
+	annotationRequest := sdk.CreateAnnotationRequest{
 		Time:    delTime.UnixMilli(),
 		TimeEnd: 0,
 		Tags:    tags,
 		Text:    fmt.Sprintf("Job Deleted. Kind:%s Name:%s", reflect.TypeOf(obj), obj.GetName()),
 	}
 
-	GetClientFor(obj).SetAnnotation(ga)
+	GetClientFor(obj).SetAnnotation(annotationRequest)
 }
 
 // RangeAnnotation uses range annotations to indicate the duration of a Chaos.

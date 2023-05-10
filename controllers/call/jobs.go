@@ -23,58 +23,73 @@ import (
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/call/utils"
+	"github.com/carv-ics-forth/frisbee/controllers/common"
 	"github.com/carv-ics-forth/frisbee/pkg/lifecycle"
 	"github.com/carv-ics-forth/frisbee/pkg/structure"
 	"github.com/pkg/errors"
+	k8errors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Call, i int) error {
-	jobName := fmt.Sprintf("%s-%d", cr.GetName(), i)
-	serviceName := cr.Spec.Services[i]
-	callable := cr.Status.QueuedJobs[i]
+type target struct {
+	Callable v1alpha1.Callable
+	Service  string
+}
 
-	r.Info("-> Call", "caller", cr.GetName(), "service", serviceName)
-	defer r.Info("<- Call", "caller", cr.GetName(), "service", serviceName)
+func (t target) String() string {
+	return fmt.Sprintf("Callable '%s/%s'", t.Service, t.Callable.Container)
+}
 
-	pod := types.NamespacedName{
-		Namespace: cr.GetNamespace(),
-		Name:      serviceName,
-	}
+func (r *Controller) runJob(ctx context.Context, caller *v1alpha1.Call, jobIndex int) error {
+	jobName := common.GenerateName(caller, jobIndex)
+
+	var t target
+
+	t.Callable = caller.Status.QueuedJobs[jobIndex]
+	t.Service = caller.Spec.Services[jobIndex]
 
 	// Call normally does not return anything. This however would break all the pipeline for
 	// managing dependencies between jobs. For that, we return a dummy virtual object without dedicated controller.
 	// FIXME: if the call fails, this object will be re-created, and the call will fail with an "existing object" error.
-	return lifecycle.VirtualExecution(ctx, r, cr, jobName, func(task *v1alpha1.VirtualObject) error {
-		res, err := r.executor.Exec(ctx, pod, callable.Container, callable.Command, true)
+	return lifecycle.CreateVirtualJob(ctx, r, caller, jobName, func(task *v1alpha1.VirtualObject) error {
+		r.Info("-> Caller", "caller", caller.GetName(), "target", t)
+		defer r.Info("<- Caller", "caller", caller.GetName(), "target", t)
+
+		pod := types.NamespacedName{
+			Namespace: caller.GetNamespace(),
+			Name:      t.Service,
+		}
+
+		res, err := r.executor.Exec(ctx, pod, t.Callable.Container, t.Callable.Command, true)
+
+		r.Logger.Info("CallOutput",
+			"job", client.ObjectKeyFromObject(caller),
+			"stdout", res.Stdout,
+			"stderr", res.Stderr,
+		)
 
 		defer func() {
 			// Use the virtual object to store the remote execution logs.
 			task.Status.Data = map[string]string{
-				"info":   fmt.Sprintf("Callable '%s/%s'", serviceName, callable.Container),
+				"info":   t.String(),
 				"stdout": res.Stdout,
 				"stderr": res.Stderr,
 			}
 		}()
 
-		r.Logger.Info("CallOutput",
-			"job", client.ObjectKeyFromObject(cr),
-			"stdout", res.Stdout,
-			"stderr", res.Stderr,
-		)
-
 		if err != nil {
-			return errors.Wrapf(err, "call [%s/%s] has failed", serviceName, callable.Container)
+			return errors.Wrapf(err, "call '%s' has failed", t.String())
 		}
 
-		if cr.Spec.Expect != nil {
+		if caller.Spec.Expect != nil {
 			r.Logger.Info("AssertCall",
-				"job", client.ObjectKeyFromObject(cr),
-				"expect", cr.Spec.Expect,
+				"job", client.ObjectKeyFromObject(caller),
+				"expect", caller.Spec.Expect,
 			)
 
-			expect := cr.Spec.Expect[i]
+			expect := caller.Spec.Expect[jobIndex]
 
 			if expect.Stdout != nil {
 				matchStdout, err := regexp.MatchString(*expect.Stdout, res.Stdout)
@@ -104,9 +119,9 @@ func (r *Controller) runJob(ctx context.Context, cr *v1alpha1.Call, i int) error
 }
 
 func (r *Controller) constructJobSpecList(ctx context.Context, call *v1alpha1.Call) ([]v1alpha1.Callable, error) {
-	specs := make([]v1alpha1.Callable, 0, len(call.Spec.Services))
+	specs := make([]v1alpha1.Callable, len(call.Spec.Services))
 
-	for _, serviceName := range call.Spec.Services {
+	for i, serviceName := range call.Spec.Services {
 		// get service spec
 		var service v1alpha1.Service
 
@@ -115,7 +130,20 @@ func (r *Controller) constructJobSpecList(ctx context.Context, call *v1alpha1.Ca
 			Name:      serviceName,
 		}
 
-		if err := r.GetClient().Get(ctx, key, &service); err != nil {
+		// retry to until we get information about the service.
+		if err := retry.OnError(common.DefaultBackoffForServiceEndpoint,
+			// retry condition
+			func(err error) bool {
+				r.Info("Retry to get info about service", "service", key)
+
+				return k8errors.IsNotFound(err)
+			},
+			// execution
+			func() error {
+				return r.GetClient().Get(ctx, key, &service)
+			},
+			// error checking
+		); err != nil {
 			return nil, errors.Wrapf(err, "cannot get info for service %s", serviceName)
 		}
 
@@ -126,7 +154,7 @@ func (r *Controller) constructJobSpecList(ctx context.Context, call *v1alpha1.Ca
 				call.Spec.Callable, serviceName, structure.SortedMapKeys(service.Spec.Callables))
 		}
 
-		specs = append(specs, callable)
+		specs[i] = callable
 	}
 
 	utils.SetTimeline(call)
