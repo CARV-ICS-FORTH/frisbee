@@ -253,16 +253,16 @@ func Create(ctx context.Context, reconciler Reconciler, parent, child client.Obj
 		"obj", client.ObjectKeyFromObject(child),
 	)
 
-	err := reconciler.GetClient().Create(ctx, child)
+	if err := reconciler.GetClient().Create(ctx, child); err != nil {
+		if k8errors.IsAlreadyExists(err) {
+			// already exists. nothing to do.
+			return nil
+		}
 
-	switch {
-	case k8errors.IsAlreadyExists(err):
-		return nil // already exists. nothing to do.
-	case err != nil:
 		return errors.Wrapf(err, "creation error")
-	default:
-		return nil
 	}
+
+	return nil
 }
 
 func ListChildren(ctx context.Context, cli client.Client, childJobs client.ObjectList, req types.NamespacedName) error {

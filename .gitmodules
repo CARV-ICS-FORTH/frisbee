@@ -1,3 +1,0 @@
-[submodule "tools/coverius"]
-	path = tools/coverius
-	url = https://github.com/fnikolai/coverius

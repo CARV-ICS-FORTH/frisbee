@@ -25,82 +25,85 @@ import (
 	"github.com/carv-ics-forth/frisbee/pkg/structure"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// buildVirtualObject builds a new virtual object.
-func buildVirtualObject(parent metav1.Object, name string) *v1alpha1.VirtualObject {
-	var vobject v1alpha1.VirtualObject
-
-	vobject.SetGroupVersionKind(v1alpha1.GroupVersion.WithKind("VirtualObject"))
-	vobject.SetNamespace(parent.GetNamespace())
-	vobject.SetName(name)
-
-	v1alpha1.PropagateLabels(&vobject, parent)
-
-	// FIXME: are these fields really needed ?
-	v1alpha1.SetScenarioLabel(&vobject.ObjectMeta, parent.GetName())
-	v1alpha1.SetComponentLabel(&vobject.ObjectMeta, v1alpha1.ComponentSUT)
-
-	return &vobject
-}
-
-// VirtualExecution wraps a call into a virtual object. This is used for operations that do not create external resources.
+// CreateVirtualJob wraps a call into a virtual object. This is used for operations that do not create external resources.
 // Examples: Deletions, Calls, ...
-// The behavior of VirtualExecution is practically asynchronous.
+// The behavior of CreateVirtualJob is practically asynchronous.
 // If the callback function fails, it will be reflected in the created virtual jobs and should be captured
-// by the parent's lifecycle. The VirtualExecution will return nil.
-// If the VirtualExecution fails (e.g, cannot create a virtual object), it will return an error.
-func VirtualExecution(ctx context.Context, reconciler common.Reconciler, parent client.Object, jobName string,
+// by the parent's lifecycle. The CreateVirtualJob will return nil.
+// If the CreateVirtualJob fails (e.g, cannot create a virtual object), it will return an error.
+func CreateVirtualJob(ctx context.Context, reconciler common.Reconciler,
+	parent client.Object,
+	jobName string,
 	callable func(vobj *v1alpha1.VirtualObject) error,
 ) error {
-	// Step 1. Create the object in the Kubernetes API
-	vJob := buildVirtualObject(parent, jobName)
+	/*---------------------------------------------------
+	 * Create a Virtual Object to host the job
+	 *---------------------------------------------------*/
+	var vJob v1alpha1.VirtualObject
 
-	if err := common.Create(ctx, reconciler, parent, vJob); err != nil {
+	vJob.SetGroupVersionKind(v1alpha1.GroupVersion.WithKind("VirtualObject"))
+	vJob.SetNamespace(parent.GetNamespace())
+	vJob.SetName(jobName)
+	v1alpha1.PropagateLabels(&vJob, parent)
+
+	if err := common.Create(ctx, reconciler, parent, &vJob); err != nil {
 		return errors.Wrapf(err, "cannot create virtual resource for vJob '%s'", jobName)
 	}
 
 	reconciler.GetEventRecorderFor(parent.GetName()).Event(parent, corev1.EventTypeNormal, "VExecBegin", jobName)
 
-	// Step 2. Run the callback function with support for context cancelling
+	/*---------------------------------------------------
+	 * Run the callback function
+	 *---------------------------------------------------*/
 	quit := make(chan error)
 
+	// Trick to support context cancelling
+	// Nonetheless, the call is performed synchronously
 	go func() {
-		quit <- callable(vJob)
+		quit <- callable(&vJob)
 		close(quit)
 	}()
 
-	var jobErr error
+	var callbackJobErr error
 	select {
 	case <-ctx.Done():
-		jobErr = ctx.Err()
-	case jobErr = <-quit:
+		callbackJobErr = ctx.Err()
+	case callbackJobErr = <-quit:
 	}
 
-	// Step 3. Update the status of the virtual job
-	if jobErr != nil {
-		reconciler.GetEventRecorderFor(parent.GetName()).Event(parent, corev1.EventTypeWarning, "VExecFailed", jobName)
-
+	// resolve the status
+	if callbackJobErr != nil {
 		vJob.Status.Lifecycle.Phase = v1alpha1.PhaseFailed
 		vJob.Status.Lifecycle.Reason = "VExecFailed"
-		vJob.Status.Lifecycle.Message = errors.Wrapf(jobErr, "Job failed").Error()
-	} else {
-		reconciler.GetEventRecorderFor(parent.GetName()).Event(parent, corev1.EventTypeNormal, "VExecSuccess", jobName)
+		vJob.Status.Lifecycle.Message = errors.Wrapf(callbackJobErr, "Job failed").Error()
 
+		reconciler.GetEventRecorderFor(parent.GetName()).Event(parent, corev1.EventTypeWarning, "VExecFailed", jobName)
+	} else {
 		vJob.Status.Lifecycle.Phase = v1alpha1.PhaseSuccess
 		vJob.Status.Lifecycle.Reason = "VExecSuccess"
 		vJob.Status.Lifecycle.Message = "Job completed"
+
+		reconciler.GetEventRecorderFor(parent.GetName()).Event(parent, corev1.EventTypeNormal, "VExecSuccess", jobName)
 	}
 
-	// Step 4. Append information for stored data, if any
+	/*---------------------------------------------------
+	 * Update the status of Virtual Job
+	 *---------------------------------------------------*/
+	// Append information for stored data, if any
 	if len(vJob.Status.Data) > 0 {
 		vJob.Status.Message = fmt.Sprintf("%s. <StoredData>: '%s'", vJob.Status.Message, structure.SortedMapKeys(vJob.Status.Data))
 	}
 
-	// Step 5. Update the status of the mockup. This will be captured by the lifecycle.
-	err := common.UpdateStatus(ctx, reconciler, vJob)
+	// remove it to avoid 'metadata.resourceVersion: Invalid value: 0x0: must be specified for an update'
+	// this happens because the last configuration was on create, which does not specify any version
+	delete(vJob.Annotations, "kubectl.kubernetes.io/last-applied-configuration")
 
-	return errors.Wrapf(err, "vexec status update error")
+	if err := common.UpdateStatus(ctx, reconciler, &vJob); err != nil {
+		return errors.Wrapf(err, "vexec status update error")
+	}
+
+	return nil
 }

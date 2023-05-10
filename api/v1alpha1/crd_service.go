@@ -147,8 +147,8 @@ type ServiceList struct {
 func (list ServiceList) Names() []string {
 	names := make([]string, len(list.Items))
 
-	for _, item := range list.Items {
-		names = append(names, item.GetName())
+	for i, item := range list.Items {
+		names[i] = item.GetName()
 	}
 
 	return names

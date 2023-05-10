@@ -125,7 +125,7 @@ func Kubectl(testName string, arguments ...string) ([]byte, error) {
 	}
 
 	if testName != "" {
-		arguments = append(arguments, "-n", testName)
+		arguments = append(arguments, "--namespace", testName)
 	}
 
 	return process.Execute(env.Default.Kubectl(), arguments...)
@@ -137,7 +137,7 @@ func LoggedKubectl(testName string, arguments ...string) ([]byte, error) {
 	}
 
 	if testName != "" {
-		arguments = append(arguments, "-n", testName)
+		arguments = append(arguments, "--namespace", testName)
 	}
 
 	return process.LoggedExecuteInDir("", os.Stdout, env.Default.Kubectl(), arguments...)
@@ -156,8 +156,12 @@ func Helm(testName string, arguments ...string) ([]byte, error) {
 		arguments = append(arguments, "--kubeconfig", env.Default.KubeConfigPath)
 	}
 
+	if env.Default.Debug {
+		arguments = append(arguments, "--debug")
+	}
+
 	if testName != "" {
-		arguments = append(arguments, "-n", testName)
+		arguments = append(arguments, "--namespace", testName)
 	}
 
 	return process.Execute(env.Default.Helm(), arguments...)
@@ -169,7 +173,7 @@ func LoggedHelm(testName string, arguments ...string) ([]byte, error) {
 	}
 
 	if testName != "" {
-		arguments = append(arguments, "-n", testName)
+		arguments = append(arguments, "--namespace", testName)
 	}
 
 	return process.LoggedExecuteInDir("", os.Stdout, env.Default.Helm(), arguments...)

@@ -1,0 +1,56 @@
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Scenario
+metadata:
+  name: cockroach-bitrot
+spec:
+  actions:
+    # Step 0. provision 3 individual servers
+    - action: Cluster
+      name: masters
+      cluster:
+        templateRef: cockroach.cluster.master
+        instances: 3
+        inputs:
+          - { join: "masters-1:26257,masters-2:26257,masters-3:26257" }
+
+    # Step 1. Create a cockroach cluster from the individual servers
+    - action: Call
+      name: boot
+      depends: { running: [ masters ], after: 30s }
+      call:
+        callable: boot
+        services: [ masters-1 ]
+        expect:
+          - { stdout: "Cluster successfully initialized.*" }
+
+    # Step 2. import TPC-C data from the workload node (node 1)
+    - action: Call
+      name: import-workload
+      depends: { success: [ boot ] }
+      call:
+        callable: import-tpcc
+        services: [ masters-1 ]
+
+    # Step 3. corrupt 6 random SST files on each node (abort if node has fewer)
+    - action: Call
+      name: bitrot
+      depends: { success: [ import-workload ] }
+      call:
+        callable: bitrot
+        services: [ masters-1, masters-2, masters-3 ]
+
+    # Step 4. run TPC-C workload for up-to 10 mins (node1)
+    - action: Call
+      name: run-workload
+      depends: { success: [ bitrot ] }
+      call:
+        callable: run-workload
+        services: [ masters-1 ]
+
+    # Teardown
+    - action: Delete
+      name: teardown
+      depends: { running: [ masters ], success: [ run-workload ] }
+      delete:
+        jobs: [ masters ]

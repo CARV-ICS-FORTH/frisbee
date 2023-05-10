@@ -46,11 +46,9 @@ spec:
                 --advertise-addr=$${HOSTNAME}:{{.Values.port}}             \
                 --join=${nodeList}
 
-
-
     callables:
       boot:
-        container: app
+        container: main
         command:
           - /bin/sh   # Run shell
           - -c        # Read from string
@@ -59,7 +57,7 @@ spec:
             cockroach init --insecure
 
       import-tpcc:
-        container: app
+        container: main
         command:
           - /bin/sh   # Run shell
           - -c        # Read from string
@@ -68,7 +66,7 @@ spec:
             ./cockroach workload fixtures import tpcc --warehouses=200 --fks=false --checks=false
 
       bitrot:
-        container: app
+        container: main
         command:
           - /bin/sh   # Run shell
           - -c        # Read from string
@@ -102,7 +100,7 @@ spec:
             done
 
       run-workload:
-        container: app
+        container: main
         command:
           - /bin/sh   # Run shell
           - -c        # Read from string
@@ -112,7 +110,7 @@ spec:
 
 
       test2-import-tpcc:
-        container: app
+        container: main
         command:
           - /bin/sh   # Run shell
           - -c        # Read from string
@@ -121,7 +119,7 @@ spec:
             ./cockroach workload fixtures import tpcc --warehouses=1
 
       test2-wait-for-3x-replication:
-        container: app
+        container: main
         command:
           - /bin/sh   # Run shell
           - -c        # Read from string
@@ -154,7 +152,7 @@ spec:
             done
 
       test2-run-workload:
-        container: app
+        container: main
         command:
           - /bin/sh   # Run shell
           - -c        # Read from string

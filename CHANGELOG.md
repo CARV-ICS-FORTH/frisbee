@@ -5,6 +5,8 @@
 ### Changed defaults / behaviours
 
 - Changed default distribution to Constant
+- Update callables to use 'main' entrypoint instead of the old 'app' entrypoint.
+- Moved the watchPod implemention to the generic Watchers package.
 - ...
 
 ### New Features & Functionality
@@ -16,7 +18,10 @@
 ## Bug Fixes
 
 - Add warning message on `kubectl-frisbee` when no config is found.
-- ...
+- Fix `kubectl-frisbee uninstall` to avoid blocking when the controller crashes.
+- Fix Call to avoid 'metadata.resourceVersion: Invalid value: "": must be specified for an update'
+- --wait on `kubectl-frisbee report` was using as test name the scenario name instead of scenario namespace.
+- Fix table representation of VirtualObjects
 
 ## 1.0.38 \[2023-05-05\]
 

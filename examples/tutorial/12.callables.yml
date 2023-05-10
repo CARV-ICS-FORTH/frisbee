@@ -16,7 +16,7 @@ spec:
     # Alter the container's execution, at runtine
     callables:
       launch:
-        container: app                                         # Target container
+        container: main                                         # Target container
         command: [ "echo", "{{.inputs.parameters.message}}" ]  # Function to call
 
 ---

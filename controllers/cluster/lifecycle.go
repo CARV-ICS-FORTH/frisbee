@@ -33,7 +33,7 @@ func (r *Controller) updateLifecycle(cr *v1alpha1.Cluster) bool {
 		return false
 	}
 
-	// Step 3. Check if "Until" conditions are met.
+	// Step 3. Check if "SuspendWhen" conditions are met.
 	if !cr.Spec.SuspendWhen.IsZero() {
 		if meta.IsStatusConditionTrue(cr.Status.Conditions, v1alpha1.ConditionAllJobsAreScheduled.String()) {
 			// The Until condition is already handled, and we are in the Running Phase.

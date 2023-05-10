@@ -146,37 +146,33 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	case v1alpha1.PhasePending:
 		nextJob := call.Status.ScheduledJobs + 1
 
-		/*
-			If all jobs are scheduled but are not in the Running phase, they may be in the Pending phase.
-			In both cases, we have nothing else to do but waiting for the next reconciliation cycle.
-		*/
+		//	If all jobs are scheduled but are not in the Running phase, they may be in the Pending phase.
+		//	In both cases, we have nothing else to do but waiting for the next reconciliation cycle.
 		if call.Spec.SuspendWhen == nil && (nextJob >= len(call.Status.QueuedJobs)) {
 			return common.Stop(r, req)
 		}
 
 		// Get the next scheduled job
-		{
-			hasJob, nextTick, err := scheduler.Schedule(log, &call, scheduler.Parameters{
-				State:            *r.view,
-				ScheduleSpec:     call.Spec.Schedule,
-				LastScheduleTime: call.Status.LastScheduleTime,
-				ExpectedTimeline: call.Status.ExpectedTimeline,
-				JobName:          call.GetName(),
-				ScheduledJobs:    call.Status.ScheduledJobs,
-			})
-			if err != nil {
-				return lifecycle.Failed(ctx, r, &call, errors.Wrapf(err, "scheduling error"))
+		hasJob, nextTick, err := scheduler.Schedule(log, &call, scheduler.Parameters{
+			State:            *r.view,
+			ScheduleSpec:     call.Spec.Schedule,
+			LastScheduleTime: call.Status.LastScheduleTime,
+			ExpectedTimeline: call.Status.ExpectedTimeline,
+			JobName:          call.GetName(),
+			ScheduledJobs:    call.Status.ScheduledJobs,
+		})
+		if err != nil {
+			return lifecycle.Failed(ctx, r, &call, errors.Wrapf(err, "scheduling error"))
+		}
+
+		if !hasJob {
+			r.Logger.Info("Nothing to do right now. Requeue request.", "nextTick", nextTick)
+
+			if nextTick.IsZero() {
+				return common.Stop(r, req)
 			}
 
-			if !hasJob {
-				r.Logger.Info("Nothing to do right now. Requeue request.", "nextTick", nextTick)
-
-				if nextTick.IsZero() {
-					return common.Stop(r, req)
-				}
-
-				return common.RequeueAfter(r, req, time.Until(nextTick))
-			}
+			return common.RequeueAfter(r, req, time.Until(nextTick))
 		}
 
 		// Build the job in kubernetes
@@ -350,7 +346,7 @@ func (r *Controller) Finalize(obj client.Object) error {
 */
 
 func NewController(mgr ctrl.Manager, logger logr.Logger) error {
-	r := &Controller{
+	reconciler := &Controller{
 		Manager:           mgr,
 		Logger:            logger.WithName("call"),
 		gvk:               v1alpha1.GroupVersion.WithKind("Call"),
@@ -367,6 +363,6 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&call).
 		Named("call").
-		Owns(&vobject, watchers.NewWatchWithRangeAnnotations(r, r.gvk)).
-		Complete(r)
+		Owns(&vobject, watchers.Watch(reconciler, reconciler.gvk)).
+		Complete(reconciler)
 }

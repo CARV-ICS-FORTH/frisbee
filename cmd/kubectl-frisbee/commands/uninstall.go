@@ -54,36 +54,30 @@ func NewUninstallCmd() *cobra.Command {
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			env.Logo()
 			ui.SetVerbose(env.Default.Debug)
+
+			if !common.CRDsExist(common.Scenarios) {
+				ui.Failf("Frisbee is not installed on the kubernetes cluster.")
+			}
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			// Delete Tests
-			if common.CRDsExist(common.Scenarios) {
-				ui.Info("Deleting Tests. If it takes long time, make sure that Frisbee controller is still running.")
-
+			/*---------------------------------------------------*
+			 * Delete Tests
+			 *---------------------------------------------------*/
+			ui.Info("Deleting Tests. If it takes long time, make sure that Frisbee controller is still running.")
+			{
+				// Delete Manifests
 				err := common.DeleteNamespaces(common.ManagedNamespace)
 				ui.ExitOnError("Deleting Tests....", err)
-
 				ui.Success("Tests", "Deleted")
-			}
 
-			// Delete Helm Charts
-			{
-				command := []string{
-					"uninstall", "--wait",
-					options.Name,
-				}
-
-				if env.Default.Debug {
-					command = append(command, "--debug")
-				}
-
-				_, err := common.Helm(options.Namespace, command...)
+				_, err = common.Helm(options.Namespace, "uninstall", "--wait", options.Name)
 				ui.ExitOnError("Deleting Helm charts ....", common.HelmIgnoreNotFound(err))
-
 				ui.Success("Charts", "Deleted")
 			}
 
-			// Delete crds
+			/*---------------------------------------------------*
+			 * Delete CRDs
+			 *---------------------------------------------------*/
 			if options.DeleteCRDS || options.All {
 				out, err := common.Kubectl("", "delete", "crds", "--wait",
 					common.Scenarios, common.Clusters, common.Services, common.Cascades, common.Chaos,
@@ -96,7 +90,9 @@ func NewUninstallCmd() *cobra.Command {
 				ui.Success("CRDs", "Deleted")
 			}
 
-			// Delete namespace
+			/*---------------------------------------------------*
+			 * Delete Namespace
+			 *---------------------------------------------------*/
 			if options.DeleteNamespace || options.All {
 				out, err := common.Kubectl("", "delete", "namespace", options.Namespace)
 				if !common.ErrNotFound(out) {
@@ -106,7 +102,9 @@ func NewUninstallCmd() *cobra.Command {
 				ui.Success("Namespace", "Deleted")
 			}
 
-			// Delete cache
+			/*---------------------------------------------------*
+			 * Delete Cache
+			 *---------------------------------------------------*/
 			if options.DeleteCache || options.All {
 				err := os.RemoveAll(options.RepositoryCache)
 				if err != nil && !os.IsNotExist(err) {

@@ -29,7 +29,7 @@ import (
 // updateLifecycle returns the update lifecycle of the cluster.
 func (r *Controller) updateLifecycle(cr *v1alpha1.Call) bool {
 	// Step 1. Skip any CR which are already completed, or uninitialized.
-	if cr.Status.Phase.Is(v1alpha1.PhaseUninitialized, v1alpha1.PhaseSuccess, v1alpha1.PhaseFailed) {
+	if cr.Status.Lifecycle.Phase.Is(v1alpha1.PhaseUninitialized, v1alpha1.PhaseSuccess, v1alpha1.PhaseFailed) {
 		return false
 	}
 
@@ -49,7 +49,7 @@ func (r *Controller) updateLifecycle(cr *v1alpha1.Call) bool {
 			cr.Status.Lifecycle.Reason = "UntilCondition"
 			cr.Status.Lifecycle.Message = eval.Info
 
-			meta.SetStatusCondition(&cr.Status.Conditions, metav1.Condition{
+			meta.SetStatusCondition(&cr.Status.Lifecycle.Conditions, metav1.Condition{
 				Type:    v1alpha1.ConditionAllJobsAreScheduled.String(),
 				Status:  metav1.ConditionTrue,
 				Reason:  "UntilCondition",
@@ -64,7 +64,7 @@ func (r *Controller) updateLifecycle(cr *v1alpha1.Call) bool {
 		}
 
 		// Event used in conjunction with "Until", instance act as a maximum bound.
-		// If the specified services are stopped before the Until conditions, we assume that
+		// If the maximum instances are reached before the Until conditions, we assume that
 		// the experiment never converges, and it fails.
 		maxJobs := len(cr.Spec.Services)
 
@@ -77,7 +77,7 @@ func (r *Controller) updateLifecycle(cr *v1alpha1.Call) bool {
 			cr.Status.Lifecycle.Reason = "MaxInstancesReached"
 			cr.Status.Lifecycle.Message = msg
 
-			meta.SetStatusCondition(&cr.Status.Conditions, metav1.Condition{
+			meta.SetStatusCondition(&cr.Status.Lifecycle.Conditions, metav1.Condition{
 				Type:    v1alpha1.ConditionJobUnexpectedTermination.String(),
 				Status:  metav1.ConditionTrue,
 				Reason:  "MaxInstancesReached",
@@ -98,7 +98,7 @@ func (r *Controller) updateLifecycle(cr *v1alpha1.Call) bool {
 	}
 
 	// Step 4. Check if scheduling goes as expected.
-	totalJobs := len(cr.Spec.Services)
+	totalJobs := len(cr.Status.QueuedJobs)
 
 	return lifecycle.GroupedJobs(totalJobs, r.view, &cr.Status.Lifecycle, cr.Spec.Tolerate)
 }

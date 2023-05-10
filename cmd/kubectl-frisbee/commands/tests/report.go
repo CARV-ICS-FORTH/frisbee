@@ -43,13 +43,11 @@ import (
 
 const (
 	User = "'':''" // Not really needed since we have no authentication in Grafana.
+
+	Timeout = "24h"
 )
 
-var (
-	DefaultDashboards = []string{"summary", "singleton"}
-
-	Timeout = 24 * time.Hour
-)
+var DefaultDashboards = []string{"summary", "singleton"}
 
 func ReportTestCmdCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	switch {
@@ -157,8 +155,8 @@ func NewReportTestCmd() *cobra.Command {
 			if options.Wait {
 				ui.Info("Waiting for scenario actions to be completed...")
 
-				err = common.WaitForCondition(scenario.GetName(), v1alpha1.ConditionAllJobsAreCompleted, Timeout.String())
-				ui.ExitOnError("scenario has not been be successful after timeout: err", err)
+				err = common.WaitForCondition(testName, v1alpha1.ConditionAllJobsAreCompleted, Timeout)
+				ui.ExitOnError("scenario has not been be successful after "+Timeout+". : err", err)
 			}
 
 			switch {

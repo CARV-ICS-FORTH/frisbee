@@ -72,7 +72,7 @@ spec:
     # of the callables should be available by the controller who calls them.
     callables:
       boot:
-        container: app
+        container: main
         command:
           - /bin/sh
           - -c
@@ -85,7 +85,7 @@ spec:
             done
 
       import-tpcc:
-        container: app
+        container: main
         command:
           - /bin/sh   # Run shell
           - -c        # Read from string
@@ -94,7 +94,7 @@ spec:
             ./cockroach workload fixtures import tpcc --warehouses=100 --fks=false --checks=false
 
       bitrot:
-        container: app
+        container: main
         command:
           - /bin/sh   # Run shell
           - -c        # Read from string
@@ -128,7 +128,7 @@ spec:
             done
 
       run-workload:
-        container: app
+        container: main
         command:
           - /bin/sh   # Run shell
           - -c        # Read from string

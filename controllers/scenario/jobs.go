@@ -229,12 +229,12 @@ func (r *Controller) delete(ctx context.Context, scenario *v1alpha1.Scenario, ac
 
 	// Delete normally does not return anything. This however would break all the pipeline for
 	// managing dependencies between jobs. For that, we return a dummy virtual object without dedicated controller.
-	return lifecycle.VirtualExecution(ctx, r, scenario, action.Name, func(_ *v1alpha1.VirtualObject) error {
+	return lifecycle.CreateVirtualJob(ctx, r, scenario, action.Name, func(_ *v1alpha1.VirtualObject) error {
 		for _, job := range jobsToDelete {
 			// a descriptive name makes it easy to follow the deletion flow from the cli.
 			deleteJobName := fmt.Sprintf("%s-%s", action.Name, job.GetName())
 
-			if err := lifecycle.VirtualExecution(ctx, r, scenario, deleteJobName, func(_ *v1alpha1.VirtualObject) error {
+			if err := lifecycle.CreateVirtualJob(ctx, r, scenario, deleteJobName, func(_ *v1alpha1.VirtualObject) error {
 				common.Delete(ctx, r, job)
 
 				return nil

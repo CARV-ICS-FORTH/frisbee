@@ -12,7 +12,7 @@ spec:
 
     callables:
       drain:
-        container: app
+        container: main
         command:
           - /bin/sh   # Run shell
           - -c        # Read from string
