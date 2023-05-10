@@ -27,7 +27,9 @@ import (
 	"github.com/carv-ics-forth/frisbee/pkg/lifecycle"
 	"github.com/carv-ics-forth/frisbee/pkg/structure"
 	"github.com/pkg/errors"
+	k8errors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -117,9 +119,9 @@ func (r *Controller) runJob(ctx context.Context, caller *v1alpha1.Call, jobIndex
 }
 
 func (r *Controller) constructJobSpecList(ctx context.Context, call *v1alpha1.Call) ([]v1alpha1.Callable, error) {
-	specs := make([]v1alpha1.Callable, 0, len(call.Spec.Services))
+	specs := make([]v1alpha1.Callable, len(call.Spec.Services))
 
-	for _, serviceName := range call.Spec.Services {
+	for i, serviceName := range call.Spec.Services {
 		// get service spec
 		var service v1alpha1.Service
 
@@ -128,7 +130,20 @@ func (r *Controller) constructJobSpecList(ctx context.Context, call *v1alpha1.Ca
 			Name:      serviceName,
 		}
 
-		if err := r.GetClient().Get(ctx, key, &service); err != nil {
+		// retry to until we get information about the service.
+		if err := retry.OnError(common.DefaultBackoffForServiceEndpoint,
+			// retry condition
+			func(err error) bool {
+				r.Info("Retry to get info about service", "service", key)
+
+				return k8errors.IsNotFound(err)
+			},
+			// execution
+			func() error {
+				return r.GetClient().Get(ctx, key, &service)
+			},
+			// error checking
+		); err != nil {
 			return nil, errors.Wrapf(err, "cannot get info for service %s", serviceName)
 		}
 
@@ -139,7 +154,7 @@ func (r *Controller) constructJobSpecList(ctx context.Context, call *v1alpha1.Ca
 				call.Spec.Callable, serviceName, structure.SortedMapKeys(service.Spec.Callables))
 		}
 
-		specs = append(specs, callable)
+		specs[i] = callable
 	}
 
 	utils.SetTimeline(call)

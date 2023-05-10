@@ -30,11 +30,9 @@ import (
 	"github.com/carv-ics-forth/frisbee/pkg/lifecycle"
 	"github.com/carv-ics-forth/frisbee/pkg/scheduler"
 	"github.com/go-logr/logr"
-	cmap "github.com/orcaman/concurrent-map"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -58,14 +56,10 @@ type Controller struct {
 	ctrl.Manager
 	logr.Logger
 
-	gvk schema.GroupVersionKind
-
 	view *lifecycle.Classifier
 
 	// executor is used to run commands directly into containers
 	executor kubexec.Executor
-
-	regionAnnotations cmap.ConcurrentMap
 }
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
@@ -347,22 +341,17 @@ func (r *Controller) Finalize(obj client.Object) error {
 
 func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 	reconciler := &Controller{
-		Manager:           mgr,
-		Logger:            logger.WithName("call"),
-		gvk:               v1alpha1.GroupVersion.WithKind("Call"),
-		view:              &lifecycle.Classifier{},
-		executor:          kubexec.NewExecutor(mgr.GetConfig()),
-		regionAnnotations: cmap.New(),
+		Manager:  mgr,
+		Logger:   logger.WithName("call"),
+		view:     &lifecycle.Classifier{},
+		executor: kubexec.NewExecutor(mgr.GetConfig()),
 	}
 
-	var (
-		call    v1alpha1.Call
-		vobject v1alpha1.VirtualObject
-	)
+	gvk := v1alpha1.GroupVersion.WithKind("Call")
 
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&call).
+		For(&v1alpha1.Call{}).
 		Named("call").
-		Owns(&vobject, watchers.Watch(reconciler, reconciler.gvk)).
+		Owns(&v1alpha1.VirtualObject{}, watchers.Watch(reconciler, gvk)).
 		Complete(reconciler)
 }

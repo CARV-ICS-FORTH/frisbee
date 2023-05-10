@@ -83,7 +83,7 @@ func NewInstallDevelopmentCmd() *cobra.Command {
 
 			command := []string{
 				"upgrade", "--install", "--wait",
-				"--namespace", options.Namespace, "--create-namespace",
+				"--create-namespace", "--namespace", common.FrisbeeNamespace,
 				"--set", fmt.Sprintf("operator.enabled=%t", false),
 				"--set", fmt.Sprintf("operator.advertisedHost=%s", publicIP),
 			}
@@ -92,14 +92,14 @@ func NewInstallDevelopmentCmd() *cobra.Command {
 				command = append(command, "--values", values)
 			}
 
-			command = append(command, options.Name, chartPath)
+			command = append(command, common.FrisbeeInstallation, chartPath)
 
 			common.InstallFrisbeeOnK8s(command, &options)
 		},
 		PersistentPostRun: func(cmd *cobra.Command, args []string) {
 			ui.NL()
 			ui.Success("Frisbee installed in development mode. Run it with: ",
-				fmt.Sprintf("FRISBEE_NAMESPACE=%s make run", options.Namespace))
+				fmt.Sprintf("FRISBEE_NAMESPACE=%s make run", common.FrisbeeNamespace))
 			ui.NL()
 
 			ui.Success(" Happy Testing! 🚀")

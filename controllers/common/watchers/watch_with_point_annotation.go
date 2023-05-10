@@ -145,6 +145,7 @@ func (w *watchWithPointAnnotation) watchUpdate(reconciler common.Reconciler, gvk
 			"version", fmt.Sprintf("%s -> %s", event.ObjectOld.GetResourceVersion(), event.ObjectNew.GetResourceVersion()),
 		)
 
+		// in general, we are not interested in updates, unless they indicate a failure.
 		if grafana.HasClientFor(event.ObjectNew) {
 			if !prevPhase.Is(v1alpha1.PhaseFailed) && latestPhase.Is(v1alpha1.PhaseFailed) {
 				annotation := &grafana.PointAnnotation{}

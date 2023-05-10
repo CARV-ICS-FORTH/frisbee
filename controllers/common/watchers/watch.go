@@ -22,7 +22,6 @@ import (
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
-	"github.com/carv-ics-forth/frisbee/pkg/grafana"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"
@@ -139,13 +138,6 @@ func (w *simpleWatch) watchUpdate(reconciler common.Reconciler, gvk schema.Group
 			"phase", fmt.Sprintf("%s -> %s", prevPhase, latestPhase),
 			"version", fmt.Sprintf("%s -> %s", event.ObjectOld.GetResourceVersion(), event.ObjectNew.GetResourceVersion()),
 		)
-
-		if grafana.HasClientFor(event.ObjectNew) {
-			if !prevPhase.Is(v1alpha1.PhaseFailed) && latestPhase.Is(v1alpha1.PhaseFailed) {
-				annotation := &grafana.PointAnnotation{}
-				annotation.Add(event.ObjectNew, grafana.TagFailed)
-			}
-		}
 
 		return true
 	}

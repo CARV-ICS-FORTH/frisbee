@@ -110,65 +110,68 @@ func NewSubmitTestCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			testName, testFile := args[0], args[1]
 
-			// Lightweight validation of the scenario performed on the client side.
-			// This allows us to filter-out some poorly written scenarios before interacting with the server.
-			// More complex validation is performed on the server side (using admission webhooks) during
-			// the actual submission.
-			{
-				err := common.RunTest(testName, testFile, common.ValidationClient)
-				ui.ExitOnError("Validating testfile: "+testFile, err)
-			}
-
 			// Generate test name, if needed
 			if strings.HasSuffix(testName, "-") {
 				testName = fmt.Sprintf("%s%d", testName, rand.Intn(1000))
 			}
 
+			/*---------------------------------------------------
+			 * Client-side validation of the spec
+			 *---------------------------------------------------*/
+			// Lightweight validation of the scenario performed on the client side.
+			// This allows us to filter-out some poorly written scenarios before interacting with the server.
+			// More complex validation is performed on the server side (using admission webhooks) during
+			// the actual submission.
+			err := common.RunTest(testName, testFile, common.ValidationClient)
+			ui.ExitOnError("Validating testfile: "+testFile, err)
+			ui.Success("Test File has been successfully validated.", testFile)
+
+			/*---------------------------------------------------
+			 * Ensure environment isolation
+			 *---------------------------------------------------*/
 			// Query Kubernetes API for conflicting tests
-			{
-				scenario, err := env.Default.GetFrisbeeClient().GetScenario(cmd.Context(), testName)
+			scenario, err := env.Default.GetFrisbeeClient().GetScenario(cmd.Context(), testName)
+			ui.ExitOnError("Looking for conflicts", client.IgnoreNotFound(err))
 
-				if scenario != nil {
-					ui.Failf("test '%s' already exists", testName)
+			if scenario != nil {
+				ui.Failf("test '%s' already exists", testName)
+			}
+
+			// ensure isolated namespace
+			err = common.CreateNamespace(testName, common.ManagedNamespace)
+			ui.ExitOnError("Creating managed namespace", err)
+
+			/*
+				if options.CPUQuota != "" || options.MemoryQuota != "" {
+					err := common.SetQuota(testName, options.CPUQuota, options.MemoryQuota)
+					ui.ExitOnError("Setting namespace quotas", err)
 				}
+			*/
+			ui.Success("Test Environment is ready.", testName)
 
-				ui.ExitOnError("Looking for conflicts", client.IgnoreNotFound(err))
-			}
-
-			// Ensure the namespace for hosting the scenario
+			/*---------------------------------------------------
+			 * Install Helm Dependencies, if any
+			 *---------------------------------------------------*/
 			{
-				err := common.CreateNamespace(testName, common.ManagedNamespace)
-				ui.ExitOnError("Creating managed namespace: "+testName, err)
-				/*
-					if options.CPUQuota != "" || options.MemoryQuota != "" {
-						err := common.SetQuota(testName, options.CPUQuota, options.MemoryQuota)
-						ui.ExitOnError("Setting namespace quotas", err)
-					}
-				*/
-			}
-
-			// Install Helm Dependencies, if any
-			{
-				helmCharts := args[2:]
-				for _, chart := range helmCharts {
-					command := []string{
+				dependentCharts := args[2:]
+				for _, dependency := range dependentCharts {
+					_, err := common.Helm(testName,
 						"upgrade", "--install",
-						filepath.Base(chart), chart,
+						filepath.Base(dependency), dependency,
 						"--create-namespace",
-					}
-
-					_, err := common.Helm(testName, command...)
-					ui.ExitOnError("Installing Dependency: "+chart, err)
+					)
+					ui.ExitOnError("Installing Dependency: "+dependency, err)
 				}
+
+				ui.Success("Scenario dependencies are installed.", dependentCharts...)
 			}
 
-			// Submit Scenario
-			{
-				err := common.RunTest(testName, testFile, common.ValidationNone)
-				ui.ExitOnError("Starting test-case execution ", err)
-			}
-
-			ui.Success("Test has been successfully submitted.", testName, "(", testFile, ")")
+			/*---------------------------------------------------
+			 * Submit Scenario
+			 *---------------------------------------------------*/
+			err = common.RunTest(testName, testFile, common.ValidationNone)
+			ui.ExitOnError("Starting test-case execution ", err)
+			ui.Success("Test has been successfully submitted.")
 
 			// Control test output
 			ControlOutput(testName, &options)

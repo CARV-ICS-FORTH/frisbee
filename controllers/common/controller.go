@@ -37,7 +37,7 @@ import (
 )
 
 func Stop(r Reconciler, req ctrl.Request) (ctrl.Result, error) {
-	r.Info("** Dequeue", "request", req)
+	r.Info("** Dequeue", "obj", req)
 
 	return ctrl.Result{Requeue: false, RequeueAfter: 0}, nil
 }

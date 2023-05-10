@@ -22,7 +22,11 @@ import (
 	"github.com/robfig/cron/v3"
 )
 
-func ValidateTolerate(_ *TolerateSpec) error {
+func ValidateTolerate(tolerate *TolerateSpec) error {
+	if tolerate == nil {
+		return nil
+	}
+
 	return nil
 }
 

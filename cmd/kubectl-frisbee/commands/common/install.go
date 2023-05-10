@@ -24,14 +24,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const (
-	FrisbeeRepo = "https://carv-ics-forth.github.io/frisbee/charts"
-)
-
-const (
-	JetstackRepo = "https://charts.jetstack.io"
-)
-
 /*******************************************************************
 
 			Install The Frisbee Platform
@@ -39,14 +31,10 @@ const (
 *******************************************************************/
 
 type FrisbeeInstallOptions struct {
-	Name, Namespace string
-	NoCertManager   bool
+	NoCertManager bool
 }
 
 func PopulateInstallFlags(cmd *cobra.Command, options *FrisbeeInstallOptions) {
-	cmd.Flags().StringVar(&options.Name, "name", "frisbee", "installation name")
-	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "frisbee", "installation namespace")
-
 	cmd.Flags().BoolVar(&options.NoCertManager, "no-cert-manager", false, "don't install cert-manager")
 }
 

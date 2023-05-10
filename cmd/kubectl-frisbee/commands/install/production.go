@@ -54,14 +54,14 @@ func NewInstallProductionCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			command := []string{
 				"upgrade", "--install", "--wait",
-				"--namespace", options.Namespace, "--create-namespace",
+				"--namespace", common.FrisbeeNamespace, "--create-namespace",
 			}
 
 			if values != "" {
 				command = append(command, "--values", values)
 			}
 
-			command = append(command, options.Name, chartPath)
+			command = append(command, common.FrisbeeInstallation, chartPath)
 
 			common.InstallFrisbeeOnK8s(command, &options)
 		},

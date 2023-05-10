@@ -17,7 +17,7 @@ spec:
     # Step 1. Create a cockroach cluster from the individual servers
     - action: Call
       name: boot
-      depends: { running: [ masters ], after: 30s }
+      depends: { running: [ masters ] }
       call:
         callable: boot
         services: [ masters-1 ]
@@ -29,6 +29,8 @@ spec:
       name: import-workload
       depends: { success: [ boot ] }
       call:
+        schedule:
+          sequential: true
         callable: import-tpcc
         services: [ masters-1 ]
 

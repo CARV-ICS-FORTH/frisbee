@@ -342,14 +342,9 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 
 	gvk := v1alpha1.GroupVersion.WithKind("Cluster")
 
-	var (
-		cluster v1alpha1.Cluster
-		service v1alpha1.Service
-	)
-
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&cluster).
+		For(&v1alpha1.Cluster{}).
 		Named("cluster").
-		Owns(&service, watchers.Watch(controller, gvk)).
+		Owns(&v1alpha1.Service{}, watchers.Watch(controller, gvk)).
 		Complete(controller)
 }
