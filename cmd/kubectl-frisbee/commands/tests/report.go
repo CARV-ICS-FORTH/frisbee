@@ -35,6 +35,7 @@ import (
 	"github.com/carv-ics-forth/frisbee/pkg/home"
 	"github.com/carv-ics-forth/frisbee/pkg/process"
 	"github.com/gosimple/slug"
+	"github.com/hashicorp/go-multierror"
 	"github.com/kubeshop/testkube/pkg/ui"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -236,7 +237,7 @@ func NewReportTestCmd() *cobra.Command {
 					aggregatedFile := filepath.Join(dashboardDir, "__aggregated__.pdf")
 
 					err = SavePDF(uri, aggregatedFile)
-					ui.ExitOnError("Saving Aggregated PDF to: "+dashboardDir+" for "+dashboardUID, err)
+					ui.ExitOnError("Saving Aggregated PDF to: "+dashboardDir, err)
 				}
 			}
 		},
@@ -255,8 +256,6 @@ func SavePDF(dashboardURI string, dstFile string) error {
 		return err
 	}
 
-	ui.Info("Saving report to", dstFile)
-
 	command := []string{
 		string(DefaultPDFExport),
 		dashboardURI,
@@ -264,7 +263,12 @@ func SavePDF(dashboardURI string, dstFile string) error {
 		dstFile,
 	}
 
-	_, err := process.LoggedExecuteInDir("", os.Stdout, env.Default.NodeJS(), command...)
+	_, err := process.Execute(env.Default.NodeJS(), command...)
+	if err != nil {
+		return err
+	}
+
+	ui.Success("Saved pdf", dstFile)
 
 	return err
 }
@@ -281,6 +285,8 @@ func SavePDFs(ctx context.Context, grafanaClient *grafana.Client, dashboardURI, 
 	/*---------------------------------------------------*
 	 * Generate PDF for each Panel.
 	 *---------------------------------------------------*/
+	var merr *multierror.Error
+
 	for i, panel := range panels {
 		ui.Debug(fmt.Sprintf("Processing %d/%d", i, len(panels)))
 
@@ -288,8 +294,14 @@ func SavePDFs(ctx context.Context, grafanaClient *grafana.Client, dashboardURI, 
 		file := filepath.Join(destDir, slug.Make(panel.Title)+".pdf")
 
 		if err := SavePDF(panelURI, file); err != nil {
-			return errors.Wrapf(err, "cannot save panel '%d (%s)'", panel.ID, panel.Title)
+			merr = multierror.Append(merr,
+				errors.Wrapf(err, "cannot save PDF for panel '%d (%s)'", panel.ID, panel.Title),
+			)
 		}
+	}
+
+	if merr.ErrorOrNil() != nil {
+		ui.Warn("Errors", merr.Error())
 	}
 
 	return nil
@@ -322,10 +334,10 @@ var (
 	DefaultPDFExport PDFExporter
 
 	// FastPDFExporter is fast on individual panels, but does not render dashboard with many panels.
-	FastPDFExporter PDFExporter = ""
+	FastPDFExporter PDFExporter
 
 	// LongPDFExporter can render dashboards with many panels, but it's a bit slow.
-	LongPDFExporter PDFExporter = ""
+	LongPDFExporter PDFExporter
 )
 
 func InstallPDFExporter(location string) {
