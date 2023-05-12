@@ -23,15 +23,14 @@ import (
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
+	"github.com/carv-ics-forth/frisbee/controllers/common/watchers"
+	"github.com/carv-ics-forth/frisbee/pkg/grafana"
 	"github.com/carv-ics-forth/frisbee/pkg/lifecycle"
 	"github.com/go-logr/logr"
-	cmap "github.com/orcaman/concurrent-map"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -48,12 +47,7 @@ type Controller struct {
 	ctrl.Manager
 	logr.Logger
 
-	gvk schema.GroupVersionKind
-
 	view *lifecycle.Classifier
-
-	// because the range annotator has state (uid), we need to save in the controller's store.
-	regionAnnotations cmap.ConcurrentMap
 }
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
@@ -279,15 +273,14 @@ func (r *Controller) Finalize(obj client.Object) error {
 
 func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 	controller := &Controller{
-		Manager:           mgr,
-		Logger:            logger.WithName("chaos"),
-		gvk:               v1alpha1.GroupVersion.WithKind("Chaos"),
-		regionAnnotations: cmap.New(),
-		view:              &lifecycle.Classifier{},
+		Manager: mgr,
+		Logger:  logger.WithName("chaos"),
+		view:    &lifecycle.Classifier{},
 	}
 
+	gvk := v1alpha1.GroupVersion.WithKind("Chaos")
+
 	var (
-		chaos        v1alpha1.Chaos
 		networkChaos GenericFault
 		podChaos     GenericFault
 		// blockChaos Fault
@@ -304,13 +297,13 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 	timeChaos.SetGroupVersionKind(TimeChaosGVK)
 
 	return ctrl.NewControllerManagedBy(mgr).
+		For(&v1alpha1.Chaos{}).
 		Named("chaos").
-		For(&chaos).
-		Owns(&networkChaos, builder.WithPredicates(controller.Watchers())).
-		Owns(&podChaos, builder.WithPredicates(controller.Watchers())).
+		Owns(&networkChaos, watchers.WatchWithRangeAnnotations(controller, gvk, grafana.TagChaos)).
+		Owns(&podChaos, watchers.WatchWithPointAnnotation(controller, gvk, grafana.TagChaos)).
 		// Owns(&blockChaos, builder.WithPredicates(controller.Watchers())).
-		Owns(&ioChaos, builder.WithPredicates(controller.Watchers())).
-		Owns(&kernelChaos, builder.WithPredicates(controller.Watchers())).
-		Owns(&timeChaos, builder.WithPredicates(controller.Watchers())).
+		Owns(&ioChaos, watchers.WatchWithRangeAnnotations(controller, gvk, grafana.TagChaos)).
+		Owns(&kernelChaos, watchers.WatchWithPointAnnotation(controller, gvk, grafana.TagChaos)).
+		Owns(&timeChaos, watchers.WatchWithPointAnnotation(controller, gvk, grafana.TagChaos)).
 		Complete(controller)
 }

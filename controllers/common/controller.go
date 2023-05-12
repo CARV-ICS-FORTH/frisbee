@@ -30,6 +30,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -130,18 +131,19 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 	/*---------------------------------------------------
 	 * Set Finalizers for CR
 	 *---------------------------------------------------*/
-	/*
-		Finalizers provide a mechanism to inform the Kubernetes control plane that an action needs to take place
-		before the standard Kubernetes garbage collection logic can be performed.
-	*/
 	if obj.GetDeletionTimestamp().IsZero() {
-		/*-- Add Finalizers to a new CR--*/
+		// Add Finalizers to a new CR
+		//
+		// Finalizers provide a mechanism to inform the Kubernetes control plane that an action needs to take place
+		// before the standard Kubernetes garbage collection logic can be performed.
 		if controllerutil.AddFinalizer(obj, r.Finalizer()) {
 			logger.Info("AddFinalizer",
 				"finalizer", r.Finalizer(),
-				"current", obj.GetFinalizers())
+				"current", obj.GetFinalizers(),
+			)
 
-			if err := wait.ExponentialBackoffWithContext(ctx, DefaultBackoffForK8sEndpoint,
+			if err := wait.ExponentialBackoffWithContext(ctx,
+				DefaultBackoffForK8sEndpoint,
 				func() (done bool, err error) {
 					if errUpdate := Update(ctx, r, obj); errUpdate != nil {
 						return false, errUpdate
@@ -176,14 +178,18 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 					"current", obj.GetFinalizers(),
 				)
 
-				if err := wait.ExponentialBackoffWithContext(ctx, DefaultBackoffForK8sEndpoint,
-					func() (done bool, err error) {
-						if errUpdate := Update(ctx, r, obj); errUpdate != nil {
-							return false, errUpdate
-						}
+				if err := retry.OnError(DefaultBackoffForK8sEndpoint,
+					// retry condition
+					func(err error) bool {
+						logger.Info("Retry to remove finalizer", "obj", obj, "Err", err)
 
-						return true, nil
+						return true
 					},
+					// execution
+					func() error {
+						return Update(ctx, r, obj)
+					},
+					// error checking
 				); err != nil {
 					logger.Error(err, "Abort retrying to remove finalizer")
 				}

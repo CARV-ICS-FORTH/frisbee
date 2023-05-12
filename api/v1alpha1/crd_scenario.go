@@ -60,6 +60,9 @@ func (in *Scenario) Table() (header []string, data [][]string) {
 
 	// age is the elapsed time since the test was created
 	age := time.Since(in.GetCreationTimestamp().Time)
+	if age < 0 {
+		scenariolog.Info("Time skew between Kubernetes Server and Controller.")
+	}
 
 	// duration is the elapsed time until the test was completed (either succeeded or failed).
 	// if the test is not  yet completed, it is equal to the age.

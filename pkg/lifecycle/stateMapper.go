@@ -81,141 +81,129 @@ func GroupedJobs(totalJobs int, state ClassifierReader, lf *v1alpha1.Lifecycle, 
 		return false
 	}
 
-	var testSequence []test
+	ret := func() (*v1alpha1.Lifecycle, *metav1.Condition) {
+		/*---------------------------------------------------
+		 * Failing Conditions
+		 *---------------------------------------------------*/
+		if state.NumFailedJobs() > 0 {
+			/*---------------------------------------------------
+			 * No Tolerance
+			 *---------------------------------------------------*/
+			if tolerate == nil {
+				failureMsg := fmt.Sprintf("failed: %d (%s)", state.NumFailedJobs(), state.ListFailedJobs())
 
-	// When there are failed jobs, we need to differentiate the number of tolerated failures.
-	if tolerate != nil {
-		message := fmt.Sprintf("tolerate: %d. failed: %d (%s)",
-			tolerate.FailedJobs, state.NumFailedJobs(), state.ListFailedJobs())
+				return &v1alpha1.Lifecycle{
+						Phase:   v1alpha1.PhaseFailed,
+						Reason:  AtLeastOneJobHasFailed,
+						Message: failureMsg,
+					}, &metav1.Condition{
+						Type:    v1alpha1.ConditionJobUnexpectedTermination.String(),
+						Status:  metav1.ConditionTrue,
+						Reason:  AtLeastOneJobHasFailed,
+						Message: failureMsg,
+					}
+			}
 
-		// A job has been failed, but it is within the expected toleration.
-		testSequence = append(testSequence, []test{
-			{ // The number of failed jobs are more than the tolerated failures.
-				expression: state.NumFailedJobs() > tolerate.FailedJobs,
-				lifecycle: v1alpha1.Lifecycle{
-					Phase:   v1alpha1.PhaseFailed,
-					Reason:  TooManyJobsHaveFailed,
-					Message: message,
-				},
-				condition: metav1.Condition{
-					Type:    v1alpha1.ConditionJobUnexpectedTermination.String(),
+			/*---------------------------------------------------
+			 * With tolerance, but Failed jobs are beyond limits
+			 *---------------------------------------------------*/
+			if state.NumFailedJobs() > tolerate.FailedJobs {
+				failureMsg := fmt.Sprintf("tolerate: %d. failed: %d (%s)",
+					tolerate.FailedJobs, state.NumFailedJobs(), state.ListFailedJobs())
+
+				return &v1alpha1.Lifecycle{
+						Phase:   v1alpha1.PhaseFailed,
+						Reason:  TooManyJobsHaveFailed,
+						Message: failureMsg,
+					}, &metav1.Condition{
+						Type:    v1alpha1.ConditionJobUnexpectedTermination.String(),
+						Status:  metav1.ConditionTrue,
+						Reason:  TooManyJobsHaveFailed,
+						Message: failureMsg,
+					}
+			}
+		}
+
+		/*---------------------------------------------------
+		 * Success Conditions
+		 *---------------------------------------------------*/
+		if state.NumSuccessfulJobs() == totalJobs {
+			// All jobs are successfully completed
+			successMsg := fmt.Sprintf("%d (successful) / %d (scheduled) / %d (total)", state.NumSuccessfulJobs(), state.Count(), totalJobs)
+
+			return &v1alpha1.Lifecycle{
+					Phase:   v1alpha1.PhaseSuccess,
+					Reason:  AllJobsAreSuccessful,
+					Message: successMsg,
+				}, &metav1.Condition{
+					Type:    v1alpha1.ConditionAllJobsAreCompleted.String(),
 					Status:  metav1.ConditionTrue,
-					Reason:  TooManyJobsHaveFailed,
-					Message: message,
-				},
-			},
-			{ // The number of failed jobs is less than the tolerated failures, and all other jobs are successful.
-				expression: state.NumSuccessfulJobs()+state.NumFailedJobs() == totalJobs,
-				lifecycle: v1alpha1.Lifecycle{
+					Reason:  AllJobsAreSuccessful,
+					Message: successMsg,
+				}
+		}
+
+		if state.NumSuccessfulJobs()+state.NumFailedJobs() == totalJobs {
+			// All jobs are terminated (either successfully or with tolerated failures)
+			successMsg := fmt.Sprintf("%d (successful) / %d (failed) / %d (total)", state.NumSuccessfulJobs(), state.NumFailedJobs(), totalJobs)
+
+			return &v1alpha1.Lifecycle{
 					Phase:   v1alpha1.PhaseSuccess,
 					Reason:  ToleratedJobsAreSuccessful,
-					Message: message,
-				},
-				condition: metav1.Condition{
+					Message: successMsg,
+				}, &metav1.Condition{
 					Type:    v1alpha1.ConditionAllJobsAreCompleted.String(),
 					Status:  metav1.ConditionTrue,
 					Reason:  ToleratedJobsAreSuccessful,
-					Message: message,
-				},
-			},
-		}...)
-	} else {
-		message := fmt.Sprintf("failed: %s", state.ListFailedJobs())
-
-		// A job has failed during execution.
-		testSequence = append(testSequence, test{
-			expression: state.NumFailedJobs() > 0,
-			lifecycle: v1alpha1.Lifecycle{
-				Phase:   v1alpha1.PhaseFailed,
-				Reason:  AtLeastOneJobHasFailed,
-				Message: message,
-			},
-			condition: metav1.Condition{
-				Type:    v1alpha1.ConditionJobUnexpectedTermination.String(),
-				Status:  metav1.ConditionTrue,
-				Reason:  AtLeastOneJobHasFailed,
-				Message: message,
-			},
-		})
-	}
-
-	// Generic sequence
-	testSequence = append(testSequence, []test{
-		{ // All jobs are successfully completed
-			expression: state.NumSuccessfulJobs() == totalJobs,
-			lifecycle: v1alpha1.Lifecycle{
-				Phase:   v1alpha1.PhaseSuccess,
-				Reason:  AllJobsAreSuccessful,
-				Message: fmt.Sprintf("%d (successful) / %d (scheduled) / %d (total)", state.NumSuccessfulJobs(), state.Count(), totalJobs),
-			},
-			condition: metav1.Condition{
-				Type:    v1alpha1.ConditionAllJobsAreCompleted.String(),
-				Status:  metav1.ConditionTrue,
-				Reason:  AllJobsAreSuccessful,
-				Message: fmt.Sprintf("%d (successful) / %d (scheduled) / %d (total)", state.NumSuccessfulJobs(), state.Count(), totalJobs),
-			},
-		},
-
-		{ // All jobs are created, and at least one is still running
-			expression: state.NumRunningJobs()+state.NumSuccessfulJobs() == totalJobs,
-			lifecycle: v1alpha1.Lifecycle{
-				Phase:   v1alpha1.PhaseRunning,
-				Reason:  AtLeastOneJobIsRunning,
-				Message: fmt.Sprintf("%d (running) / %d (scheduled) / %d (total)", state.NumRunningJobs(), state.Count(), totalJobs),
-			},
-			condition: metav1.Condition{
-				Type:    v1alpha1.ConditionAllJobsAreScheduled.String(),
-				Status:  metav1.ConditionTrue,
-				Reason:  AtLeastOneJobIsRunning,
-				Message: fmt.Sprintf("%d (running) / %d (scheduled) / %d (total)", state.NumRunningJobs(), state.Count(), totalJobs),
-			},
-		},
-		{ // Some Jobs are not yet created
-			expression: lf.Phase == v1alpha1.PhasePending,
-			lifecycle: v1alpha1.Lifecycle{
-				Phase:   v1alpha1.PhasePending,
-				Reason:  AtLeastOneJobIsNotScheduled,
-				Message: fmt.Sprintf("%d (pending) / %d (scheduled) / %d (total)", state.NumPendingJobs(), state.Count(), totalJobs),
-			},
-		},
-		{ // Invalid state transition
-			expression: true,
-			lifecycle: v1alpha1.Lifecycle{
-				Phase:   v1alpha1.PhaseFailed,
-				Reason:  v1alpha1.ConditionInvalidStateTransition.String(),
-				Message: fmt.Sprintf("totalJobs: %d, prev: '%v', current: '%s'", totalJobs, lf, state.ListAll()),
-			},
-			condition: metav1.Condition{
-				Type:    v1alpha1.ConditionInvalidStateTransition.String(),
-				Status:  metav1.ConditionTrue,
-				Reason:  AtLeastOneJobHasFailed,
-				Message: fmt.Sprintf("totalJobs: %d, prev: '%v', current: '%s'", totalJobs, lf, state.ListAll()),
-			},
-		},
-	}...)
-
-	for _, testcase := range testSequence {
-		if testcase.expression { // Check if any lifecycle condition is met
-			if diff.Changed(*lf, testcase.lifecycle) { // Update only if there is any change
-				*lf = testcase.lifecycle
-
-				if testcase.condition != (metav1.Condition{}) {
-					meta.SetStatusCondition(&lf.Conditions, testcase.condition)
+					Message: successMsg,
 				}
-
-				return true
-			}
-
-			// do nothing
-			return false
 		}
+
+		/*---------------------------------------------------
+		 * Running Conditions
+		 *---------------------------------------------------*/
+		if state.NumRunningJobs()+state.NumSuccessfulJobs() == totalJobs {
+			// All jobs are created, and at least one is still running
+			runningMsg := fmt.Sprintf("%d (running) / %d (scheduled) / %d (total)", state.NumRunningJobs(), state.Count(), totalJobs)
+
+			return &v1alpha1.Lifecycle{
+					Phase:   v1alpha1.PhaseRunning,
+					Reason:  AtLeastOneJobIsRunning,
+					Message: runningMsg,
+				}, &metav1.Condition{
+					Type:    v1alpha1.ConditionAllJobsAreScheduled.String(),
+					Status:  metav1.ConditionTrue,
+					Reason:  AtLeastOneJobIsRunning,
+					Message: runningMsg,
+				}
+		}
+
+		/*---------------------------------------------------
+		 * No significant change. Use the previous lifecycle
+		 *---------------------------------------------------*/
+		/*
+				logrus.Warnf(`unhandled lifecycle conditions.
+				current: '%v',
+				jobs: '%s',
+			`, lf, state.ListAll())
+
+		*/
+
+		return nil, nil
 	}
 
-	panic(errors.Errorf(`unhandled lifecycle conditions.
-		current: '%v',
-		totalJobs: '%d',
-		jobs: '%s',
-	`, lf, totalJobs, state.ListAll()))
+	updatedLF, updatedCond := ret()
+	if updatedLF != nil && diff.Changed(lf, updatedLF) {
+		*lf = *updatedLF
+
+		if updatedCond != nil {
+			meta.SetStatusCondition(&lf.Conditions, *updatedCond)
+		}
+
+		return true
+	}
+
+	return false
 }
 
 func SingleJob(state ClassifierReader, lf *v1alpha1.Lifecycle) bool {

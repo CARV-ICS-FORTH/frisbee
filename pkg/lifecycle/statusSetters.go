@@ -32,6 +32,40 @@ import (
 			Lifecycle Setters
 /******************************************************/
 
+// Success is a wrapper that sets Phase to Success and does not requeue the request.
+func Success(ctx context.Context, reconciler common.Reconciler, obj client.Object, msg string) (reconcile.Result, error) {
+	if ctx == nil || obj == nil || msg == "" {
+		panic("invalid args")
+	}
+
+	status := v1alpha1.Lifecycle{
+		Phase:   v1alpha1.PhaseSuccess,
+		Reason:  v1alpha1.PhaseSuccess.String(),
+		Message: msg,
+	}
+
+	if statusAware, updateStatus := obj.(v1alpha1.ReconcileStatusAware); updateStatus {
+		statusAware.SetReconcileStatus(status)
+
+		reconciler.Info("SetLifecycle",
+			"obj", client.ObjectKeyFromObject(obj),
+			"phase", status.Phase)
+
+		if err := common.UpdateStatus(ctx, reconciler, obj); err != nil {
+			return ctrl.Result{RequeueAfter: time.Second, Requeue: true}, nil
+		}
+	} else {
+		reconciler.Info("Object does not support RecocileStatusAware interface. Not setting status",
+			"obj", obj.GetName(),
+			"status", status,
+		)
+	}
+
+	reconciler.GetEventRecorderFor(obj.GetName()).Event(obj, corev1.EventTypeNormal, status.Reason, status.Message)
+
+	return ctrl.Result{}, nil
+}
+
 // Pending is a wrapper that sets Phase to Pending and does not requeue the request.
 func Pending(ctx context.Context, reconciler common.Reconciler, obj client.Object, msg string) (reconcile.Result, error) {
 	if ctx == nil || obj == nil || msg == "" {
@@ -47,16 +81,17 @@ func Pending(ctx context.Context, reconciler common.Reconciler, obj client.Objec
 	if statusAware, updateStatus := obj.(v1alpha1.ReconcileStatusAware); updateStatus {
 		statusAware.SetReconcileStatus(status)
 
-		if err := common.UpdateStatus(ctx, reconciler, obj); err != nil {
-			reconciler.Info("SetLifecycle",
-				"obj", client.ObjectKeyFromObject(obj),
-				"phase", status.Phase)
+		reconciler.Info("SetLifecycle",
+			"obj", client.ObjectKeyFromObject(obj),
+			"phase", status.Phase)
 
+		if err := common.UpdateStatus(ctx, reconciler, obj); err != nil {
 			return ctrl.Result{RequeueAfter: time.Second, Requeue: true}, nil
 		}
 	} else {
 		reconciler.Info("Object does not support RecocileStatusAware interface. Not setting status",
-			"obj", obj.GetName(), "status", status,
+			"obj", obj.GetName(),
+			"status", status,
 		)
 	}
 
@@ -80,11 +115,11 @@ func Failed(ctx context.Context, reconciler common.Reconciler, obj client.Object
 	if statusAware, updateStatus := obj.(v1alpha1.ReconcileStatusAware); updateStatus {
 		statusAware.SetReconcileStatus(status)
 
-		if err := common.UpdateStatus(ctx, reconciler, obj); err != nil {
-			reconciler.Info("SetLifecycle",
-				"obj", client.ObjectKeyFromObject(obj),
-				"phase", status.Phase)
+		reconciler.Info("SetLifecycle",
+			"obj", client.ObjectKeyFromObject(obj),
+			"phase", status.Phase)
 
+		if err := common.UpdateStatus(ctx, reconciler, obj); err != nil {
 			return ctrl.Result{RequeueAfter: time.Second, Requeue: true}, nil
 		}
 	} else {

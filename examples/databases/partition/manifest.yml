@@ -44,7 +44,7 @@ spec:
     # Step 4. run TPC-C workload from the workload node (node 4)
     - action: Call
       name: run-workload
-      depends: { success: [ wait-for-3x-replication ] }
+      depends: { success: [ wait-for-3x-replication ], after: 3m } # give tpcc a head start
       call:
         callable: test2-run-workload
         services: [ masters-3 ]
