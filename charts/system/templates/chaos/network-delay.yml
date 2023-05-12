@@ -15,9 +15,6 @@ spec:
     raw: |
       apiVersion: chaos-mesh.org/v1alpha1
       kind: NetworkChaos
-      metadata:
-        annotations:
-          grafana.frisbee.dev/draw: range
       spec:
         action: delay
         mode: all

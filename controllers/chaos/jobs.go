@@ -36,7 +36,7 @@ func (r *Controller) runJob(ctx context.Context, chaos *v1alpha1.Chaos) error {
 	fault.SetAnnotations(labels.Merge(fault.GetAnnotations(), chaos.GetAnnotations()))
 
 	if err := common.Create(ctx, r, chaos, &fault); err != nil {
-		return errors.Wrapf(err, "cannot inject fault for chaos '%s'", chaos.GetName())
+		return errors.Wrapf(err, "failed to inject chaos type '%s'", chaos.Kind)
 	}
 
 	return nil

@@ -203,24 +203,3 @@ const (
 	// MainContainerName  is the main application that run the service. A service can be either "Main" or "Sidecar".
 	MainContainerName = "main"
 )
-
-// ///////////////////////////////////////////
-//		Grafana Visualization (Annotations)
-// ///////////////////////////////////////////
-
-const (
-	// DrawMethod hints how to mark points on the Grafana dashboard.
-	DrawMethod string = "grafana.frisbee.dev/draw"
-	// DrawAsPoint will mark the creation and deletion of a service as distinct events.
-	DrawAsPoint string = "point"
-	// DrawAsRegion will draw a region starting from the creation of a service and ending to the deletion of the service.
-	DrawAsRegion string = "range"
-)
-
-func DrawRegion(obj metav1.Object) bool {
-	return obj.GetAnnotations()[DrawMethod] == DrawAsRegion
-}
-
-func DrawPoint(obj metav1.Object) bool {
-	return obj.GetAnnotations()[DrawMethod] == DrawAsPoint
-}

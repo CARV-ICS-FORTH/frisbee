@@ -11,9 +11,6 @@ spec:
     raw: |
       apiVersion: chaos-mesh.org/v1alpha1
       kind: PodChaos
-      metadata:
-        annotations:
-          grafana.frisbee.dev/draw: point
       spec:
         action: pod-kill
         mode: one

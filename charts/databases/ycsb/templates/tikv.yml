@@ -20,9 +20,6 @@ spec:
         - system.telemetry.resources
         - ycsb.telemetry.client
 
-        #annotations:
-        #"grafana.frisbee.dev/draw": "range"
-
     containers: # Container(s)
       - name: main
         image: aylei/go-ycsb:20201029
@@ -68,9 +65,6 @@ spec:
       telemetry:
         - system.telemetry.resources
         - ycsb.telemetry.client
-
-        #annotations:
-        #"grafana.frisbee.dev/draw": "range"
 
     containers: # Container(s)
       - name: main

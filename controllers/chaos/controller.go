@@ -115,7 +115,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		// Build the job in kubernetes
 		if err := r.runJob(ctx, &chaos); err != nil {
-			return lifecycle.Failed(ctx, r, &chaos, errors.Wrapf(err, "injection failed"))
+			return lifecycle.Failed(ctx, r, &chaos, errors.Wrapf(err, "chaos injection has failed"))
 		}
 
 		// Update the scheduling information
