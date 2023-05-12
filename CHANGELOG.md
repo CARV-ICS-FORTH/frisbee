@@ -9,6 +9,7 @@
 - Moved the watchPod implementation to the generic Watchers package.
 - Callable does not fail immediately if it does not find a service, but it retries.
 - On Grafana annotations print the extracted Kind of the object instead of the reflected type.
+- Change Grafana background to white so that reports are almost paper-ready.
 - ...
 
 ### New Features & Functionality

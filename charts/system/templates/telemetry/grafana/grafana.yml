@@ -82,8 +82,18 @@ data:
 
 
   grafana.ini: | # For more options see https://github.com/grafana/grafana/blob/main/conf/defaults.ini
+
+    #################################### Users ###############################
+    [users]
+    # Default UI theme ("dark" or "light" or "system")
+    default_theme = dark
+
+    [auth]
+    # Set to true to disable (hide) the login form, useful if you use OAuth
+    disable_login_form = true
+
     #################################### Paths ###############################
-    #[paths]
+    [paths]
     # Path to where grafana can store temp files, sessions, and the sqlite3 db (if that is used)
     #data = /testdata/data
 
@@ -99,8 +109,7 @@ data:
     # folder that contains provisioning config files that grafana will apply on startup and while running.
     #provisioning = conf/provisioning
 
-    [auth]
-    disable_login_form = true
+
 
     #################################### Basic Auth ##########################
     [auth.basic]
@@ -119,5 +128,9 @@ data:
 
 
     #################################### Analytics ###########################
+    [analytics]
+    # Set to false to disable all checks to https://grafana.com for new versions of grafana.
     check_for_updates = false
+
+    # Set to false to disable all checks to https://grafana.com for new versions of plugins.
     check_for_plugin_updates = false
