@@ -73,7 +73,10 @@ func CreateVirtualJob(ctx context.Context, reconciler common.Reconciler,
 	if err := retry.OnError(common.DefaultBackoffForServiceEndpoint,
 		// retry condition
 		func(err error) bool {
-			reconciler.Info("Retry to get info about virtualobject", "virtualobject", key)
+			reconciler.Info("Retry to get info about virtualobject",
+				"virtualobject", key,
+				"Err", err,
+			)
 
 			return k8errors.IsNotFound(err)
 		},

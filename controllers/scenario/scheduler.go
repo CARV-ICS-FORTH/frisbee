@@ -40,6 +40,7 @@ func (r *Controller) NextJobs(scenario *v1alpha1.Scenario) (runNext []v1alpha1.A
 			deadline := scenario.GetCreationTimestamp().Add(dur.Duration)
 
 			// the deadline has expired.
+			// FIXME: this condition is susceptible to time skew on the machine
 			if deadline.Before(cur.Time) {
 				return true
 			}

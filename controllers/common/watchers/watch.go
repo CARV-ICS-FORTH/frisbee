@@ -73,7 +73,8 @@ func (w *simpleWatch) watchCreate(reconciler common.Reconciler, gvk schema.Group
 			"version", event.Object.GetResourceVersion(),
 		)
 
-		return true
+		// we know the creation order, so we do not need to reconcile created objects.
+		return false
 	}
 }
 

@@ -31,7 +31,7 @@ import (
 	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/util/retry"
 )
 
 type Options struct {
@@ -106,18 +106,24 @@ func New(ctx context.Context, setters ...Option) (*Client, error) {
 			return nil, errors.Wrapf(err, "client error")
 		}
 
-		if err := wait.ExponentialBackoffWithContext(ctx, common.DefaultBackoffForServiceEndpoint, func() (done bool, err error) {
-			resp, errHealth := conn.GetHealth(ctx)
-			switch {
-			case errHealth != nil: // API connection error. Just retry
-
-				return false, nil
-			default:
+		if err := retry.OnError(common.DefaultBackoffForServiceEndpoint,
+			// retry condition
+			func(err error) bool {
+				client.logger.Info("Retry to connect to grafana", "Error", err)
+				return true
+			},
+			// execution
+			func() error {
+				resp, err := conn.GetHealth(ctx)
+				if err != nil {
+					return err
+				}
 				client.logger.Info("Connected to Grafana", "healthStatus", resp)
 
-				return true, nil
-			}
-		}); err != nil {
+				return nil
+			},
+			// error checking
+		); err != nil {
 			return nil, errors.Errorf("endpoint '%s' is unreachable", *args.HTTPEndpoint)
 		}
 
@@ -125,7 +131,9 @@ func New(ctx context.Context, setters ...Option) (*Client, error) {
 		client.BaseURL = *args.HTTPEndpoint
 	}
 
-	// connect Grafana to controller for receiving alerts.
+	/*---------------------------------------------------*
+	 * Set Notification channel for receiving alerts
+	 *---------------------------------------------------*/
 	if args.WebhookURL != nil {
 		client.logger.Info("Setting Notification Channel ...", "endpoint", args.WebhookURL)
 
@@ -136,8 +144,11 @@ func New(ctx context.Context, setters ...Option) (*Client, error) {
 		}
 	}
 
-	// Register the client. It will be used by GetFrisbeeClient(), ClientExistsFor()...
+	/*---------------------------------------------------*
+	 * Save client to a pool associated with the scenario.
+	 *---------------------------------------------------*/
 	if args.RegisterFor != nil {
+		// associated clients can be used by GetFrisbeeClient(), ClientExistsFor()...
 		SetClientFor(args.RegisterFor, client)
 	}
 

@@ -32,13 +32,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
-func WatchWithPointAnnotation(r common.Reconciler, gvk schema.GroupVersionKind) builder.Predicates {
-	w := watchWithPointAnnotation{}
+func WatchWithPointAnnotation(r common.Reconciler, gvk schema.GroupVersionKind, tags ...grafana.Tag) builder.Predicates {
+	w := watchWithPointAnnotation{
+		tags: tags,
+	}
 
 	return w.Watch(r, gvk)
 }
 
-type watchWithPointAnnotation struct{}
+type watchWithPointAnnotation struct {
+	tags []grafana.Tag
+}
 
 func (w *watchWithPointAnnotation) Watch(r common.Reconciler, gvk schema.GroupVersionKind) builder.Predicates {
 	return builder.WithPredicates(predicate.Funcs{
@@ -76,10 +80,12 @@ func (w *watchWithPointAnnotation) watchCreate(reconciler common.Reconciler, gvk
 
 		if grafana.HasClientFor(event.Object) {
 			annotator := &grafana.PointAnnotation{}
-			annotator.Add(event.Object)
+
+			annotator.Add(event.Object, w.tags...)
 		}
 
-		return true
+		// we know the creation order, so we do not need to reconcile created objects.
+		return false
 	}
 }
 
@@ -148,8 +154,8 @@ func (w *watchWithPointAnnotation) watchUpdate(reconciler common.Reconciler, gvk
 		// in general, we are not interested in updates, unless they indicate a failure.
 		if grafana.HasClientFor(event.ObjectNew) {
 			if !prevPhase.Is(v1alpha1.PhaseFailed) && latestPhase.Is(v1alpha1.PhaseFailed) {
-				annotation := &grafana.PointAnnotation{}
-				annotation.Add(event.ObjectNew, grafana.TagFailed)
+				annotator := &grafana.PointAnnotation{}
+				annotator.Add(event.ObjectNew, w.tags...)
 			}
 		}
 
@@ -186,8 +192,9 @@ func (w *watchWithPointAnnotation) watchDelete(reconciler common.Reconciler, gvk
 		)
 
 		if grafana.HasClientFor(event.Object) {
-			annotation := &grafana.PointAnnotation{}
-			annotation.Delete(event.Object)
+			annotator := &grafana.PointAnnotation{}
+
+			annotator.Delete(event.Object, w.tags...)
 		}
 
 		return true

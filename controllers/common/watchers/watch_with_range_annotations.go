@@ -33,14 +33,18 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
-func WatchWithRangeAnnotations(r common.Reconciler, gvk schema.GroupVersionKind) builder.Predicates {
-	w := watchWithRangeAnnotator{open: cmap.New()}
+func WatchWithRangeAnnotations(r common.Reconciler, gvk schema.GroupVersionKind, tags ...grafana.Tag) builder.Predicates {
+	w := watchWithRangeAnnotator{
+		open: cmap.New(),
+		tags: tags,
+	}
 
 	return w.Watch(r, gvk)
 }
 
 type watchWithRangeAnnotator struct {
 	open cmap.ConcurrentMap
+	tags []grafana.Tag
 }
 
 func (w *watchWithRangeAnnotator) Watch(r common.Reconciler, gvk schema.GroupVersionKind) builder.Predicates {
@@ -78,14 +82,16 @@ func (w *watchWithRangeAnnotator) watchCreate(reconciler common.Reconciler, gvk 
 		)
 
 		if grafana.HasClientFor(event.Object) {
-			// because the range open has state (uid), we need to save in the controller's store.
 			annotator := &grafana.RangeAnnotation{}
-			annotator.Add(event.Object)
 
+			annotator.Add(event.Object, w.tags...)
+
+			// because the range open has state (uid), we need to save in the controller's store.
 			w.open.Set(event.Object.GetName(), annotator)
 		}
 
-		return true
+		// we know the creation order, so we do not need to reconcile created objects.
+		return false
 	}
 }
 
@@ -191,14 +197,17 @@ func (w *watchWithRangeAnnotator) watchDelete(reconciler common.Reconciler, gvk 
 		)
 
 		if grafana.HasClientFor(event.Object) {
-			annotator, ok := w.open.Get(event.Object.GetName())
+			annotatorIntf, ok := w.open.Get(event.Object.GetName())
 			if !ok {
 				// this is a stall condition that happens when the controller is restarted. just ignore it
 				return false
 			}
 
-			annotator.(*grafana.RangeAnnotation).Delete(event.Object)
+			annotator := annotatorIntf.(*grafana.RangeAnnotation)
 
+			annotator.Delete(event.Object, w.tags...)
+
+			// delete annotator's state.
 			w.open.Remove(event.Object.GetName())
 		}
 

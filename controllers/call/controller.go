@@ -254,15 +254,15 @@ func (r *Controller) PopulateView(ctx context.Context, req types.NamespacedName)
 	return nil
 }
 
-func (r *Controller) HasSucceed(ctx context.Context, cr *v1alpha1.Call) error {
+func (r *Controller) HasSucceed(ctx context.Context, call *v1alpha1.Call) error {
 	r.Logger.Info("CleanOnSuccess",
-		"obj", client.ObjectKeyFromObject(cr).String(),
+		"obj", client.ObjectKeyFromObject(call).String(),
 		"sucessfulJobs", r.view.ListSuccessfulJobs(),
 	)
 
 	/*
-		Remove cr children once the cr is successfully complete.
-		We should not remove the cr descriptor itself, as we need to maintain its
+		Remove cr children once the call is successfully complete.
+		We should not remove the call descriptor itself, as we need to maintain its
 		status for higher-entities like the Scenario.
 	*/
 	for _, job := range r.view.GetSuccessfulJobs() {

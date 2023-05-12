@@ -27,78 +27,82 @@ import (
 )
 
 // updateLifecycle returns the update lifecycle of the cluster.
-func (r *Controller) updateLifecycle(cr *v1alpha1.Call) bool {
+func (r *Controller) updateLifecycle(call *v1alpha1.Call) bool {
 	// Step 1. Skip any CR which are already completed, or uninitialized.
-	if cr.Status.Lifecycle.Phase.Is(v1alpha1.PhaseUninitialized, v1alpha1.PhaseSuccess, v1alpha1.PhaseFailed) {
+	if call.Status.Lifecycle.Phase.Is(v1alpha1.PhaseUninitialized, v1alpha1.PhaseSuccess, v1alpha1.PhaseFailed) {
 		return false
 	}
 
-	// Step 3. Check if "SuspendWhen" conditions are met.
-	if !cr.Spec.SuspendWhen.IsZero() {
-		if meta.IsStatusConditionTrue(cr.Status.Conditions, v1alpha1.ConditionAllJobsAreScheduled.String()) {
-			// The Until condition is already handled, and we are in the Running Phase.
-			// From now on, the lifecycle depends on the progress of the already scheduled jobs.
-			totalJobs := cr.Status.ScheduledJobs + 1
+	/*---------------------------------------------------
+	 * Non-Suspended execution
+	 *---------------------------------------------------*/
+	if call.Spec.SuspendWhen.IsZero() {
+		totalJobs := len(call.Status.QueuedJobs)
 
-			return lifecycle.GroupedJobs(totalJobs, r.view, &cr.Status.Lifecycle, cr.Spec.Tolerate)
-		}
+		return lifecycle.GroupedJobs(totalJobs, r.view, &call.Status.Lifecycle, call.Spec.Tolerate)
+	}
 
-		eval := expressions.Condition{Expr: cr.Spec.SuspendWhen}
-		if eval.IsTrue(r.view, cr) {
-			cr.Status.Lifecycle.Phase = v1alpha1.PhaseRunning
-			cr.Status.Lifecycle.Reason = "UntilCondition"
-			cr.Status.Lifecycle.Message = eval.Info
+	/*---------------------------------------------------
+	 * Suspended execution
+	 *---------------------------------------------------*/
+	if meta.IsStatusConditionTrue(call.Status.Conditions, v1alpha1.ConditionAllJobsAreScheduled.String()) {
+		// The Until condition is already handled, and we are in the Running Phase.
+		// From now on, the lifecycle depends on the progress of the already scheduled jobs.
+		totalJobs := call.Status.ScheduledJobs + 1
 
-			meta.SetStatusCondition(&cr.Status.Lifecycle.Conditions, metav1.Condition{
-				Type:    v1alpha1.ConditionAllJobsAreScheduled.String(),
-				Status:  metav1.ConditionTrue,
-				Reason:  "UntilCondition",
-				Message: eval.Info,
-			})
+		return lifecycle.GroupedJobs(totalJobs, r.view, &call.Status.Lifecycle, call.Spec.Tolerate)
+	}
 
-			// prevent the parent from spawning new jobs.
-			suspend := true
-			cr.Spec.Suspend = &suspend
+	eval := expressions.Condition{Expr: call.Spec.SuspendWhen}
+	if eval.IsTrue(r.view, call) {
+		call.Status.Lifecycle.Phase = v1alpha1.PhaseRunning
+		call.Status.Lifecycle.Reason = "UntilCondition"
+		call.Status.Lifecycle.Message = eval.Info
 
-			return true
-		}
+		meta.SetStatusCondition(&call.Status.Lifecycle.Conditions, metav1.Condition{
+			Type:    v1alpha1.ConditionAllJobsAreScheduled.String(),
+			Status:  metav1.ConditionTrue,
+			Reason:  "UntilCondition",
+			Message: eval.Info,
+		})
 
-		// Event used in conjunction with "Until", instance act as a maximum bound.
-		// If the maximum instances are reached before the Until conditions, we assume that
-		// the experiment never converges, and it fails.
-		maxJobs := len(cr.Spec.Services)
-
-		if maxJobs > 0 && (cr.Status.ScheduledJobs > maxJobs) {
-			msg := fmt.Sprintf(`Resource [%s] has reached Max instances [%d] before Until conditions are met.
-			Abort the experiment as it too flaky to accept. You can retry without defining instances.`,
-				cr.GetName(), maxJobs)
-
-			cr.Status.Lifecycle.Phase = v1alpha1.PhaseFailed
-			cr.Status.Lifecycle.Reason = "MaxInstancesReached"
-			cr.Status.Lifecycle.Message = msg
-
-			meta.SetStatusCondition(&cr.Status.Lifecycle.Conditions, metav1.Condition{
-				Type:    v1alpha1.ConditionJobUnexpectedTermination.String(),
-				Status:  metav1.ConditionTrue,
-				Reason:  "MaxInstancesReached",
-				Message: msg,
-			})
-
-			return true
-		}
-
-		// A side effect of "Until" is that queued jobs will be reused,
-		// until the conditions are met. In that sense, they resemble mostly a pool of jobs
-		// rather than e queue.
-		cr.Status.Lifecycle.Phase = v1alpha1.PhasePending
-		cr.Status.Lifecycle.Reason = "SpawnUntilEvent"
-		cr.Status.Lifecycle.Message = "Assertion is not yet satisfied."
+		// prevent the parent from spawning new jobs.
+		suspend := true
+		call.Spec.Suspend = &suspend
 
 		return true
 	}
 
-	// Step 4. Check if scheduling goes as expected.
-	totalJobs := len(cr.Status.QueuedJobs)
+	// Event used in conjunction with "Until", instance act as a maximum bound.
+	// If the maximum instances are reached before the Until conditions, we assume that
+	// the experiment never converges, and it fails.
+	maxJobs := len(call.Spec.Services)
 
-	return lifecycle.GroupedJobs(totalJobs, r.view, &cr.Status.Lifecycle, cr.Spec.Tolerate)
+	if maxJobs > 0 && (call.Status.ScheduledJobs > maxJobs) {
+		msg := fmt.Sprintf(`Resource [%s] has reached Max instances [%d] before Until conditions are met.
+			Abort the experiment as it too flaky to accept. You can retry without defining instances.`,
+			call.GetName(), maxJobs)
+
+		call.Status.Lifecycle.Phase = v1alpha1.PhaseFailed
+		call.Status.Lifecycle.Reason = "MaxInstancesReached"
+		call.Status.Lifecycle.Message = msg
+
+		meta.SetStatusCondition(&call.Status.Lifecycle.Conditions, metav1.Condition{
+			Type:    v1alpha1.ConditionJobUnexpectedTermination.String(),
+			Status:  metav1.ConditionTrue,
+			Reason:  "MaxInstancesReached",
+			Message: msg,
+		})
+
+		return true
+	}
+
+	// A side effect of "Until" is that queued jobs will be reused,
+	// until the conditions are met. In that sense, they resemble mostly a pool of jobs
+	// rather than e queue.
+	call.Status.Lifecycle.Phase = v1alpha1.PhasePending
+	call.Status.Lifecycle.Reason = "SpawnUntilEvent"
+	call.Status.Lifecycle.Message = "Assertion is not yet satisfied."
+
+	return true
 }
