@@ -61,7 +61,7 @@ spec:
       name: clients
       depends: { running: [ server ] }  # Depends are pre-execution conditions
       assert: # Assert are post-execution conditions
-        state: '{{.IsRunning "server"}} || {{.IsTerminating "server"}}'
+        state: '{{.IsRunning "server"}}'
       cluster:
         templateRef: iperf.client
         inputs:

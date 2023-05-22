@@ -19,11 +19,11 @@ package watchers
 import (
 	"fmt"
 	"reflect"
+	"time"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
 	"github.com/carv-ics-forth/frisbee/pkg/grafana"
-	cmap "github.com/orcaman/concurrent-map"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"
@@ -34,16 +34,12 @@ import (
 )
 
 func WatchWithRangeAnnotations(r common.Reconciler, gvk schema.GroupVersionKind, tags ...grafana.Tag) builder.Predicates {
-	w := watchWithRangeAnnotator{
-		open: cmap.New(),
-		tags: tags,
-	}
+	w := watchWithRangeAnnotator{tags: tags}
 
 	return w.Watch(r, gvk)
 }
 
 type watchWithRangeAnnotator struct {
-	open cmap.ConcurrentMap
 	tags []grafana.Tag
 }
 
@@ -81,13 +77,18 @@ func (w *watchWithRangeAnnotator) watchCreate(reconciler common.Reconciler, gvk 
 			"version", event.Object.GetResourceVersion(),
 		)
 
+		/*---------------------------------------------------*
+		 * Push Event Annotation to Grafana
+		 *---------------------------------------------------*/
 		if grafana.HasClientFor(event.Object) {
-			annotator := &grafana.RangeAnnotation{}
+			// Define tags. The priority (e.g, Chaos over Create) is set at the level of the dashboard.
+			tags := append(w.tags, grafana.TagCreated)
 
-			annotator.Add(event.Object, w.tags...)
+			// define creation time
+			creationTime := event.Object.GetCreationTimestamp().Time
 
-			// because the range open has state (uid), we need to save in the controller's store.
-			w.open.Set(event.Object.GetName(), annotator)
+			// push the annotation asynchronously
+			go grafana.AnnotatePointInTime(event.Object, creationTime, tags)
 		}
 
 		// we know the creation order, so we do not need to reconcile created objects.
@@ -107,14 +108,6 @@ func (w *watchWithRangeAnnotator) watchUpdate(reconciler common.Reconciler, gvk 
 		if event.ObjectOld.GetResourceVersion() >= event.ObjectNew.GetResourceVersion() {
 			// Periodic resync will send update events for all known pods.
 			// Two different versions of the same pod will always have different RVs.
-			return false
-		}
-
-		if !event.ObjectNew.GetDeletionTimestamp().IsZero() {
-			// when an object is deleted gracefully it's deletion timestamp is first modified to reflect a grace period,
-			// and after such time has passed, the kubelet actually deletes it from the store. We receive an update
-			// for modification of the deletion timestamp and expect the reconciler to act asap, not to wait until the
-			// kubelet actually deletes the object.
 			return false
 		}
 
@@ -157,11 +150,25 @@ func (w *watchWithRangeAnnotator) watchUpdate(reconciler common.Reconciler, gvk 
 			"version", fmt.Sprintf("%s -> %s", event.ObjectOld.GetResourceVersion(), event.ObjectNew.GetResourceVersion()),
 		)
 
+		/*---------------------------------------------------*
+		 * Push Event Annotation to Grafana
+		 *---------------------------------------------------*/
 		if grafana.HasClientFor(event.ObjectNew) {
-			if !prevPhase.Is(v1alpha1.PhaseFailed) && latestPhase.Is(v1alpha1.PhaseFailed) {
-				annotation := &grafana.PointAnnotation{}
-				annotation.Add(event.ObjectNew, grafana.TagFailed)
+			// in general, we are not interested in updates, unless they indicate a failure.
+			if latestPhase.Is(v1alpha1.PhaseFailed) && !prevPhase.Is(v1alpha1.PhaseFailed) {
+
+				// Define tags. The priority (e.g, Chaos over Create) is set at the level of the dashboard.
+				tags := append(w.tags, grafana.TagFailed)
+
+				// set failure-detection time
+				// Perhaps we can use the state transition time.
+				failureTime := time.Now()
+
+				// push the annotation asynchronously
+				go grafana.AnnotatePointInTime(event.ObjectNew, failureTime, tags)
 			}
+		} else {
+			reconciler.Info("No Grafana Client", "object", client.ObjectKeyFromObject(event.ObjectNew))
 		}
 
 		return true
@@ -196,19 +203,32 @@ func (w *watchWithRangeAnnotator) watchDelete(reconciler common.Reconciler, gvk 
 			"version", event.Object.GetResourceVersion(),
 		)
 
+		/*---------------------------------------------------*
+		 * Push Event Annotation to Grafana
+		 *---------------------------------------------------*/
 		if grafana.HasClientFor(event.Object) {
-			annotatorIntf, ok := w.open.Get(event.Object.GetName())
-			if !ok {
-				// this is a stall condition that happens when the controller is restarted. just ignore it
-				return false
+			// Define tags. The priority (e.g, Chaos over Create) is set at the level of the dashboard.
+			tags := append(w.tags, grafana.TagDeleted)
+
+			statusAware, ok := event.Object.(v1alpha1.ReconcileStatusAware)
+			if ok {
+				if statusAware.GetReconcileStatus().Phase.Is(v1alpha1.PhaseFailed) {
+					tags = append(tags, grafana.TagFailed)
+				}
 			}
 
-			annotator := annotatorIntf.(*grafana.RangeAnnotation)
+			// set time range
+			timeStart := event.Object.GetCreationTimestamp().Time
+			timeEnd := time.Now()
 
-			annotator.Delete(event.Object, w.tags...)
+			if !event.Object.GetDeletionTimestamp().IsZero() {
+				timeEnd = event.Object.GetDeletionTimestamp().Time
+			}
 
-			// delete annotator's state.
-			w.open.Remove(event.Object.GetName())
+			// push the annotation asynchronously
+			go grafana.AnnotateTimerange(event.Object, timeStart, timeEnd, tags)
+		} else {
+			reconciler.Info("No Grafana Client", "object", client.ObjectKeyFromObject(event.Object))
 		}
 
 		return true

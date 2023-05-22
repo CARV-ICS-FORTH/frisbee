@@ -26,70 +26,6 @@
         },
         "enable": true,
         "expr": "",
-        "iconColor": "blue",
-        "iconSize": 0,
-        "lineColor": "",
-        "name": "Create",
-        "query": "",
-        "showLine": false,
-        "step": "",
-        "tagKeys": "",
-        "tags": [
-          "run"
-        ],
-        "tagsField": "",
-        "target": {
-          "limit": 100,
-          "matchAny": false,
-          "tags": [
-            "create"
-          ],
-          "type": "tags"
-        },
-        "textField": "",
-        "textFormat": "",
-        "titleFormat": "",
-        "type": "tags"
-      },
-      {
-        "datasource": {
-          "type": "datasource",
-          "uid": "grafana"
-        },
-        "enable": true,
-        "expr": "",
-        "iconColor": "#FF9830",
-        "iconSize": 0,
-        "lineColor": "",
-        "name": "Deleted",
-        "query": "",
-        "showLine": false,
-        "step": "",
-        "tagKeys": "",
-        "tags": [
-          "exit"
-        ],
-        "tagsField": "",
-        "target": {
-          "limit": 100,
-          "matchAny": false,
-          "tags": [
-            "delete"
-          ],
-          "type": "tags"
-        },
-        "textField": "",
-        "textFormat": "",
-        "titleFormat": "",
-        "type": "tags"
-      },
-      {
-        "datasource": {
-          "type": "datasource",
-          "uid": "grafana"
-        },
-        "enable": true,
-        "expr": "",
         "iconColor": "#F2495C",
         "iconSize": 0,
         "lineColor": "",
@@ -147,6 +83,70 @@
           ],
           "type": "tags"
         }
+      },
+      {
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
+        "enable": true,
+        "expr": "",
+        "iconColor": "blue",
+        "iconSize": 0,
+        "lineColor": "",
+        "name": "Create",
+        "query": "",
+        "showLine": false,
+        "step": "",
+        "tagKeys": "",
+        "tags": [
+          "run"
+        ],
+        "tagsField": "",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [
+            "create"
+          ],
+          "type": "tags"
+        },
+        "textField": "",
+        "textFormat": "",
+        "titleFormat": "",
+        "type": "tags"
+      },
+      {
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
+        "enable": true,
+        "expr": "",
+        "iconColor": "#FF9830",
+        "iconSize": 0,
+        "lineColor": "",
+        "name": "Deleted",
+        "query": "",
+        "showLine": false,
+        "step": "",
+        "tagKeys": "",
+        "tags": [
+          "exit"
+        ],
+        "tagsField": "",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [
+            "delete"
+          ],
+          "type": "tags"
+        },
+        "textField": "",
+        "textFormat": "",
+        "titleFormat": "",
+        "type": "tags"
       }
     ]
   },

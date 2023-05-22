@@ -1,0 +1,48 @@
+# Demonstrates the combination of tolerance with killing.
+# The test should fail. Change the "failedJobs" to see that happens.
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Template
+metadata:
+  name: sleeper
+spec:
+  service:
+    containers:
+      - name: main
+        image: busybox
+        command: [ "tail", "-f", "/dev/null" ]
+
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Scenario
+metadata:
+  name: delete-cluster-with-tolerance
+spec:
+  actions:
+    # Create 5 instances
+    - action: Cluster
+      name: sleepers
+      cluster:
+        templateRef: sleeper
+        instances: 5
+        tolerate:
+          failedJobs: 1 # Cluster should fail if a second job is killed.
+
+    # Delete two instances, one every 1 minute
+    - action: Cascade
+      name: killer
+      depends: { running: [ sleepers ], after: "30s" }
+      cascade:
+        templateRef: system.chaos.pod.kill
+        inputs:
+          - { target: sleepers-1 }
+          - { target: sleepers-3 }
+        schedule:
+          cron: "@every 30s"
+
+    # When all actions are done, delete looping servers to gracefully exit the experiment
+    - action: Delete
+      name: teardown
+      depends: { running: [ sleepers ], success: [ killer ] }
+      delete:
+        jobs: [ sleepers ]

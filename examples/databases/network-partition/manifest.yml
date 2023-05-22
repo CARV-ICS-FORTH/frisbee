@@ -24,13 +24,14 @@ spec:
         expect:
           - { stdout: "Cluster successfully initialized.*" }
 
-    # Step 2. import TPC-C data from the workload node (node 1)
-    - action: Call
-      name: import-workload
+    # Step 2. import data to the workload node (node 1)
+    - action: Service
       depends: { success: [ boot ] }
-      call:
-        callable: test2-import-tpcc
-        services: [ masters-1 ]
+      name: import-workload
+      service:
+        templateRef: ycsb.cockroach.loader
+        inputs:
+          - { server: masters-1, workload: workloada, recordcount: "100000", threads: "16", delay: "15" }
 
     # Step 3. wait for 3x replication
     # Alternatively, wait for "Under-replicated" metric from Grafana to become 0
@@ -41,23 +42,23 @@ spec:
         callable: test2-wait-for-3x-replication
         services: [ masters-1 ]
 
-    # Step 4. run TPC-C workload from the workload node (node 4)
-    - action: Call
+    # Step 4A. run workload for up-to 10 mins (node1)
+    - action: Service
+      depends: { success: [ wait-for-3x-replication  ] }
       name: run-workload
-      depends: { success: [ wait-for-3x-replication ], after: 3m } # give tpcc a head start
-      call:
-        callable: test2-run-workload
-        services: [ masters-3 ]
+      service:
+        templateRef: ycsb.cockroach.runner
+        inputs:
+          - { server: masters-1, workload: workloada, operationcount: "10000000", threads: "4" }
 
-    # Step5. partition node 1 from the rest of the nodes; node 1 can reach other nodes, but no other nodes can reach node 1
+    # Step4B. partition node 1 from the rest of the nodes; node 1 can reach other nodes, but no other nodes can reach node 1
     - action: Chaos
       name: partition0
-      depends: { success: [ wait-for-3x-replication ], after: "3m" } # give tpcc a head start
+      depends: { success: [ wait-for-3x-replication ], after: "5m" } # give tpcc a head start
       chaos:
         templateRef: system.chaos.network.partition.partial
         inputs:
-          - { source: masters-1, duration: 10m , direction: "to", dst: "masters-2, masters-3, masters-4" }
-
+          - { source: masters-1, duration: 5m , direction: "to", dst: "masters-2, masters-3, masters-4" }
 
     # Teardown
     - action: Delete

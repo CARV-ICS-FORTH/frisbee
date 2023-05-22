@@ -141,8 +141,6 @@ type JobStatus interface {
 	IsSuccessful(job ...string) bool
 	// IsFailed returns true if the given jobs are in the Failed phase.
 	IsFailed(job ...string) bool
-	// IsTerminating returns true if the given jobs are being deleted.
-	IsTerminating(job ...string) bool
 }
 
 // +kubebuilder:object:generate=false
@@ -156,8 +154,6 @@ type NumberOfJobs interface {
 	NumSuccessfulJobs() int
 	// NumFailedJobs returns the number of jobs in Failed Phase.
 	NumFailedJobs() int
-	// NumTerminatingJobs returns the number of jobs that are being deleted.
-	NumTerminatingJobs() int
 }
 
 // +kubebuilder:object:generate=false
@@ -171,8 +167,6 @@ type ListJobs interface {
 	ListSuccessfulJobs() []string
 	// ListFailedJobs returns the name of jobs in Failed Phase.
 	ListFailedJobs() []string
-	// ListTerminatingJobs returns the name of jobs that are being deleted.
-	ListTerminatingJobs() []string
 }
 
 // +kubebuilder:object:generate=false
@@ -201,10 +195,6 @@ func (DefaultClassifier) IsSuccessful(_ ...string) bool {
 }
 
 func (DefaultClassifier) IsFailed(_ ...string) bool {
-	return false
-}
-
-func (DefaultClassifier) IsTerminating(_ ...string) bool {
 	return false
 }
 

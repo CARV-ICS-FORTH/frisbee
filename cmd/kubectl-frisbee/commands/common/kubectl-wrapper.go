@@ -432,7 +432,10 @@ func KubectlLogs(testName string, tail bool, lines int, pods ...string) error {
 	if len(pods) == 1 {
 		switch pods[0] {
 		case "all":
+			ui.Warn("Streaming all logs in not advised for large experiments. Limit: 100")
+
 			command = append(command, "-l", v1alpha1.LabelScenario)
+			command = append(command, "--max-log-requests=100")
 		case "SYS":
 			command = append(command, "-l", strings.Join([]string{v1alpha1.LabelScenario, FilterSYS}, ","))
 		case "SUT":
@@ -491,8 +494,13 @@ func KubectlLogs(testName string, tail bool, lines int, pods ...string) error {
 
 func OpenShell(testName string, podName string, shellArgs ...string) error {
 	command := []string{
+		"--namespace", testName,
 		"exec",
-		"--stdin", "--tty", "-n", testName, podName,
+		"--stdin", "--tty", podName,
+	}
+
+	if env.Default.KubeConfigPath != "" {
+		command = append(command, "--kubeconfig", env.Default.KubeConfigPath)
 	}
 
 	if len(shellArgs) == 0 {

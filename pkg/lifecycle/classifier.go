@@ -52,12 +52,11 @@ var _ ClassifierReader = (*Classifier)(nil)
 // Classifier splits jobs into Pending, Running, Successful, and Failed.
 // To relief the garbage collector, we use an embeddable structure that we reset at every reconciliation cycle.
 type Classifier struct {
-	pendingJobs     map[string]client.Object
-	runningJobs     map[string]client.Object
-	successfulJobs  map[string]client.Object
-	failedJobs      map[string]client.Object
-	terminatingJobs map[string]client.Object
-	systemJobs      map[string]client.Object
+	pendingJobs    map[string]client.Object
+	runningJobs    map[string]client.Object
+	successfulJobs map[string]client.Object
+	failedJobs     map[string]client.Object
+	systemJobs     map[string]client.Object
 }
 
 func (in *Classifier) Reset() {
@@ -65,7 +64,6 @@ func (in *Classifier) Reset() {
 	in.runningJobs = make(map[string]client.Object)
 	in.successfulJobs = make(map[string]client.Object)
 	in.failedJobs = make(map[string]client.Object)
-	in.terminatingJobs = make(map[string]client.Object)
 	in.systemJobs = make(map[string]client.Object)
 }
 
@@ -74,12 +72,6 @@ type Convertor func(object client.Object) v1alpha1.Lifecycle
 // ClassifyExternal classifies the object based on the custom lifecycle.
 func (in *Classifier) ClassifyExternal(name string, obj client.Object, conv Convertor) {
 	status := conv(obj)
-
-	if !obj.GetDeletionTimestamp().IsZero() {
-		in.terminatingJobs[name] = obj
-
-		return
-	}
 
 	switch status.Phase {
 	case v1alpha1.PhaseUninitialized:
@@ -104,12 +96,6 @@ func (in *Classifier) ClassifyExternal(name string, obj client.Object, conv Conv
 
 // Classify the object based on the  standard Frisbee lifecycle.
 func (in *Classifier) Classify(name string, obj client.Object) {
-	if !obj.GetDeletionTimestamp().IsZero() {
-		in.terminatingJobs[name] = obj
-
-		return
-	}
-
 	if statusAware, getStatus := obj.(v1alpha1.ReconcileStatusAware); getStatus {
 		status := statusAware.GetReconcileStatus()
 
@@ -229,17 +215,6 @@ func (in *Classifier) IsFailed(job ...string) bool {
 	return true
 }
 
-func (in *Classifier) IsTerminating(job ...string) bool {
-	for _, name := range job {
-		_, ok := in.terminatingJobs[name]
-		if !ok {
-			return false
-		}
-	}
-
-	return true
-}
-
 func (in *Classifier) NumPendingJobs() int {
 	return len(in.pendingJobs)
 }
@@ -256,17 +231,12 @@ func (in Classifier) NumFailedJobs() int {
 	return len(in.failedJobs)
 }
 
-func (in Classifier) NumTerminatingJobs() int {
-	return len(in.terminatingJobs)
-}
-
 func (in *Classifier) NumAll() string {
 	return fmt.Sprint(
 		"\n * Pending:", in.NumPendingJobs(),
 		"\n * Running:", in.NumRunningJobs(),
 		"\n * Success:", in.NumSuccessfulJobs(),
 		"\n * Failed:", in.NumFailedJobs(),
-		"\n * Failed:", in.NumTerminatingJobs(),
 		"\n",
 	)
 }
@@ -319,25 +289,12 @@ func (in *Classifier) ListFailedJobs() []string {
 	return list
 }
 
-func (in *Classifier) ListTerminatingJobs() []string {
-	list := make([]string, 0, len(in.terminatingJobs))
-
-	for jobName := range in.terminatingJobs {
-		list = append(list, jobName)
-	}
-
-	sort.Strings(list)
-
-	return list
-}
-
 func (in *Classifier) ListAll() string {
 	return fmt.Sprint(
 		"\n * Pending:", in.ListPendingJobs(),
 		"\n * Running:", in.ListRunningJobs(),
 		"\n * Success:", in.ListSuccessfulJobs(),
 		"\n * Failed:", in.ListFailedJobs(),
-		"\n * Terminating:", in.ListTerminatingJobs(),
 		"\n",
 	)
 }
@@ -417,27 +374,6 @@ func (in *Classifier) GetFailedJobs(jobNames ...string) []client.Object {
 		// otherwise, iterate the list
 		for _, job := range jobNames {
 			j, exists := in.failedJobs[job]
-			if exists {
-				list = append(list, j)
-			}
-		}
-	}
-
-	return list
-}
-
-func (in *Classifier) GetTerminatingJobs(jobNames ...string) []client.Object {
-	list := make([]client.Object, 0, len(in.failedJobs))
-
-	if len(jobNames) == 0 {
-		// if no job names are defined, return everything
-		for _, job := range in.terminatingJobs {
-			list = append(list, job)
-		}
-	} else {
-		// otherwise, iterate the list
-		for _, job := range jobNames {
-			j, exists := in.terminatingJobs[job]
 			if exists {
 				list = append(list, j)
 			}

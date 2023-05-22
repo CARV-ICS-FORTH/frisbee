@@ -24,15 +24,14 @@ spec:
         expect:
           - { stdout: "Cluster successfully initialized.*" }
 
-    # Step 2. import TPC-C data from the workload node (node 1)
-    - action: Call
-      name: import-workload
+    # Step 2. import data to the workload node (node 1)
+    - action: Service
       depends: { success: [ boot ] }
-      call:
-        schedule:
-          sequential: true
-        callable: import-tpcc
-        services: [ masters-1 ]
+      name: import-workload
+      service:
+        templateRef: ycsb.cockroach.loader
+        inputs:
+          - { server: masters-1, workload: workloada, recordcount: "100000", threads: "16", delay: "15" }
 
     # Step 3. corrupt 6 random SST files on each node (abort if node has fewer)
     - action: Call
@@ -42,13 +41,14 @@ spec:
         callable: bitrot
         services: [ masters-1, masters-2, masters-3 ]
 
-    # Step 4. run TPC-C workload for up-to 10 mins (node1)
-    - action: Call
-      name: run-workload
+    # Step 4. run workload for up-to 10 mins (node1)
+    - action: Service
       depends: { success: [ bitrot ] }
-      call:
-        callable: run-workload
-        services: [ masters-1 ]
+      name: run-workload
+      service:
+        templateRef: ycsb.cockroach.runner
+        inputs:
+          - { server: masters-1, workload: workloada, operationcount: "10000000", threads: "4" }
 
     # Teardown
     - action: Delete

@@ -93,14 +93,6 @@ func (w *simpleWatch) watchUpdate(reconciler common.Reconciler, gvk schema.Group
 			return false
 		}
 
-		if !event.ObjectNew.GetDeletionTimestamp().IsZero() {
-			// when an object is deleted gracefully it's deletion timestamp is first modified to reflect a grace period,
-			// and after such time has passed, the kubelet actually deletes it from the store. We receive an update
-			// for modification of the deletion timestamp and expect the reconciler to act asap, not to wait until the
-			// kubelet actually deletes the object.
-			return false
-		}
-
 		/*---------------------------------------------------*
 		 * Try to extract information about Phase changes
 		 *---------------------------------------------------*/

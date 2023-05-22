@@ -2,10 +2,10 @@
 
 set -eux
 
-export NAMESPACE=parallel-workflows
+export NAMESPACE=sstable-bitrot
 export SCENARIO=$(dirname -- "$0")/manifest.yml
 export REPORTS=${HOME}/frisbee-reports/${NAMESPACE}/
-export DEPENDENCIES=(./charts/system/ ./charts/federated-learning/fedbed/)
+export DEPENDENCIES=(./charts/system/ ./charts/databases/cockroachdb ./charts/databases/ycsb)
 
 # Prepare the Reporting folder
 mkdir -p "${REPORTS}"

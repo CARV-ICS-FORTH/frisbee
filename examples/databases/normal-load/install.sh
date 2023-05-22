@@ -2,10 +2,11 @@
 
 set -eux
 
-export NAMESPACE=parallel-workflows
+export NAMESPACE=normal-load
 export SCENARIO=$(dirname -- "$0")/manifest.yml
 export REPORTS=${HOME}/frisbee-reports/${NAMESPACE}/
-export DEPENDENCIES=(./charts/system/ ./charts/federated-learning/fedbed/)
+export DEPENDENCIES=(./charts/system/ ./charts/databases/cockroachdb ./charts/databases/ycsb)
+export DASHBOARDS=(summary ingleton ycsb)
 
 # Prepare the Reporting folder
 mkdir -p "${REPORTS}"
@@ -20,4 +21,4 @@ cp "${SCENARIO}" "${REPORTS}"
 sleep 10
 
 # Report the scenario
-kubectl-frisbee report test "${NAMESPACE}" "${REPORTS}" --pdf --data --aggregated-pdf --wait
+kubectl-frisbee report test "${NAMESPACE}" "${REPORTS}" --pdf --data --aggregated-pdf --wait --dashboard "${DASHBOARDS}"

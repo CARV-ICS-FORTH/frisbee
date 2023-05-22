@@ -28,7 +28,6 @@ import (
 	"github.com/carv-ics-forth/frisbee/pkg/grafana"
 	"github.com/carv-ics-forth/frisbee/pkg/structure"
 	"github.com/pkg/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
 )
 
 // {{{ Internal types
@@ -63,10 +62,7 @@ func (r *Controller) StartTelemetry(ctx context.Context, scenario *v1alpha1.Scen
 // StopTelemetry removes the annotations from the target object, removes the Alert from Grafana, and deleted the
 // client for the specific scenario.
 func (r *Controller) StopTelemetry(scenario *v1alpha1.Scenario) {
-	// If the resource is not initialized, then there is not registered telemetry client.
-	if meta.IsStatusConditionTrue(scenario.Status.Conditions, v1alpha1.ConditionCRInitialized.String()) {
-		grafana.DeleteClientFor(scenario)
-	}
+	grafana.DeleteClientFor(scenario)
 }
 
 // ListTelemetryAgents iterates the referenced services (directly via Service or indirectly via Cluster) and list

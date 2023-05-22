@@ -1,18 +1,17 @@
 #!/bin/bash
 
 export NAMESPACE=ml-backend
-
-
 export SCENARIO=$(dirname -- "$0")/manifest.yml
 export REPORTS=${HOME}/frisbee-reports/${NAMESPACE}/
 export DEPENDENCIES=(./charts/system/ ./charts/federated-learning/fedbed/)
 
+# Prepare the Reporting folder
+mkdir -p "${REPORTS}"
 
-# Submit the scenario
+# Submit the scenario and follow logs
 kubectl-frisbee submit test "${NAMESPACE}" "${SCENARIO}" "${DEPENDENCIES[@]}"
 
 # Copy the manifest
-mkdir -p "${REPORTS}"
 cp "${SCENARIO}" "${REPORTS}"
 
 # wait for the scenario to be submitted

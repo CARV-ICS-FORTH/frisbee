@@ -26,15 +26,15 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8errors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/client-go/util/retry"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // CreateVirtualJob wraps a call into a virtual object. This is used for operations that do not create external resources.
 // Examples: Deletions, Calls, ...
 // If the callback function fails, it will be reflected in the created virtual jobs and should be captured
-// by the parent's lifecycle. The CreateVirtualJob will return nil.
-// If the CreateVirtualJob fails (e.g, cannot create a virtual object), it will return an error.
+// by the parent's lifecycle.
+// If this function cannot create a virtual object (e.g, cannot create a virtual object), it will return an error.
 func CreateVirtualJob(ctx context.Context, reconciler common.Reconciler,
 	parent client.Object,
 	jobName string,
@@ -68,25 +68,31 @@ func CreateVirtualJob(ctx context.Context, reconciler common.Reconciler,
 	// dirty solution to get the ResourceVersion is order to avoid update failing with
 	// 'Invalid value: 0x0: must be specified for an update'
 	// retry to until we get information about the service.
-	key := client.ObjectKeyFromObject(&vJob)
+	vObjKey := client.ObjectKeyFromObject(&vJob)
 
-	if err := retry.OnError(common.DefaultBackoffForServiceEndpoint,
-		// retry condition
-		func(err error) bool {
-			reconciler.Info("Retry to get info about virtualobject",
-				"virtualobject", key,
-				"Err", err,
-			)
+	retryCond := func() (done bool, err error) {
+		err = reconciler.GetClient().Get(ctx, vObjKey, &vJob)
 
-			return k8errors.IsNotFound(err)
-		},
-		// execution
-		func() error {
-			return reconciler.GetClient().Get(ctx, key, &vJob)
-		},
-		// error checking
-	); err != nil {
-		return errors.Wrapf(err, "failed to retrieve virtual object")
+		// Retry
+		if k8errors.IsNotFound(err) {
+			reconciler.Info("Object not found. Retry", "virtualobject", vObjKey)
+
+			return false, nil
+		}
+
+		// Abort
+		if err != nil {
+			reconciler.Info("Error. Retry", "virtualobject", vObjKey, "err", err)
+
+			return false, err
+		}
+
+		// OK
+		return true, nil
+	}
+
+	if err := wait.ExponentialBackoffWithContext(ctx, common.DefaultBackoffForServiceEndpoint, retryCond); err != nil {
+		return errors.Wrapf(err, "failed to retrieve virtual object '%s']", vObjKey)
 	}
 
 	/*---------------------------------------------------
@@ -119,8 +125,7 @@ func CreateVirtualJob(ctx context.Context, reconciler common.Reconciler,
 		 * Update the status of the Virtual Job
 		 *---------------------------------------------------*/
 		if err := common.UpdateStatus(ctx, reconciler, &vJob); err != nil {
-			reconciler.GetEventRecorderFor(parent.GetName()).Event(parent, corev1.EventTypeWarning,
-				"UpdateFailed", "vexec status update error")
+			reconciler.GetEventRecorderFor(parent.GetName()).Event(parent, corev1.EventTypeWarning, "VExecUpdateError", err.Error())
 		}
 	}()
 

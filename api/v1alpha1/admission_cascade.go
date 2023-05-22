@@ -98,8 +98,5 @@ func (in *Cascade) ValidateUpdate(runtime.Object) error {
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type.
 func (in *Cascade) ValidateDelete() error {
-	cascadelog.Info("validate delete", "name", in.Name)
-
-	// TODO(user): fill in your validation logic upon object deletion.
 	return nil
 }

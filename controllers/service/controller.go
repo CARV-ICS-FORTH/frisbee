@@ -241,6 +241,6 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.Service{}).
 		Named("service").
-		Owns(&corev1.Pod{}, watchers.WatchWithPointAnnotation(reconciler, gvk)).
+		Owns(&corev1.Pod{}, watchers.Watch(reconciler, gvk)).
 		Complete(reconciler)
 }

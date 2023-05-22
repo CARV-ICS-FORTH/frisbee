@@ -31,24 +31,24 @@ import (
 )
 
 type Parameters struct {
-	// ScheduleSpec is the scheduling options
-	ScheduleSpec *v1alpha1.TaskSchedulerSpec
-
 	// State is the real state of the system.
 	State lifecycle.Classifier
 
 	// LastScheduleTime is the time the controller last scheduled an object.
 	LastScheduleTime metav1.Time
 
+	// ScheduleSpec is the scheduling options
+	ScheduleSpec *v1alpha1.TaskSchedulerSpec
+
 	//
-	// Used for Timeline mode
+	// Parameters Used for Timeline mode
 	//
 
 	// ExpectedTime is the evaluation of a timeline distribution defined in the ScheduleSpec.
 	ExpectedTimeline v1alpha1.Timeline
 
 	//
-	// Used for Sequential mode
+	// Parameters Used for Sequential mode
 	//
 
 	// JobName is used a prefix for finding children tasks.

@@ -19,6 +19,7 @@ package watchers
 import (
 	"fmt"
 	"reflect"
+	"time"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
@@ -33,9 +34,7 @@ import (
 )
 
 func WatchWithPointAnnotation(r common.Reconciler, gvk schema.GroupVersionKind, tags ...grafana.Tag) builder.Predicates {
-	w := watchWithPointAnnotation{
-		tags: tags,
-	}
+	w := watchWithPointAnnotation{tags: tags}
 
 	return w.Watch(r, gvk)
 }
@@ -78,10 +77,18 @@ func (w *watchWithPointAnnotation) watchCreate(reconciler common.Reconciler, gvk
 			"version", event.Object.GetResourceVersion(),
 		)
 
+		/*---------------------------------------------------*
+		 * Push Event Annotation to Grafana
+		 *---------------------------------------------------*/
 		if grafana.HasClientFor(event.Object) {
-			annotator := &grafana.PointAnnotation{}
+			// Define tags. The priority (e.g, Chaos over Create) is set at the level of the dashboard.
+			tags := append(w.tags, grafana.TagCreated)
 
-			annotator.Add(event.Object, w.tags...)
+			// define creation time
+			creationTime := event.Object.GetCreationTimestamp().Time
+
+			// push the annotation asynchronously
+			go grafana.AnnotatePointInTime(event.Object, creationTime, tags)
 		}
 
 		// we know the creation order, so we do not need to reconcile created objects.
@@ -101,14 +108,6 @@ func (w *watchWithPointAnnotation) watchUpdate(reconciler common.Reconciler, gvk
 		if event.ObjectOld.GetResourceVersion() >= event.ObjectNew.GetResourceVersion() {
 			// Periodic resync will send update events for all known pods.
 			// Two different versions of the same pod will always have different RVs.
-			return false
-		}
-
-		if !event.ObjectNew.GetDeletionTimestamp().IsZero() {
-			// when an object is deleted gracefully it's deletion timestamp is first modified to reflect a grace period,
-			// and after such time has passed, the kubelet actually deletes it from the store. We receive an update
-			// for modification of the deletion timestamp and expect the reconciler to act asap, not to wait until the
-			// kubelet actually deletes the object.
 			return false
 		}
 
@@ -151,12 +150,25 @@ func (w *watchWithPointAnnotation) watchUpdate(reconciler common.Reconciler, gvk
 			"version", fmt.Sprintf("%s -> %s", event.ObjectOld.GetResourceVersion(), event.ObjectNew.GetResourceVersion()),
 		)
 
-		// in general, we are not interested in updates, unless they indicate a failure.
+		/*---------------------------------------------------*
+		 * Push Event Annotation to Grafana
+		 *---------------------------------------------------*/
 		if grafana.HasClientFor(event.ObjectNew) {
-			if !prevPhase.Is(v1alpha1.PhaseFailed) && latestPhase.Is(v1alpha1.PhaseFailed) {
-				annotator := &grafana.PointAnnotation{}
-				annotator.Add(event.ObjectNew, w.tags...)
+			// in general, we are not interested in updates, unless they indicate a failure.
+			if latestPhase.Is(v1alpha1.PhaseFailed) && !prevPhase.Is(v1alpha1.PhaseFailed) {
+
+				// Define tags. The priority (e.g, Chaos over Create) is set at the level of the dashboard.
+				tags := append(w.tags, grafana.TagFailed)
+
+				// set failure-detection time
+				// Perhaps we can use the state transition time.
+				failureTime := time.Now()
+
+				// push the annotation asynchronously
+				go grafana.AnnotatePointInTime(event.ObjectNew, failureTime, tags)
 			}
+		} else {
+			reconciler.Info("No Grafana Client", "object", client.ObjectKeyFromObject(event.ObjectNew))
 		}
 
 		return true
@@ -191,10 +203,31 @@ func (w *watchWithPointAnnotation) watchDelete(reconciler common.Reconciler, gvk
 			"version", event.Object.GetResourceVersion(),
 		)
 
+		/*---------------------------------------------------*
+		 * Push Event Annotation to Grafana
+		 *---------------------------------------------------*/
 		if grafana.HasClientFor(event.Object) {
-			annotator := &grafana.PointAnnotation{}
+			// Define tags. The priority (e.g, Chaos over Create) is set at the level of the dashboard.
+			tags := append(w.tags, grafana.TagDeleted)
 
-			annotator.Delete(event.Object, w.tags...)
+			statusAware, ok := event.Object.(v1alpha1.ReconcileStatusAware)
+			if ok {
+				if statusAware.GetReconcileStatus().Phase.Is(v1alpha1.PhaseFailed) {
+					tags = append(tags, grafana.TagFailed)
+				}
+			}
+
+			// set deletion time
+			deletionTS := time.Now()
+
+			if !event.Object.GetDeletionTimestamp().IsZero() {
+				deletionTS = event.Object.GetDeletionTimestamp().Time
+			}
+
+			// push the annotation asynchronously
+			go grafana.AnnotatePointInTime(event.Object, deletionTS, tags)
+		} else {
+			reconciler.Info("No Grafana Client", "object", client.ObjectKeyFromObject(event.Object))
 		}
 
 		return true
