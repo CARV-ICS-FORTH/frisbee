@@ -20,7 +20,6 @@ import (
 	"context"
 
 	"github.com/carv-ics-forth/frisbee/controllers/common"
-	"github.com/carv-ics-forth/frisbee/pkg/configuration"
 	"github.com/grafana-tools/sdk"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
@@ -28,7 +27,7 @@ import (
 func (c *Client) SetNotificationChannel(ctx context.Context, webhookURL string) error {
 	// use the webhook as notification channel for grafana
 	feedback := sdk.AlertNotification{
-		Name:                  configuration.Global.ControllerName,
+		Name:                  "Frisbee-Webhook",
 		Type:                  "webhook",
 		IsDefault:             true,
 		DisableResolveMessage: false,
@@ -40,14 +39,17 @@ func (c *Client) SetNotificationChannel(ctx context.Context, webhookURL string) 
 
 	// Although the notification channel is backed by the Grafana Pod, the Grafana Service is different
 	// from the Alerting Service. For this reason, we must be sure that both Services are linked to the Grafana Pod.
-	return wait.ExponentialBackoffWithContext(ctx, common.DefaultBackoffForServiceEndpoint, func() (done bool, err error) {
-		_, errCh := c.Conn.CreateAlertNotification(ctx, feedback)
-		if errCh != nil { // API connection error. Just retry
-			defaultLogger.Error(errCh, "notification channel")
+	retryCond := func() (done bool, err error) {
+		if _, err := c.Conn.CreateAlertNotification(ctx, feedback); err != nil {
+			// Retry
+			defaultLogger.Info("connection error", "Err", err)
 
-			return false, nil //nolint:nilerr
+			return false, nil
 		}
 
+		// OK
 		return true, nil
-	})
+	}
+
+	return wait.ExponentialBackoffWithContext(ctx, common.DefaultBackoffForServiceEndpoint, retryCond)
 }

@@ -272,28 +272,30 @@ func (c *Client) SetAlert(ctx context.Context, alert *AlertRule, name string, ms
 			PreserveId: true,
 		}
 
-		if err := wait.ExponentialBackoffWithContext(ctx, common.DefaultBackoffForServiceEndpoint, func() (done bool, err error) {
+		retryCond := func() (done bool, err error) {
 			resp, errReq := c.Conn.SetDashboard(ctx, board, params)
 
 			if errReq != nil {
-				// if there is a message, it is probably a query error (e.g, invalid panel)
+				// Retry
 				if resp.Message != nil {
 					c.logger.Info("Connection error. Retry", "alertName", name, "resp", resp)
 
-					return true, errors.Wrapf(errReq, *resp.Message)
+					return false, nil
 				}
 
-				// otherwise, it is probably a connection error, and we should retry
+				// Abort
 				return false, errors.Wrapf(errReq, "connection error")
 			}
 
-			// done
+			// OK
 			if resp.Status != nil && *resp.Status == RespStatusSuccess {
 				return true, nil
 			}
 
 			panic("should not go here")
-		}); err != nil {
+		}
+
+		if err := wait.ExponentialBackoffWithContext(ctx, common.DefaultBackoffForServiceEndpoint, retryCond); err != nil {
 			return errors.Wrapf(err, "cannot set alert '%s'", name)
 		}
 	} else {

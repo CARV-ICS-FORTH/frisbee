@@ -139,8 +139,5 @@ func (in *Cluster) ValidateUpdate(runtime.Object) error {
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type.
 func (in *Cluster) ValidateDelete() error {
-	clusterlog.Info("validate delete", "name", in.Name)
-
-	// TODO(user): fill in your validation logic upon object deletion.
 	return nil
 }

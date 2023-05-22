@@ -29,7 +29,7 @@ import (
 	"github.com/pkg/errors"
 	k8errors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/util/retry"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -65,7 +65,7 @@ func (r *Controller) runJob(ctx context.Context, caller *v1alpha1.Call, jobIndex
 		res, err := r.executor.Exec(ctx, pod, t.Callable.Container, t.Callable.Command, true)
 
 		r.Logger.Info("CallOutput",
-			"job", client.ObjectKeyFromObject(caller),
+			"job", jobName,
 			"stdout", res.Stdout,
 			"stderr", res.Stderr,
 		)
@@ -85,7 +85,7 @@ func (r *Controller) runJob(ctx context.Context, caller *v1alpha1.Call, jobIndex
 
 		if caller.Spec.Expect != nil {
 			r.Logger.Info("AssertCall",
-				"job", client.ObjectKeyFromObject(caller),
+				"job", jobName,
 				"expect", caller.Spec.Expect,
 			)
 
@@ -118,11 +118,11 @@ func (r *Controller) runJob(ctx context.Context, caller *v1alpha1.Call, jobIndex
 	})
 }
 
-func (r *Controller) constructJobSpecList(ctx context.Context, call *v1alpha1.Call) ([]v1alpha1.Callable, error) {
+// buildJobQueue creates a list of job templates that will be scheduled throughout execution.
+func (r *Controller) buildJobQueue(ctx context.Context, call *v1alpha1.Call) ([]v1alpha1.Callable, error) {
 	specs := make([]v1alpha1.Callable, len(call.Spec.Services))
 
 	for i, serviceName := range call.Spec.Services {
-		// get service spec
 		var service v1alpha1.Service
 
 		key := client.ObjectKey{
@@ -130,20 +130,36 @@ func (r *Controller) constructJobSpecList(ctx context.Context, call *v1alpha1.Ca
 			Name:      serviceName,
 		}
 
-		// retry to until we get information about the service.
-		if err := retry.OnError(common.DefaultBackoffForServiceEndpoint,
-			// retry condition
-			func(err error) bool {
-				r.Info("Retry to get info about service", "service", key)
+		retryCond := func() (done bool, err error) {
+			err = r.GetClient().Get(ctx, key, &service)
+			// Retry
+			if k8errors.IsNotFound(err) {
+				r.Info("Service not found. Retry", "service", key)
 
-				return k8errors.IsNotFound(err)
-			},
-			// execution
-			func() error {
-				return r.GetClient().Get(ctx, key, &service)
-			},
-			// error checking
-		); err != nil {
+				return false, nil
+			}
+
+			// Abort
+			if err != nil {
+				r.Info("Abort getting  info about service", "service", key, "err", err)
+
+				return false, err
+			}
+
+			// Abort
+			if service.Status.Phase != v1alpha1.PhaseRunning {
+				r.Info("Service is not running. Retry", "service", key)
+
+				return false, errors.Errorf("service [%s] phase is [%s]. Expected Running",
+					serviceName, service.Status.Phase)
+			}
+
+			// OK
+			return true, nil
+		}
+
+		// retry to until we get information about the service.
+		if err := wait.ExponentialBackoffWithContext(ctx, common.DefaultBackoffForServiceEndpoint, retryCond); err != nil {
 			return nil, errors.Wrapf(err, "cannot get info for service %s", serviceName)
 		}
 

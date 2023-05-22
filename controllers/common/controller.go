@@ -30,7 +30,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -87,14 +86,10 @@ type Reconciler interface {
 
 	Logger
 
+	// Finalizer returns a list of finalizers associated with the controller.
 	Finalizer() string
 
-	// Finalize deletes any external resources associated with the service
-	// Examples finalizers include performing backups and deleting
-	// resources that are not owned by this CR, like a EphemeralVolume.
-	//
-	// Ensure that delete implementation is idempotent and safe to invoke
-	// multiple times for same object
+	// Finalize handles termination logic of the object, such as performing backups and deleting resources.
 	Finalize(object client.Object) error
 }
 
@@ -111,14 +106,11 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 	/*---------------------------------------------------
 	 * Retrieve CR by name
 	 *---------------------------------------------------*/
-
 	if err := r.GetClient().Get(ctx, req.NamespacedName, obj); err != nil {
-		/*--
-			Request object not found, could have been deleted after reconcile request.
-			We'll ignore not-found errors, since they can't be fixed by an immediate
-			requeue (we'll need to wait for a new notification), and we can get them
-			on added / deleted requests.
-		 --*/
+		// 	Request object not found, could have been deleted after reconcile request.
+		// 	We'll ignore not-found errors, since they can't be fixed by an immediate
+		// 	requeue (we'll need to wait for a new notification), and we can get them
+		// 	on added / deleted requests.
 		if k8errors.IsNotFound(err) {
 			return Stop(r, req)
 		}
@@ -132,66 +124,83 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 	 * Set Finalizers for CR
 	 *---------------------------------------------------*/
 	if obj.GetDeletionTimestamp().IsZero() {
-		// Add Finalizers to a new CR
-		//
-		// Finalizers provide a mechanism to inform the Kubernetes control plane that an action needs to take place
-		// before the standard Kubernetes garbage collection logic can be performed.
+		/*---------------------------------------------------
+		 * Add the Finalizer
+		 *---------------------------------------------------*/
 		if controllerutil.AddFinalizer(obj, r.Finalizer()) {
 			logger.Info("AddFinalizer",
 				"finalizer", r.Finalizer(),
 				"current", obj.GetFinalizers(),
 			)
 
-			if err := wait.ExponentialBackoffWithContext(ctx,
-				DefaultBackoffForK8sEndpoint,
-				func() (done bool, err error) {
-					if errUpdate := Update(ctx, r, obj); errUpdate != nil {
-						return false, errUpdate
-					}
+			/*---------------------------------------------------
+			 * Update the Object with Added Finalizers
+			 *---------------------------------------------------*/
+			retryCond := func() (done bool, err error) {
+				if err := Update(context.Background(), r, obj); err != nil {
+					// Retry
+					logger.Info("Retry to add finalizer", "obj", obj, "Err", err)
 
-					return true, nil
-				},
-			); err != nil {
-				logger.Error(err, "Abort retrying to add finalizer")
+					return false, nil
+				}
+				// OK
+				return true, nil
+			}
+
+			ctxTimeout, cancel := context.WithTimeout(ctx, DefaultTimeoutFork8sEndpoint)
+			defer cancel()
+
+			if err := wait.ExponentialBackoffWithContext(ctxTimeout, DefaultBackoffForK8sEndpoint, retryCond); err != nil {
+				logger.Error(err, "Abort retrying to add finalizer. Requeue the request")
+
+				return RequeueWithError(r, req, err)
 			}
 
 			return Stop(r, req)
 		}
 	} else {
-		/*-- Handle and Remove Finalizers for a deleted CR-*/
 		if controllerutil.ContainsFinalizer(obj, r.Finalizer()) {
-			/*-- Handle finalization logic to remove external dependencies. --*/
+			/*---------------------------------------------------
+			 * Run the Finalizer
+			 *---------------------------------------------------*/
 			if err := r.Finalize(obj); err != nil {
 				logger.Error(err, "Finalize error", "finalizer", r.Finalizer())
 
-				/*--
-					If the finalization logic fails, don't remove the finalizer
-					so that we can retry during the next reconciliation.
-				 --*/
+				// retry to run the finalizer during the next reconciliation.
 				return RequeueWithError(r, req, err)
 			}
 
-			/*-- Remove Finalizer. Once all finalizers have been removed, the object will be deleted. --*/
+			/*---------------------------------------------------
+			 * Remove the Finalizer
+			 *---------------------------------------------------*/
 			if controllerutil.RemoveFinalizer(obj, r.Finalizer()) {
 				logger.Info("RemoveFinalizer",
 					"finalizer", r.Finalizer(),
 					"current", obj.GetFinalizers(),
 				)
 
-				if err := retry.OnError(DefaultBackoffForK8sEndpoint,
-					// retry condition
-					func(err error) bool {
+				/*---------------------------------------------------
+				 * Update the Object with Removed Finalizers
+				 *---------------------------------------------------*/
+				retryCond := func() (done bool, err error) {
+					if err := Update(context.Background(), r, obj); err != nil {
 						logger.Info("Retry to remove finalizer", "obj", obj, "Err", err)
 
-						return true
-					},
-					// execution
-					func() error {
-						return Update(ctx, r, obj)
-					},
-					// error checking
-				); err != nil {
-					logger.Error(err, "Abort retrying to remove finalizer")
+						// Retry
+						return false, nil
+					}
+
+					// OK
+					return true, nil
+				}
+
+				ctxTimeout, cancel := context.WithTimeout(ctx, DefaultTimeoutFork8sEndpoint)
+				defer cancel()
+
+				if err := wait.ExponentialBackoffWithContext(ctxTimeout, DefaultBackoffForK8sEndpoint, retryCond); err != nil {
+					logger.Error(err, "Abort retrying to remove finalizer. Requeue the request")
+
+					return RequeueWithError(r, req, err)
 				}
 
 				return Stop(r, req)

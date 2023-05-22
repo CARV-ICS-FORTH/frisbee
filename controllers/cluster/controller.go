@@ -111,6 +111,8 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		// If this object is suspended, we don't want to run any jobs, so we'll stop now.
 		// This is useful if something's broken with the job we're running, and we want to
 		// pause runs to investigate the cluster, without deleting the object.
+		r.Logger.Info("Cluster has been suspend. Nothing else it scheduled.")
+
 		return common.Stop(r, req)
 	}
 
@@ -125,15 +127,15 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return lifecycle.Pending(ctx, r, &cluster, "ready to start creating jobs.")
 
 	case v1alpha1.PhasePending:
-		nextJob := cluster.Status.ScheduledJobs + 1
-
 		//	If all jobs are scheduled but are not in the Running phase, they may be in the Pending phase.
 		//	In both cases, we have nothing else to do but waiting for the next reconciliation cycle.
-		if cluster.Spec.SuspendWhen == nil && (nextJob >= len(cluster.Status.QueuedJobs)) {
+		if r.view.Count() >= len(cluster.Status.QueuedJobs) {
+			r.Logger.Info("All jobs have been scheduled. Nothing else to do. ")
+
 			return common.Stop(r, req)
 		}
 
-		// Get the next scheduled job
+		// Check if the conditions are right to spawn a new job.
 		hasJob, nextTick, err := scheduler.Schedule(log, &cluster, scheduler.Parameters{
 			State:            *r.view,
 			ScheduleSpec:     cluster.Spec.Schedule,
@@ -147,22 +149,36 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		}
 
 		if !hasJob {
-			r.Logger.Info("Nothing to do right now. Requeue request.", "nextTick", nextTick)
-
+			// nothing to schedule
 			if nextTick.IsZero() {
 				return common.Stop(r, req)
 			}
 
+			// sleep until next tick
 			return common.RequeueAfter(r, req, time.Until(nextTick))
 		}
 
-		// Build the job in kubernetes
-		if err := r.runJob(ctx, &cluster, nextJob); err != nil {
+		// Fetch the next job from the queuing list, and submit it to Kubernetes.
+		nextJobIndex := cluster.Status.ScheduledJobs + 1
+
+		if nextJobIndex >= len(cluster.Status.QueuedJobs) {
+			r.Logger.Error(errors.New("Ignore job as it is out of range compared to QueuedJobs"),
+				"BadScheduling",
+				"nextJobIndex", nextJobIndex,
+				"queueJobs", len(cluster.Status.QueuedJobs),
+				"viewedJobs", r.view.Count(),
+				"jobList", r.view.ListAll(),
+			)
+
+			return common.Stop(r, req)
+		}
+
+		if err := r.runJob(ctx, &cluster, nextJobIndex); err != nil {
 			return lifecycle.Failed(ctx, r, &cluster, errors.Wrapf(err, "cannot create job"))
 		}
 
 		// Update the scheduling information
-		cluster.Status.ScheduledJobs = nextJob
+		cluster.Status.ScheduledJobs = nextJobIndex
 		cluster.Status.LastScheduleTime = metav1.Time{Time: time.Now()}
 
 		return lifecycle.Pending(ctx, r, &cluster, fmt.Sprintf("Scheduled jobs: '%d/%d'",
@@ -203,7 +219,7 @@ func (r *Controller) Initialize(ctx context.Context, cluster *v1alpha1.Cluster) 
 		This list is used by the execution step to create the actual job.
 		If the template is invalid, it should be captured at this stage.
 	*/
-	jobList, err := r.constructJobSpecList(ctx, cluster)
+	jobList, err := r.buildJobQueue(ctx, cluster)
 	if err != nil {
 		return errors.Wrapf(err, "building joblist")
 	}
@@ -345,6 +361,6 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.Cluster{}).
 		Named("cluster").
-		Owns(&v1alpha1.Service{}, watchers.Watch(controller, gvk)).
+		Owns(&v1alpha1.Service{}, watchers.WatchWithPointAnnotation(controller, gvk)).
 		Complete(controller)
 }

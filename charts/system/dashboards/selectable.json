@@ -26,70 +26,6 @@
         },
         "enable": true,
         "expr": "",
-        "iconColor": "blue",
-        "iconSize": 0,
-        "lineColor": "",
-        "name": "Create",
-        "query": "",
-        "showLine": false,
-        "step": "",
-        "tagKeys": "",
-        "tags": [
-          "run"
-        ],
-        "tagsField": "",
-        "target": {
-          "limit": 100,
-          "matchAny": false,
-          "tags": [
-            "create"
-          ],
-          "type": "tags"
-        },
-        "textField": "",
-        "textFormat": "",
-        "titleFormat": "",
-        "type": "tags"
-      },
-      {
-        "datasource": {
-          "type": "datasource",
-          "uid": "grafana"
-        },
-        "enable": true,
-        "expr": "",
-        "iconColor": "#FF9830",
-        "iconSize": 0,
-        "lineColor": "",
-        "name": "Deleted",
-        "query": "",
-        "showLine": false,
-        "step": "",
-        "tagKeys": "",
-        "tags": [
-          "exit"
-        ],
-        "tagsField": "",
-        "target": {
-          "limit": 100,
-          "matchAny": false,
-          "tags": [
-            "delete"
-          ],
-          "type": "tags"
-        },
-        "textField": "",
-        "textFormat": "",
-        "titleFormat": "",
-        "type": "tags"
-      },
-      {
-        "datasource": {
-          "type": "datasource",
-          "uid": "grafana"
-        },
-        "enable": true,
-        "expr": "",
         "iconColor": "#F2495C",
         "iconSize": 0,
         "lineColor": "",
@@ -147,13 +83,77 @@
           ],
           "type": "tags"
         }
+      },
+      {
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
+        "enable": true,
+        "expr": "",
+        "iconColor": "blue",
+        "iconSize": 0,
+        "lineColor": "",
+        "name": "Create",
+        "query": "",
+        "showLine": false,
+        "step": "",
+        "tagKeys": "",
+        "tags": [
+          "run"
+        ],
+        "tagsField": "",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [
+            "create"
+          ],
+          "type": "tags"
+        },
+        "textField": "",
+        "textFormat": "",
+        "titleFormat": "",
+        "type": "tags"
+      },
+      {
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
+        "enable": true,
+        "expr": "",
+        "iconColor": "#FF9830",
+        "iconSize": 0,
+        "lineColor": "",
+        "name": "Deleted",
+        "query": "",
+        "showLine": false,
+        "step": "",
+        "tagKeys": "",
+        "tags": [
+          "exit"
+        ],
+        "tagsField": "",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [
+            "delete"
+          ],
+          "type": "tags"
+        },
+        "textField": "",
+        "textFormat": "",
+        "titleFormat": "",
+        "type": "tags"
       }
     ]
   },
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 1,
+  "id": 10,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -1371,7 +1371,7 @@
           "refId": "Used"
         }
       ],
-      "title": "Placement Table",
+      "title": "Pod Placement",
       "transform": "",
       "transformations": [
         {
@@ -1468,7 +1468,7 @@
           "refId": "Remaining"
         }
       ],
-      "title": "Scenario Events",
+      "title": "Executed Scenario Actions",
       "transformations": [
         {
           "id": "merge",
@@ -1763,7 +1763,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               }
             ]
           },
@@ -1948,7 +1949,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               }
             ]
           },
@@ -5319,8 +5321,8 @@
   "schemaVersion": 37,
   "style": "dark",
   "tags": [
-    "kubernetes",
-    "frisbee"
+    "frisbee",
+    "console"
   ],
   "templating": {
     "list": [
@@ -5416,8 +5418,8 @@
     ]
   },
   "timezone": "",
-  "title": "Frisbee SUT Monitoring (Selectable)",
+  "title": "Frisbee Console: Selectable",
   "uid": "selectable",
-  "version": 1,
+  "version": 2,
   "weekStart": ""
 }

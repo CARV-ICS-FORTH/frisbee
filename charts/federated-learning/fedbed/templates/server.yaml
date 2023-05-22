@@ -19,7 +19,14 @@ spec:
       telemetry:
         - system.telemetry.resources
 
+    volumes:
+      - name: logs
+        emptyDir: {}
+
     containers:
+      #
+      # Run the FL-server
+      #
       - name: main
         image: icsforth/fedbed:latest
         imagePullPolicy: IfNotPresent
@@ -49,12 +56,65 @@ spec:
         ports:
           - name: http
             containerPort: 8080
+        volumeMounts:
+          - name: logs
+            mountPath: /fl-logs/
+        command:
+          - /bin/bash
+          - -c
+          - |
+            set -eux
+            cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
 
+            python server.py |& tee -a /fl-logs/server.log
+
+      #
+      # Push round events to grafana
+      #
+
+      - name: annotator
+        image: alpine/curl:latest
+        volumeMounts:
+          - name: logs
+            mountPath: /fl-logs/
         command:
           - /bin/sh   # Run shell
           - -c        # Read from string
           - |         # Multi-line str
             set -eux
-            cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
 
-            python server.py
+            export logfile=/fl-logs/server.log
+            export GRAFANA=http://${GRAFANA_SERVICE_HOST}:${GRAFANA_SERVICE_PORT}
+
+            # Wait a bit for the log file to become ready
+            sleep 10
+
+            echo "Tail tailing the log ${logfile} for events"
+
+            export EVENTCNT=0
+            tail -f ${logfile} | grep --line-buffered "fit_round received" | while read line ; do
+              echo -e "new event: $line"
+              EVENTCNT=$[$EVENTCNT +1]
+
+              annotation=$(echo '{"tags":["app"],"text":"'${EVENTCNT}'"}')
+
+              curl -s -H "Content-Type: application/json" -X POST -d ${annotation} ${GRAFANA}/api/annotations
+
+              echo -e "\n--"
+            done
+
+
+
+
+    callables:
+      wait-for-round: # block waiting for a specific round
+        container: main
+        command:
+          - /bin/bash
+          - -c
+          - |
+            export ROUND=2
+
+            while true; do
+              (( $(grep "fit_round received" /fl-logs/server.log | wc -l) > ${ROUND} )) && break || sleep 5;
+            done

@@ -361,8 +361,6 @@ func (r *Controller) HasFailed(ctx context.Context, scenario *v1alpha1.Scenario)
 		// common.Delete(ctx, r, job) Keep it commented. It is useful to see which jobs are complete.
 	}
 
-	r.StopTelemetry(scenario)
-
 	// Suspend the workflow from creating new job.
 	suspend := true
 	scenario.Spec.Suspend = &suspend
@@ -384,7 +382,7 @@ func (r *Controller) HasFailed(ctx context.Context, scenario *v1alpha1.Scenario)
 
 func (r *Controller) RunActions(ctx context.Context, scenario *v1alpha1.Scenario, actionList []v1alpha1.Action) error {
 	if scenario.Status.GrafanaEndpoint == "" {
-		r.Logger.Info("The Grafana endpoint is empty. Skip telemetry.", "scenario", scenario.GetName())
+		r.Logger.Info("Grafana endpoint is empty. Skip telemetry.", "scenario", scenario.GetName())
 	} else {
 		if err := r.connectToGrafana(ctx, scenario, r.notificationEndpoint); err != nil {
 			return errors.Wrapf(err, "connect to grafana")
@@ -434,6 +432,7 @@ func (r *Controller) Finalize(obj client.Object) error {
 		"version", obj.GetResourceVersion(),
 	)
 
+	// Remove idle Grafana clients
 	r.StopTelemetry(obj.(*v1alpha1.Scenario))
 
 	return nil
@@ -462,11 +461,11 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		Named("scenario").
 		For(&v1alpha1.Scenario{}).
-		Owns(&v1alpha1.Service{}, watchers.Watch(controller, gvk)).       // Logs Services
-		Owns(&v1alpha1.Cluster{}, watchers.Watch(controller, gvk)).       // Logs Cluster
-		Owns(&v1alpha1.Chaos{}, watchers.Watch(controller, gvk)).         // Logs Chaos
-		Owns(&v1alpha1.Cascade{}, watchers.Watch(controller, gvk)).       // Logs Cascade
-		Owns(&v1alpha1.VirtualObject{}, watchers.Watch(controller, gvk)). // Logs VirtualObjects
-		Owns(&v1alpha1.Call{}, watchers.Watch(controller, gvk)).          // Logs Calls
+		Owns(&v1alpha1.Service{}, watchers.WatchWithPointAnnotation(controller, gvk)). // Logs Services
+		Owns(&v1alpha1.Cluster{}, watchers.Watch(controller, gvk)).                    // Logs Cluster
+		Owns(&v1alpha1.Chaos{}, watchers.Watch(controller, gvk)).                      // Logs Chaos
+		Owns(&v1alpha1.Cascade{}, watchers.Watch(controller, gvk)).                    // Logs Cascade
+		Owns(&v1alpha1.VirtualObject{}, watchers.Watch(controller, gvk)).              // Logs VirtualObjects
+		Owns(&v1alpha1.Call{}, watchers.Watch(controller, gvk)).                       // Logs Calls
 		Complete(controller)
 }

@@ -39,14 +39,29 @@ func (r *Controller) updateLifecycle(service *v1alpha1.Service) bool {
 func convertPodLifecycle(obj client.Object) v1alpha1.Lifecycle {
 	pod := obj.(*corev1.Pod)
 
+	/*---------------------------------------------------*
+	 * Corner Cases
+	 *---------------------------------------------------*/
 	if pod.CreationTimestamp.IsZero() {
 		return v1alpha1.Lifecycle{
 			Phase:   v1alpha1.PhaseFailed,
-			Reason:  "PodDeleted",
-			Message: fmt.Sprintf("Pod %s is probably killed.", pod.GetLabels()),
+			Reason:  "EmptyCreationTime",
+			Message: fmt.Sprintf("Something is wrong with Pod '%s'.", pod.GetLabels()),
 		}
 	}
 
+	// If the Pod is marked for deletion, but is not completed, then is probably deleted.
+	if !pod.GetDeletionTimestamp().IsZero() && !(pod.Status.Phase == corev1.PodSucceeded || pod.Status.Phase == corev1.PodFailed) {
+		return v1alpha1.Lifecycle{
+			Phase:   v1alpha1.PhaseFailed,
+			Reason:  "PodDeletion",
+			Message: fmt.Sprintf("Pod '%s' is probably being deleted", pod.GetLabels()),
+		}
+	}
+
+	/*---------------------------------------------------*
+	 * Normal Execution Fow
+	 *---------------------------------------------------*/
 	switch pod.Status.Phase {
 	case corev1.PodPending:
 		return v1alpha1.Lifecycle{

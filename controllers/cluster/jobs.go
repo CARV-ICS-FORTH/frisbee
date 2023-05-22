@@ -50,7 +50,8 @@ func (r *Controller) runJob(ctx context.Context, cluster *v1alpha1.Cluster, jobI
 	return nil
 }
 
-func (r *Controller) constructJobSpecList(ctx context.Context, cluster *v1alpha1.Cluster) ([]v1alpha1.ServiceSpec, error) {
+// buildJobQueue creates a list of job templates that will be scheduled throughout execution.
+func (r *Controller) buildJobQueue(ctx context.Context, cluster *v1alpha1.Cluster) ([]v1alpha1.ServiceSpec, error) {
 	serviceSpecs, err := serviceutils.GetServiceSpecList(ctx, r.GetClient(), cluster, cluster.Spec.GenerateObjectFromTemplate)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot get serviceSpecs")

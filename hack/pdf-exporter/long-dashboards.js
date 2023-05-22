@@ -13,11 +13,11 @@ const outfile = process.argv[4];
 
 // Set the browser width in pixels. The paper size will be calculated on the basus of 96dpi,
 // so 1200 corresponds to 12.5".
-const width_px = 2036;
+const width_px = 1632;
 // Note that to get an actual paper size, e.g. Letter, you will want to *not* simply set the pixel
 // size here, since that would lead to a "mobile-sized" screen (816px), and mess up the rendering.
 // Instead, set e.g. double the size here (1632px), and call page.pdf() with format: 'Letter' and
-// scale = 0.5.
+const scaleFactor = 4; // 400%
 
 // Generate authorization header for basic auth
 const auth_header = 'Basic ' + new Buffer.from(auth_string).toString('base64');
@@ -44,7 +44,7 @@ const auth_header = 'Basic ' + new Buffer.from(auth_string).toString('base64');
         await page.setViewport({
             width: width_px,
             height: 800,
-            deviceScaleFactor: 1,
+            deviceScaleFactor: scaleFactor,
             isMobile: false
         })
 
@@ -113,10 +113,10 @@ const auth_header = 'Basic ' + new Buffer.from(auth_string).toString('base64');
             path: outfile,
             width: width_px + 'px',
             height: height_px + 'px',
-            format: 'Letter', // <-- see note above for generating "paper-sized" outputs
-            scale: 1,
+          //  format: 'Letter', // <-- see note above for generating "paper-sized" outputs
+            deviceScaleFactor: scaleFactor,
             displayHeaderFooter: false,
-            printBackground: true,
+            printBackground: true, // <-- Required to keep the legend color
             margin: {
                 top: 0,
                 right: 0,

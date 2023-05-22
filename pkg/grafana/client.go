@@ -19,19 +19,15 @@ package grafana
 import (
 	"context"
 	"fmt"
-	"reflect"
-	"sync"
+	"time"
 
-	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/controllers/common"
 	"github.com/go-logr/logr"
 	notifier "github.com/golanghelper/grafana-webhook"
 	"github.com/grafana-tools/sdk"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/util/retry"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 type Options struct {
@@ -106,25 +102,30 @@ func New(ctx context.Context, setters ...Option) (*Client, error) {
 			return nil, errors.Wrapf(err, "client error")
 		}
 
-		if err := retry.OnError(common.DefaultBackoffForServiceEndpoint,
-			// retry condition
-			func(err error) bool {
+		retryCond := func() (done bool, err error) {
+			resp, err := conn.GetHealth(ctx)
+			// Retry
+			if err != nil {
 				client.logger.Info("Retry to connect to grafana", "Error", err)
-				return true
-			},
-			// execution
-			func() error {
-				resp, err := conn.GetHealth(ctx)
-				if err != nil {
-					return err
-				}
-				client.logger.Info("Connected to Grafana", "healthStatus", resp)
 
-				return nil
-			},
-			// error checking
-		); err != nil {
-			return nil, errors.Errorf("endpoint '%s' is unreachable", *args.HTTPEndpoint)
+				return false, nil
+			}
+
+			// Retry
+			if resp.Database != "ok" {
+				client.logger.Info("Grafana does not seem heath. Retry")
+
+				return false, nil
+			}
+
+			// OK
+			client.logger.Info("Connected to Grafana", "healthStatus", resp)
+
+			return true, nil
+		}
+
+		if err := wait.ExponentialBackoffWithContext(ctx, common.DefaultBackoffForServiceEndpoint, retryCond); err != nil {
+			return nil, errors.Wrapf(err, "endpoint is unreachable ('%s')", *args.HTTPEndpoint)
 		}
 
 		client.Conn = conn
@@ -140,7 +141,7 @@ func New(ctx context.Context, setters ...Option) (*Client, error) {
 		// Although the notification channel is backed by the Grafana Pod, the Grafana Service is different
 		// from the Alerting Service. For this reason, we must be sure that both Services are linked to the Grafana Pod.
 		if err := client.SetNotificationChannel(ctx, *args.WebhookURL); err != nil {
-			return nil, errors.Wrapf(err, "notification channel error")
+			return nil, errors.Wrapf(err, "failed to set notification channel")
 		}
 	}
 
@@ -155,10 +156,21 @@ func New(ctx context.Context, setters ...Option) (*Client, error) {
 	return client, nil
 }
 
-var (
-	clientsLocker sync.RWMutex
-	clients       = map[types.NamespacedName]*Client{}
+const (
+	respAddOK = "Annotation added"
+
+	respAddError = "Failed to save annotation"
+
+	respPatchOK = "Annotation patched"
+
+	respPatchError = "Failed to update annotation"
+
+	respUnauthorizedError = "Unauthorized"
 )
+
+var healthError = errors.New("Grafana does not seam healthy")
+
+var Timeout = 2 * time.Minute
 
 type Client struct {
 	logger logr.Logger
@@ -168,87 +180,126 @@ type Client struct {
 	BaseURL string
 }
 
-func getKey(obj metav1.Object) types.NamespacedName {
-	if !v1alpha1.HasScenarioLabel(obj) {
-		panic(errors.Errorf("Object '%s/%s' does not have Scenario labels", obj.GetNamespace(), obj.GetName()))
+// AddAnnotation inserts a new annotation to Grafana.
+func (c *Client) AddAnnotation(annotationRequest sdk.CreateAnnotationRequest) (reqID uint) {
+	if c == nil {
+		defaultLogger.Info("NilGrafanaClient", "operation", "Set", "request", annotationRequest)
+
+		return 0
 	}
 
-	// The key structure is as follows:
-	// Namespaces: provides separation between test-cases
-	// Scenario: Is a flag that is propagated all over the test-cases.
-	return types.NamespacedName{
-		Namespace: obj.GetNamespace(),
-		Name:      v1alpha1.GetScenarioLabel(obj),
+	/*---------------------------------------------------*
+	 * Set the retry logic
+	 *---------------------------------------------------*/
+	retryCond := func() (done bool, err error) {
+		response, err := c.Conn.CreateAnnotation(context.Background(), annotationRequest)
+		// Retry
+		if err != nil {
+			defaultLogger.Info("Connection error. Retry", "annotation", annotationRequest, "Error", err.Error())
+
+			return false, nil
+		}
+
+		// Retry
+		if response.Message == nil {
+			defaultLogger.Info("Empty response. Retry", "annotation", annotationRequest)
+
+			return false, nil
+		}
+
+		// Response Status
+		switch *response.Message {
+		case respAddOK:
+			// OK
+			reqID = *response.ID
+
+			defaultLogger.Info("Annotation Added", "reqID", reqID, "annotation", annotationRequest)
+
+			return true, nil
+		case respAddError, respUnauthorizedError:
+			// Retry
+			defaultLogger.Info("AddError. Retry", "annotation", annotationRequest, "response", response)
+
+			return false, nil
+		default:
+			// Abort
+			return false, errors.Errorf("unexpected response message [%s]", *response.Message)
+		}
 	}
+
+	/*---------------------------------------------------*
+	 * Invoke the synchronous retry mechanism
+	 *---------------------------------------------------*/
+	ctx, cancel := context.WithTimeout(context.Background(), Timeout)
+	defer cancel()
+
+	if err := wait.ExponentialBackoffWithContext(ctx, common.DefaultBackoffForServiceEndpoint, retryCond); err != nil {
+		defaultLogger.Info("PutAnnotationError",
+			"request", annotationRequest,
+			"err", err.Error(),
+		)
+
+		return 0
+	}
+
+	return reqID
 }
 
-// SetClientFor creates a new client for the given object.  It panics if it cannot parse the object's metadata,
-// or if another client is already registers.
-func SetClientFor(obj metav1.Object, client *Client) {
-	key := getKey(obj)
+// PatchAnnotation updates an existing annotation to Grafana.
+func (c *Client) PatchAnnotation(reqID uint, annotationRequest sdk.PatchAnnotationRequest) {
+	if c == nil {
+		defaultLogger.Info("NilGrafanaClient", "operation", "Patch", "request", annotationRequest)
 
-	clientsLocker.RLock()
-	_, exists := clients[key]
-	clientsLocker.RUnlock()
-
-	if exists {
-		panic(errors.Errorf("client is already registered for '%s'", key))
+		return
 	}
 
-	clientsLocker.Lock()
-	clients[key] = client
-	clientsLocker.Unlock()
+	/*---------------------------------------------------*
+	 * Set the retry logic
+	 *---------------------------------------------------*/
+	retryCond := func() (done bool, err error) {
+		response, err := c.Conn.PatchAnnotation(context.Background(), reqID, annotationRequest)
+		// Retry
+		if err != nil {
+			defaultLogger.Info("Connection error. Retry", "reqID", reqID, "annotation", annotationRequest, "Error", err.Error())
 
-	client.logger.Info("Set Grafana client for", "obj", key)
-}
+			return false, nil
+		}
 
-// GetClientFor returns the client with the given name. It panics if it cannot parse the object's metadata,
-// if the client does not exist, or if the client is empty.
-func GetClientFor(obj metav1.Object) *Client {
-	if !v1alpha1.HasScenarioLabel(obj) {
-		logrus.Warn("No Scenario FOR ", obj.GetName(), " type ", reflect.TypeOf(obj))
+		// Retry
+		if response.Message == nil {
+			defaultLogger.Info("Empty response. Retry", "reqID", reqID, "annotation", annotationRequest)
 
-		return nil
+			return false, nil
+		}
+
+		// Response Status
+		switch *response.Message {
+		case respPatchOK:
+			// OK
+			defaultLogger.Info("Annotation Patched", "reqID", reqID, "annotation", annotationRequest)
+
+			return true, nil
+		case respPatchError, respUnauthorizedError:
+			// Retry
+			defaultLogger.Info("PatchError. Retry", "reqID", reqID, "annotation", annotationRequest, "response", response)
+
+			return false, nil
+		default:
+			// Abort
+			return false, errors.Errorf("unexpected response message [%s]", *response.Message)
+		}
 	}
 
-	key := getKey(obj)
+	/*---------------------------------------------------*
+	 * Invoke the synchronous retry mechanism
+	 *---------------------------------------------------*/
+	ctx, cancel := context.WithTimeout(context.Background(), Timeout)
+	defer cancel()
 
-	clientsLocker.RLock()
-	defer clientsLocker.RUnlock()
-
-	client, exists := clients[key]
-	if !exists || client == nil {
-		panic("nil grafana client was found for object: " + obj.GetName())
+	if err := wait.ExponentialBackoffWithContext(ctx, common.DefaultBackoffForServiceEndpoint, retryCond); err != nil {
+		defaultLogger.Info("PatchAnnotationError",
+			"request", annotationRequest,
+			"err", err.Error(),
+		)
 	}
-
-	return client
-}
-
-// HasClientFor returns whether there is a non-nil grafana client is registered for the given object.
-func HasClientFor(obj metav1.Object) bool {
-	if !v1alpha1.HasScenarioLabel(obj) {
-		return false
-	}
-
-	key := getKey(obj)
-
-	clientsLocker.RLock()
-	defer clientsLocker.RUnlock()
-
-	client, exists := clients[key]
-	if !exists || client == nil {
-		return false
-	}
-
-	return true
-}
-
-// DeleteClientFor removes the client registered for the given object.
-func DeleteClientFor(obj metav1.Object) {
-	key := getKey(obj)
-
-	clientsLocker.Lock()
-	defer clientsLocker.Unlock()
-
-	delete(clients, key)
 }

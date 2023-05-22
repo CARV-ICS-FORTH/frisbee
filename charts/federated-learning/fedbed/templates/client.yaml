@@ -68,5 +68,5 @@ spec:
               python client.py &
             done
 
-            # Wait for all clients to temrinate
+            # Wait for all clients to terminate
             wait

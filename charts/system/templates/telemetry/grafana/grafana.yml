@@ -86,7 +86,7 @@ data:
     #################################### Users ###############################
     [users]
     # Default UI theme ("dark" or "light" or "system")
-    default_theme = dark
+    default_theme = light
 
     [auth]
     # Set to true to disable (hide) the login form, useful if you use OAuth

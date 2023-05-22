@@ -123,6 +123,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		// If this object is suspended, we don't want to run any jobs, so we'll stop now.
 		// This is useful if something's broken with the job we're running, and we want to
 		// pause runs to investigate the cluster, without deleting the object.
+		r.Logger.Info("Call has been suspend. Nothing else it scheduled.")
 
 		return common.Stop(r, req)
 	}
@@ -138,19 +139,18 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return lifecycle.Pending(ctx, r, &call, "ready to start creating jobs.")
 
 	case v1alpha1.PhasePending:
-		nextJob := call.Status.ScheduledJobs + 1
-
 		//	If all jobs are scheduled but are not in the Running phase, they may be in the Pending phase.
 		//	In both cases, we have nothing else to do but waiting for the next reconciliation cycle.
-		if call.Spec.SuspendWhen == nil && (nextJob >= len(call.Status.QueuedJobs)) {
+		if r.view.Count() >= len(call.Status.QueuedJobs) {
+			r.Logger.Info("All jobs have been scheduled. Nothing else to do. ")
 			return common.Stop(r, req)
 		}
 
-		// Get the next scheduled job
+		// Check if the conditions are right to spawn a new job.
 		hasJob, nextTick, err := scheduler.Schedule(log, &call, scheduler.Parameters{
 			State:            *r.view,
-			ScheduleSpec:     call.Spec.Schedule,
 			LastScheduleTime: call.Status.LastScheduleTime,
+			ScheduleSpec:     call.Spec.Schedule,
 			ExpectedTimeline: call.Status.ExpectedTimeline,
 			JobName:          call.GetName(),
 			ScheduledJobs:    call.Status.ScheduledJobs,
@@ -160,22 +160,36 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		}
 
 		if !hasJob {
-			r.Logger.Info("Nothing to do right now. Requeue request.", "nextTick", nextTick)
-
+			// nothing to schedule
 			if nextTick.IsZero() {
 				return common.Stop(r, req)
 			}
 
+			// sleep until next tick
 			return common.RequeueAfter(r, req, time.Until(nextTick))
 		}
 
-		// Build the job in kubernetes
-		if err := r.runJob(ctx, &call, nextJob); err != nil {
+		// Fetch the next job from the queuing list, and submit it to Kubernetes.
+		nextJobIndex := call.Status.ScheduledJobs + 1
+
+		if nextJobIndex >= len(call.Status.QueuedJobs) {
+			r.Logger.Error(errors.New("Ignore job as it is out of range compared to QueuedJobs"),
+				"BadScheduling",
+				"nextJobIndex", nextJobIndex,
+				"queueJobs", len(call.Status.QueuedJobs),
+				"viewedJobs", r.view.Count(),
+				"jobList", r.view.ListAll(),
+			)
+
+			return common.Stop(r, req)
+		}
+
+		if err := r.runJob(ctx, &call, nextJobIndex); err != nil {
 			return lifecycle.Failed(ctx, r, &call, errors.Wrapf(err, "cannot create job"))
 		}
 
 		// Update the scheduling information
-		call.Status.ScheduledJobs = nextJob
+		call.Status.ScheduledJobs = nextJobIndex
 		call.Status.LastScheduleTime = metav1.Time{Time: time.Now()}
 
 		return lifecycle.Pending(ctx, r, &call, fmt.Sprintf("Scheduled jobs: '%d/%d'",
@@ -209,7 +223,7 @@ func (r *Controller) Initialize(ctx context.Context, call *v1alpha1.Call) error 
 		This list is used by the execution step to create the actual job.
 		If the template is invalid, it should be captured at this stage.
 	*/
-	jobList, err := r.constructJobSpecList(ctx, call)
+	jobList, err := r.buildJobQueue(ctx, call)
 	if err != nil {
 		return errors.Wrapf(err, "building joblist")
 	}
@@ -275,7 +289,7 @@ func (r *Controller) HasSucceed(ctx context.Context, call *v1alpha1.Call) error 
 func (r *Controller) HasFailed(ctx context.Context, call *v1alpha1.Call) error {
 	r.Logger.Info("!! JobError",
 		"obj", client.ObjectKeyFromObject(call).String(),
-		"reason ", call.Status.Reason,
+		"reason", call.Status.Reason,
 		"message", call.Status.Message,
 	)
 
@@ -352,6 +366,6 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.Call{}).
 		Named("call").
-		Owns(&v1alpha1.VirtualObject{}, watchers.Watch(reconciler, gvk)).
+		Owns(&v1alpha1.VirtualObject{}, watchers.WatchWithRangeAnnotations(reconciler, gvk)).
 		Complete(reconciler)
 }

@@ -17,224 +17,76 @@ limitations under the License.
 package grafana
 
 import (
-	"context"
 	"fmt"
 	"reflect"
 	"time"
 
-	"github.com/carv-ics-forth/frisbee/controllers/common"
 	"github.com/grafana-tools/sdk"
-	"github.com/pkg/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type PointAnnotation struct{}
+func tracingMsg(name string, kind string) string {
+	return fmt.Sprintf("%s (%s)", name, kind)
+}
 
-func (a *PointAnnotation) Add(obj client.Object, tags ...Tag) {
-	if tags == nil {
-		tags = []Tag{TagCreated}
+func AnnotatePointInTime(obj client.Object, ts time.Time, tags []Tag) {
+	if len(tags) == 0 {
+		panic("empty tag list")
 	}
 
-	// try to use the native kind.
-	// if not possible, use the reflected type.
-	// this should only make difference on unstructured.Unstructured types.
+	// if possible, use the native kind. Otherwise, the reflected.
+	// this is needed for wrappers types such as unstructured.Unstructured.
 	kind := obj.GetObjectKind().GroupVersionKind().Kind
 	if kind == "" {
 		kind = reflect.TypeOf(obj).String()
+	}
+
+	if ts.IsZero() {
+		defaultLogger.Info("Replace nil ts with time.Now", "obj", obj.GetName(), "kind", kind)
+
+		ts = time.Now()
 	}
 
 	annotationRequest := sdk.CreateAnnotationRequest{
-		Time:    obj.GetCreationTimestamp().UnixMilli(),
+		Time:    ts.UnixMilli(),
 		TimeEnd: 0,
 		Tags:    tags,
-		Text:    fmt.Sprintf("Job Added. Kind:%s Name:%s", kind, obj.GetName()),
+		Text:    tracingMsg(obj.GetName(), kind),
 	}
 
-	GetClientFor(obj).SetAnnotation(annotationRequest)
+	GetClientFor(obj).AddAnnotation(annotationRequest)
 }
 
-func (a *PointAnnotation) Delete(obj client.Object, tags ...Tag) {
-	if tags == nil {
-		tags = []Tag{TagDeleted}
+func AnnotateTimerange(obj client.Object, tsStart time.Time, tsEnd time.Time, tags []Tag) {
+	if len(tags) == 0 {
+		panic("empty tag list")
 	}
 
-	delTime := obj.GetDeletionTimestamp()
-	if delTime == nil {
-		delTime = &metav1.Time{Time: time.Now()}
-	}
-
-	// try to use the native kind.
-	// if not possible, use the reflected type.
-	// this should only make difference on unstructured.Unstructured types.
+	// if possible, use the native kind. Otherwise, the reflected.
+	// this is needed for wrappers types such as unstructured.Unstructured.
 	kind := obj.GetObjectKind().GroupVersionKind().Kind
 	if kind == "" {
 		kind = reflect.TypeOf(obj).String()
+	}
+
+	if tsStart.IsZero() {
+		defaultLogger.Info("Replace nil tsStart with time.Now", "obj", obj.GetName(), "kind", kind)
+
+		tsStart = time.Now()
+	}
+
+	if tsEnd.IsZero() {
+		defaultLogger.Info("Replace nil tsEnd with time.Now", "obj", obj.GetName(), "kind", kind)
+
+		tsEnd = time.Now()
 	}
 
 	annotationRequest := sdk.CreateAnnotationRequest{
-		Time:    delTime.UnixMilli(),
-		TimeEnd: 0,
+		Time:    tsStart.UnixMilli(),
+		TimeEnd: tsEnd.UnixMilli(),
 		Tags:    tags,
-		Text:    fmt.Sprintf("Job Deleted. Kind:%s Name:%s", kind, obj.GetName()),
+		Text:    tracingMsg(obj.GetName(), kind),
 	}
 
-	GetClientFor(obj).SetAnnotation(annotationRequest)
-}
-
-// RangeAnnotation uses range annotations to indicate the duration of a Chaos.
-// It consists of two parts. In the first part, a failure annotation is created
-// with open end. Event a new value is pushed to the timeEnd channel, the annotation is updated
-// accordingly. TimeEnd channel can be used as many times as wished. The client is responsible to close the channel.
-type RangeAnnotation struct {
-	// Currently the Annotator works for a single watched object. If we want to support more, use a map with
-	// the key being the object Name.
-	reqID uint
-}
-
-func (a *RangeAnnotation) Add(obj client.Object, tags ...Tag) {
-	if tags == nil {
-		tags = []Tag{TagCreated}
-	}
-
-	// try to use the native kind.
-	// if not possible, use the reflected type.
-	// this should only make difference on unstructured.Unstructured types.
-	kind := obj.GetObjectKind().GroupVersionKind().Kind
-	if kind == "" {
-		kind = reflect.TypeOf(obj).String()
-	}
-
-	// In order to make the annotation open-ended, I added a date in the future.
-	// The date (January 19, 2038), is the last date that can be described by  32-bit Unix/Linux-based systems.
-	// FIXME: Random guy in the future, thanks for maintaining this code.
-	ga := sdk.CreateAnnotationRequest{
-		Time:    obj.GetCreationTimestamp().UnixMilli(),
-		TimeEnd: time.Date(2039, 1, 19, 14, 30, 45, 100, time.Local).UnixMilli(),
-		Tags:    tags,
-		Text:    fmt.Sprintf("Job Added. Kind:%s Name:%s", kind, obj.GetName()),
-	}
-
-	a.reqID = GetClientFor(obj).SetAnnotation(ga)
-}
-
-func (a *RangeAnnotation) Delete(obj client.Object, tags ...Tag) {
-	if tags == nil {
-		tags = []Tag{TagDeleted}
-	}
-
-	timeStart := obj.GetCreationTimestamp()
-	timeEnd := obj.GetDeletionTimestamp()
-
-	// these nuances are caused by chaos partition events whose deletion time is the same as creation time.
-	// the result is that the ending line overlaps with the starting line, thus giving the feel of a period.
-	if timeEnd.IsZero() || timeEnd.Equal(&timeStart) {
-		timeEnd = &metav1.Time{Time: time.Now()}
-	}
-
-	// try to use the native kind.
-	// if not possible, use the reflected type.
-	// this should only make difference on unstructured.Unstructured types.
-	kind := obj.GetObjectKind().GroupVersionKind().Kind
-	if kind == "" {
-		kind = reflect.TypeOf(obj).String()
-	}
-
-	annotationRequest := sdk.PatchAnnotationRequest{
-		Time:    0,
-		TimeEnd: timeEnd.UnixMilli(),
-		Tags:    tags,
-		Text:    fmt.Sprintf("Job Deleted. Kind:%s Name:%s", kind, obj.GetName()),
-	}
-
-	GetClientFor(obj).PatchAnnotation(a.reqID, annotationRequest)
-}
-
-// ///////////////////////////////////////////
-//		Grafana Annotator
-// ///////////////////////////////////////////
-
-const (
-	statusAnnotationAdded = "Annotation added"
-
-	statusAnnotationPatched = "Annotation patched"
-)
-
-var Timeout = 1 * time.Minute
-
-// SetAnnotation inserts a new annotation to Grafana.
-func (c *Client) SetAnnotation(annotationRequest sdk.CreateAnnotationRequest) (reqID uint) {
-	if c == nil {
-		defaultLogger.Info("NilGrafanaClient", "operation", "Set", "request", annotationRequest)
-
-		return 0
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), Timeout)
-	defer cancel()
-
-	// retry until Grafana is ready to receive annotations.
-	if err := wait.ExponentialBackoff(common.DefaultBackoffForServiceEndpoint, func() (done bool, err error) {
-		gaResp, err := c.Conn.CreateAnnotation(ctx, annotationRequest)
-		// API connection error. Just retry
-		if err != nil {
-			return false, err
-		}
-
-		// Server error. Abort
-		if gaResp.Message == nil {
-			return true, errors.Errorf("empty annotation response")
-		}
-
-		// Unexpected response
-		if *gaResp.Message != statusAnnotationAdded {
-			return true, errors.Errorf("expected message '%s', but got '%s'", statusAnnotationAdded, *gaResp.Message)
-		}
-
-		// Done
-		reqID = *gaResp.ID
-
-		return true, nil
-	}); err != nil {
-		c.logger.Info("AnnotationError", "operation", "Set", "request", annotationRequest, "err", err.Error())
-	}
-
-	return reqID
-}
-
-// PatchAnnotation updates an existing annotation to Grafana.
-func (c *Client) PatchAnnotation(reqID uint, annotationRequest sdk.PatchAnnotationRequest) {
-	if c == nil {
-		defaultLogger.Info("NilGrafanaClient", "operation", "Patch", "request", annotationRequest)
-
-		return
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), Timeout)
-	defer cancel()
-
-	// retry until Grafana is ready to receive annotations.
-	if err := wait.ExponentialBackoffWithContext(ctx, common.DefaultBackoffForServiceEndpoint, func() (done bool, err error) {
-		gaResp, err := c.Conn.PatchAnnotation(ctx, reqID, annotationRequest)
-		// API connection error. Just retry
-		if err != nil {
-			return false, nil //nolint:nilerr
-		}
-
-		// Server error. Abort
-		if gaResp.Message == nil {
-			return true, errors.Errorf("empty annotation response")
-		}
-
-		// Unexpected response
-		if *gaResp.Message != statusAnnotationPatched {
-			return true, errors.Errorf("expected message '%s', but got '%s'", statusAnnotationPatched, *gaResp.Message)
-		}
-
-		// Done
-		return true, nil
-	}); err != nil {
-		c.logger.Info("AnnotationError", "operation", "Patch", "request", annotationRequest, "err", err.Error())
-	}
+	GetClientFor(obj).AddAnnotation(annotationRequest)
 }

@@ -4,6 +4,36 @@
 
 ### Changed defaults / behaviours
 
+- Change Grafana background to white so that reports are almost paper-ready.
+- Fix pupetteer to v19.11.0 in order to avoid crashing due to erroneously parsing specific dashboards (i.e scenario events).
+- Set maximum log streams to 100 in order to monitor up to medium-scale experiments. For more than 100 endpoints use persistent logs.
+- Fix groupped actions (Call, Cluster, Cascade) to use the cluster view for decision-making instead of the Action's status.
+  This is to avoid double-action causes by re-queued requests that maintain older state.
+- Change Annotation priority to: Failed, Chaos, App, Create, Delete.
+- Instead of annotating the lifecycle of Pods, we annotate the lifecycle of Service. This is to support capturing Failures.
+- If a Pod is deleted, either manually or by a chaos event, it is considered as failed.
+- ...
+
+### New Features & Functionality
+
+- Add fl example for injecting partition as specific epoch
+- Added an annotator sidecar for pushing annotations to Grafana directly from the app's pod
+- Add a new example in the tutorial that combines cluster with fault tolerance, and cascade of killings.
+- ...
+
+## Bug Fixes
+
+- --shell flag of kubectl-inspect takes kubeconfig from environment.
+- use background=true on pdf-exports to preserve the legend color
+- fix YCSB dashboard to show current time, and update the annotations.
+- Remove terminating functions from status classified as it complicates the deletion FSM.
+- ...
+
+## 1.0.39 \[2023-05-12\]
+
+
+### Changed defaults / behaviours
+
 - Changed default distribution to Constant
 - Update callables to use 'main' entrypoint instead of the old 'app' entrypoint.
 - Moved the watchPod implementation to the generic Watchers package.

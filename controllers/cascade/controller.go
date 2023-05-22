@@ -110,6 +110,8 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		// If this object is suspended, we don't want to run any jobs, so we'll stop now.
 		// This is useful if something's broken with the job we're running, and we want to
 		// pause runs to investigate the cluster, without deleting the object.
+		r.Logger.Info("Cascade has been suspend. Nothing else it scheduled.")
+
 		return common.Stop(r, req)
 	}
 
@@ -124,46 +126,58 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return lifecycle.Pending(ctx, r, &cascade, "ready to start creating jobs.")
 
 	case v1alpha1.PhasePending:
-		nextJob := cascade.Status.ScheduledJobs + 1
-
 		//	If all jobs are scheduled but are not in the Running phase, they may be in the Pending phase.
 		//	In both cases, we have nothing else to do but waiting for the next reconciliation cycle.
-		if cascade.Spec.SuspendWhen == nil && (nextJob >= len(cascade.Status.QueuedJobs)) {
+		if r.view.Count() >= len(cascade.Status.QueuedJobs) {
+			r.Logger.Info("All jobs have been scheduled. Nothing else to do. ")
+
 			return common.Stop(r, req)
 		}
 
-		// Get the next scheduled job
-		{
-			hasJob, nextTick, err := scheduler.Schedule(log, &cascade, scheduler.Parameters{
-				State:            *r.view,
-				ScheduleSpec:     cascade.Spec.Schedule,
-				LastScheduleTime: cascade.Status.LastScheduleTime,
-				ExpectedTimeline: cascade.Status.ExpectedTimeline,
-				JobName:          cascade.GetName(),
-				ScheduledJobs:    cascade.Status.ScheduledJobs,
-			})
-			if err != nil {
-				return lifecycle.Failed(ctx, r, &cascade, errors.Wrapf(err, "scheduling error"))
-			}
-
-			if !hasJob {
-				r.Logger.Info("Nothing to do right now. Requeue request.", "nextTick", nextTick)
-
-				if nextTick.IsZero() {
-					return common.Stop(r, req)
-				}
-
-				return common.RequeueAfter(r, req, time.Until(nextTick))
-			}
+		// Check if the conditions are right to spawn a new job.
+		hasJob, nextTick, err := scheduler.Schedule(log, &cascade, scheduler.Parameters{
+			State:            *r.view,
+			ScheduleSpec:     cascade.Spec.Schedule,
+			LastScheduleTime: cascade.Status.LastScheduleTime,
+			ExpectedTimeline: cascade.Status.ExpectedTimeline,
+			JobName:          cascade.GetName(),
+			ScheduledJobs:    cascade.Status.ScheduledJobs,
+		})
+		if err != nil {
+			return lifecycle.Failed(ctx, r, &cascade, errors.Wrapf(err, "scheduling error"))
 		}
 
-		// Build the job in kubernetes
-		if err := r.runJob(ctx, &cascade, nextJob); err != nil {
+		if !hasJob {
+			// nothing to schedule
+			if nextTick.IsZero() {
+				return common.Stop(r, req)
+			}
+
+			// sleep until next tick
+			return common.RequeueAfter(r, req, time.Until(nextTick))
+		}
+
+		// Fetch the next job from the queuing list, and submit it to Kubernetes.
+		nextJobIndex := cascade.Status.ScheduledJobs + 1
+
+		if nextJobIndex >= len(cascade.Status.QueuedJobs) {
+			r.Logger.Error(errors.New("Ignore job as it is out of range compared to QueuedJobs"),
+				"BadScheduling",
+				"nextJobIndex", nextJobIndex,
+				"queueJobs", len(cascade.Status.QueuedJobs),
+				"viewedJobs", r.view.Count(),
+				"jobList", r.view.ListAll(),
+			)
+
+			return common.Stop(r, req)
+		}
+
+		if err := r.runJob(ctx, &cascade, nextJobIndex); err != nil {
 			return lifecycle.Failed(ctx, r, &cascade, errors.Wrapf(err, "cannot create job"))
 		}
 
 		// Update the scheduling information
-		cascade.Status.ScheduledJobs = nextJob
+		cascade.Status.ScheduledJobs = nextJobIndex
 		cascade.Status.LastScheduleTime = metav1.Time{Time: time.Now()}
 
 		return lifecycle.Pending(ctx, r, &cascade, fmt.Sprintf("Scheduled jobs: '%d/%d'",
@@ -197,7 +211,7 @@ func (r *Controller) Initialize(ctx context.Context, cascade *v1alpha1.Cascade) 
 		This list is used by the execution step to create the actual job.
 		If the template is invalid, it should be captured at this stage.
 	*/
-	jobList, err := r.constructJobSpecList(ctx, cascade)
+	jobList, err := r.buildJobQueue(ctx, cascade)
 	if err != nil {
 		return errors.Wrapf(err, "building joblist")
 	}
@@ -332,6 +346,9 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 
 	gvk := v1alpha1.GroupVersion.WithKind("Cascade")
 
+	// Here we use generic watchers without annotations.
+	// This is because the right annotation type depends on the type of the Chaos jobs.
+	// For this reason, the Chaos CRD is responsible to select the right annotator.
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.Cascade{}).
 		Named("cascade").

@@ -157,7 +157,11 @@ func NewReportTestCmd() *cobra.Command {
 				ui.Info("Waiting for scenario actions to be completed...")
 
 				err = common.WaitForCondition(testName, v1alpha1.ConditionAllJobsAreCompleted, Timeout)
-				ui.ExitOnError("scenario has not been be successful after "+Timeout+". : err", err)
+				ui.ExitOnError("abnormal termination. err:", err)
+
+				// get the new status
+				scenario, err = env.Default.GetFrisbeeClient().GetScenario(cmd.Context(), testName)
+				ui.ExitOnError("Renew test information", err)
 			}
 
 			switch {
@@ -324,7 +328,7 @@ func SaveData(ctx context.Context, grafanaClient *grafana.Client, url *grafana.U
  *---------------------------------------------------*/
 
 const (
-	puppeteer = "puppeteer"
+	puppeteer = "puppeteer@19.11.0"
 )
 
 type PDFExporter string
