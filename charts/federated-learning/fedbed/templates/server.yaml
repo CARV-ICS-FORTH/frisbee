@@ -113,7 +113,7 @@ spec:
           - /bin/bash
           - -c
           - |
-            export ROUND=2
+            export ROUND=1
 
             while true; do
               (( $(grep "fit_round received" /fl-logs/server.log | wc -l) > ${ROUND} )) && break || sleep 5;
