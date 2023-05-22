@@ -65,10 +65,12 @@ func (r *Controller) updateLifecycle(cr *v1alpha1.Cascade) bool {
 		// Event used in conjunction with "Until", instance act as a maximum bound.
 		// If the maximum instances are reached before the Until conditions, we assume that
 		// the experiment never converges, and it fails.
-		if cr.Spec.MaxInstances > 0 && cr.Status.ScheduledJobs > cr.Spec.MaxInstances {
-			msg := fmt.Sprintf(`Cascade [%s] has reached Max instances [%d] before Until conditions are met.
+		maxJobs := cr.Spec.MaxInstances
+
+		if maxJobs > 0 && (cr.Status.ScheduledJobs > maxJobs) {
+			msg := fmt.Sprintf(`Resource [%s] has reached Max instances [%d] before Until conditions are met.
 			Abort the experiment as it too flaky to accept. You can retry without defining instances.`,
-				cr.GetName(), cr.Spec.MaxInstances)
+				cr.GetName(), maxJobs)
 
 			cr.Status.Lifecycle.Phase = v1alpha1.PhaseFailed
 			cr.Status.Lifecycle.Reason = "MaxInstancesReached"

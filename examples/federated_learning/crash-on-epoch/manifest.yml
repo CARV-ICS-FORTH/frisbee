@@ -40,17 +40,17 @@ spec:
         callable: wait-for-round
         services: [server]
 
-    # Step 4: Kill one client 2 minutes after the 2nd round, and another client 2 minutes later.
+    # Step 4: After 2 minutes, kill one client, and 1 minutes later, kill another client.
     - action: Cascade
       name: killer
-      depends: { success: [  wait-for-round ] }
+      depends: { success: [ wait-for-round ] }
       cascade:
         templateRef: system.chaos.pod.kill
         inputs:
           - { target: clients-1 }
           - { target: clients-3 }
         schedule:
-          cron: "@every 2m"
+          cron: "@every 1m"
 
 
     # Teardown

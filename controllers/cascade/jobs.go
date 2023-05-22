@@ -50,12 +50,12 @@ func (r *Controller) runJob(ctx context.Context, cascade *v1alpha1.Cascade, jobI
 
 // buildJobQueue creates a list of job templates that will be scheduled throughout execution.
 func (r *Controller) buildJobQueue(ctx context.Context, cascade *v1alpha1.Cascade) ([]v1alpha1.ChaosSpec, error) {
-	specs, err := chaosutils.GetChaosSpecList(ctx, r.GetClient(), cascade, cascade.Spec.GenerateObjectFromTemplate)
+	chaosSpecs, err := chaosutils.GetChaosSpecList(ctx, r.GetClient(), cascade, cascade.Spec.GenerateObjectFromTemplate)
 	if err != nil {
-		return nil, errors.Wrapf(err, "cannot get specs")
+		return nil, errors.Wrapf(err, "cannot get chaosSpecs")
 	}
 
 	cascadeutils.SetTimeline(cascade)
 
-	return specs, nil
+	return chaosSpecs, nil
 }
