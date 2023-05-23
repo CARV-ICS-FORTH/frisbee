@@ -25,6 +25,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
@@ -83,31 +84,31 @@ func (in *Scenario) Default() {
 }
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
-func (in *Scenario) ValidateCreate() error {
+func (in *Scenario) ValidateCreate() (admission.Warnings, error) {
 	legitReferences, err := BuildDependencyGraph(in)
 	if err != nil {
-		return errors.Wrapf(err, "invalid scenario [%s]", in.GetName())
+		return nil, errors.Wrapf(err, "invalid scenario [%s]", in.GetName())
 	}
 
 	for i, action := range in.Spec.Actions {
 		// Check that expressions used in the assertions are ok
 		if !action.Assert.IsZero() {
 			if err := ValidateExpr(action.Assert); err != nil {
-				return errors.Wrapf(err, "Invalid expr in assertion")
+				return nil, errors.Wrapf(err, "Invalid expr in assertion")
 			}
 		}
 
 		// Ensure that the type of action is supported and is correctly set
 		if err := CheckAction(&in.Spec.Actions[i], legitReferences); err != nil {
-			return errors.Wrapf(err, "incorrent spec for type [%s] of action [%s]", action.ActionType, action.Name)
+			return nil, errors.Wrapf(err, "incorrent spec for type [%s] of action [%s]", action.ActionType, action.Name)
 		}
 	}
 
 	if err := CheckForBoundedExecution(legitReferences); err != nil {
-		return errors.Wrapf(err, "infinity error")
+		return nil, errors.Wrapf(err, "infinity error")
 	}
 
-	return nil
+	return nil, nil
 }
 
 // BuildDependencyGraph validates the execution workflow.
@@ -240,7 +241,8 @@ func CheckAction(action *Action, references map[string]*Action) error {
 		var cluster Cluster
 		cluster.Spec = *action.EmbedActions.Cluster
 
-		if err := cluster.ValidateCreate(); err != nil {
+		_, err := cluster.ValidateCreate()
+		if err != nil {
 			return errors.Wrapf(err, "cluster error")
 		}
 
@@ -275,7 +277,8 @@ func CheckAction(action *Action, references map[string]*Action) error {
 		var cascade Cascade
 		cascade.Spec = *action.EmbedActions.Cascade
 
-		return cascade.ValidateCreate()
+		_, err := cascade.ValidateCreate()
+		return err
 
 	case ActionDelete:
 		if action.EmbedActions.Delete == nil {
@@ -304,7 +307,8 @@ func CheckAction(action *Action, references map[string]*Action) error {
 		var call Call
 		call.Spec = *action.EmbedActions.Call
 
-		return call.ValidateCreate()
+		_, err := call.ValidateCreate()
+		return err
 
 	default:
 		return errors.Errorf("Unknown action")
@@ -312,14 +316,14 @@ func CheckAction(action *Action, references map[string]*Action) error {
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
-func (in *Scenario) ValidateUpdate(runtime.Object) error {
-	return nil
+func (in *Scenario) ValidateUpdate(runtime.Object) (admission.Warnings, error) {
+	return nil, nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type.
-func (in *Scenario) ValidateDelete() error {
+func (in *Scenario) ValidateDelete() (admission.Warnings, error) {
 	scenariolog.Info("validate delete", "name", in.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.
-	return nil
+	return nil, nil
 }

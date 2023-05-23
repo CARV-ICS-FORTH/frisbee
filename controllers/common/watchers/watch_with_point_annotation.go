@@ -87,8 +87,8 @@ func (w *watchWithPointAnnotation) watchCreate(reconciler common.Reconciler, gvk
 			// define creation time
 			creationTime := event.Object.GetCreationTimestamp().Time
 
-			// push the annotation asynchronously
-			go grafana.AnnotatePointInTime(event.Object, creationTime, tags)
+			// push annotation to grafana
+			grafana.AnnotatePointInTime(event.Object, creationTime, tags)
 		}
 
 		// we know the creation order, so we do not need to reconcile created objects.
@@ -164,8 +164,8 @@ func (w *watchWithPointAnnotation) watchUpdate(reconciler common.Reconciler, gvk
 				// Perhaps we can use the state transition time.
 				failureTime := time.Now()
 
-				// push the annotation asynchronously
-				go grafana.AnnotatePointInTime(event.ObjectNew, failureTime, tags)
+				// push annotation to grafana
+				grafana.AnnotatePointInTime(event.ObjectNew, failureTime, tags)
 			}
 		} else {
 			reconciler.Info("No Grafana Client", "object", client.ObjectKeyFromObject(event.ObjectNew))
@@ -224,8 +224,8 @@ func (w *watchWithPointAnnotation) watchDelete(reconciler common.Reconciler, gvk
 				deletionTS = event.Object.GetDeletionTimestamp().Time
 			}
 
-			// push the annotation asynchronously
-			go grafana.AnnotatePointInTime(event.Object, deletionTS, tags)
+			// push annotation to grafana
+			grafana.AnnotatePointInTime(event.Object, deletionTS, tags)
 		} else {
 			reconciler.Info("No Grafana Client", "object", client.ObjectKeyFromObject(event.Object))
 		}

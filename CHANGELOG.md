@@ -3,6 +3,20 @@
 ## Changes Since Last Release
 
 ### Changed defaults / behaviours
+- Upgrade to Grafana v9.4.7 in order to avoid issues with locking database (https://github.com/grafana/grafana/issues/60703)
+- ...
+
+### New Features & Functionality
+- Upgrade API to Kubernetes v0.27.2. Upgrade all other deps to the latest version.
+- ...
+
+## Bug Fixes
+- ...
+
+## 1.0.40 \[2023-05-23\]
+
+
+### Changed defaults / behaviours
 
 - Change Grafana background to white so that reports are almost paper-ready.
 - Fix pupetteer to v19.11.0 in order to avoid crashing due to erroneously parsing specific dashboards (i.e scenario events).

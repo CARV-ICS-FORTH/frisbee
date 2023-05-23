@@ -75,7 +75,7 @@ func (c TestInspectionClient) TailTestLogs(testName string, logs chan []byte) (e
 
 	var pods corev1.PodList
 
-	if err := wait.PollImmediate(pollInterval, pollTimeout, func() (done bool, err error) {
+	if err := wait.PollImmediate(pollInterval, pollTimeout, func(ctx context.Context) (done bool, err error) {
 		c.client.List(ctx, &pods, filters)
 		switch {
 		case err != nil: // Abort operation

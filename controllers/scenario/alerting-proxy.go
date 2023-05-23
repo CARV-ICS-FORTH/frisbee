@@ -20,6 +20,7 @@ import (
 	"context"
 	"net"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/carv-ics-forth/frisbee/controllers/common"
@@ -28,14 +29,17 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	OverrideAdvertisedHost = "FRISBEE_ADVERTISED_HOST"
+)
+
 var gracefulShutDownTimeout = 30 * time.Second
 
-// CreateWebhookServer  creates a Webhook for listening for events from Grafana.
-func (r *Controller) CreateWebhookServer(ctx context.Context) error {
-	endpoint := "http://" + net.JoinHostPort(common.DefaultAdvertisedAlertingServiceHost, common.DefaultAdvertisedAlertingServicePort)
-
-	r.Logger.Info("StartWebhook", "URL", endpoint)
-
+// NewAlertingProxy  creates a Webhook for listening for events from Grafana.
+func NewAlertingProxy(ctx context.Context, r *Controller) error {
+	/*---------------------------------------------------*
+	 * Register Alert Handlers
+	 *---------------------------------------------------*/
 	webhook := http.DefaultServeMux
 
 	webhook.Handle("/", notifier.HandleWebhook(func(w http.ResponseWriter, b *notifier.Body) {
@@ -44,7 +48,9 @@ func (r *Controller) CreateWebhookServer(ctx context.Context) error {
 		}
 	}, 0))
 
-	// Start the server
+	/*---------------------------------------------------*
+	 * Start the Alerting Proxy Server
+	 *---------------------------------------------------*/
 	srv := &http.Server{
 		Addr:              ":" + common.DefaultAdvertisedAlertingServicePort,
 		Handler:           webhook,
@@ -79,7 +85,21 @@ func (r *Controller) CreateWebhookServer(ctx context.Context) error {
 		close(idleConnectionsClosed)
 	}()
 
-	r.notificationEndpoint = endpoint
+	/*---------------------------------------------------*
+	 * Advertise the Alerting Proxy Server
+	 *---------------------------------------------------*/
+	advertisedHost := common.DefaultAdvertisedAlertingServiceHost
+
+	// if runs in the development mode, use the host ip of the local controller.
+	if overrideHostIP := os.Getenv(OverrideAdvertisedHost); overrideHostIP != "" {
+		advertisedHost = overrideHostIP
+	}
+
+	address := net.JoinHostPort(advertisedHost, common.DefaultAdvertisedAlertingServicePort)
+
+	r.alertingProxy = "http://" + address
+
+	r.Logger.Info("Alert Proxy Listen", "proto", "http", "address:", address)
 
 	return nil
 }

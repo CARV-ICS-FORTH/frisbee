@@ -130,7 +130,7 @@ func (r *Controller) buildJobQueue(ctx context.Context, call *v1alpha1.Call) ([]
 			Name:      serviceName,
 		}
 
-		retryCond := func() (done bool, err error) {
+		retryCond := func(ctx context.Context) (done bool, err error) {
 			err = r.GetClient().Get(ctx, key, &service)
 			// Retry
 			if k8errors.IsNotFound(err) {

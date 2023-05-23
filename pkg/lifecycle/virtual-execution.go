@@ -70,7 +70,7 @@ func CreateVirtualJob(ctx context.Context, reconciler common.Reconciler,
 	// retry to until we get information about the service.
 	vObjKey := client.ObjectKeyFromObject(&vJob)
 
-	retryCond := func() (done bool, err error) {
+	retryCond := func(ctx context.Context) (done bool, err error) {
 		err = reconciler.GetClient().Get(ctx, vObjKey, &vJob)
 
 		// Retry

@@ -136,8 +136,11 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 			/*---------------------------------------------------
 			 * Update the Object with Added Finalizers
 			 *---------------------------------------------------*/
-			retryCond := func() (done bool, err error) {
-				if err := Update(context.Background(), r, obj); err != nil {
+			ctxTimeout, cancel := context.WithTimeout(ctx, DefaultTimeoutFork8sEndpoint)
+			defer cancel()
+
+			retryCond := func(ctx context.Context) (done bool, err error) {
+				if err := Update(ctxTimeout, r, obj); err != nil {
 					// Retry
 					logger.Info("Retry to add finalizer", "obj", obj, "Err", err)
 
@@ -146,9 +149,6 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 				// OK
 				return true, nil
 			}
-
-			ctxTimeout, cancel := context.WithTimeout(ctx, DefaultTimeoutFork8sEndpoint)
-			defer cancel()
 
 			if err := wait.ExponentialBackoffWithContext(ctxTimeout, DefaultBackoffForK8sEndpoint, retryCond); err != nil {
 				logger.Error(err, "Abort retrying to add finalizer. Requeue the request")
@@ -182,8 +182,11 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 				/*---------------------------------------------------
 				 * Update the Object with Removed Finalizers
 				 *---------------------------------------------------*/
-				retryCond := func() (done bool, err error) {
-					if err := Update(context.Background(), r, obj); err != nil {
+				ctxTimeout, cancel := context.WithTimeout(ctx, DefaultTimeoutFork8sEndpoint)
+				defer cancel()
+
+				retryCond := func(ctx context.Context) (done bool, err error) {
+					if err := Update(ctxTimeout, r, obj); err != nil {
 						logger.Info("Retry to remove finalizer", "obj", obj, "Err", err)
 
 						// Retry
@@ -193,9 +196,6 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 					// OK
 					return true, nil
 				}
-
-				ctxTimeout, cancel := context.WithTimeout(ctx, DefaultTimeoutFork8sEndpoint)
-				defer cancel()
 
 				if err := wait.ExponentialBackoffWithContext(ctxTimeout, DefaultBackoffForK8sEndpoint, retryCond); err != nil {
 					logger.Error(err, "Abort retrying to remove finalizer. Requeue the request")

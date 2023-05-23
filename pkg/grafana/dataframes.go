@@ -199,11 +199,6 @@ func downloadAnnotations(logger logr.Logger, url *URL, dstFile string) error {
 	return nil
 }
 
-// downloadPanelData downloads the raw models passed to the panel visualization.
-func downloadPanelData(logger logr.Logger, url *URL, reqBody *DataRequest, dstFile string) error {
-	return nil
-}
-
 // downloadDataFrame downloads raw data without transformations and field config applied.
 func downloadDataFrame(logger logr.Logger, url *URL, reqBody *DataRequest, dstFile string) error {
 	/*---------------------------------------------------*

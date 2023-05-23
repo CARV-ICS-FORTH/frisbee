@@ -22,6 +22,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
@@ -60,7 +61,7 @@ func (in *Cascade) Default() {
 }
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
-func (in *Cascade) ValidateCreate() error {
+func (in *Cascade) ValidateCreate() (admission.Warnings, error) {
 	cascadelog.Info("ValidateCreateRequest",
 		"name", in.GetNamespace()+"/"+in.GetName(),
 	)
@@ -73,30 +74,30 @@ func (in *Cascade) ValidateCreate() error {
 	// Until field
 	if until := in.Spec.SuspendWhen; until != nil {
 		if err := ValidateExpr(until); err != nil {
-			return errors.Wrapf(err, "SuspendWhen error")
+			return nil, errors.Wrapf(err, "SuspendWhen error")
 		}
 	}
 
 	// Schedule field
 	if schedule := in.Spec.Schedule; schedule != nil {
 		if in.Spec.MaxInstances < 1 {
-			return errors.Errorf("scheduling requires at least one instance")
+			return nil, errors.Errorf("scheduling requires at least one instance")
 		}
 
 		if err := ValidateTaskScheduler(schedule); err != nil {
-			return errors.Wrapf(err, "schedule error")
+			return nil, errors.Wrapf(err, "schedule error")
 		}
 	}
 
-	return nil
+	return nil, nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
-func (in *Cascade) ValidateUpdate(runtime.Object) error {
-	return nil
+func (in *Cascade) ValidateUpdate(runtime.Object) (admission.Warnings, error) {
+	return nil, nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type.
-func (in *Cascade) ValidateDelete() error {
-	return nil
+func (in *Cascade) ValidateDelete() (admission.Warnings, error) {
+	return nil, nil
 }

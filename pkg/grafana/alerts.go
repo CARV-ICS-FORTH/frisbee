@@ -29,6 +29,23 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
+const (
+	DefaultEvaluationFrequency = "1m"
+	DefaultDecisionWindow      = "0s"
+)
+
+type ExecErrState string
+type NoDataState string
+
+const (
+	ErrOK          ExecErrState = "OK"
+	ErrError       ExecErrState = "Error"
+	ErrAlerting    ExecErrState = "Alerting"
+	NoDataOk       NoDataState  = "OK"
+	NoData         NoDataState  = "NoData"
+	NoDataAlerting NoDataState  = "Alerting"
+)
+
 func ConvertEvaluatorAlias(alias string) string {
 	switch alias {
 	case "below":
@@ -184,23 +201,6 @@ func ParseAlertExpr(query v1alpha1.ExprMetrics) (*AlertRule, error) {
 	return &alert, nil
 }
 
-/*
-******************************************************************
-
-					Grafana Alerting Client
-
-******************************************************************
-*/
-
-const (
-	DefaultEvaluationFrequency = "1m"
-	DefaultDecisionWindow      = "0s"
-
-	KeepState = "keep_state"
-)
-
-const RespStatusSuccess = "success"
-
 // SetAlert adds a new alert to Grafana.
 func (c *Client) SetAlert(ctx context.Context, alert *AlertRule, name string, msg string) error {
 	if c == nil {
@@ -211,29 +211,32 @@ func (c *Client) SetAlert(ctx context.Context, alert *AlertRule, name string, ms
 		return errors.New("NIL alert was given")
 	}
 
-	// get the dashboard
+	/*---------------------------------------------------*
+	 * Get the dashboard
+	 *---------------------------------------------------*/
 	board, _, err := c.Conn.GetDashboardByUID(ctx, alert.DashboardUID)
 	if err != nil {
 		return errors.Wrapf(err, "cannot retrieve dashboard %s", alert.DashboardUID)
 	}
 
-	var needsUpdate bool
+	/*---------------------------------------------------*
+	 * Set Alert to the appropriate Panel
+	 *---------------------------------------------------*/
+	var panelExists bool
 
-	// iterate panels
 	for _, panel := range board.Panels {
-		// skip irrelevant panels
 		if panel.ID != alert.PanelID {
+			// skip irrelevant panels
 			continue
 		}
 
-		// set alert for the particular panel
 		if panel.Alert != nil {
 			return errors.Errorf("alert [%s] has already been set for this panel", panel.Alert.Name)
 		}
 
-		panel.Alert = &sdk.Alert{
-			Name:    name,
-			Message: msg,
+		panel.CommonPanel.Alert = &sdk.Alert{
+			Name:          name,
+			AlertRuleTags: map[string]string{"my-alert": "yeeha"},
 			Conditions: []sdk.AlertCondition{
 				{
 					Evaluator: alert.Evaluator,
@@ -247,11 +250,9 @@ func (c *Client) SetAlert(ctx context.Context, alert *AlertRule, name string, ms
 					Type:    "query",
 				},
 			},
-			ExecutionErrorState: KeepState,
-			NoDataState:         KeepState,
-			Notifications:       nil,
 
-			Handler: 1, // Send to default notification channel (should be the controller)
+			ExecutionErrorState: string(ErrError),
+			NoDataState:         string(NoData),
 
 			// Frequency specifies how often the scheduler should evaluate the alert rule.
 			// This is referred to as the evaluation interval. Because in Frisbee we use alerts as
@@ -261,45 +262,52 @@ func (c *Client) SetAlert(ctx context.Context, alert *AlertRule, name string, ms
 			// For specifies how long the query needs to violate the configured thresholds before the alert notification
 			// triggers. Default: 5m
 			For: alert.Duration,
+
+			Notifications: nil,
+			Message:       msg,
+			// Handler: 1, // Send to default notification channel (should be the controller)
 		}
 
-		needsUpdate = true
+		panelExists = true
 	}
 
-	if needsUpdate {
-		params := sdk.SetDashboardParams{
-			Overwrite:  true,
-			PreserveId: true,
+	if !panelExists {
+		c.logger.Info("No matching panel for alert", "alertRule", alert)
+
+		return errors.New("Invalid panel reference")
+	}
+
+	/*---------------------------------------------------*
+	 * Update the Dashboard
+	 *---------------------------------------------------*/
+	params := sdk.SetDashboardParams{
+		Overwrite:  false,
+		PreserveId: true,
+	}
+
+	retryCond := func(ctx context.Context) (done bool, err error) {
+		resp, errReq := c.Conn.SetDashboard(ctx, board, params)
+
+		// Retry
+		if errReq != nil {
+
+			c.logger.Info("Connection error. Retry", "alertName", name, "resp", resp, "err", errReq)
+
+			return false, nil
 		}
 
-		retryCond := func() (done bool, err error) {
-			resp, errReq := c.Conn.SetDashboard(ctx, board, params)
+		// OK
+		if resp.Status != nil && *resp.Status == respAlertSuccess {
+			c.logger.Info("Set alert", "alertName", name)
 
-			if errReq != nil {
-				// Retry
-				if resp.Message != nil {
-					c.logger.Info("Connection error. Retry", "alertName", name, "resp", resp)
-
-					return false, nil
-				}
-
-				// Abort
-				return false, errors.Wrapf(errReq, "connection error")
-			}
-
-			// OK
-			if resp.Status != nil && *resp.Status == RespStatusSuccess {
-				return true, nil
-			}
-
-			panic("should not go here")
+			return true, nil
 		}
 
-		if err := wait.ExponentialBackoffWithContext(ctx, common.DefaultBackoffForServiceEndpoint, retryCond); err != nil {
-			return errors.Wrapf(err, "cannot set alert '%s'", name)
-		}
-	} else {
-		c.logger.Info("No matches has been found for alert", "alertRule", alert)
+		panic("should not go here")
+	}
+
+	if err := wait.ExponentialBackoffWithContext(ctx, common.DefaultBackoffForServiceEndpoint, retryCond); err != nil {
+		return errors.Wrapf(err, "cannot set alert '%s'", name)
 	}
 
 	return nil

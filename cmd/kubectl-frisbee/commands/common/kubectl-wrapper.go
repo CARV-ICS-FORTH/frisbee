@@ -17,6 +17,7 @@ limitations under the License.
 package common
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"regexp"
@@ -25,6 +26,7 @@ import (
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/env"
+	"github.com/carv-ics-forth/frisbee/controllers/common"
 	"github.com/carv-ics-forth/frisbee/pkg/process"
 	"github.com/kubeshop/testkube/pkg/ui"
 	"github.com/pkg/errors"
@@ -417,7 +419,7 @@ Filter query:
   - Run with '--logs pod1'. -> monitor a specific pod
   - Run with '--logs pod1,pod2,pod3,...'. -> monitoring multiple pods
 */
-func KubectlLogs(testName string, tail bool, lines int, pods ...string) error {
+func KubectlLogs(ctx context.Context, testName string, tail bool, lines int, pods ...string) error {
 	command := []string{
 		"logs",
 		// "-c", v1alpha1.MainContainerName,
@@ -455,7 +457,7 @@ func KubectlLogs(testName string, tail bool, lines int, pods ...string) error {
 
 		ui.Debug(env.Default.Kubectl(), strings.Join(command, " "))
 
-		return wait.PollImmediate(pollInterval, pollTimeout, func() (done bool, err error) {
+		return wait.ExponentialBackoffWithContext(ctx, common.DefaultBackoffForServiceEndpoint, func(ctx context.Context) (done bool, err error) {
 			out, err := LoggedKubectl(testName, command...)
 
 			switch {

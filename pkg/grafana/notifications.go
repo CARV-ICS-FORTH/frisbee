@@ -21,6 +21,7 @@ import (
 
 	"github.com/carv-ics-forth/frisbee/controllers/common"
 	"github.com/grafana-tools/sdk"
+	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
@@ -39,12 +40,20 @@ func (c *Client) SetNotificationChannel(ctx context.Context, webhookURL string) 
 
 	// Although the notification channel is backed by the Grafana Pod, the Grafana Service is different
 	// from the Alerting Service. For this reason, we must be sure that both Services are linked to the Grafana Pod.
-	retryCond := func() (done bool, err error) {
-		if _, err := c.Conn.CreateAlertNotification(ctx, feedback); err != nil {
-			// Retry
+	retryCond := func(ctx context.Context) (done bool, err error) {
+		channelID, err := c.Conn.CreateAlertNotification(ctx, feedback)
+		// Retry
+		if err != nil {
 			defaultLogger.Info("connection error", "Err", err)
 
 			return false, nil
+		}
+
+		// Abort
+		if channelID == 0 {
+			defaultLogger.Info("Empty channel ID")
+
+			return false, errors.New("empty channel id")
 		}
 
 		// OK

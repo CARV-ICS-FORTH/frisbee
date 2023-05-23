@@ -22,6 +22,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // +kubebuilder:webhook:path=/mutate-frisbee-dev-v1alpha1-cluster,mutating=true,failurePolicy=fail,sideEffects=None,groups=frisbee.dev,resources=clusters,verbs=create;update,versions=v1alpha1,name=mcluster.kb.io,admissionReviewVersions={v1,v1alpha1}
@@ -60,7 +61,7 @@ func (in *Cluster) Default() {
 }
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
-func (in *Cluster) ValidateCreate() error {
+func (in *Cluster) ValidateCreate() (admission.Warnings, error) {
 	clusterlog.Info("ValidateCreateRequest",
 		"name", in.GetNamespace()+"/"+in.GetName(),
 	)
@@ -79,49 +80,49 @@ func (in *Cluster) ValidateCreate() error {
 	// Tolerate field
 	if tolerate := in.Spec.Tolerate; tolerate != nil {
 		if err := ValidateTolerate(tolerate); err != nil {
-			return errors.Wrapf(err, "tolerate error")
+			return nil, errors.Wrapf(err, "tolerate error")
 		}
 	}
 
 	// Until field
 	if until := in.Spec.SuspendWhen; until != nil {
 		if err := ValidateExpr(until); err != nil {
-			return errors.Wrapf(err, "SuspendWhen error")
+			return nil, errors.Wrapf(err, "SuspendWhen error")
 		}
 	}
 
 	// Schedule field
 	if schedule := in.Spec.Schedule; schedule != nil {
 		if in.Spec.MaxInstances < 1 {
-			return errors.Errorf("scheduling requires at least one instance")
+			return nil, errors.Errorf("scheduling requires at least one instance")
 		}
 
 		if err := ValidateTaskScheduler(schedule); err != nil {
-			return errors.Wrapf(err, "schedule error")
+			return nil, errors.Wrapf(err, "schedule error")
 		}
 	}
 
 	// Suspend Field
 	if suspend := in.Spec.Suspend; suspend != nil {
 		if *suspend {
-			return errors.Errorf("Cannot create a cluster that is already suspended")
+			return nil, errors.Errorf("Cannot create a cluster that is already suspended")
 		}
 	}
 
 	// Resources field
 	if resources := in.Spec.Resources; resources != nil {
 		if in.Spec.SuspendWhen != nil {
-			return errors.Errorf("resource distribution conflicts with SuspendWhen conditions")
+			return nil, errors.Errorf("resource distribution conflicts with SuspendWhen conditions")
 		}
 
 		if in.Spec.MaxInstances < 1 {
-			return errors.Errorf("resource distribution requires at least one services")
+			return nil, errors.Errorf("resource distribution requires at least one services")
 		}
 
 		// if nil, Default() will set it to constant
 		if resources.DistributionSpec != nil {
 			if err := ValidateDistribution(resources.DistributionSpec); err != nil {
-				return errors.Wrapf(err, "distribution error")
+				return nil, errors.Wrapf(err, "distribution error")
 			}
 		}
 	}
@@ -129,15 +130,15 @@ func (in *Cluster) ValidateCreate() error {
 	// Placement Field
 	// -- Validated in the scenario, because it involves references to other actions
 
-	return nil
+	return nil, nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
-func (in *Cluster) ValidateUpdate(runtime.Object) error {
-	return nil
+func (in *Cluster) ValidateUpdate(runtime.Object) (admission.Warnings, error) {
+	return nil, nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type.
-func (in *Cluster) ValidateDelete() error {
-	return nil
+func (in *Cluster) ValidateDelete() (admission.Warnings, error) {
+	return nil, nil
 }

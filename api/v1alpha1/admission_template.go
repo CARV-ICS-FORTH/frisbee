@@ -23,6 +23,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // +kubebuilder:webhook:path=/mutate-frisbee-dev-v1alpha1-template,mutating=true,failurePolicy=fail,sideEffects=None,groups=frisbee.dev,resources=templates,verbs=create;update,versions=v1alpha1,name=mtemplate.kb.io,admissionReviewVersions={v1,v1alpha1}
@@ -50,16 +51,16 @@ func (in *Template) Default() {
 }
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
-func (in *Template) ValidateCreate() error {
+func (in *Template) ValidateCreate() (admission.Warnings, error) {
 	templatelog.Info("ValidateCreateRequest",
 		"name", in.GetNamespace()+"/"+in.GetName(),
 	)
 
 	if err := in.validateTemplateLanguage(); err != nil {
-		return errors.Wrapf(err, "erroneous template '%s'", in.GetName())
+		return nil, errors.Wrapf(err, "erroneous template '%s'", in.GetName())
 	}
 
-	return nil
+	return nil, nil
 }
 
 func (in *Template) validateTemplateLanguage() error {
@@ -90,7 +91,8 @@ func (in *Template) validateTemplateLanguage() error {
 			Spec: *in.Spec.Service,
 		}
 
-		return errors.Wrapf(service.ValidateCreate(), "service definition error")
+		_, err := service.ValidateCreate()
+		return errors.Wrapf(err, "service definition error")
 	}
 
 	if in.Spec.Chaos != nil {
@@ -98,21 +100,22 @@ func (in *Template) validateTemplateLanguage() error {
 			Spec: *in.Spec.Chaos,
 		}
 
-		return errors.Wrapf(chaos.ValidateCreate(), "chaos definition error")
+		_, err := chaos.ValidateCreate()
+		return errors.Wrapf(err, "chaos definition error")
 	}
 
 	return nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
-func (in *Template) ValidateUpdate(runtime.Object) error {
-	return nil
+func (in *Template) ValidateUpdate(runtime.Object) (admission.Warnings, error) {
+	return nil, nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type.
-func (in *Template) ValidateDelete() error {
+func (in *Template) ValidateDelete() (admission.Warnings, error) {
 	templatelog.Info("validate delete", "name", in.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.
-	return nil
+	return nil, nil
 }
