@@ -236,7 +236,7 @@
         },
         "showHeader": true
       },
-      "pluginVersion": "9.3.4",
+      "pluginVersion": "9.4.7",
       "scroll": false,
       "span": 0,
       "targets": [
@@ -319,7 +319,7 @@
         "showTime": true,
         "showUser": true
       },
-      "pluginVersion": "8.2.3",
+      "pluginVersion": "9.4.7",
       "targets": [
         {
           "datasource": {
@@ -430,7 +430,7 @@
         "tags": [],
         "viewMode": "list"
       },
-      "pluginVersion": "8.2.3",
+      "pluginVersion": "9.4.7",
       "span": 0,
       "targets": [
         {
@@ -666,7 +666,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "8.2.1",
+      "pluginVersion": "9.4.7",
       "span": 0,
       "targets": [
         {
@@ -805,7 +805,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "8.2.1",
+      "pluginVersion": "9.4.7",
       "span": 0,
       "targets": [
         {
@@ -951,7 +951,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "8.2.1",
+      "pluginVersion": "9.4.7",
       "span": 0,
       "targets": [
         {
@@ -1092,7 +1092,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "8.2.1",
+      "pluginVersion": "9.4.7",
       "span": 0,
       "targets": [
         {
@@ -1203,7 +1203,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "8.2.1",
+      "pluginVersion": "9.4.7",
       "span": 0,
       "targets": [
         {
@@ -1335,7 +1335,7 @@
           "mode": "single"
         }
       },
-      "pluginVersion": "8.2.1",
+      "pluginVersion": "9.4.7",
       "span": 0,
       "targets": [
         {
@@ -1492,7 +1492,7 @@
           "mode": "single"
         }
       },
-      "pluginVersion": "8.2.3",
+      "pluginVersion": "9.4.7",
       "targets": [
         {
           "datasource": {
@@ -1524,7 +1524,7 @@
       ],
       "title": "IO Traffic (Bytes)",
       "transformations": [],
-      "transparent": true,
+      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -1581,7 +1581,7 @@
           "mode": "single"
         }
       },
-      "pluginVersion": "8.2.3",
+      "pluginVersion": "9.4.7",
       "targets": [
         {
           "datasource": {
@@ -1613,7 +1613,7 @@
       ],
       "title": "Total IO Traffic (Bytes)",
       "transformations": [],
-      "transparent": true,
+      "transparent": false,
       "type": "piechart"
     },
     {
@@ -1716,7 +1716,7 @@
           "mode": "single"
         }
       },
-      "pluginVersion": "8.2.3",
+      "pluginVersion": "9.4.7",
       "targets": [
         {
           "datasource": {
@@ -1748,7 +1748,7 @@
       ],
       "title": "IO Operations",
       "transformations": [],
-      "transparent": true,
+      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -1805,7 +1805,7 @@
           "mode": "single"
         }
       },
-      "pluginVersion": "8.2.3",
+      "pluginVersion": "9.4.7",
       "targets": [
         {
           "datasource": {
@@ -1837,7 +1837,7 @@
       ],
       "title": "Total IO Traffic (Operations)",
       "transformations": [],
-      "transparent": true,
+      "transparent": false,
       "type": "piechart"
     },
     {
@@ -1883,7 +1883,7 @@
         "showUnfilled": true,
         "text": {}
       },
-      "pluginVersion": "8.2.3",
+      "pluginVersion": "9.4.7",
       "targets": [
         {
           "datasource": {
@@ -1979,7 +1979,7 @@
           "mode": "single"
         }
       },
-      "pluginVersion": "8.2.3",
+      "pluginVersion": "9.4.7",
       "span": 0,
       "targets": [
         {
@@ -2000,7 +2000,7 @@
       "thresholds": [],
       "title": "IO Throughput (Write)",
       "transformations": [],
-      "transparent": true,
+      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -2082,7 +2082,7 @@
           "mode": "single"
         }
       },
-      "pluginVersion": "8.2.3",
+      "pluginVersion": "9.4.7",
       "span": 0,
       "targets": [
         {
@@ -2101,7 +2101,7 @@
       "thresholds": [],
       "title": "IO Throughput (Read)",
       "transformations": [],
-      "transparent": true,
+      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -2183,7 +2183,7 @@
           "mode": "single"
         }
       },
-      "pluginVersion": "8.2.3",
+      "pluginVersion": "9.4.7",
       "span": 0,
       "targets": [
         {
@@ -2204,7 +2204,7 @@
       "thresholds": [],
       "title": "IOPS (Write)",
       "transformations": [],
-      "transparent": true,
+      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -2286,7 +2286,7 @@
           "mode": "single"
         }
       },
-      "pluginVersion": "8.2.3",
+      "pluginVersion": "9.4.7",
       "span": 0,
       "targets": [
         {
@@ -2305,7 +2305,7 @@
       "thresholds": [],
       "title": "IOPS (Read)",
       "transformations": [],
-      "transparent": true,
+      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -2391,7 +2391,7 @@
           "mode": "single"
         }
       },
-      "pluginVersion": "8.2.3",
+      "pluginVersion": "9.4.7",
       "span": 0,
       "targets": [
         {
@@ -2412,7 +2412,7 @@
       "thresholds": [],
       "title": "Estimated IO Request Size (Write)",
       "transformations": [],
-      "transparent": true,
+      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -2498,7 +2498,7 @@
           "mode": "single"
         }
       },
-      "pluginVersion": "8.2.3",
+      "pluginVersion": "9.4.7",
       "span": 0,
       "targets": [
         {
@@ -2520,7 +2520,7 @@
       "thresholds": [],
       "title": "Estimated IO Request Size (Read)",
       "transformations": [],
-      "transparent": true,
+      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -2605,7 +2605,7 @@
           "mode": "single"
         }
       },
-      "pluginVersion": "8.2.3",
+      "pluginVersion": "9.4.7",
       "span": 0,
       "targets": [
         {
@@ -2625,7 +2625,7 @@
       "thresholds": [],
       "title": "Cummulative Time spent in IO (Write)",
       "transformations": [],
-      "transparent": true,
+      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -2710,7 +2710,7 @@
           "mode": "single"
         }
       },
-      "pluginVersion": "8.2.3",
+      "pluginVersion": "9.4.7",
       "span": 0,
       "targets": [
         {
@@ -2730,7 +2730,7 @@
       "thresholds": [],
       "title": "Cummulative Time spent in IO (Read)",
       "transformations": [],
-      "transparent": true,
+      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -2838,7 +2838,7 @@
           "mode": "single"
         }
       },
-      "pluginVersion": "8.2.3",
+      "pluginVersion": "9.4.7",
       "targets": [
         {
           "datasource": {
@@ -2870,7 +2870,7 @@
       ],
       "title": "Network Traffic (Bytes)",
       "transformations": [],
-      "transparent": true,
+      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -2927,7 +2927,7 @@
           "mode": "single"
         }
       },
-      "pluginVersion": "8.2.3",
+      "pluginVersion": "9.4.7",
       "targets": [
         {
           "datasource": {
@@ -2959,7 +2959,7 @@
       ],
       "title": "Total Network Traffic (Bytes)",
       "transformations": [],
-      "transparent": true,
+      "transparent": false,
       "type": "piechart"
     },
     {
@@ -3037,7 +3037,7 @@
           "mode": "single"
         }
       },
-      "pluginVersion": "8.2.3",
+      "pluginVersion": "9.4.7",
       "targets": [
         {
           "datasource": {
@@ -3069,7 +3069,7 @@
       ],
       "title": "Network Traffic (Packets)",
       "transformations": [],
-      "transparent": true,
+      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -3126,7 +3126,7 @@
           "mode": "single"
         }
       },
-      "pluginVersion": "8.2.3",
+      "pluginVersion": "9.4.7",
       "targets": [
         {
           "datasource": {
@@ -3158,7 +3158,7 @@
       ],
       "title": "Total Network Traffic (Packets)",
       "transformations": [],
-      "transparent": true,
+      "transparent": false,
       "type": "piechart"
     },
     {
@@ -3291,7 +3291,7 @@
           "mode": "multi"
         }
       },
-      "pluginVersion": "8.2.1",
+      "pluginVersion": "9.4.7",
       "span": 0,
       "targets": [
         {
@@ -3440,7 +3440,7 @@
           "mode": "multi"
         }
       },
-      "pluginVersion": "8.2.1",
+      "pluginVersion": "9.4.7",
       "span": 0,
       "targets": [
         {
@@ -3539,7 +3539,7 @@
           "mode": "single"
         }
       },
-      "pluginVersion": "8.2.1",
+      "pluginVersion": "9.4.7",
       "span": 0,
       "targets": [
         {
@@ -3646,7 +3646,7 @@
           "mode": "single"
         }
       },
-      "pluginVersion": "8.2.1",
+      "pluginVersion": "9.4.7",
       "span": 0,
       "targets": [
         {
@@ -3785,7 +3785,7 @@
           "mode": "single"
         }
       },
-      "pluginVersion": "8.2.1",
+      "pluginVersion": "9.4.7",
       "span": 0,
       "targets": [
         {
@@ -3960,7 +3960,7 @@
           "mode": "multi"
         }
       },
-      "pluginVersion": "8.2.1",
+      "pluginVersion": "9.4.7",
       "span": 0,
       "targets": [
         {
@@ -4108,7 +4108,7 @@
           "mode": "multi"
         }
       },
-      "pluginVersion": "8.2.1",
+      "pluginVersion": "9.4.7",
       "span": 0,
       "targets": [
         {

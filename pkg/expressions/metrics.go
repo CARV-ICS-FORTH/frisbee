@@ -101,19 +101,21 @@ func SetAlert(ctx context.Context, job client.Object, expr v1alpha1.ExprMetrics)
 }
 
 // DispatchAlert informs an object about the fired alert by updating the metadata of that object.
-func DispatchAlert(ctx context.Context, r common.Reconciler, b *notifier.Body) error {
-	// Step 1. create the patch
-	if b == nil {
+func DispatchAlert(ctx context.Context, r common.Reconciler, alertBody *notifier.Body) error {
+	if alertBody == nil {
 		return errors.Errorf("notifier body cannot be empty")
 	}
 
-	r.Info("New Grafana Alert",
-		"name", b.RuleName,
-		"message", b.Message,
-		"state", b.State,
-	)
+	r.Info("New Grafana Alert", "name", alertBody.RuleName, "message", alertBody.Message, "state", alertBody.State)
 
-	alertJSON, err := json.Marshal(b)
+	if true {
+		panic("POUUUUUUUUUUUUTSES")
+	}
+
+	/*---------------------------------------------------*
+	 * Patch Boilerplate
+	 *---------------------------------------------------*/
+	alertJSON, err := json.Marshal(alertBody)
 	if err != nil {
 		return errors.Wrapf(err, "marshalling error")
 	}
@@ -126,33 +128,37 @@ func DispatchAlert(ctx context.Context, r common.Reconciler, b *notifier.Body) e
 		} `json:"metadata"`
 	}{}
 
-	switch b.State {
+	/*---------------------------------------------------*
+	 * Patching Logic
+	 *---------------------------------------------------*/
+	switch alertBody.State {
 	case notifier.StatePaused:
-		r.Info("Ignore paused alert", "alertName", b.RuleName, "state", b.State)
+		r.Info("Ignore paused alert", "alertName", alertBody.RuleName, "state", alertBody.State)
 
 		return nil
 
 	case notifier.StateNoData:
-		/*
-		  Spurious Alert may be risen if the expr evaluation frequency is less than the scheduled interval.
-		  In this case, Grafana faces an idle period, and raises a NoData Alert.
-		  Just ignore it.
-		*/
-		r.Info("Ignore spurious alert", "alertName", b.RuleName, "state", b.State)
+		// Spurious Alert may be risen if the expr evaluation frequency is less than the scheduled interval.
+		// In this case, Grafana faces an idle period, and raises a NoData Alert.
+		// Just ignore it.
+		r.Info("Ignore spurious alert", "alertName", alertBody.RuleName, "state", alertBody.State)
 
 		return nil
 
 	case notifier.StateAlerting, notifier.StateOk:
 		patchStruct.Metadata.Annotations = map[string]string{
-			alertName:      b.RuleName,
-			alertState:     string(b.State),
+			alertName:      alertBody.RuleName,
+			alertState:     string(alertBody.State),
 			alertDetails:   string(alertJSON),
 			alertTimestamp: time.Now().Format(time.RFC3339),
 		}
 	default:
-		return errors.Errorf("state '%s' is not handled. Only [OK, Alerting] are supported", b.State)
+		return errors.Errorf("state '%s' is not handled. Only [OK, Alerting] are supported", alertBody.State)
 	}
 
+	/*---------------------------------------------------*
+	 * Apply Patch
+	 *---------------------------------------------------*/
 	patchJSON, err := json.Marshal(patchStruct)
 	if err != nil {
 		return errors.Wrap(err, "cannot marshal patch")
@@ -162,9 +168,9 @@ func DispatchAlert(ctx context.Context, r common.Reconciler, b *notifier.Body) e
 
 	// Step 2. find objects interested in that alert.
 	var targetEndpoint endpoint
-	if err := targetEndpoint.Parse(b.RuleName); err != nil {
+	if err := targetEndpoint.Parse(alertBody.RuleName); err != nil {
 		r.Info("an alert is detected, but is not intended for Frisbee",
-			"name", b.RuleName)
+			"name", alertBody.RuleName)
 
 		return nil //nolint:nilerr
 	}

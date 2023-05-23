@@ -47,10 +47,10 @@ func NewInstallDevelopmentCmdCompletion(cmd *cobra.Command, args []string, toCom
 
 func NewInstallDevelopmentCmd() *cobra.Command {
 	var (
-		options   common.FrisbeeInstallOptions
-		chartPath string
-		publicIP  net.IP
-		values    string
+		options          common.FrisbeeInstallOptions
+		chartPath        string
+		advertisedHostIP net.IP
+		values           string
 	)
 
 	cmd := &cobra.Command{
@@ -69,7 +69,7 @@ func NewInstallDevelopmentCmd() *cobra.Command {
 			ui.ExitOnError("Check Helm Chart", err)
 
 			// Check Public IP
-			publicIP = net.ParseIP(args[1])
+			advertisedHostIP = net.ParseIP(args[1])
 
 			return nil
 		},
@@ -85,7 +85,7 @@ func NewInstallDevelopmentCmd() *cobra.Command {
 				"upgrade", "--install", "--wait",
 				"--create-namespace", "--namespace", common.FrisbeeNamespace,
 				"--set", fmt.Sprintf("operator.enabled=%t", false),
-				"--set", fmt.Sprintf("operator.advertisedHost=%s", publicIP),
+				"--set", fmt.Sprintf("operator.advertisedHost=%s", advertisedHostIP),
 			}
 
 			if values != "" {
@@ -99,7 +99,11 @@ func NewInstallDevelopmentCmd() *cobra.Command {
 		PersistentPostRun: func(cmd *cobra.Command, args []string) {
 			ui.NL()
 			ui.Success("Frisbee installed in development mode. Run it with: ",
-				fmt.Sprintf("FRISBEE_NAMESPACE=%s make run", common.FrisbeeNamespace))
+				fmt.Sprintf("FRISBEE_ADVERTISED_HOST=%s FRISBEE_NAMESPACE=%s make run",
+					advertisedHostIP,
+					common.FrisbeeNamespace,
+				),
+			)
 			ui.NL()
 
 			ui.Success(" Happy Testing! 🚀")

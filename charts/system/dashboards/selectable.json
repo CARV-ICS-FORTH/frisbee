@@ -245,7 +245,7 @@
         "showThresholdMarkers": true,
         "text": {}
       },
-      "pluginVersion": "9.3.4",
+      "pluginVersion": "9.4.7",
       "span": 0,
       "targets": [
         {
@@ -320,7 +320,7 @@
         "showThresholdMarkers": true,
         "text": {}
       },
-      "pluginVersion": "9.3.4",
+      "pluginVersion": "9.4.7",
       "targets": [
         {
           "datasource": {
@@ -396,7 +396,7 @@
         "showThresholdMarkers": true,
         "text": {}
       },
-      "pluginVersion": "9.3.4",
+      "pluginVersion": "9.4.7",
       "span": 0,
       "targets": [
         {
@@ -471,7 +471,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "8.2.1",
+      "pluginVersion": "9.4.7",
       "span": 0,
       "targets": [
         {
@@ -584,7 +584,7 @@
         "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "9.3.4",
+      "pluginVersion": "9.4.7",
       "span": 0,
       "sparkline": {},
       "targets": [
@@ -674,7 +674,7 @@
         "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "9.3.4",
+      "pluginVersion": "9.4.7",
       "span": 0,
       "sparkline": {},
       "targets": [
@@ -748,7 +748,7 @@
         "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "9.3.4",
+      "pluginVersion": "9.4.7",
       "targets": [
         {
           "datasource": {
@@ -818,7 +818,7 @@
         "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "9.3.4",
+      "pluginVersion": "9.4.7",
       "targets": [
         {
           "datasource": {
@@ -905,7 +905,7 @@
         "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "9.3.4",
+      "pluginVersion": "9.4.7",
       "span": 0,
       "sparkline": {},
       "targets": [
@@ -992,7 +992,7 @@
         "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "9.3.4",
+      "pluginVersion": "9.4.7",
       "span": 0,
       "sparkline": {},
       "targets": [
@@ -1081,7 +1081,7 @@
         "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "9.3.4",
+      "pluginVersion": "9.4.7",
       "span": 0,
       "sparkline": {},
       "targets": [
@@ -1168,7 +1168,7 @@
         "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "9.3.4",
+      "pluginVersion": "9.4.7",
       "span": 0,
       "sparkline": {},
       "targets": [
@@ -1230,7 +1230,7 @@
         "tags": [],
         "viewMode": "list"
       },
-      "pluginVersion": "8.2.3",
+      "pluginVersion": "9.4.7",
       "span": 0,
       "targets": [
         {
@@ -1351,7 +1351,7 @@
         },
         "showHeader": true
       },
-      "pluginVersion": "9.3.4",
+      "pluginVersion": "9.4.7",
       "scroll": false,
       "span": 0,
       "targets": [
@@ -1435,7 +1435,7 @@
         "showTime": true,
         "showUser": true
       },
-      "pluginVersion": "8.2.3",
+      "pluginVersion": "9.4.7",
       "targets": [
         {
           "datasource": {
@@ -1633,7 +1633,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.3.4",
+      "pluginVersion": "9.4.7",
       "targets": [
         {
           "datasource": {
@@ -1848,7 +1848,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "8.2.1",
+      "pluginVersion": "9.4.7",
       "span": 0,
       "targets": [
         {
@@ -2013,7 +2013,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "8.2.1",
+      "pluginVersion": "9.4.7",
       "span": 0,
       "targets": [
         {
@@ -2191,7 +2191,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "8.2.1",
+      "pluginVersion": "9.4.7",
       "span": 0,
       "targets": [
         {
@@ -2360,7 +2360,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "8.2.1",
+      "pluginVersion": "9.4.7",
       "span": 0,
       "targets": [
         {
@@ -2575,7 +2575,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "8.2.1",
+      "pluginVersion": "9.4.7",
       "span": 0,
       "targets": [
         {
@@ -2778,7 +2778,7 @@
         "showUnfilled": true,
         "text": {}
       },
-      "pluginVersion": "9.3.4",
+      "pluginVersion": "9.4.7",
       "targets": [
         {
           "datasource": {
@@ -2869,7 +2869,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "8.2.3",
+      "pluginVersion": "9.4.7",
       "targets": [
         {
           "datasource": {
@@ -2901,7 +2901,7 @@
       ],
       "title": "IO Traffic (Bytes)",
       "transformations": [],
-      "transparent": true,
+      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -2959,7 +2959,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "8.2.3",
+      "pluginVersion": "9.4.7",
       "targets": [
         {
           "datasource": {
@@ -2991,7 +2991,7 @@
       ],
       "title": "Total IO Traffic (Bytes)",
       "transformations": [],
-      "transparent": true,
+      "transparent": false,
       "type": "piechart"
     },
     {
@@ -3068,7 +3068,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "8.2.3",
+      "pluginVersion": "9.4.7",
       "targets": [
         {
           "datasource": {
@@ -3100,7 +3100,7 @@
       ],
       "title": "IO Traffic (Operations)",
       "transformations": [],
-      "transparent": true,
+      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -3158,7 +3158,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "8.2.3",
+      "pluginVersion": "9.4.7",
       "targets": [
         {
           "datasource": {
@@ -3190,7 +3190,7 @@
       ],
       "title": "Total IO Traffic (Operations)",
       "transformations": [],
-      "transparent": true,
+      "transparent": false,
       "type": "piechart"
     },
     {
@@ -3274,7 +3274,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "8.2.3",
+      "pluginVersion": "9.4.7",
       "span": 0,
       "targets": [
         {
@@ -3307,7 +3307,7 @@
       "thresholds": [],
       "title": "IO Throughput (Filesystem)",
       "transformations": [],
-      "transparent": true,
+      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -3393,7 +3393,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "8.2.3",
+      "pluginVersion": "9.4.7",
       "span": 0,
       "targets": [
         {
@@ -3426,7 +3426,7 @@
       "thresholds": [],
       "title": "IOPS (Filesystem)",
       "transformations": [],
-      "transparent": true,
+      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -3511,7 +3511,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "8.2.3",
+      "pluginVersion": "9.4.7",
       "span": 0,
       "targets": [
         {
@@ -3547,7 +3547,7 @@
       "thresholds": [],
       "title": "Estimated IO Request Size",
       "transformations": [],
-      "transparent": true,
+      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -3631,7 +3631,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "8.2.3",
+      "pluginVersion": "9.4.7",
       "span": 0,
       "targets": [
         {
@@ -3664,7 +3664,7 @@
       "thresholds": [],
       "title": "Average Time spent in IO",
       "transformations": [],
-      "transparent": true,
+      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -3771,7 +3771,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "8.2.3",
+      "pluginVersion": "9.4.7",
       "targets": [
         {
           "datasource": {
@@ -3803,7 +3803,7 @@
       ],
       "title": "Network Traffic (Bytes)",
       "transformations": [],
-      "transparent": true,
+      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -3861,7 +3861,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "8.2.3",
+      "pluginVersion": "9.4.7",
       "targets": [
         {
           "datasource": {
@@ -3893,7 +3893,7 @@
       ],
       "title": "Total Network Traffic (Bytes)",
       "transformations": [],
-      "transparent": true,
+      "transparent": false,
       "type": "piechart"
     },
     {
@@ -3970,7 +3970,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "8.2.3",
+      "pluginVersion": "9.4.7",
       "targets": [
         {
           "datasource": {
@@ -4002,7 +4002,7 @@
       ],
       "title": "Network Traffic (Packets)",
       "transformations": [],
-      "transparent": true,
+      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -4060,7 +4060,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "8.2.3",
+      "pluginVersion": "9.4.7",
       "targets": [
         {
           "datasource": {
@@ -4092,7 +4092,7 @@
       ],
       "title": "Total Network Traffic (Packets)",
       "transformations": [],
-      "transparent": true,
+      "transparent": false,
       "type": "piechart"
     },
     {
@@ -4228,7 +4228,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "8.2.1",
+      "pluginVersion": "9.4.7",
       "span": 0,
       "targets": [
         {
@@ -4404,7 +4404,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "8.2.1",
+      "pluginVersion": "9.4.7",
       "span": 0,
       "targets": [
         {
@@ -4586,7 +4586,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "8.2.1",
+      "pluginVersion": "9.4.7",
       "span": 0,
       "targets": [
         {
@@ -4764,7 +4764,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "8.2.1",
+      "pluginVersion": "9.4.7",
       "span": 0,
       "targets": [
         {
@@ -4920,7 +4920,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "8.2.1",
+      "pluginVersion": "9.4.7",
       "span": 0,
       "targets": [
         {
@@ -5098,7 +5098,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "8.2.1",
+      "pluginVersion": "9.4.7",
       "span": 0,
       "targets": [
         {
@@ -5273,7 +5273,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "8.2.1",
+      "pluginVersion": "9.4.7",
       "span": 0,
       "targets": [
         {

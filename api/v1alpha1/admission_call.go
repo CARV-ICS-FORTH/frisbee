@@ -22,6 +22,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
@@ -60,57 +61,57 @@ func (in *Call) Default() {
 }
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
-func (in *Call) ValidateCreate() error {
+func (in *Call) ValidateCreate() (admission.Warnings, error) {
 	calllog.Info("-> ValidateCreate", "obj", in.GetNamespace()+"/"+in.GetName())
 	defer calllog.Info("<- ValidateCreate", "obj", in.GetNamespace()+"/"+in.GetName())
 
 	// Expect field
 	if expect := in.Spec.Expect; expect != nil {
 		if len(expect) != len(in.Spec.Services) {
-			return errors.Errorf("Expect '%d' outputs for '%d' services", len(expect), len(in.Spec.Services))
+			return nil, errors.Errorf("Expect '%d' outputs for '%d' services", len(expect), len(in.Spec.Services))
 		}
 	}
 
 	// Tolerate field
 	if err := ValidateTolerate(in.Spec.Tolerate); err != nil {
-		return errors.Wrapf(err, "tolerate error")
+		return nil, errors.Wrapf(err, "tolerate error")
 	}
 
 	// SuspendWhen field
 	if err := ValidateExpr(in.Spec.SuspendWhen); err != nil {
-		return errors.Wrapf(err, "SuspendWhen error")
+		return nil, errors.Wrapf(err, "SuspendWhen error")
 	}
 
 	// Schedule field
 	if schedule := in.Spec.Schedule; schedule != nil {
 		if len(in.Spec.Services) < 1 {
-			return errors.Errorf("scheduling requires at least one instance")
+			return nil, errors.Errorf("scheduling requires at least one instance")
 		}
 
 		if err := ValidateTaskScheduler(schedule); err != nil {
-			return errors.Wrapf(err, "schedule error")
+			return nil, errors.Wrapf(err, "schedule error")
 		}
 	}
 
 	// Suspend Field
 	if suspend := in.Spec.Suspend; suspend != nil {
 		if *suspend {
-			return errors.Errorf("Cannot create a call that is already suspended")
+			return nil, errors.Errorf("Cannot create a call that is already suspended")
 		}
 	}
 
-	return nil
+	return nil, nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
-func (in *Call) ValidateUpdate(runtime.Object) error {
-	return nil
+func (in *Call) ValidateUpdate(runtime.Object) (admission.Warnings, error) {
+	return nil, nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type.
-func (in *Call) ValidateDelete() error {
+func (in *Call) ValidateDelete() (admission.Warnings, error) {
 	calllog.Info("validate delete", "name", in.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.
-	return nil
+	return nil, nil
 }

@@ -17,6 +17,7 @@ limitations under the License.
 package tests
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -174,7 +175,7 @@ func NewSubmitTestCmd() *cobra.Command {
 			ui.Success("Test has been successfully submitted.")
 
 			// Control test output
-			ControlOutput(testName, &options)
+			ControlOutput(cmd.Context(), testName, &options)
 		},
 	}
 
@@ -183,7 +184,7 @@ func NewSubmitTestCmd() *cobra.Command {
 	return cmd
 }
 
-func ControlOutput(testName string, options *SubmitTestCmdOptions) {
+func ControlOutput(ctx context.Context, testName string, options *SubmitTestCmdOptions) {
 	switch {
 	case options.ExpectSuccess:
 		ui.Info("Expecting the test to complete successfully within ", options.Timeout)
@@ -218,7 +219,7 @@ func ControlOutput(testName string, options *SubmitTestCmdOptions) {
 	case options.Logs != nil:
 		ui.Info("Tailing test logs ...")
 
-		err := common.KubectlLogs(testName, true, -1, options.Logs...)
+		err := common.KubectlLogs(ctx, testName, true, -1, options.Logs...)
 		env.Default.Hint("To inspect the execution logs use:",
 			"kubectl frisbee inspect test ", testName, " --logs all")
 		ui.ExitOnError("Getting logs", err)

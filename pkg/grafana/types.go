@@ -19,6 +19,7 @@ package grafana
 import (
 	"time"
 
+	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
@@ -69,3 +70,21 @@ var DefaultVariableEvaluation = map[string]string{
 	"Instance": ".+",
 	"Node":     ".+",
 }
+
+const (
+	respAnnotationAddOK = "Annotation added"
+
+	respAnnotationAddError = "Failed to save annotation"
+
+	respAnnotationPatchOK = "Annotation patched"
+
+	respAnnotationPatchError = "Failed to update annotation"
+
+	respUnauthorizedError = "Unauthorized"
+
+	respAlertSuccess = "success"
+)
+
+var healthError = errors.New("Grafana does not seam healthy")
+
+var Timeout = 2 * time.Minute

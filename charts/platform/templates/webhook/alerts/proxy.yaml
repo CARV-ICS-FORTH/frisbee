@@ -15,6 +15,7 @@ spec:
 {{ else }}
 
 ---
+#https://kubernetes: io/docs/concepts/services-networking/service/#services-without-selectors:
 apiVersion: v1
 kind: Service
 metadata:
@@ -27,15 +28,24 @@ spec:
       port: 80
       targetPort: {{.Values.operator.webhook.grafana.port | int64}}
 
+
 ---
-apiVersion: v1
-kind: Endpoints
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
 metadata:
-  name: alerting-service
-subsets:
-  - addresses:
-      - ip: {{.Values.operator.advertisedHost}}
-    ports:
-      - name: http
-        port: {{.Values.operator.webhook.grafana.port | int64}}
+  name: alerting-service-1 # by convention, use the name of the Service as a prefix for the name of the EndpointSlice
+  labels:
+    # You should set the "kubernetes.io/service-name" label.
+    # Set its value to match the name of the Service
+    kubernetes.io/service-name: alerting-service
+    endpointslice.kubernetes.io/managed-by: "frisbee-team"
+addressType: IPv4
+ports:
+  - name: '' # empty because Frisbee port is not assigned as a well-known # port (by IANA)
+    appProtocol: http
+    protocol: TCP
+    port: {{.Values.operator.webhook.grafana.port | int64}}
+endpoints:
+  - addresses: # the IP addresses in this list can appear in any order
+      - {{.Values.operator.advertisedHost}}
 {{end}}

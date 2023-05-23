@@ -60,7 +60,7 @@ type Controller struct {
 
 	view *lifecycle.Classifier
 
-	notificationEndpoint string
+	alertingProxy string
 }
 
 func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -204,16 +204,6 @@ func (r *Controller) Initialize(ctx context.Context, scenario *v1alpha1.Scenario
 	/* FIXME: we set the configuration be global here. is there any better way ? */
 	configuration.SetGlobal(sysconf)
 
-	/*  Not the best place, but the webhook should start after we get the configuration parameters.
-	Given that, we need to start it here, and only once. An alternative solution would be to get
-	the webhook port and developer mode as parameters on the executable.
-	*/
-	startWebhookOnce.Do(func() {
-		if err := r.CreateWebhookServer(ctx); err != nil {
-			panic(errors.Wrapf(err, "cannot create grafana webhook"))
-		}
-	})
-
 	// load the templates required by the scenario.
 	if errValidate := scenarioutils.LoadTemplates(ctx, r.GetClient(), scenario); errValidate != nil {
 		return errors.Wrapf(errValidate, "template error")
@@ -229,7 +219,7 @@ func (r *Controller) Initialize(ctx context.Context, scenario *v1alpha1.Scenario
 	meta.SetStatusCondition(&scenario.Status.Conditions, metav1.Condition{
 		Type:    v1alpha1.ConditionCRInitialized.String(),
 		Status:  metav1.ConditionTrue,
-		Reason:  "Initialized2",
+		Reason:  "Initialized",
 		Message: "Start Scheduling Jobs",
 	})
 
@@ -384,7 +374,7 @@ func (r *Controller) RunActions(ctx context.Context, scenario *v1alpha1.Scenario
 	if scenario.Status.GrafanaEndpoint == "" {
 		r.Logger.Info("Grafana endpoint is empty. Skip telemetry.", "scenario", scenario.GetName())
 	} else {
-		if err := r.connectToGrafana(ctx, scenario, r.notificationEndpoint); err != nil {
+		if err := r.connectToGrafana(ctx, scenario, r.alertingProxy); err != nil {
 			return errors.Wrapf(err, "connect to grafana")
 		}
 	}
@@ -453,6 +443,11 @@ func NewController(mgr ctrl.Manager, logger logr.Logger) error {
 		Manager: mgr,
 		Logger:  logger.WithName("scenario"),
 		view:    &lifecycle.Classifier{},
+	}
+
+	// initiate the alerting service
+	if err := NewAlertingProxy(context.Background(), controller); err != nil {
+		return errors.Wrapf(err, "cannot create grafana webhook")
 	}
 
 	gvk := v1alpha1.GroupVersion.WithKind("Scenario")

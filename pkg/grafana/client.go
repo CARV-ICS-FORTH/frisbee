@@ -19,7 +19,6 @@ package grafana
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/carv-ics-forth/frisbee/controllers/common"
 	"github.com/go-logr/logr"
@@ -78,6 +77,14 @@ func WithHTTP(endpoint string) Option {
 	}
 }
 
+type Client struct {
+	logger logr.Logger
+
+	Conn *sdk.Client
+
+	BaseURL string
+}
+
 func New(ctx context.Context, setters ...Option) (*Client, error) {
 	var args Options
 
@@ -102,7 +109,7 @@ func New(ctx context.Context, setters ...Option) (*Client, error) {
 			return nil, errors.Wrapf(err, "client error")
 		}
 
-		retryCond := func() (done bool, err error) {
+		retryCond := func(ctx context.Context) (done bool, err error) {
 			resp, err := conn.GetHealth(ctx)
 			// Retry
 			if err != nil {
@@ -154,152 +161,4 @@ func New(ctx context.Context, setters ...Option) (*Client, error) {
 	}
 
 	return client, nil
-}
-
-const (
-	respAddOK = "Annotation added"
-
-	respAddError = "Failed to save annotation"
-
-	respPatchOK = "Annotation patched"
-
-	respPatchError = "Failed to update annotation"
-
-	respUnauthorizedError = "Unauthorized"
-)
-
-var healthError = errors.New("Grafana does not seam healthy")
-
-var Timeout = 2 * time.Minute
-
-type Client struct {
-	logger logr.Logger
-
-	Conn *sdk.Client
-
-	BaseURL string
-}
-
-// AddAnnotation inserts a new annotation to Grafana.
-func (c *Client) AddAnnotation(annotationRequest sdk.CreateAnnotationRequest) (reqID uint) {
-	if c == nil {
-		defaultLogger.Info("NilGrafanaClient", "operation", "Set", "request", annotationRequest)
-
-		return 0
-	}
-
-	/*---------------------------------------------------*
-	 * Set the retry logic
-	 *---------------------------------------------------*/
-	retryCond := func() (done bool, err error) {
-		response, err := c.Conn.CreateAnnotation(context.Background(), annotationRequest)
-		// Retry
-		if err != nil {
-			defaultLogger.Info("Connection error. Retry", "annotation", annotationRequest, "Error", err.Error())
-
-			return false, nil
-		}
-
-		// Retry
-		if response.Message == nil {
-			defaultLogger.Info("Empty response. Retry", "annotation", annotationRequest)
-
-			return false, nil
-		}
-
-		// Response Status
-		switch *response.Message {
-		case respAddOK:
-			// OK
-			reqID = *response.ID
-
-			defaultLogger.Info("Annotation Added", "reqID", reqID, "annotation", annotationRequest)
-
-			return true, nil
-		case respAddError, respUnauthorizedError:
-			// Retry
-			defaultLogger.Info("AddError. Retry", "annotation", annotationRequest, "response", response)
-
-			return false, nil
-		default:
-			// Abort
-			return false, errors.Errorf("unexpected response message [%s]", *response.Message)
-		}
-	}
-
-	/*---------------------------------------------------*
-	 * Invoke the synchronous retry mechanism
-	 *---------------------------------------------------*/
-	ctx, cancel := context.WithTimeout(context.Background(), Timeout)
-	defer cancel()
-
-	if err := wait.ExponentialBackoffWithContext(ctx, common.DefaultBackoffForServiceEndpoint, retryCond); err != nil {
-		defaultLogger.Info("PutAnnotationError",
-			"request", annotationRequest,
-			"err", err.Error(),
-		)
-
-		return 0
-	}
-
-	return reqID
-}
-
-// PatchAnnotation updates an existing annotation to Grafana.
-func (c *Client) PatchAnnotation(reqID uint, annotationRequest sdk.PatchAnnotationRequest) {
-	if c == nil {
-		defaultLogger.Info("NilGrafanaClient", "operation", "Patch", "request", annotationRequest)
-
-		return
-	}
-
-	/*---------------------------------------------------*
-	 * Set the retry logic
-	 *---------------------------------------------------*/
-	retryCond := func() (done bool, err error) {
-		response, err := c.Conn.PatchAnnotation(context.Background(), reqID, annotationRequest)
-		// Retry
-		if err != nil {
-			defaultLogger.Info("Connection error. Retry", "reqID", reqID, "annotation", annotationRequest, "Error", err.Error())
-
-			return false, nil
-		}
-
-		// Retry
-		if response.Message == nil {
-			defaultLogger.Info("Empty response. Retry", "reqID", reqID, "annotation", annotationRequest)
-
-			return false, nil
-		}
-
-		// Response Status
-		switch *response.Message {
-		case respPatchOK:
-			// OK
-			defaultLogger.Info("Annotation Patched", "reqID", reqID, "annotation", annotationRequest)
-
-			return true, nil
-		case respPatchError, respUnauthorizedError:
-			// Retry
-			defaultLogger.Info("PatchError. Retry", "reqID", reqID, "annotation", annotationRequest, "response", response)
-
-			return false, nil
-		default:
-			// Abort
-			return false, errors.Errorf("unexpected response message [%s]", *response.Message)
-		}
-	}
-
-	/*---------------------------------------------------*
-	 * Invoke the synchronous retry mechanism
-	 *---------------------------------------------------*/
-	ctx, cancel := context.WithTimeout(context.Background(), Timeout)
-	defer cancel()
-
-	if err := wait.ExponentialBackoffWithContext(ctx, common.DefaultBackoffForServiceEndpoint, retryCond); err != nil {
-		defaultLogger.Info("PatchAnnotationError",
-			"request", annotationRequest,
-			"err", err.Error(),
-		)
-	}
 }
