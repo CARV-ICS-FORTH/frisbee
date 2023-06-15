@@ -1,6 +1,8 @@
 #!/bin/bash
 
-set -eux
+set -eu
+set -o pipefail
+
 
 export NAMESPACE=elasticity
 export SCENARIO=$(dirname -- "$0")/manifest.yml
@@ -10,11 +12,11 @@ export DEPENDENCIES=(./charts/system/ ./charts/databases/cockroachdb ./charts/da
 # Prepare the Reporting folder
 mkdir -p "${REPORTS}"
 
-# Submit the scenario and follow logs
-kubectl-frisbee submit test "${NAMESPACE}" "${SCENARIO}" "${DEPENDENCIES[@]}"
-
 # Copy the manifest
 cp "${SCENARIO}" "${REPORTS}"
+
+# Submit the scenario and follow logs
+kubectl-frisbee submit test "${NAMESPACE}" "${SCENARIO}" "${DEPENDENCIES[@]}"
 
 # wait for the scenario to be submitted
 sleep 10

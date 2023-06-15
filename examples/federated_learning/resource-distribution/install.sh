@@ -3,7 +3,7 @@
 set -eu
 set -o pipefail
 
-export NAMESPACE=parallel-workflows
+export NAMESPACE=resource-distribution
 export SCENARIO=$(dirname -- "$0")/manifest.yml
 export REPORTS=${HOME}/frisbee-reports/${NAMESPACE}/
 export DEPENDENCIES=(./charts/system/ ./charts/federated-learning/fedbed/)
@@ -15,7 +15,7 @@ mkdir -p "${REPORTS}"
 cp "${SCENARIO}" "${REPORTS}"
 
 # Submit the scenario and follow server logs
-kubectl-frisbee submit test "${NAMESPACE}" "${SCENARIO}" "${DEPENDENCIES[@]}" --logs wfa-server,wfb-server |& tee -a "${REPORTS}"/logs &
+kubectl-frisbee submit test "${NAMESPACE}" "${SCENARIO}" "${DEPENDENCIES[@]}" --logs server |& tee -a "${REPORTS}"/logs &
 
 # wait for the scenario to be submitted
 sleep 10

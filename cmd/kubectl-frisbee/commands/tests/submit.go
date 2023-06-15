@@ -125,7 +125,7 @@ func NewSubmitTestCmd() *cobra.Command {
 			// the actual submission.
 			err := common.RunTest(testName, testFile, common.ValidationClient)
 			ui.ExitOnError("Validating testfile: "+testFile, err)
-			ui.Success("Test File has been successfully validated.", testFile)
+			ui.Success("Scenario validated:", testFile)
 
 			/*---------------------------------------------------
 			 * Ensure environment isolation
@@ -148,7 +148,7 @@ func NewSubmitTestCmd() *cobra.Command {
 					ui.ExitOnError("Setting namespace quotas", err)
 				}
 			*/
-			ui.Success("Test Environment is ready.", testName)
+			ui.Success("Namespace is ready:", testName)
 
 			/*---------------------------------------------------
 			 * Install Helm Dependencies, if any
@@ -164,7 +164,7 @@ func NewSubmitTestCmd() *cobra.Command {
 					ui.ExitOnError("Installing Dependency: "+dependency, err)
 				}
 
-				ui.Success("Scenario dependencies are installed.", dependentCharts...)
+				ui.Success("Installed Dependencies:", dependentCharts...)
 			}
 
 			/*---------------------------------------------------
@@ -172,7 +172,7 @@ func NewSubmitTestCmd() *cobra.Command {
 			 *---------------------------------------------------*/
 			err = common.RunTest(testName, testFile, common.ValidationNone)
 			ui.ExitOnError("Starting test-case execution ", err)
-			ui.Success("Test has been successfully submitted.")
+			ui.Success("Scenario submitted.")
 
 			// Control test output
 			ControlOutput(cmd.Context(), testName, &options)
@@ -189,7 +189,7 @@ func ControlOutput(ctx context.Context, testName string, options *SubmitTestCmdO
 	case options.ExpectSuccess:
 		ui.Info("Expecting the test to complete successfully within ", options.Timeout)
 
-		err := common.WaitForCondition(testName, v1alpha1.ConditionAllJobsAreCompleted, options.Timeout)
+		err := common.WaitForCondition(ctx, testName, v1alpha1.ConditionAllJobsAreCompleted, options.Timeout)
 
 		env.Default.Hint("To inspect the execution:", "kubectl frisbee inspect test ", testName)
 		ui.ExitOnError("waiting for test to complete successfully", err)
@@ -197,7 +197,7 @@ func ControlOutput(ctx context.Context, testName string, options *SubmitTestCmdO
 	case options.ExpectFailure:
 		ui.Info("Expecting the test to fail within ", options.Timeout)
 
-		err := common.WaitForCondition(testName, v1alpha1.ConditionJobUnexpectedTermination, options.Timeout)
+		err := common.WaitForCondition(ctx, testName, v1alpha1.ConditionJobUnexpectedTermination, options.Timeout)
 
 		env.Default.Hint("To inspect the execution:", "kubectl frisbee inspect test ", testName)
 		ui.ExitOnError("waiting for test to fail", err)
@@ -205,7 +205,7 @@ func ControlOutput(ctx context.Context, testName string, options *SubmitTestCmdO
 	case options.ExpectError:
 		ui.Info("Expecting the test to raise an assertion error within ", options.Timeout)
 
-		err := common.WaitForCondition(testName, v1alpha1.ConditionAssertionError, options.Timeout)
+		err := common.WaitForCondition(ctx, testName, v1alpha1.ConditionAssertionError, options.Timeout)
 
 		env.Default.Hint("To inspect the execution:", "kubectl frisbee inspect test ", testName)
 		ui.ExitOnError("waiting for test to raise an assertion error", err)
@@ -217,11 +217,12 @@ func ControlOutput(ctx context.Context, testName string, options *SubmitTestCmdO
 		ui.ExitOnError("Watching for changes in the test status error", err)
 
 	case options.Logs != nil:
-		ui.Info("Tailing test logs ...")
+		ui.Warn("Streaming Logs from:", options.Logs...)
 
 		err := common.KubectlLogs(ctx, testName, true, -1, options.Logs...)
 		env.Default.Hint("To inspect the execution logs use:",
 			"kubectl frisbee inspect test ", testName, " --logs all")
+
 		ui.ExitOnError("Getting logs", err)
 	}
 }

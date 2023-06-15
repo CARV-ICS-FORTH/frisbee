@@ -1,6 +1,8 @@
 #!/bin/bash
 
-set -eux
+set -eu
+set -o pipefail
+
 
 export NAMESPACE=normal-load
 export SCENARIO=$(dirname -- "$0")/manifest.yml
@@ -11,11 +13,11 @@ export DASHBOARDS=(summary ingleton ycsb)
 # Prepare the Reporting folder
 mkdir -p "${REPORTS}"
 
-# Submit the scenario and follow logs
-kubectl-frisbee submit test "${NAMESPACE}" "${SCENARIO}" "${DEPENDENCIES[@]}"
-
 # Copy the manifest
 cp "${SCENARIO}" "${REPORTS}"
+
+# Submit the scenario and follow logs
+kubectl-frisbee submit test "${NAMESPACE}" "${SCENARIO}" "${DEPENDENCIES[@]}"
 
 # wait for the scenario to be submitted
 sleep 10

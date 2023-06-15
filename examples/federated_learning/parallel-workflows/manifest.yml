@@ -1,5 +1,5 @@
 # This experiment is designed for the evaluation of parallel workflows on same clients.
-# For this purpose, we run two workflows with controllable interference
+# For this purpose, we run two workflows with controllable interference.
 ---
 apiVersion: frisbee.dev/v1alpha1
 kind: Scenario
@@ -13,45 +13,76 @@ spec:
       service:
         templateRef: fedbed.server
         inputs:
-          - { backend: "tensorflow", min_fit_clients: 5, min_available_clients: 5 }
+          - { min_fit_clients: 20, min_available_clients: 20 }
 
     - action: Cluster
       name: wfa-clients
       depends: { running: [ wfa-server ] }
       cluster:
         templateRef: fedbed.client
-        resources:
-          total: { cpu: 2 }
+        resources:                            # Change values here
+          total: { cpu: 40 }
           distribution: { name: uniform }
         inputs:
-          - { fl_server: wfa-server, backend: "tensorflow",  total_nodes: 5, node_id: 0 }
-          - { fl_server: wfa-server, backend: "tensorflow",  total_nodes: 5, node_id: 1 }
-          - { fl_server: wfa-server, backend: "tensorflow",  total_nodes: 5, node_id: 2 }
-          - { fl_server: wfa-server, backend: "tensorflow",  total_nodes: 5, node_id: 3 }
+          - { fl_server: wfa-server,  total_nodes: 20, node_id: 0 }
+          - { fl_server: wfa-server,  total_nodes: 20, node_id: 1 }
+          - { fl_server: wfa-server,  total_nodes: 20, node_id: 2 }
+          - { fl_server: wfa-server,  total_nodes: 20, node_id: 3 }
+          - { fl_server: wfa-server,  total_nodes: 20, node_id: 4 }
+          - { fl_server: wfa-server,  total_nodes: 20, node_id: 5 }
+          - { fl_server: wfa-server,  total_nodes: 20, node_id: 6 }
+          - { fl_server: wfa-server,  total_nodes: 20, node_id: 7 }
+          - { fl_server: wfa-server,  total_nodes: 20, node_id: 8 }
+          - { fl_server: wfa-server,  total_nodes: 20, node_id: 9 }
+          - { fl_server: wfa-server,  total_nodes: 20, node_id: 10 }
+          - { fl_server: wfa-server,  total_nodes: 20, node_id: 11 }
+          - { fl_server: wfa-server,  total_nodes: 20, node_id: 12 }
+          - { fl_server: wfa-server,  total_nodes: 20, node_id: 13 }
+          - { fl_server: wfa-server,  total_nodes: 20, node_id: 14 }
+          - { fl_server: wfa-server,  total_nodes: 20, node_id: 15 }
+          - { fl_server: wfa-server,  total_nodes: 20, node_id: 16 }
+          - { fl_server: wfa-server,  total_nodes: 20, node_id: 17 }
+          - { fl_server: wfa-server,  total_nodes: 20, node_id: 18 }
+ #         - { fl_server: wfa-server,  total_nodes: 20, node_id: 19 }
 
 
     ########### Training Workflow B ################
     - action: Service
       name: wfb-server
-      depends: { running: [ wfa-server ] }
       service:
         templateRef: fedbed.server
         inputs:
-          - { backend: "tensorflow", min_fit_clients: 5, min_available_clients: 5 }
+          - { min_fit_clients: 20, min_available_clients: 20 }
 
     - action: Cluster
       name: wfb-clients
       depends: { running: [ wfb-server ] }
       cluster:
         templateRef: fedbed.client
-        resources:
-          total: { cpu: 2 }
-          distribution: { name: uniform }
+        resources:                            # Change values here
+          total: { cpu: 40 }
+          distribution: { name: uniform}
         inputs:
-          - { fl_server: wfb-server, backend: "tensorflow",  total_nodes: 5, node_id: 0 }
-          - { fl_server: wfb-server, backend: "tensorflow",  total_nodes: 5, node_id: 1 }
-          - { fl_server: wfb-server, backend: "tensorflow",  total_nodes: 5, node_id: 2 }
-          - { fl_server: wfb-server, backend: "tensorflow",  total_nodes: 5, node_id: 3 }
+          - { fl_server: wfb-server,  total_nodes: 20, node_id: 0 }
+          - { fl_server: wfb-server,  total_nodes: 20, node_id: 1 }
+          - { fl_server: wfb-server,  total_nodes: 20, node_id: 2 }
+          - { fl_server: wfb-server,  total_nodes: 20, node_id: 3 }
+          - { fl_server: wfb-server,  total_nodes: 20, node_id: 4 }
+          - { fl_server: wfb-server,  total_nodes: 20, node_id: 5 }
+          - { fl_server: wfb-server,  total_nodes: 20, node_id: 6 }
+          - { fl_server: wfb-server,  total_nodes: 20, node_id: 7 }
+          - { fl_server: wfb-server,  total_nodes: 20, node_id: 8 }
+          - { fl_server: wfb-server,  total_nodes: 20, node_id: 9 }
+          - { fl_server: wfb-server,  total_nodes: 20, node_id: 10 }
+          - { fl_server: wfb-server,  total_nodes: 20, node_id: 11 }
+          - { fl_server: wfb-server,  total_nodes: 20, node_id: 12 }
+          - { fl_server: wfb-server,  total_nodes: 20, node_id: 13 }
+          - { fl_server: wfb-server,  total_nodes: 20, node_id: 14 }
+          - { fl_server: wfb-server,  total_nodes: 20, node_id: 15 }
+          - { fl_server: wfb-server,  total_nodes: 20, node_id: 16 }
+          - { fl_server: wfb-server,  total_nodes: 20, node_id: 17 }
+          - { fl_server: wfb-server,  total_nodes: 20, node_id: 18 }
+#          - { fl_server: wfb-server,  total_nodes: 20, node_id: 19 }
 
 
     ########### Common Client among Workflows A and B ################
@@ -61,14 +92,14 @@ spec:
       cluster:
         templateRef: fedbed.client
         resources:
-          total: { cpu: 2 }
+          total: { cpu: 4 }
           distribution: { name: constant }
         inputs:
-          - { fl_server: "wfa-server wfb-server", backend: "tensorflow",  total_nodes: 5, node_id: 4 }
+          - { fl_server: "wfa-server wfb-server", total_nodes: 20, node_id: 19 }
 
     ########### Teardown all workflows ################
     - action: Delete
       name: teardown
-      depends: { success: [ wfa-clients, wfb-clients, common-client ] }
+      depends: { success: [ wfa-clients, wfb-clients, common-client ] } # , common-client
       delete:
         jobs: [ wfa-server, wfb-server ]

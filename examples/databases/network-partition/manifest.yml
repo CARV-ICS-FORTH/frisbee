@@ -39,7 +39,7 @@ spec:
       name: wait-for-3x-replication
       depends: { success: [ import-workload ] }
       call:
-        callable: test2-wait-for-3x-replication
+        callable: wait-for-3x-replication
         services: [ masters-1 ]
 
     # Step 4A. run workload for up-to 10 mins (node1)

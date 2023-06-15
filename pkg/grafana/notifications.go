@@ -25,7 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
-func (c *Client) SetNotificationChannel(ctx context.Context, webhookURL string) error {
+func (c *Client) SetNotificationChannel(parentCtx context.Context, webhookURL string) error {
 	// use the webhook as notification channel for grafana
 	feedback := sdk.AlertNotification{
 		Name:                  "Frisbee-Webhook",
@@ -60,5 +60,8 @@ func (c *Client) SetNotificationChannel(ctx context.Context, webhookURL string) 
 		return true, nil
 	}
 
-	return wait.ExponentialBackoffWithContext(ctx, common.DefaultBackoffForServiceEndpoint, retryCond)
+	ctxTimeout, cancel := context.WithTimeout(parentCtx, Timeout)
+	defer cancel()
+
+	return wait.ExponentialBackoffWithContext(ctxTimeout, common.DefaultBackoffForServiceEndpoint, retryCond)
 }

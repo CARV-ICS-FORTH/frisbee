@@ -42,5 +42,5 @@ func Logo() {
 	fmt.Fprint(ui.Writer, ui.Blue(logo()))
 	fmt.Fprintln(ui.Writer)
 
-	ui.Success("Connecting to:", Default.KubeConfig.Host)
+	ui.Success("Kubernetes API:", Default.KubeConfig.Host)
 }

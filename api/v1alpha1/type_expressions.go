@@ -161,8 +161,8 @@ func (expr ExprState) GoValuate(state interface{}) (bool, error) {
 
 // +kubebuilder:object:generate=false
 
-// ExprMetricsValidator expressions evaluated with https://regex101.com/r/8JrgyI/1
-var ExprMetricsValidator = regexp.MustCompile(`(?m)^(?P<reducer>\w+)\(\)\s+of\s+query\((?P<dashboardUID>\w+)\/(?P<panelID>\d+)\/(?P<metric>.+),\s+(?P<from>\w+),\s+(?P<to>\w+)\)\s+is\s+(?P<evaluator>\w+)\((?P<params>-*\d*[\.,\s]*\d*)\)\s*(for\s+\((?P<for>\w+)\))*\s*(every\((?P<every>\w+)\))*\s*$`)
+// ExprMetricsValidator expressions evaluated with https://regex101.com/r/bjPwQK/1
+var ExprMetricsValidator = regexp.MustCompile(`(?m)^(?P<reducer>\w+)\(\)\s+of\s+query\((?P<dashboardUID>\w+)\/(?P<panelID>\d+)\/(?P<metric>.+),\s+(?P<from>\w+),\s+(?P<to>\w+)\)\s+is\s+(?P<evaluator>\w+)\((?P<params>-*\d*[\.,\s]*\d*\w*)\)\s*(for\s+\((?P<for>\w+)\))*\s*(every\((?P<every>\w+)\))*\s*$`)
 
 type ExprMetrics string
 

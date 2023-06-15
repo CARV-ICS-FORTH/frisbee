@@ -6,10 +6,13 @@ require (
 	github.com/Knetic/govaluate v3.0.0+incompatible
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/armon/circbuf v0.0.0-20190214190532-5111143e8da2
+	github.com/dariubs/percent v1.0.0
 	github.com/dimiro1/banner v1.1.0
 	github.com/go-logr/logr v1.2.4
 	github.com/golanghelper/grafana-webhook v0.0.0-20180512191629-e0da26114467
 	github.com/gosimple/slug v1.13.1
+	github.com/grafana-tools/sdk v0.0.0-20220919052116-6562121319fc
+	github.com/grafana/grafana-api-golang-client v0.21.1
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/imroc/req/v3 v3.35.0
 	github.com/kubeshop/testkube v1.11.22
@@ -57,8 +60,8 @@ require (
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gookit/color v1.5.2 // indirect
 	github.com/gosimple/unidecode v1.0.1 // indirect
-	github.com/grafana-tools/sdk v0.0.0-20220919052116-6562121319fc // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
+	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/huandu/xstrings v1.3.3 // indirect
 	github.com/imdario/mergo v0.3.13 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect

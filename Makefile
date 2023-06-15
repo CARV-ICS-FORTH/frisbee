@@ -141,7 +141,7 @@ run: generate fmt vet certs ## Run a controller from your host.
 
 docker-build: ## Build docker image for the Frisbee controller.
 	@echo "===> Build Frisbee Container <==="
-	docker build -t ${IMG} .
+	docker build -t ${IMG} . --network host
 
 docker-run: docker-build ## Build and Run docker image for the Frisbee controller.
 	@echo "===> Run Frisbee Container Locally <==="

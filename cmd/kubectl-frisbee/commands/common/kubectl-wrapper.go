@@ -48,9 +48,10 @@ const (
 	NotResourcesFoundReg = `No resources found*`
 	NotFound             = `Error from server (NotFound)`
 
-	NoResources       = `No resources found in .+ namespace.`
-	PodNotFound       = `Error from server \(NotFound\): pods ".+" not found`
-	NamespaceNotFound = `Error from server \(NotFound\): namespaces ".+" not found`
+	NoResources         = `No resources found in .+ namespace.`
+	NoMatchingResources = `no matching resources found`
+	PodNotFound         = `Error from server \(NotFound\): pods ".+" not found`
+	NamespaceNotFound   = `Error from server \(NotFound\): namespaces ".+" not found`
 )
 
 func ErrContainerNotReady(out []byte) bool {
@@ -82,6 +83,15 @@ func ErrPodNotFound(out []byte) bool {
 
 func ErrNoResources(out []byte) bool {
 	match, err := regexp.Match(NoResources, out)
+	if err != nil {
+		panic("unhandled output")
+	}
+
+	return match
+}
+
+func ErrNoMatchingResources(out []byte) bool {
+	match, err := regexp.Match(NoMatchingResources, out)
 	if err != nil {
 		panic("unhandled output")
 	}
@@ -121,28 +131,40 @@ func ErrNotFound(out []byte) bool {
 	return false
 }
 
-func Kubectl(testName string, arguments ...string) ([]byte, error) {
+func Kubectl(testName string, command ...string) ([]byte, error) {
+	var kubectlArgs []string
+
 	if env.Default.KubeConfigPath != "" {
-		arguments = append(arguments, "--kubeconfig", env.Default.KubeConfigPath)
+		kubectlArgs = append(kubectlArgs, "--kubeconfig", env.Default.KubeConfigPath)
 	}
 
 	if testName != "" {
-		arguments = append(arguments, "--namespace", testName)
+		kubectlArgs = append(kubectlArgs, "--namespace", testName)
 	}
 
-	return process.Execute(env.Default.Kubectl(), arguments...)
+	kubectlArgs = append(kubectlArgs, command...)
+
+	ui.Debug(env.Default.Kubectl(), strings.Join(kubectlArgs, " "))
+
+	return process.Execute(env.Default.Kubectl(), kubectlArgs...)
 }
 
-func LoggedKubectl(testName string, arguments ...string) ([]byte, error) {
+func LoggedKubectl(testName string, command ...string) ([]byte, error) {
+	var kubectlArgs []string
+
 	if env.Default.KubeConfigPath != "" {
-		arguments = append(arguments, "--kubeconfig", env.Default.KubeConfigPath)
+		kubectlArgs = append(kubectlArgs, "--kubeconfig", env.Default.KubeConfigPath)
 	}
 
 	if testName != "" {
-		arguments = append(arguments, "--namespace", testName)
+		kubectlArgs = append(kubectlArgs, "--namespace", testName)
 	}
 
-	return process.LoggedExecuteInDir("", os.Stdout, env.Default.Kubectl(), arguments...)
+	kubectlArgs = append(kubectlArgs, command...)
+
+	ui.Debug(env.Default.Kubectl(), strings.Join(kubectlArgs, " "))
+
+	return process.LoggedExecuteInDir("", os.Stdout, env.Default.Kubectl(), kubectlArgs...)
 }
 
 func HelmIgnoreNotFound(err error) error {
@@ -153,32 +175,40 @@ func HelmIgnoreNotFound(err error) error {
 	return err
 }
 
-func Helm(testName string, arguments ...string) ([]byte, error) {
+func Helm(testName string, command ...string) ([]byte, error) {
+	var helmArgs []string
+
 	if env.Default.KubeConfigPath != "" {
-		arguments = append(arguments, "--kubeconfig", env.Default.KubeConfigPath)
+		helmArgs = append(helmArgs, "--kubeconfig", env.Default.KubeConfigPath)
 	}
 
 	if env.Default.Debug {
-		arguments = append(arguments, "--debug")
+		helmArgs = append(helmArgs, "--debug")
 	}
 
 	if testName != "" {
-		arguments = append(arguments, "--namespace", testName)
+		helmArgs = append(helmArgs, "--namespace", testName)
 	}
 
-	return process.Execute(env.Default.Helm(), arguments...)
+	helmArgs = append(helmArgs, command...)
+
+	return process.Execute(env.Default.Helm(), helmArgs...)
 }
 
-func LoggedHelm(testName string, arguments ...string) ([]byte, error) {
+func LoggedHelm(testName string, command ...string) ([]byte, error) {
+	var helmArgs []string
+
 	if env.Default.KubeConfigPath != "" {
-		arguments = append(arguments, "--kubeconfig", env.Default.KubeConfigPath)
+		helmArgs = append(helmArgs, "--kubeconfig", env.Default.KubeConfigPath)
 	}
 
 	if testName != "" {
-		arguments = append(arguments, "--namespace", testName)
+		helmArgs = append(helmArgs, "--namespace", testName)
 	}
 
-	return process.LoggedExecuteInDir("", os.Stdout, env.Default.Helm(), arguments...)
+	helmArgs = append(helmArgs, command...)
+
+	return process.LoggedExecuteInDir("", os.Stdout, env.Default.Helm(), helmArgs...)
 }
 
 func setOutput(command []string) []string {
@@ -284,16 +314,31 @@ func GetTemplateResources(testName string) error {
 	return err
 }
 
-func WaitForCondition(testName string, condition v1alpha1.ConditionType, timeout string) error {
+func WaitForCondition(ctx context.Context, testName string, condition v1alpha1.ConditionType, timeout string) error {
 	command := []string{
 		"wait", "scenario", "--all=true",
 		"--for=condition=" + condition.String(),
 		"--timeout=" + timeout,
 	}
 
-	_, err := LoggedKubectl(testName, command...)
+	return wait.ExponentialBackoffWithContext(ctx, common.DefaultBackoffForK8sEndpoint, func(ctx context.Context) (done bool, err error) {
+		out, err := Kubectl(testName, command...)
 
-	return err
+		switch {
+		case ErrNamespaceNotFound(out):
+			return true, nil
+		case len(out) == 0, ErrNoMatchingResources(out): // resource initialization
+			// ui.Info("Waiting for pods to become ready ...", string(out))
+			return false, nil
+		case err != nil: // abort
+			return false, err
+		default: // ok
+			ui.Info("Condition successful")
+
+			// Output printing is not required as it is printed by the os.Stdout
+			return true, nil
+		}
+	})
 }
 
 /*
@@ -420,42 +465,51 @@ Filter query:
   - Run with '--logs pod1,pod2,pod3,...'. -> monitoring multiple pods
 */
 func KubectlLogs(ctx context.Context, testName string, tail bool, lines int, pods ...string) error {
-	command := []string{
-		"logs",
-		// "-c", v1alpha1.MainContainerName,
-		"--all-containers",
-		"--prefix=true",
-	}
+	ui.Debug("Streaming logs is generally not advisable. Setting Max Limit: 100")
+
+	command := []string{"logs", "--max-log-requests=100"}
 
 	if len(pods) == 0 {
-		command = append(command, "-l", v1alpha1.LabelScenario)
+		panic("this should not happen")
 	}
 
+	// Case: monitor a specific class of pods.
 	if len(pods) == 1 {
 		switch pods[0] {
 		case "all":
-			ui.Warn("Streaming all logs in not advised for large experiments. Limit: 100")
-
+			// eq: kubectl logs -l "scenario.frisbee.dev/name"
+			// We assume that only one scenario is running per namespace.
 			command = append(command, "-l", v1alpha1.LabelScenario)
-			command = append(command, "--max-log-requests=100")
 		case "SYS":
+			// eq: kubectl logs -l "scenario.frisbee.dev/name,scenario.frisbee.dev/component=SYS"
 			command = append(command, "-l", strings.Join([]string{v1alpha1.LabelScenario, FilterSYS}, ","))
 		case "SUT":
+			// eq: kubectl logs -l "scenario.frisbee.dev/name,scenario.frisbee.dev/component=SUT"
 			command = append(command, "-l", strings.Join([]string{v1alpha1.LabelScenario, FilterSUT}, ","))
 		default:
-			command = append(command, pods...)
+			// eq: kubectl logs <podname>
+			command = append(command, pods[0])
 		}
 	}
 
+	// Case: monitor a pod list <pod1, pod2, ...>
 	if len(pods) > 1 {
-		command = append(command, pods...)
+		// eq: kubectl logs -l 'scenario.frisbee.dev/action in (wfa-server,wfb-server)'
+		command = append(command, "-l",
+			fmt.Sprintf("%s in (%s)", v1alpha1.LabelAction, strings.Join(pods, ",")),
+		)
 	}
+
+	// how to present it
+	command = append(command,
+		// "-c", v1alpha1.MainContainerName,
+		"--all-containers",
+		"--prefix=true",
+	)
 
 	// with tail
 	if tail {
 		command = append(command, "--ignore-errors=false", "--follow")
-
-		ui.Debug(env.Default.Kubectl(), strings.Join(command, " "))
 
 		return wait.ExponentialBackoffWithContext(ctx, common.DefaultBackoffForServiceEndpoint, func(ctx context.Context) (done bool, err error) {
 			out, err := LoggedKubectl(testName, command...)
@@ -478,7 +532,6 @@ func KubectlLogs(ctx context.Context, testName string, tail bool, lines int, pod
 	// without tail
 	command = append(command, "--ignore-errors=true", fmt.Sprintf("--tail=%d", lines))
 
-	ui.Debug(env.Default.Kubectl(), strings.Join(command, " "))
 	out, err := Kubectl(testName, command...)
 
 	switch {
@@ -641,8 +694,6 @@ func ForceDelete(testName string) error {
 
 		// remove the resource finalizer
 		patch := []string{"patch", crd, resources, "--type", "json", K8SRemoveFinalizer}
-
-		ui.Debug("Use patch", env.Default.Kubectl(), strings.Join(patch, " "))
 
 		if _, err := Kubectl(testName, patch...); err != nil {
 			return errors.Wrapf(err, "cannot patch '%s' finalizers", crd)

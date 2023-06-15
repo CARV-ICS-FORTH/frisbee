@@ -3,7 +3,7 @@
 apiVersion: frisbee.dev/v1alpha1
 kind: Scenario
 metadata:
-  name: client-placement
+  name: node-placement
 spec:
   actions:
     # Step 1: Create FedBed server
@@ -14,7 +14,7 @@ spec:
         inputs:
           - { min_fit_clients: 20, min_available_clients: 20 }
 
-    # Step 2: Place clients[0,4] to Node A
+    # Step 2: Place clients[0,4] to Node-1
     - action: Cluster
       name: group-a
       depends: { running: [ server ] }
@@ -29,7 +29,7 @@ spec:
           - { fl_server: server, total_nodes: 20, node_id: 3 }
           - { fl_server: server, total_nodes: 20, node_id: 4 }
 
-    # Step 2: Place clients[5,9] to Node B
+    # Step 2: Place clients[5,9] to Node-2
     - action: Cluster
       name: group-b
       depends: { running: [ server ] }
@@ -45,7 +45,7 @@ spec:
           - { fl_server: server,  total_nodes: 20, node_id: 9 }
 
 
-    # Step 2: Place clients[10,14] of clients to Node C
+    # Step 2: Place clients[10,14] of clients to Node-3
     - action: Cluster
       name: group-c
       depends: { running: [ server ] }
@@ -61,7 +61,7 @@ spec:
           - { fl_server: server, total_nodes: 20, node_id: 14 }
 
 
-    # Step 2: Place clients[15,19] to Node D
+    # Step 2: Place clients[15,19] to Node-4
     - action: Cluster
       name: group-d
       depends: { running: [ server ] }

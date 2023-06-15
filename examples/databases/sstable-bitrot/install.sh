@@ -1,6 +1,7 @@
 #!/bin/bash
 
-set -eux
+set -eu
+set -o pipefail
 
 export NAMESPACE=sstable-bitrot
 export SCENARIO=$(dirname -- "$0")/manifest.yml
@@ -10,11 +11,11 @@ export DEPENDENCIES=(./charts/system/ ./charts/databases/cockroachdb ./charts/da
 # Prepare the Reporting folder
 mkdir -p "${REPORTS}"
 
-# Submit the scenario and follow logs
-kubectl-frisbee submit test "${NAMESPACE}" "${SCENARIO}" "${DEPENDENCIES[@]}"
-
 # Copy the manifest
 cp "${SCENARIO}" "${REPORTS}"
+
+# Submit the scenario and follow the failing client's logs
+kubectl-frisbee submit test "${NAMESPACE}" "${SCENARIO}" "${DEPENDENCIES[@]}" --logs masters-1 |& tee -a "${REPORTS}"/logs &
 
 # wait for the scenario to be submitted
 sleep 10

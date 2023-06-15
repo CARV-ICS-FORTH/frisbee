@@ -156,7 +156,7 @@ func NewReportTestCmd() *cobra.Command {
 			if options.Wait {
 				ui.Info("Waiting for scenario actions to be completed...")
 
-				err = common.WaitForCondition(testName, v1alpha1.ConditionAllJobsAreCompleted, Timeout)
+				err = common.WaitForCondition(cmd.Context(), testName, v1alpha1.ConditionAllJobsAreCompleted, Timeout)
 				ui.ExitOnError("abnormal termination. err:", err)
 
 				// get the new status

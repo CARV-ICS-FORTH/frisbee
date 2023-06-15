@@ -26,6 +26,7 @@ import (
 	"github.com/grafana-tools/sdk"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
@@ -177,12 +178,13 @@ func ParseAlertExpr(query v1alpha1.ExprMetrics) (*AlertRule, error) {
 			params := make([]float64, len(paramsStr))
 
 			for i, m := range paramsStr {
-				param, err := strconv.ParseFloat(m, 32)
+
+				quantity, err := resource.ParseQuantity(m)
 				if err != nil {
 					return nil, errors.Wrapf(err, "erroneous parameters")
 				}
 
-				params[i] = param
+				params[i] = quantity.AsApproximateFloat64()
 			}
 
 			alert.Evaluator.Params = params
@@ -201,7 +203,7 @@ func ParseAlertExpr(query v1alpha1.ExprMetrics) (*AlertRule, error) {
 	return &alert, nil
 }
 
-// SetAlert adds a new alert to Grafana.
+// SetAlert adds a new alert to Grafana using the Legacy API.
 func (c *Client) SetAlert(ctx context.Context, alert *AlertRule, name string, msg string) error {
 	if c == nil {
 		panic("empty client was given")
@@ -210,6 +212,9 @@ func (c *Client) SetAlert(ctx context.Context, alert *AlertRule, name string, ms
 	if alert == nil {
 		return errors.New("NIL alert was given")
 	}
+
+	ctxTimeout, cancel := context.WithTimeout(ctx, Timeout)
+	defer cancel()
 
 	/*---------------------------------------------------*
 	 * Get the dashboard
@@ -278,19 +283,16 @@ func (c *Client) SetAlert(ctx context.Context, alert *AlertRule, name string, ms
 	}
 
 	/*---------------------------------------------------*
-	 * Update the Dashboard
+	 * Update the dashboard
 	 *---------------------------------------------------*/
-	params := sdk.SetDashboardParams{
-		Overwrite:  false,
-		PreserveId: true,
-	}
-
 	retryCond := func(ctx context.Context) (done bool, err error) {
-		resp, errReq := c.Conn.SetDashboard(ctx, board, params)
+		resp, errReq := c.Conn.SetDashboard(ctx, board, sdk.SetDashboardParams{
+			Overwrite:  true, // Needed to avoid "someone else had written the dashboard".
+			PreserveId: true, // Needed to avoid "someone else had written the dashboard".
+		})
 
 		// Retry
 		if errReq != nil {
-
 			c.logger.Info("Connection error. Retry", "alertName", name, "resp", resp, "err", errReq)
 
 			return false, nil
@@ -306,7 +308,7 @@ func (c *Client) SetAlert(ctx context.Context, alert *AlertRule, name string, ms
 		panic("should not go here")
 	}
 
-	if err := wait.ExponentialBackoffWithContext(ctx, common.DefaultBackoffForServiceEndpoint, retryCond); err != nil {
+	if err := wait.ExponentialBackoffWithContext(ctxTimeout, common.DefaultBackoffForServiceEndpoint, retryCond); err != nil {
 		return errors.Wrapf(err, "cannot set alert '%s'", name)
 	}
 

@@ -215,7 +215,7 @@ func NewInspectTestCmd() *cobra.Command {
 				err := common.KubectlLogs(cmd.Context(), testName, false, options.Loglines, options.Logs...)
 
 				env.Default.Hint("For more logs use:", "kubectl logs -n", testName, "<podnames>")
-				ui.ExitOnError("== Logs FromTime Pods ==", err)
+				ui.ExitOnError("== Pod Logs ==", err)
 
 				ui.Success("== Scenario Logs ==")
 			}

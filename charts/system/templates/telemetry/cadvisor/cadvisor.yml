@@ -52,6 +52,11 @@ spec:
               nsenter -t ${mainPID} -C -- mount -t cgroup2 none /sys/fs/cgroup
             }
 
+            # update the limits temporarily to avoid "inotify_init: too many open files"
+            sysctl fs.inotify.max_user_instances=8192
+            sysctl fs.inotify.max_user_watches=524288
+            sysctl -p
+
             get_main_pid && enter_ns
 
             # Start the monitoring

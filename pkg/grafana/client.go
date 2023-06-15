@@ -24,6 +24,7 @@ import (
 	"github.com/go-logr/logr"
 	notifier "github.com/golanghelper/grafana-webhook"
 	"github.com/grafana-tools/sdk"
+	gapi "github.com/grafana/grafana-api-golang-client"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -82,10 +83,12 @@ type Client struct {
 
 	Conn *sdk.Client
 
+	GapiClient *gapi.Client
+
 	BaseURL string
 }
 
-func New(ctx context.Context, setters ...Option) (*Client, error) {
+func New(parentCtx context.Context, setters ...Option) (*Client, error) {
 	var args Options
 
 	for _, setter := range setters {
@@ -131,12 +134,20 @@ func New(ctx context.Context, setters ...Option) (*Client, error) {
 			return true, nil
 		}
 
-		if err := wait.ExponentialBackoffWithContext(ctx, common.DefaultBackoffForServiceEndpoint, retryCond); err != nil {
+		if err := wait.ExponentialBackoffWithContext(parentCtx, common.DefaultBackoffForServiceEndpoint, retryCond); err != nil {
 			return nil, errors.Wrapf(err, "endpoint is unreachable ('%s')", *args.HTTPEndpoint)
 		}
 
 		client.Conn = conn
 		client.BaseURL = *args.HTTPEndpoint
+
+		// Start Gapi client
+		gapiClient, err := gapi.New(*args.HTTPEndpoint, gapi.Config{})
+		if err != nil {
+			return nil, errors.Wrapf(err, "Failed to initialize gapi client")
+		}
+
+		client.GapiClient = gapiClient
 	}
 
 	/*---------------------------------------------------*
@@ -147,7 +158,7 @@ func New(ctx context.Context, setters ...Option) (*Client, error) {
 
 		// Although the notification channel is backed by the Grafana Pod, the Grafana Service is different
 		// from the Alerting Service. For this reason, we must be sure that both Services are linked to the Grafana Pod.
-		if err := client.SetNotificationChannel(ctx, *args.WebhookURL); err != nil {
+		if err := client.SetNotificationChannel(parentCtx, *args.WebhookURL); err != nil {
 			return nil, errors.Wrapf(err, "failed to set notification channel")
 		}
 	}
