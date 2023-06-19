@@ -18,22 +18,14 @@ package client
 
 import (
 	"context"
-	"regexp"
 	"strings"
-	"time"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	"github.com/carv-ics-forth/frisbee/pkg/manifest"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/util/yaml"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-var yamlSeparator = regexp.MustCompile(`\n---`)
 
 // NewTestManagementClient creates new Test client.
 func NewTestManagementClient(client client.Client) TestManagementClient {
@@ -172,109 +164,4 @@ func (c TestManagementClient) ListServices(ctx context.Context, namespace string
 	}
 
 	return list, err
-}
-
-// DeleteTests deletes all tests
-// Deprecated: Use the respective kubectl command.
-func (c TestManagementClient) DeleteTests(selector string) (testNames []string, err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	set, err := labels.ConvertSelectorToLabelsMap(selector)
-	if err != nil {
-		return testNames, errors.Wrapf(err, "invalid selector")
-	}
-
-	// find namespaces where tests are running
-	filters := &client.ListOptions{
-		LabelSelector: labels.SelectorFromValidatedSet(set),
-	}
-
-	var namespaces corev1.NamespaceList
-
-	if err := c.client.List(ctx, &namespaces, filters); err != nil {
-		return testNames, errors.Wrapf(err, "cannot list resource")
-	}
-
-	// remove namespaces
-	propagation := metav1.DeletePropagationForeground
-	// propagation := metav1.DeletePropagationBackground
-
-	for i := range namespaces.Items {
-		namespace := namespaces.Items[i]
-
-		if err := c.client.Delete(ctx, &namespace, &client.DeleteOptions{PropagationPolicy: &propagation}); err != nil {
-			return testNames, errors.Wrapf(err, "cannot remove namespace '%s", namespace.GetName())
-		}
-
-		testNames = append(testNames, namespace.GetName())
-	}
-
-	return testNames, nil
-}
-
-// DeleteTest deletes single test by name.
-// Deprecated: Use the respective kubectl command.
-func (c TestManagementClient) DeleteTest(id string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	if id == "" {
-		return errors.Errorf("test id '%s' is not valid", id)
-	}
-
-	propagation := metav1.DeletePropagationForeground
-	// propagation := metav1.DeletePropagationBackground
-
-	var namespace corev1.Namespace
-
-	namespace.SetName(id)
-
-	return c.client.Delete(ctx, &namespace, &client.DeleteOptions{PropagationPolicy: &propagation})
-}
-
-// SubmitTestFromFile applies the scenario from the given file.
-// Deprecated: Use the respective kubectl command.
-func (c TestManagementClient) SubmitTestFromFile(id string, manifestPath string) (resourceNames []string, err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	// read the raw content from disk
-	fileContents, err := manifest.ReadManifest(manifestPath)
-	if err != nil {
-		return resourceNames, errors.Wrapf(err, "cannot read manifest '%s'", manifestPath)
-	}
-
-	// parse the manifest into resources
-	var resources []unstructured.Unstructured
-
-	for i, text := range yamlSeparator.Split(string(fileContents[0]), -1) {
-		if strings.TrimSpace(text) == "" {
-			continue
-		}
-
-		var resource unstructured.Unstructured
-
-		if err := yaml.Unmarshal([]byte(text), &resource); err != nil {
-			// Only return an error if this is a kubernetes object, otherwise, print the error
-			if resource.GetKind() != "" {
-				return resourceNames, errors.Errorf("unexpected kind '%s'", resource.GetKind())
-			}
-
-			return resourceNames, errors.Errorf("yaml file at index %d is not valid", i)
-		}
-
-		resource.SetNamespace(id)
-		resources = append(resources, resource)
-		resourceNames = append(resourceNames, resource.GetNamespace()+"/"+resource.GetName())
-	}
-
-	// create the resources. if a resource with similar name exists, it is deleted.
-	for i, resource := range resources {
-		if err := c.client.Create(ctx, &resources[i]); err != nil {
-			return resourceNames, errors.Wrapf(err, "create resource %s", resource.GetName())
-		}
-	}
-
-	return resourceNames, nil
 }

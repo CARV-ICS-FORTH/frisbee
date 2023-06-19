@@ -99,14 +99,14 @@ type Reconciler interface {
 //
 // Bool indicate whether the caller should return immediately (true) or continue (false).
 // The reconciliation cycle is where the framework gives us back control after a watch has passed up an event.
-func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.Object, requeue *bool) (ctrl.Result, error) {
+func Reconcile(parentCtx context.Context, r Reconciler, req ctrl.Request, obj client.Object, requeue *bool) (ctrl.Result, error) {
 	/*-- make the calling controller to return --*/
 	*requeue = true
 
 	/*---------------------------------------------------
 	 * Retrieve CR by name
 	 *---------------------------------------------------*/
-	if err := r.GetClient().Get(ctx, req.NamespacedName, obj); err != nil {
+	if err := r.GetClient().Get(parentCtx, req.NamespacedName, obj); err != nil {
 		// 	Request object not found, could have been deleted after reconcile request.
 		// 	We'll ignore not-found errors, since they can't be fixed by an immediate
 		// 	requeue (we'll need to wait for a new notification), and we can get them
@@ -136,11 +136,8 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 			/*---------------------------------------------------
 			 * Update the Object with Added Finalizers
 			 *---------------------------------------------------*/
-			ctxTimeout, cancel := context.WithTimeout(ctx, DefaultTimeoutFork8sEndpoint)
-			defer cancel()
-
 			retryCond := func(ctx context.Context) (done bool, err error) {
-				if err := Update(ctxTimeout, r, obj); err != nil {
+				if err := Update(ctx, r, obj); err != nil {
 					// Retry
 					logger.Info("Retry to add finalizer", "obj", obj, "Err", err)
 
@@ -150,7 +147,7 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 				return true, nil
 			}
 
-			if err := wait.ExponentialBackoffWithContext(ctxTimeout, DefaultBackoffForK8sEndpoint, retryCond); err != nil {
+			if err := wait.ExponentialBackoffWithContext(parentCtx, DefaultBackoffForK8sEndpoint, retryCond); err != nil {
 				logger.Error(err, "Abort retrying to add finalizer. Requeue the request")
 
 				return RequeueWithError(r, req, err)
@@ -182,11 +179,9 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 				/*---------------------------------------------------
 				 * Update the Object with Removed Finalizers
 				 *---------------------------------------------------*/
-				ctxTimeout, cancel := context.WithTimeout(ctx, DefaultTimeoutFork8sEndpoint)
-				defer cancel()
 
 				retryCond := func(ctx context.Context) (done bool, err error) {
-					if err := Update(ctxTimeout, r, obj); err != nil {
+					if err := Update(ctx, r, obj); err != nil {
 						logger.Info("Retry to remove finalizer", "obj", obj, "Err", err)
 
 						// Retry
@@ -197,7 +192,7 @@ func Reconcile(ctx context.Context, r Reconciler, req ctrl.Request, obj client.O
 					return true, nil
 				}
 
-				if err := wait.ExponentialBackoffWithContext(ctxTimeout, DefaultBackoffForK8sEndpoint, retryCond); err != nil {
+				if err := wait.ExponentialBackoffWithContext(parentCtx, DefaultBackoffForK8sEndpoint, retryCond); err != nil {
 					logger.Error(err, "Abort retrying to remove finalizer. Requeue the request")
 
 					return RequeueWithError(r, req, err)

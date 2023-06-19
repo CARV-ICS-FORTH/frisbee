@@ -108,10 +108,6 @@ func DispatchAlert(ctx context.Context, r common.Reconciler, alertBody *notifier
 
 	r.Info("New Grafana Alert", "name", alertBody.RuleName, "message", alertBody.Message, "state", alertBody.State)
 
-	if true {
-		panic("POUUUUUUUUUUUUTSES")
-	}
-
 	/*---------------------------------------------------*
 	 * Patch Boilerplate
 	 *---------------------------------------------------*/

@@ -14,29 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package completion
+package common
 
 import (
-	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/common"
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/env"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
-
-const completionDesc = `
-Generate autocompletion scripts for Frisbee for the specified shell.
-`
-
-const bashCompDesc = `
-Generate the autocompletion script for Frisbee for the bash shell.
-To load completions in your current shell session:
-    source <(frisbee completion bash)
-To load completions for every new session, execute once:
-- Linux:
-      frisbee completion bash > /etc/bash_completion.d/frisbee.bash
-- MacOS:
-      frisbee completion bash > /usr/local/etc/bash_completion.d/helm.bash
-`
 
 func NoArgs(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
 	return nil, cobra.ShellCompDirectiveNoFileComp
@@ -44,7 +28,7 @@ func NoArgs(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDi
 
 // CompleteScenarios list the available test-cases
 func CompleteScenarios(cmd *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
-	list, err := env.Default.GetFrisbeeClient().ListScenarios(cmd.Context(), common.ManagedNamespace)
+	list, err := env.Default.GetFrisbeeClient().ListScenarios(cmd.Context(), ManagedNamespace)
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}

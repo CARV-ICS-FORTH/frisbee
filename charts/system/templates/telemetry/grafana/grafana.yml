@@ -17,13 +17,14 @@ spec:
     containers:
       - name: main
         image: grafana/grafana-oss:9.4.7
+        #image: grafana/grafana-oss:9.2.1
         ports:
           - name: http
             containerPort: {{.Values.telemetry.grafana.port}}
         resources:
           requests:
-            memory: "4Gi"
-            cpu: "1"
+            memory: "14Gi"
+            cpu: "2"
         volumeMounts:
           - name: config
             mountPath: /etc/grafana/grafana.ini
@@ -82,6 +83,10 @@ data:
 
 
   grafana.ini: | # For more options see https://github.com/grafana/grafana/blob/main/conf/defaults.ini
+    #################################### Logging ##########################
+    [log]
+    # Either "debug", "info", "warn", "error", "critical", default is "info"
+    level = debug
 
     #################################### Users ###############################
     [users]

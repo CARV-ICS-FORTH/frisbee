@@ -38,13 +38,21 @@ func GenerateProbabilitySliceFromSpec(samples int64, spec *v1alpha1.Distribution
 		panic("default distribution is a pointer to an already evaluated distribution, and therefore it should be handled before reaching this point")
 
 	case v1alpha1.DistributionConstant:
-		return GenerateProbabilitySlice(samples, NewConstant())
+		pdfSlice := genProbabilityDensitySlice(samples, NewConstant())
+
+		return pdfSlice
 
 	case v1alpha1.DistributionUniform:
-		return GenerateProbabilitySlice(samples, NewUniform(1, samples))
+		pdfSlice := genProbabilityDensitySlice(samples, NewUniform(1, samples))
+
+		// normalize to the generated values
+		return pdfSlice.divide(pdfSlice.sum())
 
 	case v1alpha1.DistributionNormal:
-		return GenerateProbabilitySlice(samples, NewNormal(1, samples))
+		pdfSlice := genProbabilityDensitySlice(samples, NewNormal(1, samples))
+
+		// normalize to the generated values
+		return pdfSlice.divide(pdfSlice.sum())
 
 	case v1alpha1.DistributionPareto:
 		if spec.DistParamsPareto == nil {
@@ -54,7 +62,10 @@ func GenerateProbabilitySliceFromSpec(samples int64, spec *v1alpha1.Distribution
 			}
 		}
 
-		return GenerateProbabilitySlice(samples, NewPareto(spec.DistParamsPareto.Scale, spec.DistParamsPareto.Shape))
+		pdfSlice := genProbabilityDensitySlice(samples, NewPareto(spec.DistParamsPareto.Scale, spec.DistParamsPareto.Shape))
+
+		// normalize to the generated values
+		return pdfSlice.divide(pdfSlice.sum())
 
 	default:
 		// This condition should be captured by upper layers.
@@ -62,7 +73,7 @@ func GenerateProbabilitySliceFromSpec(samples int64, spec *v1alpha1.Distribution
 	}
 }
 
-func GenerateProbabilitySlice(samples int64, distgenerator Generator) ProbabilitySlice {
+func genProbabilityDensitySlice(samples int64, distgenerator Generator) ProbabilitySlice {
 	// discard the first 0 value
 	distgenerator.Next()
 
@@ -72,8 +83,7 @@ func GenerateProbabilitySlice(samples int64, distgenerator Generator) Probabilit
 		dist[i] = distgenerator.Next()
 	}
 
-	// normalize not to exceed total.
-	return dist.divide(dist.sum())
+	return dist
 }
 
 // ProbabilitySlice provides the value of the probability density function at x.

@@ -8,13 +8,11 @@
           "uid": "grafana"
         },
         "enable": true,
-        "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
         "name": "Annotations & Alerts",
         "target": {
           "limit": 100,
           "matchAny": false,
-          "tags": [],
           "type": "dashboard"
         },
         "type": "dashboard"
@@ -34,9 +32,6 @@
         "showLine": false,
         "step": "",
         "tagKeys": "",
-        "tags": [
-          "failure"
-        ],
         "tagsField": "",
         "target": {
           "limit": 100,
@@ -99,9 +94,6 @@
         "showLine": false,
         "step": "",
         "tagKeys": "",
-        "tags": [
-          "run"
-        ],
         "tagsField": "",
         "target": {
           "limit": 100,
@@ -131,16 +123,10 @@
         "showLine": false,
         "step": "",
         "tagKeys": "",
-        "tags": [
-          "exit"
-        ],
         "tagsField": "",
         "target": {
           "limit": 100,
           "matchAny": false,
-          "tags": [
-            "delete"
-          ],
           "type": "tags"
         },
         "textField": "",
@@ -153,7 +139,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 12,
+  "id": 3,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -245,7 +231,7 @@
         "showThresholdMarkers": true,
         "text": {}
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "targets": [
         {
@@ -320,7 +306,7 @@
         "showThresholdMarkers": true,
         "text": {}
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "targets": [
         {
           "datasource": {
@@ -396,7 +382,7 @@
         "showThresholdMarkers": true,
         "text": {}
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "targets": [
         {
@@ -469,7 +455,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "targets": [
         {
@@ -565,40 +551,39 @@
           "fields": "",
           "values": false
         },
-        "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
+      "span": 0,
+      "sparkline": {},
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "exemplar": true,
           "expr": "count(max(up{}) by (instance))",
           "format": "table",
-          "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "",
           "refId": "active",
           "step": 10
         }
       ],
+      "thresholds": "",
       "title": "Active Services",
-      "transformations": [],
-      "type": "stat"
+      "type": "stat",
+      "valueFontSize": "",
+      "valueName": ""
     },
     {
+      "colorBackground": false,
+      "colorValue": false,
       "datasource": {
         "type": "prometheus",
         "uid": "PBFA97CFB590B2093"
       },
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -639,7 +624,7 @@
         "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "targets": [
         {
           "datasource": {
@@ -725,10 +710,9 @@
           "fields": "",
           "values": false
         },
-        "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "sparkline": {},
       "targets": [
@@ -737,11 +721,7 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "exemplar": true,
           "expr": "sum(max(container_memory_working_set_bytes{id=\"/\"}) by (instance))",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "",
           "refId": "allocations"
         }
       ],
@@ -823,10 +803,9 @@
           "fields": "",
           "values": false
         },
-        "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "sparkline": {},
       "targets": [
@@ -835,12 +814,8 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "exemplar": true,
           "expr": "max(machine_memory_bytes) by (node)",
           "format": "time_series",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "",
           "refId": "cores"
         }
       ],
@@ -873,9 +848,6 @@
       "error": false,
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -926,10 +898,9 @@
           "fields": "",
           "values": false
         },
-        "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "sparkline": {},
       "targets": [
@@ -938,11 +909,7 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "exemplar": true,
           "expr": "sum(rate(container_cpu_usage_seconds_total{id=\"/\"}[$__rate_interval]))",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "",
           "refId": "vcores"
         }
       ],
@@ -974,9 +941,6 @@
       "error": false,
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -1026,10 +990,9 @@
           "fields": "",
           "values": false
         },
-        "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "sparkline": {},
       "targets": [
@@ -1038,18 +1001,13 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "exemplar": true,
           "expr": "sum(max(machine_cpu_cores) by (node)) != 0",
           "format": "time_series",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "",
           "refId": "cores"
         }
       ],
       "thresholds": "",
       "title": "CPU Available",
-      "transformations": [],
       "type": "stat",
       "valueFontSize": "",
       "valueName": ""
@@ -1116,10 +1074,9 @@
           "fields": "",
           "values": false
         },
-        "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "sparkline": {},
       "targets": [
@@ -1128,11 +1085,7 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "exemplar": true,
           "expr": "sum(max(container_fs_usage_bytes{device=~\"^(^$)|(overlay_.*)|(/dev/[sv]d[a-z][1-9]*)$\"}) by (instance))",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "",
           "refId": "total"
         }
       ],
@@ -1204,10 +1157,9 @@
           "fields": "",
           "values": false
         },
-        "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "sparkline": {},
       "targets": [
@@ -1216,10 +1168,7 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "exemplar": true,
           "expr": "sum(max by (device) (container_fs_limit_bytes{id=\"/\",device=~\"^(^$)|(overlay_.*)|(/dev/[sv]d[a-z][1-9]*)$\"}))",
-          "interval": "",
-          "legendFormat": "",
           "refId": "limit"
         }
       ],
@@ -1269,7 +1218,7 @@
         "tags": [],
         "viewMode": "list"
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "targets": [
         {
@@ -1390,7 +1339,7 @@
         },
         "showHeader": true
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "scroll": false,
       "span": 0,
       "targets": [
@@ -1399,13 +1348,9 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "exemplar": true,
           "expr": "max(up) by (node, instance)",
           "format": "table",
-          "instant": false,
-          "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "",
           "refId": "Used"
         }
       ],
@@ -1473,7 +1418,7 @@
         "showTime": true,
         "showUser": true
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "targets": [
         {
           "datasource": {
@@ -1671,21 +1616,15 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "editorMode": "code",
-          "exemplar": true,
           "expr": "avg(rate(container_cpu_usage_seconds_total{id=\"/\"}[$__rate_interval])) != 0 ",
-          "hide": false,
-          "instant": false,
-          "interval": "",
           "legendFormat": "cpu",
-          "range": true,
           "refId": "cpu"
         },
         {
@@ -1693,14 +1632,8 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "editorMode": "code",
-          "exemplar": true,
           "expr": "avg(rate(container_fs_reads_bytes_total{id=\"/\"}[$__rate_interval]) +  \nrate(container_fs_writes_bytes_total{id=\"/\"}[$__rate_interval])) != 0",
-          "hide": false,
-          "instant": false,
-          "interval": "",
           "legendFormat": "io",
-          "range": true,
           "refId": "io"
         },
         {
@@ -1708,14 +1641,8 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "editorMode": "code",
-          "exemplar": true,
           "expr": "avg(rate(container_network_receive_bytes_total{id=\"/\"}[$__rate_interval]) +  \nrate(container_network_transmit_bytes_total{id=\"/\"}[$__rate_interval])) != 0",
-          "hide": false,
-          "instant": false,
-          "interval": "",
           "legendFormat": "net",
-          "range": true,
           "refId": "net"
         }
       ],
@@ -1801,7 +1728,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               }
             ]
           },
@@ -1868,7 +1796,6 @@
       },
       "id": 109,
       "isNew": false,
-      "links": [],
       "options": {
         "legend": {
           "calcs": [
@@ -1885,7 +1812,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "targets": [
         {
@@ -1893,10 +1820,7 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "exemplar": true,
           "expr": "max(rate(container_cpu_usage_seconds_total{id=\"/\"}[$__rate_interval]))  != 0",
-          "hide": false,
-          "interval": "",
           "legendFormat": "max",
           "refId": "max"
         },
@@ -1905,10 +1829,7 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "exemplar": true,
           "expr": "avg(rate(container_cpu_usage_seconds_total{id=\"/\"}[$__rate_interval]))  != 0",
-          "hide": false,
-          "interval": "",
           "legendFormat": "avg",
           "refId": "avg"
         },
@@ -1917,10 +1838,7 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "exemplar": true,
           "expr": "min(rate(container_cpu_usage_seconds_total{id=\"/\"}[$__rate_interval]))  != 0",
-          "hide": false,
-          "interval": "",
           "legendFormat": "min",
           "refId": "min"
         }
@@ -2043,7 +1961,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "targets": [
         {
@@ -2051,10 +1969,7 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "exemplar": true,
           "expr": "avg(rate(container_cpu_system_seconds_total{id=\"/\"}[$__rate_interval]))  != 0",
-          "hide": false,
-          "interval": "",
           "legendFormat": "kernel",
           "refId": "kernel"
         },
@@ -2063,20 +1978,9 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "exemplar": true,
           "expr": "avg(rate(container_cpu_user_seconds_total{id=\"/\"}[$__rate_interval]))  != 0",
-          "hide": false,
-          "interval": "",
           "legendFormat": "user",
           "refId": "user"
-        }
-      ],
-      "thresholds": [
-        {
-          "colorMode": "critical",
-          "op": "lt",
-          "value": 0.20000000298023224,
-          "visible": true
         }
       ],
       "title": "CPU Utilization [  User / Kernel ]",
@@ -2221,7 +2125,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "targets": [
         {
@@ -2390,7 +2294,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "targets": [
         {
@@ -2398,10 +2302,7 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "exemplar": true,
           "expr": "avg(container_memory_usage_bytes{id=\"/\"})   != 0",
-          "hide": false,
-          "interval": "",
           "legendFormat": "Usage",
           "refId": "Usage"
         },
@@ -2410,10 +2311,7 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "exemplar": true,
           "expr": "avg(container_memory_working_set_bytes{id=\"/\"})   != 0",
-          "hide": false,
-          "interval": "",
           "legendFormat": "WorkingSet",
           "refId": "WorkingSet"
         },
@@ -2422,10 +2320,7 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "exemplar": true,
           "expr": "avg(container_memory_rss{id=\"/\"})   != 0",
-          "hide": false,
-          "interval": "",
           "legendFormat": "RSS",
           "refId": "RSS"
         },
@@ -2434,10 +2329,7 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "exemplar": true,
           "expr": "avg(container_memory_swap{id=\"/\"})   != 0",
-          "hide": false,
-          "interval": "",
           "legendFormat": "Swap",
           "refId": "Swap"
         },
@@ -2446,10 +2338,7 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "exemplar": true,
           "expr": "avg(container_memory_mapped_file{id=\"/\"})   != 0",
-          "hide": false,
-          "interval": "",
           "legendFormat": "MMAP",
           "refId": "MMAP"
         },
@@ -2458,16 +2347,12 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "exemplar": true,
           "expr": "avg(container_memory_cache{id=\"/\"})   != 0",
-          "hide": false,
-          "interval": "",
           "legendFormat": "Cache",
           "refId": "Cache"
         }
       ],
       "title": "Average Memory Usage Per Type",
-      "transformations": [],
       "type": "timeseries"
     },
     {
@@ -2605,7 +2490,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "targets": [
         {
@@ -2613,10 +2498,7 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "exemplar": true,
           "expr": "avg(rate(container_memory_failures_total{id=\"/\"}[$__rate_interval])) != 0",
-          "hide": false,
-          "interval": "",
           "legendFormat": "PageFaults",
           "refId": "PageFaults"
         },
@@ -2625,20 +2507,9 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "exemplar": true,
           "expr": "avg(container_memory_working_set_bytes{id=\"/\"})  != 0",
-          "hide": false,
-          "interval": "",
           "legendFormat": "RAM",
           "refId": "RAM"
-        }
-      ],
-      "thresholds": [
-        {
-          "colorMode": "critical",
-          "op": "lt",
-          "value": 0.20000000298023224,
-          "visible": true
         }
       ],
       "title": "Memory Allocation (Page Faults / RAM )",
@@ -2808,7 +2679,7 @@
         "showUnfilled": true,
         "text": {}
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "targets": [
         {
           "datasource": {
@@ -2899,7 +2770,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "targets": [
         {
           "datasource": {
@@ -2931,7 +2802,6 @@
       ],
       "title": "IO Traffic (Bytes)",
       "transformations": [],
-      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -2989,7 +2859,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "targets": [
         {
           "datasource": {
@@ -3021,7 +2891,6 @@
       ],
       "title": "Total IO Traffic (Bytes)",
       "transformations": [],
-      "transparent": false,
       "type": "piechart"
     },
     {
@@ -3085,7 +2954,6 @@
         "y": 86
       },
       "id": 199,
-      "links": [],
       "options": {
         "legend": {
           "calcs": [],
@@ -3098,7 +2966,6 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
       "targets": [
         {
           "datasource": {
@@ -3130,7 +2997,6 @@
       ],
       "title": "IO Traffic (Operations)",
       "transformations": [],
-      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -3188,7 +3054,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "targets": [
         {
           "datasource": {
@@ -3220,7 +3086,6 @@
       ],
       "title": "Total IO Traffic (Operations)",
       "transformations": [],
-      "transparent": false,
       "type": "piechart"
     },
     {
@@ -3304,7 +3169,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "targets": [
         {
@@ -3337,7 +3202,6 @@
       "thresholds": [],
       "title": "IO Throughput (Filesystem)",
       "transformations": [],
-      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -3423,7 +3287,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "targets": [
         {
@@ -3456,7 +3320,6 @@
       "thresholds": [],
       "title": "IOPS (Filesystem)",
       "transformations": [],
-      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -3541,7 +3404,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "targets": [
         {
@@ -3577,7 +3440,6 @@
       "thresholds": [],
       "title": "Estimate IO Request Size",
       "transformations": [],
-      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -3661,7 +3523,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "targets": [
         {
@@ -3694,7 +3556,6 @@
       "thresholds": [],
       "title": "Average Time spent in IO",
       "transformations": [],
-      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -3801,7 +3662,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "targets": [
         {
           "datasource": {
@@ -3833,7 +3694,6 @@
       ],
       "title": "Network Traffic (Bytes)",
       "transformations": [],
-      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -3891,7 +3751,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "targets": [
         {
           "datasource": {
@@ -3923,7 +3783,6 @@
       ],
       "title": "Total Network Traffic (Bytes)",
       "transformations": [],
-      "transparent": false,
       "type": "piechart"
     },
     {
@@ -4000,7 +3859,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "targets": [
         {
           "datasource": {
@@ -4032,7 +3891,6 @@
       ],
       "title": "Network Traffic (Packets)",
       "transformations": [],
-      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -4090,7 +3948,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "targets": [
         {
           "datasource": {
@@ -4122,7 +3980,6 @@
       ],
       "title": "Total Network Traffic (Packets)",
       "transformations": [],
-      "transparent": false,
       "type": "piechart"
     },
     {
@@ -4258,7 +4115,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "targets": [
         {
@@ -4434,7 +4291,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "targets": [
         {
@@ -4620,7 +4477,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "targets": [
         {
@@ -4798,7 +4655,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "targets": [
         {
@@ -4806,10 +4663,7 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "exemplar": true,
           "expr": "avg(rate(container_network_receive_bytes_total{id=\"/\"}[$__rate_interval]))  != 0",
-          "hide": false,
-          "interval": "",
           "legendFormat": "Throughput",
           "refId": "Throughput"
         },
@@ -4818,20 +4672,9 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "exemplar": true,
           "expr": "avg(rate(container_network_receive_packets_total{id=\"/\"}[$__rate_interval]))  != 0",
-          "hide": false,
-          "interval": "",
           "legendFormat": "Packets",
           "refId": "Packets"
-        }
-      ],
-      "thresholds": [
-        {
-          "colorMode": "critical",
-          "op": "lt",
-          "value": 0.20000000298023224,
-          "visible": true
         }
       ],
       "title": "Correlated Inbound Network Throughput",
@@ -4935,7 +4778,6 @@
       },
       "id": 126,
       "isNew": false,
-      "links": [],
       "options": {
         "legend": {
           "calcs": [
@@ -4952,7 +4794,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "targets": [
         {
@@ -4960,10 +4802,7 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "exemplar": true,
           "expr": "max(rate(container_oom_events_total{id=\"/\"}[$__rate_interval])) != 0",
-          "hide": false,
-          "interval": "",
           "intervalFactor": 1,
           "legendFormat": "max",
           "refId": "max"
@@ -4973,10 +4812,7 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "exemplar": true,
           "expr": "avg(rate(container_oom_events_total{id=\"/\"}[$__rate_interval])) != 0",
-          "hide": false,
-          "interval": "",
           "intervalFactor": 1,
           "legendFormat": "avg",
           "refId": "avg"
@@ -4986,10 +4822,7 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "exemplar": true,
           "expr": "min(rate(container_oom_events_total{id=\"/\"}[$__rate_interval])) != 0",
-          "hide": false,
-          "interval": "",
           "intervalFactor": 1,
           "legendFormat": "min",
           "refId": "min"
@@ -5113,7 +4946,6 @@
       },
       "id": 168,
       "isNew": false,
-      "links": [],
       "options": {
         "legend": {
           "calcs": [
@@ -5130,7 +4962,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "targets": [
         {
@@ -5138,10 +4970,7 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "exemplar": true,
           "expr": "max(rate(container_fs_sector_writes_total{id=\"/\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\", }[$__rate_interval]))  != 0",
-          "hide": false,
-          "interval": "",
           "legendFormat": "max",
           "refId": "max"
         },
@@ -5150,10 +4979,7 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "exemplar": true,
           "expr": "avg(rate(container_fs_sector_writes_total{id=\"/\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\", }[$__rate_interval]))  != 0",
-          "hide": false,
-          "interval": "",
           "legendFormat": "avg",
           "refId": "avg"
         },
@@ -5162,10 +4988,7 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "exemplar": true,
           "expr": "min(rate(container_fs_sector_writes_total{id=\"/\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\", }[$__rate_interval]))  != 0",
-          "hide": false,
-          "interval": "",
           "legendFormat": "min",
           "refId": "min"
         }
@@ -5288,7 +5111,6 @@
       },
       "id": 169,
       "isNew": false,
-      "links": [],
       "options": {
         "legend": {
           "calcs": [
@@ -5305,7 +5127,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "targets": [
         {
@@ -5313,10 +5135,7 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "exemplar": true,
           "expr": "max(rate(container_fs_sector_reads_total{id=\"/\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\", }[$__rate_interval]))  != 0",
-          "hide": false,
-          "interval": "",
           "legendFormat": "max",
           "refId": "max"
         },
@@ -5325,10 +5144,7 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "exemplar": true,
           "expr": "avg(rate(container_fs_sector_reads_total{id=\"/\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\", }[$__rate_interval]))  != 0",
-          "hide": false,
-          "interval": "",
           "legendFormat": "avg",
           "refId": "avg"
         },
@@ -5337,10 +5153,7 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "exemplar": true,
           "expr": "min(rate(container_fs_sector_reads_total{id=\"/\", device=~\"^(^$)|(overlay_.*)|(/dev/mapper/.*)$\", }[$__rate_interval]))  != 0",
-          "hide": false,
-          "interval": "",
           "legendFormat": "min",
           "refId": "min"
         }

@@ -18,16 +18,11 @@ package client
 
 import (
 	frisbeev1alpha1 "github.com/carv-ics-forth/frisbee/api/v1alpha1"
-	"github.com/carv-ics-forth/frisbee/pkg/kubexec"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-// check in compile time if interface is implemented
-// var _ Client = (*APIClient)(nil)
 
 var scheme = runtime.NewScheme()
 
@@ -40,15 +35,10 @@ func init() {
 func NewDirectAPIClient(client client.Client) APIClient {
 	return APIClient{
 		TestManagementClient: NewTestManagementClient(client),
-		TestInspectionClient: NewTestInspectionClient(client, kubexec.NewExecutor(controllerruntime.GetConfigOrDie())),
 	}
 }
 
 // APIClient struct managing proxy API Client dependencies.
 type APIClient struct {
 	TestManagementClient
-	TestInspectionClient
-	// TestSuiteClient
-	// ExecutorClient
-	// WebhookClient
 }

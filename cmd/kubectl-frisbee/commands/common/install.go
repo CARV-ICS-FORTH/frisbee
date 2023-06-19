@@ -17,9 +17,14 @@ limitations under the License.
 package common
 
 import (
+	"log"
+	"os"
+	"path/filepath"
 	"strings"
 
+	embed "github.com/carv-ics-forth/frisbee"
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/env"
+	"github.com/carv-ics-forth/frisbee/pkg/process"
 	"github.com/kubeshop/testkube/pkg/ui"
 	"github.com/spf13/cobra"
 )
@@ -122,4 +127,83 @@ func installCertManager() error {
 	ui.Info("Helm install jetstack output", string(out))
 
 	return nil
+}
+
+/*---------------------------------------------------*
+ 	Install PDF-Exporter.
+	This is required for generating pdfs from Grafana.
+ *---------------------------------------------------*/
+
+const (
+	puppeteer = "puppeteer@19.11.0"
+)
+
+type PDFExporter string
+
+var (
+	// DefaultPDFExport points to either FastPDFExporter or LongPDFExporter.
+	DefaultPDFExport PDFExporter
+
+	// FastPDFExporter is fast on individual panels, but does not render dashboard with many panels.
+	FastPDFExporter PDFExporter
+
+	// LongPDFExporter can render dashboards with many panels, but it's a bit slow.
+	LongPDFExporter PDFExporter
+)
+
+func InstallPDFExporter(location string) {
+	/*---------------------------------------------------*
+	 * Ensure that the Cache Dir exists.
+	 *---------------------------------------------------*/
+	_, err := os.Open(location)
+	if err != nil && !os.IsNotExist(err) {
+		ui.Failf("failed to open cache directory " + location)
+	}
+
+	err = os.MkdirAll(location, os.ModePerm)
+	ui.ExitOnError("create cache directory:"+location, err)
+
+	/*---------------------------------------------------*
+	 * Install NodeJS dependencies
+	 *---------------------------------------------------*/
+	ui.Info("Installing PDFExporter ...")
+
+	oldPwd, _ := os.Getwd()
+
+	err = os.Chdir(location)
+	ui.ExitOnError("Installing PDFExporter ", err)
+
+	command := []string{
+		env.Default.NPM(), "list", location,
+		"|", "grep", puppeteer, "||",
+		env.Default.NPM(), "install", puppeteer, "--package-lock", "--prefix", location,
+	}
+
+	_, err = process.Execute("sh", "-c", strings.Join(command, " "))
+	ui.ExitOnError(" --> Installing Puppeteer", err)
+
+	/*---------------------------------------------------*
+	 * Copy the embedded pdf exporter into fs
+	 *---------------------------------------------------*/
+	err = embed.CopyLocallyIfNotExists(embed.Hack, location)
+	ui.ExitOnError(" --> Install PDF Renderer", err)
+
+	err = os.Chdir(oldPwd)
+	ui.ExitOnError("Returning to "+oldPwd, err)
+
+	/*---------------------------------------------------*
+	 * Update path to the pdf-exporter binary
+	 *---------------------------------------------------*/
+	FastPDFExporter = PDFExporter(filepath.Join(location, "hack/pdf-exporter/fast-generator.js"))
+	LongPDFExporter = PDFExporter(filepath.Join(location, "hack/pdf-exporter/long-dashboards.js"))
+
+	if err := os.Setenv("PATH", os.Getenv("PATH")+":"+location); err != nil {
+		log.Fatal(err)
+	}
+
+	if err := os.Setenv("NODE_PATH", os.Getenv("NODE_PATH")+":"+location); err != nil {
+		log.Fatal(err)
+	}
+
+	ui.Success("PDFExporter is installed at ", location)
 }

@@ -19,7 +19,6 @@ package tests
 import (
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/common"
-	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/completion"
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/env"
 	"github.com/kubeshop/testkube/pkg/ui"
 	"github.com/spf13/cobra"
@@ -28,13 +27,13 @@ import (
 func SaveTestCmdCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	switch {
 	case len(args) == 0:
-		return completion.CompleteScenarios(cmd, args, toComplete)
+		return common.CompleteScenarios(cmd, args, toComplete)
 
 	case len(args) == 1:
 		return nil, cobra.ShellCompDirectiveFilterDirs
 
 	default:
-		return completion.CompleteFlags(cmd, args, toComplete)
+		return common.CompleteFlags(cmd, args, toComplete)
 	}
 }
 

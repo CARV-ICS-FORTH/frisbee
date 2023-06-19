@@ -1,6 +1,8 @@
 #!/bin/bash
 
-set -eux
+set -eu
+set -o pipefail
+trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
 
 export NAMESPACE=network-partition
 export SCENARIO=$(dirname -- "$0")/manifest.yml
@@ -10,13 +12,13 @@ export DEPENDENCIES=(./charts/system/ ./charts/databases/cockroachdb ./charts/da
 # Prepare the Reporting folder
 mkdir -p "${REPORTS}"
 
-# Submit the scenario and follow logs
-kubectl-frisbee submit test "${NAMESPACE}" "${SCENARIO}" "${DEPENDENCIES[@]}"
-
 # Copy the manifest
 cp "${SCENARIO}" "${REPORTS}"
 
-# wait for the scenario to be submitted
+# Submit the scenario and follow logs
+kubectl-frisbee submit test "${NAMESPACE}" "${SCENARIO}" "${DEPENDENCIES[@]}"
+
+# Give a headstart
 sleep 10
 
 # Report the scenario

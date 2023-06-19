@@ -151,12 +151,12 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return lifecycle.Pending(ctx, r, &scenario, "Initializing the testing environment")
 
 	case v1alpha1.PhasePending:
-		actionList, nextRun, err := r.NextJobs(&scenario)
+		nextActionList, nextRun, err := r.NextJobs(&scenario)
 		if err != nil {
 			return lifecycle.Failed(ctx, r, &scenario, errors.Wrapf(err, "scheduling error"))
 		}
 
-		if len(actionList) == 0 {
+		if len(nextActionList) == 0 {
 			if nextRun.IsZero() {
 				// nothing to do on this cycle. wait the next cycle trigger by watchers.
 				return common.Stop(r, req)
@@ -165,7 +165,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			return common.RequeueAfter(r, req, time.Until(nextRun))
 		}
 
-		if err := r.RunActions(ctx, &scenario, actionList); err != nil {
+		if err := r.RunActions(ctx, &scenario, nextActionList); err != nil {
 			return lifecycle.Failed(ctx, r, &scenario, errors.Wrapf(err, "actions failed"))
 		}
 
@@ -370,7 +370,7 @@ func (r *Controller) HasFailed(ctx context.Context, scenario *v1alpha1.Scenario)
 	return common.Update(ctx, r, scenario)
 }
 
-func (r *Controller) RunActions(ctx context.Context, scenario *v1alpha1.Scenario, actionList []v1alpha1.Action) error {
+func (r *Controller) RunActions(ctx context.Context, scenario *v1alpha1.Scenario, nextActionList []v1alpha1.Action) error {
 	if scenario.Status.GrafanaEndpoint == "" {
 		r.Logger.Info("Grafana endpoint is empty. Skip telemetry.", "scenario", scenario.GetName())
 	} else {
@@ -379,7 +379,7 @@ func (r *Controller) RunActions(ctx context.Context, scenario *v1alpha1.Scenario
 		}
 	}
 
-	for _, action := range actionList {
+	for _, action := range nextActionList {
 		if action.Assert.HasMetricsExpr() {
 			// Assert belong to the top-level workflow. Not to the job
 			if err := expressions.SetAlert(ctx, scenario, action.Assert.Metrics); err != nil {

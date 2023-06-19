@@ -99,9 +99,6 @@
         "showLine": false,
         "step": "",
         "tagKeys": "",
-        "tags": [
-          "run"
-        ],
         "tagsField": "",
         "target": {
           "limit": 100,
@@ -153,7 +150,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 10,
+  "id": 1,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -245,7 +242,7 @@
         "showThresholdMarkers": true,
         "text": {}
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "targets": [
         {
@@ -320,7 +317,7 @@
         "showThresholdMarkers": true,
         "text": {}
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "targets": [
         {
           "datasource": {
@@ -396,7 +393,7 @@
         "showThresholdMarkers": true,
         "text": {}
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "targets": [
         {
@@ -471,7 +468,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "targets": [
         {
@@ -584,7 +581,7 @@
         "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "sparkline": {},
       "targets": [
@@ -674,7 +671,7 @@
         "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "sparkline": {},
       "targets": [
@@ -748,7 +745,7 @@
         "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "targets": [
         {
           "datasource": {
@@ -818,7 +815,7 @@
         "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "targets": [
         {
           "datasource": {
@@ -905,7 +902,7 @@
         "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "sparkline": {},
       "targets": [
@@ -992,7 +989,7 @@
         "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "sparkline": {},
       "targets": [
@@ -1081,7 +1078,7 @@
         "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "sparkline": {},
       "targets": [
@@ -1168,7 +1165,7 @@
         "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "sparkline": {},
       "targets": [
@@ -1230,7 +1227,7 @@
         "tags": [],
         "viewMode": "list"
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "targets": [
         {
@@ -1351,7 +1348,7 @@
         },
         "showHeader": true
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "scroll": false,
       "span": 0,
       "targets": [
@@ -1435,7 +1432,7 @@
         "showTime": true,
         "showUser": true
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "targets": [
         {
           "datasource": {
@@ -1576,7 +1573,7 @@
               },
               {
                 "id": "unit",
-                "value": "s"
+                "value": "short"
               },
               {
                 "id": "custom.axisLabel",
@@ -1633,7 +1630,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "targets": [
         {
           "datasource": {
@@ -1848,7 +1845,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "targets": [
         {
@@ -2013,7 +2010,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "targets": [
         {
@@ -2191,7 +2188,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "targets": [
         {
@@ -2360,7 +2357,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "targets": [
         {
@@ -2575,7 +2572,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "targets": [
         {
@@ -2778,7 +2775,7 @@
         "showUnfilled": true,
         "text": {}
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "targets": [
         {
           "datasource": {
@@ -2869,7 +2866,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "targets": [
         {
           "datasource": {
@@ -2901,7 +2898,6 @@
       ],
       "title": "IO Traffic (Bytes)",
       "transformations": [],
-      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -2959,7 +2955,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "targets": [
         {
           "datasource": {
@@ -2991,7 +2987,6 @@
       ],
       "title": "Total IO Traffic (Bytes)",
       "transformations": [],
-      "transparent": false,
       "type": "piechart"
     },
     {
@@ -3068,7 +3063,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "targets": [
         {
           "datasource": {
@@ -3100,7 +3095,6 @@
       ],
       "title": "IO Traffic (Operations)",
       "transformations": [],
-      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -3158,7 +3152,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "targets": [
         {
           "datasource": {
@@ -3190,7 +3184,6 @@
       ],
       "title": "Total IO Traffic (Operations)",
       "transformations": [],
-      "transparent": false,
       "type": "piechart"
     },
     {
@@ -3274,7 +3267,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "targets": [
         {
@@ -3307,7 +3300,6 @@
       "thresholds": [],
       "title": "IO Throughput (Filesystem)",
       "transformations": [],
-      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -3393,7 +3385,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "targets": [
         {
@@ -3426,7 +3418,6 @@
       "thresholds": [],
       "title": "IOPS (Filesystem)",
       "transformations": [],
-      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -3511,7 +3502,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "targets": [
         {
@@ -3547,7 +3538,6 @@
       "thresholds": [],
       "title": "Estimated IO Request Size",
       "transformations": [],
-      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -3631,7 +3621,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "targets": [
         {
@@ -3664,7 +3654,6 @@
       "thresholds": [],
       "title": "Average Time spent in IO",
       "transformations": [],
-      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -3771,7 +3760,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "targets": [
         {
           "datasource": {
@@ -3803,7 +3792,6 @@
       ],
       "title": "Network Traffic (Bytes)",
       "transformations": [],
-      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -3861,7 +3849,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "targets": [
         {
           "datasource": {
@@ -3893,7 +3881,6 @@
       ],
       "title": "Total Network Traffic (Bytes)",
       "transformations": [],
-      "transparent": false,
       "type": "piechart"
     },
     {
@@ -3970,7 +3957,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "targets": [
         {
           "datasource": {
@@ -4002,7 +3989,6 @@
       ],
       "title": "Network Traffic (Packets)",
       "transformations": [],
-      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -4060,7 +4046,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "targets": [
         {
           "datasource": {
@@ -4092,7 +4078,6 @@
       ],
       "title": "Total Network Traffic (Packets)",
       "transformations": [],
-      "transparent": false,
       "type": "piechart"
     },
     {
@@ -4228,7 +4213,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "targets": [
         {
@@ -4404,7 +4389,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "targets": [
         {
@@ -4586,7 +4571,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "targets": [
         {
@@ -4764,7 +4749,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "targets": [
         {
@@ -4920,7 +4905,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "targets": [
         {
@@ -5098,7 +5083,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "targets": [
         {
@@ -5273,7 +5258,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.2.1",
       "span": 0,
       "targets": [
         {
@@ -5420,6 +5405,6 @@
   "timezone": "",
   "title": "Frisbee Console: Selectable",
   "uid": "selectable",
-  "version": 2,
+  "version": 1,
   "weekStart": ""
 }

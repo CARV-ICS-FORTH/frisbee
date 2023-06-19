@@ -56,15 +56,6 @@ spec:
             set -eum
             cockroach init --insecure
 
-      import-tpcc:
-        container: main
-        command:
-          - /bin/sh   # Run shell
-          - -c        # Read from string
-          - |         # Multi-line str
-            set -eum
-            ./cockroach workload fixtures import tpcc --warehouses=200 --fks=false --checks=false
-
       bitrot:
         container: main
         command:
@@ -99,26 +90,8 @@ spec:
               dd if=/dev/urandom of=${file}.sst seek=256 count=128 bs=1 conv=notrunc
             done
 
-      run-workload:
-        container: main
-        command:
-          - /bin/sh   # Run shell
-          - -c        # Read from string
-          - |         # Multi-line str
-            set -eum
-            ./cockroach workload run tpcc --warehouses=100 --tolerate-errors
 
-
-      test2-import-tpcc:
-        container: main
-        command:
-          - /bin/sh   # Run shell
-          - -c        # Read from string
-          - |         # Multi-line str
-            set -eum
-            ./cockroach workload fixtures import tpcc --warehouses=1
-
-      test2-wait-for-3x-replication:
+      wait-for-3x-replication:
         container: main
         command:
           - /bin/sh   # Run shell
@@ -150,13 +123,3 @@ spec:
               echo "Sleep"
               sleep 2
             done
-
-      test2-run-workload:
-        container: main
-        command:
-          - /bin/sh   # Run shell
-          - -c        # Read from string
-          - |         # Multi-line str
-            set -eum
-
-            ./cockroach workload run tpcc --warehouses=1 --wait=false --histograms=/stats.json --duration=30m

@@ -21,9 +21,9 @@ spec:
       depends: { running: [ server ] }
       cluster:
         templateRef: fedbed.client
-        resources:                          # Change values here
-          total: { cpu: 40, mem: 40Gi }
-          distribution: { name: uniform }
+#        resources:                          # Change values here
+#          total: { cpu: 75}
+#          distribution: { name: normal}
         inputs:
           - { fl_server: server,  total_nodes: 20, node_id: 0 }
           - { fl_server: server,  total_nodes: 20, node_id: 1 }

@@ -23,13 +23,10 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
-	embed "github.com/carv-ics-forth/frisbee"
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/common"
-	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/completion"
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/env"
 	"github.com/carv-ics-forth/frisbee/pkg/grafana"
 	"github.com/carv-ics-forth/frisbee/pkg/home"
@@ -44,8 +41,6 @@ import (
 
 const (
 	User = "'':''" // Not really needed since we have no authentication in Grafana.
-
-	Timeout = "24h"
 )
 
 var DefaultDashboards = []string{"summary", "singleton"}
@@ -53,13 +48,13 @@ var DefaultDashboards = []string{"summary", "singleton"}
 func ReportTestCmdCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	switch {
 	case len(args) == 0:
-		return completion.CompleteScenarios(cmd, args, toComplete)
+		return common.CompleteScenarios(cmd, args, toComplete)
 
 	case len(args) == 1:
 		return nil, cobra.ShellCompDirectiveFilterDirs
 
 	default:
-		return completion.CompleteFlags(cmd, args, toComplete)
+		return common.CompleteFlags(cmd, args, toComplete)
 	}
 }
 
@@ -93,7 +88,7 @@ func ReportTestCmdFlags(cmd *cobra.Command, options *ReportTestCmdOptions) {
 	// Dashboards
 	cmd.Flags().StringSliceVar(&options.Dashboards, "dashboard", DefaultDashboards, "The dashboard(s) to generate report from.")
 
-	if err := cmd.RegisterFlagCompletionFunc("dashboard", completion.CompleteServices); err != nil {
+	if err := cmd.RegisterFlagCompletionFunc("dashboard", common.CompleteServices); err != nil {
 		log.Fatal(err)
 	}
 
@@ -156,7 +151,7 @@ func NewReportTestCmd() *cobra.Command {
 			if options.Wait {
 				ui.Info("Waiting for scenario actions to be completed...")
 
-				err = common.WaitForCondition(testName, v1alpha1.ConditionAllJobsAreCompleted, Timeout)
+				err = common.WaitForCondition(cmd.Context(), testName, v1alpha1.ConditionAllJobsAreCompleted, common.TestTimeout)
 				ui.ExitOnError("abnormal termination. err:", err)
 
 				// get the new status
@@ -187,7 +182,7 @@ func NewReportTestCmd() *cobra.Command {
 			 * Fix dependencies for PDF Generations
 			 *---------------------------------------------------*/
 			if options.PDF || options.AggregatedPDF {
-				InstallPDFExporter(options.RepositoryCache)
+				common.InstallPDFExporter(options.RepositoryCache)
 
 				// needed because the pdf-exporter lives in the installation cache.
 				if err := os.Chdir(options.RepositoryCache); err != nil {
@@ -222,11 +217,9 @@ func NewReportTestCmd() *cobra.Command {
 				 * Generate PDFs
 				 *---------------------------------------------------*/
 				if options.PDF {
-					DefaultPDFExport = FastPDFExporter
-
 					grafanaEndpoint := grafana.BuildURL(scenario.Status.GrafanaEndpoint, dashboardUID, fromTS, toTS, "&kiosk")
 
-					err = SavePDFs(cmd.Context(), grafanaClient, grafanaEndpoint, dashboardDir, dashboardUID)
+					err = SavePDFs(cmd.Context(), common.FastPDFExporter, grafanaClient, grafanaEndpoint, dashboardDir, dashboardUID)
 					ui.ExitOnError("Saving PDF to: "+dashboardDir+" for "+dashboardUID, err)
 				}
 
@@ -234,13 +227,11 @@ func NewReportTestCmd() *cobra.Command {
 				 * Generate Aggregated PDF
 				 *---------------------------------------------------*/
 				if options.AggregatedPDF {
-					DefaultPDFExport = LongPDFExporter
-
 					uri := grafana.BuildURL(scenario.Status.GrafanaEndpoint, dashboardUID, fromTS, toTS, "")
 
 					aggregatedFile := filepath.Join(dashboardDir, "__aggregated__.pdf")
 
-					err = SavePDF(uri, aggregatedFile)
+					err = SavePDF(common.LongPDFExporter, uri, aggregatedFile)
 					ui.ExitOnError("Saving Aggregated PDF to: "+dashboardDir, err)
 				}
 			}
@@ -253,7 +244,7 @@ func NewReportTestCmd() *cobra.Command {
 }
 
 // SavePDF extracts the pdf from Grafana and stores it to the destination.
-func SavePDF(dashboardURI string, dstFile string) error {
+func SavePDF(exporter common.PDFExporter, dashboardURI string, dstFile string) error {
 	// 	Validate the URI. This is because if the URI is wrong, the
 	// nodejs will block forever.
 	if _, err := url.ParseRequestURI(dashboardURI); err != nil {
@@ -261,7 +252,7 @@ func SavePDF(dashboardURI string, dstFile string) error {
 	}
 
 	command := []string{
-		string(DefaultPDFExport),
+		string(exporter),
 		dashboardURI,
 		User,
 		dstFile,
@@ -277,7 +268,7 @@ func SavePDF(dashboardURI string, dstFile string) error {
 	return err
 }
 
-func SavePDFs(ctx context.Context, grafanaClient *grafana.Client, dashboardURI, destDir, dashboardUID string) error {
+func SavePDFs(ctx context.Context, exporter common.PDFExporter, grafanaClient *grafana.Client, dashboardURI, destDir, dashboardUID string) error {
 	/*---------------------------------------------------*
 	 * Query Grafana for Available Panels.
 	 *---------------------------------------------------*/
@@ -297,7 +288,7 @@ func SavePDFs(ctx context.Context, grafanaClient *grafana.Client, dashboardURI, 
 		panelURI := fmt.Sprintf("%s&viewPanel=%d", dashboardURI, panel.ID)
 		file := filepath.Join(destDir, slug.Make(panel.Title)+".pdf")
 
-		if err := SavePDF(panelURI, file); err != nil {
+		if err := SavePDF(exporter, panelURI, file); err != nil {
 			merr = multierror.Append(merr,
 				errors.Wrapf(err, "cannot save PDF for panel '%d (%s)'", panel.ID, panel.Title),
 			)
@@ -320,85 +311,6 @@ func SaveData(ctx context.Context, grafanaClient *grafana.Client, url *grafana.U
 	}
 
 	return nil
-}
-
-/*---------------------------------------------------*
- 	Install PDF-Exporter.
-	This is required for generating pdfs from Grafana.
- *---------------------------------------------------*/
-
-const (
-	puppeteer = "puppeteer@19.11.0"
-)
-
-type PDFExporter string
-
-var (
-	// DefaultPDFExport points to either FastPDFExporter or LongPDFExporter.
-	DefaultPDFExport PDFExporter
-
-	// FastPDFExporter is fast on individual panels, but does not render dashboard with many panels.
-	FastPDFExporter PDFExporter
-
-	// LongPDFExporter can render dashboards with many panels, but it's a bit slow.
-	LongPDFExporter PDFExporter
-)
-
-func InstallPDFExporter(location string) {
-	/*---------------------------------------------------*
-	 * Ensure that the Cache Dir exists.
-	 *---------------------------------------------------*/
-	_, err := os.Open(location)
-	if err != nil && !os.IsNotExist(err) {
-		ui.Failf("failed to open cache directory " + location)
-	}
-
-	err = os.MkdirAll(location, os.ModePerm)
-	ui.ExitOnError("create cache directory:"+location, err)
-
-	/*---------------------------------------------------*
-	 * Install NodeJS dependencies
-	 *---------------------------------------------------*/
-	ui.Info("Installing PDFExporter ...")
-
-	oldPwd, _ := os.Getwd()
-
-	err = os.Chdir(location)
-	ui.ExitOnError("Installing PDFExporter ", err)
-
-	command := []string{
-		env.Default.NPM(), "list", location,
-		"|", "grep", puppeteer, "||",
-		env.Default.NPM(), "install", puppeteer, "--package-lock", "--prefix", location,
-	}
-
-	_, err = process.Execute("sh", "-c", strings.Join(command, " "))
-	ui.ExitOnError(" --> Installing Puppeteer", err)
-
-	/*---------------------------------------------------*
-	 * Copy the embedded pdf exporter into fs
-	 *---------------------------------------------------*/
-	err = embed.CopyLocallyIfNotExists(embed.Hack, location)
-	ui.ExitOnError(" --> Install PDF Renderer", err)
-
-	err = os.Chdir(oldPwd)
-	ui.ExitOnError("Returning to "+oldPwd, err)
-
-	/*---------------------------------------------------*
-	 * Update path to the pdf-exporter binary
-	 *---------------------------------------------------*/
-	FastPDFExporter = PDFExporter(filepath.Join(location, "hack/pdf-exporter/fast-generator.js"))
-	LongPDFExporter = PDFExporter(filepath.Join(location, "hack/pdf-exporter/long-dashboards.js"))
-
-	if err := os.Setenv("PATH", os.Getenv("PATH")+":"+location); err != nil {
-		log.Fatal(err)
-	}
-
-	if err := os.Setenv("NODE_PATH", os.Getenv("NODE_PATH")+":"+location); err != nil {
-		log.Fatal(err)
-	}
-
-	ui.Success("PDFExporter is installed at ", location)
 }
 
 // FindTimeline parses the scenario to find timeline that make sense (formatted into time.UnixMilli).
@@ -425,19 +337,19 @@ func FindTimeline(scenario *v1alpha1.Scenario) (from int64, to int64) {
 	if scenario.Status.Phase == v1alpha1.PhaseSuccess {
 		success := meta.FindStatusCondition(scenario.Status.Conditions, v1alpha1.ConditionAllJobsAreCompleted.String())
 
-		return from, success.LastTransitionTime.Time.UnixMilli()
+		return from, success.LastTransitionTime.Time.Add(GraceMonitoringPeriod).UnixMilli()
 	}
 
 	if scenario.Status.Phase == v1alpha1.PhaseFailed {
 		// Failure may come from various reasons. Unfortunately we have to go through all of them.
 		unexpected := meta.FindStatusCondition(scenario.Status.Conditions, v1alpha1.ConditionJobUnexpectedTermination.String())
 		if unexpected != nil {
-			return from, unexpected.LastTransitionTime.Time.UnixMilli()
+			return from, unexpected.LastTransitionTime.Time.Add(GraceMonitoringPeriod).UnixMilli()
 		}
 
 		assert := meta.FindStatusCondition(scenario.Status.Conditions, v1alpha1.ConditionAssertionError.String())
 		if assert != nil {
-			return from, assert.LastTransitionTime.Time.UnixMilli()
+			return from, assert.LastTransitionTime.Time.Add(GraceMonitoringPeriod).UnixMilli()
 		}
 	}
 

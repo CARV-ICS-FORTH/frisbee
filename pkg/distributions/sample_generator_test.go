@@ -22,18 +22,37 @@ func Test_ProbabilityGenerator(t *testing.T) {
 		expected distributions.ProbabilitySlice
 	}{
 		{
-			name:     "uniform",
-			dist:     distributions.GenerateProbabilitySlice(Samples, distributions.NewUniform(1, Samples)),
+			name: "constant",
+			dist: distributions.GenerateProbabilitySliceFromSpec(Samples,
+				&v1alpha1.DistributionSpec{Name: "constant"},
+			),
+			expected: distributions.ProbabilitySlice{1, 1, 1, 1, 1},
+		},
+		{
+			name: "uniform",
+			dist: distributions.GenerateProbabilitySliceFromSpec(Samples,
+				&v1alpha1.DistributionSpec{Name: "uniform"},
+			),
 			expected: distributions.ProbabilitySlice{0.2, 0.2, 0.2, 0.2, 0.2},
 		},
 		{
-			name:     "normal",
-			dist:     distributions.GenerateProbabilitySlice(Samples, distributions.NewNormal(1, Samples)),
+			name: "normal",
+			dist: distributions.GenerateProbabilitySliceFromSpec(Samples,
+				&v1alpha1.DistributionSpec{Name: "normal"},
+			),
 			expected: distributions.ProbabilitySlice{0.19, 0.21, 0.21, 0.21, 0.19},
 		},
 		{
-			name:     "pareto",
-			dist:     distributions.GenerateProbabilitySlice(Samples, distributions.NewPareto(1, 0.1)),
+			name: "pareto",
+			dist: distributions.GenerateProbabilitySliceFromSpec(Samples,
+				&v1alpha1.DistributionSpec{
+					Name: "pareto",
+					DistParamsPareto: &v1alpha1.DistParamsPareto{
+						Scale: 1,
+						Shape: 0.1,
+					},
+				},
+			),
 			expected: distributions.ProbabilitySlice{0.46, 0.22, 0.14, 0.1, 0.08},
 		},
 	}
@@ -67,8 +86,39 @@ func Test_ResourceDistribution(t *testing.T) {
 		want v1alpha1.ResourceDistribution
 	}{
 		{
+			name: "constant",
+			dist: distributions.GenerateProbabilitySliceFromSpec(Nodes,
+				&v1alpha1.DistributionSpec{Name: "constant"},
+			),
+			args: args{total: total},
+			want: []corev1.ResourceList{
+				{
+					corev1.ResourceCPU:    resource.MustParse("40"),
+					corev1.ResourceMemory: resource.MustParse("40G"),
+				},
+				{
+					corev1.ResourceCPU:    resource.MustParse("40"),
+					corev1.ResourceMemory: resource.MustParse("40G"),
+				},
+				{
+					corev1.ResourceCPU:    resource.MustParse("40"),
+					corev1.ResourceMemory: resource.MustParse("40G"),
+				},
+				{
+					corev1.ResourceCPU:    resource.MustParse("40"),
+					corev1.ResourceMemory: resource.MustParse("40G"),
+				},
+				{
+					corev1.ResourceCPU:    resource.MustParse("40"),
+					corev1.ResourceMemory: resource.MustParse("40G"),
+				},
+			},
+		},
+		{
 			name: "uniform",
-			dist: distributions.GenerateProbabilitySlice(Nodes, distributions.NewUniform(1, Nodes)),
+			dist: distributions.GenerateProbabilitySliceFromSpec(Nodes,
+				&v1alpha1.DistributionSpec{Name: "uniform"},
+			),
 			args: args{total: total},
 			want: []corev1.ResourceList{
 				{
@@ -95,7 +145,9 @@ func Test_ResourceDistribution(t *testing.T) {
 		},
 		{
 			name: "normal",
-			dist: distributions.GenerateProbabilitySlice(Nodes, distributions.NewNormal(1, Nodes)),
+			dist: distributions.GenerateProbabilitySliceFromSpec(Nodes,
+				&v1alpha1.DistributionSpec{Name: "normal"},
+			),
 			args: args{total: total},
 			want: []corev1.ResourceList{
 				{
@@ -122,7 +174,15 @@ func Test_ResourceDistribution(t *testing.T) {
 		},
 		{
 			name: "pareto",
-			dist: distributions.GenerateProbabilitySlice(Nodes, distributions.NewPareto(1, 0.1)),
+			dist: distributions.GenerateProbabilitySliceFromSpec(Nodes,
+				&v1alpha1.DistributionSpec{
+					Name: "pareto",
+					DistParamsPareto: &v1alpha1.DistParamsPareto{
+						Scale: 1,
+						Shape: 0.1,
+					},
+				},
+			),
 			args: args{total: total},
 			want: []corev1.ResourceList{
 				{
@@ -181,8 +241,24 @@ func Test_TimelineDistribution(t *testing.T) {
 		want v1alpha1.Timeline
 	}{
 		{
+			name: "constant",
+			dist: distributions.GenerateProbabilitySliceFromSpec(Timesteps,
+				&v1alpha1.DistributionSpec{Name: "constant"},
+			),
+			args: args{total: total},
+			want: []metav1.Time{
+				{Time: startingTime.Add(300 * time.Second)},
+				{Time: startingTime.Add(600 * time.Second)},
+				{Time: startingTime.Add(900 * time.Second)},
+				{Time: startingTime.Add(1200 * time.Second)},
+				{Time: startingTime.Add(1500 * time.Second)},
+			},
+		},
+		{
 			name: "uniform",
-			dist: distributions.GenerateProbabilitySlice(Timesteps, distributions.NewUniform(1, Timesteps)),
+			dist: distributions.GenerateProbabilitySliceFromSpec(Timesteps,
+				&v1alpha1.DistributionSpec{Name: "uniform"},
+			),
 			args: args{total: total},
 			want: []metav1.Time{
 				{Time: startingTime.Add(60 * time.Second)},
@@ -194,7 +270,9 @@ func Test_TimelineDistribution(t *testing.T) {
 		},
 		{
 			name: "normal",
-			dist: distributions.GenerateProbabilitySlice(Timesteps, distributions.NewNormal(1, Timesteps)),
+			dist: distributions.GenerateProbabilitySliceFromSpec(Timesteps,
+				&v1alpha1.DistributionSpec{Name: "normal"},
+			),
 			args: args{total: total},
 			want: []metav1.Time{
 				{Time: startingTime.Add(57 * time.Second)},
@@ -206,7 +284,15 @@ func Test_TimelineDistribution(t *testing.T) {
 		},
 		{
 			name: "pareto",
-			dist: distributions.GenerateProbabilitySlice(Timesteps, distributions.NewPareto(1, 0.1)),
+			dist: distributions.GenerateProbabilitySliceFromSpec(Timesteps,
+				&v1alpha1.DistributionSpec{
+					Name: "pareto",
+					DistParamsPareto: &v1alpha1.DistParamsPareto{
+						Scale: 1,
+						Shape: 0.1,
+					},
+				},
+			),
 			args: args{total: total},
 			want: []metav1.Time{
 				{Time: startingTime.Add(138 * time.Second)},

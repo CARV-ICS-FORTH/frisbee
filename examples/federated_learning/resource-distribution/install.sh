@@ -4,7 +4,7 @@ set -eu
 set -o pipefail
 trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
 
-export NAMESPACE=parallel-workflows
+export NAMESPACE=resource-distribution
 export SCENARIO=$(dirname -- "$0")/manifest.yml
 export REPORTS=${HOME}/frisbee-reports/${NAMESPACE}/
 export DEPENDENCIES=(./charts/system/ ./charts/federated-learning/fedbed/)
@@ -16,10 +16,10 @@ mkdir -p "${REPORTS}"
 cp "${SCENARIO}" "${REPORTS}"
 
 # Submit the scenario and follow server logs
-kubectl-frisbee submit test "${NAMESPACE}" "${SCENARIO}" "${DEPENDENCIES[@]}" --logs wfa-server,wfb-server |& tee "${REPORTS}"/logs &
+kubectl-frisbee submit test "${NAMESPACE}" "${SCENARIO}" "${DEPENDENCIES[@]}" --logs server |& tee "${REPORTS}"/logs &
 
 # Give a headstart
 sleep 10
 
-# Download test report
+# Report the scenario
 kubectl-frisbee report test "${NAMESPACE}" "${REPORTS}" --pdf --data --aggregated-pdf --wait

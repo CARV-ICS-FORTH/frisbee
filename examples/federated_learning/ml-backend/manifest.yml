@@ -4,7 +4,7 @@
 apiVersion: frisbee.dev/v1alpha1
 kind: Scenario
 metadata:
-  name: mnist-python
+  name: backend
 spec:
   actions:
     # Step 1: Create FedBed server
@@ -13,7 +13,7 @@ spec:
       service:
         templateRef: fedbed.server
         inputs:
-          - { dataset: "MNIST", backend: "python" } # Change values here
+          - { dataset: "MNIST", backend: "pytorch" } # Change values here
 
     # Step 2: Create FedBed clients
     - action: Cluster
@@ -22,7 +22,7 @@ spec:
       cluster:
         templateRef: fedbed.client
         inputs:
-          - { fl_server: server, dataset: "MNIST", backend: "python" } # Change values here
+          - { fl_server: server, dataset: "MNIST", backend: "pytorch" } # Change values here
 
     # Teardown
     - action: Delete

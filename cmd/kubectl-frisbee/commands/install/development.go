@@ -21,7 +21,6 @@ import (
 	"net"
 	"os"
 
-	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/completion"
 	"github.com/carv-ics-forth/frisbee/pkg/netutils"
 	"github.com/carv-ics-forth/frisbee/pkg/process"
 
@@ -41,7 +40,7 @@ func NewInstallDevelopmentCmdCompletion(cmd *cobra.Command, args []string, toCom
 		return []string{netutils.GetOutboundIP().String()}, cobra.ShellCompDirectiveNoFileComp
 
 	default:
-		return completion.CompleteFlags(cmd, args, toComplete)
+		return common.CompleteFlags(cmd, args, toComplete)
 	}
 }
 

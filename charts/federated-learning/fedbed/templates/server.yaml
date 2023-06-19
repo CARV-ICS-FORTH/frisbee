@@ -71,16 +71,15 @@ spec:
       #
       # Push round events to grafana
       #
-
       - name: annotator
-        image: alpine/curl:latest
+        image: icsforth/annotator:latest
         volumeMounts:
           - name: logs
             mountPath: /fl-logs/
         command:
-          - /bin/sh   # Run shell
-          - -c        # Read from string
-          - |         # Multi-line str
+          - /bin/bash
+          - -c
+          - |
             set -eux
 
             export logfile=/fl-logs/server.log
@@ -98,16 +97,24 @@ spec:
 
               annotation=$(echo '{"tags":["app"],"text":"'${EVENTCNT}'"}')
 
-              curl -s -H "Content-Type: application/json" -X POST -d ${annotation} ${GRAFANA}/api/annotations
+              curl --connect-timeout 5 \
+              --max-time 10 \
+              --retry 5 \
+              --retry-delay 0 \
+              --retry-max-time 40 \
+              -H "Content-Type: application/json" \
+              -X POST \
+              -d ${annotation} \
+              ${GRAFANA}/api/annotations
 
               echo -e "\n--"
             done
 
-
-
-
+    #
+    # Block waiting for a specific round
+    #
     callables:
-      wait-for-round: # block waiting for a specific round
+      wait-for-round:
         container: main
         command:
           - /bin/bash

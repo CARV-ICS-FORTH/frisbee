@@ -12,7 +12,7 @@ spec:
       service:
         templateRef: fedbed.server
         inputs:
-          - { backend: "tensorflow", min_fit_clients: 4, min_available_clients: 5 }
+          - { backend: "pytorch", min_fit_clients: 4, min_available_clients: 5 }
 
     # Step 2: Create FedBed clients
     - action: Cluster
@@ -24,11 +24,11 @@ spec:
           total: { cpu: 10, mem: 40Gi }
           distribution: { name: uniform }
         inputs:
-          - { fl_server: server, backend: "tensorflow",  total_nodes: 5, node_id: 0 }
-          - { fl_server: server, backend: "tensorflow",  total_nodes: 5, node_id: 1 }
-          - { fl_server: server, backend: "tensorflow",  total_nodes: 5, node_id: 2 }
-          - { fl_server: server, backend: "tensorflow",  total_nodes: 5, node_id: 3 }
-          - { fl_server: server, backend: "tensorflow",  total_nodes: 5, node_id: 4 }
+          - { fl_server: server, backend: "pytorch",  total_nodes: 5, node_id: 0 }
+          - { fl_server: server, backend: "pytorch",  total_nodes: 5, node_id: 1 }
+          - { fl_server: server, backend: "pytorch",  total_nodes: 5, node_id: 2 }
+          - { fl_server: server, backend: "pytorch",  total_nodes: 5, node_id: 3 }
+          - { fl_server: server, backend: "pytorch",  total_nodes: 5, node_id: 4 }
         tolerate:
           failedJobs: 1
 

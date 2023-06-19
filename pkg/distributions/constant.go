@@ -23,9 +23,7 @@ type Constant struct {
 
 // NewConstant creates a new Constant distribution.
 func NewConstant() *Constant {
-	return &Constant{
-		Number{LastValue: 1},
-	}
+	return &Constant{}
 }
 
 // Next computes the value of the probability density function at x.

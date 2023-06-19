@@ -4,13 +4,18 @@
 
 ### Changed defaults / behaviours
 - Upgrade to Grafana v9.4.7 in order to avoid issues with locking database (https://github.com/grafana/grafana/issues/60703)
+- Change Grafana requirements to 2 CPU and 14 Gi memory.
+- Separate the timeouts for Kubernetes API, Grafana, and Interactions (logs, reports).
 - ...
 
 ### New Features & Functionality
 - Upgrade API to Kubernetes v0.27.2. Upgrade all other deps to the latest version.
+- Fixed kubectl-frisbee to monitor multiple pods in parallel.
 - ...
 
 ## Bug Fixes
+- Added --network host to "make docker-build" to fix the network discovery issues.
+- Fix the Constant distribution. It was returning normalized values.
 - ...
 
 ## 1.0.40 \[2023-05-23\]
