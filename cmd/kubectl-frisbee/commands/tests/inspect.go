@@ -21,7 +21,6 @@ import (
 	"os"
 
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/common"
-	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/completion"
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/env"
 	"github.com/kubeshop/testkube/pkg/ui"
 	"github.com/spf13/cobra"
@@ -31,10 +30,10 @@ func InspectTestCmdCompletion(cmd *cobra.Command, args []string, toComplete stri
 	// args completion
 	switch {
 	case len(args) == 0:
-		return completion.CompleteScenarios(cmd, args, toComplete)
+		return common.CompleteScenarios(cmd, args, toComplete)
 
 	default:
-		return completion.CompleteFlags(cmd, args, toComplete)
+		return common.CompleteFlags(cmd, args, toComplete)
 	}
 }
 
@@ -59,14 +58,14 @@ func InspectTestCmdFlags(cmd *cobra.Command, options *InspectTestCmdOptions) {
 	// shell
 	cmd.Flags().StringVar(&options.Shell, "shell", "", "opens a shell to a running container")
 
-	if err := cmd.RegisterFlagCompletionFunc("shell", completion.CompleteServices); err != nil {
+	if err := cmd.RegisterFlagCompletionFunc("shell", common.CompleteServices); err != nil {
 		log.Fatal(err)
 	}
 
 	// logs
 	cmd.Flags().StringSliceVarP(&options.Logs, "logs", "l", nil, "show logs output from executor pod (if unsure, use 'all')")
 
-	if err := cmd.RegisterFlagCompletionFunc("logs", completion.CompleteServices); err != nil {
+	if err := cmd.RegisterFlagCompletionFunc("logs", common.CompleteServices); err != nil {
 		log.Fatal(err)
 	}
 

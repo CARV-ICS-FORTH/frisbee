@@ -2,6 +2,7 @@
 
 set -eu
 set -o pipefail
+trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
 
 export NAMESPACE=sstable-bitrot
 export SCENARIO=$(dirname -- "$0")/manifest.yml
@@ -15,10 +16,10 @@ mkdir -p "${REPORTS}"
 cp "${SCENARIO}" "${REPORTS}"
 
 # Submit the scenario and follow the failing client's logs
-kubectl-frisbee submit test "${NAMESPACE}" "${SCENARIO}" "${DEPENDENCIES[@]}" --logs masters-1 |& tee -a "${REPORTS}"/logs &
+kubectl-frisbee submit test "${NAMESPACE}" "${SCENARIO}" "${DEPENDENCIES[@]}"
 
-# wait for the scenario to be submitted
+# Give a headstart
 sleep 10
 
-# Report the scenario
+# Download test report
 kubectl-frisbee report test "${NAMESPACE}" "${REPORTS}" --pdf --data --aggregated-pdf --wait

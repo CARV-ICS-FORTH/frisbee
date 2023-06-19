@@ -83,7 +83,7 @@ func NewValidateTestCmd() *cobra.Command {
 				err := validateScenario(testFile)
 				ui.ExitOnError("Validating ...", err)
 
-				ui.Success("Scenario validated:", testFile)
+				ui.Success("Scenario Validated:", testFile)
 			}
 		},
 	}

@@ -20,7 +20,6 @@ import (
 	"os"
 
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/common"
-	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/completion"
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/env"
 	"github.com/kubeshop/testkube/pkg/ui"
 	"github.com/spf13/cobra"
@@ -32,7 +31,7 @@ func NewGetTestsCmd() *cobra.Command {
 		Aliases:           []string{"tests", "t"},
 		Short:             "Get all available tests",
 		Long:              `Getting all available tests from given namespace - if no namespace given "frisbee" namespace is used`,
-		ValidArgsFunction: completion.NoArgs,
+		ValidArgsFunction: common.NoArgs,
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) > 0 {
 				ui.Failf("To get information for a test use: `kubectl frisbee inspect test <testName>`")

@@ -2,6 +2,7 @@
 
 set -eu
 set -o pipefail
+trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
 
 export NAMESPACE=network-partition
 export SCENARIO=$(dirname -- "$0")/manifest.yml
@@ -17,7 +18,7 @@ cp "${SCENARIO}" "${REPORTS}"
 # Submit the scenario and follow logs
 kubectl-frisbee submit test "${NAMESPACE}" "${SCENARIO}" "${DEPENDENCIES[@]}"
 
-# wait for the scenario to be submitted
+# Give a headstart
 sleep 10
 
 # Report the scenario

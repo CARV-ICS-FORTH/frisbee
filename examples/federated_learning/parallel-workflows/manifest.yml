@@ -92,7 +92,7 @@ spec:
       cluster:
         templateRef: fedbed.client
         resources:
-          total: { cpu: 4 }
+          total: { cpu: 8 }
           distribution: { name: constant }
         inputs:
           - { fl_server: "wfa-server wfb-server", total_nodes: 20, node_id: 19 }

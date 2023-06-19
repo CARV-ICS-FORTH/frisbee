@@ -125,7 +125,7 @@ func NewSubmitTestCmd() *cobra.Command {
 			// the actual submission.
 			err := common.RunTest(testName, testFile, common.ValidationClient)
 			ui.ExitOnError("Validating testfile: "+testFile, err)
-			ui.Success("Scenario validated:", testFile)
+			ui.Success("Scenario Validated:", testFile)
 
 			/*---------------------------------------------------
 			 * Ensure environment isolation
@@ -148,7 +148,7 @@ func NewSubmitTestCmd() *cobra.Command {
 					ui.ExitOnError("Setting namespace quotas", err)
 				}
 			*/
-			ui.Success("Namespace is ready:", testName)
+			ui.Success("Namespace Created:", testName)
 
 			/*---------------------------------------------------
 			 * Install Helm Dependencies, if any
@@ -164,7 +164,7 @@ func NewSubmitTestCmd() *cobra.Command {
 					ui.ExitOnError("Installing Dependency: "+dependency, err)
 				}
 
-				ui.Success("Installed Dependencies:", dependentCharts...)
+				ui.Success("Dependencies Installed:", dependentCharts...)
 			}
 
 			/*---------------------------------------------------

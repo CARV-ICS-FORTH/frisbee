@@ -22,22 +22,14 @@ import (
 	"os"
 	"regexp"
 	"strings"
-	"time"
 
 	"github.com/carv-ics-forth/frisbee/api/v1alpha1"
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/env"
-	"github.com/carv-ics-forth/frisbee/controllers/common"
 	"github.com/carv-ics-forth/frisbee/pkg/process"
 	"github.com/kubeshop/testkube/pkg/ui"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/utils/exec"
-)
-
-const (
-	ManagedNamespace = "app.kubernetes.io/managed-by=Frisbee"
-	pollTimeout      = 24 * time.Hour
-	pollInterval     = 5 * time.Second
 )
 
 const (
@@ -167,50 +159,6 @@ func LoggedKubectl(testName string, command ...string) ([]byte, error) {
 	return process.LoggedExecuteInDir("", os.Stdout, env.Default.Kubectl(), kubectlArgs...)
 }
 
-func HelmIgnoreNotFound(err error) error {
-	if err != nil && strings.Contains(err.Error(), "release: not found") {
-		return nil
-	}
-
-	return err
-}
-
-func Helm(testName string, command ...string) ([]byte, error) {
-	var helmArgs []string
-
-	if env.Default.KubeConfigPath != "" {
-		helmArgs = append(helmArgs, "--kubeconfig", env.Default.KubeConfigPath)
-	}
-
-	if env.Default.Debug {
-		helmArgs = append(helmArgs, "--debug")
-	}
-
-	if testName != "" {
-		helmArgs = append(helmArgs, "--namespace", testName)
-	}
-
-	helmArgs = append(helmArgs, command...)
-
-	return process.Execute(env.Default.Helm(), helmArgs...)
-}
-
-func LoggedHelm(testName string, command ...string) ([]byte, error) {
-	var helmArgs []string
-
-	if env.Default.KubeConfigPath != "" {
-		helmArgs = append(helmArgs, "--kubeconfig", env.Default.KubeConfigPath)
-	}
-
-	if testName != "" {
-		helmArgs = append(helmArgs, "--namespace", testName)
-	}
-
-	helmArgs = append(helmArgs, command...)
-
-	return process.LoggedExecuteInDir("", os.Stdout, env.Default.Helm(), helmArgs...)
-}
-
 func setOutput(command []string) []string {
 	outputType := OutputType(env.Default.OutputType)
 	if outputType == "table" ||
@@ -321,7 +269,7 @@ func WaitForCondition(ctx context.Context, testName string, condition v1alpha1.C
 		"--timeout=" + timeout,
 	}
 
-	return wait.ExponentialBackoffWithContext(ctx, common.DefaultBackoffForK8sEndpoint, func(ctx context.Context) (done bool, err error) {
+	return wait.ExponentialBackoffWithContext(ctx, BackoffPodCreation, func(ctx context.Context) (done bool, err error) {
 		out, err := Kubectl(testName, command...)
 
 		switch {
@@ -501,19 +449,14 @@ func KubectlLogs(ctx context.Context, testName string, tail bool, lines int, pod
 	}
 
 	// how to present it
-	command = append(command,
-		// "-c", v1alpha1.MainContainerName,
-		"--all-containers",
-		"--prefix=true",
-	)
+	command = append(command, "--all-containers", "--prefix=true")
 
 	// with tail
 	if tail {
 		command = append(command, "--ignore-errors=false", "--follow")
 
-		return wait.ExponentialBackoffWithContext(ctx, common.DefaultBackoffForServiceEndpoint, func(ctx context.Context) (done bool, err error) {
+		return wait.ExponentialBackoffWithContext(ctx, BackoffPodCreation, func(ctx context.Context) (done bool, err error) {
 			out, err := LoggedKubectl(testName, command...)
-
 			switch {
 			case ErrNamespaceNotFound(out):
 				return true, nil
@@ -602,10 +545,7 @@ func RunTest(testName string, testFile string, mode ValidationMode) error {
 }
 
 func Dashboards(testName string) error {
-	command := []string{
-		"get", "ingress",
-		"-l", v1alpha1.LabelScenario,
-	}
+	command := []string{"get", "ingress", "-l", v1alpha1.LabelScenario}
 
 	command = setOutput(command)
 
@@ -757,23 +697,3 @@ spec:
 }
 
 */
-
-/*
-******************************************************************
-
-					Helm Resources
-
-******************************************************************
-*/
-
-func ListHelm(testName string) error {
-	command := []string{"list"}
-
-	command = setOutput(command)
-
-	out, err := Helm(testName, command...)
-
-	ui.Info(string(out))
-
-	return err
-}

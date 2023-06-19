@@ -20,13 +20,12 @@ import (
 	"strings"
 
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/common"
-	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/completion"
 	"github.com/kubeshop/testkube/pkg/ui"
 	"github.com/spf13/cobra"
 )
 
 func DeleteTestCmdCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	return completion.CompleteScenarios(cmd, args, toComplete)
+	return common.CompleteScenarios(cmd, args, toComplete)
 }
 
 type DeleteTestCmdOptions struct {

@@ -5,6 +5,7 @@
 ### Changed defaults / behaviours
 - Upgrade to Grafana v9.4.7 in order to avoid issues with locking database (https://github.com/grafana/grafana/issues/60703)
 - Change Grafana requirements to 2 CPU and 14 Gi memory.
+- Separate the timeouts for Kubernetes API, Grafana, and Interactions (logs, reports).
 - ...
 
 ### New Features & Functionality

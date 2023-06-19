@@ -2,6 +2,7 @@
 
 set -eu
 set -o pipefail
+trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
 
 export NAMESPACE=crash-on-epoch
 export SCENARIO=$(dirname -- "$0")/manifest.yml

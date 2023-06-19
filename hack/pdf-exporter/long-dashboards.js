@@ -17,7 +17,7 @@ const width_px = 1632;
 // Note that to get an actual paper size, e.g. Letter, you will want to *not* simply set the pixel
 // size here, since that would lead to a "mobile-sized" screen (816px), and mess up the rendering.
 // Instead, set e.g. double the size here (1632px), and call page.pdf() with format: 'Letter' and
-const scaleFactor = 4; // 400%
+const scaleFactor = 2; // 400%
 
 // Generate authorization header for basic auth
 const auth_header = 'Basic ' + new Buffer.from(auth_string).toString('base64');
@@ -43,7 +43,7 @@ const auth_header = 'Basic ' + new Buffer.from(auth_string).toString('base64');
         // the same value as in page.pdf() below. The height is not important
         await page.setViewport({
             width: width_px,
-            height: 800,
+            height: 6000,
             deviceScaleFactor: scaleFactor,
             isMobile: false
         })

@@ -39,7 +39,7 @@ spec:
       depends: { success: [ import-workload ] }
       call:
         callable: bitrot
-        services: [ masters-1 ]
+        services: [ masters-1, masters-2, masters-3 ]
 
     # Step 4. run workload for up-to 10 mins (node1)
     - action: Service
