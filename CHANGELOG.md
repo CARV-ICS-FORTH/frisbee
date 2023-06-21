@@ -11,11 +11,13 @@
 ### New Features & Functionality
 - Upgrade API to Kubernetes v0.27.2. Upgrade all other deps to the latest version.
 - Fixed kubectl-frisbee to monitor multiple pods in parallel.
+- Added examples for running sequences of YCSB workloads
 - ...
 
 ## Bug Fixes
 - Added --network host to "make docker-build" to fix the network discovery issues.
 - Fix the Constant distribution. It was returning normalized values.
+- Fix --deep flag on test inspection.
 - ...
 
 ## 1.0.40 \[2023-05-23\]

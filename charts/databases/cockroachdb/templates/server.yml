@@ -2,44 +2,26 @@
 apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
-  name: cockroach.cluster.master-with-logger
+  name: cockroach.cluster.master
 spec:
   inputs:
     parameters:
       join: ""
       storedir: "cockroach-data"
-      logClaimName: ""
-
   service:
     decorators:
       telemetry:
         - system.telemetry.resources
         - cockroach.telemetry.server
 
-    volumes: # Match the pod to the log volume
-      - name: logs
-        persistentVolumeClaim:
-          claimName: {{"{{.inputs.parameters.logClaimName}}" | quote}}
-
-    initContainers:
-      - name: wait-for-sync
-        image: busybox
-        volumeMounts: # Mount the log volume
-          - name: logs
-            mountPath: /logs
-        command: [ "ls", "/logs" ]
-
     containers:
       - name: main
-        image: cockroachdb/cockroach:latest
-        volumeMounts: # Mount the log volume
-          - name: logs
-            mountPath: /logs
+        image: {{.Values.image}}
         ports:
           - name: grpc
             containerPort: {{.Values.port | int64}}
-          - name: http
-            containerPort: {{ .Values.httpPort | int64 }}
+          - name: web
+            containerPort: {{ .Values.webPort | int64 }}
         command:
           - /bin/sh   # Run shell
           - -c        # Read from string
@@ -55,8 +37,6 @@ spec:
             nodeList={{"{{.inputs.parameters.join}}"}}
 
             echo "Start Cockroachdb: ${nodeList}"
-            # Because the log volume is shared with other services,
-            # we use the name of the pod as prefix
 
             COCKROACH_CRASH_ON_SPAN_USE_AFTER_FINISH=true cockroach start   \
                 --insecure                                      \
@@ -64,34 +44,32 @@ spec:
                 --listen-addr=:{{.Values.port}}                            \
                 --http-addr=$${HOSTNAME}:{{.Values.httpPort}}                   \
                 --advertise-addr=$${HOSTNAME}:{{.Values.port}}             \
-                --join=${nodeList} &> /logs/${HOSTNAME}
+                --join=${nodeList}
 
+#        startupProbe:
+ #         httpGet:
+  #          path: /health
+   #         port: http
+    #      initialDelaySeconds: 5
+     #     failureThreshold: 30
+      #    periodSeconds: 10
 
-    # Albeit it is possible to log the callables, the Pod name is not available at this level,
-    # and therefore it is difficult to place them into the proper log hierarchy. Instead, the output
-    # of the callables should be available by the controller who calls them.
+       # livenessProbe:
+        #  httpGet:
+         #   path: /health
+          #  port: http
+        #  initialDelaySeconds: 30
+        #  periodSeconds: 5
+
     callables:
       boot:
-        container: main
-        command:
-          - /bin/sh
-          - -c
-          - |
-            # Use a retry logic here
-            for i in {1..3}; do
-              echo "(re)try to boot the cluster";
-
-              cockroach init --insecure && break || sleep 15;
-            done
-
-      import-tpcc:
         container: main
         command:
           - /bin/sh   # Run shell
           - -c        # Read from string
           - |         # Multi-line str
             set -eum
-            ./cockroach workload fixtures import tpcc --warehouses=100 --fks=false --checks=false
+            cockroach init --insecure
 
       bitrot:
         container: main
@@ -127,11 +105,36 @@ spec:
               dd if=/dev/urandom of=${file}.sst seek=256 count=128 bs=1 conv=notrunc
             done
 
-      run-workload:
+
+      wait-for-3x-replication:
         container: main
         command:
           - /bin/sh   # Run shell
           - -c        # Read from string
           - |         # Multi-line str
-            set -eum
-            ./cockroach workload run tpcc --warehouses=100 --tolerate-errors
+            set -euo pipefail
+
+            # WaitFor3XReplication waits until all ranges in the system are on at least three voters.
+            oldN=0
+            for (( ; ; ))
+            do
+              n=$(./cockroach sql --insecure --format=records                                             \
+              --execute="SELECT count(1) FROM crdb_internal.ranges WHERE array_length(replicas, 1) < 3;"  \
+              | grep "count" | cut -d "|" -f 2)
+
+              if [ "${n}" -eq "0" ]
+              then
+                echo "All replicas are in place"
+                exit 0
+              fi
+
+              if [ oldN != ${n}  ]
+              then
+                echo "still waiting for full replication (${n} ranges left)"
+              fi
+
+              oldN=${n}
+
+              echo "Sleep"
+              sleep 2
+            done

@@ -418,7 +418,7 @@ func KubectlLogs(ctx context.Context, testName string, tail bool, lines int, pod
 	command := []string{"logs", "--max-log-requests=100"}
 
 	if len(pods) == 0 {
-		panic("this should not happen")
+		pods = []string{"all"}
 	}
 
 	// Case: monitor a specific class of pods.
@@ -428,10 +428,10 @@ func KubectlLogs(ctx context.Context, testName string, tail bool, lines int, pod
 			// eq: kubectl logs -l "scenario.frisbee.dev/name"
 			// We assume that only one scenario is running per namespace.
 			command = append(command, "-l", v1alpha1.LabelScenario)
-		case "SYS":
+		case string(v1alpha1.ComponentSys):
 			// eq: kubectl logs -l "scenario.frisbee.dev/name,scenario.frisbee.dev/component=SYS"
 			command = append(command, "-l", strings.Join([]string{v1alpha1.LabelScenario, FilterSYS}, ","))
-		case "SUT":
+		case string(v1alpha1.ComponentSUT):
 			// eq: kubectl logs -l "scenario.frisbee.dev/name,scenario.frisbee.dev/component=SUT"
 			command = append(command, "-l", strings.Join([]string{v1alpha1.LabelScenario, FilterSUT}, ","))
 		default:
