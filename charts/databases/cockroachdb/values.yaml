@@ -1,7 +1,10 @@
 ## @section Cockroach Configuration parameters
 
+## param image CockroachDB's image version.
 ## @param port  CockroachDB's port to listen to inter-communications and client connections.
-## @param httpPort  CockroachDB's port to listen to HTTP requests.
+## @param webPort  CockroachDB's port to Web Interface.
+
+image: cockroachdb/cockroach:v22.1.2
 
 port: 26257
-httpPort: 8080
+webPort: 8080
