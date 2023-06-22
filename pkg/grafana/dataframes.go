@@ -179,12 +179,13 @@ func downloadAnnotations(logger logr.Logger, url *URL, dstFile string) error {
 	client := req.NewClient()
 
 	resp, err := client.R().Get(url.AnnotationsQuery())
+
 	if err != nil {
 		return errors.Wrapf(err, "GET has failed")
 	}
 
 	if !resp.IsSuccessState() {
-		return errors.Errorf("bad response status: %s", resp.Status)
+		return errors.Errorf("unsuccessful response: %s", resp)
 	}
 
 	/*---------------------------------------------------*
@@ -209,15 +210,14 @@ func downloadDataFrame(logger logr.Logger, url *URL, reqBody *DataRequest, dstFi
 	resp, err := client.R().
 		SetBodyJsonMarshal(reqBody).
 		Post(url.DataSourceQuery())
+
 	if err != nil {
 		return errors.Wrapf(err, "POST has failed")
 	}
 
 	if !resp.IsSuccessState() {
-		return errors.Errorf("bad response status: %s", resp.Status)
+		return errors.Errorf("unsuccessful response: %s", resp)
 	}
-
-	//	panic("Aa")
 
 	/*---------------------------------------------------*
 	 * Store JSON to file

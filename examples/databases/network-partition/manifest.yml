@@ -31,7 +31,7 @@ spec:
       service:
         templateRef: ycsb.cockroach.loader
         inputs:
-          - { server: masters-1, workload: workloada, recordcount: "100000", threads: "16", delay: "15" }
+          - { server: masters-1, workload: workloada, recordcount: "10000", threads: "16", delay: "15" }
 
     # Step 3. wait for 3x replication
     # Alternatively, wait for "Under-replicated" metric from Grafana to become 0
@@ -49,7 +49,7 @@ spec:
       service:
         templateRef: ycsb.cockroach.runner
         inputs:
-          - { server: masters-1, workload: workloada, operationcount: "10000000", threads: "4" }
+          - { server: masters-1, workload: workloada, operationcount: "100000000", threads: "4" }
 
     # Step4B. partition node 1 from the rest of the nodes; node 1 can reach other nodes, but no other nodes can reach node 1
     - action: Chaos

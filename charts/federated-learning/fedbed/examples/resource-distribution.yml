@@ -24,7 +24,7 @@ spec:
           - { fl_server: server, dataset: "MNIST", backend: "pytorch", total_nodes: 3, node_id: 1 }
           - { fl_server: server, dataset: "MNIST", backend: "pytorch", total_nodes: 3, node_id: 2  }
         resources:
-          total: { mem: 500Mi }
+          total: { memory: 500Mi }
           distribution: { name: uniform }
 
     # Teardown

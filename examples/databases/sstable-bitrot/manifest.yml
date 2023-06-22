@@ -17,7 +17,7 @@ spec:
     # Step 1. Create a cockroach cluster from the individual servers
     - action: Call
       name: boot
-      depends: { running: [ masters ] }
+      depends: { running: [ masters ], after: "1m" }
       call:
         callable: boot
         services: [ masters-1 ]

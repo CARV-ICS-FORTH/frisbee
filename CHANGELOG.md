@@ -11,7 +11,8 @@
 ### New Features & Functionality
 - Upgrade API to Kubernetes v0.27.2. Upgrade all other deps to the latest version.
 - Fixed kubectl-frisbee to monitor multiple pods in parallel.
-- Added examples for running sequences of YCSB workloads
+- Add examples for running sequences of YCSB workloads
+- Add verification of resources and fix erroneous examples.
 - ...
 
 ## Bug Fixes

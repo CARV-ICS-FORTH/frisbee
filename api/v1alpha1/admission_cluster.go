@@ -110,6 +110,7 @@ func (in *Cluster) ValidateCreate() (admission.Warnings, error) {
 	}
 
 	// Resources field
+	// if distributionSpec is nil, Default() will set it to constant.
 	if resources := in.Spec.Resources; resources != nil {
 		if in.Spec.SuspendWhen != nil {
 			return nil, errors.Errorf("resource distribution conflicts with SuspendWhen conditions")
@@ -119,11 +120,8 @@ func (in *Cluster) ValidateCreate() (admission.Warnings, error) {
 			return nil, errors.Errorf("resource distribution requires at least one services")
 		}
 
-		// if nil, Default() will set it to constant
-		if resources.DistributionSpec != nil {
-			if err := ValidateDistribution(resources.DistributionSpec); err != nil {
-				return nil, errors.Wrapf(err, "distribution error")
-			}
+		if err := resources.Validate(); err != nil {
+			return nil, errors.Wrapf(err, "cluster.resources")
 		}
 	}
 

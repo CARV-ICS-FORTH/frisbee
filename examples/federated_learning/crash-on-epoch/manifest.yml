@@ -21,7 +21,7 @@ spec:
       cluster:
         templateRef: fedbed.client
         resources:
-          total: { cpu: 10, mem: 40Gi }
+          total: { cpu: 10, memory: 40Gi }
           distribution: { name: uniform }
         inputs:
           - { fl_server: server, backend: "pytorch",  total_nodes: 5, node_id: 0 }
@@ -30,7 +30,7 @@ spec:
           - { fl_server: server, backend: "pytorch",  total_nodes: 5, node_id: 3 }
           - { fl_server: server, backend: "pytorch",  total_nodes: 5, node_id: 4 }
         tolerate:
-          failedJobs: 1
+          failedJobs: 2
 
     # Step 3: Wait for a specific (hardcoded) round.
     - action: Call

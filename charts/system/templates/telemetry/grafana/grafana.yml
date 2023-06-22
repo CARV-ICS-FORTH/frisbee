@@ -14,17 +14,18 @@ spec:
       - name: config
         configMap:
           name: system.telemetry.grafana.config
+
     containers:
       - name: main
-        image: grafana/grafana-oss:9.4.7
-        #image: grafana/grafana-oss:9.2.1
+        image: {{.Values.telemetry.grafana.image}}
         ports:
           - name: http
             containerPort: {{.Values.telemetry.grafana.port}}
         resources:
           requests:
-            memory: "14Gi"
-            cpu: "2"
+            cpu: {{.Values.telemetry.grafana.cpu}}
+            memory: {{.Values.telemetry.grafana.memory}}
+
         volumeMounts:
           - name: config
             mountPath: /etc/grafana/grafana.ini

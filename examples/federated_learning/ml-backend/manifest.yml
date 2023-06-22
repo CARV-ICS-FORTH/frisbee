@@ -13,7 +13,7 @@ spec:
       service:
         templateRef: fedbed.server
         inputs:
-          - { dataset: "MNIST", backend: "pytorch" } # Change values here
+          - { dataset: "MNIST", backend: "tensorflow" } # Change values here
 
     # Step 2: Create FedBed clients
     - action: Cluster
@@ -22,7 +22,7 @@ spec:
       cluster:
         templateRef: fedbed.client
         inputs:
-          - { fl_server: server, dataset: "MNIST", backend: "pytorch" } # Change values here
+          - { fl_server: server, dataset: "MNIST", backend: "tensorflow" } # Change values here
 
     # Teardown
     - action: Delete

@@ -1,15 +1,21 @@
 ## @section Telemetry
 
+## @param telemetry.grafana.image Container image for Grafana
 ## @param telemetry.grafana.port Listening port for Grafana
+## @param telemetry.grafana.cpu The number of cpus reserved for Grafana.
+## @param telemetry.grafana.memory The size of memory reserved for Grafana.
 ## @param telemetry.prometheus.name The name of the prometheus service
 ## @param telemetry.prometheus.port Listening port for Prometheus
 ## @param telemetry.prometheus.honorTimestamp Use the timestamps of the metrics exposed by the agent (time-drifts)
 ## @param telemetry.prometheus.queryLookbackDelta The maximum duration for retrieving metrics for considering the source as stale.
 ## @param telemetry.dataviewer.port Listening port for Dataviewer
 telemetry:
-
   grafana:
+    image: grafana/grafana-oss:9.4.7
     port: 3000
+    cpu: 1
+    memory: 4Gi
+
 
   prometheus:
     name: prometheus
@@ -38,7 +44,6 @@ telemetry:
 ## @param chaos.network.delay.jitter Add randomness in the delay
 ## @param chaos.pod.kill.target Service to kill
 chaos:
-
   network:
     generic:
       source: ""

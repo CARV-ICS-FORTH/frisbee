@@ -403,6 +403,10 @@ const (
 	FilterSUT = string(v1alpha1.LabelComponent + "=" + v1alpha1.ComponentSUT)
 )
 
+const (
+	AllPods = "all"
+)
+
 /*
 KubectlLogs provides convenience on printing the logs from prods.
 Filter query:
@@ -418,13 +422,13 @@ func KubectlLogs(ctx context.Context, testName string, tail bool, lines int, pod
 	command := []string{"logs", "--max-log-requests=100"}
 
 	if len(pods) == 0 {
-		pods = []string{"all"}
+		panic("this should not happen")
 	}
 
 	// Case: monitor a specific class of pods.
 	if len(pods) == 1 {
 		switch pods[0] {
-		case "all":
+		case AllPods:
 			// eq: kubectl logs -l "scenario.frisbee.dev/name"
 			// We assume that only one scenario is running per namespace.
 			command = append(command, "-l", v1alpha1.LabelScenario)
