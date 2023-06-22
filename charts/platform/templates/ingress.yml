@@ -1,5 +1,31 @@
-{{- if .Values.chaos.enabled }}
 ---
+{{- if .Values.dashboard.enabled}}
+# https://stackoverflow.com/questions/54506269/simple-ingress-from-host-with-microk8s
+# https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/annotations/
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dashboard
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+spec:
+  ingressClassName: {{.Values.global.ingressClass}}
+  rules:
+    - host: dashboard-frisbee.{{.Values.global.domainName}}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{.Release.Name}}-kubernetes-dashboard
+                port:
+                  number: 443
+{{- end}}
+---
+{{- if .Values.chaos.enabled }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -19,29 +45,3 @@ spec:
                 port:
                   number: 2333
 {{- end}}
----
-# https://stackoverflow.com/questions/54506269/simple-ingress-from-host-with-microk8s
-# https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/annotations/
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: dashboard
-  annotations:
-    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    nginx.ingress.kubernetes.io/ssl-passthrough: "true"
-spec:
-  ingressClassName: {{.Values.global.ingressClass}}
-  rules:
-    {{- if .Values.dashboard.enabled}}
-    - host: dashboard-frisbee.{{.Values.global.domainName}}
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: {{.Release.Name}}-kubernetes-dashboard
-                port:
-                  number: 443
-    {{- end}}

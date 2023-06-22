@@ -84,4 +84,4 @@ chaos-mesh:
 
 ## @param dashboard.enabled Whether to enable Dashboard
 dashboard:
-  enabled: true
+  enabled: false
