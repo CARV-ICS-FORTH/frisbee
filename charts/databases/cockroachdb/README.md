@@ -66,9 +66,13 @@ option `--purge` to delete all history too.
 
 ### Cockroach Configuration parameters
 
-| Name       | Description                                                                  | Value   |
-| ---------- | ---------------------------------------------------------------------------- | ------- |
-| `port`     | CockroachDB's port to listen to inter-communications and client connections. | `26257` |
-| `httpPort` | CockroachDB's port to listen to HTTP requests.                               | `8080`  |
+| Name             | Description                                                                  | Value                           |
+| ---------------- | ---------------------------------------------------------------------------- | ------------------------------- |
+| `server.image`   | CockroachDB's image version.                                                 | `cockroachdb/cockroach:v22.1.2` |
+| `server.port`    | CockroachDB's port to listen to inter-communications and client connections. | `26257`                         |
+| `server.webPort` | CockroachDB's port to Web Interface.                                         | `8080`                          |
+| `server.cpu`     | The number of CPUs that will be allocated to each server.                    | `0.5`                           |
+| `server.memory`  | The size of memory that will be allocated to each server.                    | `3Gi`                           |
+| `server.storage` | The size of available space that will be allocated to each server.           | `15Gi`                          |
 
 

@@ -15,10 +15,10 @@ mkdir -p "${REPORTS}"
 # Copy the manifest
 cp "${SCENARIO}" "${REPORTS}"
 
-# Submit the scenario and follow logs
-kubectl-frisbee submit test "${NAMESPACE}" "${SCENARIO}" "${DEPENDENCIES[@]}"
+# Submit the scenario and follow server's logs
+kubectl-frisbee submit test "${NAMESPACE}" "${SCENARIO}" "${DEPENDENCIES[@]}" --logs server |& tee  "${REPORTS}"/logs &
 
-# wait for the scenario to be submitted
+# Give a headstart
 sleep 10
 
 # Report the scenario

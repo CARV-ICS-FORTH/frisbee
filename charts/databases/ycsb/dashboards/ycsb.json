@@ -138,7 +138,7 @@
           "uid": "grafana"
         },
         "enable": true,
-        "iconColor": "semi-dark-yellow",
+        "iconColor": "green",
         "name": "App",
         "target": {
           "refId": "Anno",

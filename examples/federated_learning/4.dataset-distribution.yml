@@ -22,7 +22,7 @@ spec:
       cluster:
         templateRef: fedbed.client
         resources:
-          total: { cpu: 40, mem: 40Gi }
+          total: { cpu: 40, memory: 40Gi }
           distribution: { name: uniform }
         inputs:
           - { fl_server: server,  dataset_distribution: flat,  total_nodes: 20, node_id: 0 } # Change values here

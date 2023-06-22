@@ -21,6 +21,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -65,11 +66,25 @@ type DistParamsPareto struct {
 */
 
 type TimelineDistributionSpec struct {
-	// DistributionSpec defines how the TotalDuration will be divided into time-based events.
-	DistributionSpec *DistributionSpec `json:"distribution"`
-
 	// TotalDuration defines the total duration within which events will happen.
 	TotalDuration *metav1.Duration `json:"total"`
+
+	// DistributionSpec defines how the TotalDuration will be divided into time-based events.
+	DistributionSpec *DistributionSpec `json:"distribution"`
+}
+
+func (in TimelineDistributionSpec) Validate() error {
+	// Validate the duration.
+	if in.TotalDuration != nil {
+		return errors.New("empty duration field")
+	}
+
+	// Validate the distribution method.
+	if err := ValidateDistribution(in.DistributionSpec); err != nil {
+		return errors.Wrapf(err, "distribution error")
+	}
+
+	return nil
 }
 
 type Timeline []metav1.Time
@@ -106,11 +121,30 @@ func (in Timeline) String() string {
 */
 
 type ResourceDistributionSpec struct {
-	// DistributionSpec defines how the TotalResources will be assigned to resources.
-	DistributionSpec *DistributionSpec `json:"distribution,omitempty"`
-
 	// TotalResources defines the total resources that will be distributed among the cluster's services.
 	TotalResources corev1.ResourceList `json:"total"`
+
+	// DistributionSpec defines how the TotalResources will be assigned to resources.
+	DistributionSpec *DistributionSpec `json:"distribution,omitempty"`
+}
+
+func (in ResourceDistributionSpec) Validate() error {
+	// Valida the type of resources.
+	for resourceName, _ := range in.TotalResources {
+		switch resourceName {
+		case corev1.ResourceCPU, corev1.ResourceMemory:
+			continue
+		default:
+			return errors.Errorf("invalid resource '%s'", resourceName)
+		}
+	}
+
+	// Validate the distribution method.
+	if err := ValidateDistribution(in.DistributionSpec); err != nil {
+		return errors.Wrapf(err, "distribution error")
+	}
+
+	return nil
 }
 
 type ResourceDistribution []corev1.ResourceList

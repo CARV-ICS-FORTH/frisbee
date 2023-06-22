@@ -15,7 +15,7 @@ mkdir -p "${REPORTS}"
 # Copy the manifest
 cp "${SCENARIO}" "${REPORTS}"
 
-# Submit the scenario and follow server logs
+# Submit the scenario and follow server's logs
 kubectl-frisbee submit test "${NAMESPACE}" "${SCENARIO}" "${DEPENDENCIES[@]}" --logs server |& tee  "${REPORTS}"/logs &
 
 # Give a headstart

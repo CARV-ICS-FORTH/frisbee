@@ -60,8 +60,8 @@ var DefaultBackoffForK8sEndpoint = wait.Backoff{
 
 // DefaultBackoffForServiceEndpoint is the default backoff for controller-to-pod communication
 var DefaultBackoffForServiceEndpoint = wait.Backoff{
-	Duration: 10 * time.Second,
-	Factor:   0.2,
+	Duration: 5 * time.Second,
+	Factor:   2,
 	Jitter:   0.1,
 	Steps:    6,
 }

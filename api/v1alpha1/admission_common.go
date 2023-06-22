@@ -82,7 +82,7 @@ func ValidateTaskScheduler(sch *TaskSchedulerSpec) error {
 	if timeline := sch.Timeline; timeline != nil {
 		enabledPolicies++
 
-		if err := ValidateDistribution(timeline.DistributionSpec); err != nil {
+		if err := timeline.Validate(); err != nil {
 			merr = multierror.Append(merr, errors.Wrapf(err, "TimelineError"))
 		}
 	}
