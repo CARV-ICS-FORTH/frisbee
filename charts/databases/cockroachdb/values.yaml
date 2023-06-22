@@ -1,9 +1,9 @@
 ## @section Cockroach Configuration parameters
 
-## param server.image CockroachDB's image version.
+## @param server.image CockroachDB's image version.
 ## @param server.port  CockroachDB's port to listen to inter-communications and client connections.
 ## @param server.webPort  CockroachDB's port to Web Interface.
-## @param server.cpus The number of CPUs that will be allocated to each server.
+## @param server.cpu The number of CPUs that will be allocated to each server.
 ## @param server.memory The size of memory that will be allocated to each server.
 ## @param server.storage The size of available space that will be allocated to each server.
 
