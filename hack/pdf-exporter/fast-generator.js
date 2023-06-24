@@ -15,13 +15,6 @@ const outfile = process.argv[4];
 // so 1200 corresponds to 12.5".
 // from https://github.com/puppeteer/puppeteer/issues/4419
 const width_px = 1920;
-const height_px = 1080;
-
-// Note that to get an actual paper size, e.g. Letter, you will want to *not* simply set the pixel
-// size here, since that would lead to a "mobile-sized" screen (816px), and mess up the rendering.
-// Instead, set e.g. double the size here (1632px), and call page.pdf() with format: 'Letter' and
-const scaleFactor = 4; // 400%
-
 
 // Generate authorization header for basic auth
 const auth_header = 'Basic ' + new Buffer.from(auth_string).toString('base64');
@@ -30,9 +23,11 @@ const auth_header = 'Basic ' + new Buffer.from(auth_string).toString('base64');
     // const browser = await puppeteer.launch();
     const browser = await puppeteer.launch({
         headless: "new",
+        devtools: false,
         // for docker few folks had issues. so added below line
         args: ["--no-sandbox", "--disable-setuid-sandbox"],
     });
+
     const page = await browser.newPage();
 
     // Set basic auth headers
@@ -44,9 +39,10 @@ const auth_header = 'Basic ' + new Buffer.from(auth_string).toString('base64');
     // Increasing the deviceScaleFactor gets a higher-resolution image. The width should be set to
     // the same value as in page.pdf() below. The height is not important
     await page.setViewport({
-        width: parseInt(width_px / scaleFactor),
-        height: parseInt(height_px / scaleFactor),
-        deviceScaleFactor: scaleFactor,
+        width: width_px,
+        height: 800,
+        deviceScaleFactor: 1,
+        scale: 1,
         isMobile: false
     })
 
@@ -59,20 +55,13 @@ const auth_header = 'Basic ' + new Buffer.from(auth_string).toString('base64');
     // Annoyingly, it seems you can't concatenate the two object collections into one
     await page.evaluate(() => {
         let infoCorners = document.getElementsByClassName('panel-info-corner');
-        for (el of infoCorners) {
-            el.hidden = true;
-        }
-        ;
+        for (el of infoCorners) { el.hidden = true; };
         let resizeHandles = document.getElementsByClassName('react-resizable-handle');
-        for (el of resizeHandles) {
-            el.hidden = true;
-        }
-        ;
+        for (el of resizeHandles) { el.hidden = true; };
     });
 
     // Get the height of the main canvas, and add a margin
     var height_px = await page.evaluate(() => {
-        document.querySelector('.react-grid-layout').style.height = 'auto';
         return document.getElementsByClassName('react-grid-layout')[0].getBoundingClientRect().bottom;
     }) + 20;
 
@@ -81,7 +70,7 @@ const auth_header = 'Basic ' + new Buffer.from(auth_string).toString('base64');
         width: width_px + 'px',
         height: height_px + 'px',
       //  format: 'Letter',  // <-- see note above for generating "paper-sized" outputs
-        scale: scaleFactor,
+        scale: 1,
         displayHeaderFooter: false,
         printBackground: true, // <-- Required to keep the legend color
         margin: {

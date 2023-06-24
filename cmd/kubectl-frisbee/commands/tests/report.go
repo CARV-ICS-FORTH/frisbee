@@ -182,12 +182,11 @@ func NewReportTestCmd() *cobra.Command {
 			 * Fix dependencies for PDF Generations
 			 *---------------------------------------------------*/
 			if options.PDF || options.AggregatedPDF {
+				// ensure that nodejs and puppetteer are installed.
 				common.InstallPDFExporter(options.RepositoryCache)
 
-				// needed because the pdf-exporter lives in the installation cache.
-				if err := os.Chdir(options.RepositoryCache); err != nil {
-					ui.Fail(errors.Wrap(err, "Cannot chdir to Frisbee cache"))
-				}
+				// load javascript for downloading the images.
+				common.LoadPDFExporter(options.RepositoryCache)
 			}
 
 			/*---------------------------------------------------*

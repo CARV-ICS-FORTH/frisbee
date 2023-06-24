@@ -32,9 +32,18 @@ import (
 //go:embed hack
 var Hack embed.FS
 
-// CopyLocallyIfNotExists duplicates the structure of embedded fs into the installation dir.
-func CopyLocallyIfNotExists(static embed.FS, installationDir string) error {
+// UpdateLocalFiles duplicates the structure of embedded fs into the installation dir.
+func UpdateLocalFiles(static embed.FS, installationDir string) error {
 	root := "."
+
+	copyLocally := func(path string) error {
+		data, err := fs.ReadFile(static, path)
+		if err != nil {
+			return errors.Wrapf(err, "cannot read embedded file '%s'", path)
+		}
+
+		return os.WriteFile(filepath.Join(installationDir, path), data, os.ModePerm)
+	}
 
 	return fs.WalkDir(static, root, func(path string, d fs.DirEntry, _ error) error {
 		if path == root {
@@ -61,24 +70,17 @@ func CopyLocallyIfNotExists(static embed.FS, installationDir string) error {
 		switch {
 		case fInfo.Mode().IsRegular():
 			localInfo, err := os.Stat(path)
-			switch {
-			case os.IsNotExist(err):
-				data, err := fs.ReadFile(static, path)
-				if err != nil {
-					return errors.Wrapf(err, "cannot read embedded file '%s'", path)
-				}
-				if err := os.WriteFile(filepath.Join(installationDir, path), data, os.ModePerm); err != nil {
-					return errors.Wrapf(err, "cannot copy '%s' to installation dir", path)
-				}
 
-				return nil
-			case err != nil:
+			if err != nil && os.IsNotExist(err) {
 				return errors.Wrapf(err, "cannot stat installation path '%s'", path)
-			case !localInfo.Mode().IsRegular():
-				return errors.Errorf("expected '%s' to be a file, but it's '%s'.", path, localInfo.Mode().Type())
-			default:
-				return nil
 			}
+
+			if !localInfo.Mode().IsRegular() {
+				return errors.Errorf("expected '%s' to be a file, but it's '%s'.", path, localInfo.Mode().Type())
+			}
+
+			// Copy the file locally
+			return copyLocally(path)
 
 		case fInfo.IsDir():
 			ufInfo, err := os.Stat(path)
