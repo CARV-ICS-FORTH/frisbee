@@ -131,7 +131,7 @@ certs:  ## Download certs under 'certs' folder
 	@kubectl get secret webhook-tls -n ${FRISBEE_NAMESPACE} -o json | jq -r '.data["tls.key"]' | base64 -d > ${CERTS_DIR}/tls.key
 	@kubectl get secret webhook-tls -n ${FRISBEE_NAMESPACE} -o json | jq -r '.data["tls.crt"]' | base64 -d > ${CERTS_DIR}/tls.crt
 
-build: generate fmt vet ## Build manager binary.
+build: generate fmt vet ## Build Frisbee binaries.
 	go build -o bin/manager cmd/manager/main.go
 	go build -o bin/kubectl-frisbee cmd/kubectl-frisbee/main.go
 

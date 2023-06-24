@@ -57,15 +57,9 @@ const auth_header = 'Basic ' + new Buffer.from(auth_string).toString('base64');
         // Annoyingly, it seems you can't concatenate the two object collections into one
         await page.evaluate(() => {
             let infoCorners = document.getElementsByClassName('panel-info-corner');
-            for (el of infoCorners) {
-                el.hidden = true;
-            }
-            ;
+            for (el of infoCorners) { el.hidden = true; };
             let resizeHandles = document.getElementsByClassName('react-resizable-handle');
-            for (el of resizeHandles) {
-                el.hidden = true;
-            }
-            ;
+            for (el of resizeHandles) { el.hidden = true; };
         });
 
         // Get the height of the main canvas, and add a margin

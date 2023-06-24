@@ -9,6 +9,7 @@
 - ...
 
 ## Bug Fixes
+- Stalled cached files were used in reporting. Update the cached files every time we run the report command.  
 - ...
 
 ## 1.0.41 \[2023-06-22\]

@@ -17,6 +17,7 @@ limitations under the License.
 package common
 
 import (
+	"github.com/pkg/errors"
 	"log"
 	"os"
 	"path/filepath"
@@ -182,28 +183,35 @@ func InstallPDFExporter(location string) {
 	_, err = process.Execute("sh", "-c", strings.Join(command, " "))
 	ui.ExitOnError(" --> Installing Puppeteer", err)
 
-	/*---------------------------------------------------*
-	 * Copy the embedded pdf exporter into fs
-	 *---------------------------------------------------*/
-	err = embed.CopyLocallyIfNotExists(embed.Hack, location)
-	ui.ExitOnError(" --> Install PDF Renderer", err)
+	ui.Success("PDFExporter is installed at ", location)
 
 	err = os.Chdir(oldPwd)
 	ui.ExitOnError("Returning to "+oldPwd, err)
+}
+
+func LoadPDFExporter(cacheLocation string) {
+	/*---------------------------------------------------*
+	 * Copy the embedded pdf exporter into fs
+	 *---------------------------------------------------*/
+	err := embed.UpdateLocalFiles(embed.Hack, cacheLocation)
+	ui.ExitOnError(" --> Install PDF Renderer", err)
 
 	/*---------------------------------------------------*
 	 * Update path to the pdf-exporter binary
 	 *---------------------------------------------------*/
-	FastPDFExporter = PDFExporter(filepath.Join(location, "hack/pdf-exporter/fast-generator.js"))
-	LongPDFExporter = PDFExporter(filepath.Join(location, "hack/pdf-exporter/long-dashboards.js"))
+	FastPDFExporter = PDFExporter(filepath.Join(cacheLocation, "hack/pdf-exporter/fast-generator.js"))
+	LongPDFExporter = PDFExporter(filepath.Join(cacheLocation, "hack/pdf-exporter/long-dashboards.js"))
 
-	if err := os.Setenv("PATH", os.Getenv("PATH")+":"+location); err != nil {
+	if err := os.Setenv("PATH", os.Getenv("PATH")+":"+cacheLocation); err != nil {
 		log.Fatal(err)
 	}
 
-	if err := os.Setenv("NODE_PATH", os.Getenv("NODE_PATH")+":"+location); err != nil {
+	if err := os.Setenv("NODE_PATH", os.Getenv("NODE_PATH")+":"+cacheLocation); err != nil {
 		log.Fatal(err)
 	}
 
-	ui.Success("PDFExporter is installed at ", location)
+	// needed because the pdf-exporter lives in the installation cache.
+	if err := os.Chdir(cacheLocation); err != nil {
+		ui.Fail(errors.Wrap(err, "Cannot chdir to Frisbee cache"))
+	}
 }
