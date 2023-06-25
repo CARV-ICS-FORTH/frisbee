@@ -7,7 +7,7 @@ trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
 export NAMESPACE=ycsb-sequence
 export SCENARIO=$(dirname -- "$0")/manifest.yml
 export REPORTS=${HOME}/frisbee-reports/${NAMESPACE}/
-export DEPENDENCIES=(./charts/system/ ./charts/databases/cockroachdb ./charts/databases/ycsb)
+export DEPENDENCIES=(./charts/system/ ./examples/apps/cockroachdb ./examples/apps/ycsb)
 
 # Prepare the Reporting folder
 mkdir -p "${REPORTS}"

@@ -3,6 +3,8 @@
 ## Changes Since Last Release
 
 ### Changed defaults / behaviours
+- Moved charts from `charts/{category}` to `examples/apps`. This allows to have the apps and the test-cases on the same directory. Additionally, that
+  means that chart releasing is no longer part of the frisbee release -- which shouldn't have been the case in the first place.
 - ...
 
 ### New Features & Functionality

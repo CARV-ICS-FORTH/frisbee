@@ -4,6 +4,7 @@ on:
   pull_request_target:
     paths:
       - 'charts/**/values.yaml'
+      - 'examples/apps/**/values.yaml'
 
 jobs:
   update-readme-metadata:
