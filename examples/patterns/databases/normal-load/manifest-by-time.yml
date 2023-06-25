@@ -9,7 +9,7 @@ spec:
     - action: Cluster
       name: masters
       cluster:
-        templateRef: cockroach.cluster.master
+        templateRef: frisbee.apps.cockroach.server
         instances: 3
         inputs:
           - { join: "masters-1:26257,masters-2:26257,masters-3:26257" }
@@ -29,7 +29,7 @@ spec:
       depends: { success: [ boot ] }
       name: preloader
       service:
-        templateRef: ycsb.cockroach.loader
+        templateRef: frisbee.apps.ycsb.cockroach.loader
         inputs:
           - { server: masters-1, workload: workloada, recordcount: "100000", threads: "16", delay: "15" }
 
@@ -39,7 +39,7 @@ spec:
       depends: { after: "5m" } # Time-driven Experiment
       name: query
       service:
-        templateRef: ycsb.cockroach.runner
+        templateRef: frisbee.apps.ycsb.cockroach.runner
         inputs:
           - { server: masters-1, workload: workloada, operationcount: "100000", threads: "4" }
 

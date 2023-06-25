@@ -10,7 +10,7 @@ spec:
     - action: Service
       name: server
       service:
-        templateRef: fedbed.server
+        templateRef: frisbee.apps.fedbed.server
         inputs:
           - { backend: "pytorch", min_fit_clients: 4, min_available_clients: 5 }
 
@@ -19,7 +19,7 @@ spec:
       name: clients
       depends: { running: [ server ] }
       cluster:
-        templateRef: fedbed.client
+        templateRef: frisbee.apps.fedbed.client
         resources:
           total: { cpu: 10, memory: 40Gi }
           distribution: { name: uniform }
@@ -45,7 +45,7 @@ spec:
       name: killer
       depends: { success: [ wait-for-round ] }
       cascade:
-        templateRef: system.chaos.pod.kill
+        templateRef: frisbee.system.chaos.pod.kill
         inputs:
           - { target: clients-1 }
           - { target: clients-3 }

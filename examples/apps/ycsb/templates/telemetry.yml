@@ -2,7 +2,7 @@
 apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
-  name: ycsb.telemetry.client
+  name: frisbee.apps.ycsb.telemetry
 spec:
   service:
     decorators:
@@ -43,7 +43,7 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: ycsb.telemetry.client.config
+  name: frisbee.apps.ycsb.telemetry.config
 data:
 {{ (.Files.Glob "dashboards/*.json").AsConfig | indent 2 }}
 

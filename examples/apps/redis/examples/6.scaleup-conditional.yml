@@ -27,7 +27,7 @@ spec:
       name: loaders
       depends: { success: [ boot ] }
       cluster:
-        templateRef: ycsb.redis.loader
+        templateRef: frisbee.apps.ycsb.redis.loader
         instances: 100
         inputs:
           - { server: .cluster.masters.one , workload: workloada, recordcount: "100000000", threads: "40", mode: "cluster" }

@@ -39,7 +39,7 @@ spec:
     - action: Service
       name: dataviewer
       service:
-        templateRef: system.telemetry.dataviewer.template
+        templateRef: frisbee.system.telemetry.dataviewer
         inputs:
           - { logClaimName: logs }
 

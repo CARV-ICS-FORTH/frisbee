@@ -17,7 +17,7 @@ spec:
       depends: { running: [ master ] }
       name: loader
       service:
-        templateRef: ycsb.redis.loader
+        templateRef: frisbee.apps.ycsb.redis.loader
         inputs:
           - { server: master, workload: workloada, recordcount: "1000000", threads: "400", delay: "15", mode: "single" }
 
@@ -27,7 +27,7 @@ spec:
       depends: { success: [ loader ] }
       name: workload-a
       service:
-        templateRef: ycsb.redis.runner
+        templateRef: frisbee.apps.ycsb.redis.runner
         inputs:
           - { server: master, workload: workloada, operationcount: "1000000", threads: "40", mode: "single" }
 
@@ -37,7 +37,7 @@ spec:
       depends: { success: [ workload-a ] }
       name: workload-b
       service:
-        templateRef: ycsb.redis.runner
+        templateRef: frisbee.apps.ycsb.redis.runner
         inputs:
           - { server: master, workload: workloadb, operationcount: "1000000", threads: "40", mode: "single" }
 
@@ -46,7 +46,7 @@ spec:
       depends: { success: [ workload-b ] }
       name: workload-c
       service:
-        templateRef: ycsb.redis.runner
+        templateRef: frisbee.apps.ycsb.redis.runner
         inputs:
           - { server: master, workload: workloadc, operationcount: "1000000", threads: "40", mode: "single" }
 
@@ -55,7 +55,7 @@ spec:
       depends: { success: [ workload-c ] }
       name: workload-f
       service:
-        templateRef: ycsb.redis.runner
+        templateRef: frisbee.apps.ycsb.redis.runner
         inputs:
           - { server: master, workload: workloadf, operationcount: "1000000", threads: "40", mode: "single" }
 
@@ -64,7 +64,7 @@ spec:
       depends: { success: [ workload-f ] }
       name: workload-d
       service:
-        templateRef: ycsb.redis.runner
+        templateRef: frisbee.apps.ycsb.redis.runner
         inputs:
           - { server: master, workload: workloadd, operationcount: "1000000", threads: "40", mode: "single" }
 
@@ -75,7 +75,7 @@ spec:
       depends: { success: [ workload-d ] }
       name: reloader
       service:
-        templateRef: ycsb.redis.loader
+        templateRef: frisbee.apps.ycsb.redis.loader
         inputs:
           - { server: master, workload: workloade, recordcount: "1000000", threads: "400", dropdata: "true", mode: "single" }
 
@@ -85,7 +85,7 @@ spec:
       depends: { success: [ reloader ] }
       name: workload-e
       service:
-        templateRef: ycsb.redis.runner
+        templateRef: frisbee.apps.ycsb.redis.runner
         inputs:
           - { server: master, workload: workloade, operationcount: "1000000", threads: "40", mode: "single" }
 

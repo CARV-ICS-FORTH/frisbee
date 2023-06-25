@@ -2,7 +2,7 @@
 apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
-  name: fedbed.client-annotation
+  name: frisbee.apps.fedbed.client-annotation
 spec:
   inputs:
     parameters:
@@ -19,7 +19,7 @@ spec:
   service:
 #    decorators:
  #     telemetry:
-  #      - system.telemetry.resources
+  #      - frisbee.system.telemetry.resources
 
     volumes:
       - name: varlog

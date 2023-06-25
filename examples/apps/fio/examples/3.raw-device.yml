@@ -8,7 +8,7 @@ spec:
     - action: Service
       name: fio
       service:
-        templateRef: fio.benchmark.raw-device
+        templateRef: frisbee.apps.fio.raw-device
         inputs:
           - { direct: "0" }
 

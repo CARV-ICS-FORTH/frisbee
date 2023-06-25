@@ -10,14 +10,14 @@ spec:
     - action: Cluster
       name: server
       cluster:
-        templateRef: iperf2.server
+        templateRef: frisbee.apps.iperf2.server
 
     # Create a cluster of iperf clients
     - action: Cluster
       name: clients-a
       depends: { running: [ server ] }
       cluster:
-        templateRef: iperf2.client
+        templateRef: frisbee.apps.iperf2.client
         instances: 20
         inputs:
           - { server: .cluster.server.one, seconds: "120" }
@@ -30,7 +30,7 @@ spec:
       name: clients-b
       depends: { running: [ server ] }
       cluster:
-        templateRef: iperf2.client
+        templateRef: frisbee.apps.iperf2.client
         instances: 20
         inputs:
           - { server: .cluster.server.one, seconds: "240" }

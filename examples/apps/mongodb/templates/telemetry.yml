@@ -2,7 +2,7 @@
 apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
-  name: mongodb.telemetry.server
+  name: frisbee.apps.mongo.telemetry
 spec:
   service:
     decorators:
@@ -48,7 +48,7 @@ spec:
 apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
-  name: mongodb.telemetry.server2
+  name: frisbee.apps.mongo.telemetry2
 spec:
   service:
     decorators:
@@ -77,5 +77,5 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: mongodb.telemetry.server.config
+  name: frisbee.apps.mongo.telemetry.config
 data: {{(.Files.Glob "dashboards/mongodb.json").AsConfig | nindent 2}}

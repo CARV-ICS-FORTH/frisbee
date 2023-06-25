@@ -17,7 +17,7 @@ spec:
     - action: Service
       name: server
       service:
-        templateRef: fedbed.server
+        templateRef: frisbee.apps.fedbed.server
         inputs:
           - { min_fit_clients: 3 }
 
@@ -26,7 +26,7 @@ spec:
       name: clients
       depends: { running: [ server ], success: [ cifar10-download ] }
       cluster:
-        templateRef: fedbed.client-shared-dataset
+        templateRef: frisbee.apps.fedbed.client-shared-dataset
         inputs:
           - { fl_server: server, dataset: fl.datasets.cifar10, backend: "pytorch", total_nodes: 3, node_id: 0 }
           - { fl_server: server, dataset: fl.datasets.cifar10, backend: "pytorch", total_nodes: 3, node_id: 1 }

@@ -4,7 +4,7 @@
 apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
-  name: system.chaos.network.partition.partial
+  name: frisbee.system.chaos.network.partition.partial
 spec:
   inputs:
     parameters:

@@ -6,7 +6,6 @@ require (
 	github.com/Knetic/govaluate v3.0.0+incompatible
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/armon/circbuf v0.0.0-20190214190532-5111143e8da2
-	github.com/dariubs/percent v1.0.0
 	github.com/dimiro1/banner v1.1.0
 	github.com/go-logr/logr v1.2.4
 	github.com/golanghelper/grafana-webhook v0.0.0-20180512191629-e0da26114467
@@ -15,6 +14,7 @@ require (
 	github.com/grafana/grafana-api-golang-client v0.21.1
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/imroc/req/v3 v3.35.0
+	github.com/jaytaylor/go-find v0.0.0-20230430153105-548b1a88d19c
 	github.com/kubeshop/testkube v1.11.22
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/pkg/errors v0.9.1
@@ -88,6 +88,7 @@ require (
 	github.com/quic-go/qtls-go1-20 v0.2.2 // indirect
 	github.com/quic-go/quic-go v0.34.0 // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
+	github.com/ryanuber/go-glob v1.0.0 // indirect
 	github.com/shopspring/decimal v1.2.0 // indirect
 	github.com/spf13/cast v1.3.1 // indirect
 	github.com/vmihailenco/msgpack/v5 v5.3.5 // indirect

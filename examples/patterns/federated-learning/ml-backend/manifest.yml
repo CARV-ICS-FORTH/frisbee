@@ -11,7 +11,7 @@ spec:
     - action: Service
       name: server
       service:
-        templateRef: fedbed.server
+        templateRef: frisbee.apps.fedbed.server
         inputs:
           - { dataset: "MNIST", backend: "tensorflow" } # Change values here
 
@@ -20,7 +20,7 @@ spec:
       name: clients
       depends: { running: [ server ] }
       cluster:
-        templateRef: fedbed.client
+        templateRef: frisbee.apps.fedbed.client
         inputs:
           - { fl_server: server, dataset: "MNIST", backend: "tensorflow" } # Change values here
 

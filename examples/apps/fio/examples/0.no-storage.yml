@@ -8,7 +8,7 @@ spec:
     - action: Service
       name: fio
       service:
-        templateRef: fio.benchmark.default-fs
+        templateRef: frisbee.apps.fio.builtin
         inputs:
           - { direct: "0" }
 

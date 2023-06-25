@@ -15,13 +15,13 @@ spec:
     - action: Service
       name: coordinator
       service:
-        templateRef: tikv.cluster.placement-driver
+        templateRef: frisbee.apps.tikv.pd.coverage
 
     - action: Cluster
       depends: { running: [ coordinator ] }
       name: workers
       cluster:
-        templateRef: tikv.cluster.worker
+        templateRef: frisbee.apps.tikv.worker
         instances: 3
         inputs:
           - { placementDriver: coordinator }
@@ -32,7 +32,7 @@ spec:
       depends: { running: [ workers ] }
       name: loader
       service:
-        templateRef: ycsb.tikv.loader
+        templateRef: frisbee.apps.ycsb.tikv.loader
         inputs:
           - { server: coordinator, workload: workloada, recordcount: "1000000", threads: "40" }
 
@@ -44,7 +44,7 @@ spec:
       depends: { success: [ loader ] }
       name: client-1
       cluster:
-        templateRef: ycsb.tikv.runner
+        templateRef: frisbee.apps.ycsb.tikv.runner
         instances: 1
         inputs:
           - { server: coordinator, workload: workloada, operationcount: "1000000", threads: "40" }
@@ -55,7 +55,7 @@ spec:
       depends: { success: [ client-1 ] }
       name: client-2
       cluster:
-        templateRef: ycsb.tikv.runner
+        templateRef: frisbee.apps.ycsb.tikv.runner
         instances: 2
         inputs:
           - { server: coordinator, workload: workloada, operationcount: "1000000", threads: "40" }
@@ -66,7 +66,7 @@ spec:
       depends: { success: [ client-2 ] }
       name: client-3
       cluster:
-        templateRef: ycsb.tikv.runner
+        templateRef: frisbee.apps.ycsb.tikv.runner
         instances: 3
         inputs:
           - { server: coordinator, workload: workloada, operationcount: "1000000",threads: "40" }
@@ -77,7 +77,7 @@ spec:
       depends: { success: [ client-3 ] }
       name: client-4
       cluster:
-        templateRef: ycsb.tikv.runner
+        templateRef: frisbee.apps.ycsb.tikv.runner
         instances: 4
         inputs:
           - { server: coordinator, workload: workloada, operationcount: "1000000", threads: "40" }
@@ -88,7 +88,7 @@ spec:
       depends: { success: [ client-4 ] }
       name: client-5
       cluster:
-        templateRef: ycsb.tikv.runner
+        templateRef: frisbee.apps.ycsb.tikv.runner
         instances: 5
         inputs:
           - { server: coordinator, workload: workloada, operationcount: "1000000", threads: "40" }
@@ -99,7 +99,7 @@ spec:
       depends: { success: [ client-5 ] }
       name: client-6
       cluster:
-        templateRef: ycsb.tikv.runner
+        templateRef: frisbee.apps.ycsb.tikv.runner
         instances: 6
         inputs:
           - { server: coordinator, workload: workloada, operationcount: "1000000", threads: "40" }
@@ -110,7 +110,7 @@ spec:
       depends: { success: [ client-6 ] }
       name: client-7
       cluster:
-        templateRef: ycsb.tikv.runner
+        templateRef: frisbee.apps.ycsb.tikv.runner
         instances: 7
         inputs:
           - { server: coordinator, workload: workloada, operationcount: "1000000", threads: "40" }
@@ -121,7 +121,7 @@ spec:
       depends: { success: [ client-7 ] }
       name: client-8
       cluster:
-        templateRef: ycsb.tikv.runner
+        templateRef: frisbee.apps.ycsb.tikv.runner
         instances: 8
         inputs:
           - { server: coordinator, workload: workloada, operationcount: "1000000", threads: "40" }
@@ -132,7 +132,7 @@ spec:
       depends: { success: [ client-8 ] }
       name: client-9
       cluster:
-        templateRef: ycsb.tikv.runner
+        templateRef: frisbee.apps.ycsb.tikv.runner
         instances: 9
         inputs:
           - { server: coordinator, workload: workloada, operationcount: "1000000", threads: "40" }
@@ -143,7 +143,7 @@ spec:
       depends: { success: [ client-9 ] }
       name: client-10
       cluster:
-        templateRef: ycsb.tikv.runner
+        templateRef: frisbee.apps.ycsb.tikv.runner
         instances: 10
         inputs:
           - { server: coordinator, workload: workloada, operationcount: "1000000",threads: "40" }
@@ -154,7 +154,7 @@ spec:
       depends: { success: [ client-10 ] }
       name: client-11
       cluster:
-        templateRef: ycsb.tikv.runner
+        templateRef: frisbee.apps.ycsb.tikv.runner
         instances: 11
         inputs:
           - { server: coordinator, workload: workloada, operationcount: "1000000",threads: "40" }
@@ -164,7 +164,7 @@ spec:
       depends: { success: [ client-11 ] }
       name: client-12
       cluster:
-        templateRef: ycsb.tikv.runner
+        templateRef: frisbee.apps.ycsb.tikv.runner
         instances: 12
         inputs:
           - { server: coordinator, workload: workloada, operationcount: "1000000", threads: "40" }

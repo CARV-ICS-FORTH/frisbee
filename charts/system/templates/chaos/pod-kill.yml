@@ -2,7 +2,7 @@
 apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
-  name: system.chaos.pod.kill
+  name: frisbee.system.chaos.pod.kill
 spec:
   inputs:
     parameters:

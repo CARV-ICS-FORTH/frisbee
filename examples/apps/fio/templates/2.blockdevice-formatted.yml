@@ -3,7 +3,7 @@
 apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
-  name: fio.benchmark.formatted-device
+  name: frisbee.apps.fio.formatted-device
 spec:
   inputs:
     parameters:
@@ -13,8 +13,8 @@ spec:
   service:
     decorators: # decorators
       telemetry:
-        - system.telemetry.resources
-        - fio.telemetry.client
+        - frisbee.system.telemetry.resources
+        - frisbee.apps.fio.telemetry
 
     volumes: # Create an ephemeral volume, backed by a formatted block device
       - name: scratch-volume

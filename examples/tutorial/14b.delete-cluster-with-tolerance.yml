@@ -33,7 +33,7 @@ spec:
       name: killer
       depends: { running: [ sleepers ], after: "30s" }
       cascade:
-        templateRef: system.chaos.pod.kill
+        templateRef: frisbee.system.chaos.pod.kill
         inputs:
           - { target: sleepers-1 }
           - { target: sleepers-3 }

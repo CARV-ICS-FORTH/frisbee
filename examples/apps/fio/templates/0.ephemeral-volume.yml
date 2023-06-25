@@ -3,7 +3,7 @@
 apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
-  name: fio.benchmark.ephemeral
+  name: frisbee.apps.fio.ephemeral
 spec:
   inputs:
     parameters:
@@ -13,7 +13,7 @@ spec:
   service:
     decorators: # decorators
       telemetry:
-        - system.telemetry.resources
+        - frisbee.system.telemetry.resources
 
     volumes: # Create an ephemeral volume, backed by a file
       - name: scratch-volume

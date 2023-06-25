@@ -10,7 +10,7 @@ spec:
   service:
     decorators:
       telemetry:
-        - system.telemetry.resources
+        - frisbee.system.telemetry.resources
     volumes:
       - name: dataset
         persistentVolumeClaim:

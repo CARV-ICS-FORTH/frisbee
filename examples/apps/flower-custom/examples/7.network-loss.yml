@@ -51,7 +51,7 @@ spec:
       name: packetloss
       depends: { running: [ clients ] }
       chaos:
-        templateRef: system.chaos.network.loss
+        templateRef: frisbee.system.chaos.network.loss
         inputs:
           - { source: server, duration: 5m }
 

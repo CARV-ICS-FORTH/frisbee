@@ -9,7 +9,7 @@ spec:
     - action: Cluster
       name: masters
       cluster:
-        templateRef: cockroach.cluster.master
+        templateRef: frisbee.apps.cockroach.server
         instances: 3
         inputs:
           - { join: "masters-1:26257,masters-2:26257,masters-3:26257" }
@@ -27,7 +27,7 @@ spec:
       depends: { success: [ boot ] }
       name: loader
       service:
-        templateRef: ycsb.cockroach.loader
+        templateRef: frisbee.apps.ycsb.cockroach.loader
         inputs:
           - { server: masters-1, workload: workloada, recordcount: "500000", threads: "40" }
 
@@ -36,7 +36,7 @@ spec:
       depends: { success: [ loader ] }
       name: workload-a
       service:
-        templateRef: ycsb.cockroach.runner
+        templateRef: frisbee.apps.ycsb.cockroach.runner
         inputs:
           - { server: masters-1, workload: workloada, operationcount: "500000", threads: "40" }
 
@@ -45,7 +45,7 @@ spec:
       depends: { success: [ workload-a ] }
       name: workload-b
       service:
-        templateRef: ycsb.cockroach.runner
+        templateRef: frisbee.apps.ycsb.cockroach.runner
         inputs:
           - { server: masters-1, workload: workloadb, operationcount: "500000", threads: "40" }
 
@@ -54,7 +54,7 @@ spec:
       depends: { success: [ workload-b ] }
       name: workload-c
       service:
-        templateRef: ycsb.cockroach.runner
+        templateRef: frisbee.apps.ycsb.cockroach.runner
         inputs:
           - { server: masters-1, workload: workloadc, operationcount: "500000", threads: "40" }
 
@@ -63,7 +63,7 @@ spec:
       depends: { success: [ workload-c ] }
       name: workload-f
       service:
-        templateRef: ycsb.cockroach.runner
+        templateRef: frisbee.apps.ycsb.cockroach.runner
         inputs:
           - { server: masters-1, workload: workloadf, operationcount: "500000", threads: "40" }
 
@@ -72,7 +72,7 @@ spec:
       depends: { success: [ workload-f ] }
       name: workload-d
       service:
-        templateRef: ycsb.cockroach.runner
+        templateRef: frisbee.apps.ycsb.cockroach.runner
         inputs:
           - { server: masters-1, workload: workloadd, operationcount: "500000", threads: "40" }
 
@@ -83,7 +83,7 @@ spec:
       depends: { success: [ workload-d ] }
       name: reloader
       service:
-        templateRef: ycsb.cockroach.loader
+        templateRef: frisbee.apps.ycsb.cockroach.loader
         inputs:
           - { server: masters-1, workload: workloade, recordcount: "500000", threads: "40", dropdata: "true" }
 
@@ -93,7 +93,7 @@ spec:
       depends: { success: [ reloader ] }
       name: workload-e
       service:
-        templateRef: ycsb.cockroach.runner
+        templateRef: frisbee.apps.ycsb.cockroach.runner
         inputs:
           - { server: masters-1, workload: workloade, operationcount: "500000", threads: "40" }
 

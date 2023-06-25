@@ -2,11 +2,11 @@
 apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
-  name: flower.advanced-pytorch.standalone
+  name: frisbee.apps.flower.advanced-pytorch
 spec:
   service:
     decorators:
-      telemetry: [ system.telemetry.resources ]
+      telemetry: [ frisbee.system.telemetry.resources ]
 
     containers:
       - name: main

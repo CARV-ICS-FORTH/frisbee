@@ -9,7 +9,7 @@ spec:
     - action: Cluster
       name: masters
       cluster:
-        templateRef: cockroach.cluster.master
+        templateRef: frisbee.apps.cockroach.server
         instances: 3
         inputs:
           - { join: "masters-1:26257,masters-2:26257,masters-3:26257" }
@@ -27,7 +27,7 @@ spec:
       name: loaders
       depends: { success: [ boot ] }
       cluster:
-        templateRef: ycsb.cockroach.loader
+        templateRef: frisbee.apps.ycsb.cockroach.loader
         instances: 100
         inputs:
           - { server: .cluster.masters.one, workload: workloada, recordcount: "100000000", threads: "40", delay: "15" }
@@ -40,7 +40,7 @@ spec:
       name: more-servers
       depends: { success: [ boot ] }
       cluster:
-        templateRef: cockroach.cluster.master
+        templateRef: frisbee.apps.cockroach.server
         instances: 10
         inputs:
           - { join: "masters-1:26257" }

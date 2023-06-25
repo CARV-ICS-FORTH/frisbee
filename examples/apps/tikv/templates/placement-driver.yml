@@ -1,0 +1,55 @@
+---
+# In some situations such as in the Docker or NAT network environment, if the other nodes (peers) cannot access
+# the PD node through the default peer URLs listened to by this PD node, you must manually set the advertise peer URLs.
+apiVersion: frisbee.dev/v1alpha1
+kind: Template
+metadata:
+  name: frisbee.apps.tikv.pd.coverage
+spec:
+  service:
+    decorators: # Decorators
+      telemetry: [ frisbee.system.telemetry.resources, frisbee.apps.tikv.pd.telemetry ]
+
+    volumes: # Create an ephemeral volume, backed by a file
+      - name: scratch-volume
+        ephemeral:
+          volumeClaimTemplate:
+            spec:
+              storageClassName: platform.storageclass.local
+              accessModes:
+                - ReadWriteOnce
+              resources:
+                requests:
+                  storage: 15Gi
+
+    containers: # Container
+      - name: main
+        image: pingcap/pd:v5.1.2
+        volumeMounts:
+          - name: scratch-volume
+            mountPath: /store
+        ports:
+          - name: to-clients
+            containerPort: 2379
+          - name: to-cluster
+            containerPort: 2380
+        command:
+          - /bin/sh   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
+            set -eum
+            cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
+
+            rm -rf /store/$${HOSTNAME}
+            mkdir -p /store/$${HOSTNAME}/pd
+
+            # see https://github.com/tikv/pd/blob/master/conf/config.toml
+
+            echo "Start PD server at $${HOSTNAME}"
+
+            /pd-server                                                  \
+            --client-urls=http://0.0.0.0:2379                           \
+            --advertise-client-urls=http://$${HOSTNAME}:2379            \
+            --peer-urls=http://0.0.0.0:2380                             \
+            --advertise-peer-urls=http://$${HOSTNAME}:2380              \
+            --data-dir=/store/$${HOSTNAME}/pd

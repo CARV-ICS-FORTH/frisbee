@@ -9,14 +9,14 @@ spec:
     - action: Service
       name: server
       service:
-        templateRef: iperf2.server
+        templateRef: frisbee.apps.iperf2.server
 
     # Create an iperf client to generate background noise
     - action: Service
       name: noise
       depends: { running: [ server ] }
       service:
-        templateRef: iperf2.client
+        templateRef: frisbee.apps.iperf2.client
         inputs:
           - { server: server, seconds: "800" }
 
@@ -26,7 +26,7 @@ spec:
       name: client
       depends: { running: [ server ], after: "2m" }
       service:
-        templateRef: iperf2.client
+        templateRef: frisbee.apps.iperf2.client
         inputs:
           - { server: server, seconds: "120" }
 

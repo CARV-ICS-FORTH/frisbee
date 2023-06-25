@@ -9,7 +9,7 @@ spec:
     - action: Service
       name: server
       service:
-        templateRef: iperf2.server
+        templateRef: frisbee.apps.iperf2.server
 
     # Create an iperf client
     - action: Service
@@ -19,7 +19,7 @@ spec:
         state: '{{.NumFailedJobs}} >= 1'
         metrics: 'max() of query(wpFnYRwGk/2/bitrate, 5m, now) is below(1000)'
       service:
-        templateRef: iperf2.client
+        templateRef: frisbee.apps.iperf2.client
         inputs:
           - { server: server, seconds: "800" }
 

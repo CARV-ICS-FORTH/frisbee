@@ -26,7 +26,7 @@ spec:
       depends: { success: [ boot ] }
       name: loader
       service:
-        templateRef: ycsb.redis.loader
+        templateRef: frisbee.apps.ycsb.redis.loader
         inputs:
           - { server: .cluster.masters.one , workload: workloada, recordcount: "100000000", threads: "40", mode: "cluster" }
 
@@ -47,7 +47,7 @@ spec:
       name: killer
       depends: { running: [ more-servers ] }
       cascade:
-        templateRef: system.chaos.pod.kill
+        templateRef: frisbee.system.chaos.pod.kill
         inputs:
           - { target: more-servers-4 }
           - { target: more-servers-7 }

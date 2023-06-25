@@ -5,6 +5,8 @@
 ### Changed defaults / behaviours
 - Moved charts from `charts/{category}` to `examples/apps`. This allows to have the apps and the test-cases on the same directory. Additionally, that
   means that chart releasing is no longer part of the frisbee release -- which shouldn't have been the case in the first place.
+- Renamed template to be in the format 'frisbee.system...' and 'frisbee.apps'. This, however, warrants a new release because 
+  the renamed systems templates affect the controller.
 - ...
 
 ### New Features & Functionality

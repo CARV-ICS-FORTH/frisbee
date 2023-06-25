@@ -17,6 +17,7 @@ limitations under the License.
 package tests
 
 import (
+	"github.com/jaytaylor/go-find"
 	"os"
 	"path/filepath"
 
@@ -67,18 +68,21 @@ func NewValidateTestCmd() *cobra.Command {
 					return
 				}
 
-				// Helm charts (and therefore templates) are validated by Helm
-				if _, err := os.Stat(testFile + "/Chart.yaml"); err == nil {
-					err = validateChart(testFile)
+				// search for all the directories that container Chart.yaml files.
+				// this file indicates that it's a helm chart that needs to be validated
+				finder := find.NewFind(testFile).Name("Chart.yaml")
+				hits, err := finder.Evaluate()
+				ui.ExitOnError("Unable to walk directory:"+testFile, err)
 
-					ui.ExitOnError("Chart Validation ...", err)
+				for _, hit := range hits {
+					// we only need the chart directory, not the path to Chart.yaml.
+					hit = filepath.Dir(hit)
 
-					ui.Success("Chart validated.", testFile)
+					err = validateChart(hit)
+					ui.ExitOnError("Chart Validation failed: "+hit, err)
 
-					return
+					ui.Success("Chart validated.", hit)
 				}
-
-				ui.Failf("Validation path should point to a Helm Chart or to an Examples directory.")
 			} else {
 				err := validateScenario(testFile)
 				ui.ExitOnError("Validating ...", err)

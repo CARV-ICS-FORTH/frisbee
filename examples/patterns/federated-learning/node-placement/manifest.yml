@@ -10,7 +10,7 @@ spec:
     - action: Service
       name: server
       service:
-        templateRef: fedbed.server
+        templateRef: frisbee.apps.fedbed.server
         inputs:
           - { min_fit_clients: 20, min_available_clients: 20 }
 
@@ -21,7 +21,7 @@ spec:
       cluster:
         placement:
           nodes: [ k8s-node1 ]  # Change values here
-        templateRef: fedbed.client
+        templateRef: frisbee.apps.fedbed.client
         inputs:
           - { fl_server: server,  total_nodes: 20, node_id: 0 }
           - { fl_server: server, total_nodes: 20, node_id: 1 }
@@ -36,7 +36,7 @@ spec:
       cluster:
         placement:
           nodes: [ k8s-node2 ]  # Change values here
-        templateRef: fedbed.client
+        templateRef: frisbee.apps.fedbed.client
         inputs:
           - { fl_server: server, total_nodes: 20, node_id: 5 }
           - { fl_server: server, total_nodes: 20, node_id: 6 }
@@ -52,7 +52,7 @@ spec:
       cluster:
         placement:
           nodes: [ k8s-node3 ]  # Change values here
-        templateRef: fedbed.client
+        templateRef: frisbee.apps.fedbed.client
         inputs:
           - { fl_server: server, total_nodes: 20, node_id: 10 }
           - { fl_server: server, total_nodes: 20, node_id: 11 }
@@ -68,7 +68,7 @@ spec:
       cluster:
         placement:
           nodes: [ k8s-node4 ]  # Change values here
-        templateRef: fedbed.client
+        templateRef: frisbee.apps.fedbed.client
         inputs:
           - { fl_server: server, total_nodes: 20, node_id: 15 }
           - { fl_server: server,  total_nodes: 20, node_id: 16 }

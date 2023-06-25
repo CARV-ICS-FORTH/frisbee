@@ -22,7 +22,7 @@ spec:
     - action: Cluster
       name: fio
       cluster:
-        templateRef: fio.benchmark.shared-fs
+        templateRef: frisbee.apps.fio.shared-fs
         instances: 2
         inputs:
           - { direct: "0", claimName: fs }

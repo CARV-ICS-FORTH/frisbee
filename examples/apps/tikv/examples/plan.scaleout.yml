@@ -12,13 +12,13 @@ spec:
     - action: Service
       name: coordinator
       service:
-        templateRef: tikv.cluster.placement-driver
+        templateRef: frisbee.apps.tikv.pd.coverage
 
     - action: Cluster
       depends: { running: [ coordinator ] }
       name: workers
       cluster:
-        templateRef: tikv.cluster.worker
+        templateRef: frisbee.apps.tikv.worker
         instances: 256
         inputs:
           - { placementDriver: coordinator }
@@ -30,7 +30,7 @@ spec:
       name: loaders
       depends: { running: [ coordinator, workers ] }
       cluster:
-        templateRef: ycsb.tikv.loader
+        templateRef: frisbee.apps.ycsb.tikv.loader
         inputs:
           - { server: coordinator, recordcount: "100000000000", offset: "0", threads: "32" }
 
