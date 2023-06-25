@@ -4,12 +4,10 @@ set -eu
 set -o pipefail
 trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
 
-
-export NAMESPACE=normal-load
+export NAMESPACE=network-partition
 export SCENARIO=$(dirname -- "$0")/manifest.yml
 export REPORTS=${HOME}/frisbee-reports/${NAMESPACE}/
-export DEPENDENCIES=(./charts/system/ ./charts/databases/cockroachdb ./charts/databases/ycsb)
-export DASHBOARDS=(summary ingleton ycsb)
+export DEPENDENCIES=(./charts/system/ ./examples/apps/cockroachdb ./examples/apps/ycsb)
 
 # Prepare the Reporting folder
 mkdir -p "${REPORTS}"
@@ -24,4 +22,4 @@ kubectl-frisbee submit test "${NAMESPACE}" "${SCENARIO}" "${DEPENDENCIES[@]}"
 sleep 10
 
 # Report the scenario
-kubectl-frisbee report test "${NAMESPACE}" "${REPORTS}" --pdf --data --aggregated-pdf --wait --dashboard "${DASHBOARDS}"
+kubectl-frisbee report test "${NAMESPACE}" "${REPORTS}" --pdf --data --aggregated-pdf --wait

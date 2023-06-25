@@ -29,7 +29,7 @@ RUN yum install -y numactl-libs  numactl-devel libibverbs-devel  librdmacm infin
 RUN yum -y install perftest gperf
 
 
-COPY ./CMakeLists.txt /root/CMakeLists.txt
+COPY CMakeLists.txt /root/CMakeLists.txt
 
 # Install Tebis
 RUN git clone --branch master "https://tebis-docker-container:kEmvUT1ZaceUsad6usGF@carvgit.ics.forth.gr/storage/tebis.git" tebis && \
