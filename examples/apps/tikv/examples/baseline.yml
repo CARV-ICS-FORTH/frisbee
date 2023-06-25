@@ -10,13 +10,13 @@ spec:
     - action: Service
       name: coordinator
       service:
-        templateRef: tikv.cluster.placement-driver
+        templateRef: frisbee.apps.tikv.pd.coverage
 
     - action: Cluster
       depends: { running: [ coordinator ] }
       name: workers
       cluster:
-        templateRef: tikv.cluster.worker
+        templateRef: frisbee.apps.tikv.worker
         instances: 3
         inputs:
           - { placementDriver: coordinator }
@@ -27,7 +27,7 @@ spec:
       depends: { running: [ workers ] }
       name: loader
       service:
-        templateRef: ycsb.tikv.loader
+        templateRef: frisbee.apps.ycsb.tikv.loader
         inputs:
           - { server: coordinator, workload: workloada, recordcount: "10000000", threads: "4" }
 
@@ -36,7 +36,7 @@ spec:
       depends: { success: [ loader ] }
       name: workload-a
       service:
-        templateRef: ycsb.tikv.runner
+        templateRef: frisbee.apps.ycsb.tikv.runner
         inputs:
           - { server: coordinator, workload: workloada, operationcount: "1000000", threads: "4" }
 
@@ -45,7 +45,7 @@ spec:
       depends: { success: [ workload-a ] }
       name: workload-b
       service:
-        templateRef: ycsb.tikv.runner
+        templateRef: frisbee.apps.ycsb.tikv.runner
         inputs:
           - { server: coordinator, workload: workloadb, operationcount: "1000000", threads: "4" }
 
@@ -54,7 +54,7 @@ spec:
       depends: { success: [ workload-b ] }
       name: workload-c
       service:
-        templateRef: ycsb.tikv.runner
+        templateRef: frisbee.apps.ycsb.tikv.runner
         inputs:
           - { server: coordinator, workload: workloadc, operationcount: "1000000", threads: "4" }
 
@@ -63,7 +63,7 @@ spec:
       depends: { success: [ workload-c ] }
       name: workload-f
       service:
-        templateRef: ycsb.tikv.runner
+        templateRef: frisbee.apps.ycsb.tikv.runner
         inputs:
           - { server: coordinator, workload: workloadf, operationcount: "1000000", threads: "4" }
 
@@ -73,7 +73,7 @@ spec:
       depends: { success: [ workload-f ] }
       name: workload-d
       service:
-        templateRef: ycsb.tikv.runner
+        templateRef: frisbee.apps.ycsb.tikv.runner
         inputs:
           - { server: coordinator, workload: workloadd, operationcount: "1000000", threads: "4" }
 
@@ -84,7 +84,7 @@ spec:
       depends: { success: [ workload-d ] }
       name: reloader
       service:
-        templateRef: ycsb.tikv.loader
+        templateRef: frisbee.apps.ycsb.tikv.loader
         inputs:
           - { server: coordinator, workload: workloade, dropdata: "true", recordcount: "1000000", threads: "4" }
 
@@ -93,7 +93,7 @@ spec:
       depends: { success: [ reloader ] }
       name: workload-e
       service:
-        templateRef: ycsb.tikv.runner
+        templateRef: frisbee.apps.ycsb.tikv.runner
         inputs:
           - { server: coordinator, workload: workloade, operationcount: "1000000", threads: "4" }
 

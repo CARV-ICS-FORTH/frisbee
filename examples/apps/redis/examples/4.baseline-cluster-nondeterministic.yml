@@ -27,7 +27,7 @@ spec:
       depends: { success: [ boot ] }
       name: loader
       service:
-        templateRef: ycsb.redis.loader
+        templateRef: frisbee.apps.ycsb.redis.loader
         inputs:
           - { server: .cluster.masters.one, workload: workloada, recordcount: "1000000", threads: "40", mode: "cluster" }
 
@@ -36,7 +36,7 @@ spec:
       depends: { success: [ loader ] }
       name: workload-a
       service:
-        templateRef: ycsb.redis.runner
+        templateRef: frisbee.apps.ycsb.redis.runner
         inputs:
           - { server: .cluster.masters.one, workload: workloada, operationcount: "1000000", threads: "40", mode: "cluster" }
 
@@ -45,7 +45,7 @@ spec:
       depends: { success: [ workload-a ] }
       name: workload-b
       service:
-        templateRef: ycsb.redis.runner
+        templateRef: frisbee.apps.ycsb.redis.runner
         inputs:
           - { server: .cluster.masters.one, workload: workloadb, operationcount: "1000000", threads: "40", mode: "cluster" }
 
@@ -54,7 +54,7 @@ spec:
       depends: { success: [ workload-b ] }
       name: workload-c
       service:
-        templateRef: ycsb.redis.runner
+        templateRef: frisbee.apps.ycsb.redis.runner
         inputs:
           - { server: .cluster.masters.one, workload: workloadc, operationcount: "1000000", threads: "40", mode: "cluster" }
 
@@ -63,7 +63,7 @@ spec:
       depends: { success: [ workload-c ] }
       name: workload-f
       service:
-        templateRef: ycsb.redis.runner
+        templateRef: frisbee.apps.ycsb.redis.runner
         inputs:
           - { server: .cluster.masters.one, workload: workloadf, operationcount: "1000000", threads: "40", mode: "cluster" }
 
@@ -72,7 +72,7 @@ spec:
       depends: { success: [ workload-f ] }
       name: workload-d
       service:
-        templateRef: ycsb.redis.runner
+        templateRef: frisbee.apps.ycsb.redis.runner
         inputs:
           - { server: .cluster.masters.one, workload: workloadd, operationcount: "1000000", threads: "40", mode: "cluster" }
 
@@ -83,7 +83,7 @@ spec:
       depends: { success: [ workload-d ] }
       name: reloader
       service:
-        templateRef: ycsb.redis.loader
+        templateRef: frisbee.apps.ycsb.redis.loader
         inputs:
           - { server: .cluster.masters.one, workload: workloade, recordcount: "1000000", threads: "40", dropdata: "true", mode: "cluster" }
 
@@ -93,7 +93,7 @@ spec:
       depends: { success: [ reloader ] }
       name: workload-e
       service:
-        templateRef: ycsb.redis.runner
+        templateRef: frisbee.apps.ycsb.redis.runner
         inputs:
           - { server: .cluster.masters.one, workload: workloade, operationcount: "1000000", threads: "40", mode: "cluster" }
 

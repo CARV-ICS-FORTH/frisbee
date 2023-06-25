@@ -8,7 +8,7 @@ spec:
     - action: Service
       name: fio
       service:
-        templateRef: fio.benchmark.ephemeral
+        templateRef: frisbee.apps.fio.ephemeral
         inputs:
           - { direct: "1" }
 

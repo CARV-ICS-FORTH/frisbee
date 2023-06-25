@@ -2,7 +2,7 @@
 apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
-  name: system.telemetry.grafana.template
+  name: frisbee.system.telemetry.grafana
 spec:
   service:
     decorators:

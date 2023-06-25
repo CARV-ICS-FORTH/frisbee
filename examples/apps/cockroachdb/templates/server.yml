@@ -2,7 +2,7 @@
 apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
-  name: cockroach.cluster.master
+  name: frisbee.apps.cockroach.server
 spec:
   inputs:
     parameters:
@@ -11,8 +11,8 @@ spec:
   service:
     decorators:
       telemetry:
-        - cockroach.telemetry.server
-        - system.telemetry.resources
+        - frisbee.apps.cockroach.server.telemetry
+        - frisbee.system.telemetry.resources
 
     volumes: # Create an ephemeral volume, backed by a file
       - name: scratch-volume

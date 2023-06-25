@@ -2,7 +2,7 @@
 apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
-  name: ycsb.tikv.loader
+  name: frisbee.apps.ycsb.tikv.loader
 spec:
   inputs:
     parameters:
@@ -17,8 +17,8 @@ spec:
   service:
     decorators: # Decorators
       telemetry:
-        - system.telemetry.resources
-        - ycsb.telemetry.client
+        - frisbee.system.telemetry.resources
+        - frisbee.apps.ycsb.telemetry
 
     containers: # Container(s)
       - name: main
@@ -51,7 +51,7 @@ spec:
 apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
-  name: ycsb.tikv.runner
+  name: frisbee.apps.ycsb.tikv.runner
 spec:
   inputs:
     parameters:
@@ -63,8 +63,8 @@ spec:
   service:
     decorators: # Decorators
       telemetry:
-        - system.telemetry.resources
-        - ycsb.telemetry.client
+        - frisbee.system.telemetry.resources
+        - frisbee.apps.ycsb.telemetry
 
     containers: # Container(s)
       - name: main

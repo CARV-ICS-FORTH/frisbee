@@ -39,7 +39,7 @@ subjects:
 apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
-  name: system.telemetry.prometheus.template
+  name: frisbee.system.telemetry.prometheus
 spec:
   inputs:
     scenario: "default"

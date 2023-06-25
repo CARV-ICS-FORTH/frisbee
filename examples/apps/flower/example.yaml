@@ -9,7 +9,7 @@ spec:
     - action: Service
       name: script
       service:
-        templateRef: flower.advanced-pytorch.standalone
+        templateRef: frisbee.apps.flower.advanced-pytorch
 
     # Teardown
     - action: Delete

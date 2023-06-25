@@ -1,0 +1,24 @@
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Template
+metadata:
+  name: frisbee.apps.iperf2.server
+spec:
+  service:
+    decorators:
+      telemetry:
+        - frisbee.system.telemetry.resources
+    containers:
+      - name: main
+        image: "czero/iperf2"
+        ports:
+          - name: tcp
+            containerPort: 5001
+        command:
+          - /bin/sh # Run shell
+          - -c # Read from string
+          - |  # Multi-line str
+            set -eum
+            cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
+
+            iperf -s -f m -i 5

@@ -2,7 +2,7 @@
 apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
-  name: iperf3.telemetry.client
+  name: frisbee.apps.iperf3.client.telemetry
 spec:
   service:
     decorators:
@@ -46,5 +46,5 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: iperf3.telemetry.client.config
+  name: frisbee.apps.iperf3.client.telemetry.config
 data: {{(.Files.Glob "dashboards/iperf.json").AsConfig | nindent 2}}

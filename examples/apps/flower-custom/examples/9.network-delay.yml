@@ -51,7 +51,7 @@ spec:
       name: delay
       depends: { running: [ clients ] }
       chaos:
-        templateRef: system.chaos.network.delay
+        templateRef: frisbee.system.chaos.network.delay
         inputs:
           - { source: server, duration: 5m, latency: "120ms",  jitter: "50ms" }
 

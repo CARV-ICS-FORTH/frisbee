@@ -4,11 +4,11 @@
 apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
-  name: tikv.cluster.coverage.placement-driver
+  name: frisbee.apps.tikv.pd.coverage.coverage
 spec:
   service:
     decorators:
-      telemetry: [ system.telemetry.resources, tikv.telemetry.pd ]
+      telemetry: [ frisbee.system.telemetry.resources, frisbee.apps.tikv.pd.telemetry ]
 
       ingressPort:
         name: coverage
@@ -93,7 +93,7 @@ spec:
 
   service:
     decorators: # Decorators
-      telemetry: [ system.telemetry.resources, tikv.telemetry.worker ]
+      telemetry: [ frisbee.system.telemetry.resources, frisbee.apps.tikv.worker.telemetry ]
       ingressPort:
         name: coverage
 

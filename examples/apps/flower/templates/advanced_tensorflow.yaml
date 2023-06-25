@@ -2,11 +2,11 @@
 apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
-  name: flower.advanced-tensorflow.standalone
+  name: frisbee.apps.flower.advanced-tensorflow
 spec:
   service:
     decorators:
-      telemetry: [ system.telemetry.resources ]
+      telemetry: [ frisbee.system.telemetry.resources ]
 
     containers:
       - name: main

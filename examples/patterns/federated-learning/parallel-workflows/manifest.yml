@@ -11,7 +11,7 @@ spec:
     - action: Service
       name: wfa-server
       service:
-        templateRef: fedbed.server
+        templateRef: frisbee.apps.fedbed.server
         inputs:
           - { min_fit_clients: 20, min_available_clients: 20 }
 
@@ -19,7 +19,7 @@ spec:
       name: wfa-clients
       depends: { running: [ wfa-server ] }
       cluster:
-        templateRef: fedbed.client
+        templateRef: frisbee.apps.fedbed.client
         resources:                            # Change values here
           total: { cpu: 40 }
           distribution: { name: uniform }
@@ -50,7 +50,7 @@ spec:
     - action: Service
       name: wfb-server
       service:
-        templateRef: fedbed.server
+        templateRef: frisbee.apps.fedbed.server
         inputs:
           - { min_fit_clients: 20, min_available_clients: 20 }
 
@@ -58,7 +58,7 @@ spec:
       name: wfb-clients
       depends: { running: [ wfb-server ] }
       cluster:
-        templateRef: fedbed.client
+        templateRef: frisbee.apps.fedbed.client
         resources:                            # Change values here
           total: { cpu: 40 }
           distribution: { name: uniform}
@@ -90,7 +90,7 @@ spec:
       name: common-client
       depends: { running: [ wfa-server, wfb-server] }
       cluster:
-        templateRef: fedbed.client
+        templateRef: frisbee.apps.fedbed.client
         resources:
           total: { cpu: 8 }
           distribution: { name: constant }

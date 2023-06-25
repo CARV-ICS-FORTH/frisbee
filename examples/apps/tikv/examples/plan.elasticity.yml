@@ -10,14 +10,14 @@ spec:
     - action: Service
       name: coordinator
       service:
-        templateRef: tikv.cluster.placement-driver
+        templateRef: frisbee.apps.tikv.pd.coverage
 
     # add a cluster of 3 TiKV instances
     - action: Cluster
       depends: { running: [ coordinator ] }
       name: workers
       cluster:
-        templateRef: tikv.cluster.worker
+        templateRef: frisbee.apps.tikv.worker
         instances: 3
         inputs:
           - { placementDriver: coordinator }
@@ -28,7 +28,7 @@ spec:
       name: loaders
       depends: { running: [ coordinator, workers ] }
       cluster:
-        templateRef: ycsb.tikv.loader
+        templateRef: frisbee.apps.ycsb.tikv.loader
         inputs:
           - { server: coordinator, recordcount: "1000000", offset: "0", threads: "400" }
 
@@ -39,7 +39,7 @@ spec:
       depends: { running: [ coordinator ], success: [ loaders ] }
       name: more-workers
       cluster:
-        templateRef: tikv.cluster.worker
+        templateRef: frisbee.apps.tikv.worker
         instances: 5
         inputs:
           - { placementDriver: coordinator }
@@ -53,7 +53,7 @@ spec:
       name: killer
       depends: { running: [ more-workers ] }
       cascade:
-        templateRef: system.chaos.pod.kill
+        templateRef: frisbee.system.chaos.pod.kill
         inputs:
           - { target: more-workers-4 }
           - { target: more-workers-7 }

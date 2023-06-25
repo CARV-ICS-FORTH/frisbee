@@ -6,7 +6,7 @@ metadata:
 spec:
   service:
     decorators: # Decorators
-      telemetry: [ system.telemetry.resources, redis.telemetry.server ]
+      telemetry: [ frisbee.system.telemetry.resources, redis.telemetry.server ]
 
     containers:
       - name: main
@@ -58,7 +58,7 @@ spec:
       master: localhost
   service:
     decorators:
-      telemetry: [ system.telemetry.resources, redis.telemetry.server ]
+      telemetry: [ frisbee.system.telemetry.resources, redis.telemetry.server ]
     containers:
       - name: main
         image: redis

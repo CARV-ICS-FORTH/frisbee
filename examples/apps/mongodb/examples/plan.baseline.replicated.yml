@@ -27,7 +27,7 @@ spec:
       name: loader
       service:
         
-        templateRef: ycsb.mongo.loader
+        templateRef: frisbee.apps.ycsb.mongo.loader
         inputs:
           - { server: master, workload: workloada, recordcount: "1000000", threads: "400" }
 
@@ -37,7 +37,7 @@ spec:
       name: workload-a
       service:
         
-        templateRef: ycsb.mongo.runner
+        templateRef: frisbee.apps.ycsb.mongo.runner
         inputs:
           - { server: master, workload: workloada, operationcount: "1000000", threads: "40" }
 
@@ -47,7 +47,7 @@ spec:
       name: workload-b
       service:
         
-        templateRef: ycsb.mongo.runner
+        templateRef: frisbee.apps.ycsb.mongo.runner
         inputs:
           - { server: master, workload: workloadb, operationcount: "1000000", threads: "40" }
 
@@ -57,7 +57,7 @@ spec:
       name: workload-c
       service:
         
-        templateRef: ycsb.mongo.runner
+        templateRef: frisbee.apps.ycsb.mongo.runner
         inputs:
           - { server: master, workload: workloadc, operationcount: "1000000", threads: "40" }
 
@@ -68,7 +68,7 @@ spec:
       name: workload-f
       service:
         
-        templateRef: ycsb.mongo.runner
+        templateRef: frisbee.apps.ycsb.mongo.runner
         inputs:
           - { server: master, workload: workloadf, operationcount: "1000000", threads: "40" }
 
@@ -79,7 +79,7 @@ spec:
       name: workload-d
       service:
         
-        templateRef: ycsb.mongo.runner
+        templateRef: frisbee.apps.ycsb.mongo.runner
         inputs:
           - { server: master, workload: workloadd, operationcount: "1000000", threads: "40" }
 
@@ -91,7 +91,7 @@ spec:
       name: reloader
       service:
         
-        templateRef: ycsb.mongo.loader
+        templateRef: frisbee.apps.ycsb.mongo.loader
         inputs:
           - { server: master, workload: workloade, dropdata: "true", recordcount: "1000000",
               threads: "400" }
@@ -103,7 +103,7 @@ spec:
       name: workload-e
       service:
         
-        templateRef: ycsb.mongo.runner
+        templateRef: frisbee.apps.ycsb.mongo.runner
         inputs:
           - { server: master, workload: workloade, operationcount: "1000000", threads: "40" }
 

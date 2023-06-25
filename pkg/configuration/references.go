@@ -22,9 +22,9 @@ const (
 	// PlatformConfigurationName points to a configmap that maintain information about the installation.
 	PlatformConfigurationName = "system.controller.configuration"
 
-	PrometheusTemplate = "system.telemetry.prometheus.template"
+	PrometheusTemplate = "frisbee.system.telemetry.prometheus"
 
-	GrafanaTemplate = "system.telemetry.grafana.template"
+	GrafanaTemplate = "frisbee.system.telemetry.grafana"
 
-	DataviewerTemplate = "system.telemetry.dataviewer.template"
+	DataviewerTemplate = "frisbee.system.telemetry.dataviewer"
 )

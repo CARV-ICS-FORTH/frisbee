@@ -6,7 +6,7 @@ metadata:
 spec:
   service:
     decorators:
-      telemetry: [ system.telemetry.resources ]
+      telemetry: [ frisbee.system.telemetry.resources ]
     containers:
       - name: main
         image: czero/iperf2
@@ -38,7 +38,7 @@ spec:
   service:
     decorators:
       telemetry:
-        - system.telemetry.resources
+        - frisbee.system.telemetry.resources
     containers:
       - name: main
         image: czero/iperf2

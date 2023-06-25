@@ -2,7 +2,7 @@
 apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
-  name: tikv.telemetry.pd
+  name: frisbee.apps.tikv.pd.telemetry
 spec:
   service:
     decorators:
@@ -43,7 +43,7 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: tikv.telemetry.pd.config
+  name: frisbee.apps.tikv.pd.telemetry.config
 data:
 {{(.Files.Glob "dashboards/tikv-pd.json").AsConfig | nindent 2}}
 
@@ -52,7 +52,7 @@ data:
 apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
-  name: tikv.telemetry.worker
+  name: frisbee.apps.tikv.worker.telemetry
 spec:
   service:
     decorators:
@@ -95,7 +95,7 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: tikv.telemetry.worker.config
+  name: frisbee.apps.tikv.worker.telemetry.config
 data:
 {{(.Files.Glob "dashboards/tikv-summary.json").AsConfig | nindent 2}}
 {{(.Files.Glob "dashboards/tikv-troubleshooting.json").AsConfig | nindent 2}}

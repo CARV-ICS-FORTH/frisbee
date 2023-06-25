@@ -6,7 +6,7 @@ metadata:
 spec:
   service:
     decorators:
-      telemetry: [ system.telemetry.resources ]
+      telemetry: [ frisbee.system.telemetry.resources ]
     containers:
       - name: main
         image: czero/iperf2
@@ -38,7 +38,7 @@ spec:
   service:
     decorators:
       telemetry:
-        - system.telemetry.resources
+        - frisbee.system.telemetry.resources
     containers:
       - name: main
         image: czero/iperf2
@@ -78,7 +78,7 @@ spec:
       name: killer
       depends: { running: [ clients ] }
       cascade:
-        templateRef: system.chaos.pod.kill
+        templateRef: frisbee.system.chaos.pod.kill
         inputs:
           - { target: clients-2 }
           - { target: clients-1 }

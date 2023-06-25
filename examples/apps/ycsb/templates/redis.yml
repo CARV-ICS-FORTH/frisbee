@@ -2,7 +2,7 @@
 apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
-  name: ycsb.redis.loader
+  name: frisbee.apps.ycsb.redis.loader
 spec:
   inputs:
     parameters:
@@ -18,8 +18,8 @@ spec:
   service:
     decorators: # Decorators
       telemetry:
-        - system.telemetry.resources
-        - ycsb.telemetry.client
+        - frisbee.system.telemetry.resources
+        - frisbee.apps.ycsb.telemetry
 
     containers: # Container(s)
       - name: main
@@ -51,7 +51,7 @@ spec:
 apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
-  name: ycsb.redis.runner
+  name: frisbee.apps.ycsb.redis.runner
 spec:
   inputs:
     parameters:
@@ -64,8 +64,8 @@ spec:
   service:
     decorators: # Decorators
       telemetry:
-        - system.telemetry.resources
-        - ycsb.telemetry.client
+        - frisbee.system.telemetry.resources
+        - frisbee.apps.ycsb.telemetry
 
 
     containers: # Container(s)

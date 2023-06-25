@@ -6,7 +6,7 @@ metadata:
 spec:
   service:
     decorators: # Add support for Telemetry22
-      telemetry: [ system.telemetry.resources ]
+      telemetry: [ frisbee.system.telemetry.resources ]
     containers:
       - name: main
         image: czero/iperf2
@@ -39,8 +39,8 @@ spec:
   service:
     decorators:
       telemetry: # Register Telemetry Agents
-        - system.telemetry.resources  # Collect Generic System's Metrics
-        - iperf2.telemetry.client # Collect App Specific Metrics
+        - frisbee.system.telemetry.resources  # Collect Generic System's Metrics
+        - frisbee.apps.iperf2.client.telemetry # Collect App Specific Metrics
     containers:
       - name: main
         image: czero/iperf2

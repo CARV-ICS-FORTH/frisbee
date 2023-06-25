@@ -2,7 +2,7 @@
 apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
-  name: system.chaos.network.loss
+  name: frisbee.system.chaos.network.loss
 spec:
   inputs:
     parameters:

@@ -51,7 +51,7 @@ spec:
       name: partition0
       depends: { running: [ clients ] }
       chaos:
-        templateRef: system.chaos.network.partition.partial
+        templateRef: frisbee.system.chaos.network.partition.partial
         inputs:
           - { source: clients-1, duration: 5m , direction: "both", dst: "clients-2,clients-3" }
 

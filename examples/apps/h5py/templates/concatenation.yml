@@ -7,7 +7,7 @@ spec:
   service:
     decorators:
       telemetry:
-        - system.telemetry.resources
+        - frisbee.system.telemetry.resources
     containers:
       - name: main
         image: hdfgroup/hdf5lib:1.13.1

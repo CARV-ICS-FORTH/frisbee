@@ -10,7 +10,7 @@ spec:
 
   service:
     decorators: # Monitoring the resources consumed by the test
-      telemetry: [ system.telemetry.resources ]
+      telemetry: [ frisbee.system.telemetry.resources ]
 
     volumes: # Create an ephemeral volume for the testdata
       - name: scratch-volume

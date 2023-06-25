@@ -2,7 +2,7 @@
 apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
-  name: fedbed.server
+  name: frisbee.apps.fedbed.server
 spec:
   inputs:
     parameters:
@@ -17,7 +17,7 @@ spec:
   service:
     decorators:
       telemetry:
-        - system.telemetry.resources
+        - frisbee.system.telemetry.resources
 
     volumes:
       - name: logs

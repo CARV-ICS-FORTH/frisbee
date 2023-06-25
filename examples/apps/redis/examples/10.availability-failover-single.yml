@@ -35,7 +35,7 @@ spec:
       name: "loaders"
       depends: { running: [ master ] }
       cluster:
-        templateRef: ycsb.redis.loader
+        templateRef: frisbee.apps.ycsb.redis.loader
         inputs:
           - { server: master, workload: workloada, recordcount: "10000000", threads: "1", delay: "15", mode: "single" }
 

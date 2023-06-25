@@ -2,7 +2,7 @@
 apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
-  name: system.telemetry.dataviewer.template
+  name: frisbee.system.telemetry.dataviewer
 spec:
   service:
     decorators:

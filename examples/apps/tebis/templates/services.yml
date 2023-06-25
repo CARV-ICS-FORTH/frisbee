@@ -6,7 +6,7 @@ metadata:
 spec:
   service:
     #    decorators:
-    #      telemetry: [ system.telemetry.resources]
+    #      telemetry: [ frisbee.system.telemetry.resources]
     containers:
       - name: main
         image: zookeeper:3.5.9
@@ -39,7 +39,7 @@ spec:
       serverPort: "6060"
   service:
     #    decorators:
-    #      telemetry: [ system.telemetry.resources]
+    #      telemetry: [ frisbee.system.telemetry.resources]
     containers:
       - name: main
         image: icsforth/tebis-init:latest
@@ -87,10 +87,10 @@ spec:
       device: "/tmp/tebis.dat"
   service:
     #    decorators:
-    #      telemetry: [ system.telemetry.resources]
+    #      telemetry: [ frisbee.system.telemetry.resources]
     #      annotations:
     #        k8s.v1.cni.cncf.io/networks: macvlan-rdma
-    #      telemetry: [ system.telemetry.resources ]
+    #      telemetry: [ frisbee.system.telemetry.resources ]
     containers:
       - name: main
         image: icsforth/tebis-node:latest
@@ -138,7 +138,7 @@ spec:
       regions: "1"
   service:
     #    decorators:
-    #      telemetry: [ system.telemetry.resources]
+    #      telemetry: [ frisbee.system.telemetry.resources]
     #      annotations:
     #        k8s.v1.cni.cncf.io/networks: macvlan-rdma
     containers:

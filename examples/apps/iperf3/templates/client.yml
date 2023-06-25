@@ -2,27 +2,7 @@
 apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
-  name: iperf3.server
-spec:
-  service:
-    decorators:
-      telemetry:
-        - system.telemetry.resources
-
-    containers: # Container
-      - name: main
-        image: "networkstatic/iperf3"
-        ports:
-          - name: tcp
-            containerPort: 5201
-        args: [ "-s", "-f", "m" ]
-
-
----
-apiVersion: frisbee.dev/v1alpha1
-kind: Template
-metadata:
-  name: iperf3.client
+  name: frisbee.apps.iperf3.client
 spec:
   inputs:
     parameters:
@@ -31,8 +11,8 @@ spec:
   service:
     decorators:
       telemetry:
-        - system.telemetry.resources
-        - iperf3.telemetry.client
+        - frisbee.system.telemetry.resources
+        - frisbee.apps.iperf3.client.telemetry
 
     containers:
       - name: main

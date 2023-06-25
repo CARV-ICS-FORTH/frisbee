@@ -10,7 +10,7 @@ spec:
       dataClaimName: ""
   service:
     decorators:
-      telemetry: [ system.telemetry.resources ]
+      telemetry: [ frisbee.system.telemetry.resources ]
 
     volumes:
       - name: dataset

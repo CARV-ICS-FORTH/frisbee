@@ -1,0 +1,68 @@
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Template
+metadata:
+  name: frisbee.apps.tikv.worker
+spec:
+  inputs:
+    parameters:
+      placementDriver: "localhost"
+  service:
+    decorators: # Decorators
+      telemetry: [ frisbee.system.telemetry.resources, frisbee.apps.tikv.worker.telemetry ]
+
+    volumes: # Create an ephemeral volume, backed by a file
+      - name: scratch-volume
+        ephemeral:
+          volumeClaimTemplate:
+            spec:
+              storageClassName: platform.storageclass.local
+              accessModes:
+                - ReadWriteOnce
+              resources:
+                requests:
+                  storage: 15Gi
+
+    containers: # Container
+      - name: main
+        image: pingcap/tikv:v5.1.2
+        volumeMounts:
+          - name: scratch-volume
+            mountPath: /store
+        ports:
+          - name: clusterbus
+            containerPort: 20160
+        securityContext:
+          capabilities:
+            add: [ "SYS_RESOURCE" ]
+        command:
+          - /bin/sh   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
+            set -eum
+            cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
+
+            # increase the maximum number of open file descriptors
+            ulimit -n 82920
+
+            rm -rf /store/$${HOSTNAME}
+            mkdir -p /store/$${HOSTNAME}/data
+
+            # see https://github.com/tikv/tikv/blob/master/etc/config-template.toml
+            cat > config.toml <<EOF
+            [server]
+              addr="0.0.0.0:20160"
+              advertise-addr="$${HOSTNAME}:20160"
+
+              # used by the prometheus agent
+              status-addr = "127.0.0.1:20180"
+
+            [pd]
+              endpoints = ["{{"{{.inputs.parameters.placementDriver}}"}}:2379"]
+
+            [storage]
+              reserve-space = "0"
+              data-dir = "/store/$${HOSTNAME}/data"
+            EOF
+
+            /tikv-server --config=config.toml

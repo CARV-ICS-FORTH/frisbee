@@ -9,7 +9,7 @@ spec:
     - action: Service
       name: server
       service:
-        templateRef: iperf3.server
+        templateRef: frisbee.apps.iperf3.server
 
     # Create an iperf client
     - action: Service
@@ -19,7 +19,7 @@ spec:
         state: '{{.IsSuccessful "client"}} == true'
         metrics: 'avg() of query(wpFnYRwGk/2/bitrate, 5m, now) is below(1000)'
       service:
-        templateRef: iperf3.client
+        templateRef: frisbee.apps.iperf3.client
         inputs:
           - { server: server, seconds: "600" }
 

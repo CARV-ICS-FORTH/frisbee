@@ -9,7 +9,7 @@ spec:
     - action: Cluster
       name: masters
       cluster:
-        templateRef: cockroach.cluster.master
+        templateRef: frisbee.apps.cockroach.server
         instances: 4
         inputs:
           - { join: "masters-1:26257,masters-2:26257,masters-3:26257,masters-4:26257" }
@@ -29,7 +29,7 @@ spec:
       depends: { success: [ boot ] }
       name: import-workload
       service:
-        templateRef: ycsb.cockroach.loader
+        templateRef: frisbee.apps.ycsb.cockroach.loader
         inputs:
           - { server: masters-1, workload: workloada, recordcount: "10000", threads: "16", delay: "15" }
 
@@ -47,7 +47,7 @@ spec:
       depends: { success: [ wait-for-3x-replication  ] }
       name: run-workload
       service:
-        templateRef: ycsb.cockroach.runner
+        templateRef: frisbee.apps.ycsb.cockroach.runner
         inputs:
           - { server: masters-1, workload: workloada, operationcount: "100000000", threads: "4" }
 
@@ -56,7 +56,7 @@ spec:
       name: partition0
       depends: { success: [ wait-for-3x-replication ], after: "5m" } # give tpcc a head start
       chaos:
-        templateRef: system.chaos.network.partition.partial
+        templateRef: frisbee.system.chaos.network.partition.partial
         inputs:
           - { source: masters-1, duration: 5m , direction: "to", dst: "masters-2, masters-3, masters-4" }
 

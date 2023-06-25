@@ -50,7 +50,7 @@ spec:
       name: duplicates
       depends: { running: [ clients ] }
       chaos:
-        templateRef: system.chaos.network.duplicate
+        templateRef: frisbee.system.chaos.network.duplicate
         inputs:
           - { source: server, duration: 5m }
 

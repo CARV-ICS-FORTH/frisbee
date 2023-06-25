@@ -2,7 +2,7 @@
 apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
-  name: cockroach.telemetry.server
+  name: frisbee.apps.cockroach.server.telemetry
 spec:
   service:
     decorators:
@@ -46,5 +46,5 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: cockroach.telemetry.server.config
+  name: frisbee.apps.cockroach.server.telemetry.config
 data: {{(.Files.Glob "dashboards/*.json").AsConfig | nindent 2}}

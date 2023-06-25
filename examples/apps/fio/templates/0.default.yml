@@ -3,7 +3,7 @@
 apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
-  name: fio.benchmark.default-fs
+  name: frisbee.apps.fio.builtin
 spec:
   inputs:
     parameters:
@@ -13,7 +13,7 @@ spec:
   service:
     decorators: # decorators
       telemetry:
-        - system.telemetry.resources
+        - frisbee.system.telemetry.resources
 
     containers: # Container
       - name: main

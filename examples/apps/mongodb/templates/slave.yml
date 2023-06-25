@@ -1,0 +1,60 @@
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Template
+metadata:
+  name: frisbee.apps.mongo.slave
+spec:
+  inputs:
+    parameters:
+      port: "27017"
+  service:
+    decorators: # Decorators
+      telemetry:
+       - frisbee.system.telemetry.resources
+       - frisbee.apps.mongo.telemetry
+
+    containers: # Container
+      - name: main
+        image: bitnami/mongodb
+        ports:
+          - name: to-clients
+            containerPort: {{"{{.inputs.parameters.port}}" | int}}
+        command:
+          - /bin/sh   # Run shell
+          - -c        # Read from string
+          - |         # Multi-line str
+            set -eum
+            cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
+
+            echo "Create Mongo configuration"
+            cat > /tmp/mongod.conf <<EOF
+              # network interfaces
+              net:
+                port: {{"{{.inputs.parameters.port}}"}}
+                bindIp: 0.0.0.0
+
+              # Where and how to store data.
+              storage:
+                dbPath: /bitnami/mongodb/data/
+                journal:
+                  enabled: true
+
+              # operation mode
+              replication:
+                replSetName: app1r0
+            EOF
+
+            mongod --config /tmp/mongod.conf
+
+        startupProbe:
+          exec:
+            command:
+              - /bin/sh   # Run shell
+              - -c        # Read from string
+              - |         # Multi-line str
+                set -eum
+
+                response=$(timeout -s QUIT 30 mongo --eval 'db.runCommand("ping").ok' localhost:{{"{{.inputs.parameters.port}}"}}/test --quiet)
+                if ["$response" != "1"]; then
+                    exit 1
+                fi

@@ -2,7 +2,7 @@
 apiVersion: frisbee.dev/v1alpha1
 kind: Template
 metadata:
-  name: fio.telemetry.client
+  name: frisbee.apps.fio.telemetry
 spec:
   service:
     decorators:
@@ -50,5 +50,5 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: fio.telemetry.client.config
+  name: frisbee.apps.fio.telemetry.config
 data: {{(.Files.Glob "dashboards/fio.json").AsConfig | nindent 2}}
