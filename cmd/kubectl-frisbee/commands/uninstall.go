@@ -26,12 +26,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type PlatformUninstallOptions struct {
+func UninstallCmdCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	return common.CompleteFlags(cmd, args, toComplete)
+}
+
+type UninstallOptions struct {
 	RepositoryCache                                           string
 	DeleteTests, DeleteOperator, DeleteCRDS, DeleteCache, All bool
 }
 
-func PopulatePlatformUninstallFlags(cmd *cobra.Command, options *PlatformUninstallOptions) {
+func UninstallFlags(cmd *cobra.Command, options *UninstallOptions) {
 	cmd.Flags().BoolVar(&options.DeleteTests, "tests", false, "delete frisbee tests")
 	cmd.Flags().BoolVar(&options.DeleteOperator, "operator", false, "delete frisbee operator")
 	cmd.Flags().BoolVar(&options.DeleteCRDS, "crds", false, "delete frisbee crds")
@@ -43,12 +47,13 @@ func PopulatePlatformUninstallFlags(cmd *cobra.Command, options *PlatformUninsta
 }
 
 func NewUninstallCmd() *cobra.Command {
-	var options PlatformUninstallOptions
+	var options UninstallOptions
 
 	cmd := &cobra.Command{
-		Use:     "uninstall",
-		Short:   "Uninstall Frisbee from current kubectl context",
-		Aliases: []string{"un", "purge"},
+		Use:               "uninstall",
+		Short:             "Uninstall Frisbee from current kubectl context",
+		Aliases:           []string{"un", "purge"},
+		ValidArgsFunction: UninstallCmdCompletion,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			env.Logo()
 			ui.SetVerbose(env.Default.Debug)
@@ -119,7 +124,7 @@ func NewUninstallCmd() *cobra.Command {
 			}
 		},
 	}
-	PopulatePlatformUninstallFlags(cmd, &options)
+	UninstallFlags(cmd, &options)
 
 	return cmd
 }

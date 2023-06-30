@@ -620,9 +620,13 @@ const (
 
 // ForceDelete iterates the Frisbee CRDs and remove its finalizers.
 func ForceDelete(testName string) error {
-	crds := []string{Services, Clusters, Chaos, Cascades, VirtualObjects, Calls, Templates, Scenarios}
+	// CRDS without finalizers:
+	// VirtualObjects
+	// Templates
 
-	for _, crd := range crds {
+	crdsWithFinalizers := []string{Services, Clusters, Chaos, Cascades, Calls, Scenarios}
+
+	for _, crd := range crdsWithFinalizers {
 		resourceQuery := []string{"get", crd, "-o", "jsonpath='{.items[*].metadata.name}'"}
 
 		// get all resources of the given Kind

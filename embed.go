@@ -51,9 +51,9 @@ func UpdateLocalFiles(static embed.FS, installationDir string) error {
 			return nil
 		}
 
-		/*
-			Open and inspect embedded file.
-		*/
+		/*---------------------------------------------------
+		 * Open and inspect embedded file.
+		 *---------------------------------------------------*/
 		f, err := static.Open(path)
 		if err != nil {
 			return errors.Wrapf(err, "cannot open embedded file '%s'", path)
@@ -64,9 +64,9 @@ func UpdateLocalFiles(static embed.FS, installationDir string) error {
 			return errors.Wrapf(err, "cannot stat embedded file '%s'", path)
 		}
 
-		/*
-			Duplicate the embedded file into installation dir.
-		*/
+		/*---------------------------------------------------
+		 * Duplicate the embedded file into installation dir.
+		 *---------------------------------------------------*/
 		switch {
 		case fInfo.Mode().IsRegular():
 			localInfo, err := os.Stat(path)

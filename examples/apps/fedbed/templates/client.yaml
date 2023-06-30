@@ -7,11 +7,11 @@ spec:
   inputs:
     parameters:
       fl_server: "server" # also server1 server2
-      backend: "pytorch"
+      backend: "pytorch" # "pytorch_mobilenetv2", "tensorflow"
       total_nodes: 1
       node_id: 0
 
-      dataset: "MNIST"
+      dataset: "MNIST" # "CIFAR10"
       dataset_distribution: flat
 
       training_setsize: 60000
@@ -23,8 +23,7 @@ spec:
 
     containers:
       - name: main
-        image: icsforth/fedbed:latest
-        imagePullPolicy: IfNotPresent
+        image: {{.Values.client.image}}
         env:
           - name: FL_BACKEND
             value: {{"{{.inputs.parameters.backend}}" | quote }}

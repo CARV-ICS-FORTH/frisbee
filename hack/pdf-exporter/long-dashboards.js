@@ -43,7 +43,7 @@ const auth_header = 'Basic ' + new Buffer.from(auth_string).toString('base64');
         // the same value as in page.pdf() below. The height is not important
         await page.setViewport({
             width: width_px,
-            height: 6000,
+            height: 8000,
             deviceScaleFactor: scaleFactor,
             isMobile: false
         })

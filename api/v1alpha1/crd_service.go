@@ -35,40 +35,6 @@ type Service struct {
 	Status ServiceStatus `json:"status,omitempty"`
 }
 
-// NIC specifies the capabilities of the emulated network interface.
-type NIC struct {
-	Rate string `json:"rate,omitempty"`
-
-	Latency string `json:"latency,omitempty"`
-}
-
-// Disk specifies the capabilities of the emulated storage device.
-type Disk struct {
-	// ReadBPS limits read rate (bytes per second)
-	ReadBPS string `json:"readbps,omitempty"`
-
-	// ReadIOPS limits read rate (IO per second)
-	ReadIOPS string `json:"readiops,omitempty"`
-
-	// WriteBPS limits write rate (bytes per second)
-	WriteBPS string `json:"writebps,omitempty"`
-
-	// WriteIOPS limits write rate (IO per second)
-	WriteIOPS string `json:"writeiops,omitempty"`
-}
-
-// Resources specifies limitations as to how the container will access host resources.
-type Resources struct {
-	// +optional
-	Memory string `json:"memory,omitempty"`
-	// +optional
-	CPU string `json:"cpu,omitempty"`
-	// +optional
-	NIC *NIC `json:"nic,omitempty"`
-	// +optional
-	Disk *Disk `json:"disk,omitempty"`
-}
-
 type SetField struct {
 	// Field is the path to the field whose value will be replaced.
 	// Examples: Containers.0.Ports.0

@@ -52,6 +52,23 @@ To learn more about Frisbee, check the **[QuickStart](https://frisbee.dev/docs/q
 our **[Website](https://frisbee.dev)**.
 
 
+## Use-Cases and Testing Patterns
+
+In declarative testing, a test scenario focuses on what to accomplish rather than on the imperative details of how to manipulate the state of an application under test and verify the final application state against an expected state.
+
+This approach not make tests more *readable, maintainable, and reproducible*, but it also help devops in identifying testing patterns.
+
+Here, you can see some testing patterns we have identified across different application domains.
+
+👉 [Databases](./examples/patterns/databases)
+
+👉 [Federated Learning](./examples/patterns/federated-learning)
+
+👉 [HPC](./examples/patterns/hpc)
+
+👉 [CI](./examples/patterns/ci)
+
+
 ## Getting Started
 
 
@@ -227,24 +244,9 @@ Finally, Frisbee provides an advanced functionality for auto-generating reports 
 kubectl-frisbee report test demo-326 ~/frisbee-reports --pdf  --force
 ```
 
-This will create report on `~/frisbee/reports` directory including the pdf from Grafana.
+This will create report on `~/frisbee-reports` directory including the pdf from Grafana.
 
 
-## Use-Cases and Testing Patterns
-
-In declarative testing, a test scenario focuses on what to accomplish rather than on the imperative details of how to manipulate the state of an application under test and verify the final application state against an expected state.
-
-This approach not make tests more *readable, maintainable, and reproducible*, but it also help devops in identifying testing patterns.
-
-Here, you can see some testing patterns we have identified across different application domains.
-
-👉 [Databases](./examples/patterns/databases)
-
-👉 [Federated Learning](./examples/patterns/federated-learning)
-
-👉 [HPC](./examples/patterns/hpc)
-
-👉 [CI](./examples/patterns/ci)
 
 
 ## Features

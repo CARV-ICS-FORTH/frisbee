@@ -103,6 +103,8 @@ func Reconcile(parentCtx context.Context, r Reconciler, req ctrl.Request, obj cl
 	/*-- make the calling controller to return --*/
 	*requeue = true
 
+	logger := r.WithValues("req", req)
+
 	/*---------------------------------------------------
 	 * Retrieve CR by name
 	 *---------------------------------------------------*/
@@ -115,10 +117,10 @@ func Reconcile(parentCtx context.Context, r Reconciler, req ctrl.Request, obj cl
 			return Stop(r, req)
 		}
 
+		logger.Error(err, "Unable to find requested object")
+
 		return RequeueWithError(r, req, err)
 	}
-
-	logger := r.WithValues("obj", client.ObjectKeyFromObject(obj))
 
 	/*---------------------------------------------------
 	 * Set Finalizers for CR
@@ -139,7 +141,7 @@ func Reconcile(parentCtx context.Context, r Reconciler, req ctrl.Request, obj cl
 			retryCond := func(ctx context.Context) (done bool, err error) {
 				if err := Update(ctx, r, obj); err != nil {
 					// Retry
-					logger.Info("Retry to add finalizer", "obj", obj, "Err", err)
+					logger.Info("Retry to add finalizer", "err", err)
 
 					return false, nil
 				}
@@ -182,7 +184,7 @@ func Reconcile(parentCtx context.Context, r Reconciler, req ctrl.Request, obj cl
 
 				retryCond := func(ctx context.Context) (done bool, err error) {
 					if err := Update(ctx, r, obj); err != nil {
-						logger.Info("Retry to remove finalizer", "obj", obj, "Err", err)
+						logger.Info("Retry to remove finalizer", "err", err)
 
 						// Retry
 						return false, nil
@@ -210,25 +212,39 @@ func Reconcile(parentCtx context.Context, r Reconciler, req ctrl.Request, obj cl
 
 // Update will update the metadata and the spec of the Object. If there is a conflict, it will retry again.
 func Update(ctx context.Context, reconciler Reconciler, obj client.Object) error {
-	reconciler.Info("OO UpdtMeta",
-		"obj", client.ObjectKeyFromObject(obj),
-		"version", obj.GetResourceVersion(),
-	)
+	logger := reconciler.WithValues("obj", client.ObjectKeyFromObject(obj))
 
-	return reconciler.GetClient().Update(ctx, obj)
+	logger.Info("OO UpdtMeta", "version", obj.GetResourceVersion())
+
+	err := reconciler.GetClient().Update(ctx, obj)
+	if k8errors.IsNotFound(err) {
+		logger.Info("Object Not found. Skip Update()")
+
+		return nil
+	}
+
+	return err
 }
 
 // UpdateStatus will update the status of the Object. If there is a conflict, it will retry again.
 func UpdateStatus(ctx context.Context, reconciler Reconciler, obj client.Object) error {
+	logger := reconciler.WithValues("obj", client.ObjectKeyFromObject(obj))
+
 	statusAwre, ok := obj.(v1alpha1.ReconcileStatusAware)
 	if ok {
-		reconciler.Info("OO UpdtStatus",
-			"obj", client.ObjectKeyFromObject(obj),
+		logger.Info("OO UpdtStatus",
 			"phase", statusAwre.GetReconcileStatus().Phase,
 			"version", obj.GetResourceVersion(),
 		)
 
-		return reconciler.GetClient().Status().Update(ctx, obj)
+		err := reconciler.GetClient().Status().Update(ctx, obj)
+		if k8errors.IsNotFound(err) {
+			logger.Info("Object Not found. Skip UpdateStatus()")
+
+			return nil
+		}
+
+		return err
 	}
 
 	return errors.Errorf("object '%s' of GKV '%s' is not status aware",

@@ -58,6 +58,7 @@ jobs:
 
       - name: Execute readme-generator-for-helm
         run: |
+          pwd && ls -Rah
           readme-generator-for-helm/bin/index.js -r $(cat prepared-inputs | grep README) -v $(cat prepared-inputs | grep values)
 
       - name: Output generated README.md
@@ -66,18 +67,25 @@ jobs:
 
       - name: Configure Git
         run: |
-          cd charts
-        
           git config user.name "$GITHUB_ACTOR"
           git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
-          
+ 
 
-      - name: Push changes
+      - name: Push changes on System Charts
         run: |
           cd charts
           # Push all the changes
           
           git status -s
           if git status -s | grep charts; then
+            git add . && git commit -am "Update README.md with readme-generator-for-helm" --signoff && git push
+          fi
+
+      - name: Push changes on App Charts
+        run: |
+          cd examples/apps
+          
+          git status -s
+          if git status -s | grep apps; then
             git add . && git commit -am "Update README.md with readme-generator-for-helm" --signoff && git push
           fi

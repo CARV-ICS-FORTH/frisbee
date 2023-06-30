@@ -41,6 +41,9 @@ jobs:
 
       - name: Unit test
         run: |
-          alias kubectl='microk8s kubectl'
-          alias helm='microk8s helm3'
+          snap alias microk8s.kubectl kubectl
+          snap alias microk8s.helm3 helm
+          
+          # alias kubectl='microk8s kubectl'
+          # alias helm='microk8s helm3'
           make test
