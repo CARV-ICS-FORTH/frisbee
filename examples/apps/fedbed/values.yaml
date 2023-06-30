@@ -1,0 +1,10 @@
+## @section Fedbed Configuration parameters
+
+## @param server.image Fedbed server's image version.
+server:
+  image: fogemulator/testfedbed:latest #  alt: icsforth/fedbed:latest
+
+
+## @param client.image Fedbed client's image version.
+client:
+  image: fogemulator/testfedbed:latest #  alt: icsforth/fedbed:latest

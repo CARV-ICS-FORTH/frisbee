@@ -12,8 +12,8 @@ spec:
 
       # should be used with FL_EVAL_DATASET
       dataset_eval: "true"
-      dataset: "MNIST"
-      backend: "pytorch"
+      dataset: "MNIST" # "CIFAR10"
+      backend: "pytorch" # "pytorch_mobilenetv2", "tensorflow"
   service:
     decorators:
       telemetry:
@@ -28,8 +28,7 @@ spec:
       # Run the FL-server
       #
       - name: main
-        image: icsforth/fedbed:latest
-        imagePullPolicy: IfNotPresent
+        image: {{.Values.server.image}}
         env:
           - name: FL_STRATEGY
             value: FedAvg

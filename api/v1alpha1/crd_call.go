@@ -51,7 +51,7 @@ type MatchOutputs struct {
 type CallSpec struct {
 	// Callable is the name of the endpoint that will be called
 	// +kubebuilder:validation:minlength=1
-	Callable string `json:"callable,omitempty"`
+	Callable string `json:"callable"`
 
 	// Services is a list of services that will be stopped.
 	// +kubebuilder:validation:minimum=1

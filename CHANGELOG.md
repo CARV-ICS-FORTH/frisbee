@@ -3,18 +3,34 @@
 ## Changes Since Last Release
 
 ### Changed defaults / behaviours
+- ...
+
+### New Features & Functionality
+- Add autocompletion for uninstall command.
+- Add validation for missing callable.
+- ...
+
+## Bug Fixes
+- Remove VirtualObjects and Templates from the list of CRDs whose finalizers can be forcibly deleted (they have no finalizers).
+- ...
+
+
+## 1.0.42 \[2023-06-27\]
+
+### Changed defaults / behaviours
 - Moved charts from `charts/{category}` to `examples/apps`. This allows to have the apps and the test-cases on the same directory. Additionally, that
-  means that chart releasing is no longer part of the frisbee release -- which shouldn't have been the case in the first place.
-- Renamed template to be in the format 'frisbee.system...' and 'frisbee.apps'. This, however, warrants a new release because 
-  the renamed systems templates affect the controller.
+means that chart releasing is no longer part of the frisbee release -- which shouldn't have been the case in the first place.
+- Renamed template to be in the format 'frisbee.system...' and 'frisbee.apps'. This, however, warrants a new release because
+the renamed systems templates affect the controller.
 - ...
 
 ### New Features & Functionality
 - ...
 
 ## Bug Fixes
-- Stalled cached files were used in reporting. Update the cached files every time we run the report command.  
+- Stalled cached files were used in reporting. Update the cached files every time we run the report command.
 - ...
+
 
 ## 1.0.41 \[2023-06-22\]
 
