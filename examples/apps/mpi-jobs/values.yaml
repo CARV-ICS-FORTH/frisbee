@@ -1,0 +1,4 @@
+## @section OpenGadget3 Configuration parameters
+
+## @param datasetPath The local path to get the dataset from.
+datasetPath: /home/fnikol/Workspace/projects/OpenGadget3/dataset

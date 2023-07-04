@@ -1,0 +1,27 @@
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Scenario
+metadata:
+  name: mpi
+spec:
+  actions:
+    - action: Cluster
+      name: workers
+      cluster:
+        templateRef: frisbee.apps.mpi-worker
+        instances: 4 # Must match
+
+    - action: Service
+      name: launcher
+      depends: { running: [ workers ] }
+      service:
+        templateRef: frisbee.apps.mpi-launcher
+        inputs:
+          - {numOfWorkers: 4} # Must match
+
+    # Teardown
+    - action: Delete
+      name: teardown
+      depends: { success: [ launcher ] }
+      delete:
+        jobs: [ workers ]

@@ -17,9 +17,10 @@ limitations under the License.
 package tests
 
 import (
-	"github.com/jaytaylor/go-find"
 	"os"
 	"path/filepath"
+
+	"github.com/jaytaylor/go-find"
 
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/commands/common"
 	"github.com/kubeshop/testkube/pkg/ui"
