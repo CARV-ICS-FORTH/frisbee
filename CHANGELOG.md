@@ -12,6 +12,7 @@
 
 ## Bug Fixes
 - Remove VirtualObjects and Templates from the list of CRDs whose finalizers can be forcibly deleted (they have no finalizers).
+- Fix issues with partial and conditional deployments (Ingress, chaos, ..)
 - ...
 
 

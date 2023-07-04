@@ -28,6 +28,7 @@ operator:
     grafana:
       port: 6666
 
+
 ## @section Provision of dynamic volumes
 ## @param openebs.enabled Whether to enable OpenEBS
 ## @param openebs.storagePath The filesystem dir where volumes will be provisioned
@@ -42,7 +43,6 @@ openebs:
     enabled: true
   ndm:
     enabled: false
-
 
 
 ## @section Chaos Injection Parameters
@@ -62,7 +62,7 @@ chaos-mesh:
 ## @section General purpose, web-based UI for Kubernetes clusters
 ## @param kubernetes-dashboard.enabled Whether to enable Dashboard
 kubernetes-dashboard:
-  enabled: true
+  enabled: false
 
 
 ## @param cert-manager.enabled Enables the certificate manager

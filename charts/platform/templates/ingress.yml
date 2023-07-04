@@ -1,5 +1,5 @@
 ---
-{{- if ".Values.kubernetes-dashboard.enabled" }}
+{{- if index .Values "kubernetes-dashboard" "enabled" }} # retarded way to access directived with dash in the name
 # https://stackoverflow.com/questions/54506269/simple-ingress-from-host-with-microk8s
 # https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/annotations/
 apiVersion: networking.k8s.io/v1
@@ -25,7 +25,7 @@ spec:
                   number: 443
 {{- end}}
 ---
-{{- if ".Values.chaos-mesh.enabled" }}
+{{- if index .Values "chaos-mesh" "enabled" }} # retarded way to access directived with dash in the name
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:

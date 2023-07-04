@@ -20,8 +20,8 @@ spec:
       serviceAccountName: default
       securityContext:
         runAsNonRoot: true
-        runAsUser: 666
-        runAsGroup: 666
+        runAsUser: 1000
+        runAsGroup: 1000
       terminationGracePeriodSeconds: 10
 
       volumes:
