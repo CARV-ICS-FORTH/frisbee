@@ -130,7 +130,7 @@ type ResourceDistributionSpec struct {
 
 func (in ResourceDistributionSpec) Validate() error {
 	// Valida the type of resources.
-	for resourceName, _ := range in.TotalResources {
+	for resourceName := range in.TotalResources {
 		switch resourceName {
 		case corev1.ResourceCPU, corev1.ResourceMemory:
 			continue
