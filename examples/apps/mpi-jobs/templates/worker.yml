@@ -21,7 +21,7 @@ spec:
     containers:
       - image: icsforth/opengadget3:boxes_32
         # imagePullPolicy: Always
-        name: mpi-worker
+        name: main
         volumeMounts:
           # ssh
           - name: ssh-volume

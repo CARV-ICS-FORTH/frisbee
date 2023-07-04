@@ -5,28 +5,21 @@
 ## @param global.domainName DNS name for making Telemetry stack accessible outside the cluster.
 ## @param global.ingressClass Type of ingres for making Telemetry stack accessible outside the cluster.
 global:
-  domainName: localhost
+  domainName: knot-platform.eu
+  ingressClass: nginx
 
-  ingressClass: public
 
 ## @section Frisbee Operator parameters
-
 ## @param operator.enabled Set it to false for running the controller outside the Kubernetes Cluster.
 ## @param operator.name Defines the name of the controller.
 ## @param operator.advertisedHost Defines the Public IP of the controller, when operator.enabled==false.
-
-
 ## @param operator.webhook.k8s.enabled Enables the Admission webhooks
 ## @param operator.webhook.k8s.port Sets the port for the Admission/Mutation  webhook server.
-
 ## @param operator.webhook.grafana.port Sets the port for the telemetry webhook server.
 operator:
   enabled: true
-
   name: "frisbee-operator"
-
-  advertisedHost: "10.1.96.192"
-
+  advertisedHost: "139.91.92.82"
   webhook:
     k8s:
       enabled: true
@@ -36,9 +29,7 @@ operator:
       port: 6666
 
 
-
 ## @section Provision of dynamic volumes
-
 ## @param openebs.enabled Whether to enable OpenEBS
 ## @param openebs.storagePath The filesystem dir where volumes will be provisioned
 ## @param openebs.nfs-provisioner.enabled Will enable dynamic NFS servers
@@ -47,41 +38,35 @@ operator:
 ## @param openebs.ndm.filters.excludePaths Exclude block devices for dynamic block provisioning
 openebs:
   enabled: true
-
   storagePath: /mnt/local
-
   nfs-provisioner:
     enabled: true
-
   ndm:
-    enabled: true
-    filters:
-      includePaths: "" # example /dev/loop7
-      excludePaths: "/dev/fd0,/dev/sr0,/dev/ram,/dev/dm-,/dev/md,/dev/rbd,/dev/zd"
+    enabled: false
 
 
 ## @section Chaos Injection Parameters
-
-## @param chaos.enabled Whether to enable the Chaos controllers
-chaos:
-  enabled: true
-
+## @param chaos-mesh.enabled Whether to enable the Chaos controllers
 ## @param chaos-mesh.controllerManager.replicaCount Number of Chaos-Mesh controller replicas
 ## @param chaos-mesh.chaosDaemon.runtime Specifies which container runtime to use.
 ## @param chaos-mesh.chaosDaemon.socketPath Specifies the container runtime socket.
 chaos-mesh:
+  enabled: true
   controllerManager:
     replicaCount: 1
-
-  # If you are using Kind or using containerd as CRI, you can use the
-  # config below to use containerd as the runtime in chaos-daemon.
   chaosDaemon:
-    runtime: containerd
-    socketPath: /var/snap/microk8s/common/run/containerd.sock
+    runtime: docker
+    socketPath: /var/run/docker.sock
 
 
 ## @section General purpose, web-based UI for Kubernetes clusters
+## @param kubernetes-dashboard.enabled Whether to enable Dashboard
+kubernetes-dashboard:
+  enabled: true
 
-## @param dashboard.enabled Whether to enable Dashboard
-dashboard:
-  enabled: false
+
+## @param cert-manager.enabled Enables the certificate manager
+## @param cert-manager.installCRDs Install CRDs for the certificate manager
+cert-manager:
+  enabled: true
+  installCRDs: true
