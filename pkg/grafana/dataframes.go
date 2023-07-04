@@ -179,7 +179,6 @@ func downloadAnnotations(logger logr.Logger, url *URL, dstFile string) error {
 	client := req.NewClient()
 
 	resp, err := client.R().Get(url.AnnotationsQuery())
-
 	if err != nil {
 		return errors.Wrapf(err, "GET has failed")
 	}
@@ -210,7 +209,6 @@ func downloadDataFrame(logger logr.Logger, url *URL, reqBody *DataRequest, dstFi
 	resp, err := client.R().
 		SetBodyJsonMarshal(reqBody).
 		Post(url.DataSourceQuery())
-
 	if err != nil {
 		return errors.Wrapf(err, "POST has failed")
 	}

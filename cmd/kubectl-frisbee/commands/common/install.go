@@ -17,11 +17,12 @@ limitations under the License.
 package common
 
 import (
-	"github.com/pkg/errors"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/pkg/errors"
 
 	embed "github.com/carv-ics-forth/frisbee"
 	"github.com/carv-ics-forth/frisbee/cmd/kubectl-frisbee/env"

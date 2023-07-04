@@ -35,8 +35,10 @@ const (
 	DefaultDecisionWindow      = "0s"
 )
 
-type ExecErrState string
-type NoDataState string
+type (
+	ExecErrState string
+	NoDataState  string
+)
 
 const (
 	ErrOK          ExecErrState = "OK"

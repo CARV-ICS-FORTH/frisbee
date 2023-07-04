@@ -1,0 +1,58 @@
+---
+apiVersion: frisbee.dev/v1alpha1
+kind: Template
+metadata:
+  name: frisbee.apps.mpi-worker
+spec:
+  service:
+    # Add monitoring sidecars
+    decorators:
+      telemetry: [ frisbee.system.telemetry.resources ]
+    volumes:
+      # declare ssh volume
+      - name: ssh-volume
+        configMap:
+          name: ssh-config
+      # declare dataset volume
+      - name: dataset-volume
+        hostPath:
+          path: {{.Values.datasetPath}}
+
+    containers:
+      - image: icsforth/opengadget3:boxes_32
+        # imagePullPolicy: Always
+        name: main
+        volumeMounts:
+          # ssh
+          - name: ssh-volume
+            subPath: sshd_config
+            mountPath: /home/mpiuser/.sshd_config
+          - name: ssh-volume
+            mountPath: /home/mpiuser/.ssh
+          # common_files
+          - name: dataset-volume
+            subPath: common_files
+            mountPath: /u/eupex/code/OpenGadget3/common_files
+          # paramfiles
+          - name: dataset-volume
+            subPath: paramfiles
+            mountPath: /u/eupex/code/OpenGadget3/paramfiles
+          # initial_conditions
+          - name: dataset-volume
+            subPath: initial_conditions
+            mountPath: /u/eupex/code/OpenGadget3/initial_conditions
+        # Expose listening port declared in the sshd_config
+        ports:
+          - name: ssh
+            containerPort: 2222
+        # Run as the container user
+        securityContext: #
+          runAsUser: 1000
+        command:
+          - /bin/sh
+          - -c
+          - |
+            set -eux
+            cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
+
+            /usr/sbin/sshd -De -f  /home/mpiuser/.sshd_config
