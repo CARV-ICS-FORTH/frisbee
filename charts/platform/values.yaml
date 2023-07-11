@@ -62,7 +62,7 @@ chaos-mesh:
 ## @section General purpose, web-based UI for Kubernetes clusters
 ## @param kubernetes-dashboard.enabled Whether to enable Dashboard
 kubernetes-dashboard:
-  enabled: true
+  enabled: false
 
 
 ## @param cert-manager.enabled Enables the certificate manager

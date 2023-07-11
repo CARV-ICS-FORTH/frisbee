@@ -6,7 +6,7 @@ metadata:
 spec:
   inputs:
     parameters:
-      slaves: ""
+      slaves: "" # masters-0, masters-1, ...
       port: "27017"
   service:
     decorators:
@@ -27,7 +27,7 @@ spec:
             set -eum
             cut -d ' ' -f 4 /proc/self/stat > /dev/shm/app # Sidecar: use it for entering the cgroup
 
-            echo "Create Mongo configuration"
+            echo "Create the configuration for Mongo server"
             cat > /tmp/mongod.conf <<EOF
               # network interfaces
               net:
@@ -45,6 +45,7 @@ spec:
                 replSetName: app1r0
             EOF
 
+            # https://www.mongodb.com/basics/replication
             echo "Create Replicaset with {{"{{.inputs.parameters.slaves}}"}}"
             cat > /tmp/rs-init.js <<EOF
               rs.initiate()

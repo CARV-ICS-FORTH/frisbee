@@ -52,4 +52,4 @@ WORKDIR $HOME
 
 COPY --from=builder /manager ./
 
-ENTRYPOINT ["./manager"]
+ENTRYPOINT ["/home/default/manager"]

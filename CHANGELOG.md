@@ -8,10 +8,13 @@
 ### New Features & Functionality
 - Add autocompletion for uninstall command.
 - Add validation for missing callable.
+- Add flag for disabling chaos controller.
 - ...
 
 ## Bug Fixes
 - Remove VirtualObjects and Templates from the list of CRDs whose finalizers can be forcibly deleted (they have no finalizers).
+- Fix issues with partial and conditional deployments (Ingress, chaos, ..)
+- Fix platform chart to disable kubernetes dashboard according to the chart values.
 - ...
 
 
