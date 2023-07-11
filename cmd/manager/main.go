@@ -33,6 +33,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -65,11 +67,15 @@ func main() {
 		enableLeaderElection bool
 		probeAddr            string
 
+		enableChaos bool
+
 		// logger
 		verbose int
 	)
 
 	flag.StringVar(&certDir, "cert-dir", "/tmp/k8s-webhook-server/serving-certs/", "Points to the directory with webhook certificates.")
+
+	flag.BoolVar(&enableChaos, "enable-chaos", true, "Enable Chaos controllers.")
 
 	// flag.StringVar(&namespace, "namespace", "default", "Restricts the manager's cache to watch objects in this namespace ")
 
@@ -97,10 +103,13 @@ func main() {
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme: scheme,
+		WebhookServer: webhook.NewServer(webhook.Options{
+			// Port:    o.Port,
+			Host:    "0.0.0.0",
+			CertDir: certDir,
+		}),
 		// DeleteNamespace:              namespace,
 		//	MetricsBindAddress: metricsAddr,
-		Host:                   "0.0.0.0",
-		CertDir:                certDir,
 		HealthProbeBindAddress: probeAddr,
 		//	LeaderElection:         enableLeaderElection,
 		//	LeaderElectionID:       "233dac68.frisbee.dev",
@@ -130,10 +139,12 @@ func main() {
 			os.Exit(1)
 		}
 
-		if err := chaos.NewController(mgr, setupLog); err != nil {
-			utilruntime.HandleError(errors.Wrapf(err, "cannot create Chaos controller"))
+		if enableChaos {
+			if err := chaos.NewController(mgr, setupLog); err != nil {
+				utilruntime.HandleError(errors.Wrapf(err, "cannot create Chaos controller"))
 
-			os.Exit(1)
+				os.Exit(1)
+			}
 		}
 
 		if err := cascade.NewController(mgr, setupLog); err != nil {

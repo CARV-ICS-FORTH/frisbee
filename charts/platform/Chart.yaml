@@ -41,7 +41,7 @@ dependencies:
     repository: https://charts.chaos-mesh.org
 
   - name: kubernetes-dashboard # web-based Kubernetes user interface
-    condition: dashboard.enabled
+    condition: kubernetes-dashboard.enabled
     version: 5.7.0
     repository: https://kubernetes.github.io/dashboard/
 

@@ -47,7 +47,8 @@ spec:
             - /bin/sh   # Run shell
             - -c        # Read from string
             - |         # Multi-line str
-              ~/manager -cert-dir=/tmp/k8s-webhook-server/serving-certs
+              /home/default/manager -cert-dir=/tmp/k8s-webhook-server/serving-certs \
+              --enable-chaos={{index .Values "chaos-mesh" "enabled"}}
 
           livenessProbe:
             httpGet:

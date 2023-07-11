@@ -6,7 +6,7 @@ metadata:
 spec:
   inputs:
     parameters:
-      slaves: ""
+      slaves: "" # masters-0, masters-1, ...
       port: "27017"
   service:
     decorators:
