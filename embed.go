@@ -33,20 +33,24 @@ import (
 var Hack embed.FS
 
 // UpdateLocalFiles duplicates the structure of embedded fs into the installation dir.
-func UpdateLocalFiles(static embed.FS, installationDir string) error {
+func UpdateLocalFiles(embeddedFS embed.FS, installationDir string) error {
 	root := "."
 
-	copyLocally := func(path string) error {
-		data, err := fs.ReadFile(static, path)
+	copyLocally := func(sourceFilePath string, hostFilePath string) error {
+		data, err := fs.ReadFile(embeddedFS, sourceFilePath)
 		if err != nil {
-			return errors.Wrapf(err, "cannot read embedded file '%s'", path)
+			return errors.Wrapf(err, "cannot read embeddedFS file '%s'", sourceFilePath)
 		}
 
-		return os.WriteFile(filepath.Join(installationDir, path), data, os.ModePerm)
+		if err := os.WriteFile(hostFilePath, data, os.ModePerm); err != nil {
+			return errors.Wrapf(err, "cannot write file '%s'", hostFilePath)
+		}
+
+		return nil
 	}
 
-	return fs.WalkDir(static, root, func(path string, d fs.DirEntry, _ error) error {
-		if path == root {
+	return fs.WalkDir(embeddedFS, root, func(relPath string, d fs.DirEntry, _ error) error {
+		if relPath == root {
 			// ignore the root
 			return nil
 		}
@@ -54,49 +58,58 @@ func UpdateLocalFiles(static embed.FS, installationDir string) error {
 		/*---------------------------------------------------
 		 * Open and inspect embedded file.
 		 *---------------------------------------------------*/
-		f, err := static.Open(path)
+		embeddedFile, err := embeddedFS.Open(relPath)
 		if err != nil {
-			return errors.Wrapf(err, "cannot open embedded file '%s'", path)
+			return errors.Wrapf(err, "cannot open embeddedFS file '%s'", relPath)
 		}
 
-		fInfo, err := f.Stat()
+		embeddedFileInfo, err := embeddedFile.Stat()
 		if err != nil {
-			return errors.Wrapf(err, "cannot stat embedded file '%s'", path)
+			return errors.Wrapf(err, "cannot stat embeddedFS file '%s'", relPath)
 		}
 
 		/*---------------------------------------------------
 		 * Duplicate the embedded file into installation dir.
 		 *---------------------------------------------------*/
-		switch {
-		case fInfo.Mode().IsRegular():
-			localInfo, err := os.Stat(path)
+		hostpath := filepath.Join(installationDir, relPath)
 
-			if err != nil && os.IsNotExist(err) {
-				return errors.Wrapf(err, "cannot stat installation path '%s'", path)
+		switch {
+		case embeddedFileInfo.Mode().IsRegular():
+			hostFileInfo, err := os.Stat(hostpath)
+			if err != nil {
+				if errors.Is(err, os.ErrNotExist) {
+					// Copy the file locally
+					return copyLocally(relPath, hostpath)
+				}
+
+				return errors.Wrapf(err, "cannot stat host path '%s'", hostpath)
 			}
 
-			if !localInfo.Mode().IsRegular() {
-				return errors.Errorf("expected '%s' to be a file, but it's '%s'.", path, localInfo.Mode().Type())
+			if !hostFileInfo.Mode().IsRegular() {
+				return errors.Errorf("expected '%s' to be a file, but it's '%s'.", relPath, hostFileInfo.Mode().Type())
 			}
 
 			// Copy the file locally
-			return copyLocally(path)
+			return copyLocally(relPath, hostpath)
 
-		case fInfo.IsDir():
-			ufInfo, err := os.Stat(path)
+		case embeddedFileInfo.IsDir():
+			hostFileInfo, err := os.Stat(hostpath)
 			switch {
 			case os.IsNotExist(err):
-				err := os.MkdirAll(filepath.Join(installationDir, path), os.ModePerm)
-				return errors.Wrapf(err, "cannot create dir '%s' in the installation fs", path)
+				if err := os.MkdirAll(hostpath, os.ModePerm); err != nil {
+					return errors.Wrapf(err, "cannot create dir '%s' in the host fs", hostpath)
+				}
+
+				return nil
 			case err != nil:
-				return errors.Wrapf(err, "cannot stat installation path '%s'", path)
-			case !ufInfo.IsDir():
-				return errors.Errorf("Expected '%s' to be a dir, but it's '%s'.", path, ufInfo.Mode().Type())
+				return errors.Wrapf(err, "cannot stat host path '%s'", hostpath)
+			case !hostFileInfo.IsDir():
+				return errors.Errorf("expected '%s' to be a dir, but it's '%s'", hostpath, hostFileInfo.Mode().Type())
 			default:
 				return nil
 			}
 		default:
-			return errors.Errorf("Filemode '%s' is not supported", fInfo.Mode().Type())
+			return errors.Errorf("Filemode '%s' is not supported", embeddedFileInfo.Mode().Type())
 		}
 	})
 }

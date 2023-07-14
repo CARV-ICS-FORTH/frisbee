@@ -15,6 +15,7 @@
 - Remove VirtualObjects and Templates from the list of CRDs whose finalizers can be forcibly deleted (they have no finalizers).
 - Fix issues with partial and conditional deployments (Ingress, chaos, ..)
 - Fix platform chart to disable kubernetes dashboard according to the chart values.
+- Fix the way embedded files are coped to the host filesystem.
 - ...
 
 

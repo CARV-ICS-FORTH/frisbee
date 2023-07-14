@@ -73,6 +73,7 @@ func NewInstallProductionCmd() *cobra.Command {
 
 	cmd.Flags().StringVar(&chartPath, "chart", FrisbeeChartInRepo, "chart file to install")
 	cmd.Flags().StringVarP(&values, "values", "f", "", "helm values file")
+
 	common.PopulateInstallFlags(cmd, &options)
 
 	return cmd
