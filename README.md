@@ -35,24 +35,24 @@
 
 ## What is Frisbee ?
 
-**Frisbee** is the first Kubernetes framework designed to support **declarative end-to-end testing** of containerized applications.
+**Frisbee** is the first Kubernetes framework designed to support **declarative end-to-end system testing** of containerized applications.
 
-:heavy_check_mark: Setup application and dependency stack – easily!
+:heavy_check_mark: Design end-to-end testing scenarios in an intuitive language!
 
-:heavy_check_mark: Test against actual, close to production software - no mocks!
+:heavy_check_mark: Run the actual production software - no mocks!
 
-:heavy_check_mark: Replay complex workloads written in an intuitive language!
+:heavy_check_mark: Replay complex workloads through automated workflows!
 
 :heavy_check_mark: Combine Chaos Engineering with large-scale performance testing!
 
-:heavy_check_mark: Assert actual program behavior and side effects. 
+:heavy_check_mark: Verify program behavior through programmable assertions!
 
 
-To learn more about Frisbee, check the **[QuickStart](https://frisbee.dev/docs/quick-start/)** tutorial or visit
-our **[Website](https://frisbee.dev)**.
+To learn more about Frisbee, check the **[Walkthrough](https://frisbee.dev/docs/walkthrough)** tutorial or visit our **[Website](https://frisbee.dev)**.
 
 
-## Use-Cases and Testing Patterns
+
+## Testing Patterns
 
 In declarative testing, a test scenario focuses on what to accomplish rather than on the imperative details of how to manipulate the state of an application under test and verify the final application state against an expected state.
 
@@ -67,6 +67,8 @@ Here, you can see some testing patterns we have identified across different appl
 👉 [HPC](./examples/patterns/hpc)
 
 👉 [CI](./examples/patterns/ci)
+
+
 
 
 ## Getting Started
@@ -90,44 +92,31 @@ sudo snap alias microk8s.kubectl kubectl
 sudo snap alias microk8s.helm3 helm
 ```
 
-### Step 2 – Install Frisbee on K8s cluster
 
-Now it's time to get Frisbee from GitHub.
+
+### Step 2 – Install Frisbee on K8s cluster:
+
+Firstly, we need to download the Frisbee CLI:
 
 ```shell
-git clone git@github.com:CARV-ICS-FORTH/frisbee.git
-cd frisbee
-```
-
-
-The above will download the project, but not the executables.
-For that, you have two options: download the precompile binaries and or compile the binaries on your machine.
-
-* **From binary:** 
-```shell
-./install.sh
+curl -sSLf https://frisbee.dev/install.sh | sudo bash
 export PATH=$PATH:/usr/local/bin
 ```
 
-* **From source:**  
-```shell
-make run
-export PATH=$PATH:$(pwd)/bin
-```
 
 
+Since the majority of Frisbee operations happens through this  CLI, it is suggested to enable the autocompletion.
 
-The next step is to install Frisbee in your Kubernetes cluster. You can two options:
-
-* **Development mode:** In this configuration, the Frisbee controller must run manually on the local node. 
-The development mode is convenient for developing new functionality on the controller. 
 
 ```shell
-kubectl-frisbee install development ./ <public address>
-make run
+source <(kubectl-frisbee completion bash)
 ```
 
-* **Production mode:** The production mode will install the Frisbee controller at yet another container within the cluster.
+> As usual, use `tab twice` to get the CLI fields auto-completed.
+
+
+
+The next step is to install Frisbee in your Kubernetes cluster. 
 
 ```shell
 kubectl-frisbee install production
@@ -135,20 +124,17 @@ kubectl logs -l control-plane=frisbee-operator -n frisbee --follow
 ```
 
 
-### Step 3 – Submit a testing job.
 
-Since the majority of Frisbee operations happens through the native CLI, 
-it is suggested to enable the autocompletion.
- 
+Finally, you can download the Frisbee project to get access to the ready-to-use examples.
 
 ```shell
-source <(kubectl-frisbee completion bash)
+git clone git@github.com:CARV-ICS-FORTH/frisbee.git
+cd frisbee
 ```
 
-As usual, use `tab twice` to get the CLI fields auto-completed.
 
 
-#### Submit a job
+### Step 3 – Submit a testing job:
 
 To submit a testing job, the general syntax is:
 
@@ -163,7 +149,7 @@ Conventionally, we separate the test-cases from the templates of the system unde
 
 
 Let's try to run a scenario from the tutorial. 
- 
+
 ```shell
 kubectl-frisbee submit test demo- ./examples/tutorial/15.performance-monitoring.yml ./charts/networking/iperf2/ ./charts/system/ 
 ```
@@ -179,7 +165,7 @@ kubectl-frisbee submit test demo- ./examples/tutorial/15.performance-monitoring.
 
 
 
-#### Inspect Submitted Jobs.
+#### Inspect Submitted Jobs:
 
 To get a list of submitted tests, use:
 
@@ -203,7 +189,7 @@ kubectl frisbee inspect tests demo-326
     <img src="docs/readme.assets/cli-inspect.png" width="900">
 </p>
 
-### Step 4 – Live Progress Monitoring
+### Step 4 – Live Progress Monitoring:
 
 The last section of `inspect` provides the URLs for accessing Prometheus/Grafana. 
 
@@ -236,7 +222,7 @@ by a `fault-injection event`.
     <img src="docs/readme.assets/contextualized-visualization.png" width="900">
 </p>
 
-### Step 5 – Auto-generate test reports.
+### Step 5 – Auto-generate test reports:
 
 Finally, Frisbee provides an advanced functionality for auto-generating reports for the tests.
 
@@ -245,7 +231,6 @@ kubectl-frisbee report test demo-326 ~/frisbee-reports --pdf  --force
 ```
 
 This will create report on `~/frisbee-reports` directory including the pdf from Grafana.
-
 
 
 
@@ -267,8 +252,6 @@ This will create report on `~/frisbee-reports` directory including the pdf from 
 
 👉 Archiving Test results after executing for later access.
 
-👉 On-Demand reliable container attached storage.
-
 👉 Garbage collection of completed resources.
 
 👉 Chaos-Engineering and Fault-Injection via Chaos-Mesh.
@@ -277,7 +260,7 @@ This will create report on `~/frisbee-reports` directory including the pdf from 
 
 👉 CLI applications to test management and test inspection.
 
-To learn how to use these features, check the **[Walkthrough](https://frisbee.dev/docs/walkthrough)**.
+
 
 ## Citation
 
@@ -292,10 +275,13 @@ year={2021}
 }
 ```
 
+
+
 ## Contributing to Frisbee
 
-We welcome contributions. Please see [CONTRIBUTING.md](CONTRIBUTING.md) to get
-started!
+We welcome contributions. Please see [CONTRIBUTING.md](CONTRIBUTING.md) to get started!
+
+
 
 ## Acknowledgements
 
