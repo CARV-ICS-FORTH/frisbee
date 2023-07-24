@@ -4,8 +4,8 @@ on:
   workflow_dispatch:
   pull_request_target:
     paths:
-      - 'charts/**/values.yaml'
-      - 'examples/apps/**/values.yaml'
+      - 'charts/charts/**/values.yaml'
+      - 'charts/examples/apps/**/values.yaml'
 
 jobs:
   update-readme-metadata:
