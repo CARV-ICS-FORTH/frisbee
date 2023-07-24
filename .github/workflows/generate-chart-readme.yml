@@ -4,8 +4,8 @@ on:
   workflow_dispatch:
   pull_request_target:
     paths:
-      - 'charts/charts/**/values.yaml'
-      - 'charts/examples/apps/**/values.yaml'
+      - 'frisbee/charts/**/values.yaml'
+      - 'frisbee/examples/apps/**/values.yaml'
 
 jobs:
   update-readme-metadata:
@@ -38,7 +38,7 @@ jobs:
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
-          path: charts
+          path: frisbee
           # token: ${{ secrets.BOT_TOKEN }}
 
       - name: Get list of files with changes in Pull Request
@@ -55,11 +55,11 @@ jobs:
           cat $HOME/files.txt | tr " " "\n" | grep \/values\\.yaml > raw-inputs
           cat raw-inputs | sed 's/values.yaml/README.md/' >> raw-inputs
           
-          cat raw-inputs | sed 's/charts/charts\/charts/' > prepared-inputs
+          cat raw-inputs | sed 's/frisbee/charts\/charts/' > prepared-inputs
 
       - name: Execute readme-generator-for-helm
         run: |
-          pwd && ls -Rah
+          pwd && echo "SKATA"
           readme-generator-for-helm/bin/index.js -r $(cat prepared-inputs | grep README) -v $(cat prepared-inputs | grep values)
 
       - name: Output generated README.md
