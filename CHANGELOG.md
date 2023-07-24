@@ -3,6 +3,7 @@
 ## Changes Since Last Release
 
 ### Changed defaults / behaviours
+- Move basic images from /deploy to /images 
 - ...
 
 ### New Features & Functionality
