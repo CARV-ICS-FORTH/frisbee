@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="KubernetesSettings">
+    <option name="getSpecFromCluster" value="true" />
+    <specSources>
+      <SpecSource>
+        <option name="pathOrUrl" value="$PROJECT_DIR$/charts/platform/crds/frisbee.dev_scenarios.yaml" />
+      </SpecSource>
+    </specSources>
+  </component>
+</project>

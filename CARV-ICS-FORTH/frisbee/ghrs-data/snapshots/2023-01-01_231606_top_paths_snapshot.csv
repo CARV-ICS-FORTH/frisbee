@@ -1,0 +1,11 @@
+url_path,views_total,views_unique
+/CARV-ICS-FORTH/frisbee,12,5
+/CARV-ICS-FORTH/frisbee/tree/main/charts/platform,5,2
+/CARV-ICS-FORTH/frisbee/tree/main/charts,3,3
+/CARV-ICS-FORTH/frisbee/blob/main/.github/workflows/live-testbed.yml,3,2
+/CARV-ICS-FORTH/frisbee/blob/main/charts/platform/README.md,3,1
+/CARV-ICS-FORTH/frisbee/tree/main/cmd/kubectl-frisbee/commands,3,1
+/CARV-ICS-FORTH/frisbee/tree/main/charts/system,2,2
+/CARV-ICS-FORTH/frisbee/tree/main/.github/workflows,2,2
+/CARV-ICS-FORTH/frisbee/blob/main/charts/platform/values.yaml,2,1
+/CARV-ICS-FORTH/frisbee/tree/main/charts/platform/templates/volumes,2,1
