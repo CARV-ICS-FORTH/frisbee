@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://carv-ics-forth.github.io/frisbee/tutorial/" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Tutorial - Frisbee</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Tutorial";
+        var mkdocs_page_input_path = "tutorial.md";
+        var mkdocs_page_url = "/frisbee/tutorial/";
+      </script>
+    
+    <script src="../js/jquery-3.6.0.min.js" defer></script>
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
+      <script>hljs.initHighlightingOnLoad();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> Frisbee
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../chart-developer/">Chart developer</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../code-developer/">Guide for the Frisbee Platform Developers</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../faq/">Faq</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="./">Tutorial</a>
+    <ul class="current">
+    </ul>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">Frisbee</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" alt="Docs"></a> &raquo;</li><li>Tutorial</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="tutorial">Tutorial</h1>
+<!-- toc -->
+
+<ul>
+<li><a href="#install-dependencies">Install Dependencies</a><ul>
+<li><a href="#1-kubernetes-and--helm">1. Kubernetes and &amp; Helm</a></li>
+<li><a href="#2-frisbee-platform">2. Frisbee platform</a></li>
+</ul>
+</li>
+<li><a href="#testing-a-system">Testing a System</a><ul>
+<li><a href="#1-deploy-the-system-templates">1. Deploy the system templates</a></li>
+<li><a href="#2-deploy-the-system-under-testing-sut">2. Deploy the System Under Testing (SUT)</a></li>
+<li><a href="#3-verify-the-deployment">3. Verify the Deployment</a></li>
+<li><a href="#4-run-a-scenario">4. Run a Scenario</a></li>
+<li><a href="#5-exploratory-testing-observe-the-progress">5. Exploratory Testing (Observe the Progress)</a></li>
+<li><a href="#6-automated-testing-passfail">6. Automated Testing (Pass/Fail)</a></li>
+<li><a href="#7-delete-a-test">7. Delete a Test</a></li>
+<li><a href="#8-parallel-tests">8. Parallel Tests</a></li>
+</ul>
+</li>
+<li><a href="#remove-frisbee">Remove Frisbee</a><ul>
+<li><a href="#1-delete-all-the-namespaces-you-created">1. Delete all the namespaces you created</a></li>
+<li><a href="#2-remove-frisbee">2. Remove Frisbee</a></li>
+<li><a href="#3-remove-frisbee-crds">3. Remove Frisbee CRDS</a></li>
+</ul>
+</li>
+</ul>
+<!-- /toc -->
+
+<p>This tutorial will guide you through deploying and running Frisbee on a local Kubernetes installation.</p>
+<h1 id="install-dependencies">Install Dependencies</h1>
+<h4 id="1-kubernetes-and-helm">1. Kubernetes and &amp; Helm</h4>
+<ul>
+<li>
+<p><a href="https://microk8s.io/docs">Microk8s</a>  is the simplest production-grade conformant K8s.  <strong>It runs entirely on your
+workstation or edge device.</strong></p>
+</li>
+<li>
+<p><a href="https://helm.sh/docs/intro/install/">Helm</a>  is a package manager for Kubernetes. Helm uses <strong>a packaging format
+called
+charts</strong>.</p>
+</li>
+</ul>
+<pre><code class="language-bash"># Install microk8s v.1.24
+&gt;&gt; sudo snap install microk8s --classic --channel=1.24/stable
+
+# Use microk8s config as the default kubernetes config
+&gt;&gt; microk8s config &gt; ~/.kube/config
+
+# Start microk8s
+&gt;&gt; microk8s start
+
+# Enable Dependencies
+&gt;&gt; microk8s enable dns ingress helm3
+
+# Create aliases
+&gt;&gt; sudo snap alias microk8s.kubectl kubectl
+&gt;&gt; sudo snap alias microk8s.helm3 helm
+</code></pre>
+<h4 id="2-frisbee-platform">2. Frisbee platform</h4>
+<p>Although Frisbee can be installed directly from a Helm repository, for demonstration purposes we favor the git-based
+method.</p>
+<pre><code class="language-bash"># Download the source code
+&gt;&gt; git clone git@github.com:CARV-ICS-FORTH/frisbee.git
+
+# Move to the Frisbee project
+&gt;&gt; cd frisbee
+
+# Have a look at the installation configuration
+&gt;&gt; less charts/platform/values.yaml
+
+# Make sure that the dir &quot;/mnt/local&quot; exists. The error will not appear until the execution of the test.
+&gt;&gt; mkdir /tmp/frisbee
+
+# Deploy the platform on the default namespace
+&gt;&gt; helm  upgrade --install --wait my-frisbee ./charts/platform/ --debug -n default
+</code></pre>
+<h2 id="testing-a-system">Testing a System</h2>
+<h4 id="1-deploy-the-system-templates">1. Deploy the system templates</h4>
+<p>Firstly, we need to create a dedicated namespace for the test.</p>
+<p>The different namespaces provide isolation and allow us to run multiple tests in parallel.</p>
+<p>We combine the creation of the namespace and the installation of system templates (e.g, telemetry, chaos) in one
+command.</p>
+<pre><code class="language-bash">&gt;&gt; helm upgrade --install --wait my-system ./charts/system --debug -n mytest --create-namespace
+</code></pre>
+<h4 id="2-deploy-the-system-under-testing-sut">2. Deploy the System Under Testing (SUT)</h4>
+<p>As a SUT we will use the  <a href="https://github.com/CARV-ICS-FORTH/frisbee/tree/main/charts/cockroachdb">CockroachDB</a>.</p>
+<p>The commands are to be executed from the <em>Frisbee</em> directory.</p>
+<pre><code class="language-bash"># Install Cockroach servers
+&gt;&gt; helm upgrade --install --wait my-cockroach ./charts/cockroachdb --debug -n mytest
+
+# Install YCSB for creating workload
+&gt;&gt; helm upgrade --install --wait my-ycsb ./charts/ycsb --debug -n mytest
+</code></pre>
+<h4 id="3-verify-the-deployment">3. Verify the Deployment</h4>
+<p>Then you can verify that all the packages are successfully installed</p>
+<pre><code class="language-bash">&gt;&gt; helm list
+NAME            NAMESPACE       REVISION        UPDATED                                         STATUS          CHART
+my-frisbee      default         1               2022-06-10 20:37:26.298297945 +0300 EEST        deployed        platform-0.0.0
+
+
+&gt;&gt; helm list -n mytest
+NAME            NAMESPACE       REVISION        UPDATED                                         STATUS          CHART
+my-cockroach    mytest          1               2022-06-10 20:40:29.741398162 +0300 EEST        deployed        cockroachdb-0.0.0
+my-system       mytest          1               2022-06-10 20:40:19.981077906 +0300 EEST        deployed        defaults-0.0.0
+my-ycsb         mytest          1               2022-06-10 20:40:36.97639544 +0300 EEST         deployed        ycsb-0.0.0
+</code></pre>
+<h4 id="4-run-a-scenario">4. Run a Scenario</h4>
+<p>You now select which scenario you wish to run.</p>
+<pre><code class="language-bash">&gt;&gt; ls -1a ./charts/cockroachdb/examples/
+...
+10.bitrot.yml
+11.network.yml
+12.bitrot-logs.yml
+1.baseline-single.yml
+2.baseline-cluster-deterministic.yml
+3.baseline-cluster-deterministic-outoforder.yml
+4.baseline-cluster-nondeterministic.yml
+5.scaleup-scheduled.yml
+6.scaleup-conditional.yml
+7.scaledown-delete.yml
+8.scaledown-stop.yml
+9.scaledown-kill.yml
+</code></pre>
+<p>Let's run a <strong>bitrot</strong> scenario.</p>
+<pre><code class="language-bash">&gt;&gt; kubectl -f ./charts/cockroachdb/examples/10.bitrot.yml apply -n mytest
+
+testplan.frisbee.io/cockroach-bitrot created
+</code></pre>
+<h4 id="5-exploratory-testing-observe-the-progress">5. Exploratory Testing (Observe the Progress)</h4>
+<p><em>Frisbee</em> provides 3 methods for observing the progress of a test.</p>
+<hr />
+<p><strong>Event-based</strong>: Consumes information from the Kubernetes API</p>
+<ul>
+<li>
+<p><a href="https://dashboard-frisbee.localhost/#/pod?namespace=mytest">Dashboard</a>:  is a web-based Kubernetes user interface.
+You can use Dashboard to deploy containerized applications to a Kubernetes cluster, troubleshoot your containerized
+application, and manage the cluster resources.</p>
+</li>
+<li>
+<p><a href="http://chaos-frisbee.localhost/experiments">Chaos Dashboard</a>: is a one-step web UI for managing, designing, and
+monitoring chaos experiments on <em>Chaos Mesh</em>. It will ask for a token. You can get it from the config
+via <code>grep token  ~/.kube/config</code>.</p>
+</li>
+</ul>
+<hr />
+<p><strong>Metrics-based:</strong> Consumes information from distributed performance metrics.</p>
+<ul>
+<li><a href="http://prometheus-mytest.localhost">Prometheus</a></li>
+<li><a href="http://grafana-mytest.localhost/d/crdb-console-runtime/crdb-console-runtime">Grafana</a></li>
+</ul>
+<hr />
+<ul>
+<li>
+<p><strong>Log-based:</strong> Consumes information from distributed logs.</p>
+</li>
+<li>
+<p><a href="http://logviewer-mytest.localhost">Logviewer</a> (admin/admin)</p>
+</li>
+</ul>
+<blockquote>
+<p>You may notice that it takes <strong>long time for the experiment to start</strong>. This is due to preparing the NFS volume for
+collecting the logs from the various services. Also note that the lifecycle of the volume is bind to that of the test.
+If the test is deleted, the volume will be garbage collected automatically.</p>
+</blockquote>
+<h4 id="6-automated-testing-passfail">6. Automated Testing (Pass/Fail)</h4>
+<p>The above tools are for understanding the behavior of a system, but do not help with test automation.</p>
+<p>Besides the visual information, we need something that can be used in external scripts.</p>
+<p>We will use <code>kubectl</code> since is the most common CLI interface between Kubernetes API and third-party applications.</p>
+<p>Firstly, let's inspect the test plan.</p>
+<pre><code class="language-bash">&gt;&gt; kubectl describe testplan.frisbee.io/cockroach-bitrot -n mytest
+
+...
+Status:
+Conditions:
+Last Transition Time:  2022-06-11T18:16:37Z
+Message:               failed jobs: [run-workload]
+Reason:                JobHasFailed
+Status:                True
+Type:                  UnexpectedTermination
+Executed Actions:
+Bitrot:
+Boot:
+Import - Workload:
+Masters:
+Run - Workload:
+Grafana Endpoint:     grafana-mytest.localhost
+Message:              failed jobs: [run-workload]
+Phase:                Failed
+Prometheus Endpoint:  prometheus-mytest.localhost
+Reason:               JobHasFailed
+</code></pre>
+<p>We are interested in the <code>Phase</code> and <code>Conditions</code> fields that provides information about the present status of a test.
+The <strong>Phase</strong> describes the lifecycle of a Test.</p>
+<table>
+<thead>
+<tr>
+<th align="center">Phase</th>
+<th align="left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">""</td>
+<td align="left">The request is not yet accepted by the controller</td>
+</tr>
+<tr>
+<td align="center">Pending</td>
+<td align="left">The request has been accepted by the Kubernetes cluster, but one of the child jobs has not been created. This includes the time waiting for logical dependencies, Ports discovery, data rewiring, and placement of Pods.</td>
+</tr>
+<tr>
+<td align="center">Running</td>
+<td align="left">All the child jobs  have been created, and at least one job is still running.</td>
+</tr>
+<tr>
+<td align="center">Success</td>
+<td align="left">All jobs have voluntarily exited.</td>
+</tr>
+<tr>
+<td align="center">Failed</td>
+<td align="left">At least one job of the CR has terminated in a failure (exited with a  non-zero exit code or was stopped by the system).</td>
+</tr>
+</tbody>
+</table>
+<h4 id="_1"></h4>
+<p>The <strong>Phase</strong> is a top-level description calculated based on some <strong>Conditions</strong>. The <strong>Conditions</strong> describe the
+various stages the Test has been through.</p>
+<table>
+<thead>
+<tr>
+<th align="center">Condition</th>
+<th align="left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">Initialized</td>
+<td align="left">The workflow has been initialized</td>
+</tr>
+<tr>
+<td align="center">AllJobsAreScheduled</td>
+<td align="left">All jobs have been successfully scheduled.</td>
+</tr>
+<tr>
+<td align="center">AllJobsAreCompleted</td>
+<td align="left">All jobs have been successfully completed.</td>
+</tr>
+<tr>
+<td align="center">UnexpectedTermination</td>
+<td align="left">At least job that has been unexpectedly terminated.</td>
+</tr>
+</tbody>
+</table>
+<p>To avoid continuous inspection via polling, we use the <code>wait</code> function of <code>kubectl</code>.</p>
+<p>In the specific <strong>bitrot</strong> scenario, the test will pass only it has reached an <strong>UnexpectedTermination</strong> within 10
+minutes of execution.</p>
+<pre><code class="language-bash">&gt;&gt; kubectl wait --for=condition=UnexpectedTermination --timeout=10m testplan.frisbee.io/cockroach-bitrot -n mytest
+
+testplan.frisbee.io/cockroach-bitrot condition met
+</code></pre>
+<p>Indeed, the condition is met, meaning that the test has failed. We can visually verify it from
+the <a href="https://dashboard-frisbee.localhost">Dashboard</a> .</p>
+<p><img alt="image-20220525170302089" src="../tutorial.assets/image-20220525170302089.png" /></p>
+<p>To reduce the noise when debugging a failed test, <em>Frisbee</em> automatically deletes all the jobs, expect for the failed
+one (masters-1), and the telemetry stack (grafana/prometheus).</p>
+<blockquote>
+<p>If the condition is not met within the specified timeout, <code>kubectl</code> will exit with failure code (1) and the following
+error message:</p>
+<p>"error: timed out waiting for the condition on testplans/cockroach-bitrot"</p>
+</blockquote>
+<h4 id="7-delete-a-test">7. Delete a Test</h4>
+<p>The deletion is as simple as the creation of a test.</p>
+<pre><code class="language-bash">&gt;&gt; kubectl -f /charts/cockroachdb/examples/10.bitrot.yml -n mytest delete --cascade=foreground
+
+testplan.frisbee.io &quot;cockroach-bitrot&quot; deleted
+</code></pre>
+<p>The flag <code>cascade=foreground</code> will wait until the experiment is actually deleted. Without this flag, the deletion will
+happen in the background. Use this flag if you want to run sequential tests, without interference.</p>
+<h4 id="8-parallel-tests">8. Parallel Tests</h4>
+<p>For the time being, the safest to run multiple experiments is to run each test on a <strong>dedicated namespace</strong>.</p>
+<p>To do so, you have to repeat Step 1, replacing the  <code>-n ....</code>  flag with a different namespace.</p>
+<p>For example:</p>
+<ul>
+<li>Run bitrot</li>
+</ul>
+<pre><code class="language-bash">&gt;&gt; helm upgrade --install --wait my-system ./charts/system --debug -n mytest --create-namespace
+&gt;&gt; helm upgrade --install --wait my-cockroach ./charts/cockroachdb --debug -n mytest
+&gt;&gt; helm upgrade --install --wait my-ycsb ./charts/ycsb --debug -n mytest
+&gt;&gt; kubectl -f ./charts/cockroachdb/examples/10.bitrot.yml apply -n mytest
+
+# go to http://grafana-mytest.localhost/d/crdb-console-runtime/crdb-console-runtime
+</code></pre>
+<ul>
+<li>Run network failure</li>
+</ul>
+<pre><code class="language-bash">&gt;&gt; helm upgrade --install --wait my-system ./charts/system --debug -n mytest2 --create-namespace
+&gt;&gt; helm upgrade --install --wait my-cockroach ./charts/cockroachdb --debug -n mytest2
+&gt;&gt; helm upgrade --install --wait my-ycsb ./charts/ycsb --debug -n mytest2
+&gt;&gt; kubectl -f ./charts/cockroachdb/examples/11.network.yml apply -n mytest2
+
+# go to http://grafana-mytest2.localhost/d/crdb-console-runtime/crdb-console-runtime
+</code></pre>
+<p>Notice that for every experiment, we start a new dedicated monitoring stack.</p>
+<h2 id="remove-frisbee">Remove Frisbee</h2>
+<h4 id="1-delete-all-the-namespaces-you-created">1. Delete all the namespaces you created</h4>
+<p>By deleting the namespaces, you also delete all the installed components.</p>
+<pre><code class="language-bash">&gt;&gt; kubectl delete namespace mytest mytest2 --wait
+</code></pre>
+<p>Notice that it may take some time.</p>
+<h4 id="2-remove-frisbee">2. Remove Frisbee</h4>
+<pre><code class="language-bash">&gt;&gt; helm  uninstall my-frisbee --debug -n default
+</code></pre>
+<h4 id="3-remove-frisbee-crds">3. Remove Frisbee CRDS</h4>
+<p>Because Helm does not delete CRDs for secure reasons, we must do it manually.</p>
+<pre><code class="language-bash">&gt;&gt; kubectl get crds | awk /frisbee.io/'{print $1}' | xargs -I{} kubectl delete crds  {}
+</code></pre>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../faq/" class="btn btn-neutral float-left" title="Faq"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../faq/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+  </span>
+</div>
+    <script>var base_url = '..';</script>
+    <script src="../js/theme_extra.js" defer></script>
+    <script src="../js/theme.js" defer></script>
+      <script src="../search/main.js" defer></script>
+    <script defer>
+        window.onload = function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        };
+    </script>
+
+</body>
+</html>

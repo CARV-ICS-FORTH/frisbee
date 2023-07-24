@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://carv-ics-forth.github.io/frisbee/code-developer/" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Guide for the Frisbee Platform Developers - Frisbee</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Guide for the Frisbee Platform Developers";
+        var mkdocs_page_input_path = "code-developer.md";
+        var mkdocs_page_url = "/frisbee/code-developer/";
+      </script>
+    
+    <script src="../js/jquery-3.6.0.min.js" defer></script>
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
+      <script>hljs.initHighlightingOnLoad();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> Frisbee
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../chart-developer/">Chart developer</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="./">Guide for the Frisbee Platform Developers</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#change-the-code">Change the Code</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#make-a-new-release">Make a new release</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#step-1-change-the-version-in-the-version-file">Step 1: Change the version in the VERSION file</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#step-2-update-the-controllers-container">Step 2: Update the controller's container</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#step-3-update-the-github-repo">Step 3: Update the Github repo</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#step-4-create-github-release">Step 4: Create  GitHub release</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#step-5-validate-release">Step 5: Validate release</a>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../faq/">Faq</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../tutorial/">Tutorial</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">Frisbee</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" alt="Docs"></a> &raquo;</li><li>Guide for the Frisbee Platform Developers</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="guide-for-the-frisbee-platform-developers">Guide for the Frisbee Platform Developers</h1>
+<!-- toc -->
+
+<ul>
+<li><a href="#change-the-code">Change the Code</a></li>
+<li><a href="#make-a-new-release">Make a new release</a><ul>
+<li><a href="#step-1-change-the-version-in-the-version-file">Step 1: Change the version in the VERSION file</a></li>
+<li><a href="#step-2-update-the-controllers-container">Step 2: Update the controller's container</a></li>
+<li><a href="#step-3-update-the-github-repo">Step 3: Update the Github repo</a></li>
+<li><a href="#step-4-create--github-release">Step 4: Create  GitHub release</a></li>
+<li><a href="#step-5-validate-release">Step 5: Validate release</a></li>
+</ul>
+</li>
+</ul>
+<!-- /toc -->
+
+<h2 id="change-the-code">Change the Code</h2>
+<pre><code class="language-bash"># Fetch Frisbee
+&gt;&gt; git clone git@github.com:CARV-ICS-FORTH/frisbee.git
+&gt;&gt; cd frisbee
+</code></pre>
+<p>There are two ways to run a Frisbee controller.</p>
+<ul>
+<li>As Go program outside a cluster.</li>
+<li>As a container inside a Kubernetes cluster.</li>
+</ul>
+<p>By default, Frisbee prefers the second way.</p>
+<p>However, when debugging a few feature it is impractical to have to create and deploy the container all the time. In such
+cases, it is preferable to run the controller outside the cluster, as shown next.</p>
+<p><strong>Step 1:</strong></p>
+<p>Firstly, we have to inform the Helm chart responsible for handling the platform deployment to not include the
+controller.</p>
+<pre><code class="language-bash"># Remove the containerized controller from a running deployment
+&gt;&gt; helm upgrade --install  my-frisbee charts/platform/ --set operator.enabled=false \
+--set global.ingress=platform.science-hangar.eu
+</code></pre>
+<p>Notice we the flag <code>global.ingress</code> . Set it accordingly to the Ingress in your cluster.</p>
+<p>If you run Frisbee on a local cluster, simply omit the flag.</p>
+<p><strong>Step 2:</strong></p>
+<p>On the second step, we need to run the controller as a standalone binary.</p>
+<pre><code class="language-bash"># Run Frisbee controller outside a cluster (from Frisbee directory)
+&gt;&gt; make run
+</code></pre>
+<p>This may take a while as it has to take download the Go dependencies and compile the binary.</p>
+<p>If everything went fine, you should see something like the following.</p>
+<p><img alt="image-20211217192114704" src="../developers.assets/image-20211217192114704.png" /></p>
+<blockquote>
+<p>Tip: Beware the different between <code>charts/platform</code> and  <code>frisbee/platform</code>.</p>
+</blockquote>
+<p>Given that we are under the Frisbee directory, the <code>charts/platform</code> points to the local copy of the chart, which is the
+one we want to modify.</p>
+<p>Otherwise, if <code>frisbee/platform</code> is used, Helm will use the released version of the repo.</p>
+<h2 id="make-a-new-release">Make a new release</h2>
+<h4 id="step-1-change-the-version-in-the-version-file">Step 1: Change the version in the VERSION file</h4>
+<h4 id="step-2-update-the-controllers-container">Step 2: Update the controller's container</h4>
+<p>If you have changes anything outside the <code>charts</code> folder, then you have probably modified some of the controller.</p>
+<p>In this case, you have to rebuild the container and push it to the registry.</p>
+<pre><code class="language-bash">make docker-build IMG=&quot;yourImage&quot;
+</code></pre>
+<p>Otherwise, you can use which will rebuild and automatically publish the container into the public Docker Hun registry,
+under the name <a href="https://hub.docker.com/repository/docker/icsforth/frisbee-operator">icsforth / frisbee-operator</a></p>
+<pre><code class="language-bash">&gt;&gt; make docker push
+</code></pre>
+<h4 id="step-3-update-the-github-repo">Step 3: Update the Github repo</h4>
+<p>We have also automated the way to publish new releases in Github.</p>
+<pre><code class="language-bash">&gt;&gt; make release
+</code></pre>
+<p>This will commit and tag all the changes in the repo. However, it will push changes to the Github.</p>
+<p>You have to do it manually using</p>
+<pre><code class="language-bash">&gt;&gt; git push --set-upstream origin  &amp;&amp; git push --tags
+</code></pre>
+<h4 id="step-4-create-github-release">Step 4: Create  GitHub release</h4>
+<ol>
+<li>
+<p>Go to GitHub and create a pull request</p>
+</li>
+<li>
+<p>Merge pull request</p>
+</li>
+<li>
+<p>Delete branch</p>
+</li>
+<li>
+<p>Go to <a href="https://github.com/CARV-ICS-FORTH/frisbee/tags">GitHub Tags</a> and create a new release for the latest tag</p>
+</li>
+</ol>
+<p>The previous must have triggered some GitHub Actions. Go to https://github.com/CARV-ICS-FORTH/frisbee/actions and check
+that is everything is successful.</p>
+<p>Then go to the <a href="https://github.com/CARV-ICS-FORTH/frisbee/tags">tags</a> and create a new release for the latest tag.</p>
+<p><img alt="image-20211217145923170" src="../developers.assets/image-20211217145923170.png" /></p>
+<h4 id="step-5-validate-release">Step 5: Validate release</h4>
+<p>The previous step have triggered the appropriate action for creating new charts.</p>
+<p>To confirm that they have been actually created, you can use the  <code>helm</code> tool to search the repo.</p>
+<pre><code class="language-bash">&gt;&gt; helm repo update
+&gt;&gt; helm search repo frisbee
+</code></pre>
+<p>Then, you see that the <code>latest</code> Chart version is equal to the latest <code>git tag</code>, and in accordance to the VERSION file.</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../chart-developer/" class="btn btn-neutral float-left" title="Chart developer"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../faq/" class="btn btn-neutral float-right" title="Faq">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../chart-developer/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../faq/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script>var base_url = '..';</script>
+    <script src="../js/theme_extra.js" defer></script>
+    <script src="../js/theme.js" defer></script>
+      <script src="../search/main.js" defer></script>
+    <script defer>
+        window.onload = function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        };
+    </script>
+
+</body>
+</html>
