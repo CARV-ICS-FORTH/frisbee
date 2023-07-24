@@ -27,7 +27,7 @@ maintainers:
     email: nikolaidis.fotis@gmail.com
     url: https://www.linkedin.com/in/fotis-nikolaidis-444a6634/
 
-icon: https://github.com/CARV-ICS-FORTH/frisbee/blob/main/docs/images/logo.jpg
+icon: https://github.com/CARV-ICS-FORTH/frisbee/blob/main/docs/logo.jpg
 
 dependencies:
   - name: openebs # Dynamic volume provisioning
