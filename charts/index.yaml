@@ -5,7 +5,7 @@ entries:
       category: Infrastructure
     apiVersion: v2
     appVersion: 1.16.0
-    created: "2023-08-18T11:56:53.870422438Z"
+    created: "2023-08-18T12:39:15.31599564Z"
     dependencies:
     - condition: openebs.enabled
       name: openebs
@@ -21,7 +21,7 @@ entries:
       version: 5.7.0
     description: Frisbee is a Kubernetes platform for exploring, testing, and benchmarking
       distributed applications.
-    digest: 800c045a38be800a5cd12c12b2d7279095d4f4458ad48d2473235448b7a9bac8
+    digest: 028eeea9eaff9514814fdc424685f21c9a9b42c8e13a7367545b09653e4409e8
     icon: https://github.com/CARV-ICS-FORTH/frisbee/blob/main/docs/logo.jpg
     maintainers:
     - email: nikolaidis.fotis@gmail.com
@@ -66,9 +66,9 @@ entries:
   system:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2023-08-18T11:56:53.872693862Z"
+    created: "2023-08-18T12:39:15.31769666Z"
     description: Default templates for Frisbee
-    digest: fc19a104c620a5cfcf90e43ed4aeecab16c658fb8cdb398d9811dd2fa3536663
+    digest: b0534f46e865b46e5eadc04e6fda28f735b3c40bb3558f10052cd7ebc5b9e8f7
     maintainers:
     - email: nikolaidis.fotis@gmail.com
       name: Fotis Nikolaidis
@@ -92,4 +92,4 @@ entries:
     urls:
     - https://CARV-ICS-FORTH.github.io/frisbee/charts/system-1.0.42.tgz
     version: 1.0.42
-generated: "2023-08-18T11:56:53.833522849Z"
+generated: "2023-08-18T12:39:15.273190734Z"
