@@ -9,6 +9,7 @@
 ## @param telemetry.prometheus.honorTimestamp Use the timestamps of the metrics exposed by the agent (time-drifts)
 ## @param telemetry.prometheus.queryLookbackDelta The maximum duration for retrieving metrics for considering the source as stale.
 ## @param telemetry.dataviewer.port Listening port for Dataviewer
+## @param telemetry.cadvisor.limits Set limits for inotify
 telemetry:
   grafana:
     image: grafana/grafana-oss:9.4.7
@@ -29,11 +30,15 @@ telemetry:
     port: 80
 
 
+  cadvisor:
+    limits: false
+
+
 ## @section Chaos
 
 ## @param chaos.network.generic.source A list of comma separated services to apply the fault
 ## @param chaos.network.generic.duration The duration of the fault
-## @param chaos.network.partition.partial.dst A list of comma seperated services that will be partitioned from the source servies.
+## @param chaos.network.partition.partial.dst A list of comma seperated services that will be partitioned from the source services.
 ## @param chaos.network.partition.partial.direction The direction of the network partition fault
 ## @param chaos.network.duplicate.duplicate  Percent of Duplicate packets
 ## @param chaos.network.duplicate.correlation  Affinity to last packet. Emulates packet burst duplicates.
