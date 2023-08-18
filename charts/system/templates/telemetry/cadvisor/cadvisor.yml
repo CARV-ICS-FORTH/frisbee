@@ -52,8 +52,8 @@ spec:
               # to find out the reason. Just exit with success and let experiment to continue.
               [ -d "/proc/${mainPID}" ] || { echo "/proc/${mainPID} does not exists.";  exit 0; }
 
-              # Unmount the local cgroup
-              umount /sys/fs/cgroup
+              # Unmount the local cgroup (return successfully if cgroup is not mounted)
+              umount /sys/fs/cgroup || return 0
 
               # Tap into the cgroup of the main container, and mount it locally
               nsenter -t ${mainPID} -C -- mount -t cgroup2 none /sys/fs/cgroup

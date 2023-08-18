@@ -3,7 +3,7 @@
 ## Changes Since Last Release
 
 ### Changed defaults / behaviours
-- ...
+- Prevent cadvisor from failing when cgroup is not mounted.
 
 ### New Features & Functionality
 - ...
