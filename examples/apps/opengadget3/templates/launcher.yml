@@ -16,13 +16,14 @@ spec:
       - name: ssh-volume
         configMap:
           name: ssh-config
+      # declare mpi volume
+      - name: mpi-volume
+        emptyDir: {}
       # declare dataset volume
       - name: dataset-volume
         hostPath:
           path: {{.Values.datasetPath}}
-      # declare mpi volume
-      - name: mpi-volume
-        emptyDir: { }
+    # Populate the hostfile with workers.
     initContainers:
       - name: populate-workers
         image: busybox

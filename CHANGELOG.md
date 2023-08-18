@@ -3,6 +3,17 @@
 ## Changes Since Last Release
 
 ### Changed defaults / behaviours
+- ...
+
+### New Features & Functionality
+- ...
+
+## Bug Fixes
+- ...
+
+## 1.0.43 \[2023-08-18\]
+
+### Changed defaults / behaviours
 - Move basic images from /deploy to /images 
 - ...
 
@@ -10,6 +21,7 @@
 - Add autocompletion for uninstall command.
 - Add validation for missing callable.
 - Add flag for disabling chaos controller.
+- Add flat on system charts for setting the inotify limits.
 - ...
 
 ## Bug Fixes
@@ -17,6 +29,7 @@
 - Fix issues with partial and conditional deployments (Ingress, chaos, ..)
 - Fix platform chart to disable kubernetes dashboard according to the chart values.
 - Fix the way embedded files are coped to the host filesystem.
+- Remove single quote from cadvisor as it may not be supported on various backends, such as HPK.
 - ...
 
 

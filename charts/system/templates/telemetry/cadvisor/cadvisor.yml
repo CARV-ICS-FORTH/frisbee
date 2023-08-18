@@ -32,6 +32,13 @@ spec:
           - |  # Multi-line str
             set -eux
 
+            {{- if .Values.telemetry.cadvisor.limits}}
+            # update the limits temporarily to avoid "inotify_init: too many open files"
+            sysctl fs.inotify.max_user_instances=8192
+            sysctl fs.inotify.max_user_watches=524288
+            sysctl -p
+            {{- end}}
+
             get_main_pid() {
               # Wait a bit to obtain the PID of the main container
               [ -f "/dev/shm/app" ] || inotifywait /dev/shm --include 'app'
@@ -40,8 +47,8 @@ spec:
             }
 
             enter_ns() {
-              # Check that main's PID corresponds to an actual process.
-              # If it doesn't, it may be already complete. In any case, it is not our job
+              # Check that PID of main container corresponds to an actual process.
+              # If it does not, it may be already complete. In any case, it is not our job
               # to find out the reason. Just exit with success and let experiment to continue.
               [ -d "/proc/${mainPID}" ] || { echo "/proc/${mainPID} does not exists.";  exit 0; }
 
@@ -51,11 +58,6 @@ spec:
               # Tap into the cgroup of the main container, and mount it locally
               nsenter -t ${mainPID} -C -- mount -t cgroup2 none /sys/fs/cgroup
             }
-
-            # update the limits temporarily to avoid "inotify_init: too many open files"
-            sysctl fs.inotify.max_user_instances=8192
-            sysctl fs.inotify.max_user_watches=524288
-            sysctl -p
 
             get_main_pid && enter_ns
 
