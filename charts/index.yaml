@@ -5,6 +5,37 @@ entries:
       category: Infrastructure
     apiVersion: v2
     appVersion: 1.16.0
+    created: "2023-08-18T11:56:53.870422438Z"
+    dependencies:
+    - condition: openebs.enabled
+      name: openebs
+      repository: https://openebs.github.io/charts
+      version: 3.2.0
+    - condition: chaos-mesh.enabled
+      name: chaos-mesh
+      repository: https://charts.chaos-mesh.org
+      version: 2.1.2
+    - condition: kubernetes-dashboard.enabled
+      name: kubernetes-dashboard
+      repository: https://kubernetes.github.io/dashboard/
+      version: 5.7.0
+    description: Frisbee is a Kubernetes platform for exploring, testing, and benchmarking
+      distributed applications.
+    digest: 800c045a38be800a5cd12c12b2d7279095d4f4458ad48d2473235448b7a9bac8
+    icon: https://github.com/CARV-ICS-FORTH/frisbee/blob/main/docs/logo.jpg
+    maintainers:
+    - email: nikolaidis.fotis@gmail.com
+      name: Fotis Nikolaidis
+      url: https://www.linkedin.com/in/fotis-nikolaidis-444a6634/
+    name: platform
+    type: application
+    urls:
+    - https://CARV-ICS-FORTH.github.io/frisbee/charts/platform-1.0.43.tgz
+    version: 1.0.43
+  - annotations:
+      category: Infrastructure
+    apiVersion: v2
+    appVersion: 1.16.0
     created: "2023-07-24T21:27:58.560484909Z"
     dependencies:
     - condition: openebs.enabled
@@ -35,6 +66,20 @@ entries:
   system:
   - apiVersion: v2
     appVersion: 1.16.0
+    created: "2023-08-18T11:56:53.872693862Z"
+    description: Default templates for Frisbee
+    digest: fc19a104c620a5cfcf90e43ed4aeecab16c658fb8cdb398d9811dd2fa3536663
+    maintainers:
+    - email: nikolaidis.fotis@gmail.com
+      name: Fotis Nikolaidis
+      url: https://www.linkedin.com/in/fotis-nikolaidis-444a6634/
+    name: system
+    type: application
+    urls:
+    - https://CARV-ICS-FORTH.github.io/frisbee/charts/system-1.0.43.tgz
+    version: 1.0.43
+  - apiVersion: v2
+    appVersion: 1.16.0
     created: "2023-07-24T21:27:58.56232171Z"
     description: Default templates for Frisbee
     digest: dc270cd223617ffa47fd7ea28d9f7a1a48f176554e07c15bf7d142e21b57f824
@@ -47,4 +92,4 @@ entries:
     urls:
     - https://CARV-ICS-FORTH.github.io/frisbee/charts/system-1.0.42.tgz
     version: 1.0.42
-generated: "2023-07-24T21:27:58.52089549Z"
+generated: "2023-08-18T11:56:53.833522849Z"
