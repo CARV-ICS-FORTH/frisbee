@@ -1,0 +1,11 @@
+url_path,views_total,views_unique
+/CARV-ICS-FORTH/frisbee,11,4
+/CARV-ICS-FORTH/frisbee/blob/main/Makefile,8,1
+/CARV-ICS-FORTH/frisbee/tree/main/.github,8,1
+/CARV-ICS-FORTH/frisbee/blob/main/.github/workflows/release-docker-images.yml,6,1
+/CARV-ICS-FORTH/frisbee/tree/main/charts/platform/templates,6,1
+/CARV-ICS-FORTH/frisbee/tree/main/.github/workflows,6,1
+/CARV-ICS-FORTH/frisbee/blob/main/VERSION,4,1
+/CARV-ICS-FORTH/frisbee/blob/main/charts/platform/templates/deployment/deployment.yaml,2,1
+/CARV-ICS-FORTH/frisbee/blob/main/charts/platform/templates/ingress.yml,2,1
+/CARV-ICS-FORTH/frisbee/blob/main/examples/apps/cockroachdb/values.yaml,2,1
