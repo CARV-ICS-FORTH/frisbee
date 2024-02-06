@@ -1,0 +1,11 @@
+url_path,views_total,views_unique
+/CARV-ICS-FORTH/frisbee,8,6
+/CARV-ICS-FORTH/frisbee/tree/main/examples/patterns/federated-learning,4,1
+/CARV-ICS-FORTH/frisbee/tree/main/examples/patterns/federated-learning/ml-backend,3,1
+/CARV-ICS-FORTH/frisbee/tree/main/examples/patterns/federated-learning/node-placement,3,1
+/CARV-ICS-FORTH/frisbee/watchers,2,2
+/CARV-ICS-FORTH/frisbee/blob/main/controllers/call/controller.go,2,1
+/CARV-ICS-FORTH/frisbee/blob/main/controllers/call/jobs.go,2,1
+/CARV-ICS-FORTH/frisbee/blob/main/controllers/call/lifecycle.go,2,1
+/CARV-ICS-FORTH/frisbee/blob/main/examples/patterns/federated-learning/ml-backend/manifest.yml,2,1
+/CARV-ICS-FORTH/frisbee/blob/main/examples/patterns/federated-learning/node-placement/manifest.yml,2,1
