@@ -1,0 +1,11 @@
+url_path,views_total,views_unique
+/CARV-ICS-FORTH/frisbee,18,6
+/CARV-ICS-FORTH/frisbee/tree/main/cmd/kubectl-frisbee/commands,11,1
+/CARV-ICS-FORTH/frisbee/tree/main/cmd/manager,10,1
+/CARV-ICS-FORTH/frisbee/tree/main/cmd,9,1
+/CARV-ICS-FORTH/frisbee/tree/main/cmd/kubectl-frisbee,7,1
+/CARV-ICS-FORTH/frisbee/blob/main/api/v1alpha1/crd_cluster.go,6,1
+/CARV-ICS-FORTH/frisbee/blob/main/cmd/manager/main.go,6,1
+/CARV-ICS-FORTH/frisbee/tree/main/controllers,6,1
+/CARV-ICS-FORTH/frisbee/tree/main/images,5,1
+/CARV-ICS-FORTH/frisbee/blob/main/cmd/kubectl-frisbee/commands/common/completion.go,4,1
