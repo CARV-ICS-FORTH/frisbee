@@ -1,0 +1,11 @@
+url_path,views_total,views_unique
+/CARV-ICS-FORTH/frisbee,15,6
+/CARV-ICS-FORTH/frisbee/blob/f80a214b67e2aa90fe1b5e1623785499e24acbcb/controllers/service/lifecycle.go,14,1
+/CARV-ICS-FORTH/frisbee/blob/main/install.sh,10,2
+/CARV-ICS-FORTH/frisbee/blob/f80a214b67e2aa90fe1b5e1623785499e24acbcb/pkg/lifecycle/stateMapper.go,10,1
+/CARV-ICS-FORTH/frisbee/tree/f80a214b67e2aa90fe1b5e1623785499e24acbcb/api/v1alpha1,10,1
+/CARV-ICS-FORTH/frisbee/tree/f80a214b67e2aa90fe1b5e1623785499e24acbcb/pkg/lifecycle,10,1
+/CARV-ICS-FORTH/frisbee/issues,9,2
+/CARV-ICS-FORTH/frisbee/tree/main/api/v1alpha1,9,1
+/CARV-ICS-FORTH/frisbee/blob/f80a214b67e2aa90fe1b5e1623785499e24acbcb/api/v1alpha1/crd_cluster.go,8,1
+/CARV-ICS-FORTH/frisbee/blob/f80a214b67e2aa90fe1b5e1623785499e24acbcb/api/v1alpha1/type_labels.go,8,1
