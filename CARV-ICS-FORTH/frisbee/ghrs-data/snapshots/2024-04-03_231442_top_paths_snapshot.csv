@@ -1,0 +1,11 @@
+url_path,views_total,views_unique
+/CARV-ICS-FORTH/frisbee,17,8
+/CARV-ICS-FORTH/frisbee/tree/a3f6f5363062adb171857b53c15b8954f5004de0/charts/platform/templates,13,1
+/CARV-ICS-FORTH/frisbee/tree/main/charts,12,2
+/CARV-ICS-FORTH/frisbee/tree/main/examples,12,2
+/CARV-ICS-FORTH/frisbee/tree/main/examples/apps,9,2
+/CARV-ICS-FORTH/frisbee/blob/a3f6f5363062adb171857b53c15b8954f5004de0/charts/platform/templates/deployment/deployment.yaml,6,1
+/CARV-ICS-FORTH/frisbee/blob/a3f6f5363062adb171857b53c15b8954f5004de0/charts/platform/templates/webhook/admission/proxy.yaml,6,1
+/CARV-ICS-FORTH/frisbee/blob/a3f6f5363062adb171857b53c15b8954f5004de0/Makefile,6,1
+/CARV-ICS-FORTH/frisbee/blob/f80a214b67e2aa90fe1b5e1623785499e24acbcb/controllers/common/defaults.go,6,1
+/CARV-ICS-FORTH/frisbee/tree/a3f6f5363062adb171857b53c15b8954f5004de0/charts/platform/templates/deployment,6,1
