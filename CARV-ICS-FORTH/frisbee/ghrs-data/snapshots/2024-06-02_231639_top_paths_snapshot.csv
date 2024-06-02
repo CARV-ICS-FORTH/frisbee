@@ -1,0 +1,11 @@
+url_path,views_total,views_unique
+/CARV-ICS-FORTH/frisbee,15,10
+/CARV-ICS-FORTH/frisbee/tree/main/charts,10,1
+/CARV-ICS-FORTH/frisbee/tree/main/charts/system,10,1
+/CARV-ICS-FORTH/frisbee/tree/main/charts/system/templates,10,1
+/CARV-ICS-FORTH/frisbee/tree/main/charts/system/templates/chaos,10,1
+/CARV-ICS-FORTH/frisbee/blob/main/charts/system/templates/chaos/pod-kill.yml,4,1
+/CARV-ICS-FORTH/frisbee/tree/main/charts/platform,4,1
+/CARV-ICS-FORTH/frisbee/tree/main/charts/platform/charts,4,1
+/CARV-ICS-FORTH/frisbee/blob/a3f6f5363062adb171857b53c15b8954f5004de0/examples/apps/tikv/templates/telemetry.yml,2,1
+/CARV-ICS-FORTH/frisbee/blob/main/charts/platform/charts/chaos-mesh-2.1.2.tgz,2,1
