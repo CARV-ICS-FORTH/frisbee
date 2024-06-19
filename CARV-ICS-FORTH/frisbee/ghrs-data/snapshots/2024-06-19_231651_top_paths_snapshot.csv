@@ -1,0 +1,11 @@
+url_path,views_total,views_unique
+/CARV-ICS-FORTH/frisbee,10,9
+/CARV-ICS-FORTH/frisbee/tree/main/examples/apps/tebis,5,2
+/CARV-ICS-FORTH/frisbee/tree/main/examples,4,2
+/CARV-ICS-FORTH/frisbee/blob/main/examples/patterns/databases/network-partition/manifest.yml,4,1
+/CARV-ICS-FORTH/frisbee/tree/main/examples/apps/tebis/examples,3,1
+/CARV-ICS-FORTH/frisbee/tree/main/examples/apps/tebis/templates,3,1
+/CARV-ICS-FORTH/frisbee/blob/main/examples/apps/tebis/examples/normal-execution.yml,2,1
+/CARV-ICS-FORTH/frisbee/blob/main/examples/apps/tebis/templates/services.yml,2,1
+/CARV-ICS-FORTH/frisbee/blob/main/examples/patterns/databases/network-partition/install.sh,2,1
+/CARV-ICS-FORTH/frisbee/blob/main/examples/patterns/databases/normal-load/manifest.yml,2,1
