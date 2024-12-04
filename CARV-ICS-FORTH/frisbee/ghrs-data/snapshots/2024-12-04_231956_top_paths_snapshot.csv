@@ -1,0 +1,11 @@
+url_path,views_total,views_unique
+/CARV-ICS-FORTH/frisbee,4,2
+/CARV-ICS-FORTH/frisbee/blob/a3f6f5363062adb171857b53c15b8954f5004de0/controllers/service/controller.go,2,1
+/CARV-ICS-FORTH/frisbee/blob/a3f6f5363062adb171857b53c15b8954f5004de0/api/v1alpha1/type_expressions.go,1,1
+/CARV-ICS-FORTH/frisbee/blob/a3f6f5363062adb171857b53c15b8954f5004de0/controllers/service/jobs.go,1,1
+/CARV-ICS-FORTH/frisbee/blob/a3f6f5363062adb171857b53c15b8954f5004de0/controllers/service/lifecycle.go,1,1
+/CARV-ICS-FORTH/frisbee/blob/a3f6f5363062adb171857b53c15b8954f5004de0/controllers/service/utils/discovery.go,1,1
+/CARV-ICS-FORTH/frisbee/blob/a3f6f5363062adb171857b53c15b8954f5004de0/controllers/service/utils/fields.go,1,1
+/CARV-ICS-FORTH/frisbee/blob/a3f6f5363062adb171857b53c15b8954f5004de0/controllers/service/utils/fields_test.go,1,1
+/CARV-ICS-FORTH/frisbee/blob/a3f6f5363062adb171857b53c15b8954f5004de0/controllers/service/utils/getters.go,1,1
+/CARV-ICS-FORTH/frisbee/blob/a3f6f5363062adb171857b53c15b8954f5004de0/controllers/service/utils/sidecars.go,1,1
