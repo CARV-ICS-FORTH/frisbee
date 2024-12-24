@@ -1,0 +1,11 @@
+url_path,views_total,views_unique
+/CARV-ICS-FORTH/frisbee,5,5
+/CARV-ICS-FORTH/frisbee/tree/main/examples/tutorial,4,2
+/CARV-ICS-FORTH/frisbee/tree/main,3,1
+/CARV-ICS-FORTH/frisbee/tree/main/cmd/kubectl-frisbee/commands,3,1
+/CARV-ICS-FORTH/frisbee/tree/main/examples,2,2
+/CARV-ICS-FORTH/frisbee/blob/main/cmd/kubectl-frisbee/commands/tests/submit.go,1,1
+/CARV-ICS-FORTH/frisbee/blob/main/examples/tutorial/12.callables.yml,1,1
+/CARV-ICS-FORTH/frisbee/blob/main/examples/tutorial/13.assertions.yml,1,1
+/CARV-ICS-FORTH/frisbee/blob/main/examples/tutorial/18.revoke-failures.yml,1,1
+/CARV-ICS-FORTH/frisbee/blob/main/examples/tutorial/1.hello-world.yml,1,1
