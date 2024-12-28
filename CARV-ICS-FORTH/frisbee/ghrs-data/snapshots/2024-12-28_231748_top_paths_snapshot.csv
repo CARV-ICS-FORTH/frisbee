@@ -1,0 +1,11 @@
+url_path,views_total,views_unique
+/CARV-ICS-FORTH/frisbee,5,5
+/CARV-ICS-FORTH/frisbee/tree/main,3,1
+/CARV-ICS-FORTH/frisbee/tree/main/cmd/kubectl-frisbee/commands,3,1
+/CARV-ICS-FORTH/frisbee/blob/main/charts/platform/charts/chaos-mesh-2.1.2.tgz,2,1
+/CARV-ICS-FORTH/frisbee/tree/main/examples/tutorial,2,1
+/CARV-ICS-FORTH/frisbee/blob/main/charts/platform/Chart.yaml,1,1
+/CARV-ICS-FORTH/frisbee/blob/main/cmd/kubectl-frisbee/commands/tests/submit.go,1,1
+/CARV-ICS-FORTH/frisbee/blob/main/examples/tutorial/18.revoke-failures.yml,1,1
+/CARV-ICS-FORTH/frisbee/blob/main/examples/tutorial/5.clustering.yml,1,1
+/CARV-ICS-FORTH/frisbee/tree/main/charts/platform/charts,1,1
