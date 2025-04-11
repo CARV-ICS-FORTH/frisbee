@@ -1,0 +1,11 @@
+url_path,views_total,views_unique
+/CARV-ICS-FORTH/frisbee,6,5
+/CARV-ICS-FORTH/frisbee/blob/main/docs/readme.assets/contextualized-visualization.png,3,2
+/CARV-ICS-FORTH/frisbee/tree/main,3,2
+/CARV-ICS-FORTH/frisbee/blob/main/examples/patterns/hpc,2,1
+/CARV-ICS-FORTH/frisbee/tree/main/examples/patterns/federated-learning,2,1
+/CARV-ICS-FORTH/frisbee/blob/main/controllers/scenario/jobs.go,1,1
+/CARV-ICS-FORTH/frisbee/blob/main/examples/patterns/ci/sequential-tests.yaml,1,1
+/CARV-ICS-FORTH/frisbee/blob/main/examples/patterns/databases/elasticity/manifest.yml,1,1
+/CARV-ICS-FORTH/frisbee/blob/main/examples/patterns/databases/network-partition/manifest.yml,1,1
+/CARV-ICS-FORTH/frisbee/blob/main/examples/patterns/federated-learning/crash-on-epoch/manifest.yml,1,1
